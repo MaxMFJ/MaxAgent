@@ -385,11 +385,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Tool upgrade orchestrator init skipped: {e}")
 
-    # EventBus 解耦服务：ErrorService、SelfHealingWorker、UpgradeService
+    # EventBus 解耦服务：注入主循环，ErrorService、SelfHealingWorker、UpgradeService
     try:
+        import asyncio
+        from agent.event_bus import get_event_bus
         from agent.error_service import get_error_service
         from agent.self_healing_worker import get_self_healing_worker
         from agent.upgrade_service import get_upgrade_service
+
+        get_event_bus().set_loop(asyncio.get_running_loop())
 
         async def _broadcast_to_session(sid: str, chunk: dict):
             await connection_manager.broadcast_to_session(sid, chunk)
@@ -628,6 +632,13 @@ async def update_config(config: ConfigUpdate):
     # 同时更新自主 agent
     if autonomous_agent:
         autonomous_agent.update_llm(new_llm_client)
+    
+    # 同步更新升级编排器的 LLM（否则升级流程仍用启动时的 dummy API key）
+    try:
+        from agent.tool_upgrade_orchestrator import get_upgrade_orchestrator
+        get_upgrade_orchestrator().update_llm(new_llm_client)
+    except Exception:
+        pass
     
     return {"status": "updated", "provider": new_config.provider, "model": new_config.model}
 

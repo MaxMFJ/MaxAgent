@@ -320,7 +320,25 @@
     [self scrollToBottom];
     [inputView clearText];
     
+    self.inputView.loading = YES;
     [[WebSocketService sharedService] sendChatMessage:message];
+}
+
+- (void)inputViewDidRequestStop:(InputView *)inputView {
+    (void)inputView;
+    self.inputView.loading = NO;
+    [[WebSocketService sharedService] sendStopStream];
+    
+    if (self.currentAssistantMessage) {
+        self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
+        self.currentAssistantMessage.status = MessageStatusComplete;
+        NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+        if (index != NSNotFound) {
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+            [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+        }
+        self.currentAssistantMessage = nil;
+    }
 }
 
 #pragma mark - WebSocketServiceDelegate
@@ -395,6 +413,7 @@
 
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName {
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.status = MessageStatusComplete;
             self.currentAssistantMessage.modelName = modelName;
@@ -410,8 +429,25 @@
     });
 }
 
+- (void)webSocketServiceDidStop:(WebSocketService *)service {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
+        if (self.currentAssistantMessage) {
+            self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
+            self.currentAssistantMessage.status = MessageStatusComplete;
+            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            if (index != NSNotFound) {
+                NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+                [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+            }
+            self.currentAssistantMessage = nil;
+        }
+    });
+}
+
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service {
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
         [self.messages removeAllObjects];
         self.currentAssistantMessage = nil;
         [self.tableView reloadData];
@@ -420,6 +456,7 @@
 
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage {
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [NSString stringWithFormat:NSLocalizedString(@"error_format", nil), errorMessage];
             self.currentAssistantMessage.status = MessageStatusError;

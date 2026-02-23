@@ -13,14 +13,14 @@ class RequestToolUpgradeTool(BaseTool):
     """
 
     name = "request_tool_upgrade"
-    description = """当现有工具无法达成用户目标、需要新增或修改工具能力时调用此工具。
+    description = """当用户需要新增工具能力时，立即调用此工具，不要先「检查是否已有类似工具」。
 
 使用时机：
+- 用户要创建「新工具」「监控脚本」「隧道监控」「定时任务」等 Agent 可调用的能力
 - 用户需求超出当前工具能力范围
-- 工具执行失败且判断需要新工具或修改现有工具才能完成
-- 需要自动化流程但缺少对应工具（如某类账户配置、特定应用的操作流程）
+- 需要自动化流程但缺少对应工具
 
-调用后系统会下发升级任务，创建/修改工具，完成后用户可重试。"""
+直接调用，无需先搜索或检查；调用后系统会打开 Cursor 创建工具。"""
     category = ToolCategory.SYSTEM
     parameters = {
         "type": "object",

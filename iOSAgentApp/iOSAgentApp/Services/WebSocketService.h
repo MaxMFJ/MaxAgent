@@ -24,6 +24,7 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId;
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;
+- (void)webSocketServiceDidStop:(WebSocketService *)service;
 
 @end
 
@@ -43,6 +44,7 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)sendAutonomousTask:(NSString *)task;
 - (void)createNewSession:(nullable NSString *)sessionId;
 - (void)clearSession;
+- (void)sendStopStream;
 
 - (void)checkServerHealth:(void(^)(BOOL available, NSString * _Nullable model))completion;
 

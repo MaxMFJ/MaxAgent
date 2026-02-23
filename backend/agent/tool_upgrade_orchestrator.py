@@ -134,6 +134,10 @@ class UpgradeOrchestrator:
         self.on_git_rollback = on_git_rollback  # () -> (success, message)
         self._upgrading = False
     
+    def update_llm(self, llm_client: LLMClient) -> None:
+        """更新 LLM 客户端（配置同步时调用，与 AgentCore 保持一致）"""
+        self.llm = llm_client
+    
     async def _broadcast(self, msg: dict):
         """广播消息给所有客户端"""
         if self.on_broadcast:

@@ -132,6 +132,18 @@
     [self sendJSONMessage:message];
 }
 
+- (void)sendStopStream {
+    if (self.connectionState != WebSocketConnectionStateConnected) {
+        return;
+    }
+    
+    NSDictionary *message = @{
+        @"type": @"stop",
+        @"session_id": [ServerConfig sharedConfig].sessionId
+    };
+    [self sendJSONMessage:message];
+}
+
 - (void)checkServerHealth:(void (^)(BOOL, NSString * _Nullable))completion {
     NSURL *url = [[ServerConfig sharedConfig] healthCheckURL];
     if (!url) {
@@ -306,6 +318,11 @@
     else if ([type isEqualToString:@"session_cleared"]) {
         if ([self.delegate respondsToSelector:@selector(webSocketServiceDidClearSession:)]) {
             [self.delegate webSocketServiceDidClearSession:self];
+        }
+    }
+    else if ([type isEqualToString:@"stopped"]) {
+        if ([self.delegate respondsToSelector:@selector(webSocketServiceDidStop:)]) {
+            [self.delegate webSocketServiceDidStop:self];
         }
     }
     else {

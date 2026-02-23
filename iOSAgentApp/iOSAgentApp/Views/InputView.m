@@ -17,6 +17,7 @@
     if (self) {
         [self setupUI];
         _enabled = YES;
+        _loading = NO;
     }
     return self;
 }
@@ -90,6 +91,12 @@
 }
 
 - (void)sendButtonTapped {
+    if (self.loading) {
+        if ([self.delegate respondsToSelector:@selector(inputViewDidRequestStop:)]) {
+            [self.delegate inputViewDidRequestStop:self];
+        }
+        return;
+    }
     NSString *text = [self.textView.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (text.length > 0 && self.enabled) {
         if ([self.delegate respondsToSelector:@selector(inputView:didSendMessage:)]) {
@@ -111,15 +118,32 @@
 - (void)setEnabled:(BOOL)enabled {
     _enabled = enabled;
     self.textView.editable = enabled;
-    self.sendButton.enabled = enabled && self.textView.text.length > 0;
+    [self updateSendButton];
     self.alpha = enabled ? 1.0 : 0.6;
+}
+
+- (void)setLoading:(BOOL)loading {
+    _loading = loading;
+    [self updateSendButton];
+}
+
+- (void)updateSendButton {
+    if (self.loading) {
+        self.sendButton.enabled = YES;
+        [self.sendButton setImage:[UIImage systemImageNamed:@"stop.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
+        self.sendButton.tintColor = [UIColor systemRedColor];
+    } else {
+        self.sendButton.enabled = self.enabled && self.textView.text.length > 0;
+        [self.sendButton setImage:[UIImage systemImageNamed:@"arrow.up.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
+        self.sendButton.tintColor = [UIColor systemBlueColor];
+    }
 }
 
 #pragma mark - UITextViewDelegate
 
 - (void)textViewDidChange:(UITextView *)textView {
     self.placeholderLabel.hidden = textView.text.length > 0;
-    self.sendButton.enabled = self.enabled && textView.text.length > 0;
+    [self updateSendButton];
     
     CGFloat maxHeight = 120;
     CGSize sizeThatFits = [textView sizeThatFits:CGSizeMake(textView.frame.size.width, CGFLOAT_MAX)];

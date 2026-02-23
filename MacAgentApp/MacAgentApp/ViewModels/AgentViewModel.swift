@@ -54,15 +54,17 @@ class AgentViewModel: ObservableObject {
     
     private let backendService = BackendService()
     private var cancellables = Set<AnyCancellable>()
+    private var currentSendTask: Task<Void, Never>?
     
     // MARK: - Initialization
     
     init() {
         setupSubscriptions()
-        loadConversations()
-        
-        if currentConversation == nil {
-            newConversation()
+        Task { @MainActor in
+            loadConversations()
+            if currentConversation == nil {
+                newConversation()
+            }
         }
     }
     
@@ -228,9 +230,33 @@ class AgentViewModel: ObservableObject {
         
         let conversationId = conversation.id.uuidString
         
-        Task {
+        currentSendTask = Task {
+            defer {
+                Task { @MainActor in
+                    isLoading = false
+                    currentSendTask = nil
+                }
+            }
             await sendMessageWithRetry(messageText, sessionId: conversationId, retryCount: 0)
-            isLoading = false
+        }
+    }
+    
+    func stopTask() {
+        guard isLoading, let conversation = currentConversation else { return }
+        currentSendTask?.cancel()
+        currentSendTask = nil
+        isLoading = false
+        
+        Task {
+            await backendService.sendStopStream(sessionId: conversation.id.uuidString)
+        }
+        
+        if let lastIndex = currentConversation?.messages.lastIndex(where: { $0.role == .assistant }),
+           currentConversation?.messages[lastIndex].isStreaming == true {
+            var conv = currentConversation!
+            conv.messages[lastIndex].content += "\n\n[已终止]"
+            conv.messages[lastIndex].isStreaming = false
+            updateCurrentConversation(conv)
         }
     }
     
@@ -263,6 +289,9 @@ class AgentViewModel: ObservableObject {
                 case .done(let model, let tokenUsage):
                     updateAssistantMessage(content: fullContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
                     
+                case .stopped:
+                    updateAssistantMessage(content: fullContent + "\n\n[已终止]", isStreaming: false)
+                    
                 case .error(let message):
                     errorMessage = message
                     updateAssistantMessage(content: "错误: \(message)", isStreaming: false)
@@ -289,6 +318,8 @@ class AgentViewModel: ObservableObject {
                 updateAssistantMessage(content: fullContent, isStreaming: false)
             }
             
+        } catch is CancellationError {
+            return
         } catch {
             // 尝试重连一次
             if retryCount < 1 {
@@ -354,15 +385,19 @@ class AgentViewModel: ObservableObject {
         updateCurrentConversation(conversation)
         isLoading = true
         
-        // Reset autonomous state
         actionLogs = []
         currentIteration = 0
         
         let sessionId = conversation.id.uuidString
         
-        Task {
+        currentSendTask = Task {
+            defer {
+                Task { @MainActor in
+                    isLoading = false
+                    currentSendTask = nil
+                }
+            }
             await executeAutonomousTask(task, sessionId: sessionId)
-            isLoading = false
         }
     }
     
@@ -529,9 +564,17 @@ class AgentViewModel: ObservableObject {
                     let icon = success ? "✅" : "❌"
                     statusContent += "\(icon) \(name): \(result)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .stopped:
+                    statusContent += "\n\n[已终止]"
+                    updateAssistantMessage(content: statusContent, isStreaming: false)
                 }
+        
             }
             
+        } catch is CancellationError {
+            statusContent += "\n\n[已终止]"
+            updateAssistantMessage(content: statusContent, isStreaming: false)
         } catch {
             errorMessage = "自主执行失败: \(error.localizedDescription)"
             updateAssistantMessage(

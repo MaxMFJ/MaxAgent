@@ -68,8 +68,12 @@ struct CustomTextEditor: NSViewRepresentable {
         
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
-            text = textView.string
-            updatePlaceholder()
+            let newText = textView.string
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.text = newText
+                self.updatePlaceholder()
+            }
         }
         
         func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {

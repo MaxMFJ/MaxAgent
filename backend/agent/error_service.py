@@ -9,17 +9,13 @@ import logging
 import os
 from collections import deque
 from datetime import datetime
-from typing import Any, Callable, Deque, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from .event_bus import (
-    get_event_bus,
-    EVENT_TOOL_FAILED,
-    EVENT_PARSE_FAILED,
-)
+from .event_bus import get_event_bus, EVENT_TOOL_FAILED, EVENT_PARSE_FAILED
+from .event_schema import Event
 
 logger = logging.getLogger(__name__)
 
-# 错误队列最大长度
 MAX_QUEUE_SIZE = 100
 
 
@@ -27,29 +23,21 @@ class ErrorService:
     """错误收集服务，订阅 EventBus 并记录错误"""
 
     def __init__(self, persist_path: Optional[str] = None):
-        self._queue: Deque[Dict[str, Any]] = deque(maxlen=MAX_QUEUE_SIZE)
+        self._queue: deque = deque(maxlen=MAX_QUEUE_SIZE)
         self._persist_path = persist_path
         self._enabled = True
 
-    def _on_tool_failed(self, payload: Any) -> None:
+    def _on_tool_failed(self, event: Event) -> None:
         if not self._enabled:
             return
-        entry = {
-            "event": EVENT_TOOL_FAILED,
-            "timestamp": datetime.now().isoformat(),
-            "payload": payload if isinstance(payload, dict) else {"raw": str(payload)},
-        }
-        self._append(entry)
+        payload = event.payload if isinstance(event.payload, dict) else {"raw": str(event.payload)}
+        self._append({"event": EVENT_TOOL_FAILED, "timestamp": datetime.now().isoformat(), "payload": payload})
 
-    def _on_parse_failed(self, payload: Any) -> None:
+    def _on_parse_failed(self, event: Event) -> None:
         if not self._enabled:
             return
-        entry = {
-            "event": EVENT_PARSE_FAILED,
-            "timestamp": datetime.now().isoformat(),
-            "payload": payload if isinstance(payload, dict) else {"raw": str(payload)},
-        }
-        self._append(entry)
+        payload = event.payload if isinstance(event.payload, dict) else {"raw": str(event.payload)}
+        self._append({"event": EVENT_PARSE_FAILED, "timestamp": datetime.now().isoformat(), "payload": payload})
 
     def _append(self, entry: Dict[str, Any]) -> None:
         self._queue.append(entry)
@@ -58,7 +46,6 @@ class ErrorService:
             self._persist_async(entry)
 
     def _persist_async(self, entry: Dict[str, Any]) -> None:
-        """异步写入 JSON 文件（不阻塞）"""
         try:
             path = self._persist_path
             existing: List[Dict] = []
@@ -78,20 +65,17 @@ class ErrorService:
             logger.warning(f"ErrorService persist failed: {e}")
 
     def register(self) -> None:
-        """注册到 EventBus"""
         bus = get_event_bus()
         bus.subscribe(EVENT_TOOL_FAILED, self._on_tool_failed)
         bus.subscribe(EVENT_PARSE_FAILED, self._on_parse_failed)
         logger.info("ErrorService registered to EventBus")
 
     def unregister(self) -> None:
-        """从 EventBus 取消注册"""
         bus = get_event_bus()
         bus.unsubscribe(EVENT_TOOL_FAILED, self._on_tool_failed)
         bus.unsubscribe(EVENT_PARSE_FAILED, self._on_parse_failed)
 
     def pop_all(self) -> List[Dict[str, Any]]:
-        """取出并清空队列（供 SelfHealingWorker 轮询）"""
         items = list(self._queue)
         self._queue.clear()
         return items
@@ -104,7 +88,6 @@ _error_service: Optional[ErrorService] = None
 
 
 def get_error_service(persist_path: Optional[str] = None) -> ErrorService:
-    """获取单例并自动注册"""
     global _error_service
     if _error_service is None:
         _error_service = ErrorService(persist_path=persist_path)

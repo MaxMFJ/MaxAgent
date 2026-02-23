@@ -29,14 +29,14 @@ struct InputBar: View {
                 .help("自主执行模式 (⌘⇧↵)")
                 .keyboardShortcut(.return, modifiers: [.command, .shift])
                 
-                Button(action: sendMessage) {
+                Button(action: viewModel.isLoading ? { viewModel.stopTask() } : sendMessage) {
                     Image(systemName: viewModel.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
                         .font(.title)
-                        .foregroundColor(canSend ? .accentColor : .secondary)
+                        .foregroundColor(viewModel.isLoading ? .red : (canSend ? .accentColor : .secondary))
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend && !viewModel.isLoading)
-                .help("发送消息 (⌘↵)")
+                .help(viewModel.isLoading ? "终止任务" : "发送消息 (⌘↵)")
                 .keyboardShortcut(.return, modifiers: .command)
             }
         }

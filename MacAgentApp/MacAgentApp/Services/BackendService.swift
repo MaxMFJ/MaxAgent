@@ -6,6 +6,7 @@ enum StreamChunk {
     case toolResult(name: String, success: Bool, result: String)
     case done(model: String?, tokenUsage: TokenUsage?)
     case error(String)
+    case stopped
     
     case imageData(base64: String, mimeType: String, path: String?)
     case localImage(path: String)
@@ -270,6 +271,11 @@ class BackendService: ObservableObject {
                                     continuation.finish()
                                     return
                                     
+                                case "stopped":
+                                    continuation.yield(.stopped)
+                                    continuation.finish()
+                                    return
+                                    
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))
@@ -300,6 +306,25 @@ class BackendService: ObservableObject {
                     continuation.finish(throwing: error)
                 }
             }
+        }
+    }
+    
+    // MARK: - Stop Stream
+    
+    func sendStopStream(sessionId: String? = nil) async {
+        guard let webSocket = webSocketTask else { return }
+        
+        var message: [String: Any] = ["type": "stop"]
+        if let sessionId = sessionId {
+            message["session_id"] = sessionId
+        }
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message)
+            let jsonString = String(data: jsonData, encoding: .utf8)!
+            try await webSocket.send(.string(jsonString))
+        } catch {
+            print("Failed to send stop: \(error)")
         }
     }
     

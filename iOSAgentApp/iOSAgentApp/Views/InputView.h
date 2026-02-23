@@ -7,6 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol InputViewDelegate <NSObject>
 
 - (void)inputView:(InputView *)inputView didSendMessage:(NSString *)message;
+- (void)inputViewDidRequestStop:(InputView *)inputView;
 
 @end
 
@@ -14,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak, nullable) id<InputViewDelegate> delegate;
 @property (nonatomic, assign, getter=isEnabled) BOOL enabled;
+@property (nonatomic, assign, getter=isLoading) BOOL loading;
 
 - (void)clearText;
 - (void)setText:(NSString *)text;

@@ -14,12 +14,13 @@ from .context_manager import context_manager
 from .local_tool_parser import LocalToolParser, is_local_model, LOCAL_MODEL_SYSTEM_PROMPT
 from .context_enhancer import get_context_enhancer
 from .prompt_loader import get_full_system_prompt
-from .event_bus import (
-    get_event_bus,
-    EVENT_TOOL_FAILED,
-    EVENT_PARSE_FAILED,
-    EVENT_TOOL_NOT_FOUND,
-    EVENT_TRIGGER_UPGRADE,
+from .event_bus import get_event_bus
+from .event_schema import (
+    Event,
+    PRIORITY_TOOL_FAILED,
+    PRIORITY_TOOL_NOT_FOUND,
+    PRIORITY_PARSE_FAILED,
+    PRIORITY_TRIGGER_UPGRADE,
 )
 from tools import get_all_tools, ToolRegistry
 from tools.base import BaseTool, ToolResult
@@ -270,16 +271,20 @@ class AgentCore:
                     else:
                         yield {"type": "content", "content": current_content}
                         if _should_have_tool_call(user_message, current_content):
-                            get_event_bus().publish(EVENT_PARSE_FAILED, {
-                                "session_id": session_id,
-                                "error": f"LocalToolParser failed to parse tool call from: {current_content[:200]}",
-                                "context": {
-                                    "user_message": user_message,
-                                    "model_output": current_content[:500],
-                                    "provider": provider,
-                                    "local_model_active": use_local_mode,
+                            get_event_bus().publish(Event(
+                                type="parse_failed",
+                                payload={
+                                    "session_id": session_id,
+                                    "error": f"LocalToolParser failed to parse tool call from: {current_content[:200]}",
+                                    "context": {
+                                        "user_message": user_message,
+                                        "model_output": current_content[:500],
+                                        "provider": provider,
+                                        "local_model_active": use_local_mode,
+                                    },
                                 },
-                            })
+                                priority=PRIORITY_PARSE_FAILED,
+                            ))
                 
                 logger.info(f"LLM stream completed. Tool calls: {len(tool_calls)}, Content length: {len(current_content)}")
                 
@@ -313,25 +318,35 @@ class AgentCore:
                             }
                             if isinstance(result.data, dict):
                                 if result.data.get("tool_not_found"):
-                                    get_event_bus().publish(EVENT_TOOL_NOT_FOUND, {
-                                        "session_id": session_id,
-                                        "reason": result.error or "未知工具",
-                                        "tool_name": tc["name"],
-                                        "user_message": user_message,
-                                    })
+                                    get_event_bus().publish(Event(
+                                        type="tool_not_found",
+                                        payload={
+                                            "session_id": session_id,
+                                            "reason": result.error or "未知工具",
+                                            "tool_name": tc["name"],
+                                            "user_message": user_message,
+                                        },
+                                        priority=PRIORITY_TOOL_NOT_FOUND,
+                                    ))
                                 elif result.data.get("trigger_upgrade"):
-                                    get_event_bus().publish(EVENT_TRIGGER_UPGRADE, {
-                                        "session_id": session_id,
-                                        "reason": result.data.get("reason", ""),
-                                        "tool_name": tc["name"],
-                                        "user_message": user_message,
-                                    })
+                                    reason = result.data.get("reason", "")
+                                    logger.info(f"Tool upgrade triggered by {tc['name']}: {reason[:80]}...")
+                                    get_event_bus().publish(Event(
+                                        type="trigger_upgrade",
+                                        payload={
+                                            "session_id": session_id,
+                                            "reason": reason,
+                                            "tool_name": tc["name"],
+                                            "user_message": user_message,
+                                        },
+                                        priority=PRIORITY_TRIGGER_UPGRADE,
+                                    ))
                             if not result.success:
-                                get_event_bus().publish(EVENT_TOOL_FAILED, {
-                                    "tool": tc["name"],
-                                    "args": tc.get("arguments", {}),
-                                    "error": result.error,
-                                })
+                                get_event_bus().publish(Event(
+                                    type="tool_failed",
+                                    payload={"tool": tc["name"], "args": tc.get("arguments", {}), "error": result.error},
+                                    priority=PRIORITY_TOOL_FAILED,
+                                ))
                     else:
                         # 远程模型：使用标准 function calling 格式
                         messages.append({
@@ -365,25 +380,35 @@ class AgentCore:
                             }
                             if isinstance(result.data, dict):
                                 if result.data.get("tool_not_found"):
-                                    get_event_bus().publish(EVENT_TOOL_NOT_FOUND, {
-                                        "session_id": session_id,
-                                        "reason": result.error or "未知工具",
-                                        "tool_name": tc["name"],
-                                        "user_message": user_message,
-                                    })
+                                    get_event_bus().publish(Event(
+                                        type="tool_not_found",
+                                        payload={
+                                            "session_id": session_id,
+                                            "reason": result.error or "未知工具",
+                                            "tool_name": tc["name"],
+                                            "user_message": user_message,
+                                        },
+                                        priority=PRIORITY_TOOL_NOT_FOUND,
+                                    ))
                                 elif result.data.get("trigger_upgrade"):
-                                    get_event_bus().publish(EVENT_TRIGGER_UPGRADE, {
-                                        "session_id": session_id,
-                                        "reason": result.data.get("reason", ""),
-                                        "tool_name": tc["name"],
-                                        "user_message": user_message,
-                                    })
+                                    reason = result.data.get("reason", "")
+                                    logger.info(f"Tool upgrade triggered by {tc['name']}: {reason[:80]}...")
+                                    get_event_bus().publish(Event(
+                                        type="trigger_upgrade",
+                                        payload={
+                                            "session_id": session_id,
+                                            "reason": reason,
+                                            "tool_name": tc["name"],
+                                            "user_message": user_message,
+                                        },
+                                        priority=PRIORITY_TRIGGER_UPGRADE,
+                                    ))
                             if not result.success:
-                                get_event_bus().publish(EVENT_TOOL_FAILED, {
-                                    "tool": tc["name"],
-                                    "args": tc.get("arguments", {}),
-                                    "error": result.error,
-                                })
+                                get_event_bus().publish(Event(
+                                    type="tool_failed",
+                                    payload={"tool": tc["name"], "args": tc.get("arguments", {}), "error": result.error},
+                                    priority=PRIORITY_TOOL_FAILED,
+                                ))
                 else:
                     # 检查是否收到空响应
                     if not current_content.strip():
