@@ -4,12 +4,17 @@ MacAgent Backend Server
 FastAPI server with WebSocket support for the macOS AI Agent
 Supports both ReAct and Autonomous execution modes
 """
-
+import os
+# 尽早加载 .env，供 Cursor CLI 等子进程继承 CURSOR_API_KEY
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except ImportError:
+    pass
 import asyncio
 import json
 import logging
 import secrets
-import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Set

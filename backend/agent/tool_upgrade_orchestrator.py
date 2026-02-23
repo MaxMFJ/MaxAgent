@@ -7,7 +7,7 @@ import os
 import json
 import asyncio
 import logging
-from typing import Optional, Dict, Any, AsyncGenerator, Callable, List, Union
+from typing import Optional, Dict, Any, AsyncGenerator, Callable, List, Union, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -29,7 +29,7 @@ UPGRADE_PLAN_PROMPT = """你是一个 MacAgent 工具升级规划师。用户请
 **项目根目录（backend）绝对路径**：`{macagent_root}` — terminal 命令将在此目录执行，请使用此路径或相对路径（如 tools/generated/），不要使用其他路径。
 
 可选执行方式：
-1. **terminal** - 适合：安装依赖(pip install)、执行简单命令
+1. **terminal** - 适合：pip install 第三方包（注意：smtplib、email、ssl、json、os 等是 Python 标准库，不要 pip install）
 2. **cursor** - 适合：创建新工具（必须用于编写 Python 工具代码）
 
 请分析需求，返回 JSON 格式的升级计划：
@@ -103,6 +103,21 @@ class {class_name}(BaseTool):
 ## 你的具体任务
 """
 
+# LLM 自主生成工具代码的 prompt（不依赖 Cursor）
+LLM_TOOL_GEN_PROMPT = """你是一个 Python 工具开发专家。根据以下规格生成完整的 MacAgent 工具代码。
+
+**规格**：
+{task_description}
+
+**约束**：
+1. 必须继承 `from tools.base import BaseTool, ToolResult, ToolCategory`
+2. 实现 name, description, parameters (JSON Schema), async def execute(**kwargs) -> ToolResult
+3. 使用 asyncio.create_subprocess_shell 或 create_subprocess_exec 执行命令，禁止使用 subprocess.run、subprocess.Popen
+4. smtplib、email、ssl 是 Python 标准库，直接 import 即可，不要 pip install
+5. 只输出完整 Python 代码，不要解释，不要 markdown 标记之外的任何文字
+
+请输出完整的工具代码："""
+
 
 class UpgradeOrchestrator:
     """
@@ -173,6 +188,58 @@ class UpgradeOrchestrator:
             "content": content,
             "is_system": True
         })
+    
+    async def _generate_tool_via_llm(self, step: Dict[str, Any], plan: UpgradePlan) -> Tuple[bool, str, Optional[str]]:
+        """
+        LLM 自主生成工具代码并写入 tools/generated/
+        返回 (success, error_message, output_path)
+        """
+        try:
+            from agent.upgrade_security import check_code_safety, is_path_allowed
+        except ImportError:
+            check_code_safety = lambda c: (True, "")
+            is_path_allowed = lambda p: True
+        
+        spec = plan.tool_spec
+        file_name = spec.get("file_name", "") or (spec.get("name", "new_tool").replace("-", "_") + "_tool.py")
+        if not file_name.endswith(".py"):
+            file_name = file_name.rstrip("_") + "_tool.py"
+        output_path = os.path.join(MACAGENT_ROOT, "tools", "generated", file_name)
+        
+        task_desc = self._build_cursor_task(step, plan)
+        prompt = LLM_TOOL_GEN_PROMPT.format(task_description=task_desc)
+        
+        try:
+            response = await self.llm.chat([
+                {"role": "system", "content": "你输出完整的 Python 代码，仅代码，无其他文字。"},
+                {"role": "user", "content": prompt}
+            ], tools=None)
+            content = response.get("content", "").strip()
+            
+            # 提取 ```python ... ``` 块
+            if "```python" in content:
+                content = content.split("```python")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            
+            if not content or "from tools.base" not in content:
+                return False, "LLM 未返回有效的工具代码", None
+            
+            safe, err = check_code_safety(content)
+            if not safe:
+                return False, f"安全校验失败: {err}", None
+            
+            if not is_path_allowed(output_path):
+                return False, f"路径不在允许范围: {output_path}", None
+            
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"LLM generated tool: {output_path}")
+            return True, "", output_path
+        except Exception as e:
+            logger.error(f"LLM tool generation failed: {e}")
+            return False, str(e), None
     
     def _build_cursor_task(self, step: Dict[str, Any], plan: UpgradePlan) -> str:
         """构建 Cursor 的完整任务描述，包含强制约束与模板"""
@@ -316,10 +383,19 @@ class UpgradeOrchestrator:
                 yield {"type": "upgrade_progress", "phase": "executing", "step": i + 1, "target": target}
                 
                 if target == "terminal" and step.get("command"):
-                    result = await self.dispatcher.dispatch_to_terminal(
-                        step["command"],
-                        working_dir=MACAGENT_ROOT
-                    )
+                    cmd = step["command"]
+                    # 跳过无效的 pip install（smtplib/email/ssl 等是标准库）
+                    skip_modules = ("smtplib", "email", "ssl", "json", "os ", "re ", "asyncio ")
+                    if "pip install" in cmd.lower():
+                        for m in skip_modules:
+                            if m in cmd.lower():
+                                logger.info(f"Skipping invalid pip install (stdlib): {cmd[:80]}")
+                                result = DispatchResult(success=True, target=DispatchTarget.TERMINAL, output=f"跳过：{m} 是标准库")
+                                break
+                        else:
+                            result = await self.dispatcher.dispatch_to_terminal(cmd, working_dir=MACAGENT_ROOT)
+                    else:
+                        result = await self.dispatcher.dispatch_to_terminal(cmd, working_dir=MACAGENT_ROOT)
                     yield {
                         "type": "upgrade_step_result",
                         "target": "terminal",
@@ -332,19 +408,36 @@ class UpgradeOrchestrator:
                 
                 elif target == "cursor" and step.get("task_prompt"):
                     full_task = self._build_cursor_task(step, plan)
-                    # 1) Cursor CLI 自动执行  2) Mac 键盘模拟  3) 仅打开 GUI
-                    result, used_auto = await self.dispatcher.dispatch_to_cursor_cli(
+                    # 1) Cursor CLI  2) Cursor GUI  3) LLM 自主生成  4) 仅打开 Cursor
+                    result = DispatchResult(success=False, target=DispatchTarget.CURSOR)
+                    auto_mode = None
+                    # 1. Cursor CLI（内部任务注入）
+                    curs_result, cli_used = await self.dispatcher.dispatch_to_cursor_cli(
                         project_path=MACAGENT_ROOT,
                         task_prompt=full_task
                     )
-                    auto_mode = "cli" if used_auto else None
-                    if not used_auto:
-                        result, used_auto = await self.dispatcher.dispatch_to_cursor_gui_auto(
+                    if cli_used and curs_result.success:
+                        result, auto_mode = curs_result, "cli"
+                    if not result.success:
+                        # 2. Cursor GUI 键盘模拟
+                        gui_result, gui_used = await self.dispatcher.dispatch_to_cursor_gui_auto(
                             project_path=MACAGENT_ROOT,
                             task_prompt=full_task
                         )
-                        auto_mode = "gui" if used_auto else None
-                    if not used_auto:
+                        if gui_used and gui_result.success:
+                            result, auto_mode = gui_result, "gui"
+                        elif gui_used:
+                            result = gui_result
+                    if not result.success:
+                        # 3. LLM 自主生成（不依赖 Cursor，稳定回退）
+                        gen_ok, gen_err, _ = await self._generate_tool_via_llm(step, plan)
+                        if gen_ok:
+                            result = DispatchResult(success=True, target=DispatchTarget.CURSOR, output="LLM 已生成工具代码")
+                            auto_mode = "llm"
+                        else:
+                            logger.info(f"LLM tool gen: {gen_err}")
+                    if not result.success:
+                        # 4. 仅打开 Cursor（手动完成）
                         result = await self.dispatcher.dispatch_to_cursor(
                             project_path=MACAGENT_ROOT,
                             task_prompt=full_task
@@ -364,7 +457,11 @@ class UpgradeOrchestrator:
                         elif auto_mode == "gui":
                             await self._broadcast_content(
                                 "✅ 已通过键盘模拟将任务发送到 Cursor Composer/Chat。"
-                                "若未填入：请在 系统设置→隐私与安全性→辅助功能 中授予 Terminal（或运行后端的应用）权限，然后重试。"
+                                "若未填入：请在 系统设置→隐私与安全性→辅助功能 中授予运行后端的应用权限。"
+                            )
+                        elif auto_mode == "llm":
+                            await self._broadcast_content(
+                                "✅ LLM 已自主生成工具代码并写入 tools/generated/，正在加载..."
                             )
                         else:
                             await self._broadcast_content(
