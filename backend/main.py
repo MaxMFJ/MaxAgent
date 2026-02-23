@@ -202,6 +202,9 @@ class ConnectionManager:
 # 全局连接管理器
 connection_manager = ConnectionManager()
 
+# 会话级流任务：session_id -> asyncio.Task，用于终止任务
+_session_stream_tasks: Dict[str, asyncio.Task] = {}
+
 
 async def _broadcast_status_change(status: str, message: str = ""):
     """广播状态变更给所有连接"""
@@ -381,6 +384,26 @@ async def lifespan(app: FastAPI):
         logger.info("Tool upgrade orchestrator initialized")
     except Exception as e:
         logger.warning(f"Tool upgrade orchestrator init skipped: {e}")
+
+    # EventBus 解耦服务：ErrorService、SelfHealingWorker、UpgradeService
+    try:
+        from agent.error_service import get_error_service
+        from agent.self_healing_worker import get_self_healing_worker
+        from agent.upgrade_service import get_upgrade_service
+
+        async def _broadcast_to_session(sid: str, chunk: dict):
+            await connection_manager.broadcast_to_session(sid, chunk)
+
+        get_error_service()
+        get_self_healing_worker(on_broadcast=lambda sid, c: _broadcast_to_session(sid, c))
+        get_upgrade_service(
+            on_trigger_upgrade=_trigger_tool_upgrade,
+            on_broadcast=lambda sid, c: _broadcast_to_session(sid, c),
+            auto_upgrade=AUTO_TOOL_UPGRADE,
+        )
+        logger.info("EventBus services (Error, SelfHealing, Upgrade) initialized")
+    except Exception as e:
+        logger.warning(f"EventBus services init skipped: {e}")
     
     logger.info("MacAgent backend started (ReAct + Autonomous modes with Model Selection)")
     yield
@@ -875,15 +898,29 @@ async def websocket_endpoint(
             # 更新活动时间
             conn.last_activity = datetime.now()
             
-            if message.get("type") == "chat":
-                content = message.get("content", "")
-                # 支持从消息中指定 session_id
+            if message.get("type") == "stop":
                 session_id = message.get("session_id") or message.get("conversation_id") or current_session_id
-                current_session_id = session_id  # 记住当前会话
+                task = _session_stream_tasks.get(session_id)
+                if task and not task.done():
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+                    _session_stream_tasks.pop(session_id, None)
+                    stopped_msg = {"type": "stopped", "session_id": session_id}
+                    await safe_send_json(websocket, stopped_msg)
+                    await connection_manager.broadcast_to_session(session_id, stopped_msg, exclude_client=actual_client_id)
+                    logger.info(f"Stream stopped by user (session: {session_id})")
+                continue
+            
+            elif message.get("type") == "chat":
+                content = message.get("content", "")
+                session_id = message.get("session_id") or message.get("conversation_id") or current_session_id
+                current_session_id = session_id
                 
                 logger.info(f"Received chat message (session: {session_id}): {content[:100]}...")
                 
-                # 广播用户消息给同一会话的其他客户端
                 await connection_manager.broadcast_to_session(
                     session_id,
                     {
@@ -901,72 +938,94 @@ async def websocket_endpoint(
                     await safe_send_json(websocket, {"type": "error", "message": "Agent not initialized"})
                     continue
                 
-                try:
+                if session_id in _session_stream_tasks:
+                    old_task = _session_stream_tasks[session_id]
+                    if not old_task.done():
+                        old_task.cancel()
+                        try:
+                            await old_task
+                        except asyncio.CancelledError:
+                            pass
+                    _session_stream_tasks.pop(session_id, None)
+                
+                async def _run_stream_and_send():
+                    nonlocal session_id, actual_client_id, content
                     chunk_count = 0
                     has_error = False
                     client_gone = False
                     total_usage = None
-                    async for chunk in agent_core.run_stream(content, session_id=session_id):
-                        chunk_count += 1
-                        chunk_type = chunk.get('type', 'unknown')
-                        
-                        # 捕获 stream_end 中的 usage 信息，不发送给前端
-                        if chunk_type == 'stream_end':
-                            total_usage = chunk.get('usage')
-                            logger.info(f"Stream end received, usage: {total_usage}")
-                            continue
-                        
-                        logger.info(f"Sending chunk {chunk_count}: type={chunk_type}")
-                        
-                        # 向发送者发送响应（客户端已断开则停止）
-                        if not await safe_send_json(websocket, chunk):
-                            client_gone = True
-                            break
-                        
-                        # 广播给同一会话的其他客户端
-                        await connection_manager.broadcast_to_session(
-                            session_id, chunk, exclude_client=actual_client_id
-                        )
-                        
-                        # 检测工具不存在，触发自我升级（可配置关闭）
-                        if chunk_type == 'tool_upgrade_needed' and AUTO_TOOL_UPGRADE:
-                            reason = chunk.get('reason', '')
-                            user_msg = chunk.get('user_message', '')
-                            asyncio.create_task(_trigger_tool_upgrade(reason, user_msg, session_id))
-                        
-                        # 如果发送了 error，标记并继续（让前端决定）
-                        if chunk_type == 'error':
-                            has_error = True
-                    
-                    if client_gone:
-                        logger.info("Client disconnected during stream, stopping")
-                        raise WebSocketDisconnect(code=1006)
-                    
-                    # 只有没有 error 时才发送 done
-                    if not has_error:
-                        logger.info(f"Stream completed, sent {chunk_count} chunks, sending done...")
-                        # Include model name and token usage in done message
-                        model_name = None
-                        if agent_core and agent_core.llm:
-                            model_name = agent_core.llm.config.model
-                        done_msg = {"type": "done", "model": model_name}
-                        if total_usage:
-                            done_msg["usage"] = total_usage
-                        await safe_send_json(websocket, done_msg)
-                        # 广播 done 消息
-                        await connection_manager.broadcast_to_session(
-                            session_id, done_msg, exclude_client=actual_client_id
-                        )
-                        logger.info(f"Done message sent successfully with usage: {total_usage}")
-                    else:
-                        logger.info(f"Stream completed with error, sent {chunk_count} chunks")
-                        
-                except WebSocketDisconnect:
-                    logger.info("Client disconnected during stream")
-                    raise
-                except Exception as e:
-                    logger.error(f"Error in stream: {e}", exc_info=True)
-                    await safe_send_json(websocket, {"type": "error", "message": str(e)})
+                    extra_system_prompt = ""
+                    try:
+                        # 联网增强（从 Core 抽离到 main）
+                        try:
+                            from agent.web_augmented_thinking import ThinkingAugmenter
+                            aug = ThinkingAugmenter()
+                            a = await aug.augment(content)
+                            if a and a.get("success"):
+                                extra_system_prompt = aug.format_augmentation_for_llm(a)
+                                if extra_system_prompt:
+                                    web_chunk = {"type": "web_augmentation", "augmentation_type": a.get("type"), "query": a.get("query"), "success": True}
+                                    if not await safe_send_json(websocket, web_chunk):
+                                        client_gone = True
+                                    if not client_gone:
+                                        await connection_manager.broadcast_to_session(session_id, web_chunk, exclude_client=actual_client_id)
+                        except Exception as e:
+                            logger.warning(f"Web augmentation failed: {e}")
+
+                        async for chunk in agent_core.run_stream(content, session_id=session_id, extra_system_prompt=extra_system_prompt):
+                            chunk_count += 1
+                            chunk_type = chunk.get('type', 'unknown')
+                            if chunk_type == 'stream_end':
+                                total_usage = chunk.get('usage')
+                                continue
+                            # tool_result: 抽取图片并下发，不向前端传 data
+                            if chunk_type == 'tool_result':
+                                data = chunk.pop('data', None)
+                                to_send = {k: v for k, v in chunk.items()}
+                                if not await safe_send_json(websocket, to_send):
+                                    client_gone = True
+                                    break
+                                await connection_manager.broadcast_to_session(session_id, to_send, exclude_client=actual_client_id)
+                                if data:
+                                    from agent.image_extractor import extract_image_from_result
+                                    img = extract_image_from_result(data)
+                                    if img:
+                                        if not await safe_send_json(websocket, img):
+                                            client_gone = True
+                                            break
+                                        await connection_manager.broadcast_to_session(session_id, img, exclude_client=actual_client_id)
+                            else:
+                                if not await safe_send_json(websocket, chunk):
+                                    client_gone = True
+                                    break
+                                await connection_manager.broadcast_to_session(session_id, chunk, exclude_client=actual_client_id)
+                            if chunk_type == 'error':
+                                has_error = True
+                            if client_gone:
+                                break
+                        if client_gone:
+                            raise WebSocketDisconnect(code=1006)
+                        if not has_error:
+                            model_name = agent_core.llm.config.model if agent_core and agent_core.llm else None
+                            done_msg = {"type": "done", "model": model_name}
+                            if total_usage:
+                                done_msg["usage"] = total_usage
+                            await safe_send_json(websocket, done_msg)
+                            await connection_manager.broadcast_to_session(session_id, done_msg, exclude_client=actual_client_id)
+                    except asyncio.CancelledError:
+                        stopped_msg = {"type": "stopped", "session_id": session_id}
+                        await safe_send_json(websocket, stopped_msg)
+                        await connection_manager.broadcast_to_session(session_id, stopped_msg, exclude_client=actual_client_id)
+                        raise
+                    except WebSocketDisconnect:
+                        raise
+                    except Exception as e:
+                        logger.error(f"Error in stream: {e}", exc_info=True)
+                        await safe_send_json(websocket, {"type": "error", "message": str(e)})
+                    finally:
+                        _session_stream_tasks.pop(session_id, None)
+                
+                _session_stream_tasks[session_id] = asyncio.create_task(_run_stream_and_send())
             
             elif message.get("type") == "ping":
                 await safe_send_json(websocket, {"type": "pong"})
