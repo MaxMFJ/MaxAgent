@@ -315,12 +315,16 @@ class ResourceDispatcher:
             '''
             r = await adapter.run_script(script, "applescript")
             if not r.success:
+                err = r.error or ""
+                hint = ""
+                if "不允许发送按键" in err or "1002" in err or "not allowed" in err.lower():
+                    hint = "请在 系统设置→隐私与安全性→辅助功能 中，添加运行后端的应用（如 Terminal、MacAgentApp 或 Python），并重启后端。"
                 logger.warning(f"AppleScript keystroke failed: {r.error}")
                 return (
                     DispatchResult(
                         success=False,
                         target=DispatchTarget.CURSOR,
-                        error=f"键盘模拟失败: {r.error}",
+                        error=f"键盘模拟失败: {err} {hint}".strip(),
                         output="Cursor 已打开，请手动在 Chat 中粘贴并发送任务"
                     ),
                     True

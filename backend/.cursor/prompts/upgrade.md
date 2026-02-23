@@ -24,38 +24,54 @@ from tools.base import BaseTool, ToolResult, ToolCategory
 
 class TunnelMonitorTool(BaseTool):
     name = "tunnel_monitor"
-    description = "监控隧道连接状态，检测到中断时自动重启隧道，并将新的连接信息发送到指定邮箱。支持进程名或端口号检测，可配置检测间隔和重启命令。"
+    description = "隧道监控工具，用于启动、停止、检查隧道监控状态，支持SSH、VPN、WireGuard等多种隧道类型。可以设置检查间隔、重试次数等参数，并提供实时状态查询和日志查看功能。"
     category = ToolCategory.SYSTEM
     parameters = {
     "type": "object",
     "properties": {
-        "process_name": {
+        "action": {
             "type": "string",
-            "description": "隧道进程名称（如 'frpc', 'ngrok'）"
+            "description": "操作类型：start(启动监控)、stop(停止监控)、status(检查状态)、logs(查看日志)",
+            "enum": [
+                "start",
+                "stop",
+                "status",
+                "logs"
+            ]
         },
-        "port": {
-            "type": "integer",
-            "description": "隧道监听的端口号"
+        "tunnel_type": {
+            "type": "string",
+            "description": "隧道类型：ssh(SSH隧道)、vpn(VPN连接)、wireguard(WireGuard隧道)、custom(自定义隧道)",
+            "enum": [
+                "ssh",
+                "vpn",
+                "wireguard",
+                "custom"
+            ],
+            "default": "ssh"
         },
         "check_interval": {
             "type": "integer",
-            "description": "检测间隔秒数，默认60秒"
-        },
-        "restart_command": {
-            "type": "string",
-            "description": "重启隧道的shell命令"
-        },
-        "email": {
-            "type": "string",
-            "description": "接收通知的邮箱地址，默认675632487@qq.com"
+            "description": "检查间隔时间（秒）",
+            "minimum": 5,
+            "maximum": 3600,
+            "default": 30
         },
         "max_retries": {
             "type": "integer",
-            "description": "最大重试次数，默认3次"
+            "description": "最大重试次数",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 3
+        },
+        "log_file": {
+            "type": "string",
+            "description": "日志文件路径",
+            "default": "/tmp/tunnel_monitor.log"
         }
     },
     "required": [
-        "restart_command"
+        "action"
     ]
 }
 
@@ -66,35 +82,40 @@ class TunnelMonitorTool(BaseTool):
 
 ## 你的具体任务
 
-创建隧道监控工具 tunnel_monitor_tool.py，实现以下功能：
+在 ~/Desktop/MacAgent/backend/tools/generated/ 目录下创建 tunnel_monitor_tool.py 文件，实现完整的隧道监控工具包装器。
 
-1. **核心功能**：
-   - 监控指定隧道进程（通过进程名或端口号检测）
-   - 检测连接中断（通过心跳检测或进程状态）
-   - 自动重启隧道（执行重启命令）
-   - 将新的连接信息发送到指定邮箱（675632487@qq.com）
+实现要求：
+1. 继承 BaseTool 类，实现完整的工具框架
+2. 提供以下核心功能：
+   - 启动隧道监控
+   - 停止隧道监控
+   - 检查隧道状态
+   - 查看监控日志
+3. 支持多种隧道类型：ssh, vpn, wireguard, custom
+4. 实现参数验证和错误处理
+5. 提供清晰的用户反馈
 
-2. **实现逻辑**：
-   - 使用 psutil 库检测进程状态
-   - 实现网络连接检测（可配置检测间隔）
-   - 支持自定义重启命令
-   - 使用 requests 发送邮件通知（通过邮件服务API或SMTP）
-   - 提供配置参数：进程名/端口、检测间隔、重启命令、邮箱地址
+具体实现逻辑：
+1. 工具类名：TunnelMonitorTool
+2. 使用 subprocess 模块管理监控脚本进程
+3. 监控脚本路径：同目录下的 tunnel_monitor_v3.sh
+4. 实现进程管理，确保只有一个监控实例运行
+5. 提供状态查询和日志查看功能
 
-3. **参数设计**：
-   - process_name: 隧道进程名（可选）
-   - port: 隧道端口（可选）
-   - check_interval: 检测间隔秒数（默认60）
-   - restart_command: 重启命令
-   - email: 通知邮箱（默认675632487@qq.com）
-   - max_retries: 最大重试次数（默认3）
+参数设计：
+- action: 操作类型 (start|stop|status|logs)
+- tunnel_type: 隧道类型 (ssh|vpn|wireguard|custom)
+- check_interval: 检查间隔(秒)
+- max_retries: 最大重试次数
+- log_file: 日志文件路径
 
-4. **调用方式**：
-   - 作为独立工具运行：python tunnel_monitor_tool.py --start
-   - 被Agent调用：tunnel_monitor.start_monitoring()
-   - 支持后台守护进程模式
+调用方式示例：
+- 启动监控：tunnel_monitor(action='start', tunnel_type='ssh', check_interval=30)
+- 检查状态：tunnel_monitor(action='status')
+- 查看日志：tunnel_monitor(action='logs')
+- 停止监控：tunnel_monitor(action='stop')
 
-5. **文件位置**：必须保存在 MacAgent 项目的 backend/tools/generated/ 目录下
+确保工具能够被Agent正确调用，并提供详细的执行结果反馈。
 
 ---
 

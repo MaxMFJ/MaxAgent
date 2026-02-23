@@ -3,5 +3,10 @@
     "sha256": "c33752e2cb368f745ed1a6cde89d22b3921d518bc257fc69bc033bbe32681cee",
     "approved_at": "2025-02-23T00:00:00Z",
     "approved_by": "initial"
+  },
+  "tunnel_monitor": {
+    "sha256": "a681b47cc4a115db84b5c02f48968d21d8c15f40b67418c36687004cfe482a8c",
+    "approved_at": "2025-02-23T00:00:00Z",
+    "approved_by": "manual"
   }
 }

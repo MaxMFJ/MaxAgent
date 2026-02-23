@@ -26,6 +26,8 @@ UPGRADE_PLAN_PROMPT = """你是一个 MacAgent 工具升级规划师。用户请
 当前无法执行的原因：{reason}
 用户原始请求：{user_message}
 
+**项目根目录（backend）绝对路径**：`{macagent_root}` — terminal 命令将在此目录执行，请使用此路径或相对路径（如 tools/generated/），不要使用其他路径。
+
 可选执行方式：
 1. **terminal** - 适合：安装依赖(pip install)、执行简单命令
 2. **cursor** - 适合：创建新工具（必须用于编写 Python 工具代码）
@@ -237,7 +239,8 @@ class UpgradeOrchestrator:
                 "role": "user",
                 "content": UPGRADE_PLAN_PROMPT.format(
                     reason=reason,
-                    user_message=user_message
+                    user_message=user_message,
+                    macagent_root=MACAGENT_ROOT
                 )
             }
         ]
@@ -313,7 +316,10 @@ class UpgradeOrchestrator:
                 yield {"type": "upgrade_progress", "phase": "executing", "step": i + 1, "target": target}
                 
                 if target == "terminal" and step.get("command"):
-                    result = await self.dispatcher.dispatch_to_terminal(step["command"])
+                    result = await self.dispatcher.dispatch_to_terminal(
+                        step["command"],
+                        working_dir=MACAGENT_ROOT
+                    )
                     yield {
                         "type": "upgrade_step_result",
                         "target": "terminal",
