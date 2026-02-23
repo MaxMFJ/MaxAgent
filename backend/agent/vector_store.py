@@ -22,6 +22,21 @@ _embedding_model = None
 _model_loading = False
 
 
+def _get_embedding_device() -> str:
+    """
+    获取嵌入模型使用的设备。
+    在 Apple Silicon 上强制使用 CPU，避免 MPS 在 SDPA 上的已知崩溃：
+    validateComputeFunctionArguments sdpa_vector_float_64_64 buffer size mismatch
+    """
+    try:
+        import torch
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            return "cpu"  # 强制 CPU，避免 MPS SDPA 崩溃
+    except Exception:
+        pass
+    return "cpu"
+
+
 def get_embedding_model():
     """懒加载嵌入模型"""
     global _embedding_model, _model_loading
@@ -40,15 +55,17 @@ def get_embedding_model():
             from sentence_transformers import SentenceTransformer
             
             model_name = EMBEDDING_MODEL
-            logger.info(f"Loading embedding model: {model_name}...")
+            device = _get_embedding_device()
+            logger.info(f"Loading embedding model: {model_name} on {device}...")
             
             # 模型选项：
             # - BAAI/bge-m3: 最强，支持多语言，但较大 (~1.5GB)
             # - BAAI/bge-large-zh-v1.5: 中文优秀 (~1.3GB)
             # - BAAI/bge-small-zh-v1.5: 中文，小而快 (~90MB) [默认]
             # - BAAI/bge-base-zh-v1.5: 中文，平衡选择 (~400MB)
-            
-            _embedding_model = SentenceTransformer(model_name)
+            #
+            # 注意：Apple Silicon 上使用 device='cpu' 以避免 MPS SDPA 崩溃
+            _embedding_model = SentenceTransformer(model_name, device=device)
             logger.info(f"Embedding model loaded: {model_name}, dim={_embedding_model.get_sentence_embedding_dimension()}")
             
         except Exception as e:
@@ -56,8 +73,9 @@ def get_embedding_model():
             # 尝试更小的模型
             try:
                 from sentence_transformers import SentenceTransformer
-                _embedding_model = SentenceTransformer('BAAI/bge-small-zh-v1.5')
-                logger.info("Loaded fallback model: bge-small-zh-v1.5")
+                device = _get_embedding_device()
+                _embedding_model = SentenceTransformer('BAAI/bge-small-zh-v1.5', device=device)
+                logger.info(f"Loaded fallback model: bge-small-zh-v1.5 on {device}")
             except Exception as e2:
                 logger.error(f"Failed to load any embedding model: {e2}")
                 _embedding_model = None

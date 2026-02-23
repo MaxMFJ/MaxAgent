@@ -53,7 +53,8 @@ struct ImageDisplayView: View {
                         .padding(6)
                     }
                 }
-                .onTapGesture(count: 2) {
+                .contentShape(Rectangle())
+                .onTapGesture {
                     showFullScreen = true
                 }
             
@@ -95,11 +96,16 @@ struct FullScreenImageView: View {
     let image: NSImage
     @Environment(\.dismiss) var dismiss
     @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
             Color.black.opacity(0.9)
                 .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismiss()
+                }
             
             Image(nsImage: image)
                 .resizable()
@@ -108,12 +114,18 @@ struct FullScreenImageView: View {
                 .gesture(
                     MagnificationGesture()
                         .onChanged { value in
-                            scale = value
+                            scale = lastScale * value
+                        }
+                        .onEnded { _ in
+                            lastScale = scale
+                            scale = min(max(scale, 0.5), 5.0)
+                            lastScale = scale
                         }
                 )
                 .onTapGesture(count: 2) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         scale = scale > 1 ? 1 : 2
+                        lastScale = scale
                     }
                 }
             

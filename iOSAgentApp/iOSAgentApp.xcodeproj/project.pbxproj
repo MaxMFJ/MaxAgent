@@ -21,6 +21,7 @@
 		SVC001 /* WebSocketService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* WebSocketService.m */; };
 		VCT001 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC007 /* ChatViewController.m */; };
 		VCT002 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC008 /* SettingsViewController.m */; };
+		VCT003 /* ImageZoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC011 /* ImageZoomViewController.m */; };
 		VIW001 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* MessageCell.m */; };
 		VIW002 /* InputView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* InputView.m */; };
 /* End PBXBuildFile section */
@@ -56,6 +57,8 @@
 		SRC009H /* MessageCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessageCell.h; sourceTree = "<group>"; };
 		SRC010 /* InputView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = InputView.m; sourceTree = "<group>"; };
 		SRC010H /* InputView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InputView.h; sourceTree = "<group>"; };
+		SRC011 /* ImageZoomViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ImageZoomViewController.m; sourceTree = "<group>"; };
+		SRC011H /* ImageZoomViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageZoomViewController.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,6 +167,8 @@
 				SRC007 /* ChatViewController.m */,
 				SRC008H /* SettingsViewController.h */,
 				SRC008 /* SettingsViewController.m */,
+				SRC011H /* ImageZoomViewController.h */,
+				SRC011 /* ImageZoomViewController.m */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -284,6 +289,7 @@
 				MDL002 /* ServerConfig.m in Sources */,
 				VCT001 /* ChatViewController.m in Sources */,
 				VCT002 /* SettingsViewController.m in Sources */,
+				VCT003 /* ImageZoomViewController.m in Sources */,
 				VIW001 /* MessageCell.m in Sources */,
 				VIW002 /* InputView.m in Sources */,
 			);

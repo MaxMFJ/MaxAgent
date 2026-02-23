@@ -5,8 +5,9 @@
 #import "Message.h"
 #import "MessageCell.h"
 #import "InputView.h"
+#import "ImageZoomViewController.h"
 
-@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate>
+@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) InputView *inputView;
@@ -219,6 +220,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MessageCell" forIndexPath:indexPath];
     Message *message = self.messages[indexPath.row];
+    cell.delegate = self;
     [cell configureWithMessage:message];
     return cell;
 }
@@ -470,6 +472,13 @@
             self.currentAssistantMessage = nil;
         }
     });
+}
+
+#pragma mark - MessageCellDelegate
+
+- (void)messageCell:(MessageCell *)cell didTapImage:(UIImage *)image {
+    ImageZoomViewController *zoomVC = [[ImageZoomViewController alloc] initWithImage:image];
+    [self presentViewController:zoomVC animated:YES completion:nil];
 }
 
 - (void)dealloc {

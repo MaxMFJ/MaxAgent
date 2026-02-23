@@ -51,6 +51,10 @@
     _messageImageView.layer.cornerRadius = 8;
     _messageImageView.clipsToBounds = YES;
     _messageImageView.hidden = YES;
+    _messageImageView.userInteractionEnabled = YES;
+    
+    UITapGestureRecognizer *imageTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(imageTapped)];
+    [_messageImageView addGestureRecognizer:imageTap];
     
     _bubbleStackView = [[UIStackView alloc] initWithArrangedSubviews:@[_contentLabel, _messageImageView]];
     _bubbleStackView.axis = UILayoutConstraintAxisVertical;
@@ -141,6 +145,12 @@
     }
     _messageImageView.image = nil;
     _messageImageView.hidden = YES;
+}
+
+- (void)imageTapped {
+    if (_messageImageView.image && [self.delegate respondsToSelector:@selector(messageCell:didTapImage:)]) {
+        [self.delegate messageCell:self didTapImage:_messageImageView.image];
+    }
 }
 
 @end
