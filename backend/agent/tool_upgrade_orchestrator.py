@@ -357,7 +357,8 @@ class UpgradeOrchestrator:
                             )
                         elif auto_mode == "gui":
                             await self._broadcast_content(
-                                "✅ 已通过键盘模拟将任务发送到 Cursor Chat，请等待 AI 执行完成..."
+                                "✅ 已通过键盘模拟将任务发送到 Cursor Composer/Chat。"
+                                "若未填入：请在 系统设置→隐私与安全性→辅助功能 中授予 Terminal（或运行后端的应用）权限，然后重试。"
                             )
                         else:
                             await self._broadcast_content(

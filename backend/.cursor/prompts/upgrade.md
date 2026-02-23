@@ -24,33 +24,38 @@ from tools.base import BaseTool, ToolResult, ToolCategory
 
 class TunnelMonitorTool(BaseTool):
     name = "tunnel_monitor"
-    description = "监控隧道连接状态，在中断时自动重启并发送新链接到指定邮箱"
+    description = "监控隧道连接状态，检测到中断时自动重启隧道，并将新的连接信息发送到指定邮箱。支持进程名或端口号检测，可配置检测间隔和重启命令。"
     category = ToolCategory.SYSTEM
     parameters = {
     "type": "object",
     "properties": {
-        "tunnel_command": {
+        "process_name": {
             "type": "string",
-            "description": "启动隧道的完整命令"
+            "description": "隧道进程名称（如 'frpc', 'ngrok'）"
+        },
+        "port": {
+            "type": "integer",
+            "description": "隧道监听的端口号"
         },
         "check_interval": {
             "type": "integer",
-            "description": "检查间隔（秒）",
-            "default": 60
+            "description": "检测间隔秒数，默认60秒"
         },
-        "recipient_email": {
+        "restart_command": {
             "type": "string",
-            "description": "收件人邮箱地址",
-            "default": "675632487@qq.com"
+            "description": "重启隧道的shell命令"
         },
-        "process_name": {
+        "email": {
             "type": "string",
-            "description": "隧道进程名关键词"
+            "description": "接收通知的邮箱地址，默认675632487@qq.com"
+        },
+        "max_retries": {
+            "type": "integer",
+            "description": "最大重试次数，默认3次"
         }
     },
     "required": [
-        "tunnel_command",
-        "process_name"
+        "restart_command"
     ]
 }
 
@@ -61,31 +66,35 @@ class TunnelMonitorTool(BaseTool):
 
 ## 你的具体任务
 
-在MacAgent项目的backend/tools/generated/目录下创建tunnel_monitor_tool.py文件。
+创建隧道监控工具 tunnel_monitor_tool.py，实现以下功能：
 
-实现逻辑：
-1. 工具需要监控指定的隧道进程（如SSH隧道、frp等）
-2. 定期检查隧道进程是否运行，如果中断则自动重启
-3. 重启成功后获取新的隧道链接
-4. 通过邮件将新链接发送到指定邮箱
+1. **核心功能**：
+   - 监控指定隧道进程（通过进程名或端口号检测）
+   - 检测连接中断（通过心跳检测或进程状态）
+   - 自动重启隧道（执行重启命令）
+   - 将新的连接信息发送到指定邮箱（675632487@qq.com）
 
-参数设计：
-- tunnel_command: 启动隧道的命令（如'ssh -L 8080:localhost:8080 user@server'）
-- check_interval: 检查间隔（秒，默认60）
-- recipient_email: 收件人邮箱（默认675632487@qq.com）
-- process_name: 进程名关键词（用于识别隧道进程）
+2. **实现逻辑**：
+   - 使用 psutil 库检测进程状态
+   - 实现网络连接检测（可配置检测间隔）
+   - 支持自定义重启命令
+   - 使用 requests 发送邮件通知（通过邮件服务API或SMTP）
+   - 提供配置参数：进程名/端口、检测间隔、重启命令、邮箱地址
 
-调用方式：
-1. 初始化监控：tunnel_monitor.start_monitoring()
-2. 停止监控：tunnel_monitor.stop_monitoring()
-3. 检查状态：tunnel_monitor.check_status()
+3. **参数设计**：
+   - process_name: 隧道进程名（可选）
+   - port: 隧道端口（可选）
+   - check_interval: 检测间隔秒数（默认60）
+   - restart_command: 重启命令
+   - email: 通知邮箱（默认675632487@qq.com）
+   - max_retries: 最大重试次数（默认3）
 
-实现要点：
-- 使用psutil库监控进程
-- 使用subprocess启动隧道进程
-- 使用smtplib发送邮件（Mac系统自带邮件功能）
-- 实现后台线程持续监控
-- 记录日志便于调试
+4. **调用方式**：
+   - 作为独立工具运行：python tunnel_monitor_tool.py --start
+   - 被Agent调用：tunnel_monitor.start_monitoring()
+   - 支持后台守护进程模式
+
+5. **文件位置**：必须保存在 MacAgent 项目的 backend/tools/generated/ 目录下
 
 ---
 

@@ -283,27 +283,32 @@ class ResourceDispatcher:
                     False
                 )
             
-            # 打开 Cursor 并聚焦 upgrade.md
+            # 打开 Cursor，优先打开项目目录（确保 workspace 正确），再定位到 upgrade.md
             proc = await asyncio.create_subprocess_exec(
-                "open", "-a", "Cursor", upgrade_file,
+                "open", "-a", "Cursor", project_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             await proc.communicate()
-            await asyncio.sleep(1.5)  # 等待 Cursor 启动/切换
+            await asyncio.sleep(2.5)  # 等待 Cursor 完全启动
             
-            # AppleScript：激活 Cursor → Cmd+L 打开 Chat → Cmd+V 粘贴 → 回车发送
-            script = '''
+            # 使用 Cmd+I 打开 Composer（更适合执行任务），也可用 Cmd+L 打开 Chat
+            use_composer = os.environ.get("MACAGENT_CURSOR_USE_COMPOSER", "true").lower() == "true"
+            shortcut_key = "i" if use_composer else "l"
+            
+            # AppleScript：激活 Cursor → Cmd+I/L 打开面板 → 延时 → 粘贴 → 回车发送
+            # 注意：需在 系统设置→隐私与安全性→辅助功能 中授予运行后端的应用（如 Terminal）权限
+            script = f'''
             tell application "Cursor" to activate
-            delay 1
+            delay 1.5
             tell application "System Events"
-                keystroke "l" using command down
+                keystroke "{shortcut_key}" using command down
             end tell
-            delay 2.5
+            delay 3
             tell application "System Events"
                 keystroke "v" using command down
             end tell
-            delay 0.5
+            delay 0.8
             tell application "System Events"
                 key code 36
             end tell
