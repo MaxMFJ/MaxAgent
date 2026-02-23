@@ -10,6 +10,11 @@ import shutil
 from typing import Any, Dict, Optional
 
 from tools.base import BaseTool, ToolResult, ToolCategory
+from tools.cloudflared_utils import (
+    BACKEND_PORT,
+    get_cloudflared_path,
+    get_cloudflared_restart_command,
+)
 
 # 配置存储目录（项目内，避免写入用户主目录）
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "tunnel_configs")
@@ -88,14 +93,14 @@ class TunnelManagerTool(BaseTool):
     description = """隧道管理工具。提供隧道控制、配置管理、连接控制、服务管理功能。
 
 支持操作：
-- start: 启动指定隧道
+- start: 启动指定隧道。tunnel_name="cloudflared" 时启动 Cloudflare 快速隧道（与 Mac 客户端一致，供用户连接）
 - stop: 停止指定隧道
 - restart: 重启指定隧道
 - create: 根据配置创建新隧道
 - disconnect: 断开指定客户端连接
 - service: 管理隧道相关系统服务（start/stop/restart）
 
-与 tunnel_monitor 互补：tunnel_monitor 负责监控和自动重启，tunnel_manager 负责主动管理。"""
+cloudflared 隧道与 Mac 客户端、tunnel_monitor 使用相同配置（端口 8765）。"""
     category = ToolCategory.SYSTEM
     requires_confirmation = True  # 管理操作需要确认
     parameters = {
@@ -108,7 +113,7 @@ class TunnelManagerTool(BaseTool):
             },
             "tunnel_name": {
                 "type": "string",
-                "description": "隧道名称，create 和 disconnect 时为可选"
+                "description": "隧道名称。start/stop/restart 时可用 cloudflared 表示 Cloudflare 快速隧道（与 Mac 客户端一致）"
             },
             "client_id": {
                 "type": "string",
@@ -195,10 +200,54 @@ class TunnelManagerTool(BaseTool):
             None, lambda: self._run_cmd(cmd, timeout, use_sudo)
         )
 
+    async def _start_cloudflared(self) -> ToolResult:
+        """启动 Cloudflare 快速隧道（使用 launchd 持久运行，避免 Agent 子进程退出时被终止）"""
+        cf = get_cloudflared_path()
+        if not cf:
+            return ToolResult(success=False, error="未找到 cloudflared，请安装: brew install cloudflared 或下载到 ~/bin/")
+        log_path = os.path.expanduser("~/cloudflared.log")
+        cmd = get_cloudflared_restart_command()
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        _, stderr = await proc.communicate()
+        await asyncio.sleep(3)  # 等待 launchd 启动 cloudflared
+        if proc.returncode != 0 and stderr:
+            return ToolResult(
+                success=False,
+                error=f"launchd 加载失败: {stderr.decode().strip()}"
+            )
+        return ToolResult(
+            success=True,
+            data={
+                "message": "Cloudflare 隧道已通过 launchd 启动（持久运行），公网链接可从 http://127.0.0.1:4040/api/tunnels 获取",
+                "tunnel_name": "cloudflared",
+                "log_path": log_path
+            }
+        )
+
+    async def _stop_cloudflared(self) -> ToolResult:
+        """停止 Cloudflare 隧道（unload launchd + pkill）"""
+        plist_path = os.path.expanduser("~/Library/LaunchAgents/com.macagent.cloudflared.plist")
+        proc = await asyncio.create_subprocess_shell(
+            f'launchctl unload "{plist_path}" 2>/dev/null; pkill -f cloudflared 2>/dev/null; true',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        await proc.communicate()
+        return ToolResult(
+            success=True,
+            data={"message": "Cloudflare 隧道已停止", "tunnel_name": "cloudflared"}
+        )
+
     async def _start_tunnel(self, tunnel_name: Optional[str]) -> ToolResult:
         """启动指定隧道"""
         if not tunnel_name:
             return ToolResult(success=False, error="需要提供 tunnel_name")
+        if tunnel_name == "cloudflared":
+            return await self._start_cloudflared()
         err = _validate_tunnel_name(tunnel_name)
         if err:
             return ToolResult(success=False, error=err)
@@ -243,6 +292,8 @@ class TunnelManagerTool(BaseTool):
         """停止指定隧道"""
         if not tunnel_name:
             return ToolResult(success=False, error="需要提供 tunnel_name")
+        if tunnel_name == "cloudflared":
+            return await self._stop_cloudflared()
         err = _validate_tunnel_name(tunnel_name)
         if err:
             return ToolResult(success=False, error=err)

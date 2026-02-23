@@ -4,6 +4,7 @@ enum StreamChunk {
     case content(String)
     case toolCall(name: String, args: [String: Any])
     case toolResult(name: String, success: Bool, result: String)
+    case executionLog(toolName: String, actionId: String, level: String, message: String)
     case done(model: String?, tokenUsage: TokenUsage?)
     case error(String)
     case stopped
@@ -218,6 +219,18 @@ class BackendService: ObservableObject {
                                         continuation.yield(.content(content))
                                     }
                                     
+                                case "upgrade_complete":
+                                    let plan = json["plan"] as? String ?? ""
+                                    let loaded = json["loaded_tools"] as? [String] ?? []
+                                    let summary = loaded.isEmpty
+                                        ? "✅ 升级已完成。\(plan.isEmpty ? "" : plan)"
+                                        : "✅ 升级已完成，已加载工具: \(loaded.joined(separator: ", "))"
+                                    continuation.yield(.content(summary))
+                                    
+                                case "upgrade_error":
+                                    let err = json["error"] as? String ?? "未知错误"
+                                    continuation.yield(.content("❌ 升级失败: \(err)"))
+                                    
                                 case "tool_call":
                                     if let name = json["tool_name"] as? String,
                                        let args = json["tool_args"] as? [String: Any] {
@@ -256,6 +269,14 @@ class BackendService: ObservableObject {
                                     
                                 case "tool_executing":
                                     continue
+                                    
+                                case "execution_log":
+                                    if let toolName = json["tool_name"] as? String,
+                                       let level = json["level"] as? String,
+                                       let message = json["message"] as? String {
+                                        let actionId = json["action_id"] as? String ?? ""
+                                        continuation.yield(.executionLog(toolName: toolName, actionId: actionId, level: level, message: message))
+                                    }
                                     
                                 case "done":
                                     let modelName = json["model"] as? String
@@ -433,10 +454,30 @@ class BackendService: ObservableObject {
                                     let totalActions = json["total_actions"] as? Int ?? 0
                                     continuation.yield(.taskComplete(taskId: taskId, success: success, summary: summary, totalActions: totalActions))
                                     
+                                case "execution_log":
+                                    if let toolName = json["tool_name"] as? String,
+                                       let level = json["level"] as? String,
+                                       let message = json["message"] as? String {
+                                        let actionId = json["action_id"] as? String ?? ""
+                                        continuation.yield(.executionLog(toolName: toolName, actionId: actionId, level: level, message: message))
+                                    }
+                                    
                                 case "content":
                                     if let content = json["content"] as? String {
                                         continuation.yield(.content(content))
                                     }
+                                    
+                                case "upgrade_complete":
+                                    let plan = json["plan"] as? String ?? ""
+                                    let loaded = json["loaded_tools"] as? [String] ?? []
+                                    let summary = loaded.isEmpty
+                                        ? "✅ 升级已完成。\(plan.isEmpty ? "" : plan)"
+                                        : "✅ 升级已完成，已加载工具: \(loaded.joined(separator: ", "))"
+                                    continuation.yield(.content(summary))
+                                    
+                                case "upgrade_error":
+                                    let err = json["error"] as? String ?? "未知错误"
+                                    continuation.yield(.content("❌ 升级失败: \(err)"))
                                     
                                 case "done":
                                     let modelName = json["model"] as? String

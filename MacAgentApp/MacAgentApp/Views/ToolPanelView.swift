@@ -11,6 +11,7 @@ struct ToolPanelView: View {
                 Text("工具").tag(0)
                 Text("历史").tag(1)
                 Text("任务").tag(2)
+                Text("执行日志").tag(3)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -25,6 +26,8 @@ struct ToolPanelView: View {
                 ToolHistoryView()
             case 2:
                 AutonomousTaskView()
+            case 3:
+                ExecutionLogsView()
             default:
                 ToolsListView()
             }
@@ -474,6 +477,122 @@ struct ActionLogsList: View {
             text += "\n"
         }
         
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+}
+
+// MARK: - Execution Logs View
+
+struct ExecutionLogsView: View {
+    @EnvironmentObject var viewModel: AgentViewModel
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("工具执行日志")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                if !viewModel.executionLogs.isEmpty {
+                    Button(action: { viewModel.clearExecutionLogs() }) {
+                        Label("清空", systemImage: "trash")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+                    
+                    Button(action: copyAllLogs) {
+                        Label("复制全部", systemImage: "doc.on.doc")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.accentColor)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(NSColor.controlBackgroundColor))
+            
+            Divider()
+            
+            if viewModel.executionLogs.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "terminal")
+                        .font(.system(size: 36))
+                        .foregroundColor(.secondary)
+                    Text("工具执行时，实时日志将显示在此")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            ForEach(viewModel.executionLogs) { log in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text(formatTime(log.timestamp))
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                    
+                                    Text("[\(log.level.uppercased())]")
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundColor(colorForLevel(log.level))
+                                    
+                                    if !log.toolName.isEmpty {
+                                        Text("\(log.toolName):")
+                                            .font(.system(.caption2, design: .monospaced))
+                                            .foregroundColor(.accentColor)
+                                    }
+                                    
+                                    Text(log.message)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .foregroundColor(.primary)
+                                        .textSelection(.enabled)
+                                }
+                                .id(log.id)
+                            }
+                        }
+                        .padding(12)
+                    }
+                    .onChange(of: viewModel.executionLogs.count) { _, _ in
+                        if let last = viewModel.executionLogs.last {
+                            withAnimation {
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+                .background(Color(NSColor.textBackgroundColor))
+            }
+        }
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(from: date)
+    }
+    
+    private func colorForLevel(_ level: String) -> Color {
+        switch level.lowercased() {
+        case "error": return .red
+        case "warning": return .orange
+        case "info": return .blue
+        case "debug": return .secondary
+        default: return .secondary
+        }
+    }
+    
+    private func copyAllLogs() {
+        let text = viewModel.executionLogs.map { log in
+            "[\(formatTime(log.timestamp))] [\(log.level.uppercased())] \(log.toolName): \(log.message)"
+        }.joined(separator: "\n")
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
     }

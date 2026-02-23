@@ -4,7 +4,9 @@ MacRuntimeAdapter - macOS 运行时适配器
 """
 
 import asyncio
+import logging
 import platform
+import re
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -13,6 +15,19 @@ from .base import (
     CAP_APP_CONTROL, CAP_CLIPBOARD, CAP_SCREENSHOT, CAP_GUI_INPUT,
     CAP_NOTIFICATION, CAP_SCRIPT, CAP_BROWSER, CAP_WINDOW_INFO,
 )
+
+logger = logging.getLogger(__name__)
+
+# System Events 进程名映射：显示名/中文名 -> 实际进程名
+# macOS 中 "tell process" 需要使用进程名，不是应用显示名
+PROCESS_NAME_MAP = {
+    "微信": "WeChat",
+    "WeChat": "WeChat",
+    "钉钉": "DingTalk",
+    "DingTalk": "DingTalk",
+    "飞书": "Lark",
+    "Lark": "Lark",
+}
 
 
 class MacRuntimeAdapter(RuntimeAdapter):
@@ -219,31 +234,68 @@ class MacRuntimeAdapter(RuntimeAdapter):
         except Exception as e:
             return False, str(e)
     
+    def _resolve_process_name(self, app_name: str) -> List[str]:
+        """解析进程名：返回要尝试的进程名列表（含回退）"""
+        names = [app_name.strip()]
+        mapped = PROCESS_NAME_MAP.get(app_name.strip())
+        if mapped and mapped not in names:
+            names.insert(0, mapped)
+        return names
+
+    def _parse_window_bounds(self, output: str) -> Optional[Tuple[int, int, int, int]]:
+        """解析 AppleScript 返回的 x,y,w,h 坐标"""
+        output = output.strip()
+        # 可能包含错误信息或多余字符，提取所有整数
+        numbers = re.findall(r"-?\d+", output)
+        if len(numbers) >= 4:
+            try:
+                return (
+                    int(numbers[0]),
+                    int(numbers[1]),
+                    int(numbers[2]),
+                    int(numbers[3]),
+                )
+            except ValueError:
+                pass
+        # 尝试按逗号分割
+        parts = [p.strip() for p in output.split(",")]
+        if len(parts) == 4:
+            try:
+                return int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])
+            except ValueError:
+                pass
+        logger.warning("screenshot_window 解析失败, output=%r", output)
+        return None
+
     async def screenshot_window(self, app_name: str, path: str) -> Tuple[bool, str]:
-        """使用 screencapture -l 窗口ID 或 -R 区域"""
-        script = f'''
-        tell application "System Events"
-            tell process "{app_name}"
-                if (count of windows) > 0 then
-                    set w to window 1
-                    set pos to position of w
-                    set sz to size of w
-                    return (item 1 of pos) & "," & (item 2 of pos) & "," & (item 1 of sz) & "," & (item 2 of sz)
-                end if
+        """使用 screencapture -R 区域截取应用窗口"""
+        last_error = "无法获取窗口"
+        for process_name in self._resolve_process_name(app_name):
+            script = f'''
+            tell application "System Events"
+                tell process "{process_name}"
+                    if (count of windows) > 0 then
+                        set w to window 1
+                        set pos to position of w
+                        set sz to size of w
+                        return (item 1 of pos) & "," & (item 2 of pos) & "," & (item 1 of sz) & "," & (item 2 of sz)
+                    end if
+                end tell
             end tell
-        end tell
-        '''
-        r = await self._run_applescript(script)
-        if not r.success or not r.output:
-            return False, r.error or "无法获取窗口"
-        try:
-            parts = r.output.split(",")
-            if len(parts) != 4:
-                return False, "解析窗口信息失败"
-            x, y, w, h = int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])
-            return await self.screenshot_region(path, x, y, w, h)
-        except (ValueError, IndexError):
-            return False, "解析窗口坐标失败"
+            '''
+            r = await self._run_applescript(script)
+            if not r.success:
+                last_error = r.error or "AppleScript 执行失败"
+                continue
+            if not r.output:
+                last_error = "应用无窗口或窗口未就绪"
+                continue
+            bounds = self._parse_window_bounds(r.output)
+            if bounds:
+                x, y, w, h = bounds
+                return await self.screenshot_region(path, x, y, w, h)
+            last_error = f"解析窗口信息失败 (output={r.output[:80]!r})"
+        return False, last_error
     
     # ---------- GUI 输入 ----------
     

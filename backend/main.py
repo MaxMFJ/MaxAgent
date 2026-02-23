@@ -236,11 +236,16 @@ async def _trigger_tool_upgrade(reason: str, user_message: str, session_id: str 
         from agent.tool_upgrade_orchestrator import get_upgrade_orchestrator
         orchestrator = get_upgrade_orchestrator()
         async for progress in orchestrator.execute_upgrade(reason, user_message, session_id):
-            # 进度已由 orchestrator 通过 on_broadcast 广播
             logger.info(f"Upgrade progress: {progress.get('type')} {progress.get('phase', '')}")
+            # 闭环：将 upgrade_complete / upgrade_error 广播给客户端
+            if progress.get("type") == "upgrade_complete":
+                await _broadcast_upgrade_message(progress)
+            elif progress.get("type") == "upgrade_error":
+                await _broadcast_upgrade_message(progress)
     except Exception as e:
         logger.error(f"Tool upgrade trigger failed: {e}")
         await _broadcast_status_change("normal", f"升级失败: {str(e)}")
+        await _broadcast_upgrade_message({"type": "upgrade_error", "error": str(e)})
 
 
 def _load_generated_tools() -> list:
@@ -1251,6 +1256,7 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=8765,
         reload=True,
+        reload_excludes=["**/tools/generated/*"],  # 工具升级写入新文件不触发重启，避免断开连接
         log_level="info",
         ws_ping_interval=None,  # 禁用服务端 ping
         ws_ping_timeout=None,   # 禁用 ping 超时

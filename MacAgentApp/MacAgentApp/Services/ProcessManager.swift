@@ -30,6 +30,7 @@ class ProcessManager: ObservableObject {
     
     // 日志轮询
     private var logPollingTask: Task<Void, Never>?
+    private var statusPollingTask: Task<Void, Never>?
     private var lastLogPosition: UInt64 = 0
     private var logFilePath: String?
     
@@ -49,6 +50,18 @@ class ProcessManager: ObservableObject {
     
     private init() {
         checkServicesStatus()
+        startStatusPolling()
+    }
+
+    /// 定期轮询服务状态，避免 health 偶尔超时导致误显示「已停止」
+    private func startStatusPolling() {
+        statusPollingTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)  // 每 15 秒
+                await checkBackendStatus()
+                await checkOllamaStatus()
+            }
+        }
     }
     
     // MARK: - Log Polling (for externally started backend)
@@ -326,14 +339,14 @@ class ProcessManager: ObservableObject {
         ollamaProcess?.terminate()
         ollamaProcess = nil
         
-        // 异步杀掉进程，避免阻塞主线程
-        Task.detached {
-            let killTask = Process()
-            killTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-            killTask.arguments = ["-c", "pkill -f 'ollama serve' 2>/dev/null || true"]
-            try? killTask.run()
-            killTask.waitUntilExit()
-        }
+//        // 异步杀掉进程，避免阻塞主线程
+//        Task.detached {
+//            let killTask = Process()
+//            killTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+//            killTask.arguments = ["-c", "pkill -f 'ollama serve' 2>/dev/null || true"]
+//            try? killTask.run()
+//            killTask.waitUntilExit()
+//        }
         
         isOllamaRunning = false
         addLog(to: &ollamaLogs, message: "Ollama stopped", level: .info)

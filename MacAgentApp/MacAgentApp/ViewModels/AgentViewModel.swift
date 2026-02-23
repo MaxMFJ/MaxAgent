@@ -23,6 +23,7 @@ class AgentViewModel: ObservableObject {
     @Published var currentTaskId: String?
     @Published var currentIteration: Int = 0
     @Published var actionLogs: [ActionLogEntry] = []
+    @Published var executionLogs: [ExecutionLogEntry] = []
     @Published var taskProgress: TaskProgress?
     
     // Model Selection
@@ -227,6 +228,7 @@ class AgentViewModel: ObservableObject {
         
         updateCurrentConversation(conversation)
         isLoading = true
+        executionLogs = []
         
         let conversationId = conversation.id.uuidString
         
@@ -285,6 +287,9 @@ class AgentViewModel: ObservableObject {
                     if let index = recentToolCalls.firstIndex(where: { $0.name == name && $0.result == nil }) {
                         recentToolCalls[index].result = ToolResult(success: success, output: result)
                     }
+                    
+                case .executionLog(let toolName, _, let level, let message):
+                    executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: message, toolName: toolName))
                     
                 case .done(let model, let tokenUsage):
                     updateAssistantMessage(content: fullContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
@@ -411,6 +416,7 @@ class AgentViewModel: ObservableObject {
         selectedModelReason = nil
         taskAnalysisType = nil
         taskComplexity = 0
+        executionLogs = []
         
         do {
             for try await chunk in backendService.sendAutonomousTask(
@@ -565,6 +571,9 @@ class AgentViewModel: ObservableObject {
                     statusContent += "\(icon) \(name): \(result)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
                     
+                case .executionLog(let toolName, _, let level, let message):
+                    executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: message, toolName: toolName))
+                    
                 case .stopped:
                     statusContent += "\n\n[已终止]"
                     updateAssistantMessage(content: statusContent, isStreaming: false)
@@ -590,9 +599,14 @@ class AgentViewModel: ObservableObject {
     
     func clearActionLogs() {
         actionLogs = []
+        executionLogs = []
         taskProgress = nil
         currentTaskId = nil
         currentIteration = 0
+    }
+    
+    func clearExecutionLogs() {
+        executionLogs = []
     }
     
     private func updateCurrentConversation(_ conversation: Conversation, shouldSave: Bool = true) {

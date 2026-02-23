@@ -5,9 +5,12 @@ Supports both remote (function calling) and local (text parsing) models
 自愈、升级、图片等副作用通过 EventBus 解耦
 """
 
+import asyncio
 import json
 import logging
 from typing import List, Dict, Any, Optional, AsyncGenerator
+
+from .execution_log_handler import QueueLogHandler
 
 from .llm_client import LLMClient
 from .context_manager import context_manager
@@ -291,7 +294,12 @@ class AgentCore:
                 if tool_calls:
                     yield {"type": "tool_executing", "count": len(tool_calls)}
                     
-                    tool_results = await self._execute_tools(tool_calls)
+                    tool_results = []
+                    async for ev in self._execute_tools_with_streaming_logs(tool_calls):
+                        if ev.get("type") == "execution_log":
+                            yield ev
+                        else:
+                            tool_results = ev.get("results", [])
                     
                     if use_local_mode:
                         # 本地模型：将工具调用和结果作为对话历史
@@ -455,3 +463,54 @@ class AgentCore:
             results.append(result)
             logger.info(f"Tool {name} result: success={result.success}")
         return results
+
+    async def _execute_tools_with_streaming_logs(
+        self, tool_calls: List[Dict[str, Any]]
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Execute tools and yield execution_log events during execution"""
+        results: List[ToolResult] = []
+        tools_logger = logging.getLogger("tools")
+        for tc in tool_calls:
+            name = tc["name"]
+            args = tc.get("arguments", {})
+            action_id = tc.get("id", "")
+            queue: asyncio.Queue = asyncio.Queue()
+            handler = QueueLogHandler(queue, ["tools"])
+            handler.setFormatter(logging.Formatter("%(message)s"))
+            tools_logger.addHandler(handler)
+            orig_level = tools_logger.level
+            tools_logger.setLevel(logging.DEBUG)
+            try:
+                task = asyncio.create_task(self.registry.execute(name, **args))
+                while True:
+                    try:
+                        rec = await asyncio.wait_for(queue.get(), timeout=0.1)
+                        yield {
+                            "type": "execution_log",
+                            "tool_name": name,
+                            "action_id": action_id,
+                            "level": rec["level"],
+                            "message": rec["message"],
+                        }
+                    except asyncio.TimeoutError:
+                        if task.done():
+                            break
+                        await asyncio.sleep(0)
+                result = await task
+                while not queue.empty():
+                    try:
+                        rec = queue.get_nowait()
+                        yield {
+                            "type": "execution_log",
+                            "tool_name": name,
+                            "action_id": action_id,
+                            "level": rec["level"],
+                            "message": rec["message"],
+                        }
+                    except asyncio.QueueEmpty:
+                        break
+                results.append(result)
+            finally:
+                tools_logger.removeHandler(handler)
+                tools_logger.setLevel(orig_level)
+        yield {"type": "_tool_results", "results": results}

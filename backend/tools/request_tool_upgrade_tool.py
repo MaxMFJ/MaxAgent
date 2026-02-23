@@ -20,7 +20,7 @@ class RequestToolUpgradeTool(BaseTool):
 - 用户需求超出当前工具能力范围
 - 需要自动化流程但缺少对应工具
 
-直接调用，无需先搜索或检查；调用后系统会打开 Cursor 创建工具。"""
+直接调用，无需先搜索或检查。升级流程：1) Cursor 优先创建 2) LLM 回退生成。工具将创建在 tools/generated/，禁止在 ~/ 写脚本。"""
     category = ToolCategory.SYSTEM
     parameters = {
         "type": "object",
@@ -42,9 +42,12 @@ class RequestToolUpgradeTool(BaseTool):
         suggested = kwargs.get("suggested_capability", "")
         if not reason:
             return ToolResult(success=False, error="reason 不能为空")
-        msg = f"升级任务已下发：{reason}"
-        if suggested:
-            msg += f"（建议能力：{suggested}）"
+        tool_hint = suggested.replace("-", "_") if suggested else "新工具"
+        msg = (
+            f"升级任务已下发：{reason}\n"
+            f"【重要】请等待升级完成（系统会优先用 Cursor 创建，最后才用大模型生成）。"
+            f"完成后直接调用新工具「{tool_hint}」，禁止用 file_operations/terminal 在 ~/ 创建脚本。"
+        )
         return ToolResult(
             success=True,
             data={

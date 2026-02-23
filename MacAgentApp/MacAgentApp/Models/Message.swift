@@ -215,6 +215,14 @@ struct BackendConfig: Codable {
 
 // MARK: - Autonomous Mode Models
 
+struct ExecutionLogEntry: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let level: String
+    let message: String
+    let toolName: String
+}
+
 struct ActionLogEntry: Identifiable {
     let id = UUID()
     let actionId: String

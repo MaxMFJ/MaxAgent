@@ -6,6 +6,10 @@ import CoreImage.CIFilterBuiltins
 @MainActor
 class TunnelManager: ObservableObject {
     static let shared = TunnelManager()
+
+    /// 与 tunnel_monitor / 后端统一的端口
+    static let backendPort = 8765       // 后端服务
+    static let cloudflaredMetricsPort = 4040  // cloudflared metrics API
     
     @Published var isTunnelRunning = false
     @Published var tunnelURL: String = ""
@@ -19,6 +23,7 @@ class TunnelManager: ObservableObject {
     private var outputPipe: Pipe?
     private var errorPipe: Pipe?
     private var checkConnectionTask: Task<Void, Never>?
+    private var detectExternalTask: Task<Void, Never>?
     
     struct LogEntry: Identifiable {
         let id = UUID()
@@ -39,6 +44,76 @@ class TunnelManager: ObservableObject {
     
     private init() {
         loadAuthToken()
+        startExternalTunnelDetection()
+    }
+
+    // MARK: - 检测外部启动的 Tunnel（tunnel_monitor 脚本、Agent 等）
+
+    /// 定期检测是否有外部启动的 cloudflared，并更新状态与日志
+    private func startExternalTunnelDetection() {
+        detectExternalTask?.cancel()
+        detectExternalTask = Task {
+            while !Task.isCancelled {
+                // 仅当本 App 未启动 tunnel 时检测外部 tunnel
+                if tunnelProcess == nil {
+                    await detectExternallyRunningTunnel()
+                }
+                try? await Task.sleep(nanoseconds: 5_000_000_000)  // 每 5 秒
+            }
+        }
+    }
+
+    private func stopExternalTunnelDetection() {
+        detectExternalTask?.cancel()
+        detectExternalTask = nil
+    }
+
+    private func detectExternallyRunningTunnel() async {
+        do {
+            let url = URL(string: "http://127.0.0.1:\(Self.cloudflaredMetricsPort)/api/tunnels")!
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 2
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let tunnels = json["tunnels"] as? [[String: Any]] else { return }
+            for t in tunnels {
+                if let u = t["public_url"] as? String, u.contains("trycloudflare.com") {
+                    await MainActor.run {
+                        if !isTunnelRunning || tunnelURL != u {
+                            isTunnelRunning = true
+                            tunnelURL = u
+                            generateQRCode()
+                            startConnectionMonitoring()
+                        }
+                        loadExternalTunnelLogs()  // 首次检测或定期刷新日志
+                    }
+                    return
+                }
+            }
+        } catch {}
+        // 未检测到 tunnel：若当前显示为运行中且非本进程启动，保持状态（可能短暂不可用）
+    }
+
+    private func loadExternalTunnelLogs() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let logFiles = [
+            "\(home)/cloudflared.log",
+            "\(home)/tunnel_monitor.log"
+        ]
+        for path in logFiles {
+            guard FileManager.default.fileExists(atPath: path),
+                  let content = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) else { continue }
+            tunnelLogs.removeAll()
+            let lines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }.suffix(100)
+            for line in lines {
+                var level: LogEntry.LogLevel = .info
+                if line.contains("ERR") || line.lowercased().contains("error") { level = .error }
+                else if line.contains("WARN") || line.lowercased().contains("warning") { level = .warning }
+                addLog(String(line), level: level)
+            }
+            break
+        }
     }
     
     // MARK: - Cloudflared Installation Check
@@ -51,9 +126,11 @@ class TunnelManager: ObservableObject {
     /// 获取 cloudflared 可执行文件路径。优先检查 Homebrew 等常用安装路径，避免依赖 PATH。
     func getCloudflaredPath() -> String? {
         // 按优先级检查已知安装路径（Mac App GUI 启动时 PATH 通常不包含 Homebrew）
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
         let possiblePaths = [
             "/opt/homebrew/bin/cloudflared",      // Apple Silicon Homebrew
             "/usr/local/bin/cloudflared",         // Intel Homebrew
+            "\(home)/bin/cloudflared",            // 用户手动安装
             "/opt/homebrew/Cellar/cloudflared/",  // Homebrew Cellar (需拼接版本/bin)
             "/usr/bin/cloudflared"
         ]
@@ -120,7 +197,7 @@ class TunnelManager: ObservableObject {
         let errorPipe = Pipe()
         
         process.executableURL = URL(fileURLWithPath: cloudflaredPath)
-        process.arguments = ["tunnel", "--url", "http://localhost:8765"]
+        process.arguments = ["tunnel", "--url", "http://localhost:\(Self.backendPort)"]
         process.standardOutput = outputPipe
         process.standardError = errorPipe
         
@@ -174,6 +251,15 @@ class TunnelManager: ObservableObject {
         tunnelProcess = nil
         outputPipe = nil
         errorPipe = nil
+
+        // 若由 tunnel_monitor 等外部启动，也终止 cloudflared 进程
+        if isTunnelRunning {
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            killTask.arguments = ["-f", "cloudflared"]
+            try? killTask.run()
+            killTask.waitUntilExit()
+        }
         
         isTunnelRunning = false
         tunnelURL = ""
@@ -258,7 +344,7 @@ class TunnelManager: ObservableObject {
     
     private func enableAuthOnBackend(token: String) async {
         do {
-            var request = URLRequest(url: URL(string: "http://127.0.0.1:8765/auth/generate-token")!)
+            var request = URLRequest(url: URL(string: "http://127.0.0.1:\(Self.backendPort)/auth/generate-token")!)
             request.httpMethod = "POST"
             request.timeoutInterval = 5
             
@@ -273,7 +359,7 @@ class TunnelManager: ObservableObject {
     
     private func disableAuthOnBackend() async {
         do {
-            var request = URLRequest(url: URL(string: "http://127.0.0.1:8765/auth/disable")!)
+            var request = URLRequest(url: URL(string: "http://127.0.0.1:\(Self.backendPort)/auth/disable")!)
             request.httpMethod = "POST"
             request.timeoutInterval = 5
             
@@ -330,7 +416,7 @@ class TunnelManager: ObservableObject {
     
     private func fetchConnectedClients() async {
         do {
-            let url = URL(string: "http://127.0.0.1:8765/connections")!
+            let url = URL(string: "http://127.0.0.1:\(Self.backendPort)/connections")!
             var request = URLRequest(url: url)
             request.timeoutInterval = 3
             
@@ -369,6 +455,12 @@ class TunnelManager: ObservableObject {
     
     func clearLogs() {
         tunnelLogs.removeAll()
+    }
+
+    /// 刷新外部 tunnel 的日志（由 tunnel_monitor 启动时从 ~/cloudflared.log 读取）
+    func refreshLogsIfExternal() {
+        guard tunnelProcess == nil, isTunnelRunning else { return }
+        loadExternalTunnelLogs()
     }
     
     func copyTunnelURL() {

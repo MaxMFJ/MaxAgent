@@ -351,6 +351,12 @@ struct TunnelView: View {
                 
                 Spacer()
                 
+                Button(action: { tunnelManager.refreshLogsIfExternal() }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.plain)
+                .help("刷新日志")
+                
                 Button(action: { tunnelManager.clearLogs() }) {
                     Image(systemName: "trash")
                 }
