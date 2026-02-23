@@ -336,7 +336,13 @@ class UpgradeOrchestrator:
                         "success": result.success,
                         "error": result.error
                     }
-                    if not result.success:
+                    if result.success:
+                        await self._broadcast_content(
+                            "📋 Cursor 已打开，任务已写入 .cursor/prompts/upgrade.md。"
+                            "请在该窗口中用 Cmd+I (Composer) 或 Cmd+L (Chat) 让 AI 完成该任务，"
+                            "创建 tools/generated/ 下的新工具文件并保存。"
+                        )
+                    elif not result.success:
                         logger.warning(f"Cursor step failed: {result.error}")
             
             # 4. 动态加载新工具（无需重启）

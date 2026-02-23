@@ -148,8 +148,9 @@ class ResourceDispatcher:
                 with open(upgrade_file, "w", encoding="utf-8") as f:
                     f.write(content)
                 logger.info(f"Wrote upgrade task to {upgrade_file}")
+                # 直接打开任务文件，便于用户看到并让 Cursor AI 完成
+                open_path = upgrade_file
             
-            # 使用 open 命令打开 Cursor
             cmd = ["open", "-a", "Cursor", open_path]
             process = await asyncio.create_subprocess_exec(
                 *cmd,
