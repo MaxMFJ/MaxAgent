@@ -1,0 +1,23 @@
+# iOS Agent 客户端 - CocoaPods 配置
+# 使用: pod install 后打开 iOSAgentApp.xcworkspace
+
+platform :ios, '15.0'
+use_frameworks!
+
+target 'iOSAgentApp' do
+  # 可按需添加更多依赖，例如:
+  # pod 'Masonry'             # Auto Layout DSL
+  # pod 'AFNetworking'        # 网络请求
+  # pod 'SDWebImage'          # 图片加载与缓存
+  # pod 'CocoaLumberjack'     # 日志
+  # pod 'MBProgressHUD'       # 加载指示
+  # pod 'MJRefresh'           # 下拉刷新
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
+  end
+end

@@ -1,0 +1,590 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */; };
+		4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */; };
+		512B129F2AC9980B6FFC7CF4 /* Pods_MacAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */; };
+		A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002234567890ABCDEF1 /* MacAgentApp.swift */; };
+		A1000003234567890ABCDEF1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004234567890ABCDEF1 /* ContentView.swift */; };
+		A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006234567890ABCDEF1 /* Assets.xcassets */; };
+		A1000007234567890ABCDEF1 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008234567890ABCDEF1 /* Message.swift */; };
+		A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A234567890ABCDEF1 /* AgentViewModel.swift */; };
+		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };
+		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
+		A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012234567890ABCDEF1 /* ToolPanelView.swift */; };
+		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
+		B1000001234567890ABCDEF1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002234567890ABCDEF1 /* ChatView.swift */; };
+		B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004234567890ABCDEF1 /* MessageBubble.swift */; };
+		B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006234567890ABCDEF1 /* MessageAvatars.swift */; };
+		B1000007234567890ABCDEF1 /* UserMessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008234567890ABCDEF1 /* UserMessageContent.swift */; };
+		B1000009234567890ABCDEF1 /* AssistantMessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000A234567890ABCDEF1 /* AssistantMessageContent.swift */; };
+		B100000B234567890ABCDEF1 /* InputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000C234567890ABCDEF1 /* InputBar.swift */; };
+		B100000D234567890ABCDEF1 /* CustomTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E234567890ABCDEF1 /* CustomTextEditor.swift */; };
+		B100000F234567890ABCDEF1 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010234567890ABCDEF1 /* MarkdownParser.swift */; };
+		B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012234567890ABCDEF1 /* RichMarkdownView.swift */; };
+		B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */; };
+		B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000016234567890ABCDEF1 /* CodeBlockView.swift */; };
+		B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000018234567890ABCDEF1 /* MarkdownElements.swift */; };
+		B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A234567890ABCDEF1 /* AsyncImageView.swift */; };
+		B100001B234567890ABCDEF1 /* Base64ImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001C234567890ABCDEF1 /* Base64ImageView.swift */; };
+		B100001D234567890ABCDEF1 /* LocalFileImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001E234567890ABCDEF1 /* LocalFileImageView.swift */; };
+		B100001F234567890ABCDEF1 /* ImageDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000020234567890ABCDEF1 /* ImageDisplayView.swift */; };
+		B1000021234567890ABCDEF1 /* AttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000022234567890ABCDEF1 /* AttachmentView.swift */; };
+		B1000023234567890ABCDEF1 /* ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000024234567890ABCDEF1 /* ErrorBannerView.swift */; };
+		B1000025234567890ABCDEF1 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000026234567890ABCDEF1 /* WelcomeView.swift */; };
+		B1000027234567890ABCDEF1 /* TypingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000028234567890ABCDEF1 /* TypingIndicator.swift */; };
+		B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002A234567890ABCDEF1 /* ViewExtensions.swift */; };
+		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
+		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
+		4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceManagerView.swift; sourceTree = "<group>"; };
+		5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.release.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.release.xcconfig"; sourceTree = "<group>"; };
+		A1000000234567890ABCDEF1 /* MacAgentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacAgentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000002234567890ABCDEF1 /* MacAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAgentApp.swift; sourceTree = "<group>"; };
+		A1000004234567890ABCDEF1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A1000006234567890ABCDEF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1000008234567890ABCDEF1 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		A100000A234567890ABCDEF1 /* AgentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViewModel.swift; sourceTree = "<group>"; };
+		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };
+		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		A1000012234567890ABCDEF1 /* ToolPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolPanelView.swift; sourceTree = "<group>"; };
+		A1000014234567890ABCDEF1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
+		B1000002234567890ABCDEF1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		B1000004234567890ABCDEF1 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
+		B1000006234567890ABCDEF1 /* MessageAvatars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAvatars.swift; sourceTree = "<group>"; };
+		B1000008234567890ABCDEF1 /* UserMessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageContent.swift; sourceTree = "<group>"; };
+		B100000A234567890ABCDEF1 /* AssistantMessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessageContent.swift; sourceTree = "<group>"; };
+		B100000C234567890ABCDEF1 /* InputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBar.swift; sourceTree = "<group>"; };
+		B100000E234567890ABCDEF1 /* CustomTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTextEditor.swift; sourceTree = "<group>"; };
+		B1000010234567890ABCDEF1 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
+		B1000012234567890ABCDEF1 /* RichMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMarkdownView.swift; sourceTree = "<group>"; };
+		B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineMarkdownText.swift; sourceTree = "<group>"; };
+		B1000016234567890ABCDEF1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
+		B1000018234567890ABCDEF1 /* MarkdownElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownElements.swift; sourceTree = "<group>"; };
+		B100001A234567890ABCDEF1 /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncImageView.swift; sourceTree = "<group>"; };
+		B100001C234567890ABCDEF1 /* Base64ImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64ImageView.swift; sourceTree = "<group>"; };
+		B100001E234567890ABCDEF1 /* LocalFileImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFileImageView.swift; sourceTree = "<group>"; };
+		B1000020234567890ABCDEF1 /* ImageDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDisplayView.swift; sourceTree = "<group>"; };
+		B1000022234567890ABCDEF1 /* AttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
+		B1000024234567890ABCDEF1 /* ErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBannerView.swift; sourceTree = "<group>"; };
+		B1000026234567890ABCDEF1 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		B1000028234567890ABCDEF1 /* TypingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingIndicator.swift; sourceTree = "<group>"; };
+		B100002A234567890ABCDEF1 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
+		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
+		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
+		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000FD234567890ABCDEF1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				512B129F2AC9980B6FFC7CF4 /* Pods_MacAgentApp.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1540237FFEFF4065F998A709 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1DCA4D4222C841407E3E4D9A /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */,
+				5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		A10000F7234567890ABCDEF1 = {
+			isa = PBXGroup;
+			children = (
+				A1000101234567890ABCDEF1 /* MacAgentApp */,
+				A1000100234567890ABCDEF1 /* Products */,
+				1DCA4D4222C841407E3E4D9A /* Pods */,
+				1540237FFEFF4065F998A709 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A1000100234567890ABCDEF1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000234567890ABCDEF1 /* MacAgentApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000101234567890ABCDEF1 /* MacAgentApp */ = {
+			isa = PBXGroup;
+			children = (
+				A1000002234567890ABCDEF1 /* MacAgentApp.swift */,
+				A1000004234567890ABCDEF1 /* ContentView.swift */,
+				A1000102234567890ABCDEF1 /* Views */,
+				A1000103234567890ABCDEF1 /* ViewModels */,
+				A1000104234567890ABCDEF1 /* Services */,
+				A1000105234567890ABCDEF1 /* Models */,
+				A1000006234567890ABCDEF1 /* Assets.xcassets */,
+				A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */,
+			);
+			path = MacAgentApp;
+			sourceTree = "<group>";
+		};
+		A1000102234567890ABCDEF1 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B1000030234567890ABCDEF1 /* 聊天 */,
+				4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */,
+				C1000002234567890ABCDEF1 /* TunnelView.swift */,
+				A1000010234567890ABCDEF1 /* SidebarView.swift */,
+				A1000012234567890ABCDEF1 /* ToolPanelView.swift */,
+				A1000014234567890ABCDEF1 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A1000103234567890ABCDEF1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A100000A234567890ABCDEF1 /* AgentViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A1000104234567890ABCDEF1 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */,
+				C1000004234567890ABCDEF1 /* TunnelManager.swift */,
+				A100000C234567890ABCDEF1 /* BackendService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A1000105234567890ABCDEF1 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A1000008234567890ABCDEF1 /* Message.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B1000030234567890ABCDEF1 /* 聊天 */ = {
+			isa = PBXGroup;
+			children = (
+				B1000002234567890ABCDEF1 /* ChatView.swift */,
+				B1000031234567890ABCDEF1 /* 消息 */,
+				B1000032234567890ABCDEF1 /* 输入 */,
+				B1000033234567890ABCDEF1 /* Markdown渲染 */,
+				B1000034234567890ABCDEF1 /* 图片 */,
+				B1000035234567890ABCDEF1 /* 辅助组件 */,
+			);
+			path = "聊天";
+			sourceTree = "<group>";
+		};
+		B1000031234567890ABCDEF1 /* 消息 */ = {
+			isa = PBXGroup;
+			children = (
+				B1000004234567890ABCDEF1 /* MessageBubble.swift */,
+				B1000006234567890ABCDEF1 /* MessageAvatars.swift */,
+				B1000008234567890ABCDEF1 /* UserMessageContent.swift */,
+				B100000A234567890ABCDEF1 /* AssistantMessageContent.swift */,
+			);
+			path = "消息";
+			sourceTree = "<group>";
+		};
+		B1000032234567890ABCDEF1 /* 输入 */ = {
+			isa = PBXGroup;
+			children = (
+				B100000C234567890ABCDEF1 /* InputBar.swift */,
+				B100000E234567890ABCDEF1 /* CustomTextEditor.swift */,
+			);
+			path = "输入";
+			sourceTree = "<group>";
+		};
+		B1000033234567890ABCDEF1 /* Markdown渲染 */ = {
+			isa = PBXGroup;
+			children = (
+				B1000010234567890ABCDEF1 /* MarkdownParser.swift */,
+				B1000012234567890ABCDEF1 /* RichMarkdownView.swift */,
+				B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */,
+				B1000016234567890ABCDEF1 /* CodeBlockView.swift */,
+				B1000018234567890ABCDEF1 /* MarkdownElements.swift */,
+			);
+			path = "Markdown渲染";
+			sourceTree = "<group>";
+		};
+		B1000034234567890ABCDEF1 /* 图片 */ = {
+			isa = PBXGroup;
+			children = (
+				B100001A234567890ABCDEF1 /* AsyncImageView.swift */,
+				B100001C234567890ABCDEF1 /* Base64ImageView.swift */,
+				B100001E234567890ABCDEF1 /* LocalFileImageView.swift */,
+				B1000020234567890ABCDEF1 /* ImageDisplayView.swift */,
+				B1000022234567890ABCDEF1 /* AttachmentView.swift */,
+			);
+			path = "图片";
+			sourceTree = "<group>";
+		};
+		B1000035234567890ABCDEF1 /* 辅助组件 */ = {
+			isa = PBXGroup;
+			children = (
+				B1000024234567890ABCDEF1 /* ErrorBannerView.swift */,
+				B1000026234567890ABCDEF1 /* WelcomeView.swift */,
+				B1000028234567890ABCDEF1 /* TypingIndicator.swift */,
+				B100002A234567890ABCDEF1 /* ViewExtensions.swift */,
+			);
+			path = "辅助组件";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000FF234567890ABCDEF1 /* MacAgentApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1000115234567890ABCDEF1 /* Build configuration list for PBXNativeTarget "MacAgentApp" */;
+			buildPhases = (
+				D3EABD9E1004CB61024BFAF0 /* [CP] Check Pods Manifest.lock */,
+				A10000FC234567890ABCDEF1 /* Sources */,
+				A10000FD234567890ABCDEF1 /* Frameworks */,
+				A10000FE234567890ABCDEF1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacAgentApp;
+			productName = MacAgentApp;
+			productReference = A1000000234567890ABCDEF1 /* MacAgentApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000F8234567890ABCDEF1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A10000FF234567890ABCDEF1 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A10000FB234567890ABCDEF1 /* Build configuration list for PBXProject "MacAgentApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = A10000F7234567890ABCDEF1;
+			productRefGroup = A1000100234567890ABCDEF1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000FF234567890ABCDEF1 /* MacAgentApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000FE234567890ABCDEF1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D3EABD9E1004CB61024BFAF0 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MacAgentApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000FC234567890ABCDEF1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000003234567890ABCDEF1 /* ContentView.swift in Sources */,
+				A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */,
+				A1000007234567890ABCDEF1 /* Message.swift in Sources */,
+				4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */,
+				A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */,
+				A100000B234567890ABCDEF1 /* BackendService.swift in Sources */,
+				4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */,
+				B1000001234567890ABCDEF1 /* ChatView.swift in Sources */,
+				B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */,
+				B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */,
+				B1000007234567890ABCDEF1 /* UserMessageContent.swift in Sources */,
+				B1000009234567890ABCDEF1 /* AssistantMessageContent.swift in Sources */,
+				B100000B234567890ABCDEF1 /* InputBar.swift in Sources */,
+				B100000D234567890ABCDEF1 /* CustomTextEditor.swift in Sources */,
+				B100000F234567890ABCDEF1 /* MarkdownParser.swift in Sources */,
+				B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */,
+				B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */,
+				B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */,
+				B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */,
+				B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */,
+				B100001B234567890ABCDEF1 /* Base64ImageView.swift in Sources */,
+				B100001D234567890ABCDEF1 /* LocalFileImageView.swift in Sources */,
+				B100001F234567890ABCDEF1 /* ImageDisplayView.swift in Sources */,
+				B1000021234567890ABCDEF1 /* AttachmentView.swift in Sources */,
+				B1000023234567890ABCDEF1 /* ErrorBannerView.swift in Sources */,
+				B1000025234567890ABCDEF1 /* WelcomeView.swift in Sources */,
+				B1000027234567890ABCDEF1 /* TypingIndicator.swift in Sources */,
+				B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */,
+				A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */,
+				A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */,
+				A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */,
+				C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */,
+				C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1000113234567890ABCDEF1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1000114234567890ABCDEF1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A1000116234567890ABCDEF1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacAgentApp/MacAgentApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macagent.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A1000117234567890ABCDEF1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacAgentApp/MacAgentApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macagent.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000FB234567890ABCDEF1 /* Build configuration list for PBXProject "MacAgentApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000113234567890ABCDEF1 /* Debug */,
+				A1000114234567890ABCDEF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1000115234567890ABCDEF1 /* Build configuration list for PBXNativeTarget "MacAgentApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000116234567890ABCDEF1 /* Debug */,
+				A1000117234567890ABCDEF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000F8234567890ABCDEF1 /* Project object */;
+}

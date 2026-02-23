@@ -1,0 +1,50 @@
+/* Chat */
+"app_title" = "MacAgent";
+"clear_chat" = "Clear Chat";
+"clear_chat_message" = "This will clear all messages. Continue?";
+"cancel" = "Cancel";
+"clear" = "Clear";
+
+/* Connection Status */
+"status_disconnected" = "Disconnected";
+"status_connecting" = "Connecting...";
+"status_connected" = "Connected";
+"status_reconnecting" = "Reconnecting...";
+"error_format" = "Error: %@";
+
+/* Settings */
+"settings" = "Settings";
+"camera_access" = "Camera Access";
+"camera_access_message" = "Please enable camera access in Settings to scan QR codes.";
+"ok" = "OK";
+"checking" = "Checking...";
+"server_available" = "Server Available";
+"server_unavailable" = "Server Unavailable";
+"unknown" = "Unknown";
+"server_configuration" = "Server Configuration";
+"status" = "Status";
+"actions" = "Actions";
+"server_config_footer" = "Enter the Cloudflare Tunnel URL or scan the QR code from your Mac.";
+"url" = "URL";
+"url_placeholder" = "xxx.trycloudflare.com";
+"token" = "Token";
+"token_placeholder" = "Optional auth token";
+"connection" = "Connection";
+"model" = "Model";
+"connect" = "Connect";
+"disconnect" = "Disconnect";
+"scan_qr_code" = "Scan QR Code";
+"camera_unavailable" = "Camera not available";
+"error" = "Error";
+
+/* Message */
+"copy" = "Copy";
+"re_edit" = "Re-edit";
+"delete" = "Delete";
+"you" = "You";
+"tool" = "Tool";
+"result" = "Result";
+"assistant" = "Assistant";
+
+/* Input */
+"message_placeholder" = "Message...";

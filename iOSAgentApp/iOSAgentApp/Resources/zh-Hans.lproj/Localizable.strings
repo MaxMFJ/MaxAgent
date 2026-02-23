@@ -1,0 +1,50 @@
+/* Chat */
+"app_title" = "MacAgent";
+"clear_chat" = "清空聊天";
+"clear_chat_message" = "将清空所有消息，是否继续？";
+"cancel" = "取消";
+"clear" = "清空";
+
+/* Connection Status */
+"status_disconnected" = "未连接";
+"status_connecting" = "连接中...";
+"status_connected" = "已连接";
+"status_reconnecting" = "重连中...";
+"error_format" = "错误：%@";
+
+/* Settings */
+"settings" = "设置";
+"camera_access" = "相机权限";
+"camera_access_message" = "请在系统设置中开启相机权限以扫描二维码。";
+"ok" = "确定";
+"checking" = "检查中...";
+"server_available" = "服务器可用";
+"server_unavailable" = "服务器不可用";
+"unknown" = "未知";
+"server_configuration" = "服务器配置";
+"status" = "状态";
+"actions" = "操作";
+"server_config_footer" = "输入 Cloudflare Tunnel 地址，或扫描 Mac 上的二维码。";
+"url" = "地址";
+"url_placeholder" = "xxx.trycloudflare.com";
+"token" = "令牌";
+"token_placeholder" = "可选认证令牌";
+"connection" = "连接";
+"model" = "模型";
+"connect" = "连接";
+"disconnect" = "断开";
+"scan_qr_code" = "扫描二维码";
+"camera_unavailable" = "相机不可用";
+"error" = "错误";
+
+/* Message */
+"copy" = "复制";
+"re_edit" = "重新编辑";
+"delete" = "删除";
+"you" = "我";
+"tool" = "工具";
+"result" = "结果";
+"assistant" = "助手";
+
+/* Input */
+"message_placeholder" = "输入消息...";
