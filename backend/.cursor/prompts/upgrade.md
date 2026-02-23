@@ -24,47 +24,51 @@ from tools.base import BaseTool, ToolResult, ToolCategory
 
 class TunnelMonitorTool(BaseTool):
     name = "tunnel_monitor"
-    description = "监控隧道连接状态，在中断时自动重启并发送邮件通知。支持通过进程名或端口号检测隧道状态，可配置重启命令和通知邮箱。"
+    description = "监控隧道连接状态，中断后自动重启并发送新链接到指定邮箱"
     category = ToolCategory.SYSTEM
     parameters = {
     "type": "object",
     "properties": {
-        "tunnel_name": {
+        "tunnel_type": {
             "type": "string",
-            "description": "隧道标识名称"
-        },
-        "check_method": {
-            "type": "string",
+            "description": "隧道类型：ngrok, frp, 或 custom",
             "enum": [
-                "process_name",
-                "port"
-            ],
-            "description": "检测方式：进程名或端口号"
+                "ngrok",
+                "frp",
+                "custom"
+            ]
         },
-        "check_value": {
+        "process_name": {
             "type": "string",
-            "description": "检测值：进程名或端口号"
+            "description": "隧道进程名称"
         },
-        "restart_command": {
-            "type": "string",
-            "description": "重启隧道的命令"
-        },
-        "monitor_interval": {
+        "check_port": {
             "type": "integer",
-            "description": "监控间隔（秒）",
+            "description": "监控的端口号（可选）"
+        },
+        "check_interval": {
+            "type": "integer",
+            "description": "监控间隔秒数，默认60",
             "default": 60
+        },
+        "max_retries": {
+            "type": "integer",
+            "description": "最大重试次数，默认3",
+            "default": 3
         },
         "email": {
             "type": "string",
-            "description": "通知邮箱地址",
+            "description": "接收新链接的邮箱地址",
             "default": "675632487@qq.com"
+        },
+        "tunnel_command": {
+            "type": "string",
+            "description": "重启隧道的命令（custom类型时必须）"
         }
     },
     "required": [
-        "tunnel_name",
-        "check_method",
-        "check_value",
-        "restart_command"
+        "tunnel_type",
+        "process_name"
     ]
 }
 
@@ -75,39 +79,36 @@ class TunnelMonitorTool(BaseTool):
 
 ## 你的具体任务
 
-在 backend/tools/generated/ 目录下创建 tunnel_monitor_tool.py 文件。实现以下功能：
+在MacAgent项目的backend/tools/generated/目录下创建tunnel_monitor_tool.py文件。
 
+实现要求：
 1. 工具类名：TunnelMonitorTool
 2. 主要功能：
-   - 监控指定隧道进程（通过进程名或端口号）
-   - 检测隧道连接状态（通过检查进程存活和端口监听）
-   - 隧道中断时自动重启（执行预设的重启命令）
-   - 状态变化时发送邮件通知到指定邮箱
+   - 监控指定隧道进程（通过进程名或端口检测）
+   - 检测到中断后自动重启隧道服务
+   - 获取新的隧道链接（可通过解析日志或API获取）
+   - 将新链接通过SMTP发送到指定邮箱（675632487@qq.com）
+   - 支持配置监控间隔和重试次数
 
 3. 参数设计：
-   - tunnel_name: 隧道标识名称
-   - check_method: 检测方式（'process_name' 或 'port'）
-   - check_value: 检测值（进程名或端口号）
-   - restart_command: 重启命令
-   - monitor_interval: 监控间隔（秒，默认60）
-   - email: 通知邮箱（默认675632487@qq.com）
+   - tunnel_type: 隧道类型（ngrok/frp/custom）
+   - process_name: 进程名（如'ngrok'）
+   - check_port: 监控端口（可选）
+   - check_interval: 监控间隔秒数（默认60）
+   - max_retries: 最大重试次数（默认3）
+   - email: 接收邮箱（默认675632487@qq.com）
+   - tunnel_command: 启动命令（用于重启）
 
 4. 实现逻辑：
-   - 使用 psutil 库检查进程状态
-   - 使用 socket 检查端口监听状态
-   - 实现守护线程持续监控
-   - 使用 smtplib 发送邮件通知
-   - 记录监控日志
+   - 使用psutil检查进程状态
+   - 使用schedule或threading实现定时监控
+   - 邮件发送使用smtplib，配置发件邮箱（需用户自行配置SMTP信息）
+   - 提供start_monitoring()方法启动监控
+   - 提供stop_monitoring()方法停止监控
 
 5. 调用方式：
-   - 启动监控：tool.execute(tunnel_name='my_tunnel', check_method='port', check_value=8080, restart_command='ssh -N -L 8080:localhost:80 user@server')
-   - 停止监控：tool.stop_monitor(tunnel_name='my_tunnel')
-
-6. 邮件内容：
-   - 主题：隧道状态变化通知
-   - 正文：包含隧道名称、状态变化时间、新链接（如适用）、当前状态
-
-注意：工具应支持同时监控多个隧道，并正确处理异常情况。
+   - LLM可调用tunnel_monitor方法启动监控
+   - 返回监控状态信息
 
 ---
 

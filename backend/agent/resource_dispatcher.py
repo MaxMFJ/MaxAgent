@@ -2,11 +2,13 @@
 Resource Dispatcher - 资源调度器
 调度 Cursor、终端等系统资源执行升级任务
 沙箱：cwd 限制、命令黑名单、超时
+支持：CLI 自动执行、GUI 键盘模拟（Mac 专用）
 """
 
 import os
 import asyncio
 import logging
+import platform
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Tuple
@@ -38,6 +40,9 @@ COMMAND_BLACKLIST = [
 
 # 默认超时上限（秒）
 MAX_TERMINAL_TIMEOUT = int(os.environ.get("MACAGENT_TERMINAL_MAX_TIMEOUT", "300"))
+
+# Cursor CLI 执行升级任务的超时（LLM 生成代码较慢）
+CURSOR_CLI_UPGRADE_TIMEOUT = int(os.environ.get("MACAGENT_CURSOR_CLI_TIMEOUT", "600"))
 
 
 class DispatchTarget(str, Enum):
@@ -98,6 +103,246 @@ class ResourceDispatcher:
             if os.path.exists(path):
                 return path
         return None
+    
+    def _find_agent_cli(self) -> Optional[str]:
+        """查找 Cursor agent CLI（需先安装：curl https://cursor.com/install -fsSL | bash）"""
+        import shutil
+        agent_path = shutil.which("agent")
+        if agent_path:
+            return agent_path
+        # 尝试从 Cursor.app 内查找
+        for app_path in ["/Applications/Cursor.app", os.path.expanduser("~/Applications/Cursor.app")]:
+            if os.path.exists(app_path):
+                cli = os.path.join(app_path, "Contents", "Resources", "app", "bin", "agent")
+                if os.path.isfile(cli):
+                    return cli
+        return None
+    
+    async def dispatch_to_cursor_cli(
+        self,
+        project_path: str,
+        task_prompt: str,
+        timeout: int = CURSOR_CLI_UPGRADE_TIMEOUT
+    ) -> Tuple[DispatchResult, bool]:
+        """
+        通过 Cursor CLI 自动执行升级任务（无交互）
+        成功时返回 (result, True)，CLI 不可用时返回 (fallback_result, False)
+        """
+        # 1. 写入 upgrade.md
+        prompts_dir = os.path.join(project_path, ".cursor", "prompts")
+        os.makedirs(prompts_dir, exist_ok=True)
+        upgrade_file = os.path.join(prompts_dir, "upgrade.md")
+        content = f"""# MacAgent 工具自我升级任务
+
+**请在本次对话中完成此任务，创建/修改文件后保存。**
+
+**⚠️ 输出位置**：新工具必须创建在 MacAgent 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
+
+---
+
+{task_prompt}
+
+---
+
+## 完成后
+1. 保存所有文件
+2. 新工具将自动加载，用户可立即在 Chat 中调用
+"""
+        with open(upgrade_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        logger.info(f"Wrote upgrade task to {upgrade_file}")
+        
+        agent_path = self._find_agent_cli()
+        if not agent_path:
+            logger.info("Cursor agent CLI not found, will fall back to GUI")
+            return (
+                DispatchResult(
+                    success=False,
+                    target=DispatchTarget.CURSOR,
+                    error="未找到 Cursor agent CLI，请安装: curl https://cursor.com/install -fsSL | bash"
+                ),
+                False
+            )
+        
+        prompt = (
+            "Read the task in .cursor/prompts/upgrade.md and execute it completely. "
+            "Create the required tool file in tools/generated/ as specified. "
+            "Apply all file changes. Do not ask for confirmation."
+        )
+        
+        try:
+            process = await asyncio.create_subprocess_exec(
+                agent_path, "-p", "--force", prompt,
+                cwd=project_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                return (
+                    DispatchResult(
+                        success=False,
+                        target=DispatchTarget.CURSOR,
+                        error=f"Cursor CLI 执行超时 ({timeout}s)"
+                    ),
+                    True
+                )
+            out = stdout.decode().strip() or stderr.decode().strip()
+            return (
+                DispatchResult(
+                    success=(process.returncode == 0),
+                    target=DispatchTarget.CURSOR,
+                    output=out[:3000] if out else None,
+                    error=None if process.returncode == 0 else stderr.decode()[:500],
+                    pid=process.pid
+                ),
+                True
+            )
+        except Exception as e:
+            logger.error(f"Cursor CLI execution failed: {e}")
+            return (
+                DispatchResult(
+                    success=False,
+                    target=DispatchTarget.CURSOR,
+                    error=str(e)
+                ),
+                True
+            )
+    
+    async def dispatch_to_cursor_gui_auto(
+        self,
+        project_path: str,
+        task_prompt: str,
+    ) -> Tuple[DispatchResult, bool]:
+        """
+        通过 Mac 键盘模拟：打开 Cursor → 聚焦 Chat → 粘贴任务 → 发送
+        无需安装 Cursor CLI，直接使用已安装的 Cursor.app
+        成功返回 (result, True)，不可用时返回 (result, False)
+        """
+        if platform.system() != "Darwin":
+            return (
+                DispatchResult(
+                    success=False,
+                    target=DispatchTarget.CURSOR,
+                    error="GUI 键盘模拟仅支持 macOS"
+                ),
+                False
+            )
+        if not self._cursor_path:
+            return (
+                DispatchResult(
+                    success=False,
+                    target=DispatchTarget.CURSOR,
+                    error="未找到 Cursor 应用"
+                ),
+                False
+            )
+        
+        prompts_dir = os.path.join(project_path, ".cursor", "prompts")
+        os.makedirs(prompts_dir, exist_ok=True)
+        upgrade_file = os.path.join(prompts_dir, "upgrade.md")
+        content = f"""# MacAgent 工具自我升级任务
+
+**请在本次对话中完成此任务，创建/修改文件后保存。**
+
+**⚠️ 输出位置**：新工具必须创建在 MacAgent 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
+
+---
+
+{task_prompt}
+
+---
+
+## 完成后
+1. 保存所有文件
+2. 新工具将自动加载，用户可立即在 Chat 中调用
+"""
+        with open(upgrade_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        logger.info(f"Wrote upgrade task to {upgrade_file}")
+        
+        # 剪贴板写入简短指令（让 Cursor AI 读取 upgrade.md 执行）
+        instruction = (
+            "请根据 .cursor/prompts/upgrade.md 中的任务说明，创建 tools/generated/ 下的工具文件并保存。"
+        )
+        
+        try:
+            from runtime import get_runtime_adapter
+            adapter = get_runtime_adapter()
+            ok, err = await adapter.clipboard_write(instruction)
+            if not ok:
+                logger.warning(f"Clipboard write failed: {err}")
+                return (
+                    DispatchResult(success=False, target=DispatchTarget.CURSOR, error=f"剪贴板写入失败: {err}"),
+                    False
+                )
+            
+            # 打开 Cursor 并聚焦 upgrade.md
+            proc = await asyncio.create_subprocess_exec(
+                "open", "-a", "Cursor", upgrade_file,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await proc.communicate()
+            await asyncio.sleep(1.5)  # 等待 Cursor 启动/切换
+            
+            # AppleScript：激活 Cursor → Cmd+L 打开 Chat → Cmd+V 粘贴 → 回车发送
+            script = '''
+            tell application "Cursor" to activate
+            delay 1
+            tell application "System Events"
+                keystroke "l" using command down
+            end tell
+            delay 2.5
+            tell application "System Events"
+                keystroke "v" using command down
+            end tell
+            delay 0.5
+            tell application "System Events"
+                key code 36
+            end tell
+            '''
+            r = await adapter.run_script(script, "applescript")
+            if not r.success:
+                logger.warning(f"AppleScript keystroke failed: {r.error}")
+                return (
+                    DispatchResult(
+                        success=False,
+                        target=DispatchTarget.CURSOR,
+                        error=f"键盘模拟失败: {r.error}",
+                        output="Cursor 已打开，请手动在 Chat 中粘贴并发送任务"
+                    ),
+                    True
+                )
+            return (
+                DispatchResult(
+                    success=True,
+                    target=DispatchTarget.CURSOR,
+                    output="已通过键盘模拟将任务发送到 Cursor Chat，请等待 AI 执行完成"
+                ),
+                True
+            )
+        except ImportError:
+            return (
+                DispatchResult(
+                    success=False,
+                    target=DispatchTarget.CURSOR,
+                    error="无法加载 runtime adapter"
+                ),
+                False
+            )
+        except Exception as e:
+            logger.error(f"Cursor GUI auto failed: {e}")
+            return (
+                DispatchResult(success=False, target=DispatchTarget.CURSOR, error=str(e)),
+                False
+            )
     
     async def dispatch_to_cursor(
         self,

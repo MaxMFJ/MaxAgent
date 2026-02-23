@@ -326,22 +326,44 @@ class UpgradeOrchestrator:
                 
                 elif target == "cursor" and step.get("task_prompt"):
                     full_task = self._build_cursor_task(step, plan)
-                    result = await self.dispatcher.dispatch_to_cursor(
+                    # 1) Cursor CLI 自动执行  2) Mac 键盘模拟  3) 仅打开 GUI
+                    result, used_auto = await self.dispatcher.dispatch_to_cursor_cli(
                         project_path=MACAGENT_ROOT,
                         task_prompt=full_task
                     )
+                    auto_mode = "cli" if used_auto else None
+                    if not used_auto:
+                        result, used_auto = await self.dispatcher.dispatch_to_cursor_gui_auto(
+                            project_path=MACAGENT_ROOT,
+                            task_prompt=full_task
+                        )
+                        auto_mode = "gui" if used_auto else None
+                    if not used_auto:
+                        result = await self.dispatcher.dispatch_to_cursor(
+                            project_path=MACAGENT_ROOT,
+                            task_prompt=full_task
+                        )
                     yield {
                         "type": "upgrade_step_result",
                         "target": "cursor",
                         "success": result.success,
+                        "output": result.output,
                         "error": result.error
                     }
                     if result.success:
-                        await self._broadcast_content(
-                            "📋 Cursor 已打开，任务已写入 .cursor/prompts/upgrade.md。"
-                            "请在该窗口中用 Cmd+I (Composer) 或 Cmd+L (Chat) 让 AI 完成该任务，"
-                            "创建 tools/generated/ 下的新工具文件并保存。"
-                        )
+                        if auto_mode == "cli":
+                            await self._broadcast_content(
+                                "✅ Cursor CLI 已自动执行完成，正在加载新工具..."
+                            )
+                        elif auto_mode == "gui":
+                            await self._broadcast_content(
+                                "✅ 已通过键盘模拟将任务发送到 Cursor Chat，请等待 AI 执行完成..."
+                            )
+                        else:
+                            await self._broadcast_content(
+                                "📋 Cursor 已打开，任务已写入 .cursor/prompts/upgrade.md。"
+                                "请用 Cmd+I (Composer) 或 Cmd+L (Chat) 让 AI 完成该任务。"
+                            )
                     elif not result.success:
                         logger.warning(f"Cursor step failed: {result.error}")
             
