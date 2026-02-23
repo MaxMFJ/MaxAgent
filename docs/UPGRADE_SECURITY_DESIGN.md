@@ -225,7 +225,21 @@ POST /upgrade/rollback
 
 ---
 
-## 十一、快速检查清单
+## 十一、实现状态
+
+| 模块 | 文件 | 状态 |
+|------|------|------|
+| Git 集成 | `agent/upgrade_git.py` | ✅ 已实现 |
+| 行为白名单 | `agent/upgrade_security.py` (check_code_safety) | ✅ 已实现 |
+| 路径保护 | `agent/upgrade_security.py` (is_path_allowed, PROTECTED_PATHS) | ✅ 已实现 |
+| 沙箱增强 | `agent/resource_dispatcher.py` (cwd、命令黑名单、超时) | ✅ 已实现 |
+| 签名校验 | `agent/upgrade_security.py` + `data/signatures.json` | ✅ 已实现 |
+| 编排器集成 | `agent/tool_upgrade_orchestrator.py` | ✅ Git checkpoint/rollback |
+| API | `POST /tools/approve` | ✅ 人工审批 |
+
+---
+
+## 十二、快速检查清单
 
 升级前必须通过：
 

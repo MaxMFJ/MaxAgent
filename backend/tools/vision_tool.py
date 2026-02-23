@@ -93,171 +93,33 @@ class VisionTool(BaseTool):
         else:
             return ToolResult(success=False, error=f"未知操作: {action}")
     
-    async def _capture_screenshot(self, area: str = "full", app_name: str = "", 
+    async def _capture_screenshot(self, area: str = "full", app_name: str = "",
                                    region: Optional[Dict] = None) -> Optional[str]:
-        """截取屏幕截图（自动，无需用户交互）"""
+        """截取屏幕截图（通过 runtime adapter）"""
+        if not self.runtime_adapter:
+            return None
         timestamp = int(datetime.now().timestamp())
         save_path = f"/tmp/vision_{timestamp}.png"
-        
+
         if app_name:
-            # 使用窗口 ID 自动截取指定应用窗口（无需用户交互）
-            # 先激活窗口
-            activate_script = f'''
-tell application "{app_name}"
-    activate
-end tell
-'''
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", activate_script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
+            await self.runtime_adapter.activate_app(app_name)
             await asyncio.sleep(0.5)
-            
-            # 获取窗口 ID 并自动截图
-            window_id = await self._get_window_id(app_name)
-            if window_id:
-                process = await asyncio.create_subprocess_exec(
-                    "screencapture", "-x", "-l", str(window_id), save_path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                await process.communicate()
-                
-                if os.path.exists(save_path):
-                    return save_path
-            
-            # 备用方案：使用窗口边界截图
-            bounds = await self._get_window_bounds(app_name)
-            if bounds:
-                x, y, w, h = bounds
-                region_str = f"{int(x)},{int(y)},{int(w)},{int(h)}"
-                process = await asyncio.create_subprocess_exec(
-                    "screencapture", "-x", "-R", region_str, save_path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                await process.communicate()
-                
-                if os.path.exists(save_path):
-                    return save_path
-            
-            # 最后备用：全屏截图
+            ok, _ = await self.runtime_adapter.screenshot_window(app_name, save_path)
+            if ok and os.path.exists(save_path):
+                return save_path
             logger.warning(f"无法获取 {app_name} 窗口，使用全屏截图")
-            
         elif area == "region" and region:
-            x, y, w, h = region.get("x"), region.get("y"), region.get("width"), region.get("height")
-            region_str = f"{int(x)},{int(y)},{int(w)},{int(h)}"
-            process = await asyncio.create_subprocess_exec(
-                "screencapture", "-R", region_str, save_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
+            x = int(region.get("x", 0))
+            y = int(region.get("y", 0))
+            w = int(region.get("width", 100))
+            h = int(region.get("height", 100))
+            ok, _ = await self.runtime_adapter.screenshot_region(save_path, x, y, w, h)
         else:
-            # 全屏截图
-            process = await asyncio.create_subprocess_exec(
-                "screencapture", "-x", save_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-        
-        if os.path.exists(save_path):
+            ok, _ = await self.runtime_adapter.screenshot_full(save_path)
+        if ok and os.path.exists(save_path):
             return save_path
         return None
-    
-    async def _get_window_id(self, app_name: str) -> Optional[int]:
-        """获取应用窗口的 ID"""
-        try:
-            import Quartz
-            
-            windows = Quartz.CGWindowListCopyWindowInfo(
-                Quartz.kCGWindowListOptionOnScreenOnly | Quartz.kCGWindowListExcludeDesktopElements,
-                Quartz.kCGNullWindowID
-            )
-            
-            # 搜索名称匹配：支持中英文名称和别名
-            app_name_lower = app_name.lower()
-            
-            # 常见应用的别名映射
-            aliases = {
-                "wechat": ["微信", "wechat", "企业微信"],
-                "微信": ["微信", "wechat", "企业微信"],
-                "safari": ["safari", "safari浏览器"],
-                "chrome": ["chrome", "google chrome"],
-                "vscode": ["code", "visual studio code"],
-                "cursor": ["cursor"],
-            }
-            
-            # 获取所有可能的匹配名称
-            match_names = [app_name_lower]
-            for key, values in aliases.items():
-                if app_name_lower in key.lower() or key.lower() in app_name_lower:
-                    match_names.extend([v.lower() for v in values])
-            match_names = list(set(match_names))
-            
-            for window in windows:
-                owner = window.get(Quartz.kCGWindowOwnerName, "")
-                owner_lower = owner.lower()
-                
-                matched = False
-                for match_name in match_names:
-                    if match_name in owner_lower or owner_lower in match_name:
-                        matched = True
-                        break
-                
-                if matched:
-                    layer = window.get(Quartz.kCGWindowLayer, 0)
-                    if layer == 0:
-                        window_id = window.get(Quartz.kCGWindowNumber, 0)
-                        if window_id > 0:
-                            logger.info(f"Got window ID for {app_name} (owner={owner}): {window_id}")
-                            return window_id
-            
-            logger.warning(f"No window ID found for {app_name}")
-            return None
-            
-        except ImportError:
-            logger.warning("Quartz module not available")
-            return None
-        except Exception as e:
-            logger.warning(f"获取窗口 ID 失败: {e}")
-            return None
-    
-    async def _get_window_bounds(self, app_name: str) -> Optional[tuple]:
-        """获取应用窗口的边界"""
-        script = f'''
-tell application "System Events"
-    tell process "{app_name}"
-        if (count of windows) > 0 then
-            set w to window 1
-            set pos to position of w
-            set sz to size of w
-            return (item 1 of pos) & "," & (item 2 of pos) & "," & (item 1 of sz) & "," & (item 2 of sz)
-        end if
-    end tell
-end tell
-'''
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, _ = await process.communicate()
-            
-            if process.returncode == 0:
-                output = stdout.decode().strip()
-                parts = output.split(",")
-                if len(parts) == 4:
-                    return tuple(int(p.strip()) for p in parts)
-        except Exception as e:
-            logger.warning(f"获取窗口边界失败: {e}")
-        
-        return None
-    
+
     async def _ocr_image(self, image_path: str) -> str:
         """使用 macOS Vision 框架进行 OCR"""
         swift_script = '''
@@ -440,14 +302,10 @@ tell application "System Events"
     end tell
 end tell
 '''
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
-            output = stdout.decode().strip()
+            if not self.runtime_adapter:
+                return ToolResult(success=False, error="当前平台不支持 AppleScript")
+            r = await self.runtime_adapter.run_script(script, lang="applescript")
+            output = r.output.strip() if r.success else ""
             if "FOUND:" in output:
                 # 解析找到的元素
                 elements = []
@@ -556,14 +414,10 @@ tell application "System Events"
 end tell
 '''
         
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        output = stdout.decode().strip()
+        if not self.runtime_adapter:
+            return ToolResult(success=False, error="当前平台不支持 AppleScript")
+        r = await self.runtime_adapter.run_script(script, lang="applescript")
+        output = r.output.strip() if r.success else ""
         
         if output == "NO_WINDOW":
             return ToolResult(success=False, error=f"应用 {app_name} 没有打开的窗口")

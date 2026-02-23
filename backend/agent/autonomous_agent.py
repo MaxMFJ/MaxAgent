@@ -128,6 +128,7 @@ class AutonomousAgent:
         llm_client: LLMClient,
         local_llm_client: Optional[LLMClient] = None,
         reflect_llm: Optional[LLMClient] = None,
+        runtime_adapter=None,
         max_iterations: int = 50,
         enable_reflection: bool = True,
         enable_model_selection: bool = True,
@@ -136,6 +137,7 @@ class AutonomousAgent:
         max_time_seconds: int = 600
     ):
         self.remote_llm = llm_client  # Remote model (DeepSeek/OpenAI)
+        self.runtime_adapter = runtime_adapter  # DI: 平台操作通过 adapter
         self.local_llm = local_llm_client  # Local model (Ollama/LM Studio)
         self.llm = llm_client  # Current active LLM
         self.reflect_llm = reflect_llm
@@ -940,51 +942,28 @@ class AutonomousAgent:
             return {"success": False, "error": str(e)}
     
     async def _handle_open_app(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle open_app action"""
-        import asyncio
-        
+        """Handle open_app action（通过 runtime adapter）"""
         app_name = params.get("app_name", "")
-        
         if not app_name:
             return {"success": False, "error": "App name is empty"}
-        
-        try:
-            process = await asyncio.create_subprocess_shell(
-                f'open -a "{app_name}"',
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-            
-            return {
-                "success": process.returncode == 0,
-                "output": f"Opened: {app_name}" if process.returncode == 0 else None,
-                "error": f"Failed to open: {app_name}" if process.returncode != 0 else None
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        if not self.runtime_adapter:
+            return {"success": False, "error": "当前平台不支持应用控制"}
+        ok, err = await self.runtime_adapter.open_app(app_name=app_name)
+        return {
+            "success": ok,
+            "output": f"Opened: {app_name}" if ok else None,
+            "error": err if not ok else None
+        }
     
     async def _handle_close_app(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle close_app action"""
-        import asyncio
-        
+        """Handle close_app action（通过 runtime adapter）"""
         app_name = params.get("app_name", "")
-        
         if not app_name:
             return {"success": False, "error": "App name is empty"}
-        
-        try:
-            script = f'tell application "{app_name}" to quit'
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-            
-            return {"success": True, "output": f"Closed: {app_name}"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        if not self.runtime_adapter:
+            return {"success": False, "error": "当前平台不支持应用控制"}
+        ok, err = await self.runtime_adapter.close_app(app_name)
+        return {"success": ok, "output": f"Closed: {app_name}" if ok else None, "error": err if not ok else None}
     
     async def _handle_system_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle get_system_info action"""
@@ -1025,42 +1004,19 @@ class AutonomousAgent:
             return {"success": False, "error": str(e)}
     
     async def _handle_clipboard_read(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle clipboard_read action"""
-        import asyncio
-        
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "pbpaste",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, _ = await process.communicate()
-            
-            return {
-                "success": True,
-                "output": stdout.decode("utf-8", errors="replace")
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        """Handle clipboard_read action（通过 runtime adapter）"""
+        if not self.runtime_adapter:
+            return {"success": False, "error": "当前平台不支持剪贴板"}
+        ok, content, err = await self.runtime_adapter.clipboard_read()
+        return {"success": ok, "output": content if ok else None, "error": err if not ok else None}
     
     async def _handle_clipboard_write(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle clipboard_write action"""
-        import asyncio
-        
+        """Handle clipboard_write action（通过 runtime adapter）"""
         content = params.get("content", "")
-        
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "pbcopy",
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate(input=content.encode("utf-8"))
-            
-            return {"success": True, "output": "Content copied to clipboard"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        if not self.runtime_adapter:
+            return {"success": False, "error": "当前平台不支持剪贴板"}
+        ok, err = await self.runtime_adapter.clipboard_write(content)
+        return {"success": ok, "output": "Content copied to clipboard" if ok else None, "error": err if not ok else None}
     
     async def _handle_think(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle think action - no actual execution"""

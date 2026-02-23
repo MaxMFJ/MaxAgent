@@ -1,11 +1,10 @@
 """
 Input Control Tool - 鼠标和键盘控制工具
-让 Agent 能够模拟人类的鼠标和键盘操作
+让 Agent 能够模拟人类的鼠标和键盘操作（通过 RuntimeAdapter 跨平台）
 """
 
 import asyncio
 import logging
-import subprocess
 from typing import Optional, List, Tuple
 from .base import BaseTool, ToolResult, ToolCategory
 
@@ -139,72 +138,24 @@ class InputControlTool(BaseTool):
             return ToolResult(success=False, error=str(e))
     
     async def _run_applescript(self, script: str) -> Tuple[bool, str]:
-        """执行 AppleScript"""
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
-            if process.returncode == 0:
-                return True, stdout.decode().strip()
-            else:
-                return False, stderr.decode().strip()
-        except Exception as e:
-            return False, str(e)
+        """执行 AppleScript（通过 RuntimeAdapter）"""
+        adapter = self.runtime_adapter
+        if not adapter:
+            return False, "当前平台不支持 GUI 输入"
+        r = await adapter.run_script(script, "applescript")
+        return r.success, r.error or r.output
     
     async def _mouse_move(self, kwargs: dict) -> ToolResult:
         """移动鼠标到指定位置"""
-        x = kwargs.get("x")
-        y = kwargs.get("y")
-        
+        x, y = kwargs.get("x"), kwargs.get("y")
         if x is None or y is None:
             return ToolResult(success=False, error="需要提供 x 和 y 坐标")
-        
-        # 使用 cliclick 移动鼠标（如果安装了的话）
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "cliclick", f"m:{int(x)},{int(y)}",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-            
-            if process.returncode == 0:
-                return ToolResult(
-                    success=True,
-                    data={"action": "mouse_move", "x": x, "y": y}
-                )
-        except FileNotFoundError:
-            pass
-        
-        # 备用方案：使用 AppleScript + Python
-        script = f'''
-do shell script "python3 -c \\"
-import Quartz
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, 
-    Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, ({x}, {y}), 0))
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持 GUI 输入")
+        success, err = await adapter.mouse_move(int(x), int(y))
         if not success:
-            # 最后备用：使用 cliclick 风格的 Swift 脚本
-            swift_code = f'''
-import Cocoa
-import CoreGraphics
-
-let point = CGPoint(x: {x}, y: {y})
-let moveEvent = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: point, mouseButton: .left)
-moveEvent?.post(tap: .cghidEventTap)
-'''
-            result = await self._run_swift_inline(swift_code)
-            if result:
-                return ToolResult(success=True, data={"action": "mouse_move", "x": x, "y": y})
-            return ToolResult(success=False, error="鼠标移动失败，请安装 cliclick: brew install cliclick")
-        
+            return ToolResult(success=False, error=err or "鼠标移动失败")
         return ToolResult(success=True, data={"action": "mouse_move", "x": x, "y": y})
     
     async def _run_swift_inline(self, code: str) -> bool:

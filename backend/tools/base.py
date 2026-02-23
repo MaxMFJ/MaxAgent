@@ -1,12 +1,16 @@
 """
 Base Tool class for all agent tools
 Defines the standard interface for tool implementation
+支持依赖注入：runtime_adapter 由 Agent 在初始化时传入，Tool 禁止自行获取全局 adapter
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
+
+if TYPE_CHECKING:
+    from runtime import RuntimeAdapter
 
 
 class ToolCategory(Enum):
@@ -73,6 +77,8 @@ class BaseTool(ABC):
     """
     Abstract base class for all tools
     
+    依赖注入：runtime_adapter 由 Agent 传入，Tool 禁止调用 get_runtime_adapter()
+    
     Each tool must define:
     - name: Unique identifier for the tool
     - description: Human-readable description for LLM
@@ -83,11 +89,14 @@ class BaseTool(ABC):
     - execute(): Async method to perform the tool action
     """
     
-    name: str
-    description: str
+    name: str = ""
+    description: str = ""
     parameters: Dict[str, Any]
     category: ToolCategory = ToolCategory.CUSTOM
     requires_confirmation: bool = False  # Set True for dangerous operations
+    
+    def __init__(self, runtime_adapter: Optional["RuntimeAdapter"] = None):
+        self.runtime_adapter = runtime_adapter  # DI: 由 Agent 注入
     
     @abstractmethod
     async def execute(self, **kwargs) -> ToolResult:

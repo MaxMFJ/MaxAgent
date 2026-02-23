@@ -85,8 +85,8 @@ class DeveloperTool(BaseTool):
         "required": ["action"]
     }
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, runtime_adapter=None):
+        super().__init__(runtime_adapter)
         self._running_servers: Dict[str, asyncio.subprocess.Process] = {}
     
     async def execute(
@@ -1048,28 +1048,24 @@ build/
         if not project_path:
             return ToolResult(success=False, error="需要项目路径")
         
-        # 使用 AppleScript 打开 Xcode 并运行
+        # 使用 AppleScript 打开 Xcode 并运行（通过 runtime adapter）
+        if not self.runtime_adapter:
+            return ToolResult(success=False, error="当前平台不支持 AppleScript")
         script = f'''
         tell application "Xcode"
             activate
             open "{project_path}"
             delay 2
         end tell
-        
         tell application "System Events"
             tell process "Xcode"
                 keystroke "r" using command down
             end tell
         end tell
         '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        await process.communicate()
-        
+        r = await self.runtime_adapter.run_script(script, lang="applescript")
+        if not r.success:
+            return ToolResult(success=False, error=r.error)
         return ToolResult(success=True, data={"message": "Xcode 项目运行中"})
     
     async def _xcode_create_view(

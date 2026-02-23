@@ -1,20 +1,18 @@
 """
 Application Control Tool
-Open, close, and manage macOS applications
+Open, close, and manage applications（通过 RuntimeAdapter 跨平台）
 """
 
-import asyncio
-import subprocess
 from typing import Any, Dict, List, Optional
 
 from .base import BaseTool, ToolResult, ToolCategory
 
 
 class AppTool(BaseTool):
-    """Tool for controlling macOS applications"""
+    """Tool for controlling applications（应用控制）"""
     
     name = "app_control"
-    description = """macOS 应用控制工具，支持以下操作：
+    description = """应用控制工具，支持以下操作：
 - open: 打开应用程序
 - close: 关闭应用程序
 - list: 列出正在运行的应用
@@ -91,132 +89,60 @@ class AppTool(BaseTool):
         file_path: Optional[str]
     ) -> ToolResult:
         """Open an application, URL, or file"""
-        cmd = ["open"]
-        
-        if url:
-            cmd.append(url)
-        elif file_path:
-            cmd.extend([file_path])
-            if app_name:
-                cmd.extend(["-a", app_name])
-        elif app_path:
-            cmd.append(app_path)
-        elif app_name:
-            cmd.extend(["-a", app_name])
-        else:
-            return ToolResult(success=False, error="需要指定 app_name、app_path、url 或 file 之一")
-        
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        _, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=stderr.decode().strip())
-        
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, err = await adapter.open_app(app_name, app_path, url, file_path)
+        if not ok:
+            return ToolResult(success=False, error=err)
         return ToolResult(success=True, data={"opened": app_name or app_path or url or file_path})
     
     async def _close_app(self, app_name: str) -> ToolResult:
         """Close an application gracefully"""
-        script = f'''
-        tell application "{app_name}"
-            quit
-        end tell
-        '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        _, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=f"无法关闭应用: {stderr.decode().strip()}")
-        
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, err = await adapter.close_app(app_name)
+        if not ok:
+            return ToolResult(success=False, error=err or "无法关闭应用")
         return ToolResult(success=True, data={"closed": app_name})
     
     async def _list_apps(self) -> ToolResult:
         """List running applications"""
-        script = '''
-        tell application "System Events"
-            set appList to name of every process whose background only is false
-        end tell
-        return appList
-        '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=stderr.decode().strip())
-        
-        apps = stdout.decode().strip().split(", ")
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, apps, err = await adapter.list_apps()
+        if not ok:
+            return ToolResult(success=False, error=err)
         return ToolResult(success=True, data={"running_apps": apps, "count": len(apps)})
     
     async def _get_frontmost(self) -> ToolResult:
         """Get the frontmost application"""
-        script = '''
-        tell application "System Events"
-            set frontApp to name of first process whose frontmost is true
-        end tell
-        return frontApp
-        '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=stderr.decode().strip())
-        
-        return ToolResult(success=True, data={"frontmost_app": stdout.decode().strip()})
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, app_name, err = await adapter.get_frontmost_app()
+        if not ok:
+            return ToolResult(success=False, error=err)
+        return ToolResult(success=True, data={"frontmost_app": app_name})
     
     async def _hide_app(self, app_name: str) -> ToolResult:
         """Hide an application"""
-        script = f'''
-        tell application "System Events"
-            set visible of process "{app_name}" to false
-        end tell
-        '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        _, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=stderr.decode().strip())
-        
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, err = await adapter.hide_app(app_name)
+        if not ok:
+            return ToolResult(success=False, error=err)
         return ToolResult(success=True, data={"hidden": app_name})
     
     async def _activate_app(self, app_name: str) -> ToolResult:
         """Activate (bring to front) an application"""
-        script = f'''
-        tell application "{app_name}"
-            activate
-        end tell
-        '''
-        
-        process = await asyncio.create_subprocess_exec(
-            "osascript", "-e", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        _, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=stderr.decode().strip())
-        
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持应用控制")
+        ok, err = await adapter.activate_app(app_name)
+        if not ok:
+            return ToolResult(success=False, error=err)
         return ToolResult(success=True, data={"activated": app_name})

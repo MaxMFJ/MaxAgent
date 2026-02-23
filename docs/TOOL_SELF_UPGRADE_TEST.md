@@ -43,7 +43,7 @@ curl -s http://127.0.0.1:8765/tools | python3 -m json.tool | grep -A2 example_ge
 
 **步骤 1：新建工具**
 
-在 `tools/generated/` 下创建 `my_test_tool.py`：
+在 `tools/generated/` 下创建 `my_test_tool.py`（注意：新工具需先审批或设置 `MACAGENT_TRUST_ALL_GENERATED=true`）：
 
 ```python
 from tools.base import BaseTool, ToolResult, ToolCategory
@@ -58,7 +58,17 @@ class MyTestTool(BaseTool):
         return ToolResult(success=True, data={"msg": "my_test ok"})
 ```
 
-**步骤 2：调用 reload 接口**
+**步骤 2：审批新工具（签名校验）**
+
+```bash
+curl -X POST http://127.0.0.1:8765/tools/approve \
+  -H "Content-Type: application/json" \
+  -d '{"tool_name": "my_test"}'
+```
+
+或设置环境变量跳过校验：`MACAGENT_TRUST_ALL_GENERATED=true`
+
+**步骤 3：调用 reload 接口**
 
 ```bash
 curl -X POST http://127.0.0.1:8765/tools/reload
@@ -66,7 +76,7 @@ curl -X POST http://127.0.0.1:8765/tools/reload
 
 预期返回：`{"status": "ok", "loaded_tools": ["my_test"]}`
 
-**步骤 3：验证工具已注册**
+**步骤 4：验证工具已注册**
 
 ```bash
 curl -s http://127.0.0.1:8765/tools | python3 -m json.tool | grep -A2 my_test
@@ -151,6 +161,8 @@ curl -X POST http://127.0.0.1:8765/upgrade/trigger \
 | 变量 | 说明 | 默认 |
 |------|------|------|
 | `MACAGENT_AUTO_TOOL_UPGRADE` | 是否在检测到未知工具时自动触发升级 | `true` |
+| `MACAGENT_TRUST_ALL_GENERATED` | 跳过签名校验（不推荐） | `false` |
+| `MACAGENT_TERMINAL_MAX_TIMEOUT` | 终端命令最大超时（秒） | `300` |
 
 关闭自动升级：
 

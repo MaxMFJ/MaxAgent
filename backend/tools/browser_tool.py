@@ -6,7 +6,6 @@ Browser Tool - 浏览器自动化
 import os
 import json
 import asyncio
-import subprocess
 from typing import Optional, List, Dict, Any
 from .base import BaseTool, ToolResult, ToolCategory
 
@@ -96,20 +95,11 @@ class BrowserTool(BaseTool):
         return await actions[action]()
     
     async def _run_applescript(self, script: str) -> tuple[bool, str]:
-        """执行 AppleScript"""
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
-            if process.returncode != 0:
-                return False, stderr.decode().strip()
-            return True, stdout.decode().strip()
-        except Exception as e:
-            return False, str(e)
+        """执行 AppleScript（通过 runtime adapter）"""
+        if not self.runtime_adapter:
+            return False, "当前平台不支持 AppleScript"
+        r = await self.runtime_adapter.run_script(script, lang="applescript")
+        return r.success, r.output if r.success else r.error
     
     async def _open_url(self, url: str, browser: str) -> ToolResult:
         """打开 URL"""
@@ -267,13 +257,12 @@ class BrowserTool(BaseTool):
         
         await asyncio.sleep(0.5)  # 等待窗口激活
         
-        # 截取当前窗口
-        process = await asyncio.create_subprocess_exec(
-            "screencapture", "-w", save_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        await process.communicate()
+        # 截取当前窗口（通过 adapter）
+        if not self.runtime_adapter:
+            return ToolResult(success=False, error="当前平台不支持截图")
+        ok, err = await self.runtime_adapter.screenshot_pick_window(save_path)
+        if not ok:
+            return ToolResult(success=False, error=err)
         
         if os.path.exists(save_path):
             return ToolResult(success=True, data={"path": save_path})

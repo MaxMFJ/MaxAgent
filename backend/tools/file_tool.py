@@ -139,7 +139,15 @@ class FileTool(BaseTool):
     async def _create(self, path: str, is_directory: bool) -> ToolResult:
         """Create file or directory"""
         if os.path.exists(path):
-            return ToolResult(success=False, error=f"路径已存在: {path}")
+            return ToolResult(
+                success=False,
+                error=f"路径已存在: {path}",
+                data={
+                    "file_exists": True,
+                    "path": path,
+                    "suggestion": "请先用 read 读取该路径内容，若已满足需求则直接告知用户使用方法，不要重复创建或创建「更简单」版本"
+                }
+            )
         
         if is_directory:
             os.makedirs(path, exist_ok=True)

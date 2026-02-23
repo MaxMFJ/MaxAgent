@@ -1,6 +1,7 @@
 """
 Tool Registry for dynamic tool management
 Supports registration, discovery, execution, and dynamic loading of tools
+安全：行为白名单、签名校验
 """
 
 import os
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 # 动态工具目录（tools/generated/）
 GENERATED_TOOLS_DIR = os.path.join(os.path.dirname(__file__), "generated")
+
+# 是否跳过签名校验（不推荐）
+TRUST_ALL_GENERATED = os.environ.get("MACAGENT_TRUST_ALL_GENERATED", "false").lower() == "true"
 
 
 class ToolRegistry:
@@ -94,14 +98,26 @@ class ToolRegistry:
             logger.error(f"Tool {name} failed: {e}")
             return ToolResult(success=False, error=str(e))
     
-    def load_generated_tools(self) -> List[str]:
+    def load_generated_tools(self, runtime_adapter=None) -> List[str]:
         """
         动态加载 tools/generated/ 目录下的新工具
-        扫描 .py 文件，查找 BaseTool 子类并注册
-        
+        加载前：行为白名单校验、签名校验
+        runtime_adapter: DI 注入，传给需要 adapter 的动态工具
+
         Returns:
             新加载的工具名称列表
         """
+        try:
+            from agent.upgrade_security import (
+                check_code_safety,
+                verify_tool_signature,
+                is_path_allowed,
+            )
+        except ImportError:
+            check_code_safety = lambda c: (True, "")
+            verify_tool_signature = lambda fp, tn, ta=False: (True, "")
+            is_path_allowed = lambda p: True
+        
         loaded: List[str] = []
         if not os.path.exists(GENERATED_TOOLS_DIR):
             os.makedirs(GENERATED_TOOLS_DIR, exist_ok=True)
@@ -113,8 +129,23 @@ class ToolRegistry:
             
             module_name = f"tools.generated.{filename[:-3]}"
             filepath = os.path.join(GENERATED_TOOLS_DIR, filename)
+            tool_name_from_file = filename[:-3]
+            
+            # 路径保护：仅加载 generated 目录
+            if not is_path_allowed(filepath):
+                logger.warning(f"Skipping {filename}: path not in allowed list")
+                continue
             
             try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    code = f.read()
+                
+                # 行为白名单
+                safe, err = check_code_safety(code)
+                if not safe:
+                    logger.warning(f"Skipping {filename}: {err}")
+                    continue
+                
                 spec = importlib.util.spec_from_file_location(module_name, filepath)
                 if not spec or not spec.loader:
                     continue
@@ -131,7 +162,20 @@ class ToolRegistry:
                         and not getattr(obj, "name", "").startswith("_")
                     ):
                         try:
-                            instance = obj()
+                            # 优先注入 runtime_adapter（与 get_all_tools 一致）
+                            import inspect
+                            sig = inspect.signature(obj.__init__)
+                            if "runtime_adapter" in sig.parameters:
+                                instance = obj(runtime_adapter=runtime_adapter)
+                            else:
+                                instance = obj()
+                            # 再次按工具名校验签名（因工具名可能与文件名不同）
+                            verified, _ = verify_tool_signature(
+                                filepath, instance.name, TRUST_ALL_GENERATED
+                            )
+                            if not verified:
+                                logger.warning(f"Skipping {instance.name}: signature not verified")
+                                continue
                             self.register(instance)
                             loaded.append(instance.name)
                             logger.info(f"Dynamic loaded tool: {instance.name} from {filename}")

@@ -73,37 +73,20 @@ class NotificationTool(BaseTool):
         sound: Optional[str]
     ) -> ToolResult:
         """发送系统通知"""
-        title = title or "MacAgent"
-        message_escaped = message.replace('"', '\\"')
-        title_escaped = title.replace('"', '\\"')
-        
-        script = f'display notification "{message_escaped}" with title "{title_escaped}"'
-        
-        if subtitle:
-            subtitle_escaped = subtitle.replace('"', '\\"')
-            script += f' subtitle "{subtitle_escaped}"'
-        
-        if sound:
-            script += f' sound name "{sound}"'
-        
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            _, stderr = await process.communicate()
-            
-            if process.returncode != 0:
-                return ToolResult(success=False, error=stderr.decode())
-            
-            return ToolResult(success=True, data={
-                "message": "通知已发送",
-                "title": title,
-                "content": message
-            })
-        except Exception as e:
-            return ToolResult(success=False, error=str(e))
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持系统通知")
+        ok, err = await adapter.show_notification(
+            title or "MacAgent", message,
+            subtitle=subtitle, sound=sound
+        )
+        if not ok:
+            return ToolResult(success=False, error=err)
+        return ToolResult(success=True, data={
+            "message": "通知已发送",
+            "title": title or "MacAgent",
+            "content": message
+        })
     
     async def _schedule_notification(
         self,
@@ -132,20 +115,10 @@ class NotificationTool(BaseTool):
         })
     
     async def _speak(self, message: str) -> ToolResult:
-        """语音朗读"""
-        message_escaped = message.replace('"', '\\"')
-        
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "say", message,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            _, stderr = await process.communicate()
-            
-            if process.returncode != 0:
-                return ToolResult(success=False, error=stderr.decode())
-            
-            return ToolResult(success=True, data={"message": "已朗读", "text": message})
-        except Exception as e:
-            return ToolResult(success=False, error=str(e))
+        """语音朗读（通过 runtime adapter）"""
+        if not self.runtime_adapter:
+            return ToolResult(success=False, error="当前平台不支持语音朗读")
+        ok, err = await self.runtime_adapter.speak(message)
+        if not ok:
+            return ToolResult(success=False, error=err)
+        return ToolResult(success=True, data={"message": "已朗读", "text": message})

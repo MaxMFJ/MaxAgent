@@ -108,8 +108,8 @@ class WebSearchTool(BaseTool):
         "required": ["action"]
     }
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, runtime_adapter=None):
+        super().__init__(runtime_adapter)
         # API Keys from environment
         self.google_api_key = os.getenv("GOOGLE_API_KEY", "")
         self.google_cx = os.getenv("GOOGLE_CX", "")

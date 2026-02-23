@@ -81,20 +81,11 @@ class MailTool(BaseTool):
             return ToolResult(success=False, error=f"未知操作: {action}")
     
     async def _run_applescript(self, script: str) -> tuple[bool, str]:
-        """执行 AppleScript"""
-        try:
-            process = await asyncio.create_subprocess_exec(
-                "osascript", "-e", script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
-            if process.returncode != 0:
-                return False, stderr.decode().strip()
-            return True, stdout.decode().strip()
-        except Exception as e:
-            return False, str(e)
+        """执行 AppleScript（通过 runtime adapter）"""
+        if not self.runtime_adapter:
+            return False, "当前平台不支持 AppleScript"
+        r = await self.runtime_adapter.run_script(script, lang="applescript")
+        return r.success, r.output if r.success else r.error
     
     async def _send_mail(
         self,

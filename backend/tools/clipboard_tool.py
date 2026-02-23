@@ -1,17 +1,15 @@
 """
 Clipboard Tool
-Read and write to system clipboard
+Read and write to system clipboard（通过 RuntimeAdapter 跨平台）
 """
 
-import asyncio
-import subprocess
 from typing import Any, Dict, Optional
 
 from .base import BaseTool, ToolResult, ToolCategory
 
 
 class ClipboardTool(BaseTool):
-    """Tool for clipboard operations on macOS"""
+    """Tool for clipboard operations（剪贴板操作）"""
     
     name = "clipboard"
     description = """剪贴板操作工具，支持以下操作：
@@ -56,36 +54,26 @@ class ClipboardTool(BaseTool):
             return ToolResult(success=False, error=str(e))
     
     async def _read(self) -> ToolResult:
-        """Read text from clipboard using pbpaste (macOS)"""
-        process = await asyncio.create_subprocess_exec(
-            "pbpaste",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=f"读取剪贴板失败: {stderr.decode()}")
-        
-        content = stdout.decode("utf-8")
+        """Read text from clipboard"""
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持剪贴板操作")
+        ok, content, err = await adapter.clipboard_read()
+        if not ok:
+            return ToolResult(success=False, error=err or "读取剪贴板失败")
         return ToolResult(success=True, data={
             "content": content,
             "length": len(content)
         })
     
     async def _write(self, content: str) -> ToolResult:
-        """Write text to clipboard using pbcopy (macOS)"""
-        process = await asyncio.create_subprocess_exec(
-            "pbcopy",
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        _, stderr = await process.communicate(input=content.encode("utf-8"))
-        
-        if process.returncode != 0:
-            return ToolResult(success=False, error=f"写入剪贴板失败: {stderr.decode()}")
-        
+        """Write text to clipboard"""
+        adapter = self.runtime_adapter
+        if not adapter:
+            return ToolResult(success=False, error="当前平台不支持剪贴板操作")
+        ok, err = await adapter.clipboard_write(content)
+        if not ok:
+            return ToolResult(success=False, error=err or "写入剪贴板失败")
         return ToolResult(success=True, data={
             "written": True,
             "length": len(content)

@@ -239,7 +239,7 @@ def _load_generated_tools() -> list:
     """动态加载 tools/generated/ 下的新工具"""
     if not agent_core:
         return []
-    return agent_core.registry.load_generated_tools()
+    return agent_core.registry.load_generated_tools(agent_core.runtime_adapter)
 
 
 async def _trigger_restart(delay_seconds: int = 5):
@@ -328,7 +328,9 @@ async def lifespan(app: FastAPI):
     
     # Initialize remote LLM (DeepSeek/OpenAI)
     llm_client = LLMClient()
-    agent_core = AgentCore(llm_client)
+    from runtime import get_runtime_adapter
+    _adapter = get_runtime_adapter()
+    agent_core = AgentCore(llm_client, runtime_adapter=_adapter)
     
     # Initialize local LLM (Ollama) - for model selection feature
     local_llm_client = LLMClient(LLMConfig(
@@ -351,6 +353,7 @@ async def lifespan(app: FastAPI):
         llm_client=llm_client,
         local_llm_client=local_llm_client,
         reflect_llm=reflect_llm,
+        runtime_adapter=_adapter,
         enable_reflection=True,
         enable_model_selection=True  # Enable intelligent model selection
     )
@@ -362,15 +365,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to start model preloading: {e}")
     
-    # 初始化工具升级编排器（注入异步广播、动态加载、重启回调）
+    # 初始化工具升级编排器（注入 Git、广播、动态加载、重启回调）
     try:
         from agent.tool_upgrade_orchestrator import get_upgrade_orchestrator
+        from agent.upgrade_git import git_checkpoint, git_rollback
         get_upgrade_orchestrator(
             llm_client=llm_client,
             on_status_change=_broadcast_status_change,
             on_broadcast=_broadcast_upgrade_message,
             on_load_generated_tools=_load_generated_tools,
-            on_trigger_restart=lambda: _trigger_restart(5)
+            on_trigger_restart=lambda: _trigger_restart(5),
+            on_git_checkpoint=git_checkpoint,
+            on_git_rollback=git_rollback
         )
         logger.info("Tool upgrade orchestrator initialized")
     except Exception as e:
@@ -428,6 +434,38 @@ async def trigger_upgrade(request: UpgradeTriggerRequest):
         request.reason, request.user_message, "default"
     ))
     return {"status": "triggered", "message": "升级流程已启动"}
+
+
+class ToolApproveRequest(BaseModel):
+    tool_name: str
+    file_path: Optional[str] = None  # 可选，默认 tools/generated/{tool_name}_tool.py
+
+
+@app.post("/tools/approve")
+async def approve_tool(request: ToolApproveRequest):
+    """人工审批工具：将 hash 加入 signatures.json，允许加载"""
+    try:
+        from agent.upgrade_security import approve_tool as do_approve
+        import os
+        fp = request.file_path
+        if not fp:
+            fp = os.path.join(
+                os.path.dirname(__file__), "tools", "generated",
+                f"{request.tool_name.replace('_tool','')}_tool.py"
+            )
+            if not os.path.exists(fp):
+                fp = os.path.join(
+                    os.path.dirname(__file__), "tools", "generated",
+                    f"{request.tool_name}.py"
+                )
+        ok, msg = do_approve(fp, request.tool_name)
+        if not ok:
+            raise HTTPException(status_code=400, detail=msg)
+        return {"status": "approved", "message": msg}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/tools/reload")
@@ -561,7 +599,8 @@ async def update_config(config: ConfigUpdate):
         llm_client = new_llm_client
     else:
         llm_client = new_llm_client
-        agent_core = AgentCore(llm_client)
+        from runtime import get_runtime_adapter
+        agent_core = AgentCore(llm_client, runtime_adapter=get_runtime_adapter())
     
     # 同时更新自主 agent
     if autonomous_agent:
