@@ -24,50 +24,35 @@ from tools.base import BaseTool, ToolResult, ToolCategory
 
 class TunnelMonitorTool(BaseTool):
     name = "tunnel_monitor"
-    description = "隧道监控工具，用于启动、停止、检查隧道监控状态，支持SSH、VPN、WireGuard等多种隧道类型。可以设置检查间隔、重试次数等参数，并提供实时状态查询和日志查看功能。"
+    description = "完整的隧道监控工具包，提供隧道状态监控、连接管理、日志查看、性能监控等功能。支持 SSH、OpenVPN、WireGuard、IPSec 等常见隧道类型。"
     category = ToolCategory.SYSTEM
     parameters = {
     "type": "object",
     "properties": {
         "action": {
             "type": "string",
-            "description": "操作类型：start(启动监控)、stop(停止监控)、status(检查状态)、logs(查看日志)",
+            "description": "要执行的操作：status, connections, logs, performance, config",
             "enum": [
-                "start",
-                "stop",
                 "status",
-                "logs"
+                "connections",
+                "logs",
+                "performance",
+                "config"
             ]
         },
-        "tunnel_type": {
+        "tunnel_name": {
             "type": "string",
-            "description": "隧道类型：ssh(SSH隧道)、vpn(VPN连接)、wireguard(WireGuard隧道)、custom(自定义隧道)",
-            "enum": [
-                "ssh",
-                "vpn",
-                "wireguard",
-                "custom"
-            ],
-            "default": "ssh"
+            "description": "隧道名称，如不指定则处理所有隧道"
         },
-        "check_interval": {
+        "lines": {
             "type": "integer",
-            "description": "检查间隔时间（秒）",
-            "minimum": 5,
-            "maximum": 3600,
-            "default": 30
+            "description": "查看日志时显示的行数",
+            "default": 50
         },
-        "max_retries": {
+        "duration": {
             "type": "integer",
-            "description": "最大重试次数",
-            "minimum": 1,
-            "maximum": 10,
-            "default": 3
-        },
-        "log_file": {
-            "type": "string",
-            "description": "日志文件路径",
-            "default": "/tmp/tunnel_monitor.log"
+            "description": "性能监控持续时间（秒）",
+            "default": 10
         }
     },
     "required": [
@@ -82,40 +67,21 @@ class TunnelMonitorTool(BaseTool):
 
 ## 你的具体任务
 
-在 ~/Desktop/MacAgent/backend/tools/generated/ 目录下创建 tunnel_monitor_tool.py 文件，实现完整的隧道监控工具包装器。
+在 backend/tools/generated/ 目录下创建 tunnel_tools_examples.py 文件。提供完整的工具使用示例和集成指南：
 
-实现要求：
-1. 继承 BaseTool 类，实现完整的工具框架
-2. 提供以下核心功能：
-   - 启动隧道监控
-   - 停止隧道监控
-   - 检查隧道状态
-   - 查看监控日志
-3. 支持多种隧道类型：ssh, vpn, wireguard, custom
-4. 实现参数验证和错误处理
-5. 提供清晰的用户反馈
+1. 每个工具的完整使用示例
+2. 工具链组合使用场景
+3. 常见问题解决方案
+4. 与现有 Agent 系统的集成方法
+5. 配置说明和最佳实践
 
-具体实现逻辑：
-1. 工具类名：TunnelMonitorTool
-2. 使用 subprocess 模块管理监控脚本进程
-3. 监控脚本路径：同目录下的 tunnel_monitor_v3.sh
-4. 实现进程管理，确保只有一个监控实例运行
-5. 提供状态查询和日志查看功能
-
-参数设计：
-- action: 操作类型 (start|stop|status|logs)
-- tunnel_type: 隧道类型 (ssh|vpn|wireguard|custom)
-- check_interval: 检查间隔(秒)
-- max_retries: 最大重试次数
-- log_file: 日志文件路径
-
-调用方式示例：
-- 启动监控：tunnel_monitor(action='start', tunnel_type='ssh', check_interval=30)
-- 检查状态：tunnel_monitor(action='status')
-- 查看日志：tunnel_monitor(action='logs')
-- 停止监控：tunnel_monitor(action='stop')
-
-确保工具能够被Agent正确调用，并提供详细的执行结果反馈。
+内容要求：
+- 包含导入和使用每个工具的代码示例
+- 展示工具链如何协同工作
+- 提供错误处理示例
+- 说明如何扩展和自定义功能
+- 包含性能优化建议
+- 添加版本兼容性说明
 
 ---
 
