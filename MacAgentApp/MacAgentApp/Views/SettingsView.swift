@@ -21,8 +21,11 @@ struct SettingsView: View {
                 SettingsTabButton(title: "通用", icon: "gear", isSelected: selectedTab == 3) {
                     selectedTab = 3
                 }
-                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 4) {
+                SettingsTabButton(title: "邮件", icon: "envelope", isSelected: selectedTab == 4) {
                     selectedTab = 4
+                }
+                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 5) {
+                    selectedTab = 5
                 }
             }
             .padding(.vertical, 16)
@@ -49,6 +52,11 @@ struct SettingsView: View {
                             .padding(20)
                     }
                 case 4:
+                    ScrollView {
+                        MailSettingsContent()
+                            .padding(20)
+                    }
+                case 5:
                     ScrollView {
                         AboutContent()
                             .padding(20)
@@ -460,6 +468,105 @@ struct ModelSettingsContent: View {
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(8)
+        }
+    }
+}
+
+struct MailSettingsContent: View {
+    @EnvironmentObject var viewModel: AgentViewModel
+    @State private var showPassword = false
+    @State private var saveMessage: String?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("邮件发信配置")
+                .font(.headline)
+            
+            Text("通过 SMTP 系统级发送邮件，不依赖 Mail 程序。需在邮箱中开启 SMTP 并获取授权码。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("SMTP 服务器:")
+                        .frame(width: 100, alignment: .leading)
+                    TextField("smtp.qq.com", text: $viewModel.smtpServer)
+                        .textFieldStyle(.roundedBorder)
+                }
+                
+                HStack {
+                    Text("端口:")
+                        .frame(width: 100, alignment: .leading)
+                    TextField("465", text: $viewModel.smtpPort)
+                        .textFieldStyle(.roundedBorder)
+                    Text("465=SSL, 587=STARTTLS")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("邮箱:")
+                        .frame(width: 100, alignment: .leading)
+                    TextField("your_email@qq.com", text: $viewModel.smtpUser)
+                        .textFieldStyle(.roundedBorder)
+                }
+                
+                HStack {
+                    Text("授权码:")
+                        .frame(width: 100, alignment: .leading)
+                    if showPassword {
+                        TextField("输入授权码", text: $viewModel.smtpPassword)
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        SecureField("输入授权码（QQ/163 等需在邮箱设置中获取）", text: $viewModel.smtpPassword)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    Button(action: { showPassword.toggle() }) {
+                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+            
+            if let msg = saveMessage {
+                Text(msg)
+                    .font(.caption)
+                    .foregroundColor(msg.contains("失败") ? .red : .green)
+            }
+            
+            HStack {
+                Spacer()
+                Button("保存并同步到后端") {
+                    Task {
+                        saveMessage = nil
+                        await viewModel.syncSmtpConfig()
+                        saveMessage = viewModel.errorMessage ?? "已保存，Agent 发信功能可直接使用"
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+            
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text("常见邮箱:")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Text("QQ: smtp.qq.com:465 | 163: smtp.163.com:465 | Gmail: smtp.gmail.com:587")
+                Text("需在邮箱设置中开启 SMTP 并获取授权码，非登录密码")
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            Task { await viewModel.loadSmtpConfig() }
         }
     }
 }

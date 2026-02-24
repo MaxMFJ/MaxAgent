@@ -323,6 +323,13 @@ class ConfigUpdate(BaseModel):
     model: Optional[str] = None
 
 
+class SmtpConfigUpdate(BaseModel):
+    smtp_server: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+
+
 class ChatMessage(BaseModel):
     content: str
     conversation_id: Optional[str] = None
@@ -651,6 +658,32 @@ async def update_config(config: ConfigUpdate):
         pass
     
     return {"status": "updated", "provider": new_config.provider, "model": new_config.model}
+
+
+@app.get("/config/smtp")
+async def get_smtp_config_endpoint():
+    """获取 SMTP 配置（不含密码）"""
+    from smtp_config import load_smtp_config
+    cfg = load_smtp_config()
+    return {
+        "smtp_server": cfg.get("smtp_server", ""),
+        "smtp_port": cfg.get("smtp_port", 465),
+        "smtp_user": cfg.get("smtp_user", ""),
+        "configured": bool(cfg.get("smtp_server") and cfg.get("smtp_user") and cfg.get("smtp_password"))
+    }
+
+
+@app.post("/config/smtp")
+async def update_smtp_config_endpoint(config: SmtpConfigUpdate):
+    """更新 SMTP 配置（Mac 设置页同步）"""
+    from smtp_config import update_smtp_config
+    result = update_smtp_config(
+        smtp_server=config.smtp_server,
+        smtp_port=config.smtp_port,
+        smtp_user=config.smtp_user,
+        smtp_password=config.smtp_password,
+    )
+    return {"status": "updated", **result}
 
 
 @app.get("/tools")

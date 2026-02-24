@@ -10,8 +10,8 @@
 ## ⚠️ 强制性要求（必须遵守，违反则升级失败）
 
 1. **输出路径（硬性）**：
-   - 必须在 MacAgent 项目内创建：`tools/generated/tunnel_monitor_tool.py`（相对 workspace 根 backend/）
-   - 绝对路径示例：`/Users/lzz/Desktop/未命名文件夹/MacAgent/backend/tools/generated/tunnel_monitor_tool.py`
+   - 必须在 MacAgent 项目内创建：`tools/generated/chat_session_recovery_tool.py`（相对 workspace 根 backend/）
+   - 绝对路径示例：`/Users/lzz/Desktop/未命名文件夹/MacAgent/backend/tools/generated/chat_session_recovery_tool.py`
    - **严禁**创建在：~/、$HOME、/tmp、/Users/xxx/、桌面 等项目外路径
    - 只有 tools/generated/ 下的工具会被 Agent 动态加载
 2. **类结构**：必须继承 `from tools.base import BaseTool, ToolResult, ToolCategory`
@@ -22,24 +22,25 @@
 ```python
 from tools.base import BaseTool, ToolResult, ToolCategory
 
-class TunnelMonitorTool(BaseTool):
-    name = "tunnel_monitor"
-    description = "监控隧道连接状态，检测中断后自动重启并发送新的隧道链接到指定邮箱"
+class ChatSessionRecoveryTool(BaseTool):
+    name = "chat_session_recovery"
+    description = "检查当前聊天会话状态，检测中断的会话并提供恢复方案。当手机端中断链接再恢复后，之前的聊天会话中断时，可以使用此工具诊断和恢复。"
     category = ToolCategory.SYSTEM
     parameters = {
     "type": "object",
     "properties": {
-        "email_recipient": {
+        "action": {
             "type": "string",
-            "description": "收件人邮箱地址"
+            "description": "操作类型：check_status（检查状态）、list_interrupted（列出中断会话）、recover_last（恢复最近中断的会话）",
+            "enum": [
+                "check_status",
+                "list_interrupted",
+                "recover_last"
+            ]
         },
-        "check_interval": {
-            "type": "integer",
-            "description": "检查间隔时间（秒）"
-        },
-        "max_retries": {
-            "type": "integer",
-            "description": "最大重试次数"
+        "session_id": {
+            "type": "string",
+            "description": "指定要恢复的会话ID（当action为recover_last时可选）"
         }
     },
     "required": []
@@ -52,29 +53,30 @@ class TunnelMonitorTool(BaseTool):
 
 ## 你的具体任务
 
-在 backend/tools/generated/ 目录下创建 tunnel_monitor_tool.py 文件。
+请创建一个名为 chat_session_recovery_tool.py 的工具文件，放置在 backend/tools/generated/ 目录下。
 
 实现逻辑：
-1. 工具类名为 TunnelMonitorTool，继承自 BaseTool
-2. 主要功能：
-   - 监控隧道连接状态（通过检查特定进程或端口）
-   - 检测到中断后自动重启隧道（调用系统命令重启隧道服务）
-   - 获取新的隧道链接（从配置文件或命令输出中提取）
-   - 发送邮件通知到指定邮箱（675632487@qq.com），包含新的隧道链接
-3. 参数设计：
-   - email_recipient: 收件人邮箱，默认 '675632487@qq.com'
-   - check_interval: 检查间隔（秒），默认 30
-   - max_retries: 最大重试次数，默认 3
-4. 邮件发送功能：
-   - 使用 smtplib 和 email 标准库
-   - 支持 SSL/TLS 加密连接
-   - 邮件主题：'隧道链接更新通知'
-   - 邮件内容包含：新的隧道链接、更新时间、状态信息
-5. 错误处理：
-   - 网络异常重试机制
-   - 邮件发送失败记录日志
-   - 隧道重启失败告警
-6. 调用方式：Agent 可调用该工具进行隧道监控，工具会持续运行直到检测到中断并完成重启和通知
+1. 工具需要检查当前聊天会话的状态，特别是当手机端中断链接再恢复后，之前的聊天会话是否中断
+2. 工具应该能够检测到中断的会话并提供恢复方案
+3. 实现以下核心功能：
+   - 检查当前活跃的聊天会话状态
+   - 识别最近中断的会话
+   - 提供恢复中断会话的方法
+   - 返回会话状态信息和恢复建议
+
+参数设计：
+- action (string, 可选): 指定操作类型，如 'check_status', 'list_interrupted', 'recover_last'
+- session_id (string, 可选): 指定要恢复的会话ID
+
+调用方式：
+- 当用户报告聊天中断问题时，Agent可以调用此工具检查状态
+- 工具返回当前会话状态、中断会话列表和恢复建议
+
+实现要点：
+1. 需要与现有的聊天系统集成
+2. 提供清晰的返回信息，包括状态码、消息和建议
+3. 考虑异常处理和边缘情况
+4. 工具应该返回JSON格式的结果，便于Agent解析
 
 ---
 

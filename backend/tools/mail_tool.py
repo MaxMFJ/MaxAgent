@@ -1,19 +1,25 @@
 """
 Mail Tool - 邮件操作
-使用 macOS Mail.app 发送和管理邮件
+发送邮件：通过 SMTP 系统级发送（不依赖 Mail.app）
+读邮件/搜索：仍使用 Mail.app（需已配置）
 """
 
 import asyncio
+import os
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Optional, List
 from .base import BaseTool, ToolResult, ToolCategory
 
 
 class MailTool(BaseTool):
-    """邮件工具，支持发送邮件、读取邮件等"""
+    """邮件工具：系统级 SMTP 发送，可选 Mail.app 读/搜"""
     
     name = "mail"
-    description = "邮件操作：发送邮件、读取收件箱、搜索邮件"
-    category = ToolCategory.APPLICATION
+    description = "邮件操作：通过 SMTP 系统级发送邮件（不依赖 Mail 程序），可选读取收件箱、搜索"
+    category = ToolCategory.SYSTEM
     parameters = {
         "type": "object",
         "properties": {
@@ -87,6 +93,19 @@ class MailTool(BaseTool):
         r = await self.runtime_adapter.run_script(script, lang="applescript")
         return r.success, r.output if r.success else r.error
     
+    def _get_smtp_config(self) -> tuple[Optional[str], int, Optional[str], Optional[str]]:
+        """从 smtp_config 读取（支持 Mac 设置页 + 环境变量）"""
+        try:
+            from smtp_config import get_smtp_config
+            return get_smtp_config()
+        except ImportError:
+            pass
+        server = os.environ.get("MACAGENT_SMTP_SERVER")
+        port = int(os.environ.get("MACAGENT_SMTP_PORT", "465"))
+        user = os.environ.get("MACAGENT_SMTP_USER")
+        password = os.environ.get("MACAGENT_SMTP_PASSWORD")
+        return server, port, user, password
+
     async def _send_mail(
         self,
         to: str,
@@ -95,47 +114,57 @@ class MailTool(BaseTool):
         cc: Optional[str] = None,
         bcc: Optional[str] = None
     ) -> ToolResult:
-        """发送邮件"""
+        """通过 SMTP 系统级发送邮件（不依赖 Mail.app）"""
         if not to or not subject:
             return ToolResult(success=False, error="需要提供收件人和主题")
         
-        # 转义特殊字符
-        body_escaped = (body or "").replace('"', '\\"').replace('\n', '\\n')
-        subject_escaped = subject.replace('"', '\\"')
-        
-        script = f'''
-        tell application "Mail"
-            set newMessage to make new outgoing message with properties {{subject:"{subject_escaped}", content:"{body_escaped}", visible:true}}
-            
-            tell newMessage
-                make new to recipient at end of to recipients with properties {{address:"{to}"}}
-        '''
-        
-        if cc:
-            script += f'''
-                make new cc recipient at end of cc recipients with properties {{address:"{cc}"}}
-            '''
-        
-        if bcc:
-            script += f'''
-                make new bcc recipient at end of bcc recipients with properties {{address:"{bcc}"}}
-            '''
-        
-        script += '''
-            end tell
-            send newMessage
-        end tell
-        '''
-        
-        success, result = await self._run_applescript(script)
-        
+        server, port, user, password = self._get_smtp_config()
+        if not all([server, user, password]):
+            return ToolResult(
+                success=False,
+                error="请先在 Mac 设置 → 邮件 中填写邮箱与授权码，或配置环境变量 MACAGENT_SMTP_SERVER / MACAGENT_SMTP_USER / MACAGENT_SMTP_PASSWORD"
+            )
+
+        def _do_send() -> tuple[bool, str]:
+            try:
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = subject
+                msg["From"] = user
+                msg["To"] = to
+                if cc:
+                    msg["Cc"] = cc
+                if bcc:
+                    msg["Bcc"] = bcc
+                msg.attach(MIMEText(body or "", "plain", "utf-8"))
+                
+                recipients = [addr.strip() for addr in to.split(",")]
+                if cc:
+                    recipients.extend(addr.strip() for addr in cc.split(","))
+                if bcc:
+                    recipients.extend(addr.strip() for addr in bcc.split(","))
+                
+                context = ssl.create_default_context()
+                if port == 465:
+                    with smtplib.SMTP_SSL(server, port, context=context) as s:
+                        s.login(user, password)
+                        s.sendmail(user, recipients, msg.as_string())
+                else:
+                    with smtplib.SMTP(server, port) as s:
+                        s.starttls(context=context)
+                        s.login(user, password)
+                        s.sendmail(user, recipients, msg.as_string())
+                return True, ""
+            except Exception as e:
+                return False, str(e)
+
+        success, err = await asyncio.get_event_loop().run_in_executor(None, _do_send)
         if success:
             return ToolResult(success=True, data={
-                "message": "邮件已发送",
+                "message": "邮件已通过 SMTP 发送",
                 "to": to,
                 "subject": subject
             })
-        return ToolResult(success=False, error=f"发送失败: {result}")
+        return ToolResult(success=False, error=f"SMTP 发送失败: {err}")
     
     async def _read_inbox(self, count: int) -> ToolResult:
         """读取收件箱最新邮件"""

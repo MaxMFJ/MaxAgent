@@ -94,6 +94,36 @@ class BackendService: ObservableObject {
     
     // MARK: - Configuration
     
+    nonisolated func updateSmtpConfig(smtpServer: String, smtpPort: Int, smtpUser: String, smtpPassword: String?) async throws {
+        guard let url = URL(string: "\(baseURL)/config/smtp") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: Any] = [
+            "smtp_server": smtpServer,
+            "smtp_port": smtpPort,
+            "smtp_user": smtpUser
+        ]
+        if let pwd = smtpPassword, !pwd.isEmpty {
+            body["smtp_password"] = pwd
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+    
+    nonisolated func fetchSmtpConfig() async throws -> SmtpConfig {
+        guard let url = URL(string: "\(baseURL)/config/smtp") else {
+            throw URLError(.badURL)
+        }
+        let (data, _) = try await urlSession.data(from: url)
+        return try JSONDecoder().decode(SmtpConfig.self, from: data)
+    }
+    
     nonisolated func updateConfig(provider: String, apiKey: String, baseUrl: String, model: String) async throws {
         guard let url = URL(string: "\(baseURL)/config") else {
             throw URLError(.badURL)

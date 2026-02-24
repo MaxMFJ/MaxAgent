@@ -213,6 +213,20 @@ struct BackendConfig: Codable {
     }
 }
 
+struct SmtpConfig: Codable {
+    let smtpServer: String
+    let smtpPort: Int
+    let smtpUser: String
+    let configured: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case smtpServer = "smtp_server"
+        case smtpPort = "smtp_port"
+        case smtpUser = "smtp_user"
+        case configured
+    }
+}
+
 // MARK: - Autonomous Mode Models
 
 struct ExecutionLogEntry: Identifiable {

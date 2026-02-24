@@ -27,5 +27,6 @@ backend/__pycache__/
 *.pyc
 .env
 .env.local
+backend/data/smtp_config.json
 .DS_Store
 *.log

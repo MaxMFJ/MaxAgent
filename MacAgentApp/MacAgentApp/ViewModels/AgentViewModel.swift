@@ -47,6 +47,12 @@ class AgentViewModel: ObservableObject {
     @AppStorage("enableModelSelection") var enableModelSelection: Bool = true
     @AppStorage("preferLocalModel") var preferLocalModel: Bool = false
     
+    // 邮件 SMTP 配置（用于系统级发信，不依赖 Mail.app）
+    @AppStorage("smtpServer") var smtpServer: String = "smtp.qq.com"
+    @AppStorage("smtpPort") var smtpPort: String = "465"
+    @AppStorage("smtpUser") var smtpUser: String = ""
+    @AppStorage("smtpPassword") var smtpPassword: String = ""
+    
     // 本地可用模型列表
     @Published var availableLocalModels: [String] = []
     @Published var isLoadingModels = false
@@ -124,6 +130,32 @@ class AgentViewModel: ObservableObject {
             )
         } catch {
             errorMessage = "配置同步失败: \(error.localizedDescription)"
+        }
+    }
+    
+    func syncSmtpConfig() async {
+        do {
+            try await backendService.updateSmtpConfig(
+                smtpServer: smtpServer,
+                smtpPort: Int(smtpPort) ?? 465,
+                smtpUser: smtpUser,
+                smtpPassword: smtpPassword.isEmpty ? nil : smtpPassword
+            )
+            errorMessage = nil
+        } catch {
+            errorMessage = "邮件配置同步失败: \(error.localizedDescription)"
+        }
+    }
+    
+    func loadSmtpConfig() async {
+        do {
+            let cfg = try await backendService.fetchSmtpConfig()
+            smtpServer = cfg.smtpServer
+            smtpPort = String(cfg.smtpPort)
+            smtpUser = cfg.smtpUser
+            // 密码不返回，保留本地已填写的
+        } catch {
+            // 后端未启动或未配置，保留本地值
         }
     }
     
