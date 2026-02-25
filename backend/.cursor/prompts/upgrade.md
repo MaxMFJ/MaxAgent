@@ -10,8 +10,8 @@
 ## ⚠️ 强制性要求（必须遵守，违反则升级失败）
 
 1. **输出路径（硬性）**：
-   - 必须在 MacAgent 项目内创建：`tools/generated/chat_session_recovery_tool.py`（相对 workspace 根 backend/）
-   - 绝对路径示例：`/Users/lzz/Desktop/未命名文件夹/MacAgent/backend/tools/generated/chat_session_recovery_tool.py`
+   - 必须在 MacAgent 项目内创建：`tools/generated/interactive_mail_tool.py`（相对 workspace 根 backend/）
+   - 绝对路径示例：`/Users/lzz/Desktop/未命名文件夹/MacAgent/backend/tools/generated/interactive_mail_tool.py`
    - **严禁**创建在：~/、$HOME、/tmp、/Users/xxx/、桌面 等项目外路径
    - 只有 tools/generated/ 下的工具会被 Agent 动态加载
 2. **类结构**：必须继承 `from tools.base import BaseTool, ToolResult, ToolCategory`
@@ -22,28 +22,47 @@
 ```python
 from tools.base import BaseTool, ToolResult, ToolCategory
 
-class ChatSessionRecoveryTool(BaseTool):
-    name = "chat_session_recovery"
-    description = "检查当前聊天会话状态，检测中断的会话并提供恢复方案。当手机端中断链接再恢复后，之前的聊天会话中断时，可以使用此工具诊断和恢复。"
-    category = ToolCategory.SYSTEM
+class InteractiveMailTool(BaseTool):
+    name = "interactive_mail"
+    description = "通过Chat交互获取SMTP配置信息后发送邮件。当缺少SMTP服务器、邮箱、授权码等信息时，会提示用户通过Chat提供，然后自动配置并发送邮件。"
+    category = ToolCategory.CUSTOM
     parameters = {
     "type": "object",
     "properties": {
-        "action": {
+        "to_email": {
             "type": "string",
-            "description": "操作类型：check_status（检查状态）、list_interrupted（列出中断会话）、recover_last（恢复最近中断的会话）",
-            "enum": [
-                "check_status",
-                "list_interrupted",
-                "recover_last"
-            ]
+            "description": "收件人邮箱地址"
         },
-        "session_id": {
+        "subject": {
             "type": "string",
-            "description": "指定要恢复的会话ID（当action为recover_last时可选）"
+            "description": "邮件主题"
+        },
+        "body": {
+            "type": "string",
+            "description": "邮件正文内容"
+        },
+        "smtp_server": {
+            "type": "string",
+            "description": "SMTP服务器地址（如smtp.qq.com），可选，缺失时会提示用户提供"
+        },
+        "smtp_port": {
+            "type": "integer",
+            "description": "SMTP端口号（如465或587），可选，缺失时会提示用户提供"
+        },
+        "sender_email": {
+            "type": "string",
+            "description": "发件人邮箱地址，可选，缺失时会提示用户提供"
+        },
+        "sender_password": {
+            "type": "string",
+            "description": "发件人邮箱授权码/密码，可选，缺失时会提示用户提供"
         }
     },
-    "required": []
+    "required": [
+        "to_email",
+        "subject",
+        "body"
+    ]
 }
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -53,30 +72,17 @@ class ChatSessionRecoveryTool(BaseTool):
 
 ## 你的具体任务
 
-请创建一个名为 chat_session_recovery_tool.py 的工具文件，放置在 backend/tools/generated/ 目录下。
-
-实现逻辑：
-1. 工具需要检查当前聊天会话的状态，特别是当手机端中断链接再恢复后，之前的聊天会话是否中断
-2. 工具应该能够检测到中断的会话并提供恢复方案
-3. 实现以下核心功能：
-   - 检查当前活跃的聊天会话状态
-   - 识别最近中断的会话
-   - 提供恢复中断会话的方法
-   - 返回会话状态信息和恢复建议
-
-参数设计：
-- action (string, 可选): 指定操作类型，如 'check_status', 'list_interrupted', 'recover_last'
-- session_id (string, 可选): 指定要恢复的会话ID
-
-调用方式：
-- 当用户报告聊天中断问题时，Agent可以调用此工具检查状态
-- 工具返回当前会话状态、中断会话列表和恢复建议
-
-实现要点：
-1. 需要与现有的聊天系统集成
-2. 提供清晰的返回信息，包括状态码、消息和建议
-3. 考虑异常处理和边缘情况
-4. 工具应该返回JSON格式的结果，便于Agent解析
+在 backend/tools/generated/ 目录下创建 interactive_mail_tool.py，实现以下功能：
+1. 工具类 InteractiveMailTool，继承 BaseTool
+2. 主要方法 send_mail_with_config：
+   - 参数：to_email（收件人），subject（主题），body（正文），smtp_server（可选），smtp_port（可选），sender_email（可选），sender_password（可选）
+   - 逻辑：如果缺少SMTP配置参数，抛出 ToolException 提示用户通过Chat提供缺失信息
+   - 支持SSL/TLS加密连接
+   - 使用email.mime.text构建邮件内容
+   - 成功发送后返回确认信息
+3. 辅助方法 save_smtp_config（可选）：将用户提供的配置保存到本地文件供后续使用
+4. 错误处理：网络错误、认证失败、参数缺失等
+5. 工具描述明确说明需要用户通过Chat交互提供SMTP配置信息
 
 ---
 

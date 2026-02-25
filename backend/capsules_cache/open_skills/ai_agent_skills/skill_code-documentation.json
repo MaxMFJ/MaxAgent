@@ -1,0 +1,129 @@
+{
+  "id": "skill_code-documentation",
+  "description": "Writing effective code documentation - API docs, README files, inline comments, and technical guides. Use for documenting codebases, APIs, or writing developer guides.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Code Documentation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[README Structure] ### Standard README Template\n```markdown\n# Project Name\n\nBrief description of what this project does."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] \\`\\`\\`bash\nnpm install\nnpm run dev\n\\`\\`\\`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Installation] Detailed installation instructions..."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage] \\`\\`\\`typescript\nimport { something } from 'project';\n\n// Example usage\nconst result = something.doThing();\n\\`\\`\\`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Reference] ### `functionName(param: Type): ReturnType`\n\nDescription of what the function does.\n\n**Parameters:**\n- `param` - Description of parameter\n\n**Returns:** Description of return value\n\n**Example:**\n\\`\\`\\`typescript\nconst result = functionName('value');\n\\`\\`\\`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Configuration] | Option | Type | Default | Description |\n|--------|------|---------|-------------|\n| `option1` | `string` | `'default'` | What it does |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Contributing] How to contribute..."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[License] MIT\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[API Documentation] ### JSDoc/TSDoc Style\n```typescript\n/**\n * Creates a new user account.\n *\n * @param userData - The user data for account creation\n * @param options - Optional configuration\n * @returns The created user object\n * @throws {ValidationError} If email is invalid\n * @example\n * ```ts\n * const user = await createUser({\n *   email: 'user@example.com',\n *   name: 'John'\n * });\n * ```\n */\nasync function createUser(\n  userData: UserInput,\n  options?: CreateOptions\n): Promise<User> {\n  // Implementation\n}\n\n/**\n * Configuration options for the API client.\n */\ninterface ClientConfig {\n  /** The API base URL */\n  baseUrl: string;\n  /** Request timeout in milliseconds @default 5000 */\n  timeout?: number;\n  /** Custom headers to include in requests */\n  headers?: Record<string, string>;\n}\n```\n\n### OpenAPI/Swagger\n```yaml\nopenapi: 3.0.0\ninfo:\n  title: My API\n  version: 1.0.0\n\npaths:\n  /users:\n    post:\n      summary: Create a user\n      description: Creates a new user account\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              $ref: '#/components/schemas/UserInput'\n      responses:\n        '201':\n          description: User created successfully\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/User'\n        '400':\n          description: Invalid input\n\ncomponents:\n  schemas:\n    UserInput:\n      type: object\n      required:\n        - email\n        - name\n      properties:\n        email:\n          type: string\n          format: email\n        name:\n          type: string\n    User:\n      type: object\n      properties:\n        id:\n          type: string\n        email:\n          type: string\n        name:\n          type: string\n        createdAt:\n          type: string\n          format: date-time\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Inline Comments] ### When to Comment\n```typescript\n// GOOD: Explain WHY, not WHAT\n\n// Use binary search because the list is always sorted and\n// can contain millions of items - O(log n) vs O(n)\nconst index = binarySearch(items, target);\n\n// GOOD: Explain complex business logic\n// Users get 20% discount if they've been members for 2+ years\n// AND have made 10+ purchases (per marketing team decision Q4 2024)\nif (user.memberYears >= 2 && user.purchaseCount >= 10) {\n  applyDiscount(0.2);\n}\n\n// GOOD: Document workarounds\n// HACK: Safari doesn't support this API, fallback to polling\n// TODO: Remove when Safari adds support (tracking: webkit.org/b/12345)\nif (!window.IntersectionObserver) {\n  startPolling();\n}\n```\n\n### When NOT to Comment\n```typescript\n// BAD: Stating the obvious\n// Increment counter by 1\ncounter++;\n\n// BAD: Explaining clear code\n// Check if user is admin\nif (user.role === 'admin') { ... }\n\n// BAD: Outdated comments (worse than no comment)\n// Returns the user's full name  <-- Actually returns email now!\nfunction getUserIdentifier(user) {\n  return user.email;\n}\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Architecture Documentation] ### ADR (Architecture Decision Record)\n```markdown\n# ADR-001: Use PostgreSQL for Primary Database"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Status] Accepted"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Context] We need a database for storing user data and transactions.\nOptions considered: PostgreSQL, MySQL, MongoDB, DynamoDB."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Decision] Use PostgreSQL with Supabase hosting."
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Rationale] - Strong ACID compliance needed for financial data\n- Team has PostgreSQL experience\n- Supabase provides auth and realtime features\n- pgvector extension for future AI features"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Consequences] - Need to manage schema migrations\n- May need read replicas for scale\n- Team needs to learn Supabase-specific features\n```\n\n### Component Documentation\n```markdown"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Authentication Module] ### Overview\nHandles user authentication using JWT tokens with refresh rotation.\n\n### Flow\n1. User submits credentials to `/auth/login`\n2. Server validates and returns access + refresh tokens\n3. Access token used for API requests (15min expiry)\n4. Refresh token used to get new access token (7d expiry)\n\n### Dependencies\n- `jsonwebtoken` - Token generation/validation\n- `bcrypt` - Password hashing\n- `redis` - Refresh token storage\n\n### Configuration\n- `JWT_SECRET` - Secret for signing tokens\n- `ACCESS_TOKEN_EXPIRY` - Access token lifetime\n- `REFRESH_TOKEN_EXPIRY` - Refresh token lifetime\n```"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Documentation Principles] 1. **Write for your audience** - New devs vs API consumers\n2. **Keep it close to code** - Docs in same repo, near relevant code\n3. **Update with code** - Stale docs are worse than none\n4. **Examples over explanations** - Show, don't just tell\n5. **Progressive disclosure** - Quick start first, details later"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "code_documentation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/code-documentation/SKILL.md"
+}

@@ -4,7 +4,13 @@ Defines structured actions that the agent can execute
 """
 
 import json
+import logging
+import re
 import uuid
+
+from llm.json_repair import repair_json
+
+logger = logging.getLogger(__name__)
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field, asdict
@@ -73,35 +79,96 @@ class AgentAction:
     
     @classmethod
     def from_llm_response(cls, response_text: str) -> Optional["AgentAction"]:
-        """Parse LLM response to extract action"""
-        try:
-            text = response_text.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
-            
-            data = json.loads(text)
-            
-            action_type_str = data.get("action_type", "").lower()
-            if not action_type_str:
-                return None
-            
-            try:
-                action_type = ActionType(action_type_str)
-            except ValueError:
-                return None
-            
-            return cls(
-                action_type=action_type,
-                params=data.get("params", {}),
-                reasoning=data.get("reasoning", "")
-            )
-        except (json.JSONDecodeError, KeyError, ValueError):
+        """Parse LLM response to extract action (supports DeepSeek/本地模型多种输出格式)"""
+        if not response_text or not isinstance(response_text, str):
             return None
+        text = response_text.strip()
+        if not text:
+            return None
+
+        # 1. 提取所有 ```json ... ``` 或 ``` ... ``` 块，逐个尝试（DeepSeek 可能先输出总结再输出动作）
+        for code_block in re.finditer(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", text):
+            parsed = cls._parse_json_to_action(code_block.group(1).strip())
+            if parsed:
+                return parsed
+
+        # 2. 提取所有 { ... } 块，逐个尝试（从后往前，模型常把最终动作放在最后）
+        blocks = cls._extract_brace_blocks(text)
+        for candidate in reversed(blocks):
+            parsed = cls._parse_json_to_action(candidate)
+            if parsed:
+                return parsed
+
+        # 3. 使用 json_repair 从全文提取
+        data = repair_json(text)
+        if data:
+            parsed = cls._dict_to_action(data)
+            if parsed:
+                return parsed
+
+        # 4. 直接解析整段
+        try:
+            clean = text
+            if clean.startswith("```json"):
+                clean = clean[7:]
+            if clean.startswith("```"):
+                clean = clean[3:]
+            if clean.endswith("```"):
+                clean = clean[:-3]
+            clean = clean.strip()
+            data = json.loads(clean)
+            return cls._dict_to_action(data)
+        except (json.JSONDecodeError, KeyError, ValueError):
+            pass
+
+        return None
+
+    @staticmethod
+    def _extract_brace_blocks(text: str) -> list[str]:
+        """提取文本中所有完整的 { ... } JSON 对象块"""
+        out = []
+        depth = 0
+        start = -1
+        for i, c in enumerate(text):
+            if c == "{":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    out.append(text[start : i + 1])
+                    start = -1
+        return out
+
+    @classmethod
+    def _dict_to_action(cls, data: dict) -> Optional["AgentAction"]:
+        """从 dict 构建 AgentAction"""
+        if not isinstance(data, dict):
+            return None
+        action_type_str = (data.get("action_type") or data.get("action") or "").lower().strip()
+        if not action_type_str:
+            return None
+        try:
+            action_type = ActionType(action_type_str)
+        except ValueError:
+            return None
+        params = data.get("params") or data.get("arguments") or {}
+        if not isinstance(params, dict):
+            params = {}
+        reasoning = data.get("reasoning") or data.get("reason") or ""
+        return cls(action_type=action_type, params=params, reasoning=reasoning)
+
+    @classmethod
+    def _parse_json_to_action(cls, raw: str) -> Optional["AgentAction"]:
+        """解析 JSON 字符串为 AgentAction"""
+        data = repair_json(raw)
+        if data is None:
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                return None
+        return cls._dict_to_action(data)
 
 
 @dataclass

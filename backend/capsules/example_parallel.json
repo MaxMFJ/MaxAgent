@@ -1,0 +1,53 @@
+{
+  "id": "capsule_system_health_check",
+  "description": "并行检查系统健康状态：同时获取系统信息和截图",
+  "version": "1.0.0",
+  "inputs": {
+    "include_screenshot": {
+      "type": "boolean",
+      "description": "是否包含屏幕截图，默认 true"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "系统健康检查结果"
+    }
+  },
+  "procedure": [
+    {
+      "id": "parallel_check",
+      "type": "parallel",
+      "description": "并行获取系统信息和截图",
+      "steps": [
+        {
+          "id": "sys_info",
+          "type": "tool",
+          "tool": "system",
+          "args": {
+            "action": "info"
+          }
+        },
+        {
+          "id": "screen_cap",
+          "type": "tool",
+          "tool": "screenshot",
+          "args": {
+            "action": "capture",
+            "area": "full"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report",
+      "type": "subtask",
+      "description": "生成系统健康报告：综合系统信息和屏幕状态"
+    }
+  ],
+  "task_type": "system",
+  "tags": ["system", "health", "系统", "健康检查", "监控"],
+  "capability": ["system_monitor", "screenshot"],
+  "priority": 0,
+  "schema_version": "1.1.0"
+}

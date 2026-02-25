@@ -1,0 +1,64 @@
+{
+  "id": "skill_javascript-typescript",
+  "description": "JavaScript and TypeScript development with ES6+, Node.js, React, and modern web frameworks. Use for frontend, backend, or full-stack JavaScript/TypeScript projects.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # JavaScript/TypeScript Development"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[TypeScript Configuration] ```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"strict\": true,\n    \"noUncheckedIndexedAccess\": true,\n    \"noImplicitOverride\": true,\n    \"skipLibCheck\": true,\n    \"declaration\": true,\n    \"outDir\": \"./dist\"\n  },\n  \"include\": [\"src/**/*\"],\n  \"exclude\": [\"node_modules\", \"dist\"]\n}\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Type Patterns] ### Utility Types\n```typescript\n// Pick specific properties\ntype UserPreview = Pick<User, 'id' | 'name'>;\n\n// Omit properties\ntype CreateUser = Omit<User, 'id' | 'createdAt'>;\n\n// Make all properties optional\ntype PartialUser = Partial<User>;\n\n// Make all properties required\ntype RequiredUser = Required<User>;\n\n// Extract union types\ntype Status = 'pending' | 'active' | 'inactive';\ntype ActiveStatus = Extract<Status, 'active' | 'pending'>;\n```\n\n### Discriminated Unions\n```typescript\ntype Result<T> =\n  | { success: true; data: T }\n  | { success: false; error: Error };\n\nfunction handleResult<T>(result: Result<T>) {\n  if (result.success) {\n    console.log(result.data); // T\n  } else {\n    console.error(result.error); // Error\n  }\n}\n```\n\n### Generic Constraints\n```typescript\ninterface HasId {\n  id: string | number;\n}\n\nfunction findById<T extends HasId>(items: T[], id: T['id']): T | undefined {\n  return items.find(item => item.id === id);\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Modern JavaScript] ### Destructuring & Spread\n```javascript\nconst { name, ...rest } = user;\nconst merged = { ...defaults, ...options };\nconst [first, ...others] = items;\n```\n\n### Optional Chaining & Nullish Coalescing\n```javascript\nconst city = user?.address?.city ?? 'Unknown';\nconst count = data?.items?.length ?? 0;\n```\n\n### Array Methods\n```javascript\nconst adults = users.filter(u => u.age >= 18);\nconst names = users.map(u => u.name);\nconst total = items.reduce((sum, item) => sum + item.price, 0);\nconst hasAdmin = users.some(u => u.role === 'admin');\nconst allActive = users.every(u => u.active);\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[React Patterns] ```typescript\n// Props with children\ninterface CardProps {\n  title: string;\n  children: React.ReactNode;\n}\n\n// Event handlers\ninterface ButtonProps {\n  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;\n}\n\n// Custom hooks\nfunction useLocalStorage<T>(key: string, initial: T) {\n  const [value, setValue] = useState<T>(() => {\n    const stored = localStorage.getItem(key);\n    return stored ? JSON.parse(stored) : initial;\n  });\n\n  useEffect(() => {\n    localStorage.setItem(key, JSON.stringify(value));\n  }, [key, value]);\n\n  return [value, setValue] as const;\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Node.js Patterns] ```typescript\n// ES Modules\nimport { readFile } from 'node:fs/promises';\nimport { join } from 'node:path';\n\n// Error handling\nprocess.on('unhandledRejection', (reason) => {\n  console.error('Unhandled Rejection:', reason);\n  process.exit(1);\n});\n```"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "javascript_typescript"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/javascript-typescript/SKILL.md"
+}

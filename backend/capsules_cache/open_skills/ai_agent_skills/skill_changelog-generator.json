@@ -1,0 +1,84 @@
+{
+  "id": "skill_changelog-generator",
+  "description": "Automatically creates user-facing changelogs from git commits by analyzing commit history, categorizing changes, and transforming technical commits into clear, customer-friendly release notes. Turns hours of manual changelog writing into minutes of automated generation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Changelog Generator\n\nThis skill transforms technical git commits into polished, user-friendly changelogs that your customers and users will actually understand and appreciate."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Preparing release notes for a new version\n- Creating weekly or monthly product update summaries\n- Documenting changes for customers\n- Writing changelog entries for app store submissions\n- Generating update notifications\n- Creating internal release documentation\n- Maintaining a public changelog/product updates page"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Scans Git History**: Analyzes commits from a specific time period or between versions\n2. **Categorizes Changes**: Groups commits into logical categories (features, improvements, bug fixes, breaking changes, security)\n3. **Translates Technical → User-Friendly**: Converts developer commits into customer language\n4. **Formats Professionally**: Creates clean, structured changelog entries\n5. **Filters Noise**: Excludes internal commits (refactoring, tests, etc.)\n6. **Follows Best Practices**: Applies changelog guidelines and your brand voice"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Basic Usage\n\nFrom your project repository:\n\n```\nCreate a changelog from commits since last release\n```\n\n```\nGenerate changelog for all commits from the past week\n```\n\n```\nCreate release notes for version 2.5.0\n```\n\n### With Specific Date Range\n\n```\nCreate a changelog for all commits between March 1 and March 15\n```\n\n### With Custom Guidelines\n\n```\nCreate a changelog for commits since v2.4.0, using my changelog \nguidelines from CHANGELOG_STYLE.md\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Create a changelog for commits from the past 7 days\"\n\n**Output**:\n```markdown\n# Updates - Week of March 10, 2024"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[✨ New Features] - **Team Workspaces**: Create separate workspaces for different \n  projects. Invite team members and keep everything organized.\n\n- **Keyboard Shortcuts**: Press ? to see all available shortcuts. \n  Navigate faster without touching your mouse."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[🔧 Improvements] - **Faster Sync**: Files now sync 2x faster across devices\n- **Better Search**: Search now includes file contents, not just titles"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[🐛 Fixes] - Fixed issue where large images wouldn't upload\n- Resolved timezone confusion in scheduled posts\n- Corrected notification badge count\n```\n\n**Inspired by:** Manik Aggarwal's use case from Lenny's Newsletter"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Tips] - Run from your git repository root\n- Specify date ranges for focused changelogs\n- Use your CHANGELOG_STYLE.md for consistent formatting\n- Review and adjust the generated changelog before publishing\n- Save output directly to CHANGELOG.md"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Related Use Cases] - Creating GitHub release notes\n- Writing app store update descriptions\n- Generating email updates for users\n- Creating social media announcement posts"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "changelog_generator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/changelog-generator/SKILL.md"
+}

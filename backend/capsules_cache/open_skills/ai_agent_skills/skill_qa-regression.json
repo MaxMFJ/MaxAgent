@@ -1,0 +1,89 @@
+{
+  "id": "skill_qa-regression",
+  "description": "Automate QA regression testing with reusable test skills. Create login flows, dashboard checks, user creation, and other common test scenarios that run consistently.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # QA Regression Testing\n\nBuild and run automated regression tests using Playwright. Each test is a reusable skill that can be composed into full test suites."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ```bash\nnpm init -y\nnpm install playwright @playwright/test\nnpx playwright install\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Test Structure] Create tests in `tests/` folder:\n\n```\ntests/\n├── auth/\n│   ├── login.spec.ts\n│   └── logout.spec.ts\n├── dashboard/\n│   └── load.spec.ts\n├── users/\n│   ├── create.spec.ts\n│   └── delete.spec.ts\n└── regression.spec.ts   # Full suite\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Common Test Skills] ### Login Test\n\n```typescript\n// tests/auth/login.spec.ts\nimport { test, expect } from '@playwright/test';\n\ntest.describe('Login Flow', () => {\n  test('should login with valid credentials', async ({ page }) => {\n    await page.goto('/login');\n\n    await page.fill('[data-testid=\"email\"]', process.env.TEST_EMAIL!);\n    await page.fill('[data-testid=\"password\"]', process.env.TEST_PASSWORD!);\n    await page.click('[data-testid=\"submit\"]');\n\n    // Verify redirect to dashboard\n    await expect(page).toHaveURL(/dashboard/);\n    await expect(page.locator('[data-testid=\"user-menu\"]')).toBeVisible();\n  });\n\n  test('should show error for invalid credentials', async ({ page }) => {\n    await page.goto('/login');\n\n    await page.fill('[data-testid=\"email\"]', 'wrong@example.com');\n    await page.fill('[data-testid=\"password\"]', 'wrongpassword');\n    await page.click('[data-testid=\"submit\"]');\n\n    await expect(page.locator('[data-testid=\"error-message\"]')).toBeVisible();\n  });\n});\n```\n\n### Dashboard Load Test\n\n```typescript\n// tests/dashboard/load.spec.ts\nimport { test, expect } from '@playwright/test';\nimport { login } from '../helpers/auth';\n\ntest.describe('Dashboard', () => {\n  test.beforeEach(async ({ page }) => {\n    await login(page);\n  });\n\n  test('should load dashboard within 3 seconds', async ({ page }) => {\n    const start = Date.now();\n    await page.goto('/dashboard');\n    await page.waitForSelector('[data-testid=\"dashboard-content\"]');\n    const loadTime = Date.now() - start;\n\n    expect(loadTime).toBeLessThan(3000);\n  });\n\n  test('should display all widgets', async ({ page }) => {\n    await page.goto('/dashboard');\n\n    await expect(page.locator('[data-testid=\"stats-widget\"]')).toBeVisible();\n    await expect(page.locator('[data-testid=\"chart-widget\"]')).toBeVisible();\n    await expect(page.locator('[data-testid=\"activity-widget\"]')).toBeVisible();\n  });\n\n  test('should refresh data on button click', async ({ page }) => {\n    await page.goto('/dashboard');\n\n    con"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Shared Helpers] ```typescript\n// tests/helpers/auth.ts\nimport { Page } from '@playwright/test';\n\nexport async function login(page: Page) {\n  await page.goto('/login');\n  await page.fill('[data-testid=\"email\"]', process.env.TEST_EMAIL!);\n  await page.fill('[data-testid=\"password\"]', process.env.TEST_PASSWORD!);\n  await page.click('[data-testid=\"submit\"]');\n  await page.waitForURL(/dashboard/);\n}\n\nexport async function logout(page: Page) {\n  await page.click('[data-testid=\"user-menu\"]');\n  await page.click('[data-testid=\"logout\"]');\n  await page.waitForURL(/login/);\n}\n```\n\n```typescript\n// tests/helpers/users.ts\nexport function generateTestUser() {\n  const id = Date.now();\n  return {\n    name: `Test User ${id}`,\n    email: `test-${id}@example.com`,\n  };\n}\n\nexport async function deleteTestUser(email: string) {\n  // API call to cleanup test user\n  await fetch(`${process.env.API_URL}/admin/users`, {\n    method: 'DELETE',\n    headers: {\n      'Authorization': `Bearer ${process.env.ADMIN_TOKEN}`,\n      'Content-Type': 'application/json',\n    },\n    body: JSON.stringify({ email }),\n  });\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Full Regression Suite] ```typescript\n// tests/regression.spec.ts\nimport { test } from '@playwright/test';\n\n// Import all test suites\nimport './auth/login.spec';\nimport './auth/logout.spec';\nimport './dashboard/load.spec';\nimport './users/create.spec';\nimport './users/delete.spec';\n\ntest.describe('Full Regression Suite', () => {\n  // Tests run in order defined above\n});\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Playwright Config] ```typescript\n// playwright.config.ts\nimport { defineConfig, devices } from '@playwright/test';\n\nexport default defineConfig({\n  testDir: './tests',\n  fullyParallel: true,\n  forbidOnly: !!process.env.CI,\n  retries: process.env.CI ? 2 : 0,\n  workers: process.env.CI ? 1 : undefined,\n  reporter: [\n    ['html'],\n    ['json', { outputFile: 'test-results.json' }],\n  ],\n  use: {\n    baseURL: process.env.BASE_URL || 'http://localhost:3000',\n    trace: 'on-first-retry',\n    screenshot: 'only-on-failure',\n  },\n  projects: [\n    {\n      name: 'chromium',\n      use: { ...devices['Desktop Chrome'] },\n    },\n    {\n      name: 'firefox',\n      use: { ...devices['Desktop Firefox'] },\n    },\n    {\n      name: 'webkit',\n      use: { ...devices['Desktop Safari'] },\n    },\n  ],\n});\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Running Tests] ```bash\n# Run all tests\nnpx playwright test\n\n# Run specific test file\nnpx playwright test tests/auth/login.spec.ts\n\n# Run tests with UI\nnpx playwright test --ui\n\n# Run in headed mode (see browser)\nnpx playwright test --headed\n\n# Generate report\nnpx playwright show-report\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[CI Integration] ```yaml\n# .github/workflows/regression.yml\nname: Regression Tests\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  schedule:\n    - cron: '0 6 * * *'  # Daily at 6 AM\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Install Playwright\n        run: npx playwright install --with-deps\n\n      - name: Run tests\n        run: npx playwright test\n        env:\n          BASE_URL: ${{ secrets.STAGING_URL }}\n          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}\n          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}\n\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Use data-testid attributes** - More stable than CSS selectors\n2. **Clean up test data** - Always delete what you create\n3. **Avoid hardcoded waits** - Use `waitForSelector` instead of `waitForTimeout`\n4. **Run in parallel** - Faster feedback on CI\n5. **Screenshot on failure** - Easier debugging\n6. **Environment variables** - Never commit credentials"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Quick Commands] | Task | Command |\n|------|---------|\n| Run all | `npx playwright test` |\n| Run one file | `npx playwright test login.spec.ts` |\n| Debug mode | `npx playwright test --debug` |\n| UI mode | `npx playwright test --ui` |\n| Update snapshots | `npx playwright test --update-snapshots` |"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "qa_regression"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/qa-regression/SKILL.md"
+}

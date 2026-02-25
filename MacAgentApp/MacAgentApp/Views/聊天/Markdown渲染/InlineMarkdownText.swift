@@ -19,18 +19,26 @@ struct InlineMarkdownText: View {
         }
     }
     
+    /// URL 尾部不参与匹配的标点（避免“链接吃掉后续文本”造成污染）
+    private static let urlTrailingPunctuation = CharacterSet(charactersIn: "。，、．.,;:!?！？」』)】 \t\n\r")
+    
     private func containsSpecialElements(_ text: String) -> Bool {
         let patterns = [
             "\\[([^\\]]+)\\]\\(([^)]+)\\)",
             "https?://[^\\s]+",
+            "www\\.[a-zA-Z0-9][\\w.-]*\\.[a-zA-Z]{2,}",
         ]
-        
         for pattern in patterns {
             if text.range(of: pattern, options: .regularExpression) != nil {
                 return true
             }
         }
         return false
+    }
+    
+    /// 从匹配到的 URL 字符串末尾去掉标点，避免后续文本被当成 URL 的一部分
+    private func trimTrailingPunctuationFromURL(_ url: String) -> String {
+        return url.trimmingCharacters(in: Self.urlTrailingPunctuation)
     }
     
     private func parseLines(_ text: String) -> [String] {
@@ -88,17 +96,18 @@ struct InlineMarkdownText: View {
         
         let codePattern = try? NSRegularExpression(pattern: "`([^`]+)`")
         let linkPattern = try? NSRegularExpression(pattern: "\\[([^\\]]+)\\]\\(([^)]+)\\)")
-        let urlPattern = try? NSRegularExpression(pattern: "https?://[^\\s]+")
+        // 支持 https?:// 与 www. 开头；匹配到的 URL 会去掉尾部标点，避免污染后续文本
+        let urlPattern = try? NSRegularExpression(pattern: "(https?://[^\\s]+)|(www\\.[a-zA-Z0-9][\\w.-]*\\.[a-zA-Z0-9\\w.-]*)")
         
         while !remaining.isEmpty {
-            var earliestMatch: (range: Range<String.Index>, type: String, groups: [String])? = nil
+            var earliestMatch: (range: Range<String.Index>, type: String, groups: [String], consumeUpTo: String.Index)? = nil
             
             if let codePattern = codePattern,
                let match = codePattern.firstMatch(in: remaining, range: NSRange(remaining.startIndex..., in: remaining)),
                let range = Range(match.range, in: remaining),
                let codeRange = Range(match.range(at: 1), in: remaining) {
                 if earliestMatch == nil || range.lowerBound < earliestMatch!.range.lowerBound {
-                    earliestMatch = (range, "code", [String(remaining[codeRange])])
+                    earliestMatch = (range, "code", [String(remaining[codeRange])], range.upperBound)
                 }
             }
             
@@ -108,17 +117,20 @@ struct InlineMarkdownText: View {
                let titleRange = Range(match.range(at: 1), in: remaining),
                let urlRange = Range(match.range(at: 2), in: remaining) {
                 if earliestMatch == nil || range.lowerBound < earliestMatch!.range.lowerBound {
-                    earliestMatch = (range, "link", [String(remaining[titleRange]), String(remaining[urlRange])])
+                    earliestMatch = (range, "link", [String(remaining[titleRange]), String(remaining[urlRange])], range.upperBound)
                 }
             }
             
             if let urlPattern = urlPattern,
                let match = urlPattern.firstMatch(in: remaining, range: NSRange(remaining.startIndex..., in: remaining)),
                let range = Range(match.range, in: remaining) {
-                if earliestMatch == nil || range.lowerBound < earliestMatch!.range.lowerBound {
-                    let urlStr = String(remaining[range])
-                    if !remaining.contains("](\(urlStr))") {
-                        earliestMatch = (range, "url", [urlStr])
+                let urlStr = String(remaining[range])
+                let trimmedUrl = trimTrailingPunctuationFromURL(urlStr)
+                if !trimmedUrl.isEmpty && !remaining.contains("](\(trimmedUrl))") {
+                    let offset = min(trimmedUrl.count, remaining.distance(from: range.lowerBound, to: range.upperBound))
+                    let consumeIndex = remaining.index(range.lowerBound, offsetBy: offset)
+                    if earliestMatch == nil || range.lowerBound < earliestMatch!.range.lowerBound {
+                        earliestMatch = (range, "url", [trimmedUrl], consumeIndex)
                     }
                 }
             }
@@ -142,7 +154,7 @@ struct InlineMarkdownText: View {
                     break
                 }
                 
-                remaining = String(remaining[match.range.upperBound...])
+                remaining = String(remaining[match.consumeUpTo...])
             } else {
                 if !remaining.isEmpty {
                     parts.append(.text(remaining))

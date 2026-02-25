@@ -19,10 +19,17 @@ struct ContentView: View {
                 ToolPanelView()
                     .frame(minWidth: 250, idealWidth: 300, maxWidth: 400)
             }
+            
+            // 系统消息面板（可隐藏）
+            if viewModel.showSystemMessages {
+                SystemMessageView()
+                    .environmentObject(viewModel)
+                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 420)
+            }
         }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar {
-            // 服务状态指示器
+            // 左侧：服务状态 + 系统消息铃铛
             ToolbarItem(placement: .navigation) {
                 HStack(spacing: 8) {
                     ServiceStatusIndicator(
@@ -48,6 +55,10 @@ struct ContentView: View {
                             }
                         }
                     )
+                    
+                    // 系统消息入口（铃铛），点击展开/收起系统消息面板
+                    NotificationBellButton()
+                        .environmentObject(viewModel)
                 }
             }
             

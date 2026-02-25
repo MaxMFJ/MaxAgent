@@ -17,9 +17,16 @@ class AgentViewModel: ObservableObject {
     @Published var recentToolCalls: [ToolCall] = []
     @Published var errorMessage: String?
     
-    // MARK: - Autonomous Mode Properties
+    // MARK: - System Notifications
     
-    @Published var isAutonomousMode: Bool = false
+    @Published var systemNotifications: [SystemNotification] = []
+    @Published var unreadNotificationCount: Int = 0
+    @Published var showSystemMessages: Bool = false
+    /// 当前选中的 Tab（全部 / 系统错误 / 进化状态 / 任务完成 / 其他）
+    @Published var selectedNotificationTab: SystemMessageTab = .all
+    
+    // MARK: - Autonomous Task Properties
+    
     @Published var currentTaskId: String?
     @Published var currentIteration: Int = 0
     @Published var actionLogs: [ActionLogEntry] = []
@@ -43,15 +50,19 @@ class AgentViewModel: ObservableObject {
     @AppStorage("lmStudioUrl") var lmStudioUrl: String = "http://localhost:1234/v1"
     @AppStorage("lmStudioModel") var lmStudioModel: String = ""
     
-    // Model Selection Settings
-    @AppStorage("enableModelSelection") var enableModelSelection: Bool = true
-    @AppStorage("preferLocalModel") var preferLocalModel: Bool = false
-    
     // 邮件 SMTP 配置（用于系统级发信，不依赖 Mail.app）
     @AppStorage("smtpServer") var smtpServer: String = "smtp.qq.com"
     @AppStorage("smtpPort") var smtpPort: String = "465"
     @AppStorage("smtpUser") var smtpUser: String = ""
     @AppStorage("smtpPassword") var smtpPassword: String = ""
+    
+    // GitHub Token（拉取开放技能源，提高 API 限额）
+    @AppStorage("githubToken") var githubToken: String = ""
+    @Published var githubConfigured: Bool = false
+    
+    // 待审批工具（签名校验未通过）
+    @Published var pendingTools: [PendingTool] = []
+    @Published var approvingToolName: String? = nil
     
     // 本地可用模型列表
     @Published var availableLocalModels: [String] = []
@@ -79,6 +90,37 @@ class AgentViewModel: ObservableObject {
         backendService.$isConnected
             .receive(on: DispatchQueue.main)
             .assign(to: &$isConnected)
+        
+        backendService.onSystemNotification = { [weak self] notification, unreadCount in
+            guard let self = self else { return }
+            if !self.systemNotifications.contains(where: { $0.id == notification.id }) {
+                self.systemNotifications.insert(notification, at: 0)
+            }
+            self.unreadNotificationCount = unreadCount
+        }
+        
+        backendService.onToolsUpdated = { [weak self] in
+            guard let self = self else { return }
+            Task { @MainActor in
+                await self.loadTools()
+                await self.loadPendingTools()
+            }
+        }
+        
+        backendService.onTaskDetected = { [weak self] hasRunningTask, taskId in
+            guard let self = self, hasRunningTask, let conversation = self.currentConversation else { return }
+            
+            Task { @MainActor in
+                await self.resumeAutonomousTask(sessionId: conversation.id.uuidString, taskId: taskId)
+            }
+        }
+        
+        backendService.onChatResumeDetected = { [weak self] sessionId in
+            guard let self = self else { return }
+            Task { @MainActor in
+                await self.resumeChatStream(sessionId: sessionId)
+            }
+        }
     }
     
     // MARK: - Connection
@@ -88,6 +130,8 @@ class AgentViewModel: ObservableObject {
             await backendService.connect()
             await loadTools()
             await syncConfig()
+            await loadGitHubConfig()
+            loadSystemMessages()
         }
     }
     
@@ -156,6 +200,48 @@ class AgentViewModel: ObservableObject {
             // 密码不返回，保留本地已填写的
         } catch {
             // 后端未启动或未配置，保留本地值
+        }
+    }
+    
+    func loadGitHubConfig() async {
+        do {
+            let cfg = try await backendService.fetchGitHubConfig()
+            githubConfigured = cfg.configured
+        } catch {
+            githubConfigured = false
+        }
+    }
+    
+    func syncGitHubConfig() async {
+        do {
+            try await backendService.updateGitHubConfig(githubToken: githubToken.isEmpty ? nil : githubToken)
+            await loadGitHubConfig()
+            errorMessage = nil
+        } catch {
+            errorMessage = "GitHub 配置同步失败: \(error.localizedDescription)"
+        }
+    }
+    
+    func loadPendingTools() async {
+        do {
+            pendingTools = try await backendService.fetchPendingTools()
+        } catch {
+            pendingTools = []
+        }
+    }
+    
+    func approveTool(name: String) async {
+        approvingToolName = name
+        defer { approvingToolName = nil }
+        do {
+            try await backendService.approveTool(toolName: name)
+            try await backendService.reloadTools()
+            // 工具列表刷新由服务端广播 tools_updated、客户端 onToolsUpdated 统一处理，各端收到后刷新
+            await loadPendingTools()
+            await loadTools()
+            errorMessage = nil
+        } catch {
+            errorMessage = "审批失败: \(error.localizedDescription)"
         }
     }
     
@@ -358,7 +444,6 @@ class AgentViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
-            // 尝试重连一次
             if retryCount < 1 {
                 errorMessage = "连接断开，正在重连..."
                 updateAssistantMessage(content: "连接断开，正在重连...", isStreaming: true)
@@ -366,7 +451,8 @@ class AgentViewModel: ObservableObject {
                 await backendService.reconnect()
                 
                 if isConnected {
-                    await sendMessageWithRetry(messageText, sessionId: sessionId, retryCount: retryCount + 1)
+                    updateAssistantMessage(content: "已重连，正在恢复对话...", isStreaming: true)
+                    await resumeChatStream(sessionId: sessionId)
                 } else {
                     errorMessage = "重连失败，请检查后端服务是否运行"
                     updateAssistantMessage(content: "重连失败，请检查后端服务是否运行", isStreaming: false)
@@ -453,9 +539,7 @@ class AgentViewModel: ObservableObject {
         do {
             for try await chunk in backendService.sendAutonomousTask(
                 task,
-                sessionId: sessionId,
-                enableModelSelection: enableModelSelection,
-                preferLocal: preferLocalModel
+                sessionId: sessionId
             ) {
                 switch chunk {
                 case .modelSelected(let modelType, let reason, let taskType, let complexity):
@@ -558,7 +642,7 @@ class AgentViewModel: ObservableObject {
                     statusContent += "💡 反思结果:\n\(reflection)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
                     
-                case .taskComplete(let taskId, let success, let summary, let totalActions):
+                case .taskComplete(_, let success, let summary, let totalActions):
                     taskProgress?.status = success ? .completed : .failed
                     taskProgress?.endTime = Date()
                     taskProgress?.summary = summary
@@ -625,10 +709,6 @@ class AgentViewModel: ObservableObject {
         }
     }
     
-    func toggleAutonomousMode() {
-        isAutonomousMode.toggle()
-    }
-    
     func clearActionLogs() {
         actionLogs = []
         executionLogs = []
@@ -639,6 +719,246 @@ class AgentViewModel: ObservableObject {
     
     func clearExecutionLogs() {
         executionLogs = []
+    }
+    
+    // MARK: - Task Resume (断线重连恢复)
+    
+    private func resumeAutonomousTask(sessionId: String, taskId: String?) async {
+        guard var conversation = currentConversation else { return }
+        
+        // 添加一条恢复消息
+        let resumeMessage = Message(role: .assistant, content: "🔄 检测到任务正在运行，正在恢复...\n任务ID: \(taskId ?? "unknown")", isStreaming: true)
+        conversation.messages.append(resumeMessage)
+        updateCurrentConversation(conversation)
+        
+        isLoading = true
+        
+        var statusContent = "🔄 正在恢复任务...\n"
+        var completedActions = 0
+        var failedActions = 0
+        
+        do {
+            for try await chunk in backendService.resumeTask(sessionId: sessionId) {
+                switch chunk {
+                case .modelSelected(let modelType, let reason, let taskType, let complexity):
+                    selectedModelType = modelType
+                    selectedModelReason = reason
+                    taskAnalysisType = taskType
+                    taskComplexity = complexity
+                    
+                    let modelIcon = modelType == "local" ? "🏠" : "☁️"
+                    let modelName = modelType == "local" ? "本地模型" : "远程模型"
+                    statusContent += "\(modelIcon) 模型: \(modelName) | 任务类型: \(taskType) (复杂度: \(complexity)/10)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .taskStart(let recoveredTaskId, let taskDesc):
+                    currentTaskId = recoveredTaskId
+                    taskProgress = TaskProgress(
+                        id: recoveredTaskId,
+                        taskDescription: taskDesc,
+                        status: .running,
+                        currentIteration: 0,
+                        totalActions: 0,
+                        successfulActions: 0,
+                        failedActions: 0,
+                        startTime: Date()
+                    )
+                    statusContent += "✅ 任务已恢复: \(taskDesc)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .actionPlan(let action, let iteration):
+                    currentIteration = iteration
+                    let actionType = action["action_type"] as? String ?? "unknown"
+                    let reasoning = action["reasoning"] as? String ?? ""
+                    
+                    let logEntry = ActionLogEntry(
+                        actionId: action["action_id"] as? String ?? UUID().uuidString,
+                        actionType: actionType,
+                        reasoning: reasoning,
+                        status: .pending,
+                        output: nil,
+                        error: nil,
+                        timestamp: Date(),
+                        iteration: iteration
+                    )
+                    actionLogs.append(logEntry)
+                    
+                    statusContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .actionExecuting(let actionId, let actionType):
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        actionLogs[index] = ActionLogEntry(
+                            actionId: actionId,
+                            actionType: actionLogs[index].actionType,
+                            reasoning: actionLogs[index].reasoning,
+                            status: .executing,
+                            output: nil,
+                            error: nil,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: actionLogs[index].iteration
+                        )
+                    }
+                    statusContent += "   ⏳ 执行中: \(actionType)...\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .actionResult(let actionId, let success, let output, let error):
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        actionLogs[index] = ActionLogEntry(
+                            actionId: actionId,
+                            actionType: actionLogs[index].actionType,
+                            reasoning: actionLogs[index].reasoning,
+                            status: success ? .success : .failed,
+                            output: output,
+                            error: error,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: actionLogs[index].iteration
+                        )
+                    }
+                    
+                    if success {
+                        completedActions += 1
+                        let outputPreview = output?.prefix(100) ?? ""
+                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ": \(outputPreview)...")\n"
+                    } else {
+                        failedActions += 1
+                        statusContent += "   ❌ 失败: \(error ?? "未知错误")\n"
+                    }
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                    taskProgress?.totalActions = completedActions + failedActions
+                    taskProgress?.successfulActions = completedActions
+                    taskProgress?.failedActions = failedActions
+                    
+                case .reflectStart:
+                    statusContent += "\n🔍 正在分析执行结果...\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .reflectResult(let reflection):
+                    statusContent += "💡 反思结果:\n\(reflection)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .taskComplete(_, let success, let summary, let totalActions):
+                    taskProgress?.status = success ? .completed : .failed
+                    taskProgress?.endTime = Date()
+                    taskProgress?.summary = summary
+                    
+                    let statusIcon = success ? "✅" : "⚠️"
+                    statusContent += "\n\(statusIcon) 任务完成\n"
+                    statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
+                    statusContent += "📝 总结: \(summary)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .content(let text):
+                    statusContent += text
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .done(let model, let tokenUsage):
+                    updateAssistantMessage(content: statusContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
+                    
+                case .error(let message):
+                    statusContent += "\n❌ 错误: \(message)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: false)
+                    errorMessage = message
+                    
+                case .stopped:
+                    statusContent += "\n\n[已终止]"
+                    updateAssistantMessage(content: statusContent, isStreaming: false)
+                    
+                default:
+                    break
+                }
+            }
+            
+        } catch {
+            errorMessage = "任务恢复失败: \(error.localizedDescription)"
+            updateAssistantMessage(
+                content: statusContent + "\n❌ 恢复失败: \(error.localizedDescription)",
+                isStreaming: false
+            )
+        }
+        
+        isLoading = false
+    }
+    
+    // MARK: - Chat Resume (断线重连恢复 chat 流)
+    
+    private func resumeChatStream(sessionId: String) async {
+        guard var conversation = currentConversation else { return }
+        
+        let resumeMessage = Message(role: .assistant, content: "正在恢复对话...", isStreaming: true)
+        conversation.messages.append(resumeMessage)
+        updateCurrentConversation(conversation)
+        
+        isLoading = true
+        var fullContent = ""
+        
+        do {
+            for try await chunk in backendService.resumeChat(sessionId: sessionId) {
+                switch chunk {
+                case .content(let text):
+                    fullContent += text
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .toolCall(let name, let args):
+                    let toolCall = ToolCall(
+                        id: UUID().uuidString,
+                        name: name,
+                        arguments: args.mapValues { AnyCodable($0) }
+                    )
+                    recentToolCalls.insert(toolCall, at: 0)
+                    if recentToolCalls.count > 10 {
+                        recentToolCalls.removeLast()
+                    }
+                    
+                case .toolResult(let name, let success, let result):
+                    if let index = recentToolCalls.firstIndex(where: { $0.name == name && $0.result == nil }) {
+                        recentToolCalls[index].result = ToolResult(success: success, output: result)
+                    }
+                    
+                case .executionLog(let toolName, _, let level, let message):
+                    executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: message, toolName: toolName))
+                    
+                case .imageData(let base64, let mimeType, let path):
+                    let attachment = MessageAttachment.fromBase64(base64, mimeType: mimeType)
+                    if let imagePath = path {
+                        fullContent += "\n截图已保存: \(imagePath)\n"
+                    }
+                    updateAssistantMessage(content: fullContent, isStreaming: true, attachments: [attachment])
+                    
+                case .localImage(let path):
+                    let attachment = MessageAttachment.fromLocalPath(path)
+                    fullContent += "\n图片: \(path)\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true, attachments: [attachment])
+                    
+                case .done(let model, let tokenUsage):
+                    updateAssistantMessage(content: fullContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
+                    
+                case .stopped:
+                    updateAssistantMessage(content: fullContent + "\n\n[已终止]", isStreaming: false)
+                    
+                case .error(let message):
+                    errorMessage = message
+                    updateAssistantMessage(content: "错误: \(message)", isStreaming: false)
+                    
+                default:
+                    break
+                }
+            }
+            
+            if !fullContent.isEmpty {
+                updateAssistantMessage(content: fullContent, isStreaming: false)
+            }
+            
+        } catch {
+            errorMessage = "Chat 恢复失败: \(error.localizedDescription)"
+            updateAssistantMessage(
+                content: fullContent.isEmpty ? "恢复失败: \(error.localizedDescription)" : fullContent,
+                isStreaming: false
+            )
+        }
+        
+        isLoading = false
     }
     
     private func updateCurrentConversation(_ conversation: Conversation, shouldSave: Bool = true) {
@@ -694,6 +1014,67 @@ class AgentViewModel: ObservableObject {
         
         conversation.messages.remove(at: messageIndex)
         updateCurrentConversation(conversation)
+    }
+    
+    // MARK: - System Notifications
+    
+    func loadSystemMessages(category: NotificationCategory? = nil) {
+        Task {
+            do {
+                let cat = category?.rawValue
+                let (messages, unreadCount) = try await backendService.fetchSystemMessages(category: cat)
+                self.systemNotifications = messages
+                self.unreadNotificationCount = unreadCount
+            } catch {
+                // 静默失败，不阻塞主流程
+            }
+        }
+    }
+    
+    /// 当前 Tab 下展示的通知列表（按选中的分类筛选）
+    var filteredSystemNotifications: [SystemNotification] {
+        guard let cat = selectedNotificationTab.category else { return systemNotifications }
+        return systemNotifications.filter { $0.category == cat }
+    }
+    
+    func markNotificationRead(_ notification: SystemNotification) {
+        Task {
+            do {
+                let unreadCount = try await backendService.markSystemMessageRead(notification.id)
+                if let idx = self.systemNotifications.firstIndex(where: { $0.id == notification.id }) {
+                    self.systemNotifications[idx].read = true
+                }
+                self.unreadNotificationCount = unreadCount
+            } catch {
+                // 静默失败
+            }
+        }
+    }
+    
+    func markAllNotificationsRead() {
+        Task {
+            do {
+                try await backendService.markAllSystemMessagesRead()
+                for i in self.systemNotifications.indices {
+                    self.systemNotifications[i].read = true
+                }
+                self.unreadNotificationCount = 0
+            } catch {
+                // 静默失败
+            }
+        }
+    }
+    
+    func clearNotifications() {
+        Task {
+            do {
+                try await backendService.clearSystemMessages()
+                self.systemNotifications = []
+                self.unreadNotificationCount = 0
+            } catch {
+                // 静默失败
+            }
+        }
     }
     
     // MARK: - UI

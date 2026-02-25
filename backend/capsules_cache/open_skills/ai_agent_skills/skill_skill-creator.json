@@ -1,0 +1,79 @@
+{
+  "id": "skill_skill-creator",
+  "description": "Guide for creating effective skills. Use when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Skill Creator\n\nSkills are modular packages that extend Claude's capabilities by providing specialized knowledge, workflows, and tools."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Principles] ### Concise is Key\nThe context window is a shared resource. Only add context Claude doesn't already have. Challenge each piece: \"Does Claude really need this?\"\n\n### Anatomy of a Skill\n\n```\nskill-name/\n├── SKILL.md (required)\n│   ├── YAML frontmatter (name, description)\n│   └── Markdown instructions\n└── Bundled Resources (optional)\n    ├── scripts/      - Executable code\n    ├── references/   - Documentation\n    └── assets/       - Templates, images\n```\n\n### SKILL.md Format\n\n```markdown\n---\nname: my-skill-name\ndescription: A clear description of what this skill does and when to use it\n---\n\n# My Skill Name\n\n[Instructions for Claude when this skill is active]"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Examples] - Example usage 1\n- Example usage 2"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Guidelines] - Guideline 1\n- Guideline 2\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Skill Creation Process] ### Step 1: Understand with Examples\nGather concrete examples of how the skill will be used. Ask:\n- \"What functionality should this skill support?\"\n- \"What would a user say that should trigger this skill?\"\n\n### Step 2: Plan Reusable Contents\nAnalyze examples to identify:\n- **Scripts**: Code that gets rewritten repeatedly\n- **References**: Documentation Claude needs to reference\n- **Assets**: Templates, images for output\n\n### Step 3: Initialize\nCreate the skill directory structure with SKILL.md and resource folders.\n\n### Step 4: Implement\n- Start with reusable resources (scripts, references, assets)\n- Write clear SKILL.md with proper frontmatter\n- Test scripts by actually running them\n\n### Step 5: Iterate\nUse the skill on real tasks, notice struggles, improve."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Progressive Disclosure] Keep SKILL.md under 500 lines. Split content:\n\n```markdown\n# PDF Processing"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quick start] [code example]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Advanced features] - **Form filling**: See [FORMS.md](FORMS.md)\n- **API reference**: See [REFERENCE.md](REFERENCE.md)\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[What NOT to Include] - README.md\n- INSTALLATION_GUIDE.md\n- CHANGELOG.md\n- User-facing documentation\n\nSkills are for AI agents, not humans."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "skill_creator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/skill-creator/SKILL.md"
+}

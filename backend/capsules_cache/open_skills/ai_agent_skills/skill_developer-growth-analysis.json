@@ -1,0 +1,99 @@
+{
+  "id": "skill_developer-growth-analysis",
+  "description": "Analyzes your recent Claude Code chat history to identify coding patterns, development gaps, and areas for improvement, curates relevant learning resources from HackerNews, and automatically sends a personalized growth report to your Slack DMs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Developer Growth Analysis\n\nThis skill provides personalized feedback on your recent coding work by analyzing your Claude Code chat interactions and identifying patterns that reveal strengths and areas for growth."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when you want to:\n- Understand your development patterns and habits from recent work\n- Identify specific technical gaps or recurring challenges\n- Discover which topics would benefit from deeper study\n- Get curated learning resources tailored to your actual work patterns\n- Track improvement areas across your recent projects\n- Find high-quality articles that directly address the skills you're developing\n\nThis skill is ideal for developers who want structured feedback on their growth without waiting for code reviews, and who prefer data-driven insights from their own work history."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] This skill performs a six-step analysis of your development work:\n\n1. **Reads Your Chat History**: Accesses your local Claude Code chat history from the past 24-48 hours to understand what you've been working on.\n\n2. **Identifies Development Patterns**: Analyzes the types of problems you're solving, technologies you're using, challenges you encounter, and how you approach different kinds of tasks.\n\n3. **Detects Improvement Areas**: Recognizes patterns that suggest skill gaps, repeated struggles, inefficient approaches, or areas where you might benefit from deeper knowledge.\n\n4. **Generates a Personalized Report**: Creates a comprehensive report showing your work summary, identified improvement areas, and specific recommendations for growth.\n\n5. **Finds Learning Resources**: Uses HackerNews to curate high-quality articles and discussions directly relevant to your improvement areas, providing you with a reading list tailored to your actual development work.\n\n6. **Sends to Your Slack DMs**: Automatically delivers the complete report to your own Slack direct messages so you can reference it anytime, anywhere."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] Ask Claude to analyze your recent coding work:\n\n```\nAnalyze my developer growth from my recent chats\n```\n\nOr be more specific about which time period:\n\n```\nAnalyze my work from today and suggest areas for improvement\n```\n\nThe skill will generate a formatted report with:\n- Overview of your recent work\n- Key improvement areas identified\n- Specific recommendations for each area\n- Curated learning resources from HackerNews\n- Action items you can focus on"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests analysis of their developer growth or coding patterns from recent work:\n\n1. **Access Chat History**\n\n   Read the chat history from `~/.claude/history.jsonl`. This file is a JSONL format where each line contains:\n   - `display`: The user's message/request\n   - `project`: The project being worked on\n   - `timestamp`: Unix timestamp (in milliseconds)\n   - `pastedContents`: Any code or content pasted\n\n   Filter for entries from the past 24-48 hours based on the current timestamp.\n\n2. **Analyze Work Patterns**\n\n   Extract and analyze the following from the filtered chats:\n   - **Projects and Domains**: What types of projects was the user working on? (e.g., backend, frontend, DevOps, data, etc.)\n   - **Technologies Used**: What languages, frameworks, and tools appear in the conversations?\n   - **Problem Types**: What categories of problems are being solved? (e.g., performance optimization, debugging, feature implementation, refactoring, setup/configuration)\n   - **Challenges Encountered**: What problems did the user struggle with? Look for:\n     - Repeated questions about similar topics\n     - Problems that took multiple attempts to solve\n     - Questions indicating knowledge gaps\n     - Complex architectural decisions\n   - **Approach Patterns**: How does the user solve problems? (e.g., methodical, exploratory, experimental)\n\n3. **Identify Improvement Areas**\n\n   Based on the analysis, identify 3-5 specific areas where the user could improve. These should be:\n   - **Specific** (not vague like \"improve coding skills\")\n   - **Evidence-based** (grounded in actual chat history)\n   - **Actionable** (practical improvements that can be made)\n   - **Prioritized** (most impactful first)\n\n   Examples of good improvement areas:\n   - \"Advanced TypeScript patterns (generics, utility types, type guards) - you struggled with type safety in [specific project]\"\n   - \"Error handling and validation - I noticed you patched several bugs related to missing null checks\"\n   "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Example Usage] ### Input\n\n```\nAnalyze my developer growth from my recent chats\n```\n\n### Output\n\n```markdown\n# Your Developer Growth Report\n\n**Report Period**: November 9-10, 2024\n**Last Updated**: November 10, 2024, 9:15 PM UTC"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Work Summary] Over the past two days, you focused on backend infrastructure and API development. Your primary project was an open-source showcase application, where you made significant progress on connections management, UI improvements, and deployment configuration. You worked with TypeScript, React, and Node.js, tackling challenges ranging from data security to responsive design. Your work shows a balance between implementing features and addressing technical debt."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Improvement Areas (Prioritized)] ### 1. Advanced TypeScript Patterns and Type Safety\n\n**Why This Matters**: TypeScript is central to your work, but leveraging its advanced features (generics, utility types, conditional types, type guards) can significantly improve code reliability and reduce runtime errors. Better type safety catches bugs at compile time rather than in production.\n\n**What I Observed**: In your recent chats, you were working with connection data structures and struggled a few times with typing auth configurations properly. You also had to iterate on union types for different connection states. There's an opportunity to use discriminated unions and type guards more effectively.\n\n**Recommendation**: Study TypeScript's advanced type system, particularly utility types (Omit, Pick, Record), conditional types, and discriminated unions. Apply these patterns to your connection configuration handling and auth state management.\n\n**Time to Skill Up**: 5-8 hours of focused learning and practice\n\n### 2. Secure Data Handling and Information Hiding in UI\n\n**Why This Matters**: You identified and fixed a security concern where sensitive connection data was being displayed in your console. Preventing information leakage is critical for applications handling user credentials and API keys. Good practices here prevent security incidents and user trust violations.\n\n**What I Observed**: You caught that your \"Your Apps\" page was showing full connection data including auth configs. This shows good security instincts, and the next step is building this into your default thinking when handling sensitive information.\n\n**Recommendation**: Review security best practices for handling sensitive data in frontend applications. Create reusable patterns for filtering/masking sensitive information before displaying it. Consider implementing a secure data layer that explicitly whitelist what can be shown in the UI.\n\n**Time to Skill Up**: 3-4 hours\n\n### 3. Component Architecture and Responsive UI Patterns\n\n**Why This Ma"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Strengths Observed] - **Security Awareness**: You proactively identified data leakage issues before they became problems\n- **Iterative Refinement**: You worked through UI requirements methodically, asking clarifying questions and improving designs\n- **Full-Stack Capability**: You comfortably work across backend APIs, frontend UI, and deployment concerns\n- **Problem-Solving Approach**: You break down complex tasks into manageable steps"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Action Items] Priority order:\n1. Spend 1-2 hours learning TypeScript utility types and discriminated unions; apply to your connection data structures\n2. Document security patterns for your project (what data is safe to display, filtering/masking functions)\n3. Study one article on advanced React patterns and apply one pattern to your current UI work\n4. Set up a code review checklist focused on type safety and data security for future PRs"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Curated Learning Resources] ### For: Advanced TypeScript Patterns\n\n1. **TypeScript's Advanced Types: Generics, Utility Types, and Conditional Types** - HackerNews, October 2024\n   Deep dive into TypeScript's type system with practical examples and real-world applications. Covers discriminated unions, type guards, and patterns for ensuring compile-time safety in complex applications.\n   [Link to discussion]\n\n2. **Building Type-Safe APIs in TypeScript** - HackerNews, September 2024\n   Practical guide to designing APIs with TypeScript that catch errors early. Particularly relevant for your connection configuration work.\n   [Link to discussion]\n\n### For: Secure Data Handling in Frontend\n\n1. **Preventing Information Leakage in Web Applications** - HackerNews, August 2024\n   Comprehensive guide to data security in frontend applications, including filtering sensitive information, secure logging, and audit trails.\n   [Link to discussion]\n\n2. **OAuth and API Key Management Best Practices** - HackerNews, July 2024\n   How to safely handle authentication tokens and API keys in applications, with examples for different frameworks.\n   [Link to discussion]\n\n### For: Component Architecture and Responsive Design\n\n1. **Advanced React Patterns: Composition Over Configuration** - HackerNews\n   Explores component composition strategies that scale, with examples using modern React patterns.\n   [Link to discussion]\n\n2. **CSS Layout Mastery: Flexbox, Grid, and Container Queries** - HackerNews, October 2024\n   Learn responsive design patterns that prevent overflow issues and work across all screen sizes.\n   [Link to discussion]\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips and Best Practices] - Run this analysis once a week to track your improvement trajectory over time\n- Pick one improvement area at a time and focus on it for a few days before moving to the next\n- Use the learning resources as a study guide; work through the recommended materials and practice applying the patterns\n- Revisit this report after focusing on an area for a week to see how your work patterns change\n- The learning resources are intentionally curated for your actual work, not generic topics, so they'll be highly relevant to what you're building"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[How Accuracy and Quality Are Maintained] This skill:\n- Analyzes your actual work patterns from timestamped chat history\n- Generates evidence-based recommendations grounded in real projects\n- Curates learning resources that directly address your identified gaps\n- Focuses on actionable improvements, not vague feedback\n- Provides specific time estimates based on complexity\n- Prioritizes areas that will have the most impact on your development velocity"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "developer_growth_analysis"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/developer-growth-analysis/SKILL.md"
+}

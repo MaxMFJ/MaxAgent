@@ -1,0 +1,108 @@
+{
+  "id": "capsule_stock_query",
+  "description": "查询A股股票信息，访问百度股市通（https://gushitong.baidu.com）获取实时股票数据",
+  "task_type": "stock",
+  "tags": ["股票", "查询", "A股", "百度股市通", "stock", "finance"],
+  "capability": ["stock_query", "web_scraping", "finance_data"],
+  "priority": 1,
+  "version": "1.0.0",
+  "trusted": "local_source",
+  "source": "local:stock_query_capsule.json",
+  "instruction_mode": true,
+  "instructions": [
+    {
+      "step": 1,
+      "action": "browser",
+      "description": "打开百度股市通网站",
+      "parameters": {
+        "action": "open",
+        "url": "https://gushitong.baidu.com",
+        "browser": "safari"
+      }
+    },
+    {
+      "step": 2,
+      "action": "browser",
+      "description": "等待页面加载完成",
+      "parameters": {
+        "action": "get_content",
+        "delay": 3
+      }
+    },
+    {
+      "step": 3,
+      "action": "browser",
+      "description": "在搜索框中输入股票代码或名称",
+      "parameters": {
+        "action": "type_text",
+        "selector": "input[placeholder*='股票']",
+        "text": "{stock_code}"
+      }
+    },
+    {
+      "step": 4,
+      "action": "browser",
+      "description": "点击搜索按钮或按回车键",
+      "parameters": {
+        "action": "click",
+        "selector": "button[type='submit'], .search-btn"
+      }
+    },
+    {
+      "step": 5,
+      "action": "browser",
+      "description": "等待搜索结果加载",
+      "parameters": {
+        "action": "get_content",
+        "delay": 3
+      }
+    },
+    {
+      "step": 6,
+      "action": "browser",
+      "description": "获取股票价格信息",
+      "parameters": {
+        "action": "execute_js",
+        "javascript": "// 尝试获取股票价格信息\nlet stockData = {};\n\n// 尝试查找价格元素\nconst priceEl = document.querySelector('.price, .stock-price, .current-price, [class*=\"price\"]');\nif (priceEl) stockData.price = priceEl.textContent.trim();\n\n// 尝试查找涨跌幅\nconst changeEl = document.querySelector('.change, .change-percent, [class*=\"change\"]');\nif (changeEl) stockData.change = changeEl.textContent.trim();\n\n// 尝试查找股票名称\nconst nameEl = document.querySelector('.stock-name, .name, h1, h2');\nif (nameEl) stockData.name = nameEl.textContent.trim();\n\n// 返回数据\nreturn stockData;"
+      }
+    },
+    {
+      "step": 7,
+      "action": "browser",
+      "description": "截图保存搜索结果",
+      "parameters": {
+        "action": "screenshot",
+        "save_path": "~/Desktop/stock_{stock_code}_screenshot.png"
+      }
+    },
+    {
+      "step": 8,
+      "action": "browser",
+      "description": "获取页面主要内容",
+      "parameters": {
+        "action": "get_content"
+      }
+    }
+  ],
+  "inputs": {
+    "stock_code": {
+      "type": "string",
+      "description": "股票代码或名称（如：002195、岩山科技、上证指数）",
+      "required": true
+    }
+  },
+  "outputs": {
+    "stock_data": {
+      "type": "object",
+      "description": "股票数据对象"
+    },
+    "screenshot_path": {
+      "type": "string",
+      "description": "截图保存路径"
+    },
+    "page_content": {
+      "type": "string",
+      "description": "页面主要内容"
+    }
+  }
+}

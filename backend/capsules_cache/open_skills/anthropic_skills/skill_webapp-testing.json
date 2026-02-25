@@ -1,0 +1,69 @@
+{
+  "id": "skill_webapp-testing",
+  "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Web Application Testing\n\nTo test local web applications, write native Python Playwright scripts.\n\n**Helper Scripts Available**:\n- `scripts/with_server.py` - Manages server lifecycle (supports multiple servers)\n\n**Always run scripts with `--help` first** to see usage. DO NOT read the source until you try running the script first and find that a customized solution is abslutely necessary. These scripts can be very large and thus pollute your context window. They exist to be called directly as black-box scripts rather than ingested into your context window."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Decision Tree: Choosing Your Approach] ```\nUser task → Is it static HTML?\n    ├─ Yes → Read HTML file directly to identify selectors\n    │         ├─ Success → Write Playwright script using selectors\n    │         └─ Fails/Incomplete → Treat as dynamic (below)\n    │\n    └─ No (dynamic webapp) → Is the server already running?\n        ├─ No → Run: python scripts/with_server.py --help\n        │        Then use the helper + write simplified Playwright script\n        │\n        └─ Yes → Reconnaissance-then-action:\n            1. Navigate and wait for networkidle\n            2. Take screenshot or inspect DOM\n            3. Identify selectors from rendered state\n            4. Execute actions with discovered selectors\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Example: Using with_server.py] To start a server, run `--help` first, then use the helper:\n\n**Single server:**\n```bash\npython scripts/with_server.py --server \"npm run dev\" --port 5173 -- python your_automation.py\n```\n\n**Multiple servers (e.g., backend + frontend):**\n```bash\npython scripts/with_server.py \\\n  --server \"cd backend && python server.py\" --port 3000 \\\n  --server \"cd frontend && npm run dev\" --port 5173 \\\n  -- python your_automation.py\n```\n\nTo create an automation script, include only Playwright logic (servers are managed automatically):\n```python\nfrom playwright.sync_api import sync_playwright\n\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=True) # Always launch chromium in headless mode\n    page = browser.new_page()\n    page.goto('http://localhost:5173') # Server already running and ready\n    page.wait_for_load_state('networkidle') # CRITICAL: Wait for JS to execute\n    # ... your automation logic\n    browser.close()\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Reconnaissance-Then-Action Pattern] 1. **Inspect rendered DOM**:\n   ```python\n   page.screenshot(path='/tmp/inspect.png', full_page=True)\n   content = page.content()\n   page.locator('button').all()\n   ```\n\n2. **Identify selectors** from inspection results\n\n3. **Execute actions** using discovered selectors"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Pitfall] ❌ **Don't** inspect the DOM before waiting for `networkidle` on dynamic apps\n✅ **Do** wait for `page.wait_for_load_state('networkidle')` before inspection"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Best Practices] - **Use bundled scripts as black boxes** - To accomplish a task, consider whether one of the scripts available in `scripts/` can help. These scripts handle common, complex workflows reliably without cluttering the context window. Use `--help` to see usage, then invoke directly. \n- Use `sync_playwright()` for synchronous scripts\n- Always close the browser when done\n- Use descriptive selectors: `text=`, `role=`, CSS selectors, or IDs\n- Add appropriate waits: `page.wait_for_selector()` or `page.wait_for_timeout()`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Reference Files] - **examples/** - Examples showing common patterns:\n  - `element_discovery.py` - Discovering buttons, links, and inputs on a page\n  - `static_html_automation.py` - Using file:// URLs for local HTML\n  - `console_logging.py` - Capturing console logs during automation"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "webapp_testing"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:anthropics/skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Complete terms in LICENSE.txt",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/anthropics/skills/main/skills/webapp-testing/SKILL.md"
+}

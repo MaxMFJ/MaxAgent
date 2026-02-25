@@ -90,6 +90,9 @@ struct ClickableLink: View {
                 .underline(isHovering)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 2)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -104,7 +107,8 @@ struct ClickableLink: View {
     }
     
     private func openLink() {
-        if let linkUrl = URL(string: url) {
+        let openable = url.hasPrefix("http://") || url.hasPrefix("https://") ? url : "https://\(url)"
+        if let linkUrl = URL(string: openable) {
             NSWorkspace.shared.open(linkUrl)
         }
     }

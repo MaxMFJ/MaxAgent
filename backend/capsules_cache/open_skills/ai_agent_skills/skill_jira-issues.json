@@ -1,0 +1,74 @@
+{
+  "id": "skill_jira-issues",
+  "description": "Create, update, and manage Jira issues from natural language. Use when the user wants to log bugs, create tickets, update issue status, or manage their Jira backlog.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Jira Issue Management\n\nCreate and manage Jira issues using the Jira REST API or MCP."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ### Option 1: Jira MCP Server\nInstall the Jira MCP server for seamless integration:\n```bash\nnpx @anthropic/create-mcp-server jira\n```\n\n### Option 2: Direct API\nSet environment variables:\n```bash\nexport JIRA_BASE_URL=\"https://yourcompany.atlassian.net\"\nexport JIRA_EMAIL=\"your-email@company.com\"\nexport JIRA_API_TOKEN=\"your-api-token\"\n```\n\nGet your API token: https://id.atlassian.com/manage-profile/security/api-tokens"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Creating Issues] ### Basic Issue\n```python\nimport requests\nfrom requests.auth import HTTPBasicAuth\nimport os\n\ndef create_issue(project_key, summary, description, issue_type=\"Task\"):\n    url = f\"{os.environ['JIRA_BASE_URL']}/rest/api/3/issue\"\n\n    auth = HTTPBasicAuth(\n        os.environ['JIRA_EMAIL'],\n        os.environ['JIRA_API_TOKEN']\n    )\n\n    payload = {\n        \"fields\": {\n            \"project\": {\"key\": project_key},\n            \"summary\": summary,\n            \"description\": {\n                \"type\": \"doc\",\n                \"version\": 1,\n                \"content\": [{\n                    \"type\": \"paragraph\",\n                    \"content\": [{\"type\": \"text\", \"text\": description}]\n                }]\n            },\n            \"issuetype\": {\"name\": issue_type}\n        }\n    }\n\n    response = requests.post(url, json=payload, auth=auth)\n    return response.json()\n\n# Example\nissue = create_issue(\"PROJ\", \"Fix login bug\", \"Users can't login with SSO\", \"Bug\")\nprint(f\"Created: {issue['key']}\")\n```\n\n### With Labels and Priority\n```python\ndef create_detailed_issue(project_key, summary, description,\n                          issue_type=\"Task\", priority=\"Medium\",\n                          labels=None, assignee=None):\n    payload = {\n        \"fields\": {\n            \"project\": {\"key\": project_key},\n            \"summary\": summary,\n            \"description\": {\n                \"type\": \"doc\",\n                \"version\": 1,\n                \"content\": [{\n                    \"type\": \"paragraph\",\n                    \"content\": [{\"type\": \"text\", \"text\": description}]\n                }]\n            },\n            \"issuetype\": {\"name\": issue_type},\n            \"priority\": {\"name\": priority},\n        }\n    }\n\n    if labels:\n        payload[\"fields\"][\"labels\"] = labels\n    if assignee:\n        payload[\"fields\"][\"assignee\"] = {\"accountId\": assignee}\n\n    # ... make request\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Common Issue Types] | Type | Use For |\n|------|---------|\n| Bug | Something broken |\n| Task | Work item |\n| Story | User-facing feature |\n| Epic | Large initiative |\n| Sub-task | Part of larger task |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Updating Issues] ### Change Status\n```python\ndef transition_issue(issue_key, transition_name):\n    # Get available transitions\n    url = f\"{JIRA_BASE_URL}/rest/api/3/issue/{issue_key}/transitions\"\n    transitions = requests.get(url, auth=auth).json()\n\n    # Find matching transition\n    transition_id = None\n    for t in transitions['transitions']:\n        if t['name'].lower() == transition_name.lower():\n            transition_id = t['id']\n            break\n\n    # Execute transition\n    requests.post(url, json={\"transition\": {\"id\": transition_id}}, auth=auth)\n```\n\n### Add Comment\n```python\ndef add_comment(issue_key, comment_text):\n    url = f\"{JIRA_BASE_URL}/rest/api/3/issue/{issue_key}/comment\"\n\n    payload = {\n        \"body\": {\n            \"type\": \"doc\",\n            \"version\": 1,\n            \"content\": [{\n                \"type\": \"paragraph\",\n                \"content\": [{\"type\": \"text\", \"text\": comment_text}]\n            }]\n        }\n    }\n\n    requests.post(url, json=payload, auth=auth)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Searching Issues] ### JQL Queries\n```python\ndef search_issues(jql):\n    url = f\"{JIRA_BASE_URL}/rest/api/3/search\"\n    params = {\"jql\": jql, \"maxResults\": 50}\n    response = requests.get(url, params=params, auth=auth)\n    return response.json()['issues']\n\n# Examples\nmy_bugs = search_issues(\"project = PROJ AND type = Bug AND assignee = currentUser()\")\nopen_items = search_issues(\"project = PROJ AND status != Done\")\nrecent = search_issues(\"project = PROJ AND created >= -7d\")\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quick Commands] When user says... create this:\n\n| Command | Action |\n|---------|--------|\n| \"log bug about X\" | Bug issue with description |\n| \"create task for X\" | Task issue |\n| \"what's on my plate\" | JQL: assignee = currentUser() AND status != Done |\n| \"move X to done\" | Transition issue to Done |\n| \"add comment to X\" | Add comment to issue |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Summary**: Keep under 80 chars, start with verb (Fix, Add, Update)\n2. **Description**: Include steps to reproduce for bugs\n3. **Labels**: Use for categorization (frontend, backend, urgent)\n4. **Links**: Reference related issues when relevant"
+    }
+  ],
+  "task_type": "productivity",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "jira_issues"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/jira-issues/SKILL.md"
+}

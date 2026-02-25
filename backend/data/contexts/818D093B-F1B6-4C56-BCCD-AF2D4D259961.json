@@ -1,0 +1,15 @@
+{
+  "session_id": "818D093B-F1B6-4C56-BCCD-AF2D4D259961",
+  "recent_messages": [
+    {
+      "role": "user",
+      "content": "打开微信"
+    },
+    {
+      "role": "assistant",
+      "content": "微信已成功打开！"
+    }
+  ],
+  "created_at": "2026-02-24T12:53:01.917397",
+  "last_active": "2026-02-24T12:53:10.109800"
+}

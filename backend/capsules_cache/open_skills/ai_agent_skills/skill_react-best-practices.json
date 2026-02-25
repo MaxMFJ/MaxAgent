@@ -1,0 +1,49 @@
+{
+  "id": "skill_react-best-practices",
+  "description": "React development guidelines with hooks, component patterns, state management, and performance optimization.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # React Best Practices\n\nModern React development guidelines covering hooks, component patterns, state management, and performance optimization."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Building React applications\n- Learning React best practices\n- Code reviews for React projects\n- Performance optimization"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Source] This skill references patterns from [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "react_best_practices"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/react-best-practices/SKILL.md"
+}

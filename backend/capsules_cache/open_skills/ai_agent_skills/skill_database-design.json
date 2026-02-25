@@ -1,0 +1,69 @@
+{
+  "id": "skill_database-design",
+  "description": "Database schema design, optimization, and migration patterns for PostgreSQL, MySQL, and NoSQL databases. Use for designing schemas, writing migrations, or optimizing queries.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Database Design"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Schema Design Principles] ### Normalization Guidelines\n```sql\n-- 1NF: Atomic values, no repeating groups\n-- 2NF: No partial dependencies on composite keys\n-- 3NF: No transitive dependencies\n\n-- Users table (normalized)\nCREATE TABLE users (\n  id SERIAL PRIMARY KEY,\n  email VARCHAR(255) UNIQUE NOT NULL,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\n-- Addresses table (separate entity)\nCREATE TABLE addresses (\n  id SERIAL PRIMARY KEY,\n  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,\n  street VARCHAR(255),\n  city VARCHAR(100),\n  country VARCHAR(100),\n  is_primary BOOLEAN DEFAULT false\n);\n```\n\n### Denormalization for Performance\n```sql\n-- When read performance matters more than write consistency\nCREATE TABLE order_summaries (\n  id SERIAL PRIMARY KEY,\n  order_id INTEGER REFERENCES orders(id),\n  customer_name VARCHAR(255),  -- Denormalized from customers\n  total_amount DECIMAL(10,2),\n  item_count INTEGER,\n  last_updated TIMESTAMPTZ DEFAULT NOW()\n);\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Index Design] ### Common Index Patterns\n```sql\n-- B-tree (default) for equality and range queries\nCREATE INDEX idx_users_email ON users(email);\n\n-- Composite index (order matters!)\nCREATE INDEX idx_orders_user_date ON orders(user_id, created_at DESC);\n\n-- Partial index for specific conditions\nCREATE INDEX idx_active_users ON users(email) WHERE deleted_at IS NULL;\n\n-- GIN index for array/JSONB columns\nCREATE INDEX idx_posts_tags ON posts USING GIN(tags);\n\n-- Covering index (includes additional columns)\nCREATE INDEX idx_orders_covering ON orders(user_id) INCLUDE (total, status);\n```\n\n### Index Analysis\n```sql\n-- Check index usage\nSELECT\n  schemaname, tablename, indexname,\n  idx_scan, idx_tup_read, idx_tup_fetch\nFROM pg_stat_user_indexes\nORDER BY idx_scan DESC;\n\n-- Find missing indexes\nSELECT\n  relname, seq_scan, seq_tup_read,\n  idx_scan, idx_tup_fetch\nFROM pg_stat_user_tables\nWHERE seq_scan > idx_scan\nORDER BY seq_tup_read DESC;\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Migration Patterns] ### Safe Migration Template\n```sql\n-- Always use transactions\nBEGIN;\n\n-- Add column with default (non-blocking in PG 11+)\nALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active';\n\n-- Create index concurrently (doesn't lock table)\nCREATE INDEX CONCURRENTLY idx_users_status ON users(status);\n\n-- Backfill data in batches\nUPDATE users SET status = 'active' WHERE status IS NULL AND id BETWEEN 1 AND 10000;\n\nCOMMIT;\n```\n\n### Zero-Downtime Migrations\n```\n1. Add new column (nullable)\n2. Deploy code that writes to both columns\n3. Backfill old data\n4. Deploy code that reads from new column\n5. Remove old column\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Query Optimization] ### EXPLAIN Analysis\n```sql\n-- Always use EXPLAIN ANALYZE\nEXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)\nSELECT * FROM orders WHERE user_id = 123 AND status = 'pending';\n\n-- Key metrics to watch:\n-- - Seq Scan vs Index Scan\n-- - Actual rows vs Estimated rows\n-- - Buffers: shared hit vs read\n```\n\n### Common Optimizations\n```sql\n-- Use EXISTS instead of IN for large sets\nSELECT * FROM users u\nWHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);\n\n-- Pagination with keyset (cursor) instead of OFFSET\nSELECT * FROM posts\nWHERE created_at < '2024-01-01'\nORDER BY created_at DESC\nLIMIT 20;\n\n-- Use CTEs for complex queries\nWITH active_users AS (\n  SELECT id FROM users WHERE last_login > NOW() - INTERVAL '30 days'\n)\nSELECT * FROM orders WHERE user_id IN (SELECT id FROM active_users);\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Constraints & Data Integrity] ```sql\n-- Primary key\nALTER TABLE users ADD PRIMARY KEY (id);\n\n-- Foreign key with cascade\nALTER TABLE orders ADD CONSTRAINT fk_orders_user\n  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;\n\n-- Check constraint\nALTER TABLE products ADD CONSTRAINT chk_price_positive\n  CHECK (price >= 0);\n\n-- Unique constraint\nALTER TABLE users ADD CONSTRAINT uniq_users_email UNIQUE (email);\n\n-- Exclusion constraint (no overlapping ranges)\nALTER TABLE reservations ADD CONSTRAINT excl_no_overlap\n  EXCLUDE USING gist (room_id WITH =, tsrange(start_time, end_time) WITH &&);\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] - Use UUIDs for public-facing IDs, SERIAL/BIGSERIAL for internal\n- Always add `created_at` and `updated_at` timestamps\n- Use soft deletes (`deleted_at`) for important data\n- Design for eventual consistency in distributed systems\n- Document schema decisions in migration files\n- Test migrations on production-size data before deploying"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "database_design"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/database-design/SKILL.md"
+}

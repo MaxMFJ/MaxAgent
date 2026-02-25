@@ -1,0 +1,64 @@
+{
+  "id": "skill_brand-guidelines",
+  "description": "Apply brand colors and typography to artifacts. Use when brand colors, style guidelines, visual formatting, or company design standards apply. Ensures consistency across branded content.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Brand Guidelines Application"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Purpose] Apply consistent brand styling to any artifact: documents, presentations, web pages, or marketing materials."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Brand Elements] ### Colors\nDefine your brand palette with CSS variables:\n\n```css\n:root {\n  --brand-primary: #1a73e8;\n  --brand-secondary: #34a853;\n  --brand-accent: #ea4335;\n  --brand-dark: #202124;\n  --brand-light: #f8f9fa;\n  --brand-text: #3c4043;\n  --brand-text-muted: #5f6368;\n}\n```\n\n### Typography\n```css\n/* Primary font for headings */\n--font-display: 'Product Sans', 'Google Sans', system-ui;\n\n/* Body font */\n--font-body: 'Roboto', 'Inter', -apple-system, sans-serif;\n\n/* Monospace for code */\n--font-mono: 'Roboto Mono', 'Fira Code', monospace;\n\n/* Type scale */\n--text-xs: 0.75rem;\n--text-sm: 0.875rem;\n--text-base: 1rem;\n--text-lg: 1.125rem;\n--text-xl: 1.25rem;\n--text-2xl: 1.5rem;\n--text-3xl: 1.875rem;\n--text-4xl: 2.25rem;\n```\n\n### Spacing\n```css\n--space-1: 0.25rem;\n--space-2: 0.5rem;\n--space-3: 0.75rem;\n--space-4: 1rem;\n--space-6: 1.5rem;\n--space-8: 2rem;\n--space-12: 3rem;\n--space-16: 4rem;\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Application Examples] ### Buttons\n```css\n.btn-primary {\n  background: var(--brand-primary);\n  color: white;\n  padding: var(--space-2) var(--space-4);\n  border-radius: 4px;\n  font-family: var(--font-body);\n  font-weight: 500;\n}\n```\n\n### Cards\n```css\n.card {\n  background: white;\n  border: 1px solid var(--brand-light);\n  border-radius: 8px;\n  padding: var(--space-6);\n  box-shadow: 0 1px 3px rgba(0,0,0,0.1);\n}\n```\n\n### Headers\n```css\nh1 {\n  font-family: var(--font-display);\n  font-size: var(--text-4xl);\n  color: var(--brand-dark);\n  font-weight: 500;\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Document Templates] ### Google Docs\n- Heading 1: Display font, 24pt, Brand Dark\n- Heading 2: Display font, 18pt, Brand Primary\n- Body: Body font, 11pt, Brand Text\n- Links: Brand Primary, underlined\n\n### Presentations\n- Title slides: White text on Brand Primary background\n- Content slides: Brand Dark text on white\n- Accent elements: Brand Secondary or Accent"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Consistency**: Use exact brand colors, never approximate\n2. **Contrast**: Ensure 4.5:1 minimum for text readability\n3. **Hierarchy**: Use size and weight to establish importance\n4. **Whitespace**: Generous spacing feels premium\n5. **Logo usage**: Maintain clear space around logo"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "brand_guidelines"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/brand-guidelines/SKILL.md"
+}

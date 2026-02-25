@@ -5,11 +5,16 @@ Uses local LLM to improve context extraction from conversation history
 
 import logging
 import asyncio
+import time
 from typing import List, Dict, Any, Optional
 
 from .local_llm_manager import get_local_llm_manager, LocalLLMProvider
 
 logger = logging.getLogger(__name__)
+
+# 连续超时后的冷却策略
+_MAX_CONSECUTIVE_TIMEOUTS = 3
+_COOLDOWN_SECONDS = 300  # 连续超时 N 次后冷却 5 分钟，不再调用本地 LLM
 
 
 class ContextEnhancer:
@@ -19,20 +24,11 @@ class ContextEnhancer:
     - Identifies task continuations
     - Extracts key information from history
     """
-    
-    INTENT_ANALYSIS_PROMPT = """分析用户的查询意图，判断是否在引用之前的任务或对话。
 
+    INTENT_ANALYSIS_PROMPT = """分析用户查询意图，判断是否引用之前的任务。
 用户查询: {query}
-
-请以 JSON 格式回答：
-{{
-  "is_continuation": true/false,  // 是否在继续之前的任务
-  "task_keywords": ["关键词1", "关键词2"],  // 可能相关的任务关键词
-  "time_reference": "recent/specific/none",  // 时间引用：最近的/特定的/无
-  "search_terms": ["搜索词1", "搜索词2"]  // 用于搜索历史的关键词
-}}
-
-只输出 JSON，不要其他内容。"""
+以JSON回答：{{"is_continuation":true/false,"task_keywords":["词1"],"time_reference":"recent/specific/none","search_terms":["词1"]}}
+只输出JSON。"""
 
     CONTEXT_SUMMARY_PROMPT = """根据以下对话历史，提取与当前查询最相关的信息摘要。
 
@@ -50,49 +46,89 @@ class ContextEnhancer:
 
     def __init__(self):
         self._llm_manager = get_local_llm_manager()
-    
+        self._consecutive_timeouts = 0
+        self._cooldown_until: float = 0
+
     async def analyze_intent(self, query: str) -> Dict[str, Any]:
         """
-        Analyze user query intent using local LLM
-        Returns intent analysis with keywords for context search
+        Analyze user query intent using local LLM.
+        Includes cooldown logic: after N consecutive timeouts, skip LLM calls for a period.
         """
+        # 冷却期内直接跳过，避免每次请求都等 15 秒超时
+        if self._consecutive_timeouts >= _MAX_CONSECUTIVE_TIMEOUTS:
+            if time.time() < self._cooldown_until:
+                logger.debug(
+                    f"Intent analysis in cooldown ({self._consecutive_timeouts} consecutive timeouts), "
+                    f"using keyword fallback"
+                )
+                return self._default_intent(query)
+            # 冷却结束，重置计数器，再试一次
+            self._consecutive_timeouts = 0
+
         try:
             client, config = await self._llm_manager.get_client()
-            
+
             if client is None or config.provider == LocalLLMProvider.NONE:
                 logger.debug("No local LLM available for intent analysis")
                 return self._default_intent(query)
-            
+
+            # 优先选择较小的模型（7B 级别）做意图分析，14B 太慢
+            model_name = config.model
+            all_configs = self._llm_manager._all_configs
+            if all_configs:
+                from .local_llm_manager import LocalLLMManager
+                small_chat = [
+                    c for c in all_configs
+                    if LocalLLMManager._is_chat_model(c.model)
+                    and LocalLLMManager._estimate_model_size(c.model) <= 8
+                ]
+                if small_chat:
+                    model_name = small_chat[0].model
+
             prompt = self.INTENT_ANALYSIS_PROMPT.format(query=query)
-            
+
             response = await asyncio.wait_for(
                 client.chat.completions.create(
-                    model=config.model,
+                    model=model_name,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.1,
-                    max_tokens=200
+                    max_tokens=120,
                 ),
-                timeout=10.0
+                timeout=15.0,
             )
-            
+
             content = response.choices[0].message.content.strip()
-            
-            # 解析 JSON
+
             import json
-            # 尝试提取 JSON
             if "{" in content and "}" in content:
                 json_start = content.index("{")
                 json_end = content.rindex("}") + 1
-                json_str = content[json_start:json_end]
-                result = json.loads(json_str)
+                result = json.loads(content[json_start:json_end])
                 logger.info(f"Intent analysis: {result}")
+                self._consecutive_timeouts = 0
                 return result
-            
+
         except asyncio.TimeoutError:
-            logger.warning("Intent analysis timed out")
+            self._consecutive_timeouts += 1
+            self._cooldown_until = time.time() + _COOLDOWN_SECONDS
+            logger.warning(
+                f"Intent analysis timed out (15s), consecutive={self._consecutive_timeouts}. "
+                f"{'Entering cooldown.' if self._consecutive_timeouts >= _MAX_CONSECUTIVE_TIMEOUTS else ''}"
+            )
+            if self._consecutive_timeouts == 1:
+                try:
+                    from .system_message_service import get_system_message_service, MessageCategory
+                    get_system_message_service().add_warning(
+                        "意图分析超时",
+                        "本地 LLM 意图分析超时，已使用默认关键词匹配。如持续超时将自动跳过。",
+                        source="context_enhancer",
+                        category=MessageCategory.INFO.value,
+                    )
+                except Exception:
+                    pass
         except Exception as e:
             logger.warning(f"Intent analysis failed: {e}")
-        
+
         return self._default_intent(query)
     
     def _default_intent(self, query: str) -> Dict[str, Any]:

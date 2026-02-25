@@ -139,7 +139,7 @@ class ServerStatus(str, Enum):
 
 | 文件 | 职责 |
 |------|------|
-| `agent/tool_upgrade_orchestrator.py` | 升级流程编排、LLM 规划、资源调度 |
+| `agent/self_upgrade/` | 升级流程编排、Planner、Strategy Router、Executors、Validation、Activation |
 | `agent/resource_dispatcher.py` | Cursor/终端调度实现 |
 | `main.py` | ServerStatus、status_change 广播、/health |
 | `tools/registry.py` | 动态加载扩展 |

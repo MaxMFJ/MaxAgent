@@ -1,0 +1,39 @@
+{
+  "id": "capsule_screenshot_desktop",
+  "description": "截取当前桌面/屏幕截图并返回结果",
+  "version": "1.0.0",
+  "inputs": {
+    "area": {
+      "type": "string",
+      "description": "截图区域：full 或 window，默认 full"
+    },
+    "app_name": {
+      "type": "string",
+      "description": "可选，应用名称（如 Safari、微信）以截取该窗口"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "截图结果，含 success 与 data"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "tool",
+      "tool": "screenshot",
+      "args": {
+        "action": "capture",
+        "area": "{{input.area}}",
+        "app_name": "{{input.app_name}}"
+      },
+      "timeout": 30
+    }
+  ],
+  "task_type": "screenshot",
+  "tags": ["screenshot", "截图", "屏幕"],
+  "capability": ["screenshot", "screen_capture"],
+  "priority": 0,
+  "schema_version": "1.1.0"
+}

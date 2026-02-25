@@ -1,0 +1,49 @@
+{
+  "id": "skill_expo-app-design",
+  "description": "Build beautiful cross-platform mobile apps with Expo Router, NativeWind, and React Native.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Expo App Design\n\nBuild beautiful cross-platform mobile apps with Expo Router, NativeWind, and React Native."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Building mobile apps with Expo\n- Navigation with Expo Router\n- Styling with NativeWind/Tailwind\n- Native tabs and animations"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Source] This skill references patterns from [Expo's skills](https://github.com/expo/skills)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "expo_app_design"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/expo-app-design/SKILL.md"
+}

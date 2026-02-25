@@ -28,5 +28,8 @@ backend/__pycache__/
 .env
 .env.local
 backend/data/smtp_config.json
+backend/data/github_config.json
+backend/data/llm_config.json
+backend/models/
 .DS_Store
 *.log

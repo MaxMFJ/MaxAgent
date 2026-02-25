@@ -1,0 +1,49 @@
+{
+  "id": "skill_vercel-deploy",
+  "description": "Deploy applications to Vercel with edge functions, serverless, and ISR.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Vercel Deploy\n\nDeploy applications to Vercel with edge functions, serverless, and ISR."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Deploying Next.js applications\n- Setting up edge functions\n- Configuring ISR (Incremental Static Regeneration)\n- Serverless deployments"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Source] This skill references patterns from [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "vercel_deploy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/vercel-deploy/SKILL.md"
+}

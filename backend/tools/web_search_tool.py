@@ -73,7 +73,7 @@ class WebSearchTool(BaseTool):
             },
             "query": {
                 "type": "string",
-                "description": "搜索关键词或问题"
+                "description": "搜索关键词或问题。get_stock 时请传入股票代码（如 002195、AAPL）或中文名称（如 上证指数）"
             },
             "url": {
                 "type": "string",
@@ -748,50 +748,89 @@ class WebSearchTool(BaseTool):
         
         return ToolResult(success=False, error=f"获取天气失败: {'; '.join(errors)}")
     
+    # A 股常用指数 / 股票中文名 → Yahoo Finance 代码映射
+    _CN_STOCK_ALIASES: Dict[str, str] = {
+        "上证指数": "000001.SS", "上证": "000001.SS", "沪指": "000001.SS",
+        "深证成指": "399001.SZ", "深成指": "399001.SZ", "深指": "399001.SZ",
+        "创业板指": "399006.SZ", "创业板": "399006.SZ",
+        "科创50": "000688.SS", "科创板": "000688.SS",
+        "沪深300": "000300.SS", "hs300": "000300.SS",
+        "中证500": "000905.SS",
+        "上证50": "000016.SS",
+    }
+
+    def _resolve_stock_symbol(self, raw: str) -> str:
+        """将中文名称 / 纯数字代码转为 Yahoo Finance 可识别的 ticker"""
+        raw = raw.strip()
+        # 直接命中别名
+        for alias, ticker in self._CN_STOCK_ALIASES.items():
+            if alias in raw:
+                return ticker
+        # 纯 6 位数字 → 自动补后缀
+        import re
+        m = re.search(r"\b(\d{6})\b", raw)
+        if m:
+            code = m.group(1)
+            if code.startswith(("6", "9")):
+                return f"{code}.SS"
+            elif code.startswith(("0", "3", "2")):
+                return f"{code}.SZ"
+            return code
+        # 已含 .SS / .SZ / .HK 等后缀，直接返回
+        if re.match(r"^[A-Za-z0-9.]+$", raw):
+            return raw
+        # 无法识别，返回原始值（大概率 404，由调用方处理）
+        return raw
+
     async def _get_stock(self, symbol: str) -> ToolResult:
-        """获取股票信息"""
+        """获取股票信息（支持 A 股中文名称、6 位代码、Yahoo ticker）"""
         if not symbol:
-            return ToolResult(success=False, error="需要股票代码")
-        
+            return ToolResult(success=False, error="需要股票代码或名称，例如 '上证指数'、'002195'、'AAPL'")
+
+        resolved = self._resolve_stock_symbol(symbol)
+
         try:
             import httpx
-            
-            # 使用 Yahoo Finance API
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-            
+
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{resolved}"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
             }
-            
+
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, headers=headers, timeout=10)
+                if response.status_code == 404:
+                    return ToolResult(
+                        success=False,
+                        error=f"未找到股票 '{symbol}'（解析为 {resolved}）。请使用标准代码，如 '000001'（上证指数）、'002195'（岩山科技）、'AAPL'。",
+                    )
                 data = response.json()
-            
+
             chart = data.get("chart", {}).get("result", [{}])[0]
             meta = chart.get("meta", {})
-            
+
             stock_info = {
-                "symbol": meta.get("symbol", symbol),
-                "name": meta.get("longName", ""),
+                "symbol": meta.get("symbol", resolved),
+                "name": meta.get("longName", "") or meta.get("shortName", ""),
                 "currency": meta.get("currency", ""),
                 "exchange": meta.get("exchangeName", ""),
                 "current_price": meta.get("regularMarketPrice", ""),
                 "previous_close": meta.get("previousClose", ""),
                 "market_state": meta.get("marketState", ""),
-                "timezone": meta.get("timezone", "")
+                "timezone": meta.get("timezone", ""),
+                "query": symbol,
             }
-            
-            # 计算涨跌
+
             if stock_info["current_price"] and stock_info["previous_close"]:
                 change = float(stock_info["current_price"]) - float(stock_info["previous_close"])
                 change_percent = (change / float(stock_info["previous_close"])) * 100
                 stock_info["change"] = round(change, 2)
                 stock_info["change_percent"] = round(change_percent, 2)
-            
+
             return ToolResult(success=True, data=stock_info)
-            
+
         except Exception as e:
-            return ToolResult(success=False, error=f"获取股票信息失败: {str(e)}")
+            return ToolResult(success=False, error=f"获取股票信息失败 ({resolved}): {str(e)}")
     
     async def _translate(
         self,

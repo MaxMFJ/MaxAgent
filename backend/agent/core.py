@@ -15,6 +15,14 @@ from .execution_log_handler import QueueLogHandler
 from .llm_client import LLMClient
 from .context_manager import context_manager
 from .local_tool_parser import LocalToolParser, is_local_model, LOCAL_MODEL_SYSTEM_PROMPT
+from llm.tool_parser_v2 import parse_tool_call as parse_tool_call_v2
+from .task_context_manager import (
+    extract_explicit_target,
+    resolve_task,
+    bind_target_to_tool_args,
+    is_single_step_task,
+)
+from .agent_state import get_current_task, set_current_task, clear_current_task
 from .context_enhancer import get_context_enhancer
 from .prompt_loader import get_full_system_prompt
 from .event_bus import get_event_bus
@@ -25,8 +33,11 @@ from .event_schema import (
     PRIORITY_PARSE_FAILED,
     PRIORITY_TRIGGER_UPGRADE,
 )
+from .evomap_bridge import evomap_enhance_context, evomap_record_success
 from tools import get_all_tools, ToolRegistry
 from tools.base import BaseTool, ToolResult
+from tools.schema_registry import build_from_base_tools
+from tools.router import execute_tool, set_router_registry
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +73,7 @@ class AgentCore:
         self.max_iterations = max_iterations
         self.registry = ToolRegistry()
         self._register_tools()
+        set_router_registry(self.registry)
         self.context_manager = context_manager
     
     def _register_tools(self):
@@ -69,6 +81,7 @@ class AgentCore:
         tools = get_all_tools(self.runtime_adapter)
         self.registry.register_many(tools)
         loaded = self.registry.load_generated_tools(self.runtime_adapter)
+        build_from_base_tools(self.registry.list_tools())
         logger.info(f"Registered {len(self.registry)} tools (dynamic: {loaded})")
     
     @property
@@ -83,6 +96,7 @@ class AgentCore:
     def reset_conversation(self, session_id: str = "default"):
         """Clear conversation history for a session"""
         self.context_manager.clear_session(session_id)
+        clear_current_task(session_id)
     
     async def run(self, user_message: str, session_id: str = "default") -> str:
         """
@@ -92,7 +106,13 @@ class AgentCore:
         # 获取会话上下文
         context = self.context_manager.get_or_create(session_id)
         context.add_message("user", user_message)
-        
+
+        # Task Context: 提取显式目标并解析任务
+        explicit_target = extract_explicit_target(user_message)
+        current_task = get_current_task(session_id)
+        resolved_task = resolve_task(user_message, explicit_target, current_task)
+        set_current_task(session_id, resolved_task)
+
         # 构建消息列表（使用语义搜索优化上下文）
         context_messages = context.get_context_messages(current_query=user_message)
         messages = [
@@ -113,7 +133,7 @@ class AgentCore:
             )
             
             if response.get("tool_calls"):
-                tool_results = await self._execute_tools(response["tool_calls"])
+                tool_results = await self._execute_tools(response["tool_calls"], session_id)
                 
                 messages.append({
                     "role": "assistant",
@@ -179,7 +199,15 @@ class AgentCore:
             logger.warning(f"Context enhancement failed: {e}")
 
         context.add_message("user", user_message)
-        
+
+        # Task Context: 提取显式目标并解析任务，防止跨任务上下文污染
+        explicit_target = extract_explicit_target(user_message)
+        current_task = get_current_task(session_id)
+        resolved_task = resolve_task(user_message, explicit_target, current_task)
+        set_current_task(session_id, resolved_task)
+        if explicit_target:
+            logger.info(f"TaskContext: explicit target '{explicit_target}' -> new task")
+
         # 检查是否是本地模型
         provider = self.llm.config.provider
         model_name = self.llm.config.model or ""
@@ -193,11 +221,19 @@ class AgentCore:
                 logger.info(f"Detected local URL ({base_url}), switching to local mode")
                 use_local_mode = True
         
+        # EvoMap: 查询进化网络获取策略增强上下文
+        evomap_context = ""
+        try:
+            evomap_context = await evomap_enhance_context(enhanced_message)
+        except Exception as e:
+            logger.debug(f"EvoMap context enhancement skipped: {e}")
+
         # 构建消息列表（使用增强后的查询进行语义搜索）
         context_messages = context.get_context_messages(current_query=enhanced_message)
         
         base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_full_system_prompt()
-        system_prompt = f"{base_prompt}\n\n{extra_system_prompt}" if extra_system_prompt else base_prompt
+        combined_extra = "\n\n".join(p for p in [extra_system_prompt, evomap_context] if p)
+        system_prompt = f"{base_prompt}\n\n{combined_extra}" if combined_extra else base_prompt
         
         messages = [
             {"role": "system", "content": system_prompt},
@@ -210,11 +246,15 @@ class AgentCore:
         tool_schemas = None if use_local_mode else self.get_tool_schemas()
         accumulated_content = ""
         
+        truncation_retries = 0
+        MAX_TRUNCATION_RETRIES = 2
+
         for iteration in range(self.max_iterations):
             logger.info(f"Agent stream iteration {iteration + 1}, session: {session_id}, messages: {len(messages)}, local_mode={use_local_mode}")
             
             tool_calls = []
             current_content = ""
+            finish_reason = None
             
             try:
                 logger.info(f"Starting LLM stream (local_mode={use_local_mode})...")
@@ -226,7 +266,6 @@ class AgentCore:
                     
                     if chunk["type"] == "content" and chunk.get("content"):
                         current_content += chunk["content"]
-                        # 本地模型：暂存内容，稍后解析
                         if not use_local_mode:
                             yield {"type": "content", "content": chunk["content"]}
                     
@@ -240,8 +279,8 @@ class AgentCore:
                         }
                     
                     elif chunk["type"] == "finish":
-                        logger.info(f"Stream finished: {chunk.get('finish_reason')}")
-                        # 累加 token 使用量
+                        finish_reason = chunk.get("finish_reason")
+                        logger.info(f"Stream finished: {finish_reason}")
                         if chunk.get("usage"):
                             usage = chunk["usage"]
                             total_usage["prompt_tokens"] += usage.get("prompt_tokens", 0)
@@ -254,12 +293,48 @@ class AgentCore:
                         yield {"type": "error", "error": chunk["error"]}
                         return
                 
-                # 本地模型：从文本中解析工具调用
+                # ── 截断自动续传：finish_reason=length 且 tool call 参数不完整 ──
+                if finish_reason == "length" and tool_calls and not use_local_mode:
+                    has_truncated = any(tc.get("_truncated") for tc in tool_calls)
+                    if has_truncated and truncation_retries < MAX_TRUNCATION_RETRIES:
+                        truncation_retries += 1
+                        tool_names = ", ".join(tc["name"] for tc in tool_calls)
+                        logger.warning(
+                            f"Tool call truncated (retry {truncation_retries}/{MAX_TRUNCATION_RETRIES}), "
+                            f"tools: [{tool_names}]. Asking LLM to regenerate with shorter output."
+                        )
+                        yield {
+                            "type": "content",
+                            "content": f"\n\n⚠️ 生成内容过长被截断，正在重新生成（第 {truncation_retries} 次）...\n\n",
+                        }
+                        messages.append({
+                            "role": "assistant",
+                            "content": current_content or f"我需要调用 {tool_names} 工具，但输出被截断了。",
+                        })
+                        messages.append({
+                            "role": "user",
+                            "content": (
+                                "你的上一次回复因为太长被截断了，工具调用参数不完整。"
+                                "请用更简洁的方式重新生成。具体建议：\n"
+                                "1. 如果是生成代码/脚本，请将内容拆分为多个步骤，先完成核心部分\n"
+                                "2. 减少注释和装饰性内容\n"
+                                "3. 如果是生成报告，先生成简要版本"
+                            ),
+                        })
+                        tool_calls = []
+                        continue
+                
+                # 本地模型：使用 Tool Parser v2 解析
                 if use_local_mode and current_content:
-                    parsed_tool, remaining_text = LocalToolParser.parse_response(current_content)
-                    if parsed_tool:
+                    tool_name, args, remaining_text = parse_tool_call_v2(current_content)
+                    if tool_name:
+                        parsed_tool = {
+                            "id": f"local_{tool_name}_{hash(current_content) % 10000}",
+                            "name": tool_name,
+                            "arguments": args or {},
+                        }
                         tool_calls.append(parsed_tool)
-                        logger.info(f"Local model tool call parsed: {parsed_tool['name']}")
+                        logger.info(f"Local model tool call parsed (v2): {tool_name}")
                         yield {
                             "type": "tool_call",
                             "tool_name": parsed_tool["name"],
@@ -289,13 +364,17 @@ class AgentCore:
                                 priority=PRIORITY_PARSE_FAILED,
                             ))
                 
+                # 清理内部标记
+                for tc in tool_calls:
+                    tc.pop("_truncated", None)
+
                 logger.info(f"LLM stream completed. Tool calls: {len(tool_calls)}, Content length: {len(current_content)}")
                 
                 if tool_calls:
                     yield {"type": "tool_executing", "count": len(tool_calls)}
                     
                     tool_results = []
-                    async for ev in self._execute_tools_with_streaming_logs(tool_calls):
+                    async for ev in self._execute_tools_with_streaming_logs(tool_calls, session_id):
                         if ev.get("type") == "execution_log":
                             yield ev
                         else:
@@ -452,27 +531,35 @@ class AgentCore:
         
         yield {"type": "error", "error": "达到最大迭代次数"}
     
-    async def _execute_tools(self, tool_calls: List[Dict[str, Any]]) -> List[ToolResult]:
-        """Execute a list of tool calls"""
+    async def _execute_tools(
+        self, tool_calls: List[Dict[str, Any]], session_id: str = "default"
+    ) -> List[ToolResult]:
+        """Execute a list of tool calls (Tool Runtime v2: validate → router)"""
         results = []
+        bind_fn = lambda n, a: bind_target_to_tool_args(n, a, get_current_task(session_id))
         for tc in tool_calls:
             name = tc["name"]
-            args = tc.get("arguments", {})
+            args = dict(tc.get("arguments", {}))
             logger.info(f"Executing tool: {name} with args: {args}")
-            result = await self.registry.execute(name, **args)
+            result = await execute_tool(name, args, registry=self.registry, bind_target_fn=bind_fn)
             results.append(result)
             logger.info(f"Tool {name} result: success={result.success}")
+            if result.success:
+                task = get_current_task(session_id)
+                if task and is_single_step_task(task.task_type, name):
+                    clear_current_task(session_id)
         return results
 
     async def _execute_tools_with_streaming_logs(
-        self, tool_calls: List[Dict[str, Any]]
+        self, tool_calls: List[Dict[str, Any]], session_id: str = "default"
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Execute tools and yield execution_log events during execution"""
         results: List[ToolResult] = []
         tools_logger = logging.getLogger("tools")
+        bind_fn = lambda n, a: bind_target_to_tool_args(n, a, get_current_task(session_id))
         for tc in tool_calls:
             name = tc["name"]
-            args = tc.get("arguments", {})
+            args = dict(tc.get("arguments", {}))
             action_id = tc.get("id", "")
             queue: asyncio.Queue = asyncio.Queue()
             handler = QueueLogHandler(queue, ["tools"])
@@ -481,7 +568,9 @@ class AgentCore:
             orig_level = tools_logger.level
             tools_logger.setLevel(logging.DEBUG)
             try:
-                task = asyncio.create_task(self.registry.execute(name, **args))
+                task = asyncio.create_task(
+                    execute_tool(name, args, registry=self.registry, bind_target_fn=bind_fn)
+                )
                 while True:
                     try:
                         rec = await asyncio.wait_for(queue.get(), timeout=0.1)
@@ -510,6 +599,12 @@ class AgentCore:
                     except asyncio.QueueEmpty:
                         break
                 results.append(result)
+                # Task Context: 单步任务完成后清除 current_task
+                if result.success:
+                    task = get_current_task(session_id)
+                    if task and is_single_step_task(task.task_type, name):
+                        clear_current_task(session_id)
+                        logger.info(f"TaskContext: single-step task done, cleared current_task")
             finally:
                 tools_logger.removeHandler(handler)
                 tools_logger.setLevel(orig_level)

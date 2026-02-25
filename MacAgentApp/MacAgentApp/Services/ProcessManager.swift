@@ -185,7 +185,7 @@ class ProcessManager: ObservableObject {
         let errorPipe = Pipe()
         
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = ["-c", "cd '\(backendPath)' && ./start.sh"]
+        process.arguments = ["-c", "cd '\(backendPath)' && bash start.sh"]
         process.standardOutput = pipe
         process.standardError = errorPipe
         process.environment = ProcessInfo.processInfo.environment
@@ -238,21 +238,24 @@ class ProcessManager: ObservableObject {
     func stopBackend() {
         addLog(to: &backendLogs, message: "Stopping backend service...", level: .info)
         
-        // 先尝试正常终止
+        // 仅当本次是由本 App 启动的后端时，才按端口杀进程，避免误杀用户在其他终端/方式启动的服务
+        let wasStartedByApp = (backendProcess != nil)
+        
         backendProcess?.terminate()
         backendProcess = nil
-        
-        // 异步杀掉可能存在的进程，避免阻塞主线程
-//        Task.detached {
-//            let killTask = Process()
-//            killTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-//            killTask.arguments = ["-c", "lsof -ti:8765 | xargs kill -9 2>/dev/null || true"]
-//            try? killTask.run()
-//            killTask.waitUntilExit()
-//        }
-        
         isBackendRunning = false
         addLog(to: &backendLogs, message: "Backend service stopped", level: .info)
+        
+        guard wasStartedByApp else { return }
+        // 由本 App 启动时，必须按端口杀掉实际占用 8765 的子进程（如 python main.py），
+        // 否则子进程会继续运行，状态轮询会再次显示「已运行」
+        Task.detached(priority: .userInitiated) {
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+            killTask.arguments = ["-c", "lsof -ti:8765 | xargs kill -9 2>/dev/null || true"]
+            try? killTask.run()
+            killTask.waitUntilExit()
+        }
     }
     
     // MARK: - Ollama Management

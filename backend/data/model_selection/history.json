@@ -1,0 +1,156 @@
+[
+  {
+    "task_hash": "da6089f7fc86",
+    "task_description": "打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 6189,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T12:53:23.169563"
+  },
+  {
+    "task_hash": "87a9f04715d1",
+    "task_description": "打开网易云音乐 ",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 4515,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T12:56:54.344395"
+  },
+  {
+    "task_hash": "8b8177577076",
+    "task_description": " 打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 58114,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T13:02:45.810564"
+  },
+  {
+    "task_hash": "cefbf5e19300",
+    "task_description": "联网搜索 股票 A股 美股 状态",
+    "model_type": "remote",
+    "task_type": "knowledge_query",
+    "success": false,
+    "execution_time_ms": 459101,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T13:11:42.259200"
+  },
+  {
+    "task_hash": "da6089f7fc86",
+    "task_description": "打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 83846,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T13:16:19.793847"
+  },
+  {
+    "task_hash": "40277907c382",
+    "task_description": "搜索今日A股和美股情况 上午的情况 当前点数",
+    "model_type": "remote",
+    "task_type": "knowledge_query",
+    "success": true,
+    "execution_time_ms": 102666,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T13:19:32.803545"
+  },
+  {
+    "task_hash": "304e1d847f35",
+    "task_description": " 搜索今日A股和美股情况 上午的情况 当前点数",
+    "model_type": "remote",
+    "task_type": "knowledge_query",
+    "success": true,
+    "execution_time_ms": 503409,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T13:32:22.839219"
+  },
+  {
+    "task_hash": "b68753877270",
+    "task_description": "检查macagetn 系统当前新增能力",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 292825,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T15:14:05.053339"
+  },
+  {
+    "task_hash": "b68753877270",
+    "task_description": "检查macagetn 系统当前新增能力",
+    "model_type": "remote",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 26506,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T15:32:55.463106"
+  },
+  {
+    "task_hash": "da6089f7fc86",
+    "task_description": "打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 35563,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T17:54:45.027228"
+  },
+  {
+    "task_hash": "9a39a5c3ffa5",
+    "task_description": "打开微信并截图微信窗口 发给我 发送到聊天内",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 49552,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T17:56:24.831022"
+  },
+  {
+    "task_hash": "704f3a6b91d8",
+    "task_description": "打开微信 并截图微信窗口给我",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 79632,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-24T17:58:23.378795"
+  },
+  {
+    "task_hash": "22bd6f9e5fea",
+    "task_description": "今天天气怎么样 ",
+    "model_type": "remote",
+    "task_type": "knowledge_query",
+    "success": true,
+    "execution_time_ms": 140668,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-25T10:49:19.026999"
+  },
+  {
+    "task_hash": "76687749ee38",
+    "task_description": "今天天气怎么样",
+    "model_type": "remote",
+    "task_type": "knowledge_query",
+    "success": true,
+    "execution_time_ms": 20055,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-25T11:28:36.931521"
+  }
+]

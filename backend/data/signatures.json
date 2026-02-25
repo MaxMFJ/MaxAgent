@@ -5,8 +5,18 @@
     "approved_by": "initial"
   },
   "tunnel_monitor": {
-    "sha256": "5956a55e4949fd2a7971786d054559646da0bb27e16d8c7597b9676bbf7e6eab",
-    "approved_at": "2025-02-23T00:00:00Z",
+    "sha256": "5b3cfa51293b8f2fd5e99fbe0f871fa027d87ee5cd35eea8448b1a8013cc3fb3",
+    "approved_at": "2026-02-25T13:04:44.087093",
+    "approved_by": "manual"
+  },
+  "interactive_mail": {
+    "sha256": "30c62eefbcaf57acc6b30605411d0402f83ea81c47531f01655b7ec88354ff8e",
+    "approved_at": "2026-02-24T09:41:32.225061",
+    "approved_by": "manual"
+  },
+  "tunnel_manager": {
+    "sha256": "8989784f11ea6dd4d0087889366691da2ea79b3ab7619b24896ee8073c7eafc4",
+    "approved_at": "2026-02-25T10:35:10.091098",
     "approved_by": "manual"
   }
 }

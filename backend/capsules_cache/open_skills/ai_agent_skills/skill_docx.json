@@ -1,0 +1,69 @@
+{
+  "id": "skill_docx",
+  "description": "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. When Claude needs to work with professional documents (.docx files) for creating new documents, modifying content, working with tracked changes, or adding comments.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # DOCX Processing"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflow Decision Tree] - **Reading/Analyzing**: Use text extraction or raw XML access\n- **Creating New Document**: Use docx-js (JavaScript)\n- **Editing Existing**: Use OOXML editing or redlining workflow"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Reading Content] ### Text Extraction with Pandoc\n```bash\n# Convert to markdown with tracked changes\npandoc --track-changes=all file.docx -o output.md\n```\n\n### Raw XML Access\n```bash\n# Unpack document\nunzip document.docx -d unpacked/\n# Key files:\n# word/document.xml - Main content\n# word/comments.xml - Comments\n# word/media/ - Images\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Creating New Documents (docx-js)] ```javascript\nimport { Document, Paragraph, TextRun, Packer } from 'docx';\nimport fs from 'fs';\n\nconst doc = new Document({\n  sections: [{\n    children: [\n      new Paragraph({\n        children: [\n          new TextRun({ text: \"Hello \", bold: true }),\n          new TextRun({ text: \"World\", italics: true })\n        ]\n      })\n    ]\n  }]\n});\n\nconst buffer = await Packer.toBuffer(doc);\nfs.writeFileSync('document.docx', buffer);\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Editing Existing Documents] ### Simple Edits\n1. Unpack: `unzip doc.docx -d unpacked/`\n2. Edit `word/document.xml`\n3. Repack: `cd unpacked && zip -r ../edited.docx .`\n\n### Tracked Changes (Redlining)\nFor professional documents, use tracked changes:\n\n```xml\n<!-- Deletion -->\n<w:del w:author=\"Author\" w:date=\"2025-01-01T00:00:00Z\">\n  <w:r><w:delText>old text</w:delText></w:r>\n</w:del>\n\n<!-- Insertion -->\n<w:ins w:author=\"Author\" w:date=\"2025-01-01T00:00:00Z\">\n  <w:r><w:t>new text</w:t></w:r>\n</w:ins>\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Converting to Images] ```bash\n# DOCX to PDF\nsoffice --headless --convert-to pdf document.docx\n\n# PDF to images\npdftoppm -jpeg -r 150 document.pdf page\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] - Use Pandoc for text extraction\n- Use docx-js for creating new documents\n- For legal/business docs, always use tracked changes\n- Preserve original RSIDs when editing"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "docx"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/docx/SKILL.md"
+}

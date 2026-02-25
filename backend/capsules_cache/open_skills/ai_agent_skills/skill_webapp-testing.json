@@ -1,0 +1,79 @@
+{
+  "id": "skill_webapp-testing",
+  "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Web App Testing with Playwright"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ```bash\nnpm init playwright@latest\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Basic Test Structure] ```typescript\nimport { test, expect } from '@playwright/test';\n\ntest('homepage has title', async ({ page }) => {\n  await page.goto('http://localhost:3000');\n  await expect(page).toHaveTitle(/My App/);\n});\n\ntest('can navigate to about page', async ({ page }) => {\n  await page.goto('http://localhost:3000');\n  await page.click('text=About');\n  await expect(page).toHaveURL(/.*about/);\n});\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Common Actions] ### Navigation\n```typescript\nawait page.goto('http://localhost:3000');\nawait page.goBack();\nawait page.reload();\n```\n\n### Clicking\n```typescript\nawait page.click('button');\nawait page.click('text=Submit');\nawait page.click('#submit-btn');\nawait page.click('[data-testid=\"submit\"]');\n```\n\n### Form Input\n```typescript\nawait page.fill('input[name=\"email\"]', 'test@example.com');\nawait page.fill('#password', 'secret123');\nawait page.selectOption('select#country', 'USA');\nawait page.check('input[type=\"checkbox\"]');\n```\n\n### Waiting\n```typescript\nawait page.waitForSelector('.loaded');\nawait page.waitForURL('**/dashboard');\nawait page.waitForResponse('**/api/data');\nawait page.waitForTimeout(1000); // Avoid if possible\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Assertions] ```typescript\nawait expect(page.locator('h1')).toHaveText('Welcome');\nawait expect(page.locator('.items')).toHaveCount(5);\nawait expect(page.locator('button')).toBeEnabled();\nawait expect(page.locator('.modal')).toBeVisible();\nawait expect(page.locator('input')).toHaveValue('test');\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Screenshots] ```typescript\n// Full page\nawait page.screenshot({ path: 'screenshot.png', fullPage: true });\n\n// Element only\nawait page.locator('.chart').screenshot({ path: 'chart.png' });\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Console Logs] ```typescript\npage.on('console', msg => console.log(msg.text()));\npage.on('pageerror', err => console.error(err.message));\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Network Interception] ```typescript\nawait page.route('**/api/data', route => {\n  route.fulfill({\n    status: 200,\n    body: JSON.stringify({ items: [] })\n  });\n});\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Running Tests] ```bash\n# Run all tests\nnpx playwright test\n\n# Run specific file\nnpx playwright test tests/login.spec.ts\n\n# Run in headed mode\nnpx playwright test --headed\n\n# Run with UI\nnpx playwright test --ui\n```"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "webapp_testing"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/webapp-testing/SKILL.md"
+}

@@ -1,0 +1,59 @@
+{
+  "id": "skill_algorithmic-art",
+  "description": "Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Algorithmic Art\n\nCreate generative art with code using p5.js, featuring seeded randomness for reproducibility."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Concepts] ### Seeded Randomness\n```javascript\n// Use seed for reproducible results\nfunction setup() {\n  randomSeed(42);\n  noiseSeed(42);\n}\n```\n\n### Noise Functions\n```javascript\n// Perlin noise for organic patterns\nlet x = noise(frameCount * 0.01) * width;\nlet y = noise(frameCount * 0.01 + 1000) * height;\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Common Patterns] ### Flow Fields\n```javascript\nlet cols, rows, scale = 20;\nlet particles = [];\nlet flowfield;\n\nfunction setup() {\n  createCanvas(800, 800);\n  cols = floor(width / scale);\n  rows = floor(height / scale);\n  flowfield = new Array(cols * rows);\n\n  for (let i = 0; i < 1000; i++) {\n    particles.push(new Particle());\n  }\n}\n\nfunction draw() {\n  let yoff = 0;\n  for (let y = 0; y < rows; y++) {\n    let xoff = 0;\n    for (let x = 0; x < cols; x++) {\n      let angle = noise(xoff, yoff) * TWO_PI * 2;\n      let v = p5.Vector.fromAngle(angle);\n      flowfield[x + y * cols] = v;\n      xoff += 0.1;\n    }\n    yoff += 0.1;\n  }\n\n  particles.forEach(p => {\n    p.follow(flowfield);\n    p.update();\n    p.show();\n  });\n}\n```\n\n### Recursive Trees\n```javascript\nfunction branch(len) {\n  line(0, 0, 0, -len);\n  translate(0, -len);\n\n  if (len > 4) {\n    push();\n    rotate(PI / 6);\n    branch(len * 0.67);\n    pop();\n\n    push();\n    rotate(-PI / 6);\n    branch(len * 0.67);\n    pop();\n  }\n}\n```\n\n### Particle Systems\n```javascript\nclass Particle {\n  constructor() {\n    this.pos = createVector(random(width), random(height));\n    this.vel = createVector(0, 0);\n    this.acc = createVector(0, 0);\n    this.maxSpeed = 4;\n  }\n\n  follow(flowfield) {\n    let x = floor(this.pos.x / scale);\n    let y = floor(this.pos.y / scale);\n    let force = flowfield[x + y * cols];\n    this.acc.add(force);\n  }\n\n  update() {\n    this.vel.add(this.acc);\n    this.vel.limit(this.maxSpeed);\n    this.pos.add(this.vel);\n    this.acc.mult(0);\n  }\n\n  show() {\n    stroke(255, 5);\n    point(this.pos.x, this.pos.y);\n  }\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Color Palettes] ```javascript\n// Define palette\nconst palette = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];\n\n// Random from palette\nfill(random(palette));\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Best Practices] - Use `noLoop()` for static pieces, save with `save('art.png')`\n- Experiment with blend modes: `blendMode(ADD)`\n- Layer transparency for depth\n- Use frameCount for animation"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "algorithmic_art"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/algorithmic-art/SKILL.md"
+}

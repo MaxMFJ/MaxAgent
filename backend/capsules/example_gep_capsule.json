@@ -1,0 +1,17 @@
+{
+  "id": "gep_file_backup_strategy",
+  "type": "Capsule",
+  "trigger": ["file_operation", "backup", "文件", "备份"],
+  "gene": "gene_file_backup",
+  "summary": "文件备份策略：先检查文件是否存在，然后复制到备份目录",
+  "confidence": 0.9,
+  "strategy": [
+    "检查源文件是否存在",
+    "创建备份目录（如不存在）",
+    "复制文件到备份目录并添加时间戳",
+    "验证备份文件完整性"
+  ],
+  "env_fingerprint": {
+    "platform": "darwin"
+  }
+}

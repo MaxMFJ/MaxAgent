@@ -1,0 +1,23 @@
+{
+  "session_id": "427174DE-A575-487F-BB15-81D038C687B0",
+  "recent_messages": [
+    {
+      "role": "user",
+      "content": "打开微信"
+    },
+    {
+      "role": "assistant",
+      "content": "微信已成功打开！"
+    },
+    {
+      "role": "user",
+      "content": "打开微信"
+    },
+    {
+      "role": "assistant",
+      "content": "微信已成功打开！"
+    }
+  ],
+  "created_at": "2026-02-24T11:21:19.905421",
+  "last_active": "2026-02-24T11:24:29.652925"
+}

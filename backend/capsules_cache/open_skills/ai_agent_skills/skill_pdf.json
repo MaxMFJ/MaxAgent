@@ -1,0 +1,59 @@
+{
+  "id": "skill_pdf",
+  "description": "Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms. When Claude needs to fill in a PDF form or programmatically process, generate, or analyze PDF documents at scale.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # PDF Processing Guide"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```python\nfrom pypdf import PdfReader, PdfWriter\n\n# Read a PDF\nreader = PdfReader(\"document.pdf\")\nprint(f\"Pages: {len(reader.pages)}\")\n\n# Extract text\ntext = \"\"\nfor page in reader.pages:\n    text += page.extract_text()\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Python Libraries] ### pypdf - Basic Operations\n\n#### Merge PDFs\n```python\nfrom pypdf import PdfWriter, PdfReader\n\nwriter = PdfWriter()\nfor pdf_file in [\"doc1.pdf\", \"doc2.pdf\", \"doc3.pdf\"]:\n    reader = PdfReader(pdf_file)\n    for page in reader.pages:\n        writer.add_page(page)\n\nwith open(\"merged.pdf\", \"wb\") as output:\n    writer.write(output)\n```\n\n#### Split PDF\n```python\nreader = PdfReader(\"input.pdf\")\nfor i, page in enumerate(reader.pages):\n    writer = PdfWriter()\n    writer.add_page(page)\n    with open(f\"page_{i+1}.pdf\", \"wb\") as output:\n        writer.write(output)\n```\n\n### pdfplumber - Text and Table Extraction\n\n#### Extract Tables\n```python\nimport pdfplumber\nimport pandas as pd\n\nwith pdfplumber.open(\"document.pdf\") as pdf:\n    all_tables = []\n    for page in pdf.pages:\n        tables = page.extract_tables()\n        for table in tables:\n            if table:\n                df = pd.DataFrame(table[1:], columns=table[0])\n                all_tables.append(df)\n```\n\n### reportlab - Create PDFs\n\n```python\nfrom reportlab.lib.pagesizes import letter\nfrom reportlab.pdfgen import canvas\n\nc = canvas.Canvas(\"hello.pdf\", pagesize=letter)\nwidth, height = letter\nc.drawString(100, height - 100, \"Hello World!\")\nc.save()\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Command-Line Tools] ```bash\n# Extract text (poppler-utils)\npdftotext input.pdf output.txt\n\n# Merge PDFs (qpdf)\nqpdf --empty --pages file1.pdf file2.pdf -- merged.pdf\n\n# Split pages\nqpdf input.pdf --pages . 1-5 -- pages1-5.pdf\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Reference] | Task | Best Tool | Command/Code |\n|------|-----------|--------------|\n| Merge PDFs | pypdf | `writer.add_page(page)` |\n| Split PDFs | pypdf | One page per file |\n| Extract text | pdfplumber | `page.extract_text()` |\n| Extract tables | pdfplumber | `page.extract_tables()` |\n| Create PDFs | reportlab | Canvas or Platypus |\n| OCR scanned PDFs | pytesseract | Convert to image first |"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pdf"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/pdf/SKILL.md"
+}

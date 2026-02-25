@@ -1,0 +1,26 @@
+{
+  "capsule_sources": [],
+
+  "open_skill_sources": [
+    {
+      "id": "anthropic_skills",
+      "name": "Anthropic Official Skills",
+      "owner": "anthropics",
+      "repo": "skills",
+      "branch": "main",
+      "path": "skills",
+      "enabled": true
+    },
+    {
+      "id": "ai_agent_skills",
+      "name": "AI Agent Skills (Community)",
+      "owner": "skillcreatorai",
+      "repo": "Ai-Agent-Skills",
+      "branch": "main",
+      "path": "skills",
+      "enabled": true
+    }
+  ],
+
+  "_strategy_note": "默认使用 Strategy 2 (open_skill_sources)。设置环境变量 EVOMAP_AUTH_CODE 后自动切换到 Strategy 1 (EvoMap)。capsule_sources 用于自定义 Capsule JSON 仓库。"
+}

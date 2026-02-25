@@ -1,0 +1,49 @@
+{
+  "id": "skill_mcp-builder",
+  "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MCP Server Development Guide\n\nCreate MCP servers that enable LLMs to interact with external services through well-designed tools."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[High-Level Workflow] ### Phase 1: Research and Planning\n\n**Understand Modern MCP Design:**\n- Balance comprehensive API coverage with specialized workflow tools\n- Use clear, descriptive tool names with consistent prefixes (e.g., `github_create_issue`)\n- Design tools that return focused, relevant data\n- Provide actionable error messages\n\n**Study MCP Protocol:**\n- Start with sitemap: `https://modelcontextprotocol.io/sitemap.xml`\n- Key pages: specification, transport mechanisms, tool definitions\n\n### Phase 2: Implementation\n\n**Recommended Stack:**\n- **Language**: TypeScript (best SDK support)\n- **Transport**: Streamable HTTP for remote, stdio for local\n\n**Project Structure:**\n```\nmy-mcp-server/\n├── src/\n│   ├── index.ts      # Server entry point\n│   ├── tools/        # Tool implementations\n│   └── utils/        # Shared utilities\n├── package.json\n└── tsconfig.json\n```\n\n**Tool Implementation Pattern:**\n```typescript\nserver.registerTool({\n  name: \"github_create_issue\",\n  description: \"Create a new GitHub issue\",\n  inputSchema: z.object({\n    repo: z.string().describe(\"Repository name (owner/repo)\"),\n    title: z.string().describe(\"Issue title\"),\n    body: z.string().optional().describe(\"Issue body\")\n  }),\n  outputSchema: z.object({\n    id: z.number(),\n    url: z.string()\n  }),\n  annotations: {\n    readOnlyHint: false,\n    destructiveHint: false,\n    idempotentHint: false\n  },\n  handler: async (input) => {\n    // Implementation\n    return { id: 123, url: \"https://...\" };\n  }\n});\n```\n\n### Phase 3: Test\n\n```bash\n# TypeScript\nnpm run build\nnpx @modelcontextprotocol/inspector\n\n# Python\npython -m py_compile your_server.py\n```\n\n### Phase 4: Create Evaluations\n\nCreate 10 complex, realistic questions to test your MCP server:\n\n```xml\n<evaluation>\n  <qa_pair>\n    <question>Find all open issues labeled 'bug' in the repo</question>\n    <answer>5</answer>\n  </qa_pair>\n</evaluation>\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Tool Design Best Practices] - Use Zod (TS) or Pydantic (Python) for schemas\n- Include constraints and examples in field descriptions\n- Define `outputSchema` for structured data\n- Support pagination where applicable\n- Add tool annotations (readOnly, destructive, idempotent)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mcp_builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/mcp-builder/SKILL.md"
+}

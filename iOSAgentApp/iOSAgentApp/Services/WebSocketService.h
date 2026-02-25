@@ -26,6 +26,11 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;
 - (void)webSocketServiceDidStop:(WebSocketService *)service;
 
+// 新增：断线重连恢复回调
+- (void)webSocketService:(WebSocketService *)service didDetectRunningTask:(NSString *)taskId;
+- (void)webSocketService:(WebSocketService *)service didResumeTaskWithId:(NSString *)taskId description:(NSString *)taskDescription;
+- (void)webSocketService:(WebSocketService *)service taskResumeDidFail:(NSString *)message;
+
 @end
 
 @interface WebSocketService : NSObject
@@ -45,6 +50,7 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)createNewSession:(nullable NSString *)sessionId;
 - (void)clearSession;
 - (void)sendStopStream;
+- (void)resumeTask:(NSString *)sessionId;  // 新增：恢复运行中的任务
 
 - (void)checkServerHealth:(void(^)(BOOL available, NSString * _Nullable model))completion;
 

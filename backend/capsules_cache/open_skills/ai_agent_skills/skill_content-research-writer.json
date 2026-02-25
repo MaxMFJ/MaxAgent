@@ -1,0 +1,104 @@
+{
+  "id": "skill_content-research-writer",
+  "description": "Assists in writing high-quality content by conducting research, adding citations, improving hooks, iterating on outlines, and providing real-time feedback on each section. Transforms your writing process from solo effort to collaborative partnership.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Content Research Writer\n\nThis skill acts as your writing partner, helping you research, outline, draft, and refine content while maintaining your unique voice and style."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Writing blog posts, articles, or newsletters\n- Creating educational content or tutorials\n- Drafting thought leadership pieces\n- Researching and writing case studies\n- Producing technical documentation with sources\n- Writing with proper citations and references\n- Improving hooks and introductions\n- Getting section-by-section feedback while writing"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Collaborative Outlining**: Helps you structure ideas into coherent outlines\n2. **Research Assistance**: Finds relevant information and adds citations\n3. **Hook Improvement**: Strengthens your opening to capture attention\n4. **Section Feedback**: Reviews each section as you write\n5. **Voice Preservation**: Maintains your writing style and tone\n6. **Citation Management**: Adds and formats references properly\n7. **Iterative Refinement**: Helps you improve through multiple drafts"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Setup Your Writing Environment\n\nCreate a dedicated folder for your article:\n```\nmkdir ~/writing/my-article-title\ncd ~/writing/my-article-title\n```\n\nCreate your draft file:\n```\ntouch article-draft.md\n```\n\nOpen Claude Code from this directory and start writing.\n\n### Basic Workflow\n\n1. **Start with an outline**:\n```\nHelp me create an outline for an article about [topic]\n```\n\n2. **Research and add citations**:\n```\nResearch [specific topic] and add citations to my outline\n```\n\n3. **Improve the hook**:\n```\nHere's my introduction. Help me make the hook more compelling.\n```\n\n4. **Get section feedback**:\n```\nI just finished the \"Why This Matters\" section. Review it and give feedback.\n```\n\n5. **Refine and polish**:\n```\nReview the full draft for flow, clarity, and consistency.\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests writing assistance:\n\n1. **Understand the Writing Project**\n   \n   Ask clarifying questions:\n   - What's the topic and main argument?\n   - Who's the target audience?\n   - What's the desired length/format?\n   - What's your goal? (educate, persuade, entertain, explain)\n   - Any existing research or sources to include?\n   - What's your writing style? (formal, conversational, technical)\n\n2. **Collaborative Outlining**\n   \n   Help structure the content:\n   \n   ```markdown\n   # Article Outline: [Title]\n   \n   ## Hook\n   - [Opening line/story/statistic]\n   - [Why reader should care]\n   \n   ## Introduction\n   - Context and background\n   - Problem statement\n   - What this article covers\n   \n   ## Main Sections\n   \n   ### Section 1: [Title]\n   - Key point A\n   - Key point B\n   - Example/evidence\n   - [Research needed: specific topic]\n   \n   ### Section 2: [Title]\n   - Key point C\n   - Key point D\n   - Data/citation needed\n   \n   ### Section 3: [Title]\n   - Key point E\n   - Counter-arguments\n   - Resolution\n   \n   ## Conclusion\n   - Summary of main points\n   - Call to action\n   - Final thought\n   \n   ## Research To-Do\n   - [ ] Find data on [topic]\n   - [ ] Get examples of [concept]\n   - [ ] Source citation for [claim]\n   ```\n   \n   **Iterate on outline**:\n   - Adjust based on feedback\n   - Ensure logical flow\n   - Identify research gaps\n   - Mark sections for deep dives\n\n3. **Conduct Research**\n   \n   When user requests research on a topic:\n   \n   - Search for relevant information\n   - Find credible sources\n   - Extract key facts, quotes, and data\n   - Add citations in requested format\n   \n   Example output:\n   ```markdown\n   ## Research: AI Impact on Productivity\n   \n   Key Findings:\n   \n   1. **Productivity Gains**: Studies show 40% time savings for \n      content creation tasks [1]\n   \n   2. **Adoption Rates**: 67% of knowledge workers use AI tools \n      weekly [2]\n   \n   3. **Expert Quote**: \"AI augments rather than replaces human \n      creativity\" - "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ### Example 1: Teresa Torres's Workflow\n\n**User**: \"I'm writing an article about continuous discovery. Help me create an outline.\"\n\n**Process**:\n1. Collaborates on outline structure\n2. Identifies research needs\n3. User starts writing introduction\n4. Reviews and improves the hook\n5. User writes each section\n6. Provides feedback after each section\n7. Conducts research and adds citations\n8. Final review of complete draft\n9. Polish and prep for publishing\n\n**Result**: Well-researched, properly cited article written in Teresa's voice with strong structure and flow.\n\n### Example 2: Research-Heavy Article\n\n**User**: \"I'm writing about AI's impact on product management. Help me find current data and examples.\"\n\n**Output**:\n```markdown"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Research Compiled] ### Recent Data\n- Gartner: 80% of PMs will use AI tools by 2025 [1]\n- Survey: 45% report faster feature shipping [2]\n- Case study: Airbnb's AI-assisted prioritization [3]\n\n### Expert Quotes\n- \"AI amplifies PM judgment, not replaces it\" - Marty Cagan\n- [Additional quotes with citations]\n\n### Real Examples\n1. **Company A**: Used AI for user research synthesis\n   - Result: 60% time savings\n   - Source: [citation]\n\n2. **Company B**: AI-powered roadmap analysis\n   - Result: Better stakeholder alignment\n   - Source: [citation]\n\nAll added to your outline with proper citations.\n```\n\n### Example 3: Hook Improvement\n\n**User's Original Hook**:\n> \"Product management is changing because of AI. In this article, I'll discuss some ways AI affects product managers.\"\n\n**Improved Options**:\n\n**Option 1 (Data-driven)**:\n> \"Last month, I asked AI to analyze 500 customer interviews. It took 30 minutes instead of 3 weeks. Product management will never be the same.\"\n\n**Option 2 (Question)**:\n> \"What if you could talk to every customer, read every review, and analyze every support ticket—all before your morning coffee?\"\n\n**Option 3 (Story)**:\n> \"Sarah spent two weeks building the wrong feature. Not because she didn't understand her users, but because she couldn't process the hundreds of interviews fast enough to spot the pattern.\"\n\n### Example 4: Section Feedback\n\n**User**: \"Just finished my 'Common Mistakes' section. Thoughts?\"\n\n**Response**:\n```markdown\n# Feedback: Common Mistakes Section"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[What Works Well ✓] - Strong examples (the Slack notification story)\n- Clear structure (3 mistakes, clean layout)\n- Practical advice for each mistake"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Suggestions] ### Make It More Specific\nYour second point says \"Bad prioritization\" but could be stronger:\n\nCurrent:\n> \"Many teams prioritize badly by focusing on features instead of outcomes.\"\n\nSuggested:\n> \"I've watched teams ship 14 features in a quarter yet move none of their key metrics. They prioritized activity over progress.\"\n\n### Add Data\nThe third mistake would benefit from evidence:\n> \"[Add citation]: Studies show teams without regular user contact are 3x more likely to build unused features [needs source]\"\n\n### Flow Improvement\nConsider reordering: Mistake 3 → Mistake 2 → Mistake 1\nThis builds from small to big impact.\n\nReady for the next section!\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Writing Workflows] ### Blog Post Workflow\n1. Outline together\n2. Research key points\n3. Write introduction → get feedback\n4. Write body sections → feedback each\n5. Write conclusion → final review\n6. Polish and edit\n\n### Newsletter Workflow\n1. Discuss hook ideas\n2. Quick outline (shorter format)\n3. Draft in one session\n4. Review for clarity and links\n5. Quick polish\n\n### Technical Tutorial Workflow\n1. Outline steps\n2. Write code examples\n3. Add explanations\n4. Test instructions\n5. Add troubleshooting section\n6. Final review for accuracy\n\n### Thought Leadership Workflow\n1. Brainstorm unique angle\n2. Research existing perspectives\n3. Develop your thesis\n4. Write with strong POV\n5. Add supporting evidence\n6. Craft compelling conclusion"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Pro Tips] 1. **Work in VS Code**: Better than web Claude for long-form writing\n2. **One section at a time**: Get feedback incrementally\n3. **Save research separately**: Keep a research.md file\n4. **Version your drafts**: article-v1.md, article-v2.md, etc.\n5. **Read aloud**: Use feedback to identify clunky sentences\n6. **Set deadlines**: \"I want to finish the draft today\"\n7. **Take breaks**: Write, get feedback, pause, revise"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[File Organization] Recommended structure for writing projects:\n\n```\n~/writing/article-name/\n├── outline.md          # Your outline\n├── research.md         # All research and citations\n├── draft-v1.md         # First draft\n├── draft-v2.md         # Revised draft\n├── final.md            # Publication-ready\n├── feedback.md         # Collected feedback\n└── sources/            # Reference materials\n    ├── study1.pdf\n    └── article2.md\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Best Practices] ### For Research\n- Verify sources before citing\n- Use recent data when possible\n- Balance different perspectives\n- Link to original sources\n\n### For Feedback\n- Be specific about what you want: \"Is this too technical?\"\n- Share your concerns: \"I'm worried this section drags\"\n- Ask questions: \"Does this flow logically?\"\n- Request alternatives: \"What's another way to explain this?\"\n\n### For Voice\n- Share examples of your writing\n- Specify tone preferences\n- Point out good matches: \"That sounds like me!\"\n- Flag mismatches: \"Too formal for my style\""
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Related Use Cases] - Creating social media posts from articles\n- Adapting content for different audiences\n- Writing email newsletters\n- Drafting technical documentation\n- Creating presentation content\n- Writing case studies\n- Developing course outlines"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "content_research_writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/content-research-writer/SKILL.md"
+}

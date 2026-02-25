@@ -1,0 +1,69 @@
+{
+  "id": "skill_job-application",
+  "description": "Write tailored cover letters and job applications using your CV and preferred style",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Job Application Assistant\n\nGenerate cover letters and job applications that sound like you, not a template."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Your CV/Resume] <!-- PASTE YOUR FULL CV BELOW -->\n\n```\n[Your name]\n[Your title/headline]\n\nEXPERIENCE\n- [Job 1]\n- [Job 2]\n\nSKILLS\n- [Skill 1]\n- [Skill 2]\n\nEDUCATION\n- [Degree, School, Year]\n\n[Add your full CV here]\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Cover Letter Examples You Like] <!-- PASTE 1-2 COVER LETTERS YOU'VE WRITTEN THAT WORKED WELL -->\n\n### Example 1\n```\n[Paste a cover letter you're proud of]\n```\n\n### Example 2 (optional)\n```\n[Another example if you have one]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Your Voice & Preferences] ### Tone\n- Professional but not stiff\n- Confident without bragging\n- Specific about achievements, not generic\n\n### Things to Emphasize\n- [What makes you unique]\n- [Key achievements to highlight]\n- [Skills you want to lead with]\n\n### Things to Avoid\n- Generic phrases like \"I'm a hard worker\"\n- Repeating the job description back\n- Being too formal or robotic"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How to Use] 1. Paste the job description\n2. Say: \"Write a cover letter for this\"\n\nOr be more specific:\n- \"Write a cover letter emphasizing my backend experience\"\n- \"Make it shorter, 3 paragraphs max\"\n- \"Tailor this for a startup vs enterprise\""
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format] When writing cover letters:\n- Keep it under 400 words unless asked otherwise\n- Lead with why you're interested in THIS role\n- Connect your experience to their specific needs\n- End with a clear call to action\n- Match the tone to the company (startup = casual, enterprise = formal)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Additional Context] <!-- ADD ANY OTHER RELEVANT INFO -->\n\n- LinkedIn: [your URL]\n- Portfolio: [your URL]\n- Specific industries you're targeting: [e.g., fintech, healthtech]\n- Role types: [e.g., senior backend, staff engineer]"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "job_application"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/job-application/SKILL.md"
+}

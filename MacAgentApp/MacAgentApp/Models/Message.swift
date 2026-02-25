@@ -227,6 +227,25 @@ struct SmtpConfig: Codable {
     }
 }
 
+struct GithubConfig: Codable {
+    let configured: Bool
+}
+
+struct PendingTool: Codable, Identifiable {
+    var id: String { toolName }
+    let toolName: String
+    let filename: String
+    
+    enum CodingKeys: String, CodingKey {
+        case toolName = "tool_name"
+        case filename
+    }
+}
+
+struct PendingToolsResponse: Codable {
+    let pending: [PendingTool]
+}
+
 // MARK: - Autonomous Mode Models
 
 struct ExecutionLogEntry: Identifiable {
@@ -253,6 +272,156 @@ struct ActionLogEntry: Identifiable {
         case executing = "executing"
         case success = "success"
         case failed = "failed"
+    }
+}
+
+// MARK: - System Notification Models
+
+/// 通知分类，对应系统消息 Tab 栏
+enum NotificationCategory: String, Codable, CaseIterable {
+    case systemError = "system_error"  // 系统错误
+    case evolution = "evolution"       // 进化/升级状态
+    case task = "task"                 // 任务完成
+    case info = "info"                 // 其他
+    
+    var tabTitle: String {
+        switch self {
+        case .systemError: return "系统错误"
+        case .evolution: return "进化状态"
+        case .task: return "任务完成"
+        case .info: return "其他"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .systemError: return "exclamationmark.octagon"
+        case .evolution: return "arrow.triangle.2.circlepath"
+        case .task: return "checkmark.circle"
+        case .info: return "info.circle"
+        }
+    }
+}
+
+/// 系统消息 Tab 选项（用于 UI 分段选择）
+enum SystemMessageTab: String, CaseIterable {
+    case all = "all"
+    case systemError = "system_error"
+    case evolution = "evolution"
+    case task = "task"
+    case info = "info"
+    
+    var category: NotificationCategory? {
+        switch self {
+        case .all: return nil
+        case .systemError: return .systemError
+        case .evolution: return .evolution
+        case .task: return .task
+        case .info: return .info
+        }
+    }
+    
+    var tabTitle: String {
+        switch self {
+        case .all: return "全部"
+        case .systemError: return "系统错误"
+        case .evolution: return "进化状态"
+        case .task: return "任务完成"
+        case .info: return "其他"
+        }
+    }
+}
+
+enum NotificationLevel: String, Codable {
+    case info
+    case warning
+    case error
+    
+    var icon: String {
+        switch self {
+        case .info: return "info.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.octagon.fill"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .info: return "blue"
+        case .warning: return "orange"
+        case .error: return "red"
+        }
+    }
+}
+
+struct SystemNotification: Identifiable, Codable, Equatable {
+    let id: String
+    let level: NotificationLevel
+    let title: String
+    let content: String
+    let source: String
+    let category: NotificationCategory
+    let timestamp: String
+    var read: Bool
+    
+    init(id: String, level: NotificationLevel, title: String, content: String, source: String, category: NotificationCategory, timestamp: String, read: Bool) {
+        self.id = id
+        self.level = level
+        self.title = title
+        self.content = content
+        self.source = source
+        self.category = category
+        self.timestamp = timestamp
+        self.read = read
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        level = try c.decode(NotificationLevel.self, forKey: .level)
+        title = try c.decode(String.self, forKey: .title)
+        content = try c.decode(String.self, forKey: .content)
+        source = try c.decode(String.self, forKey: .source)
+        category = (try? c.decode(NotificationCategory.self, forKey: .category)) ?? .info
+        timestamp = try c.decode(String.self, forKey: .timestamp)
+        read = try c.decode(Bool.self, forKey: .read)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, level, title, content, source, category, timestamp, read
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(level, forKey: .level)
+        try c.encode(title, forKey: .title)
+        try c.encode(content, forKey: .content)
+        try c.encode(source, forKey: .source)
+        try c.encode(category, forKey: .category)
+        try c.encode(timestamp, forKey: .timestamp)
+        try c.encode(read, forKey: .read)
+    }
+    
+    var date: Date {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = formatter.date(from: timestamp) { return d }
+        formatter.formatOptions = [.withInternetDateTime]
+        if let d = formatter.date(from: timestamp) { return d }
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        if let d = df.date(from: timestamp) { return d }
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return df.date(from: timestamp) ?? Date()
+    }
+    
+    var relativeTime: String {
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return "刚刚" }
+        if interval < 3600 { return "\(Int(interval / 60)) 分钟前" }
+        if interval < 86400 { return "\(Int(interval / 3600)) 小时前" }
+        return "\(Int(interval / 86400)) 天前"
     }
 }
 

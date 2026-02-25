@@ -1,0 +1,129 @@
+{
+  "id": "skill_internal-comms",
+  "description": "Write internal communications using company formats. Use when writing status reports, leadership updates, company newsletters, FAQs, incident reports, project updates, or any internal communications.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Internal Communications"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Document Types] ### Status Report\n```markdown\n# [Project Name] Status Report\n**Date:** [Date]\n**Author:** [Name]\n**Status:** 🟢 On Track / 🟡 At Risk / 🔴 Blocked"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Summary] [2-3 sentence overview]"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Progress This Week] - Completed: [items]\n- In Progress: [items]\n- Blocked: [items with owners]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Key Metrics] | Metric | Target | Actual | Trend |\n|--------|--------|--------|-------|\n| [Metric] | [Target] | [Actual] | ⬆️/➡️/⬇️ |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Next Week] - [Planned items]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Risks & Mitigations] | Risk | Impact | Mitigation | Owner |\n|------|--------|------------|-------|\n| [Risk] | H/M/L | [Action] | [Name] |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Asks] - [Any blockers needing escalation]\n```\n\n### Leadership Update\n```markdown\n# [Team] Update - [Date]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[TL;DR] [One paragraph executive summary - the only thing busy execs will read]"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Wins] - [Key accomplishment with impact]\n- [Key accomplishment with impact]"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Challenges] - [Challenge]: [What we're doing about it]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Key Decisions Needed] 1. [Decision]: [Context, options, recommendation]"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Metrics Dashboard] [Include 3-5 key metrics with trends]\n```\n\n### Incident Report\n```markdown\n# Incident Report: [Title]\n\n**Severity:** P0/P1/P2/P3\n**Duration:** [Start] - [End]\n**Impact:** [User/revenue impact]\n**Status:** Resolved/Monitoring/Active"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Timeline] | Time (UTC) | Event |\n|------------|-------|\n| [Time] | [What happened] |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Root Cause] [Clear explanation of what went wrong]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Resolution] [What was done to fix it]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Action Items] | Item | Owner | Due Date | Status |\n|------|-------|----------|--------|\n| [Action] | [Name] | [Date] | ⬜/✅ |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Lessons Learned] - [What we learned]\n- [What we'll do differently]\n```\n\n### All-Hands Announcement\n```markdown\n# [Announcement Title]\n\nHey team,\n\n[Opening that sets context]\n\n**What's happening:** [Clear, simple explanation]\n\n**Why it matters:** [Impact and benefits]\n\n**What you need to do:** [Specific actions if any]\n\n**Timeline:**\n- [Date]: [Milestone]\n- [Date]: [Milestone]\n\n**Questions?** [Where to ask]\n\n[Sign-off]\n```"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Writing Principles] 1. **Lead with the bottom line** - Busy readers skim\n2. **Be specific** - Numbers > adjectives\n3. **Own problems** - \"We missed\" not \"It was missed\"\n4. **Action-oriented** - Every problem has a next step\n5. **Appropriate tone** - Match urgency to content"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "internal_comms"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/internal-comms/SKILL.md"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "skill_backend-development",
+  "description": "Backend API design, database architecture, microservices patterns, and test-driven development. Use for designing APIs, database schemas, or backend system architecture.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Backend Development"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[API Design] ### RESTful Conventions\n```\nGET    /users          # List users\nPOST   /users          # Create user\nGET    /users/:id      # Get user\nPUT    /users/:id      # Update user (full)\nPATCH  /users/:id      # Update user (partial)\nDELETE /users/:id      # Delete user\n\nGET    /users/:id/posts  # List user's posts\nPOST   /users/:id/posts  # Create post for user\n```\n\n### Response Format\n```json\n{\n  \"data\": { ... },\n  \"meta\": {\n    \"page\": 1,\n    \"per_page\": 20,\n    \"total\": 100\n  }\n}\n```\n\n### Error Format\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Invalid input\",\n    \"details\": [\n      { \"field\": \"email\", \"message\": \"Invalid format\" }\n    ]\n  }\n}\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Database Patterns] ### Schema Design\n```sql\n-- Use UUIDs for public IDs\nCREATE TABLE users (\n  id SERIAL PRIMARY KEY,\n  public_id UUID DEFAULT gen_random_uuid() UNIQUE,\n  email VARCHAR(255) UNIQUE NOT NULL,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\n\n-- Soft deletes\nALTER TABLE users ADD COLUMN deleted_at TIMESTAMPTZ;\n\n-- Indexes\nCREATE INDEX idx_users_email ON users(email);\nCREATE INDEX idx_users_created ON users(created_at DESC);\n```\n\n### Query Patterns\n```sql\n-- Pagination with cursor\nSELECT * FROM posts\nWHERE created_at < $cursor\nORDER BY created_at DESC\nLIMIT 20;\n\n-- Efficient counting\nSELECT reltuples::bigint AS estimate\nFROM pg_class WHERE relname = 'users';\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Authentication] ### JWT Pattern\n```typescript\ninterface TokenPayload {\n  sub: string;      // User ID\n  iat: number;      // Issued at\n  exp: number;      // Expiration\n  scope: string[];  // Permissions\n}\n\nfunction verifyToken(token: string): TokenPayload {\n  return jwt.verify(token, SECRET) as TokenPayload;\n}\n```\n\n### Middleware\n```typescript\nasync function authenticate(req: Request, res: Response, next: Next) {\n  const token = req.headers.authorization?.replace('Bearer ', '');\n  if (!token) {\n    return res.status(401).json({ error: 'Unauthorized' });\n  }\n\n  try {\n    req.user = verifyToken(token);\n    next();\n  } catch {\n    res.status(401).json({ error: 'Invalid token' });\n  }\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Caching Strategy] ```typescript\n// Cache-aside pattern\nasync function getUser(id: string): Promise<User> {\n  const cached = await redis.get(`user:${id}`);\n  if (cached) return JSON.parse(cached);\n\n  const user = await db.users.findById(id);\n  await redis.setex(`user:${id}`, 3600, JSON.stringify(user));\n  return user;\n}\n\n// Cache invalidation\nasync function updateUser(id: string, data: Partial<User>) {\n  await db.users.update(id, data);\n  await redis.del(`user:${id}`);\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Rate Limiting] ```typescript\nconst limiter = rateLimit({\n  windowMs: 60 * 1000,  // 1 minute\n  max: 100,             // 100 requests per window\n  keyGenerator: (req) => req.ip,\n  handler: (req, res) => {\n    res.status(429).json({ error: 'Too many requests' });\n  }\n});\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Observability] - **Logging**: Structured JSON logs with request IDs\n- **Metrics**: Request latency, error rates, queue depths\n- **Tracing**: Distributed tracing with correlation IDs\n- **Health checks**: `/health` and `/ready` endpoints"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "backend_development"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/backend-development/SKILL.md"
+}

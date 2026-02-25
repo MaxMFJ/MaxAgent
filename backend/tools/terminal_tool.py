@@ -37,8 +37,8 @@ class TerminalTool(BaseTool):
             },
             "timeout": {
                 "type": "integer",
-                "description": "命令超时时间（秒），默认 30 秒",
-                "default": 30
+                "description": "命令超时时间（秒），默认 120 秒（pip/npm 等安装命令建议使用 300 秒）",
+                "default": 120
             },
             "shell": {
                 "type": "boolean",
@@ -68,7 +68,7 @@ class TerminalTool(BaseTool):
     async def execute(self, **kwargs) -> ToolResult:
         command = kwargs.get("command", "").strip()
         working_dir = kwargs.get("working_directory", os.path.expanduser("~"))
-        timeout = kwargs.get("timeout", 30)
+        timeout = kwargs.get("timeout", 120)
         use_shell = kwargs.get("shell", True)
         
         if not command:

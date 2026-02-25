@@ -1,0 +1,69 @@
+{
+  "id": "skill_xlsx",
+  "description": "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for creating new spreadsheets, reading/analyzing data, modifying existing spreadsheets, or recalculating formulas.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Excel/Spreadsheet Processing"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Reading and Analyzing Data] ```python\nimport pandas as pd\n\n# Read Excel\ndf = pd.read_excel('file.xlsx')  # Default: first sheet\nall_sheets = pd.read_excel('file.xlsx', sheet_name=None)  # All sheets as dict\n\n# Analyze\ndf.head()      # Preview data\ndf.info()      # Column info\ndf.describe()  # Statistics\n\n# Write Excel\ndf.to_excel('output.xlsx', index=False)\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Creating Excel Files with openpyxl] ```python\nfrom openpyxl import Workbook\nfrom openpyxl.styles import Font, PatternFill, Alignment\n\nwb = Workbook()\nsheet = wb.active\n\n# Add data\nsheet['A1'] = 'Hello'\nsheet['B1'] = 'World'\nsheet.append(['Row', 'of', 'data'])\n\n# Add formula - ALWAYS use formulas, not hardcoded values\nsheet['B2'] = '=SUM(A1:A10)'\n\n# Formatting\nsheet['A1'].font = Font(bold=True, color='FF0000')\nsheet['A1'].fill = PatternFill('solid', start_color='FFFF00')\nsheet['A1'].alignment = Alignment(horizontal='center')\n\n# Column width\nsheet.column_dimensions['A'].width = 20\n\nwb.save('output.xlsx')\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Editing Existing Files] ```python\nfrom openpyxl import load_workbook\n\nwb = load_workbook('existing.xlsx')\nsheet = wb.active\n\n# Modify cells\nsheet['A1'] = 'New Value'\nsheet.insert_rows(2)\nsheet.delete_cols(3)\n\n# Add new sheet\nnew_sheet = wb.create_sheet('NewSheet')\nnew_sheet['A1'] = 'Data'\n\nwb.save('modified.xlsx')\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Critical: Use Formulas, Not Hardcoded Values] ```python\n# BAD - Hardcoding calculated values\ntotal = df['Sales'].sum()\nsheet['B10'] = total  # Hardcodes 5000\n\n# GOOD - Using Excel formulas\nsheet['B10'] = '=SUM(B2:B9)'\nsheet['C5'] = '=(C4-C2)/C2'  # Growth rate\nsheet['D20'] = '=AVERAGE(D2:D19)'\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Financial Model Standards] - **Blue text**: Hardcoded inputs\n- **Black text**: ALL formulas\n- **Green text**: Links from other worksheets\n- **Yellow background**: Key assumptions"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] - Use `data_only=True` to read calculated values\n- For large files: Use `read_only=True` or `write_only=True`\n- Formulas are preserved but not evaluated by openpyxl"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "xlsx"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/xlsx/SKILL.md"
+}

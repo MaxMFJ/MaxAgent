@@ -5,9 +5,10 @@ Implements fully autonomous task execution with structured actions
 
 import json
 import uuid
+import hashlib
 import logging
 import time
-from typing import List, Dict, Any, Optional, AsyncGenerator
+from typing import List, Dict, Any, Optional, AsyncGenerator, Tuple
 from datetime import datetime
 
 from .llm_client import LLMClient, LLMConfig
@@ -22,8 +23,17 @@ from .stop_policy import (
     AdaptiveStopPolicy, StopReason, StopDecision,
     create_stop_policy, TaskComplexity
 )
+from .capsule_registry import get_capsule_registry
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Strategy escalation levels for the three-layer defense
+# ---------------------------------------------------------------------------
+ESCALATION_NORMAL = 0          # No intervention
+ESCALATION_FORCE_SWITCH = 1    # Force a different approach (layer 2)
+ESCALATION_SKILL_FALLBACK = 2  # Inject skill guidance (layer 3)
 
 
 AUTONOMOUS_SYSTEM_PROMPT = """你是一个完全自主执行的 macOS Agent，名叫 MacAgent。你会自动完成用户的任务，无需用户干预。
@@ -114,6 +124,8 @@ AUTONOMOUS_SYSTEM_PROMPT = """你是一个完全自主执行的 macOS Agent，�
 - 禁止修改系统关键文件
 - 所有操作都会被记录
 
+{user_context}
+
 现在，根据用户的任务和当前上下文，输出下一步动作的 JSON。"""
 
 
@@ -200,28 +212,36 @@ class AutonomousAgent:
         Intelligently select the best model for a task
         Based on task analysis and learned strategies
         """
-        # Check model availability
         local_llm_manager = get_local_llm_manager()
         _, local_config = await local_llm_manager.get_client(force_refresh=True)
-        
-        local_available = local_config.provider != LocalLLMProvider.NONE and self.local_llm is not None
+
+        local_available = local_config.provider != LocalLLMProvider.NONE
         remote_available = self.remote_llm is not None
-        
+
         selection = self.model_selector.select(
             task=task,
             local_available=local_available,
             remote_available=remote_available,
             prefer_local=self._prefer_local
         )
-        
-        # Switch to selected model
-        if selection.model_type == ModelType.LOCAL and self.local_llm:
+
+        if selection.model_type == ModelType.LOCAL and local_available:
+            detected_model = local_config.model
+            if self.local_llm is None or self.local_llm.config.model != detected_model:
+                from .llm_client import LLMConfig
+                self.local_llm = LLMClient(LLMConfig(
+                    provider=local_config.provider.value,
+                    base_url=local_config.base_url,
+                    model=detected_model,
+                    api_key=local_config.api_key,
+                ))
+                logger.info(f"Created local LLM client for detected model: {detected_model}")
             self.llm = self.local_llm
-            logger.info(f"Selected LOCAL model for task: {selection.reason}")
+            logger.info(f"Selected LOCAL model ({detected_model}) for task: {selection.reason}")
         else:
             self.llm = self.remote_llm
             logger.info(f"Selected REMOTE model for task: {selection.reason}")
-        
+
         return selection
     
     def _record_task_result(self, success: bool, execution_time_ms: int = 0):
@@ -234,6 +254,205 @@ class AutonomousAgent:
                 execution_time_ms=execution_time_ms
             )
     
+    # ------------------------------------------------------------------
+    # Layer 1: User context enrichment
+    # ------------------------------------------------------------------
+
+    async def _collect_user_context(self) -> str:
+        """Collect user environment context (locale, timezone, approximate location)."""
+        import asyncio
+        import os
+
+        parts: List[str] = []
+
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        parts.append(f"- 当前时间: {now_str}")
+
+        # System locale
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                "defaults read NSGlobalDomain AppleLocale 2>/dev/null || echo unknown",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+            locale_str = stdout.decode().strip()
+            if locale_str and locale_str != "unknown":
+                parts.append(f"- 系统语言/区域: {locale_str}")
+        except Exception:
+            pass
+
+        # Timezone
+        try:
+            tz = time.tzname[0] if time.tzname else "unknown"
+            import locale as _locale
+            try:
+                tz_full = datetime.now().astimezone().tzinfo
+                parts.append(f"- 时区: {tz_full}")
+            except Exception:
+                parts.append(f"- 时区: {tz}")
+        except Exception:
+            pass
+
+        # Approximate location via macOS system or IP geolocation
+        city = await self._get_approximate_location()
+        if city:
+            parts.append(f"- 大致位置: {city}")
+
+        if not parts:
+            return ""
+
+        return "## 用户环境\n" + "\n".join(parts)
+
+    async def _get_approximate_location(self) -> str:
+        """Best-effort approximate city via system timezone or IP geolocation."""
+        import asyncio
+
+        # Strategy 1: derive city from macOS timezone setting
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                "readlink /etc/localtime 2>/dev/null || echo ''",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=3)
+            tz_path = stdout.decode().strip()
+            # e.g. /var/db/timezone/zoneinfo/Asia/Shanghai -> Shanghai
+            if "/" in tz_path:
+                city_part = tz_path.rsplit("/", 1)[-1]
+                if city_part and city_part not in ("UTC", "GMT", "localtime"):
+                    return city_part
+        except Exception:
+            pass
+
+        # Strategy 2: lightweight IP geolocation (timeout 3s)
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                'curl -s --max-time 3 "http://ip-api.com/json/?fields=city,country" 2>/dev/null',
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+            data = json.loads(stdout.decode().strip())
+            city = data.get("city", "")
+            country = data.get("country", "")
+            if city:
+                return f"{city}, {country}" if country else city
+        except Exception:
+            pass
+
+        return ""
+
+    # ------------------------------------------------------------------
+    # Layer 2: Repeated failure detection & forced strategy switch
+    # ------------------------------------------------------------------
+
+    def _detect_repeated_failure(self, context: TaskContext) -> int:
+        """
+        Analyze recent action logs for repetitive failure patterns.
+        Returns escalation level: ESCALATION_NORMAL / FORCE_SWITCH / SKILL_FALLBACK.
+        """
+        logs = context.action_logs
+        if len(logs) < 2:
+            return ESCALATION_NORMAL
+
+        recent = logs[-5:]
+
+        # Hash each action's (type + truncated output) to detect similarity
+        hashes: List[str] = []
+        for log in recent:
+            sig = f"{log.action.action_type.value}:{str(log.result.output)[:200]}"
+            hashes.append(hashlib.md5(sig.encode()).hexdigest()[:10])
+
+        # Count how many of the last N are identical
+        last_hash = hashes[-1]
+        consecutive_same = 0
+        for h in reversed(hashes):
+            if h == last_hash:
+                consecutive_same += 1
+            else:
+                break
+
+        if consecutive_same >= 3:
+            return ESCALATION_SKILL_FALLBACK
+        if consecutive_same >= 2:
+            return ESCALATION_FORCE_SWITCH
+
+        return ESCALATION_NORMAL
+
+    def _build_escalation_prompt(
+        self, level: int, context: TaskContext, skill_guidance: str
+    ) -> str:
+        """Build the escalation injection text for _generate_action."""
+        if level == ESCALATION_NORMAL:
+            return ""
+
+        recent_types = [
+            log.action.action_type.value for log in context.action_logs[-5:]
+        ]
+        used_methods = ", ".join(dict.fromkeys(recent_types))
+
+        parts: List[str] = []
+
+        if level >= ESCALATION_FORCE_SWITCH:
+            parts.append(
+                f"⚠️ 你已经连续多次尝试了相似的方法但都未能成功完成任务。\n"
+                f"你之前使用的方法: {used_methods}\n"
+                f"你必须使用完全不同的方法。禁止再次使用与之前相同的命令或工具。\n"
+                f"考虑: 1) 使用不同的工具或 API  2) 换一种思路  3) 先获取更多信息再行动"
+            )
+
+        if level >= ESCALATION_SKILL_FALLBACK and skill_guidance:
+            parts.append(skill_guidance)
+
+        return "\n\n".join(parts)
+
+    # ------------------------------------------------------------------
+    # Layer 3: Skill / Capsule fallback
+    # ------------------------------------------------------------------
+
+    def _try_skill_fallback(self, task: str) -> str:
+        """
+        Search the CapsuleRegistry for skills relevant to the task.
+        Returns formatted guidance text, or empty string if nothing found.
+        """
+        try:
+            registry = get_capsule_registry()
+            if len(registry) == 0:
+                return ""
+
+            capsules = registry.find_capsule_by_task(task, limit=3, min_score=1.0)
+            if not capsules:
+                return ""
+
+            best = capsules[0]
+            steps = best.get_steps()
+
+            lines = [
+                f"💡 系统找到了一个相关技能可以帮助你完成任务:",
+                f"技能: {best.description}",
+                f"来源: {best.source or 'local'}",
+            ]
+
+            if steps:
+                lines.append("建议步骤:")
+                for i, step in enumerate(steps[:8], 1):
+                    desc = step.get("description", "")
+                    tool = step.get("tool", step.get("name", ""))
+                    if desc:
+                        lines.append(f"  {i}. {desc}")
+                    elif tool:
+                        args_str = json.dumps(step.get("args", step.get("parameters", {})), ensure_ascii=False)
+                        lines.append(f"  {i}. 使用工具 {tool}: {args_str[:120]}")
+
+            lines.append("请参考以上建议调整你的执行策略。")
+            return "\n".join(lines)
+
+        except Exception as e:
+            logger.debug(f"Skill fallback lookup failed: {e}")
+            return ""
+
+    # ------------------------------------------------------------------
+    # Main autonomous execution loop
+    # ------------------------------------------------------------------
+
     async def run_autonomous(
         self,
         task: str,
@@ -268,6 +487,21 @@ class AutonomousAgent:
         
         logger.info(f"Starting autonomous task: {task_id} - {task[:50]}...")
         
+        # Layer 1: Collect user environment context
+        user_context = ""
+        try:
+            user_context = await self._collect_user_context()
+            if user_context:
+                logger.info(f"User context collected ({len(user_context)} chars)")
+        except Exception as e:
+            logger.warning(f"User context collection failed: {e}")
+
+        # Per-task escalation state (layer 2 & 3)
+        self._escalation_level: int = ESCALATION_NORMAL
+        self._escalation_prompt: str = ""
+        self._user_context: str = user_context
+        self._skill_guidance_cache: Optional[str] = None
+        
         # Model selection
         self._task_start_time = time.time()
         if self.enable_model_selection:
@@ -278,7 +512,8 @@ class AutonomousAgent:
                     "model_type": self._current_selection.model_type.value,
                     "reason": self._current_selection.reason,
                     "task_type": self._current_selection.task_analysis.task_type.value,
-                    "complexity": self._current_selection.task_analysis.complexity_score
+                    "complexity": self._current_selection.task_analysis.complexity_score,
+                    "model_name": getattr(self.llm, "config", None) and self.llm.config.model or None,
                 }
             except Exception as e:
                 logger.warning(f"Model selection failed, using default: {e}")
@@ -428,6 +663,29 @@ class AutonomousAgent:
                     if context.retry_count >= context.max_retries:
                         logger.warning(f"Max retries reached for action type: {action.action_type}")
                 
+                # Layer 2 & 3: Detect repeated failures and escalate strategy
+                new_level = self._detect_repeated_failure(context)
+                if new_level > self._escalation_level:
+                    self._escalation_level = new_level
+                    skill_guidance = ""
+                    if new_level >= ESCALATION_SKILL_FALLBACK:
+                        if self._skill_guidance_cache is None:
+                            self._skill_guidance_cache = self._try_skill_fallback(task)
+                        skill_guidance = self._skill_guidance_cache or ""
+                    self._escalation_prompt = self._build_escalation_prompt(
+                        new_level, context, skill_guidance
+                    )
+                    logger.info(
+                        f"Strategy escalated to level {new_level} "
+                        f"(skill_guidance={'yes' if skill_guidance else 'no'})"
+                    )
+                    yield {
+                        "type": "strategy_escalation",
+                        "level": new_level,
+                        "has_skill_guidance": bool(skill_guidance),
+                        "iteration": context.current_iteration,
+                    }
+
                 # Check adaptive stop policy
                 if self._stop_policy:
                     decision = self._stop_policy.should_continue()
@@ -510,9 +768,15 @@ class AutonomousAgent:
             }
     
     async def _generate_action(self, context: TaskContext) -> Optional[AgentAction]:
-        """Generate the next action using LLM"""
+        """Generate the next action using LLM with context enrichment."""
+        # Build system prompt with user context (layer 1)
+        user_ctx = getattr(self, "_user_context", "")
+        system_prompt = AUTONOMOUS_SYSTEM_PROMPT.replace(
+            "{user_context}", user_ctx if user_ctx else ""
+        )
+
         messages = [
-            {"role": "system", "content": AUTONOMOUS_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": context.get_context_for_llm()}
         ]
         
@@ -529,6 +793,11 @@ class AutonomousAgent:
             else:
                 result_summary = f"上一步执行失败。错误: {last_log.result.error}"
             
+            # Inject escalation prompt (layer 2 & 3) when triggered
+            escalation = getattr(self, "_escalation_prompt", "")
+            if escalation:
+                result_summary += f"\n\n{escalation}"
+
             messages.append({
                 "role": "user",
                 "content": f"{result_summary}\n\n请分析结果并输出下一步动作的 JSON。"
@@ -536,18 +805,25 @@ class AutonomousAgent:
         
         try:
             import asyncio
+            model_info = f"{self.llm.config.provider}/{self.llm.config.model}"
+            logger.info(f"Generating action with LLM: {model_info}")
             # 设置 120 秒超时
             response = await asyncio.wait_for(
                 self.llm.chat(messages=messages),
                 timeout=120.0
             )
             content = response.get("content", "")
-            
+
             if not content:
                 logger.warning("Empty LLM response")
                 return None
-            
+
             action = AgentAction.from_llm_response(content)
+            if action is None:
+                logger.warning(
+                    "Failed to parse LLM output (len=%d, first 800 chars): %s",
+                    len(content), content[:800]
+                )
             
             if action:
                 validation_error = validate_action(action)

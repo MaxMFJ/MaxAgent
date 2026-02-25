@@ -49,153 +49,178 @@ DEFAULT_CONFIGS = {
 class LocalLLMManager:
     """
     Manages local LLM services (Ollama, LM Studio)
-    Provides automatic detection and failover
+    Detects all available services and picks the best model
     """
-    
+
     def __init__(self):
         self._current_config: Optional[LocalLLMConfig] = None
+        self._all_configs: list[LocalLLMConfig] = []
         self._client: Optional[AsyncOpenAI] = None
         self._last_check_time: float = 0
-        self._check_interval: float = 30.0  # Re-check every 30 seconds
-    
-    async def check_ollama(self, url: str = "http://localhost:11434") -> Tuple[bool, Optional[str]]:
-        """
-        Check if Ollama is running and get available models
-        Returns (is_available, first_model_name)
-        """
+        self._check_interval: float = 30.0
+
+    async def check_ollama(self, url: str = "http://localhost:11434") -> list[LocalLLMConfig]:
+        """Check Ollama and return configs for all available models"""
+        configs: list[LocalLLMConfig] = []
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(f"{url}/api/tags")
                 if response.status_code == 200:
                     data = response.json()
                     models = data.get("models", [])
-                    if models:
-                        # Prefer qwen or deepseek models
-                        preferred = ["qwen", "deepseek", "llama"]
-                        for pref in preferred:
-                            for m in models:
-                                if pref in m.get("name", "").lower():
-                                    logger.info(f"Ollama available with model: {m['name']}")
-                                    return True, m["name"]
-                        # Return first available model
-                        first_model = models[0].get("name", "")
-                        logger.info(f"Ollama available with model: {first_model}")
-                        return True, first_model
-                    logger.warning("Ollama running but no models available")
-                    return False, None
+                    for m in models:
+                        name = m.get("name", "")
+                        if name:
+                            configs.append(LocalLLMConfig(
+                                provider=LocalLLMProvider.OLLAMA,
+                                base_url=f"{url}/v1",
+                                model=name,
+                                api_key="ollama",
+                            ))
+                    if configs:
+                        logger.info(f"Ollama: {len(configs)} models ({', '.join(c.model for c in configs)})")
+                    else:
+                        logger.warning("Ollama running but no models available")
         except Exception as e:
             logger.debug(f"Ollama not available: {e}")
-        return False, None
-    
-    async def check_lm_studio(self, url: str = "http://localhost:1234") -> Tuple[bool, Optional[str]]:
-        """
-        Check if LM Studio is running and get available models
-        Returns (is_available, first_model_name)
-        """
+        return configs
+
+    async def check_lm_studio(self, url: str = "http://localhost:1234") -> list[LocalLLMConfig]:
+        """Check LM Studio and return configs for all available models"""
+        configs: list[LocalLLMConfig] = []
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(f"{url}/v1/models")
                 if response.status_code == 200:
                     data = response.json()
                     models = data.get("data", [])
-                    if models:
-                        first_model = models[0].get("id", "")
-                        logger.info(f"LM Studio available with model: {first_model}")
-                        return True, first_model
-                    logger.warning("LM Studio running but no models loaded")
-                    return False, None
+                    for m in models:
+                        mid = m.get("id", "")
+                        if mid:
+                            configs.append(LocalLLMConfig(
+                                provider=LocalLLMProvider.LM_STUDIO,
+                                base_url=f"{url}/v1",
+                                model=mid,
+                                api_key="lm-studio",
+                            ))
+                    if configs:
+                        logger.info(f"LM Studio: {len(configs)} models ({', '.join(c.model for c in configs)})")
+                    else:
+                        logger.warning("LM Studio running but no models loaded")
         except Exception as e:
             logger.debug(f"LM Studio not available: {e}")
-        return False, None
-    
+        return configs
+
+    @staticmethod
+    def _estimate_model_size(name: str) -> float:
+        """Estimate model parameter size from name (higher = larger)"""
+        import re
+        name_lower = name.lower()
+        match = re.search(r'(\d+\.?\d*)\s*b', name_lower)
+        if match:
+            return float(match.group(1))
+        for marker, size in [("70b", 70), ("32b", 32), ("14b", 14), ("13b", 13),
+                             ("8b", 8), ("7b", 7), ("3b", 3), ("1b", 1)]:
+            if marker in name_lower:
+                return size
+        return 3.0
+
+    @staticmethod
+    def _is_chat_model(name: str) -> bool:
+        """Filter out embedding/non-chat models"""
+        skip = ("embed", "embedding", "nomic", "bge", "e5", "rerank")
+        name_lower = name.lower()
+        return not any(s in name_lower for s in skip)
+
+    def _pick_best(self, configs: list[LocalLLMConfig]) -> Optional[LocalLLMConfig]:
+        """Pick the best chat model: prefer larger, prefer qwen/deepseek"""
+        chat_models = [c for c in configs if self._is_chat_model(c.model)]
+        if not chat_models:
+            return None
+        def score(c: LocalLLMConfig) -> float:
+            s = self._estimate_model_size(c.model)
+            name = c.model.lower()
+            if any(p in name for p in ("qwen", "deepseek")):
+                s += 0.5
+            return s
+        return max(chat_models, key=score)
+
+    async def detect_all_services(self) -> list[LocalLLMConfig]:
+        """Detect Ollama and LM Studio concurrently, return all available models"""
+        ollama_task = asyncio.create_task(self.check_ollama())
+        lm_task = asyncio.create_task(self.check_lm_studio())
+        ollama_configs, lm_configs = await asyncio.gather(ollama_task, lm_task)
+        all_configs = ollama_configs + lm_configs
+        self._all_configs = all_configs
+        return all_configs
+
     async def detect_available_service(self) -> LocalLLMConfig:
-        """
-        Detect which local LLM service is available
-        Priority: Ollama > LM Studio
-        """
-        # Check Ollama first
-        ollama_ok, ollama_model = await self.check_ollama()
-        if ollama_ok and ollama_model:
-            config = LocalLLMConfig(
-                provider=LocalLLMProvider.OLLAMA,
-                base_url="http://localhost:11434/v1",
-                model=ollama_model,
-                api_key="ollama"
-            )
-            self._current_config = config
-            return config
-        
-        # Check LM Studio
-        lm_ok, lm_model = await self.check_lm_studio()
-        if lm_ok and lm_model:
-            config = LocalLLMConfig(
-                provider=LocalLLMProvider.LM_STUDIO,
-                base_url="http://localhost:1234/v1",
-                model=lm_model,
-                api_key="lm-studio"
-            )
-            self._current_config = config
-            return config
-        
-        # No service available
+        """Detect all local services and pick the best model"""
+        all_configs = await self.detect_all_services()
+        best = self._pick_best(all_configs)
+        if best:
+            self._current_config = best
+            logger.info(f"Best local model: {best.provider.value}/{best.model}")
+            return best
         logger.warning("No local LLM service available (Ollama/LM Studio)")
-        return LocalLLMConfig(
-            provider=LocalLLMProvider.NONE,
-            base_url="",
-            model="",
-            api_key=""
-        )
-    
+        return LocalLLMConfig(provider=LocalLLMProvider.NONE, base_url="", model="", api_key="")
+
     async def get_client(self, force_refresh: bool = False) -> Tuple[Optional[AsyncOpenAI], LocalLLMConfig]:
-        """
-        Get an OpenAI-compatible client for the available local LLM
-        Returns (client, config)
-        """
+        """Get an OpenAI-compatible client for the best available local LLM"""
         import time
-        
+
         current_time = time.time()
         should_recheck = (
-            force_refresh or 
-            self._current_config is None or
-            self._current_config.provider == LocalLLMProvider.NONE or
-            (current_time - self._last_check_time) > self._check_interval
+            force_refresh
+            or self._current_config is None
+            or self._current_config.provider == LocalLLMProvider.NONE
+            or (current_time - self._last_check_time) > self._check_interval
         )
-        
+
         if should_recheck:
             self._last_check_time = current_time
             config = await self.detect_available_service()
-            
+
             if config.provider == LocalLLMProvider.NONE:
                 self._client = None
                 return None, config
-            
+
             self._client = AsyncOpenAI(
                 base_url=config.base_url,
-                api_key=config.api_key
+                api_key=config.api_key,
             )
             self._current_config = config
-        
+
         return self._client, self._current_config
-    
+
     @property
     def current_provider(self) -> LocalLLMProvider:
         if self._current_config:
             return self._current_config.provider
         return LocalLLMProvider.NONE
-    
+
     @property
     def current_model(self) -> str:
         if self._current_config:
             return self._current_config.model
         return ""
-    
+
     def get_status(self) -> Dict[str, Any]:
-        """Get current status information"""
+        """Get current status with all detected services"""
+        all_services = []
+        for c in self._all_configs:
+            all_services.append({
+                "provider": c.provider.value,
+                "model": c.model,
+                "base_url": c.base_url,
+                "size_estimate": self._estimate_model_size(c.model),
+            })
         return {
             "provider": self._current_config.provider.value if self._current_config else "none",
             "model": self._current_config.model if self._current_config else "",
             "base_url": self._current_config.base_url if self._current_config else "",
-            "available": self._current_config is not None and self._current_config.provider != LocalLLMProvider.NONE
+            "available": self._current_config is not None and self._current_config.provider != LocalLLMProvider.NONE,
+            "all_services": all_services,
         }
 
 

@@ -174,31 +174,27 @@ cloudflared 隧道与 Mac 客户端、tunnel_monitor 使用相同配置（端口
             )
         return ToolResult(success=False, error="未知操作")
 
-    def _run_cmd(self, cmd: str, timeout: int = 30, use_sudo: bool = False) -> tuple[int, str, str]:
-        """同步执行命令（在 asyncio 中 run_in_executor）"""
-        import subprocess
+    async def _run_cmd_async(self, cmd: str, timeout: int = 30, use_sudo: bool = False) -> tuple[int, str, str]:
+        """异步执行命令（使用 asyncio 子进程，符合安全白名单）"""
         if use_sudo and _check_sudo_available():
             cmd = f"sudo {cmd}"
         try:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=timeout
+            proc = await asyncio.wait_for(
+                asyncio.create_subprocess_shell(
+                    cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                ),
+                timeout=float(timeout),
             )
-            return result.returncode, result.stdout.strip(), result.stderr.strip()
-        except subprocess.TimeoutExpired:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=float(timeout))
+            out = (stdout or b"").decode().strip()
+            err = (stderr or b"").decode().strip()
+            return proc.returncode or 0, out, err
+        except asyncio.TimeoutError:
             return -1, "", "执行超时"
         except Exception as e:
             return -1, "", str(e)
-
-    async def _run_cmd_async(self, cmd: str, timeout: int = 30, use_sudo: bool = False) -> tuple[int, str, str]:
-        """异步执行命令"""
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, lambda: self._run_cmd(cmd, timeout, use_sudo)
-        )
 
     async def _start_cloudflared(self) -> ToolResult:
         """启动 Cloudflare 快速隧道（使用 launchd 持久运行，避免 Agent 子进程退出时被终止）"""

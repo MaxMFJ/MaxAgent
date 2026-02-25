@@ -1,0 +1,19 @@
+{
+  "episode_id": "f44a82ca",
+  "task_description": "今天天气怎么样 ",
+  "action_log": [],
+  "result": "成功获取了今天的天气信息。根据wttr.in的数据，北京当前的天气是多云（☁️），温度为+3°C。",
+  "success": true,
+  "total_actions": 17,
+  "total_iterations": 17,
+  "execution_time_ms": 0,
+  "user_feedback": null,
+  "strategies_used": [],
+  "reflection": null,
+  "created_at": "2026-02-25T10:49:19.031323",
+  "token_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "capsule_web_search_and_summarize",
+  "description": "搜索网页内容并总结：先执行网页搜索，再将结果通过终端处理",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "description": "搜索关键词"
+    },
+    "max_results": {
+      "type": "integer",
+      "description": "最大结果数，默认 5"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "搜索与处理结果"
+    }
+  },
+  "procedure": [
+    {
+      "id": "search",
+      "type": "tool",
+      "tool": "web_search",
+      "args": {
+        "query": "{{input.query}}",
+        "max_results": "{{input.max_results}}"
+      },
+      "retry": 2,
+      "retry_delay": 2.0,
+      "timeout": 30
+    },
+    {
+      "id": "format",
+      "type": "tool",
+      "tool": "terminal",
+      "args": {
+        "command": "echo '搜索完成: {{input.query}}'"
+      },
+      "condition": "{{output.search.success}} == true"
+    }
+  ],
+  "task_type": "search",
+  "tags": ["search", "web", "搜索", "网页"],
+  "capability": ["web_search", "summarize"],
+  "priority": 1,
+  "schema_version": "1.1.0"
+}

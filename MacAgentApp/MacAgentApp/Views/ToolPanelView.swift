@@ -334,17 +334,13 @@ struct EmptyTaskView: View {
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
             
-            Text("自主执行模式")
+            Text("自主执行")
                 .font(.headline)
             
-            Text("在聊天框输入任务后点击\n🤖 按钮启动自主执行")
+            Text("在聊天框输入任务后点击 🤖 按钮\n自动选择本地/远程模型执行")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            
-            Toggle("自主模式", isOn: $viewModel.isAutonomousMode)
-                .toggleStyle(.switch)
-                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

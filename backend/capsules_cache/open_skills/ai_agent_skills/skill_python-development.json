@@ -1,0 +1,69 @@
+{
+  "id": "skill_python-development",
+  "description": "Modern Python development with Python 3.12+, Django, FastAPI, async patterns, and production best practices. Use for Python projects, APIs, data processing, or automation scripts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Python Development"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Project Setup] ### Modern Python Project Structure\n```\nmy-project/\n├── src/\n│   └── my_project/\n│       ├── __init__.py\n│       ├── main.py\n│       └── utils.py\n├── tests/\n│   ├── __init__.py\n│   └── test_main.py\n├── pyproject.toml\n├── README.md\n└── .gitignore\n```\n\n### pyproject.toml\n```toml\n[project]\nname = \"my-project\"\nversion = \"0.1.0\"\nrequires-python = \">=3.12\"\ndependencies = [\n    \"fastapi>=0.100.0\",\n    \"pydantic>=2.0\",\n]\n\n[project.optional-dependencies]\ndev = [\n    \"pytest>=7.0\",\n    \"ruff>=0.1.0\",\n    \"mypy>=1.0\",\n]\n\n[tool.ruff]\nline-length = 88\nselect = [\"E\", \"F\", \"I\", \"N\", \"W\"]\n\n[tool.mypy]\nstrict = true\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Type Hints] ```python\nfrom typing import TypeVar, Generic\nfrom collections.abc import Sequence\n\nT = TypeVar('T')\n\ndef process_items(items: Sequence[str]) -> list[str]:\n    return [item.upper() for item in items]\n\nclass Repository(Generic[T]):\n    def get(self, id: int) -> T | None: ...\n    def save(self, item: T) -> T: ...\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Async Patterns] ```python\nimport asyncio\nfrom collections.abc import AsyncIterator\n\nasync def fetch_all(urls: list[str]) -> list[dict]:\n    async with aiohttp.ClientSession() as session:\n        tasks = [fetch_one(session, url) for url in urls]\n        return await asyncio.gather(*tasks)\n\nasync def stream_data() -> AsyncIterator[bytes]:\n    async with aiofiles.open('large_file.txt', 'rb') as f:\n        async for chunk in f:\n            yield chunk\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[FastAPI Patterns] ```python\nfrom fastapi import FastAPI, Depends, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass UserCreate(BaseModel):\n    email: str\n    name: str\n\nclass UserResponse(BaseModel):\n    id: int\n    email: str\n    name: str\n\n@app.post(\"/users\", response_model=UserResponse)\nasync def create_user(\n    user: UserCreate,\n    db: Database = Depends(get_db)\n) -> UserResponse:\n    result = await db.users.create(user.model_dump())\n    return UserResponse(**result)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Testing] ```python\nimport pytest\nfrom unittest.mock import AsyncMock, patch\n\n@pytest.fixture\ndef mock_db():\n    db = AsyncMock()\n    db.users.get.return_value = {\"id\": 1, \"name\": \"Test\"}\n    return db\n\n@pytest.mark.asyncio\nasync def test_get_user(mock_db):\n    result = await get_user(1, db=mock_db)\n    assert result[\"name\"] == \"Test\"\n    mock_db.users.get.assert_called_once_with(1)\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] - Use `ruff` for linting and formatting\n- Use `mypy` with strict mode\n- Prefer `pathlib.Path` over `os.path`\n- Use dataclasses or Pydantic for data structures\n- Use `asyncio` for I/O-bound operations\n- Use `contextlib.asynccontextmanager` for async resources"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "python_development"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/python-development/SKILL.md"
+}

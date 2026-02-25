@@ -1,0 +1,19 @@
+{
+  "episode_id": "d03ca1c1",
+  "task_description": "打开微信",
+  "action_log": [],
+  "result": "成功打开了微信应用程序。",
+  "success": true,
+  "total_actions": 4,
+  "total_iterations": 4,
+  "execution_time_ms": 0,
+  "user_feedback": null,
+  "strategies_used": [],
+  "reflection": null,
+  "created_at": "2026-02-24T13:16:19.815931",
+  "token_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  }
+}

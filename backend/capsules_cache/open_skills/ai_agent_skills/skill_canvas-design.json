@@ -1,0 +1,59 @@
+{
+  "id": "skill_canvas-design",
+  "description": "Create beautiful visual art in .png and .pdf documents using design philosophy. Use when the user asks to create a poster, piece of art, design, or other static visual piece. Creates original visual designs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Canvas Design\n\nCreate visually striking static designs using HTML Canvas or Python imaging libraries."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Design Principles] ### Composition\n- **Rule of Thirds**: Place key elements along grid lines\n- **Visual Hierarchy**: Size, color, and position indicate importance\n- **White Space**: Embrace negative space for elegance\n- **Balance**: Symmetrical for formal, asymmetrical for dynamic\n\n### Color Theory\n- **Complementary**: Colors opposite on wheel (high contrast)\n- **Analogous**: Adjacent colors (harmonious)\n- **Triadic**: Three equidistant colors (vibrant)\n- Limit palette to 3-5 colors\n\n### Typography\n- Pair one display font with one body font\n- Maintain consistent hierarchy\n- Ensure readability (contrast, size)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Python Canvas (Pillow + Cairo)] ```python\nfrom PIL import Image, ImageDraw, ImageFont\nimport cairo\n\n# Create canvas\nwidth, height = 1200, 800\nsurface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)\nctx = cairo.Context(surface)\n\n# Background gradient\npattern = cairo.LinearGradient(0, 0, 0, height)\npattern.add_color_stop_rgb(0, 0.1, 0.1, 0.2)\npattern.add_color_stop_rgb(1, 0.05, 0.05, 0.1)\nctx.set_source(pattern)\nctx.paint()\n\n# Draw shapes\nctx.set_source_rgba(1, 0.3, 0.3, 0.8)\nctx.arc(600, 400, 150, 0, 2 * 3.14159)\nctx.fill()\n\n# Add text\nctx.set_source_rgb(1, 1, 1)\nctx.select_font_face(\"Sans\", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)\nctx.set_font_size(48)\nctx.move_to(400, 600)\nctx.show_text(\"Hello Design\")\n\n# Save\nsurface.write_to_png(\"design.png\")\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[HTML Canvas to Image] ```javascript\nconst canvas = document.createElement('canvas');\ncanvas.width = 1200;\ncanvas.height = 800;\nconst ctx = canvas.getContext('2d');\n\n// Draw\nctx.fillStyle = '#1a1a2e';\nctx.fillRect(0, 0, 1200, 800);\n\nctx.fillStyle = '#e94560';\nctx.beginPath();\nctx.arc(600, 400, 150, 0, Math.PI * 2);\nctx.fill();\n\n// Export\nconst dataUrl = canvas.toDataURL('image/png');\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Design Styles] - **Minimalist**: Limited colors, lots of whitespace, clean lines\n- **Brutalist**: Raw, bold typography, stark contrasts\n- **Glassmorphism**: Frosted glass effects, subtle borders\n- **Retro/Vintage**: Muted colors, textures, classic typography\n- **Abstract**: Geometric shapes, gradients, artistic composition"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "canvas_design"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/canvas-design/SKILL.md"
+}

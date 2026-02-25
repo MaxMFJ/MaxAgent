@@ -11,6 +11,8 @@
 @property (nonatomic, strong) NSTimer *pingTimer;
 @property (nonatomic, assign) NSInteger reconnectAttempts;
 @property (nonatomic, assign) BOOL shouldReconnect;
+@property (nonatomic, assign) BOOL hasRunningTask;  // 新增：服务端是否有运行中的任务
+@property (nonatomic, copy, nullable) NSString *runningTaskId;  // 新增：运行中的任务 ID
 
 @end
 
@@ -144,6 +146,22 @@
     [self sendJSONMessage:message];
 }
 
+// 新增：恢复运行中的任务
+- (void)resumeTask:(NSString *)sessionId {
+    if (self.connectionState != WebSocketConnectionStateConnected) {
+        NSLog(@"[WebSocket] Not connected, cannot resume task");
+        return;
+    }
+    
+    NSDictionary *message = @{
+        @"type": @"resume_task",
+        @"session_id": sessionId ?: [ServerConfig sharedConfig].sessionId
+    };
+    
+    NSLog(@"[WebSocket] Sending resume_task for session: %@", sessionId);
+    [self sendJSONMessage:message];
+}
+
 - (void)checkServerHealth:(void (^)(BOOL, NSString * _Nullable))completion {
     NSURL *url = [[ServerConfig sharedConfig] healthCheckURL];
     if (!url) {
@@ -235,10 +253,20 @@
     if ([type isEqualToString:@"connected"]) {
         self.clientId = json[@"client_id"];
         self.sessionId = json[@"session_id"];
-        NSLog(@"[WebSocket] Connected with client_id: %@", self.clientId);
+        self.hasRunningTask = [json[@"has_running_task"] boolValue];
+        self.runningTaskId = json[@"running_task_id"];
+        
+        NSLog(@"[WebSocket] Connected with client_id: %@, has_running_task: %d", self.clientId, self.hasRunningTask);
         
         if ([self.delegate respondsToSelector:@selector(webSocketService:didConnectWithClientId:)]) {
             [self.delegate webSocketService:self didConnectWithClientId:self.clientId];
+        }
+        
+        // 如果检测到有运行中的任务，通知代理
+        if (self.hasRunningTask && self.runningTaskId) {
+            if ([self.delegate respondsToSelector:@selector(webSocketService:didDetectRunningTask:)]) {
+                [self.delegate webSocketService:self didDetectRunningTask:self.runningTaskId];
+            }
         }
     }
     else if ([type isEqualToString:@"content"]) {
@@ -311,6 +339,36 @@
     }
     else if ([type isEqualToString:@"pong"]) {
         // Heartbeat response
+    }
+    else if ([type isEqualToString:@"server_ping"]) {
+        // 服务端心跳，回复 pong
+        NSDictionary *pongMessage = @{@"type": @"pong"};
+        [self sendJSONMessage:pongMessage];
+    }
+    else if ([type isEqualToString:@"autonomous_task_accepted"]) {
+        // 服务端确认接受任务
+        NSLog(@"[WebSocket] Autonomous task accepted");
+    }
+    else if ([type isEqualToString:@"resume_result"]) {
+        BOOL found = [json[@"found"] boolValue];
+        if (!found) {
+            NSString *message = json[@"message"] ?: @"未找到任务";
+            NSLog(@"[WebSocket] Resume failed: %@", message);
+            if ([self.delegate respondsToSelector:@selector(webSocketService:taskResumeDidFail:)]) {
+                [self.delegate webSocketService:self taskResumeDidFail:message];
+            }
+        } else {
+            NSString *taskId = json[@"task_id"];
+            NSString *taskDesc = json[@"task_description"];
+            NSLog(@"[WebSocket] Task resume successful: %@", taskId);
+            if ([self.delegate respondsToSelector:@selector(webSocketService:didResumeTaskWithId:description:)]) {
+                [self.delegate webSocketService:self didResumeTaskWithId:taskId description:taskDesc];
+            }
+        }
+    }
+    else if ([type isEqualToString:@"resume_streaming"]) {
+        // 历史回放完成，后续是实时流
+        NSLog(@"[WebSocket] Resume streaming started");
     }
     else if ([type isEqualToString:@"session_created"]) {
         NSLog(@"[WebSocket] Session created");

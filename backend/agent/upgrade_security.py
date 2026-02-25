@@ -3,12 +3,13 @@ Upgrade Security - 升级安全校验
 行为白名单、路径保护、签名校验
 """
 
+import ast
 import os
 import re
 import json
 import hashlib
 import logging
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict, Any
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ PROTECTED_PATHS = [
     "tools/__init__.py",
     "tools/base.py",
     "agent/core.py",
-    "agent/tool_upgrade_orchestrator.py",
+    "agent/self_upgrade/",
     "agent/upgrade_security.py",
     "agent/upgrade_git.py",
 ]
@@ -172,3 +173,64 @@ def approve_tool(filepath: str, tool_name: str) -> Tuple[bool, str]:
     if save_signatures(sigs):
         return True, f"已批准 {tool_name}"
     return False, "写入 signatures.json 失败"
+
+
+def _get_tool_name_from_file(filepath: str) -> Optional[str]:
+    """从 .py 文件中解析出 BaseTool 子类的 name 属性（不执行代码）"""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+    except Exception:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        # 检查是否继承 BaseTool
+        has_base_tool = False
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id == "BaseTool":
+                has_base_tool = True
+                break
+            if isinstance(base, ast.Attribute) and base.attr == "BaseTool":
+                has_base_tool = True
+                break
+        if not has_base_tool:
+            continue
+        # 在类体中查找 name = "xxx"
+        for stmt in node.body:
+            if isinstance(stmt, ast.Assign):
+                for t in stmt.targets:
+                    if isinstance(t, ast.Name) and t.id == "name" and stmt.value:
+                        if isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
+                            return stmt.value.value
+                        if isinstance(stmt.value, ast.Str):  # Python 3.7
+                            return stmt.value.s
+        return None
+    return None
+
+
+def list_pending_tool_approvals() -> List[Dict[str, Any]]:
+    """
+    列出 tools/generated/ 下未通过签名校验的工具（待人工审批）。
+    不执行工具代码，仅解析 AST 获取工具名并检查 signatures.json。
+    """
+    result: List[Dict[str, Any]] = []
+    if not os.path.isdir(GENERATED_TOOLS_DIR):
+        return result
+    for filename in sorted(os.listdir(GENERATED_TOOLS_DIR)):
+        if not filename.endswith(".py") or filename.startswith("_"):
+            continue
+        filepath = os.path.join(GENERATED_TOOLS_DIR, filename)
+        if not is_path_allowed(filepath):
+            continue
+        tool_name = _get_tool_name_from_file(filepath)
+        if not tool_name:
+            continue
+        verified, _ = verify_tool_signature(filepath, tool_name, trust_all=False)
+        if not verified:
+            result.append({
+                "tool_name": tool_name,
+                "file_path": filepath,
+                "filename": filename,
+            })
+    return result

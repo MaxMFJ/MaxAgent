@@ -13,6 +13,11 @@ if TYPE_CHECKING:
     from runtime import RuntimeAdapter
 
 
+class ToolException(Exception):
+    """Exception raised when a tool execution fails (invalid input, runtime error, etc.)."""
+    pass
+
+
 class ToolCategory(Enum):
     """Tool categories for organization"""
     FILE = "file"

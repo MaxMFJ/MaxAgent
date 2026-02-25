@@ -110,7 +110,11 @@ class TaskAnalyzer:
     KNOWLEDGE_KEYWORDS = [
         "什么是", "为什么", "如何", "怎么", "解释", "介绍",
         "区别", "比较", "最新", "最佳实践", "推荐",
-        "what is", "why", "how to", "explain", "compare"
+        "查询", "搜索", "查找", "联网", "上网", "网上",
+        "股票", "天气", "新闻", "价格", "汇率", "翻译",
+        "百度", "谷歌", "google", "搜一下", "帮我查",
+        "what is", "why", "how to", "explain", "compare",
+        "search", "query", "look up", "find out",
     ]
     
     COMPLEX_KEYWORDS = [

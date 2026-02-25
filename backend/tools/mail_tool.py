@@ -6,6 +6,7 @@ Mail Tool - 邮件操作
 
 import asyncio
 import os
+import time
 import smtplib
 import ssl
 from email.mime.text import MIMEText
@@ -126,36 +127,68 @@ class MailTool(BaseTool):
             )
 
         def _do_send() -> tuple[bool, str]:
-            try:
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = subject
-                msg["From"] = user
-                msg["To"] = to
-                if cc:
-                    msg["Cc"] = cc
-                if bcc:
-                    msg["Bcc"] = bcc
-                msg.attach(MIMEText(body or "", "plain", "utf-8"))
-                
-                recipients = [addr.strip() for addr in to.split(",")]
-                if cc:
-                    recipients.extend(addr.strip() for addr in cc.split(","))
-                if bcc:
-                    recipients.extend(addr.strip() for addr in bcc.split(","))
-                
-                context = ssl.create_default_context()
-                if port == 465:
-                    with smtplib.SMTP_SSL(server, port, context=context) as s:
+            timeout = 30
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = user
+            msg["To"] = to
+            if cc:
+                msg["Cc"] = cc
+            if bcc:
+                msg["Bcc"] = bcc
+            msg.attach(MIMEText(body or "", "plain", "utf-8"))
+            recipients = [addr.strip() for addr in to.split(",")]
+            if cc:
+                recipients.extend(addr.strip() for addr in cc.split(","))
+            if bcc:
+                recipients.extend(addr.strip() for addr in bcc.split(","))
+            context = ssl.create_default_context()
+
+            def _try_465() -> tuple[bool, str]:
+                try:
+                    with smtplib.SMTP_SSL(server, 465, context=context, timeout=timeout) as s:
                         s.login(user, password)
                         s.sendmail(user, recipients, msg.as_string())
-                else:
-                    with smtplib.SMTP(server, port) as s:
+                    return True, ""
+                except Exception as e:
+                    return False, str(e)
+
+            def _try_587() -> tuple[bool, str]:
+                try:
+                    with smtplib.SMTP(server, 587, timeout=timeout) as s:
+                        s.ehlo()
                         s.starttls(context=context)
+                        s.ehlo()
                         s.login(user, password)
                         s.sendmail(user, recipients, msg.as_string())
-                return True, ""
-            except Exception as e:
-                return False, str(e)
+                    return True, ""
+                except Exception as e:
+                    return False, str(e)
+
+            if port == 465:
+                ok, err = _try_465()
+                if ok:
+                    return True, ""
+                err_lower = (err or "").lower()
+                if any(k in err_lower for k in ("timeout", "ssl", "timed out", "handshake", "connection")):
+                    time.sleep(2)  # 稍等后重试，缓解瞬时超时
+                    ok, err2 = _try_587()
+                    if ok:
+                        return True, ""
+                    return False, f"465 失败: {err}；587 也失败: {err2}"
+                return False, err
+            else:
+                ok, err = _try_587()
+                if ok:
+                    return True, ""
+                err_lower = (err or "").lower()
+                if any(k in err_lower for k in ("timeout", "ssl", "timed out", "handshake", "connection")):
+                    time.sleep(2)
+                    ok, err2 = _try_465()
+                    if ok:
+                        return True, ""
+                    return False, f"587 失败: {err}；465 也失败: {err2}"
+                return False, err
 
         success, err = await asyncio.get_event_loop().run_in_executor(None, _do_send)
         if success:
@@ -164,6 +197,14 @@ class MailTool(BaseTool):
                 "to": to,
                 "subject": subject
             })
+        # 区分错误类型，便于 LLM 正确引导
+        err_lower = (err or "").lower()
+        is_connection = any(k in err_lower for k in ("timeout", "ssl", "timed out", "handshake", "connection", "connect"))
+        if is_connection:
+            return ToolResult(
+                success=False,
+                error=f"SMTP 连接失败（配置已就绪，疑似网络/防火墙问题）：{err}。建议稍后重试，或运行 backend/scripts/test_smtp_send.py 诊断"
+            )
         return ToolResult(success=False, error=f"SMTP 发送失败: {err}")
     
     async def _read_inbox(self, count: int) -> ToolResult:

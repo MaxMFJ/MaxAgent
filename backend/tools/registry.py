@@ -191,3 +191,13 @@ class ToolRegistry:
     
     def __contains__(self, name: str) -> bool:
         return name in self._tools
+
+
+# === Tool Runtime v2: 结构化 Schema 注册（供 validator/router 使用）===
+from .schema_registry import (
+    TOOLS,
+    get_tool,
+    validate_args as validate_tool_args,
+    build_from_base_tools,
+    register_tool as register_schema,
+)

@@ -1,0 +1,49 @@
+{
+  "id": "skill_web-design-guidelines",
+  "description": "Modern web design principles for responsive layouts, accessibility, and visual hierarchy.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Web Design Guidelines\n\nModern web design principles for responsive layouts, accessibility, and visual hierarchy."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Creating polished web interfaces\n- Improving accessibility\n- Responsive design patterns\n- Visual hierarchy decisions"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Source] This skill references patterns from [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "web_design_guidelines"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/web-design-guidelines/SKILL.md"
+}

@@ -29,6 +29,7 @@
 		B100000F234567890ABCDEF1 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010234567890ABCDEF1 /* MarkdownParser.swift */; };
 		B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012234567890ABCDEF1 /* RichMarkdownView.swift */; };
 		B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */; };
+		B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037234567890ABCDEF1 /* RichMessageTextView.swift */; };
 		B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000016234567890ABCDEF1 /* CodeBlockView.swift */; };
 		B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000018234567890ABCDEF1 /* MarkdownElements.swift */; };
 		B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A234567890ABCDEF1 /* AsyncImageView.swift */; };
@@ -42,6 +43,7 @@
 		B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002A234567890ABCDEF1 /* ViewExtensions.swift */; };
 		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
+		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +71,7 @@
 		B1000010234567890ABCDEF1 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		B1000012234567890ABCDEF1 /* RichMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMarkdownView.swift; sourceTree = "<group>"; };
 		B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineMarkdownText.swift; sourceTree = "<group>"; };
+		B1000037234567890ABCDEF1 /* RichMessageTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMessageTextView.swift; sourceTree = "<group>"; };
 		B1000016234567890ABCDEF1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
 		B1000018234567890ABCDEF1 /* MarkdownElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownElements.swift; sourceTree = "<group>"; };
 		B100001A234567890ABCDEF1 /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncImageView.swift; sourceTree = "<group>"; };
@@ -83,6 +86,7 @@
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1000002234567890ABCDEF1 /* SystemMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageView.swift; sourceTree = "<group>"; };
 		E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -112,7 +116,6 @@
 				E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */,
 				5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -158,6 +161,7 @@
 				A1000010234567890ABCDEF1 /* SidebarView.swift */,
 				A1000012234567890ABCDEF1 /* ToolPanelView.swift */,
 				A1000014234567890ABCDEF1 /* SettingsView.swift */,
+				D1000002234567890ABCDEF1 /* SystemMessageView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -226,6 +230,7 @@
 			children = (
 				B1000010234567890ABCDEF1 /* MarkdownParser.swift */,
 				B1000012234567890ABCDEF1 /* RichMarkdownView.swift */,
+				B1000037234567890ABCDEF1 /* RichMessageTextView.swift */,
 				B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */,
 				B1000016234567890ABCDEF1 /* CodeBlockView.swift */,
 				B1000018234567890ABCDEF1 /* MarkdownElements.swift */,
@@ -285,7 +290,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					A10000FF234567890ABCDEF1 = {
 						CreatedOnToolsVersion = 15.0;
@@ -369,6 +374,7 @@
 				B100000F234567890ABCDEF1 /* MarkdownParser.swift in Sources */,
 				B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */,
 				B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */,
+				B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */,
 				B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */,
 				B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */,
 				B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */,
@@ -383,6 +389,7 @@
 				A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */,
 				A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */,
 				A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */,
+				D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */,
 				C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */,
 				C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */,
 			);
@@ -396,6 +403,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -425,6 +433,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -449,6 +458,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -459,6 +469,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -488,6 +499,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -505,6 +517,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -515,13 +528,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = MacAgentApp/MacAgentApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -542,13 +560,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = MacAgentApp/MacAgentApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (

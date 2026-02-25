@@ -14,8 +14,6 @@ from tools.cloudflared_utils import (
     get_cloudflared_restart_command,
 )
 
-# 设置日志
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

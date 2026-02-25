@@ -1,0 +1,64 @@
+{
+  "id": "skill_code-refactoring",
+  "description": "Code refactoring patterns and techniques for improving code quality without changing behavior. Use for cleaning up legacy code, reducing complexity, or improving maintainability.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Code Refactoring"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Refactoring Principles] ### When to Refactor\n- Before adding new features (make change easy, then make easy change)\n- After getting tests passing (red-green-refactor)\n- When you see code smells\n- During code review feedback\n\n### When NOT to Refactor\n- Without tests covering the code\n- Under tight deadlines with no safety net\n- Code that will be replaced soon\n- When you don't understand what the code does"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Common Code Smells] ### Long Methods\n```typescript\n// BEFORE: Method doing too much\nfunction processOrder(order: Order) {\n  // 100 lines of validation, calculation, notification, logging...\n}\n\n// AFTER: Extract into focused methods\nfunction processOrder(order: Order) {\n  validateOrder(order);\n  const total = calculateTotal(order);\n  saveOrder(order, total);\n  notifyCustomer(order);\n}\n```\n\n### Deeply Nested Conditionals\n```typescript\n// BEFORE: Arrow code\nfunction getDiscount(user: User, order: Order) {\n  if (user) {\n    if (user.isPremium) {\n      if (order.total > 100) {\n        if (order.items.length > 5) {\n          return 0.2;\n        }\n      }\n    }\n  }\n  return 0;\n}\n\n// AFTER: Early returns (guard clauses)\nfunction getDiscount(user: User, order: Order) {\n  if (!user) return 0;\n  if (!user.isPremium) return 0;\n  if (order.total <= 100) return 0;\n  if (order.items.length <= 5) return 0;\n  return 0.2;\n}\n```\n\n### Primitive Obsession\n```typescript\n// BEFORE: Primitives everywhere\nfunction createUser(name: string, email: string, phone: string) {\n  if (!email.includes('@')) throw new Error('Invalid email');\n  // more validation...\n}\n\n// AFTER: Value objects\nclass Email {\n  constructor(private value: string) {\n    if (!value.includes('@')) throw new Error('Invalid email');\n  }\n  toString() { return this.value; }\n}\n\nfunction createUser(name: string, email: Email, phone: Phone) {\n  // Email is already validated\n}\n```\n\n### Feature Envy\n```typescript\n// BEFORE: Method uses another object's data extensively\nfunction calculateShipping(order: Order) {\n  const address = order.customer.address;\n  const weight = order.items.reduce((sum, i) => sum + i.weight, 0);\n  const distance = calculateDistance(address.zip);\n  return weight * distance * 0.01;\n}\n\n// AFTER: Move method to where the data is\nclass Order {\n  calculateShipping() {\n    return this.totalWeight * this.customer.shippingDistance * 0.01;\n  }\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Refactoring Techniques] ### Extract Method\n```typescript\n// Identify a code block that does one thing\n// Move it to a new method with a descriptive name\n// Replace original code with method call\n\nfunction printReport(data: ReportData) {\n  // Extract this block...\n  const header = `Report: ${data.title}\\nDate: ${data.date}\\n${'='.repeat(40)}`;\n  console.log(header);\n\n  // ...into a method\n  printHeader(data);\n}\n```\n\n### Replace Conditional with Polymorphism\n```typescript\n// BEFORE: Switch on type\nfunction getArea(shape: Shape) {\n  switch (shape.type) {\n    case 'circle': return Math.PI * shape.radius ** 2;\n    case 'rectangle': return shape.width * shape.height;\n    case 'triangle': return shape.base * shape.height / 2;\n  }\n}\n\n// AFTER: Polymorphic classes\ninterface Shape {\n  getArea(): number;\n}\n\nclass Circle implements Shape {\n  constructor(private radius: number) {}\n  getArea() { return Math.PI * this.radius ** 2; }\n}\n\nclass Rectangle implements Shape {\n  constructor(private width: number, private height: number) {}\n  getArea() { return this.width * this.height; }\n}\n```\n\n### Introduce Parameter Object\n```typescript\n// BEFORE: Too many parameters\nfunction searchProducts(\n  query: string,\n  minPrice: number,\n  maxPrice: number,\n  category: string,\n  inStock: boolean,\n  sortBy: string,\n  sortOrder: string\n) { ... }\n\n// AFTER: Parameter object\ninterface SearchParams {\n  query: string;\n  priceRange: { min: number; max: number };\n  category?: string;\n  inStock?: boolean;\n  sort?: { by: string; order: 'asc' | 'desc' };\n}\n\nfunction searchProducts(params: SearchParams) { ... }\n```\n\n### Replace Magic Numbers with Constants\n```typescript\n// BEFORE\nif (user.age >= 18 && order.total >= 50) {\n  applyDiscount(order, 0.1);\n}\n\n// AFTER\nconst MINIMUM_AGE = 18;\nconst DISCOUNT_THRESHOLD = 50;\nconst STANDARD_DISCOUNT = 0.1;\n\nif (user.age >= MINIMUM_AGE && order.total >= DISCOUNT_THRESHOLD) {\n  applyDiscount(order, STANDARD_DISCOUNT);\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Safe Refactoring Process] 1. **Ensure tests exist** - Write tests if they don't\n2. **Make small changes** - One refactoring at a time\n3. **Run tests after each change** - Catch regressions immediately\n4. **Commit frequently** - Easy to revert if something breaks\n5. **Review the diff** - Make sure behavior hasn't changed"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Refactoring Checklist] - [ ] Tests pass before starting\n- [ ] Each change is small and focused\n- [ ] Tests pass after each change\n- [ ] No behavior changes (only structure)\n- [ ] Code is more readable than before\n- [ ] Commit message explains the refactoring"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "code_refactoring"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/code-refactoring/SKILL.md"
+}

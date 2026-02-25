@@ -14,16 +14,25 @@ from openai import AsyncOpenAI
 logger = logging.getLogger(__name__)
 
 
+def _default_api_key() -> Optional[str]:
+    """优先从持久化配置读取 API key，其次从环境变量"""
+    try:
+        from llm_config import get_persisted_api_key
+        return get_persisted_api_key()
+    except Exception:
+        return os.getenv("DEEPSEEK_API_KEY")
+
+
 @dataclass
 class LLMConfig:
     """Configuration for LLM client"""
     provider: str = "deepseek"  # "deepseek", "ollama", or "lmstudio"
-    api_key: Optional[str] = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY"))
+    api_key: Optional[str] = field(default_factory=_default_api_key)
     base_url: str = field(default_factory=lambda: os.getenv("LLM_BASE_URL", "https://api.deepseek.com"))
     model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "deepseek-chat"))
     temperature: float = 0.7
     max_tokens: int = 4096
-    
+
     def __post_init__(self):
         if self.provider == "ollama":
             self.base_url = self.base_url or "http://localhost:11434/v1"
@@ -45,12 +54,18 @@ class LLMClient:
     def _init_client(self):
         """Initialize the OpenAI-compatible client"""
         import httpx
-        
-        # 增加超时时间以处理慢速网络
+
+        api_key = self.config.api_key or "dummy"
+        if api_key == "dummy" and self.config.provider not in ("ollama", "lmstudio"):
+            logger.warning(
+                "LLM API key not configured! Set DEEPSEEK_API_KEY in .env or configure via Mac App settings. "
+                "Requests will fail with 401."
+            )
+
         self._client = AsyncOpenAI(
-            api_key=self.config.api_key or "dummy",
+            api_key=api_key,
             base_url=self.config.base_url,
-            timeout=httpx.Timeout(120.0, connect=30.0),  # 120秒总超时，30秒连接超时
+            timeout=httpx.Timeout(120.0, connect=30.0),
         )
         logger.info(f"LLM client initialized: provider={self.config.provider}, model={self.config.model}")
     
@@ -192,18 +207,28 @@ class LLMClient:
                                 tool_calls_buffer[idx]["arguments"] += tc.function.arguments
                 
                 if chunk.choices[0].finish_reason:
-                    logger.info(f"Stream finish_reason: {chunk.choices[0].finish_reason}, processed {chunk_count} chunks")
+                    finish_reason = chunk.choices[0].finish_reason
+                    logger.info(f"Stream finish_reason: {finish_reason}, processed {chunk_count} chunks")
                     if tool_calls_buffer:
-                        logger.info(f"Yielding {len(tool_calls_buffer)} tool calls")
+                        truncated = (finish_reason == "length")
+                        if truncated:
+                            logger.warning(
+                                f"Output truncated (finish_reason=length) with {len(tool_calls_buffer)} pending tool calls. "
+                                f"Tool call arguments are likely incomplete."
+                            )
+                        logger.info(f"Yielding {len(tool_calls_buffer)} tool calls (truncated={truncated})")
                         for idx in sorted(tool_calls_buffer.keys()):
                             tc = tool_calls_buffer[idx]
                             try:
                                 tc["arguments"] = json.loads(tc["arguments"])
+                                tc["_truncated"] = False
                             except json.JSONDecodeError:
+                                logger.warning(f"Tool call '{tc['name']}' has invalid JSON arguments (truncated={truncated})")
                                 tc["arguments"] = {}
+                                tc["_truncated"] = True
                             yield {"type": "tool_call", "tool_call": tc}
                     
-                    yield {"type": "finish", "finish_reason": chunk.choices[0].finish_reason, "usage": usage_info}
+                    yield {"type": "finish", "finish_reason": finish_reason, "usage": usage_info}
             
             logger.info(f"LLM stream loop ended, total chunks: {chunk_count}")
                     

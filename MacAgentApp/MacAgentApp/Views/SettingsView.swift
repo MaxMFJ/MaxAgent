@@ -24,8 +24,11 @@ struct SettingsView: View {
                 SettingsTabButton(title: "邮件", icon: "envelope", isSelected: selectedTab == 4) {
                     selectedTab = 4
                 }
-                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 5) {
+                SettingsTabButton(title: "工具", icon: "wrench.and.screwdriver", isSelected: selectedTab == 5) {
                     selectedTab = 5
+                }
+                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 6) {
+                    selectedTab = 6
                 }
             }
             .padding(.vertical, 16)
@@ -45,6 +48,7 @@ struct SettingsView: View {
                     ScrollView {
                         ModelSettingsContent(onSave: closeSettings)
                             .padding(20)
+                            .frame(minWidth: 580)
                     }
                 case 3:
                     ScrollView {
@@ -55,8 +59,14 @@ struct SettingsView: View {
                     ScrollView {
                         MailSettingsContent()
                             .padding(20)
+                            .frame(minWidth: 580)
                     }
                 case 5:
+                    ScrollView {
+                        ToolSettingsContent()
+                            .padding(20)
+                    }
+                case 6:
                     ScrollView {
                         AboutContent()
                             .padding(20)
@@ -144,6 +154,36 @@ struct GeneralSettingsContent: View {
             
             Divider()
             
+            // GitHub Token（开放技能源）
+            VStack(alignment: .leading, spacing: 8) {
+                Text("GitHub Token")
+                    .font(.headline)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        SecureField("可选，用于拉取开放技能源并提高 API 限额", text: $viewModel.githubToken)
+                            .textFieldStyle(.roundedBorder)
+                        if viewModel.githubConfigured {
+                            Text("已配置")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    Text("未配置时从 GitHub 拉取技能会受频率限制；设置后限额更高。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Button("保存") {
+                        Task { await viewModel.syncGitHubConfig() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            }
+            
+            Divider()
+            
             // 连接状态
             VStack(alignment: .leading, spacing: 8) {
                 Text("连接状态")
@@ -170,72 +210,12 @@ struct GeneralSettingsContent: View {
                 .cornerRadius(8)
             }
             
-            Divider()
-            
-            // Model Selection Settings
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("智能模型选择")
-                        .font(.headline)
-                    
-                    Spacer()
-                    
-                    Text("自动选择最优模型")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("启用智能模型选择", isOn: $viewModel.enableModelSelection)
-                        .toggleStyle(.switch)
-                    
-                    Text("根据任务特征自动选择本地或远程模型，节省 Token 成本")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Divider()
-                    
-                    Toggle("优先使用本地模型", isOn: $viewModel.preferLocalModel)
-                        .toggleStyle(.switch)
-                        .disabled(!viewModel.enableModelSelection)
-                    
-                    Text("当本地模型可用时，优先使用本地模型处理任务")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("模型选择规则:")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        
-                        Group {
-                            HStack {
-                                Image(systemName: "house.fill")
-                                    .foregroundColor(.green)
-                                    .frame(width: 16)
-                                Text("本地模型: 敏感数据、简单操作、代码生成")
-                            }
-                            HStack {
-                                Image(systemName: "cloud.fill")
-                                    .foregroundColor(.blue)
-                                    .frame(width: 16)
-                                Text("远程模型: 复杂推理、知识查询、多步规划")
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(8)
-            }
-            
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            Task { await viewModel.loadGitHubConfig() }
+        }
     }
 }
 
@@ -292,15 +272,16 @@ struct ModelSettingsContent: View {
                 HStack {
                     Text("API Key:")
                         .frame(width: 80, alignment: .leading)
-                    
-                    if showApiKey {
-                        TextField("输入 API Key", text: $viewModel.apiKey)
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        SecureField("输入 API Key", text: $viewModel.apiKey)
-                            .textFieldStyle(.roundedBorder)
+                    Group {
+                        if showApiKey {
+                            TextField("输入 API Key", text: $viewModel.apiKey)
+                        } else {
+                            SecureField("输入 API Key", text: $viewModel.apiKey)
+                        }
                     }
-                    
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .id(showApiKey)
                     Button(action: { showApiKey.toggle() }) {
                         Image(systemName: showApiKey ? "eye.slash" : "eye")
                     }
@@ -312,6 +293,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 80, alignment: .leading)
                     TextField("https://api.deepseek.com", text: $viewModel.baseUrl)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
                 }
                 
                 HStack {
@@ -319,6 +301,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 80, alignment: .leading)
                     TextField("deepseek-chat", text: $viewModel.model)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
                 }
                 
                 Link("获取 API Key →", destination: URL(string: "https://platform.deepseek.com/")!)
@@ -342,6 +325,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 80, alignment: .leading)
                     TextField("http://localhost:11434/v1", text: $viewModel.ollamaUrl)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
                 }
                 
                 HStack {
@@ -351,6 +335,7 @@ struct ModelSettingsContent: View {
                     if viewModel.availableLocalModels.isEmpty {
                         TextField("deepseek-r1:8b", text: $viewModel.ollamaModel)
                             .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
                     } else {
                         Picker("", selection: $viewModel.ollamaModel) {
                             ForEach(viewModel.availableLocalModels, id: \.self) { model in
@@ -408,6 +393,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 80, alignment: .leading)
                     TextField("http://localhost:1234/v1", text: $viewModel.lmStudioUrl)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
                 }
                 
                 HStack {
@@ -417,6 +403,7 @@ struct ModelSettingsContent: View {
                     if viewModel.availableLocalModels.isEmpty {
                         TextField("选择或输入模型名称", text: $viewModel.lmStudioModel)
                             .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
                     } else {
                         Picker("", selection: $viewModel.lmStudioModel) {
                             Text("选择模型...").tag("")
@@ -472,10 +459,82 @@ struct ModelSettingsContent: View {
     }
 }
 
+struct ToolSettingsContent: View {
+    @EnvironmentObject var viewModel: AgentViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("工具审批")
+                .font(.headline)
+            
+            Text("以下动态工具未通过签名校验，审批后将加入白名单并立即加载。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            if viewModel.pendingTools.isEmpty {
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(.secondary)
+                    Text("暂无待审批工具")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(viewModel.pendingTools) { tool in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(tool.toolName)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text(tool.filename)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            HStack(spacing: 6) {
+                                if viewModel.approvingToolName == tool.toolName {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                }
+                                Button("审批") {
+                                    Task { await viewModel.approveTool(name: tool.toolName) }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(viewModel.approvingToolName == tool.toolName)
+                            }
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(8)
+                    }
+                }
+            }
+            
+            if let err = viewModel.errorMessage, !err.isEmpty {
+                Text(err)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            Task { await viewModel.loadPendingTools() }
+        }
+    }
+}
+
 struct MailSettingsContent: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @State private var showPassword = false
     @State private var saveMessage: String?
+    
+    private let textFieldWidth: CGFloat = 280
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -492,6 +551,7 @@ struct MailSettingsContent: View {
                         .frame(width: 100, alignment: .leading)
                     TextField("smtp.qq.com", text: $viewModel.smtpServer)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: textFieldWidth)
                 }
                 
                 HStack {
@@ -499,6 +559,7 @@ struct MailSettingsContent: View {
                         .frame(width: 100, alignment: .leading)
                     TextField("465", text: $viewModel.smtpPort)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
                     Text("465=SSL, 587=STARTTLS")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -509,18 +570,22 @@ struct MailSettingsContent: View {
                         .frame(width: 100, alignment: .leading)
                     TextField("your_email@qq.com", text: $viewModel.smtpUser)
                         .textFieldStyle(.roundedBorder)
+                        .frame(width: textFieldWidth)
                 }
                 
                 HStack {
                     Text("授权码:")
                         .frame(width: 100, alignment: .leading)
-                    if showPassword {
-                        TextField("输入授权码", text: $viewModel.smtpPassword)
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        SecureField("输入授权码（QQ/163 等需在邮箱设置中获取）", text: $viewModel.smtpPassword)
-                            .textFieldStyle(.roundedBorder)
+                    Group {
+                        if showPassword {
+                            TextField("输入授权码", text: $viewModel.smtpPassword)
+                        } else {
+                            SecureField("输入授权码（QQ/163 等需在邮箱设置中获取）", text: $viewModel.smtpPassword)
+                        }
                     }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: textFieldWidth)
+                    .id(showPassword)
                     Button(action: { showPassword.toggle() }) {
                         Image(systemName: showPassword ? "eye.slash" : "eye")
                     }

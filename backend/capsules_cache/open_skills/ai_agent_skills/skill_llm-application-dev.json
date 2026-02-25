@@ -1,0 +1,64 @@
+{
+  "id": "skill_llm-application-dev",
+  "description": "Building applications with Large Language Models - prompt engineering, RAG patterns, and LLM integration. Use for AI-powered features, chatbots, or LLM-based automation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LLM Application Development"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prompt Engineering] ### Structured Prompts\n```typescript\nconst systemPrompt = `You are a helpful assistant that answers questions about our product.\n\nRULES:\n- Only answer questions about our product\n- If you don't know, say \"I don't know\"\n- Keep responses concise (under 100 words)\n- Never make up information\n\nCONTEXT:\n{context}`;\n\nconst userPrompt = `Question: {question}`;\n```\n\n### Few-Shot Examples\n```typescript\nconst prompt = `Classify the sentiment of customer feedback.\n\nExamples:\nInput: \"Love this product!\"\nOutput: positive\n\nInput: \"Worst purchase ever\"\nOutput: negative\n\nInput: \"It works fine\"\nOutput: neutral\n\nInput: \"${customerFeedback}\"\nOutput:`;\n```\n\n### Chain of Thought\n```typescript\nconst prompt = `Solve this step by step:\n\nQuestion: ${question}\n\nLet's think through this:\n1. First, identify the key information\n2. Then, determine the approach\n3. Finally, calculate the answer\n\nStep-by-step solution:`;\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[API Integration] ### OpenAI Pattern\n```typescript\nimport OpenAI from 'openai';\n\nconst openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });\n\nasync function chat(messages: Message[]): Promise<string> {\n  const response = await openai.chat.completions.create({\n    model: 'gpt-4',\n    messages,\n    temperature: 0.7,\n    max_tokens: 500,\n  });\n\n  return response.choices[0].message.content ?? '';\n}\n```\n\n### Anthropic Pattern\n```typescript\nimport Anthropic from '@anthropic-ai/sdk';\n\nconst anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });\n\nasync function chat(prompt: string): Promise<string> {\n  const response = await anthropic.messages.create({\n    model: 'claude-3-opus-20240229',\n    max_tokens: 1024,\n    messages: [{ role: 'user', content: prompt }],\n  });\n\n  return response.content[0].type === 'text'\n    ? response.content[0].text\n    : '';\n}\n```\n\n### Streaming Responses\n```typescript\nasync function* streamChat(prompt: string) {\n  const stream = await openai.chat.completions.create({\n    model: 'gpt-4',\n    messages: [{ role: 'user', content: prompt }],\n    stream: true,\n  });\n\n  for await (const chunk of stream) {\n    const content = chunk.choices[0]?.delta?.content;\n    if (content) yield content;\n  }\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[RAG (Retrieval-Augmented Generation)] ### Basic RAG Pipeline\n```typescript\nasync function ragQuery(question: string): Promise<string> {\n  // 1. Embed the question\n  const questionEmbedding = await embedText(question);\n\n  // 2. Search vector database\n  const relevantDocs = await vectorDb.search(questionEmbedding, { limit: 5 });\n\n  // 3. Build context\n  const context = relevantDocs.map(d => d.content).join('\\n\\n');\n\n  // 4. Generate answer\n  const prompt = `Answer based on this context:\\n${context}\\n\\nQuestion: ${question}`;\n  return await chat(prompt);\n}\n```\n\n### Document Chunking\n```typescript\nfunction chunkDocument(text: string, options: ChunkOptions): string[] {\n  const { chunkSize = 1000, overlap = 200 } = options;\n  const chunks: string[] = [];\n\n  let start = 0;\n  while (start < text.length) {\n    const end = Math.min(start + chunkSize, text.length);\n    chunks.push(text.slice(start, end));\n    start += chunkSize - overlap;\n  }\n\n  return chunks;\n}\n```\n\n### Embedding Storage\n```typescript\n// Using Supabase with pgvector\nasync function storeEmbeddings(docs: Document[]) {\n  for (const doc of docs) {\n    const embedding = await embedText(doc.content);\n\n    await supabase.from('documents').insert({\n      content: doc.content,\n      metadata: doc.metadata,\n      embedding: embedding,  // vector column\n    });\n  }\n}\n\nasync function searchSimilar(query: string, limit = 5) {\n  const embedding = await embedText(query);\n\n  const { data } = await supabase.rpc('match_documents', {\n    query_embedding: embedding,\n    match_count: limit,\n  });\n\n  return data;\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] ```typescript\nasync function safeLLMCall<T>(\n  fn: () => Promise<T>,\n  options: { retries?: number; fallback?: T }\n): Promise<T> {\n  const { retries = 3, fallback } = options;\n\n  for (let i = 0; i < retries; i++) {\n    try {\n      return await fn();\n    } catch (error) {\n      if (error.status === 429) {\n        // Rate limit - exponential backoff\n        await sleep(Math.pow(2, i) * 1000);\n        continue;\n      }\n      if (i === retries - 1) {\n        if (fallback !== undefined) return fallback;\n        throw error;\n      }\n    }\n  }\n  throw new Error('Max retries exceeded');\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Best Practices] - **Token Management**: Track usage and set limits\n- **Caching**: Cache embeddings and common queries\n- **Evaluation**: Test prompts with diverse inputs\n- **Guardrails**: Validate outputs before using\n- **Logging**: Log prompts and responses for debugging\n- **Cost Control**: Use cheaper models for simple tasks\n- **Latency**: Stream responses for better UX\n- **Privacy**: Don't send PII to external APIs"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "llm_application_dev"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/llm-application-dev/SKILL.md"
+}

@@ -24,6 +24,8 @@ from .dynamic_tool_generator import DynamicToolGenerator, GUIAutomationTool
 from .vision_tool import VisionTool
 from .input_control_tool import InputControlTool
 from .request_tool_upgrade_tool import RequestToolUpgradeTool
+from .evomap_tool import EvoMapTool
+from .capsule_tool import CapsuleTool
 
 __all__ = [
     "BaseTool",
@@ -51,6 +53,8 @@ __all__ = [
     "VisionTool",
     "InputControlTool",
     "RequestToolUpgradeTool",
+    "EvoMapTool",
+    "CapsuleTool",
 ]
 
 def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
@@ -82,4 +86,6 @@ def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
         VisionTool(runtime_adapter),
         InputControlTool(runtime_adapter),
         RequestToolUpgradeTool(runtime_adapter),
+        EvoMapTool(runtime_adapter),
+        CapsuleTool(runtime_adapter),
     ]

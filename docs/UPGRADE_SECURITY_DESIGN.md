@@ -234,7 +234,7 @@ POST /upgrade/rollback
 | 路径保护 | `agent/upgrade_security.py` (is_path_allowed, PROTECTED_PATHS) | ✅ 已实现 |
 | 沙箱增强 | `agent/resource_dispatcher.py` (cwd、命令黑名单、超时) | ✅ 已实现 |
 | 签名校验 | `agent/upgrade_security.py` + `data/signatures.json` | ✅ 已实现 |
-| 编排器集成 | `agent/tool_upgrade_orchestrator.py` | ✅ Git checkpoint/rollback |
+| 编排器集成 | `agent/self_upgrade/` | ✅ Planner → Strategy → Executor → Validation → Activation |
 | API | `POST /tools/approve` | ✅ 人工审批 |
 
 ---

@@ -71,33 +71,41 @@ class ScriptTool(BaseTool):
     category = ToolCategory.TERMINAL
     requires_confirmation = False
     
-    LANGUAGE_CONFIG = {
-        "python": {
-            "extension": ".py",
-            "runner": ["python3"],
-            "shebang": "#!/usr/bin/env python3"
-        },
-        "bash": {
-            "extension": ".sh",
-            "runner": ["bash"],
-            "shebang": "#!/bin/bash"
-        },
-        "shell": {
-            "extension": ".sh",
-            "runner": ["bash"],
-            "shebang": "#!/bin/bash"
-        },
-        "javascript": {
-            "extension": ".js",
-            "runner": ["node"],
-            "shebang": "#!/usr/bin/env node"
-        },
-        "node": {
-            "extension": ".js",
-            "runner": ["node"],
-            "shebang": "#!/usr/bin/env node"
+    @staticmethod
+    def _venv_python() -> str:
+        """优先使用项目 venv 的 Python（已安装 reportlab 等依赖），回退到系统 python3"""
+        venv_py = os.path.join(os.path.dirname(os.path.dirname(__file__)), "venv", "bin", "python3")
+        return venv_py if os.path.isfile(venv_py) else "python3"
+
+    @property
+    def LANGUAGE_CONFIG(self):
+        return {
+            "python": {
+                "extension": ".py",
+                "runner": [self._venv_python()],
+                "shebang": "#!/usr/bin/env python3"
+            },
+            "bash": {
+                "extension": ".sh",
+                "runner": ["bash"],
+                "shebang": "#!/bin/bash"
+            },
+            "shell": {
+                "extension": ".sh",
+                "runner": ["bash"],
+                "shebang": "#!/bin/bash"
+            },
+            "javascript": {
+                "extension": ".js",
+                "runner": ["node"],
+                "shebang": "#!/usr/bin/env node"
+            },
+            "node": {
+                "extension": ".js",
+                "runner": ["node"],
+                "shebang": "#!/usr/bin/env node"
+            },
         }
-    }
     
     SAFE_DIRS = [
         os.path.expanduser("~"),
@@ -116,6 +124,9 @@ class ScriptTool(BaseTool):
         
         if not code:
             return ToolResult(success=False, error="代码不能为空")
+
+        if language == "python":
+            code = self._inject_chinese_font_support(code)
         
         if language not in self.LANGUAGE_CONFIG:
             return ToolResult(
@@ -243,6 +254,59 @@ class ScriptTool(BaseTool):
         except Exception as e:
             return ToolResult(success=False, error=f"脚本执行错误: {str(e)}")
     
+    @staticmethod
+    def _inject_chinese_font_support(code: str) -> str:
+        """
+        如果 Python 脚本使用了 reportlab 但没有注册中文字体，
+        自动注入字体注册代码，解决 PDF 中文乱码。
+        """
+        if "reportlab" not in code:
+            return code
+
+        if "registerFont" in code or "pdf_fonts" in code or "ChineseFont" in code:
+            return code
+
+        font_snippet = '''
+# === Auto-injected: 注册 macOS 中文字体，解决 reportlab 中文乱码 ===
+import os as _os
+_CN_FONT_PATHS = [
+    "/System/Library/Fonts/STHeiti Medium.ttc",
+    "/System/Library/Fonts/Hiragino Sans GB.ttc",
+    "/System/Library/Fonts/Supplemental/Songti.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
+]
+_CN_FONT = None
+for _p in _CN_FONT_PATHS:
+    if _os.path.isfile(_p):
+        _CN_FONT = _p
+        break
+if _CN_FONT:
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    pdfmetrics.registerFont(TTFont("ChineseFont", _CN_FONT))
+    pdfmetrics.registerFont(TTFont("ChineseFontBold", _CN_FONT))
+# === End auto-injected ===
+'''
+        # 在所有 import 之后、第一个函数/类定义或主逻辑之前注入
+        lines = code.split("\n")
+        insert_idx = 0
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith(("import ", "from ")) or stripped.startswith("#") or stripped == "":
+                insert_idx = i + 1
+            else:
+                break
+
+        lines.insert(insert_idx, font_snippet)
+
+        # 将所有 Helvetica / Helvetica-Bold 替换为 ChineseFont / ChineseFontBold
+        result = "\n".join(lines)
+        result = result.replace("'Helvetica-Bold'", "'ChineseFontBold'")
+        result = result.replace('"Helvetica-Bold"', '"ChineseFontBold"')
+        result = result.replace("'Helvetica'", "'ChineseFont'")
+        result = result.replace('"Helvetica"', '"ChineseFont"')
+        return result
+
     def _is_safe_path(self, path: str) -> bool:
         """Check if path is within safe directories"""
         path = os.path.abspath(os.path.expanduser(path))

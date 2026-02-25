@@ -1,0 +1,97 @@
+---
+description: MacAgent 后端模块化架构规范 - 新增功能时必须遵循模块化拆分原则
+globs:
+  - "MacAgent/backend/**/*.py"
+alwaysApply: true
+---
+
+# MacAgent Backend 模块化架构规范
+
+## 核心原则
+
+当你在 MacAgent backend 中新增功能时，**禁止直接向 main.py 添加路由、handler 或业务逻辑**。
+main.py 仅负责：lifespan 初始化、FastAPI app 创建、路由注册、uvicorn 启动。
+
+## 模块结构
+
+```
+backend/
+├── main.py                    # 入口：lifespan + app + 路由注册（≤250行）
+├── app_state.py               # 全局状态：LLM clients、agent_core、server_status
+├── auth.py                    # 认证：token 生成/验证
+├── connection_manager.py      # WebSocket 连接管理 + 广播 + safe_send_json
+├── ws_handler.py              # 主 WebSocket /ws 端点 + 消息分发
+├── routes/                    # HTTP 路由（按领域拆分）
+│   ├── __init__.py            # 汇总所有 router 到 all_routers
+│   ├── health.py              # /health, /server-status, /connections
+│   ├── auth_routes.py         # /auth/*
+│   ├── config.py              # /config, /config/smtp, /config/github
+│   ├── tools.py               # /tools, /tools/pending, /tools/approve, /tools/reload
+│   ├── upgrade.py             # /upgrade/self, /upgrade/trigger, /upgrade/restart
+│   ├── logs.py                # /logs, /system-messages
+│   ├── memory.py              # /memory/status, /local-llm/status, /model-selector/*
+│   ├── self_healing.py        # /self-healing/*, /ws/self-healing
+│   ├── evomap.py              # /evomap/*
+│   ├── capsules.py            # /capsules/*
+│   └── chat.py                # /chat
+```
+
+## 新增功能的工作流
+
+### 1. 新增 HTTP 路由
+
+1. 判断属于哪个领域（config / tools / memory / ...）
+2. 如果属于已有模块 → 在对应 `routes/xxx.py` 中添加
+3. 如果是全新领域 → 创建 `routes/new_domain.py`，使用 `APIRouter()`
+4. 在 `routes/__init__.py` 中注册新 router 到 `all_routers`
+5. **不要修改 main.py**（main.py 通过 `all_routers` 自动注册）
+
+### 2. 新增 WebSocket 消息类型
+
+1. 在 `ws_handler.py` 中添加 `_handle_xxx()` handler 函数
+2. 在 `websocket_endpoint` 的消息分发区域添加 `elif msg_type == "xxx":`
+3. 如果 handler 逻辑复杂（>80行），考虑抽到独立模块
+
+### 3. 新增全局状态
+
+1. 在 `app_state.py` 中添加变量 + getter/setter
+2. 在 `main.py` 的 `lifespan()` 中初始化
+3. 其他模块通过 `from app_state import get_xxx` 访问
+
+### 4. 新增认证逻辑
+
+在 `auth.py` 中扩展
+
+## 关键约束
+
+- **main.py 行数上限 250 行**：超过时必须将逻辑抽到对应模块
+- **单个路由文件上限 200 行**：超过时拆分为子模块
+- **ws_handler.py 上限 600 行**：超过时将 handler 抽到独立文件
+- **禁止循环 import**：app_state.py 不 import 任何 routes/ws_handler 模块
+- **全局状态统一管理**：不在路由模块中定义 `global` 变量，统一放 app_state.py
+
+## Pydantic Model 放置规则
+
+- Request/Response model 放在使用它的路由文件中
+- 如果多个路由共用同一 model → 创建 `schemas.py`
+
+## 示例：新增 "日程管理" 功能
+
+```python
+# 1. 创建 routes/calendar.py
+from fastapi import APIRouter
+router = APIRouter()
+
+@router.get("/calendar/events")
+async def list_events(): ...
+
+@router.post("/calendar/events")
+async def create_event(): ...
+
+# 2. 在 routes/__init__.py 中添加
+from .calendar import router as calendar_router
+# 并加入 all_routers 列表
+
+# 3. 如果需要 WebSocket 推送日程提醒
+# 在 ws_handler.py 中添加 _handle_get_calendar_events()
+```

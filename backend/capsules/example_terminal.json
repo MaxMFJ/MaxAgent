@@ -1,0 +1,35 @@
+{
+  "id": "capsule_terminal_run",
+  "description": "在终端中执行一条命令并返回输出",
+  "version": "1.0.0",
+  "inputs": {
+    "command": {
+      "type": "string",
+      "description": "要执行的 shell 命令"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "命令执行结果"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "tool",
+      "tool": "terminal",
+      "args": {
+        "command": "{{input.command}}"
+      },
+      "timeout": 60,
+      "retry": 1,
+      "retry_delay": 1.0
+    }
+  ],
+  "task_type": "terminal",
+  "tags": ["terminal", "命令", "shell"],
+  "capability": ["terminal", "command"],
+  "priority": 0,
+  "schema_version": "1.1.0"
+}

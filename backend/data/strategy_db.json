@@ -1,7 +1,7 @@
 {
   "tool_parse_failure:switch_mode": {
-    "attempts": 6,
+    "attempts": 9,
     "successes": 0,
-    "success_rate": 0.058824499999999974
+    "success_rate": 0.02017680349999999
   }
 }

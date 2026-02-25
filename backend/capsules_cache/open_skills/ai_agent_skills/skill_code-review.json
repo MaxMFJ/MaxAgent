@@ -1,0 +1,64 @@
+{
+  "id": "skill_code-review",
+  "description": "Automated code review for pull requests using specialized review patterns. Analyzes code for quality, security, performance, and best practices. Use when reviewing code changes, PRs, or doing code audits.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Code Review"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Review Categories] ### 1. Security Review\nCheck for:\n- SQL injection vulnerabilities\n- XSS (Cross-Site Scripting)\n- Command injection\n- Insecure deserialization\n- Hardcoded secrets/credentials\n- Improper authentication/authorization\n- Insecure direct object references\n\n### 2. Performance Review\nCheck for:\n- N+1 queries\n- Missing database indexes\n- Unnecessary re-renders (React)\n- Memory leaks\n- Blocking operations in async code\n- Missing caching opportunities\n- Large bundle sizes\n\n### 3. Code Quality Review\nCheck for:\n- Code duplication (DRY violations)\n- Functions doing too much (SRP violations)\n- Deep nesting / complex conditionals\n- Magic numbers/strings\n- Poor naming\n- Missing error handling\n- Incomplete type coverage\n\n### 4. Testing Review\nCheck for:\n- Missing test coverage for new code\n- Tests that don't test behavior\n- Flaky test patterns\n- Missing edge cases\n- Mocked external dependencies"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Review Output Format] ```markdown"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Code Review Summary] ### 🔴 Critical (Must Fix)\n- **[File:Line]** [Issue description]\n  - **Why:** [Explanation]\n  - **Fix:** [Suggested fix]\n\n### 🟡 Suggestions (Should Consider)\n- **[File:Line]** [Issue description]\n  - **Why:** [Explanation]\n  - **Fix:** [Suggested fix]\n\n### 🟢 Nits (Optional)\n- **[File:Line]** [Minor suggestion]\n\n### ✅ What's Good\n- [Positive feedback on good patterns]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Patterns to Flag] ### Security\n```javascript\n// BAD: SQL injection\nconst query = `SELECT * FROM users WHERE id = ${userId}`;\n\n// GOOD: Parameterized query\nconst query = 'SELECT * FROM users WHERE id = $1';\nawait db.query(query, [userId]);\n```\n\n### Performance\n```javascript\n// BAD: N+1 query\nusers.forEach(async user => {\n  const posts = await getPosts(user.id);\n});\n\n// GOOD: Batch query\nconst userIds = users.map(u => u.id);\nconst posts = await getPostsForUsers(userIds);\n```\n\n### Error Handling\n```javascript\n// BAD: Swallowing errors\ntry {\n  await riskyOperation();\n} catch (e) {}\n\n// GOOD: Handle or propagate\ntry {\n  await riskyOperation();\n} catch (e) {\n  logger.error('Operation failed', { error: e });\n  throw new AppError('Operation failed', { cause: e });\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Review Checklist] - [ ] No hardcoded secrets\n- [ ] Input validation present\n- [ ] Error handling complete\n- [ ] Types/interfaces defined\n- [ ] Tests added for new code\n- [ ] No obvious performance issues\n- [ ] Code is readable and documented\n- [ ] Breaking changes documented"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "code_review"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/code-review/SKILL.md"
+}

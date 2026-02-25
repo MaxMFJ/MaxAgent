@@ -5,6 +5,7 @@ Uses BGE embedding models for efficient context retrieval
 
 import os
 import logging
+import threading
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
@@ -12,14 +13,38 @@ from datetime import datetime
 import hashlib
 
 logger = logging.getLogger(__name__)
+_model_lock = threading.Lock()
 
-# 配置
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")  # 默认使用小模型，更快
+# 配置（默认 bge-small ~90MB；bge-m3 约 1.5GB）
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
 ENABLE_VECTOR_SEARCH = os.getenv("ENABLE_VECTOR_SEARCH", "true").lower() == "true"
+# 国内可设 HF_ENDPOINT=https://hf-mirror.com 加速下载
+
+# 项目内嵌模型目录：若存在则优先从此加载，不再启动时从 Hugging Face 下载
+_BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+LOCAL_EMBEDDING_DIR = os.path.join(_BACKEND_ROOT, "models", "embedding")
 
 # 延迟加载，避免启动时间过长
 _embedding_model = None
 _model_loading = False
+
+
+def _get_local_embedding_path() -> Optional[str]:
+    """
+    若项目内已存在嵌入模型目录则返回其路径，用于离线/内嵌加载。
+    目录名与 EMBEDDING_MODEL 对应：BAAI/bge-small-zh-v1.5 -> bge-small-zh-v1.5
+    """
+    if not os.path.isdir(LOCAL_EMBEDDING_DIR):
+        return None
+    # 使用模型短名作为子目录（如 bge-small-zh-v1.5）
+    short_name = EMBEDDING_MODEL.split("/")[-1] if "/" in EMBEDDING_MODEL else EMBEDDING_MODEL
+    local_path = os.path.join(LOCAL_EMBEDDING_DIR, short_name)
+    if not os.path.isdir(local_path):
+        return None
+    config_path = os.path.join(local_path, "config.json")
+    if not os.path.isfile(config_path):
+        return None
+    return local_path
 
 
 def _get_embedding_device() -> str:
@@ -38,44 +63,58 @@ def _get_embedding_device() -> str:
 
 
 def get_embedding_model():
-    """懒加载嵌入模型"""
+    """懒加载嵌入模型（线程安全）"""
     global _embedding_model, _model_loading
-    
+
     if not ENABLE_VECTOR_SEARCH:
         return None
-    
-    # 如果正在加载，返回 None（不阻塞）
+
+    if _embedding_model is not None:
+        return _embedding_model
+
     if _model_loading:
         logger.debug("Model is loading, skipping embedding")
         return None
-    
-    if _embedding_model is None:
+
+    with _model_lock:
+        if _embedding_model is not None:
+            return _embedding_model
         _model_loading = True
         try:
             from sentence_transformers import SentenceTransformer
-            
-            model_name = EMBEDDING_MODEL
+
             device = _get_embedding_device()
-            logger.info(f"Loading embedding model: {model_name} on {device}...")
-            
-            # 模型选项：
-            # - BAAI/bge-m3: 最强，支持多语言，但较大 (~1.5GB)
-            # - BAAI/bge-large-zh-v1.5: 中文优秀 (~1.3GB)
-            # - BAAI/bge-small-zh-v1.5: 中文，小而快 (~90MB) [默认]
-            # - BAAI/bge-base-zh-v1.5: 中文，平衡选择 (~400MB)
-            #
-            # 注意：Apple Silicon 上使用 device='cpu' 以避免 MPS SDPA 崩溃
-            _embedding_model = SentenceTransformer(model_name, device=device)
-            logger.info(f"Embedding model loaded: {model_name}, dim={_embedding_model.get_sentence_embedding_dimension()}")
-            
+            local_path = _get_local_embedding_path()
+
+            if local_path:
+                # 优先从项目内 models/embedding 加载，不访问网络
+                logger.info(f"Loading embedding model from local: {local_path} on {device}...")
+                _embedding_model = SentenceTransformer(local_path, device=device, local_files_only=True)
+                logger.info(f"Embedding model loaded (local): {local_path}, dim={_embedding_model.get_sentence_embedding_dimension()}")
+            else:
+                # 回退：从 Hugging Face 下载（需网络，可能受 HF 限速影响）
+                model_name = EMBEDDING_MODEL
+                logger.info(f"Loading embedding model: {model_name} on {device}...")
+                # 模型选项：
+                # - BAAI/bge-m3: 最强，支持多语言，但较大 (~1.5GB)
+                # - BAAI/bge-large-zh-v1.5: 中文优秀 (~1.3GB)
+                # - BAAI/bge-small-zh-v1.5: 中文，小而快 (~90MB) [默认]
+                # - BAAI/bge-base-zh-v1.5: 中文，平衡选择 (~400MB)
+                # Apple Silicon 上使用 device='cpu' 以避免 MPS SDPA 崩溃
+                _embedding_model = SentenceTransformer(model_name, device=device)
+                logger.info(f"Embedding model loaded: {model_name}, dim={_embedding_model.get_sentence_embedding_dimension()}")
         except Exception as e:
             logger.warning(f"Failed to load embedding model {EMBEDDING_MODEL}: {e}")
-            # 尝试更小的模型
             try:
                 from sentence_transformers import SentenceTransformer
                 device = _get_embedding_device()
-                _embedding_model = SentenceTransformer('BAAI/bge-small-zh-v1.5', device=device)
-                logger.info(f"Loaded fallback model: bge-small-zh-v1.5 on {device}")
+                fallback_local = os.path.join(LOCAL_EMBEDDING_DIR, "bge-small-zh-v1.5")
+                if os.path.isdir(fallback_local) and os.path.isfile(os.path.join(fallback_local, "config.json")):
+                    _embedding_model = SentenceTransformer(fallback_local, device=device, local_files_only=True)
+                    logger.info(f"Loaded fallback model (local): {fallback_local}")
+                else:
+                    _embedding_model = SentenceTransformer("BAAI/bge-small-zh-v1.5", device=device)
+                    logger.info("Loaded fallback model: bge-small-zh-v1.5 from HF")
             except Exception as e2:
                 logger.error(f"Failed to load any embedding model: {e2}")
                 _embedding_model = None
@@ -85,14 +124,26 @@ def get_embedding_model():
     return _embedding_model
 
 
+def _force_reload_embedding_model():
+    """强制重新加载嵌入模型（用于 Broken pipe 恢复）"""
+    global _embedding_model, _model_loading
+    logger.info("Force-reloading embedding model...")
+    _embedding_model = None
+    _model_loading = False
+    get_embedding_model()
+
+
 def preload_embedding_model():
-    """预加载模型（可在启动时调用）"""
+    """后台预加载 BGE 模型，不阻塞启动；RAG 可用时日志会打印 'Embedding model loaded'"""
     import threading
     def _load():
-        get_embedding_model()
+        try:
+            get_embedding_model()
+        except Exception as e:
+            logger.warning(f"Background BGE load failed: {e}. RAG/vector search disabled.")
     thread = threading.Thread(target=_load, daemon=True)
     thread.start()
-    logger.info("Started background model loading")
+    logger.info("BGE embedding loading in background (see 'Embedding model loaded' when RAG is ready)")
 
 
 @dataclass
@@ -131,18 +182,38 @@ class VectorMemoryStore:
         """Generate hash for content deduplication"""
         return hashlib.md5(content.encode()).hexdigest()[:16]
     
-    def _compute_embedding(self, text: str) -> Optional[np.ndarray]:
-        """Compute embedding for text"""
+    def _compute_embedding(self, text: str, _retry: bool = True) -> Optional[np.ndarray]:
+        """Compute embedding for text. Retries once on Broken pipe by reloading the model."""
         model = get_embedding_model()
         if model is None:
             return None
-        
+
         try:
-            # BGE 模型建议添加指令前缀
             embedding = model.encode(text, normalize_embeddings=True)
             return np.array(embedding, dtype=np.float32)
+        except BrokenPipeError:
+            if _retry:
+                logger.warning("Broken pipe in embedding, reloading model and retrying...")
+                _force_reload_embedding_model()
+                return self._compute_embedding(text, _retry=False)
+            logger.error("Broken pipe persists after model reload")
+            return None
         except Exception as e:
+            if "Broken pipe" in str(e) and _retry:
+                logger.warning("Broken pipe in embedding, reloading model and retrying...")
+                _force_reload_embedding_model()
+                return self._compute_embedding(text, _retry=False)
             logger.error(f"Failed to compute embedding: {e}")
+            try:
+                from .system_message_service import get_system_message_service, MessageCategory
+                get_system_message_service().add_error(
+                    "向量嵌入失败",
+                    str(e),
+                    source="vector_store",
+                    category=MessageCategory.SYSTEM_ERROR.value,
+                )
+            except Exception as _e:
+                logger.debug(f"Failed to push embedding error notification: {_e}")
             return None
     
     def add(self, role: str, content: str, **metadata) -> Optional[str]:

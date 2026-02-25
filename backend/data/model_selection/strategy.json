@@ -1,0 +1,38 @@
+{
+  "simple_operation": {
+    "model": "local",
+    "confidence": 0.475,
+    "stats": {
+      "local_success": 3,
+      "local_total": 8,
+      "remote_success": 0,
+      "remote_total": 1
+    }
+  },
+  "code_generation": {
+    "model": "local",
+    "confidence": 0.8
+  },
+  "sensitive_data": {
+    "model": "local",
+    "confidence": 1.0
+  },
+  "complex_reasoning": {
+    "model": "remote",
+    "confidence": 0.7
+  },
+  "knowledge_query": {
+    "model": "remote",
+    "confidence": 0.9,
+    "stats": {
+      "local_success": 0,
+      "local_total": 0,
+      "remote_success": 4,
+      "remote_total": 5
+    }
+  },
+  "multi_step_planning": {
+    "model": "remote",
+    "confidence": 0.75
+  }
+}

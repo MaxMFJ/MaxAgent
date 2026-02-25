@@ -1,0 +1,49 @@
+{
+  "id": "skill_upgrading-expo",
+  "description": "Guidelines for upgrading Expo SDK versions and fixing dependency issues.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Upgrading Expo\n\nGuidelines for upgrading Expo SDK versions and fixing dependency issues."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Upgrading Expo SDK versions\n- Fixing dependency conflicts\n- Migration patterns\n- Breaking change handling"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Source] This skill references patterns from [Expo's skills](https://github.com/expo/skills)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "upgrading_expo"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:skillcreatorai/Ai-Agent-Skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/skillcreatorai/Ai-Agent-Skills/main/skills/upgrading-expo/SKILL.md"
+}
