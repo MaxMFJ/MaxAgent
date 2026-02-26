@@ -4,6 +4,10 @@
 "clear_chat_message" = "This will clear all messages. Continue?";
 "cancel" = "Cancel";
 "clear" = "Clear";
+"new_conversation" = "New Conversation";
+"conversations" = "Conversations";
+"select_conversation" = "Select a conversation";
+"messages" = "messages";
 
 /* Connection Status */
 "status_disconnected" = "Disconnected";

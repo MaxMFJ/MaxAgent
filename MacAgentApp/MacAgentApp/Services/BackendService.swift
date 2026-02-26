@@ -30,6 +30,8 @@ class BackendService: ObservableObject {
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession
     private var pingTask: Task<Void, Never>?
+    /// 空闲时持续收包，用于响应服务端 ping、处理 system_notification/tools_updated，断线时触发重连
+    private var idleReceiveTask: Task<Void, Never>?
     @Published var isConnected: Bool = false
     
     // 断线重连状态追踪
@@ -69,6 +71,7 @@ class BackendService: ObservableObject {
         
         // 监听首个 connected 消息
         await listenForConnectedMessage()
+        startIdleReceiveLoop()
     }
     
     private func listenForConnectedMessage() async {
@@ -106,6 +109,7 @@ class BackendService: ObservableObject {
     }
     
     func disconnect() {
+        cancelIdleReceiveLoop()
         pingTask?.cancel()
         pingTask = nil
         webSocketTask?.cancel(with: .goingAway, reason: nil)
@@ -140,6 +144,66 @@ class BackendService: ObservableObject {
     private func ensureConnected() async {
         if webSocketTask == nil || !isConnected {
             await connect()
+        }
+    }
+    
+    /// 取消空闲收包循环（在开始 stream 收包前调用，避免双 receive 竞争）
+    private func cancelIdleReceiveLoop() {
+        idleReceiveTask?.cancel()
+        idleReceiveTask = nil
+    }
+    
+    /// 启动空闲时收包循环：响应 server_ping、处理 system_notification/tools_updated，断线时触发重连
+    private func startIdleReceiveLoop() {
+        guard webSocketTask != nil, isConnected else { return }
+        cancelIdleReceiveLoop()
+        idleReceiveTask = Task { [weak self] in
+            guard let self = self else { return }
+            while !Task.isCancelled {
+                let (ws, connected): (URLSessionWebSocketTask?, Bool) = await MainActor.run {
+                    (self.webSocketTask, self.isConnected)
+                }
+                guard let ws = ws, connected else { break }
+                do {
+                    let result = try await ws.receive()
+                    switch result {
+                    case .string(let text):
+                        if let data = text.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let type = json["type"] as? String {
+                            switch type {
+                            case "server_ping":
+                                do {
+                                    let pongMsg: [String: Any] = ["type": "pong"]
+                                    let pongData = try JSONSerialization.data(withJSONObject: pongMsg)
+                                    if let pongStr = String(data: pongData, encoding: .utf8) {
+                                        try await ws.send(.string(pongStr))
+                                    }
+                                } catch {}
+                            case "system_notification":
+                                await MainActor.run { self.handleSystemNotification(json) }
+                            case "tools_updated":
+                                if let cb = await MainActor.run(body: { self.onToolsUpdated }) { await cb() }
+                            case "client_disconnected":
+                                break
+                            default:
+                                break
+                            }
+                        }
+                    case .data:
+                        break
+                    @unknown default:
+                        break
+                    }
+                } catch is CancellationError {
+                    return
+                } catch {
+                    await MainActor.run { self.disconnect() }
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    Task { @MainActor in await self.reconnect() }
+                    return
+                }
+            }
         }
     }
     
@@ -234,7 +298,7 @@ class BackendService: ObservableObject {
         }
     }
     
-    nonisolated func updateConfig(provider: String, apiKey: String, baseUrl: String, model: String) async throws {
+    nonisolated func updateConfig(provider: String, apiKey: String, baseUrl: String, model: String, remoteFallbackProvider: String = "") async throws {
         guard let url = URL(string: "\(baseURL)/config") else {
             throw URLError(.badURL)
         }
@@ -243,12 +307,13 @@ class BackendService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "provider": provider,
             "api_key": apiKey,
             "base_url": baseUrl,
             "model": model
         ]
+        body["remote_fallback_provider"] = remoteFallbackProvider
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
@@ -268,7 +333,50 @@ class BackendService: ObservableObject {
         let (data, _) = try await urlSession.data(from: url)
         return try JSONDecoder().decode(BackendConfig.self, from: data)
     }
-    
+
+    /// 仅更新 LangChain 兼容开关（持久化到后端，无需重启）
+    nonisolated func updateLangChainCompat(enabled: Bool) async throws {
+        guard let url = URL(string: "\(baseURL)/config") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["langchain_compat": enabled])
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// 尝试在后端安装 LangChain 可选依赖；失败时返回 (false, 提示文案)
+    nonisolated func installLangChainDependencies() async -> (success: Bool, message: String) {
+        guard let url = URL(string: "\(baseURL)/config/install-langchain") else {
+            return (false, "无效的后端地址")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 130
+        do {
+            let (data, response) = try await urlSession.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                return (false, "请求失败，请确认后端已启动")
+            }
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let success = json["success"] as? Bool else {
+                return (false, "无法解析安装结果")
+            }
+            let message = (json["message"] as? String) ?? ""
+            if success {
+                return (true, message)
+            }
+            let manualHint = "请在后端目录自行执行: pip install -r requirements-langchain.txt"
+            return (false, message.isEmpty ? manualHint : "\(message)\n\n\(manualHint)")
+        } catch {
+            return (false, "安装请求失败: \(error.localizedDescription)。请在后端目录自行执行: pip install -r requirements-langchain.txt")
+        }
+    }
+
     // MARK: - Tools
     
     nonisolated func fetchTools() async throws -> [ToolDefinition] {
@@ -387,7 +495,7 @@ class BackendService: ObservableObject {
                     continuation.finish(throwing: URLError(.cancelled))
                     return
                 }
-                
+                cancelIdleReceiveLoop()
                 do {
                     // 确保连接
                     await self.ensureConnected()
@@ -498,17 +606,20 @@ class BackendService: ObservableObject {
                                         )
                                     }
                                     continuation.yield(.done(model: modelName, tokenUsage: tokenUsage))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "stopped":
                                     continuation.yield(.stopped)
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
@@ -556,10 +667,8 @@ class BackendService: ObservableObject {
                     }
                     
                 } catch {
-                    // 连接断开时尝试重连
-                    await MainActor.run {
-                        self.isConnected = false
-                    }
+                    disconnect()
+                    startIdleReceiveLoop()
                     continuation.finish(throwing: error)
                 }
             }
@@ -613,7 +722,7 @@ class BackendService: ObservableObject {
                     continuation.finish(throwing: URLError(.cancelled))
                     return
                 }
-                
+                cancelIdleReceiveLoop()
                 do {
                     await self.ensureConnected()
                     
@@ -647,6 +756,7 @@ class BackendService: ObservableObject {
                                     if !found {
                                         let message = json["message"] as? String ?? "未找到任务"
                                         continuation.yield(.error(message))
+                                        startIdleReceiveLoop()
                                         continuation.finish()
                                         return
                                     }
@@ -726,17 +836,20 @@ class BackendService: ObservableObject {
                                         )
                                     }
                                     continuation.yield(.done(model: modelName, tokenUsage: tokenUsageResume))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "stopped":
                                     continuation.yield(.stopped)
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
@@ -754,9 +867,8 @@ class BackendService: ObservableObject {
                     }
                     
                 } catch {
-                    await MainActor.run {
-                        self.isConnected = false
-                    }
+                    disconnect()
+                    startIdleReceiveLoop()
                     continuation.finish(throwing: error)
                 }
             }
@@ -772,7 +884,7 @@ class BackendService: ObservableObject {
                     continuation.finish(throwing: URLError(.cancelled))
                     return
                 }
-                
+                cancelIdleReceiveLoop()
                 do {
                     await self.ensureConnected()
                     
@@ -803,6 +915,7 @@ class BackendService: ObservableObject {
                                 case "resume_chat_result":
                                     let found = json["found"] as? Bool ?? false
                                     if !found {
+                                        startIdleReceiveLoop()
                                         continuation.finish()
                                         return
                                     }
@@ -857,17 +970,20 @@ class BackendService: ObservableObject {
                                         )
                                     }
                                     continuation.yield(.done(model: modelName, tokenUsage: tokenUsageResume))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "stopped":
                                     continuation.yield(.stopped)
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
@@ -899,9 +1015,8 @@ class BackendService: ObservableObject {
                     }
                     
                 } catch {
-                    await MainActor.run {
-                        self.isConnected = false
-                    }
+                    disconnect()
+                    startIdleReceiveLoop()
                     continuation.finish(throwing: error)
                 }
             }
@@ -917,7 +1032,7 @@ class BackendService: ObservableObject {
                     continuation.finish(throwing: URLError(.cancelled))
                     return
                 }
-                
+                cancelIdleReceiveLoop()
                 do {
                     await self.ensureConnected()
                     
@@ -1039,12 +1154,14 @@ class BackendService: ObservableObject {
                                         )
                                     }
                                     continuation.yield(.done(model: modelName, tokenUsage: tokenUsageAuto))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                     
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))
+                                    startIdleReceiveLoop()
                                     continuation.finish()
                                     return
                                 
@@ -1093,9 +1210,8 @@ class BackendService: ObservableObject {
                     }
                     
                 } catch {
-                    await MainActor.run {
-                        self.isConnected = false
-                    }
+                    disconnect()
+                    startIdleReceiveLoop()
                     continuation.finish(throwing: error)
                 }
             }

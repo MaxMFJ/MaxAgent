@@ -35,10 +35,10 @@ def test_send(to_email: str = None):
         return False
     
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "MacAgent SMTP 测试邮件"
+    msg["Subject"] = "Chow Duck SMTP 测试邮件"
     msg["From"] = user
     msg["To"] = to_email
-    msg.attach(MIMEText("这是一封来自 MacAgent 的 SMTP 测试邮件。", "plain", "utf-8"))
+    msg.attach(MIMEText("这是一封来自 Chow Duck 的 SMTP 测试邮件。", "plain", "utf-8"))
     
     # 测试 1: 端口 465 SMTP_SSL
     if port == 465:

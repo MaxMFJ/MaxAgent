@@ -256,7 +256,7 @@ class DeveloperTool(BaseTool):
 <body>
     <div class="container">
         <h1>🚀 {name}</h1>
-        <p>欢迎使用 MacAgent 创建的 Web 应用！</p>
+        <p>欢迎使用 Chow Duck 创建的 Web 应用！</p>
         <a href="#" class="btn">开始使用</a>
     </div>
     <script>
@@ -412,7 +412,7 @@ from typing import Optional, List
 
 app = FastAPI(
     title="API Server",
-    description="由 MacAgent 创建的 API 服务",
+    description="由 Chow Duck 创建的 API 服务",
     version="1.0.0"
 )
 
@@ -558,7 +558,7 @@ if __name__ == "__main__":
         pyproject = f'''[project]
 name = "{name}"
 version = "0.1.0"
-description = "A Python project created by MacAgent"
+description = "A Python project created by Chow Duck"
 requires-python = ">=3.10"
 dependencies = []
 
@@ -575,7 +575,7 @@ build-backend = "setuptools.build_meta"
         # README.md
         readme = f'''# {name}
 
-由 MacAgent 创建的 Python 项目。
+由 Chow Duck 创建的 Python 项目。
 
 ## 安装
 
@@ -688,7 +688,7 @@ function App() {{
           点击次数: {{count}}
         </button>
       </div>
-      <p>由 MacAgent 创建</p>
+      <p>由 Chow Duck 创建</p>
     </div>
   )
 }}
@@ -1139,7 +1139,7 @@ struct {name}: View {{
 </head>
 <body>
     <h1>{description}</h1>
-    <p>由 MacAgent 生成</p>
+    <p>由 Chow Duck 生成</p>
 </body>
 </html>
 '''

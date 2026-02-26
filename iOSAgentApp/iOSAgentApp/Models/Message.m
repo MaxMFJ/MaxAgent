@@ -2,6 +2,10 @@
 
 @implementation Message
 
++ (BOOL)supportsSecureCoding {
+    return YES;
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -51,6 +55,50 @@
     if (content) {
         _content = [_content stringByAppendingString:content];
     }
+}
+
+#pragma mark - NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    self = [super init];
+    if (self) {
+        _messageId = [coder decodeObjectOfClass:[NSString class] forKey:@"messageId"];
+        _role = [coder decodeIntegerForKey:@"role"];
+        _content = [coder decodeObjectOfClass:[NSString class] forKey:@"content"];
+        _timestamp = [coder decodeObjectOfClass:[NSDate class] forKey:@"timestamp"];
+        _status = [coder decodeIntegerForKey:@"status"];
+        _fromClient = [coder decodeObjectOfClass:[NSString class] forKey:@"fromClient"];
+        _fromClientType = [coder decodeObjectOfClass:[NSString class] forKey:@"fromClientType"];
+        _toolName = [coder decodeObjectOfClass:[NSString class] forKey:@"toolName"];
+        _toolCallId = [coder decodeObjectOfClass:[NSString class] forKey:@"toolCallId"];
+        _modelName = [coder decodeObjectOfClass:[NSString class] forKey:@"modelName"];
+        _imageBase64 = [coder decodeObjectOfClass:[NSString class] forKey:@"imageBase64"];
+        
+        if (!_messageId) {
+            _messageId = [[NSUUID UUID] UUIDString];
+        }
+        if (!_timestamp) {
+            _timestamp = [NSDate date];
+        }
+        if (!_content) {
+            _content = @"";
+        }
+    }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    [coder encodeObject:_messageId forKey:@"messageId"];
+    [coder encodeInteger:_role forKey:@"role"];
+    [coder encodeObject:_content forKey:@"content"];
+    [coder encodeObject:_timestamp forKey:@"timestamp"];
+    [coder encodeInteger:_status forKey:@"status"];
+    [coder encodeObject:_fromClient forKey:@"fromClient"];
+    [coder encodeObject:_fromClientType forKey:@"fromClientType"];
+    [coder encodeObject:_toolName forKey:@"toolName"];
+    [coder encodeObject:_toolCallId forKey:@"toolCallId"];
+    [coder encodeObject:_modelName forKey:@"modelName"];
+    [coder encodeObject:_imageBase64 forKey:@"imageBase64"];
 }
 
 @end

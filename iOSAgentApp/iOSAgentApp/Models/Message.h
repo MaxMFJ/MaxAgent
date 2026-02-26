@@ -17,7 +17,7 @@ typedef NS_ENUM(NSInteger, MessageStatus) {
     MessageStatusError
 };
 
-@interface Message : NSObject
+@interface Message : NSObject <NSCoding, NSSecureCoding>
 
 @property (nonatomic, copy) NSString *messageId;
 @property (nonatomic, assign) MessageRole role;

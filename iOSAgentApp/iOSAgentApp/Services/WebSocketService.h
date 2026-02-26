@@ -20,16 +20,20 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didReceiveToolResult:(NSString *)callId result:(NSString *)result;
 - (void)webSocketService:(WebSocketService *)service didReceiveImage:(NSString *)base64 mimeType:(NSString *)mimeType;
 - (void)webSocketService:(WebSocketService *)service didReceiveUserMessage:(NSString *)content fromClient:(NSString *)clientId clientType:(NSString *)clientType;
-- (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(nullable NSString *)modelName;
+- (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(nullable NSString *)modelName tokenUsage:(nullable NSDictionary<NSString *, NSNumber *> *)tokenUsage;
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage;
-- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId;
+- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat;
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;
 - (void)webSocketServiceDidStop:(WebSocketService *)service;
+- (void)webSocketService:(WebSocketService *)service didReceiveWebAugmentation:(NSString *)augmentationType query:(NSString *)query;
+- (void)webSocketService:(WebSocketService *)service didReceiveExecutionLog:(NSString *)toolName level:(NSString *)level message:(NSString *)message;
+- (void)webSocketService:(WebSocketService *)service didReceiveSystemNotification:(NSDictionary *)notification unreadCount:(NSInteger)unreadCount;
+- (void)webSocketServiceDidReceiveToolsUpdated:(WebSocketService *)service;
 
-// 新增：断线重连恢复回调
 - (void)webSocketService:(WebSocketService *)service didDetectRunningTask:(NSString *)taskId;
 - (void)webSocketService:(WebSocketService *)service didResumeTaskWithId:(NSString *)taskId description:(NSString *)taskDescription;
 - (void)webSocketService:(WebSocketService *)service taskResumeDidFail:(NSString *)message;
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount;
 
 @end
 
@@ -45,12 +49,13 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)connect;
 - (void)disconnect;
 
-- (void)sendChatMessage:(NSString *)content;
-- (void)sendAutonomousTask:(NSString *)task;
-- (void)createNewSession:(nullable NSString *)sessionId;
-- (void)clearSession;
-- (void)sendStopStream;
-- (void)resumeTask:(NSString *)sessionId;  // 新增：恢复运行中的任务
+- (void)sendChatMessage:(NSString *)content sessionId:(NSString *)sessionId;
+- (void)sendAutonomousTask:(NSString *)task sessionId:(NSString *)sessionId;
+- (void)createNewSession:(NSString *)sessionId;
+- (void)clearSession:(NSString *)sessionId;
+- (void)sendStopStream:(NSString *)sessionId;
+- (void)resumeTask:(NSString *)sessionId;
+- (void)resumeChat:(NSString *)sessionId;
 
 - (void)checkServerHealth:(void(^)(BOOL available, NSString * _Nullable model))completion;
 

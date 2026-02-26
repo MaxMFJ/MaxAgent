@@ -181,7 +181,7 @@ class EvolutionEvent:
 class NodeRegistration:
     """Registration payload for an EvoMap network node."""
     node_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    agent_name: str = "MacAgent"
+    agent_name: str = "Chow Duck"
     agent_version: str = "1.0.0"
     capabilities: List[str] = field(default_factory=list)
     platform: str = field(default_factory=lambda: platform.system().lower())
@@ -206,7 +206,7 @@ class NodeRegistration:
             status = NodeStatus.ONLINE
         return cls(
             node_id=data.get("node_id", str(uuid.uuid4())),
-            agent_name=data.get("agent_name", "MacAgent"),
+            agent_name=data.get("agent_name", "Chow Duck"),
             agent_version=data.get("agent_version", "1.0.0"),
             capabilities=data.get("capabilities", []),
             platform=data.get("platform", ""),

@@ -419,7 +419,7 @@ class RepairExecutor:
         try:
             process = await asyncio.create_subprocess_exec(
                 "osascript", "-e",
-                f'display notification "{message}" with title "MacAgent Self-Healing" subtitle "{severity}"',
+                f'display notification "{message}" with title "Chow Duck Self-Healing" subtitle "{severity}"',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )

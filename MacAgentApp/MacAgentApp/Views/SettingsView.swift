@@ -128,33 +128,143 @@ struct SettingsTabButton: View {
 
 struct GeneralSettingsContent: View {
     @EnvironmentObject var viewModel: AgentViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // AI 提供商选择
+            // 使用 LangChain 进行对话
             VStack(alignment: .leading, spacing: 8) {
-                Text("AI 提供商")
+                Text("对话引擎")
                     .font(.headline)
-                
-                Picker("", selection: $viewModel.provider) {
-                    Text("DeepSeek").tag("deepseek")
-                    Text("New API").tag("newapi")
-                    Text("Ollama").tag("ollama")
-                    Text("LM Studio").tag("lmstudio")
+                // LangChain 说明：是什么、能提升什么能力
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("LangChain 是什么？")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Text("LangChain 是业界常用的 AI 应用编排框架，提供统一的 Runnable 接口、LCEL 链式组合和标准 Agent 循环。开启后，对话将使用 LangChain 的 Agent 执行，与 Chow Duck 原生引擎并存、可随时切换。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("能提升什么能力？")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .padding(.top, 4)
+                    Text("• 可观测性：便于接入 LangSmith / OpenTelemetry 做端到端追踪与调试\n• 工具链：工具以 Runnable 形式参与链式调用，支持统一重试与中间件\n• 标准 Agent 循环：与社区生态一致，便于扩展人工审核、多步推理等节点\n• 与现有能力兼容：仍使用同一套 LLM、工具与上下文，仅执行路径不同")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: viewModel.provider) { _, newValue in
-                    Task {
-                        if newValue == "ollama" || newValue == "lmstudio" {
-                            await viewModel.fetchLocalModels()
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                .cornerRadius(6)
+
+                Toggle(isOn: $viewModel.langchainCompat) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("使用 LangChain 进行对话")
+                        if viewModel.langchainInstalled {
+                            Text("已安装可选依赖，可开启或关闭。")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("未安装 LangChain，请先点击「安装」；安装成功后将默认勾选。")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
-                        await viewModel.syncConfig()
+                    }
+                }
+                .disabled(!viewModel.langchainInstalled)
+                .onChange(of: viewModel.langchainCompat) { _, newValue in
+                    Task {
+                        await viewModel.setLangChainCompat(newValue)
+                    }
+                }
+                if !viewModel.langchainInstalled {
+                    HStack(spacing: 8) {
+                        Button {
+                            Task { await viewModel.installLangChainAndEnable() }
+                        } label: {
+                            if viewModel.isInstallingLangChain {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text("安装中…")
+                            } else {
+                                Text("安装")
+                            }
+                        }
+                        .disabled(viewModel.isInstallingLangChain)
+                        .buttonStyle(.borderedProminent)
                     }
                 }
             }
-            
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+            .alert("LangChain 依赖安装失败", isPresented: Binding(
+                get: { viewModel.langchainInstallError != nil },
+                set: { if !$0 { viewModel.langchainInstallError = nil } }
+            )) {
+                Button("确定", role: .cancel) {
+                    viewModel.langchainInstallError = nil
+                }
+            } message: {
+                if let msg = viewModel.langchainInstallError {
+                    Text(msg)
+                }
+            }
+
             Divider()
-            
+
+            // 语音 TTS / STT
+            VStack(alignment: .leading, spacing: 12) {
+                Text("语音")
+                    .font(.headline)
+                Toggle(isOn: $viewModel.ttsEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("朗读助手回复 (TTS)")
+                        Text("开启后，助手回复会流式朗读（按句播放）")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("语音输入 (STT)")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
+                        HStack(spacing: 4) {
+                            Text("静音")
+                            TextField("", value: $viewModel.sttSilenceSeconds, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 44)
+                            Text("秒后自动发送")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack(spacing: 4) {
+                            Text("超时")
+                            TextField("", value: $viewModel.sttNoSpeechTimeoutSeconds, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 44)
+                            Text("秒未说话强制发送")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    Text("点击输入框旁麦克风开始语音输入；静音达到设定秒数自动发送，或一直未说话则超时发送。空内容不会发送。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                .cornerRadius(6)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+
+            Divider()
+
             // GitHub Token（开放技能源）
             VStack(alignment: .leading, spacing: 8) {
                 Text("GitHub Token")
@@ -215,8 +325,23 @@ struct GeneralSettingsContent: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
-            Task { await viewModel.loadGitHubConfig() }
+            Task {
+                await viewModel.loadBackendConfig()
+                await viewModel.loadGitHubConfig()
+            }
         }
+    }
+}
+
+/// 远程回退/云端提供商显示名（与后端 CLOUD_PROVIDERS 一致）
+private func remoteFallbackDisplayName(_ provider: String) -> String {
+    switch provider.lowercased() {
+    case "newapi": return "New API"
+    case "deepseek": return "DeepSeek"
+    case "openai": return "ChatGPT"
+    case "gemini": return "Gemini"
+    case "anthropic": return "Claude API"
+    default: return provider
     }
 }
 
@@ -227,11 +352,41 @@ struct ModelSettingsContent: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // AI 提供商（合并到模型页，选择即对应当前使用的模型配置）
+            VStack(alignment: .leading, spacing: 8) {
+                Text("AI 提供商")
+                    .font(.headline)
+                Picker("", selection: $viewModel.provider) {
+                    Text("DeepSeek").tag("deepseek")
+                    Text("New API").tag("newapi")
+                    Text("ChatGPT").tag("openai")
+                    Text("Gemini").tag("gemini")
+                    Text("Claude").tag("anthropic")
+                    Text("Ollama").tag("ollama")
+                    Text("LM Studio").tag("lmstudio")
+                }
+                .pickerStyle(.menu)
+                .onChange(of: viewModel.provider) { _, newValue in
+                    Task {
+                        if newValue == "ollama" || newValue == "lmstudio" {
+                            await viewModel.fetchLocalModels()
+                        }
+                        await viewModel.syncConfig()
+                    }
+                }
+            }
+
             switch viewModel.provider {
             case "deepseek":
                 deepSeekConfig
             case "newapi":
                 newApiConfig
+            case "openai":
+                chatGPTConfig
+            case "gemini":
+                geminiConfig
+            case "anthropic":
+                claudeApiConfig
             case "ollama":
                 ollamaConfig
             case "lmstudio":
@@ -239,6 +394,28 @@ struct ModelSettingsContent: View {
             default:
                 deepSeekConfig
             }
+
+            // 远程回退策略：固定列出所有远程 LLM，用户显式选择“当使用远程模型时”调用哪个
+            VStack(alignment: .leading, spacing: 8) {
+                Text("远程回退策略")
+                    .font(.headline)
+                Text("自主任务在本地不可用时将使用远程模型，此处选择使用哪个云端提供商。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("当使用远程模型时调用：", selection: $viewModel.remoteFallbackProvider) {
+                    Text("默认 (DeepSeek)").tag("")
+                    Text("New API").tag("newapi")
+                    Text("DeepSeek").tag("deepseek")
+                    Text("ChatGPT").tag("openai")
+                    Text("Gemini").tag("gemini")
+                    Text("Claude API").tag("anthropic")
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
             
             // 保存按钮
             HStack {
@@ -257,8 +434,9 @@ struct ModelSettingsContent: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
-            if viewModel.provider == "ollama" || viewModel.provider == "lmstudio" {
-                Task {
+            Task {
+                await viewModel.loadBackendConfig()
+                if viewModel.provider == "ollama" || viewModel.provider == "lmstudio" {
                     await viewModel.fetchLocalModels()
                 }
             }
@@ -361,7 +539,157 @@ struct ModelSettingsContent: View {
                         .frame(width: 280)
                 }
                 
-                Link("New API 配置说明文档 →", destination: URL(string: "https://www.yuque.com/nicaisadasd/fwextu/ekk2q8nrf3ow4k9q")!)
+                Link("New API 配置说明文档（转发站通用）示例 →", destination: URL(string: "https://www.yuque.com/nicaisadasd/fwextu/ekk2q8nrf3ow4k9q")!)
+                    .font(.caption)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - ChatGPT (OpenAI) 配置
+    private var chatGPTConfig: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("ChatGPT (OpenAI) 配置")
+                .font(.headline)
+            Text("使用 OpenAI 官方 API，模型如 gpt-5.2、gpt-coder 等。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("API Key:")
+                        .frame(width: 80, alignment: .leading)
+                    Group {
+                        if showApiKey {
+                            TextField("输入 API Key", text: $viewModel.openaiApiKey)
+                        } else {
+                            SecureField("输入 API Key", text: $viewModel.openaiApiKey)
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .id(showApiKey)
+                    Button(action: { showApiKey.toggle() }) {
+                        Image(systemName: showApiKey ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                }
+                HStack {
+                    Text("API 地址:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("https://api.openai.com/v1", text: $viewModel.openaiBaseUrl)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                HStack {
+                    Text("模型:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("gpt-4o", text: $viewModel.openaiModel)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                Link("OpenAI API 文档 →", destination: URL(string: "https://platform.openai.com/docs")!)
+                    .font(.caption)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - Gemini 配置
+    private var geminiConfig: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Gemini 配置")
+                .font(.headline)
+            Text("Google Gemini API。若使用 OpenAI 兼容网关，请填写对应 base_url 与模型名。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("API Key:")
+                        .frame(width: 80, alignment: .leading)
+                    Group {
+                        if showApiKey {
+                            TextField("输入 API Key", text: $viewModel.geminiApiKey)
+                        } else {
+                            SecureField("输入 API Key", text: $viewModel.geminiApiKey)
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .id(showApiKey)
+                    Button(action: { showApiKey.toggle() }) {
+                        Image(systemName: showApiKey ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                }
+                HStack {
+                    Text("API 地址:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("如 OpenAI 兼容网关或 Google 端点", text: $viewModel.geminiBaseUrl)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                HStack {
+                    Text("模型:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("如 gemini-1.5-pro、gemini-1.5-flash", text: $viewModel.geminiModel)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                Link("Google AI Studio →", destination: URL(string: "https://aistudio.google.com/")!)
+                    .font(.caption)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - Claude API 配置
+    private var claudeApiConfig: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Claude API 配置")
+                .font(.headline)
+            Text("Anthropic Claude API。若使用 OpenAI 兼容网关，请填写对应 base_url 与模型名。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("API Key:")
+                        .frame(width: 80, alignment: .leading)
+                    Group {
+                        if showApiKey {
+                            TextField("输入 API Key", text: $viewModel.anthropicApiKey)
+                        } else {
+                            SecureField("输入 API Key", text: $viewModel.anthropicApiKey)
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .id(showApiKey)
+                    Button(action: { showApiKey.toggle() }) {
+                        Image(systemName: showApiKey ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                }
+                HStack {
+                    Text("API 地址:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("如 OpenAI 兼容网关或 Anthropic 端点", text: $viewModel.anthropicBaseUrl)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                HStack {
+                    Text("模型:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("如 claude-3-5-sonnet、claude-3-opus", text: $viewModel.anthropicModel)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                Link("Anthropic 文档 →", destination: URL(string: "https://docs.anthropic.com/")!)
                     .font(.caption)
             }
             .padding()
@@ -445,6 +773,16 @@ struct ModelSettingsContent: View {
             }
             
             VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("端口:")
+                        .frame(width: 80, alignment: .leading)
+                    TextField("1234", text: viewModel.lmStudioPortBinding)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 100)
+                    Text("默认 1234，多实例时可填 1235、1236…")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
                 HStack {
                     Text("地址:")
                         .frame(width: 80, alignment: .leading)
@@ -706,7 +1044,7 @@ struct AboutContent: View {
                     endPoint: .bottomTrailing
                 ))
             
-            Text("MacAgent")
+            Text("Chow Duck")
                 .font(.largeTitle)
                 .fontWeight(.bold)
             

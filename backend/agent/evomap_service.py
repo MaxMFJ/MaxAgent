@@ -44,7 +44,7 @@ class EvoMapService:
         Full initialization sequence:
           1. Register node on EvoMap network
           2. Search and inherit available capsules for our capabilities
-          3. Build local gene library from MacAgent's existing strategies
+          3. Build local gene library from Chow Duck's existing strategies
         """
         results = {
             "registration": None,
@@ -72,7 +72,7 @@ class EvoMapService:
             results["inheritance"] = {"status": "error", "error": str(e)}
             logger.error(f"EvoMap inheritance failed: {e}")
 
-        # Step 3: Ensure local genes exist for MacAgent capabilities
+        # Step 3: Ensure local genes exist for Chow Duck capabilities
         try:
             genes_result = self._ensure_local_genes(capabilities)
             results["local_genes"] = genes_result
@@ -143,7 +143,7 @@ class EvoMapService:
         return True
 
     def _ensure_local_genes(self, capabilities: List[str]) -> Dict[str, Any]:
-        """Create default genes for MacAgent's capabilities if they don't exist."""
+        """Create default genes for Chow Duck's capabilities if they don't exist."""
         from .evomap_client import _load_json, _save_json, GENES_FILE
 
         data = _load_json(GENES_FILE, {"version": 1, "genes": []})
@@ -211,7 +211,7 @@ class EvoMapService:
         confidence: float = 0.85,
     ) -> Dict[str, Any]:
         """
-        Publish a proven MacAgent capability as a GEP Capsule to the network.
+        Publish a proven Chow Duck capability as a GEP Capsule to the network.
         """
         gene_id = f"gene_macagent_{tool_name}"
         capsule_id = f"capsule_macagent_{tool_name}_{int(time.time() * 1000)}"
@@ -221,7 +221,7 @@ class EvoMapService:
             id=gene_id,
             category=GeneCategory(category) if category in [c.value for c in GeneCategory] else GeneCategory.CAPABILITY,
             signals_match=signals,
-            preconditions=[f"MacAgent {tool_name} tool available"],
+            preconditions=[f"Chow Duck {tool_name} tool available"],
             strategy=strategy,
         )
         self._save_gene(gene)
@@ -230,7 +230,7 @@ class EvoMapService:
             id=capsule_id,
             trigger=signals,
             gene=gene_id,
-            summary=summary or f"MacAgent capability: {tool_name}",
+            summary=summary or f"Chow Duck capability: {tool_name}",
             confidence=confidence,
             outcome=CapsuleOutcome(
                 status=CapsuleOutcomeStatus.SUCCESS if success else CapsuleOutcomeStatus.FAILURE,
@@ -305,7 +305,7 @@ def _extract_signals(task: str) -> List[str]:
 
 
 def _build_macagent_genes(capabilities: List[str]) -> List[Dict[str, Any]]:
-    """Build default gene definitions for MacAgent's native capabilities."""
+    """Build default gene definitions for Chow Duck's native capabilities."""
     genes = []
 
     cap_gene_map = {

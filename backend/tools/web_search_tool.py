@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Wikipedia 要求请求带 User-Agent，否则易返回 403 Forbidden
-WIKIPEDIA_USER_AGENT = "MacAgent/1.0 (Wikipedia summary client; +https://www.mediawiki.org/wiki/API:Main_page)"
+WIKIPEDIA_USER_AGENT = "ChowDuck/1.0 (Wikipedia summary client; +https://www.mediawiki.org/wiki/API:Main_page)"
 
 
 @dataclass

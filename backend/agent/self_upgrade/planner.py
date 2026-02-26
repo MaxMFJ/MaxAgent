@@ -12,7 +12,7 @@ from .workspace import PROJECT_ROOT, TOOLS_GENERATED_DIR
 
 logger = logging.getLogger(__name__)
 
-PLANNER_PROMPT = """你是一个 MacAgent 升级规划师。根据用户目标输出**纯 JSON** 计划，不要生成任何代码。
+PLANNER_PROMPT = """你是一个 Chow Duck 升级规划师。根据用户目标输出**纯 JSON** 计划，不要生成任何代码。
 
 用户目标：{goal}
 

@@ -17,6 +17,7 @@ from app_state import (
     get_server_status, get_agent_core, get_autonomous_agent,
     get_llm_client, session_stream_tasks,
     get_task_tracker, AutoTaskStatus, TaskType,
+    get_chat_runner,
 )
 from connection_manager import (
     connection_manager, safe_send_json, ClientType,
@@ -126,7 +127,8 @@ async def _handle_chat(
         exclude_client=actual_client_id,
     )
 
-    if not agent_core:
+    chat_runner = get_chat_runner()
+    if not chat_runner:
         logger.error("Agent not initialized!")
         await safe_send_json(websocket, {"type": "error", "message": "Agent not initialized"})
         try:
@@ -192,7 +194,7 @@ async def _handle_chat(
             except Exception as e:
                 logger.warning(f"Web augmentation failed: {e}")
 
-            async for chunk in agent_core.run_stream(_content, session_id=_sid, extra_system_prompt=extra_system_prompt):
+            async for chunk in chat_runner.run_stream(_content, session_id=_sid, extra_system_prompt=extra_system_prompt):
                 chunk_count += 1
                 chunk_type = chunk.get("type", "unknown")
                 if chunk_type == "stream_end":

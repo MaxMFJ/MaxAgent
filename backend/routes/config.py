@@ -22,6 +22,8 @@ class ConfigUpdate(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     model: Optional[str] = None
+    langchain_compat: Optional[bool] = None  # 是否启用 LangChain 兼容（Chat）；未安装依赖时自动用原生
+    remote_fallback_provider: Optional[str] = None  # 模型页“远程回退策略”：当使用远程时调用该提供商（newapi/deepseek/openai），空则用默认 DeepSeek
 
 
 class SmtpConfigUpdate(BaseModel):
@@ -35,16 +37,33 @@ class GitHubConfigUpdate(BaseModel):
     github_token: Optional[str] = None
 
 
+def _langchain_installed() -> bool:
+    """动态检查当前环境是否已安装 langchain（不依赖启动时缓存，便于安装后立即生效）"""
+    try:
+        import langchain_core  # noqa: F401
+        import langchain  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 @router.get("/config")
 async def get_config():
     llm = get_llm_client()
     if not llm:
         raise HTTPException(status_code=500, detail="LLM client not initialized")
+    from app_state import get_langchain_compat_enabled
+    from llm_config import load_llm_config, get_cloud_providers_configured
+    cfg = load_llm_config()
     return {
         "provider": llm.config.provider,
         "model": llm.config.model,
         "base_url": llm.config.base_url,
         "has_api_key": bool(llm.config.api_key),
+        "langchain_compat": get_langchain_compat_enabled(),
+        "langchain_installed": _langchain_installed(),
+        "remote_fallback_provider": (cfg.get("remote_fallback_provider") or "").strip() or None,
+        "cloud_providers_configured": get_cloud_providers_configured(),
     }
 
 
@@ -60,7 +79,7 @@ async def update_config(config: ConfigUpdate):
         model=config.model or current_config.model,
     )
 
-    # 持久化到磁盘，uvicorn reload 后自动恢复
+    # 持久化到磁盘，uvicorn reload 后自动恢复；远程回退由用户显式选择后传入
     try:
         from llm_config import save_llm_config
         save_llm_config(
@@ -68,9 +87,17 @@ async def update_config(config: ConfigUpdate):
             api_key=new_config.api_key,
             base_url=new_config.base_url,
             model=new_config.model,
+            remote_fallback_provider=config.remote_fallback_provider,
         )
     except Exception:
         pass
+
+    if config.langchain_compat is not None:
+        try:
+            from agent_config import save_agent_config
+            save_agent_config({"langchain_compat": config.langchain_compat})
+        except Exception:
+            pass
 
     new_llm_client = LLMClient(new_config)
     provider = (new_config.provider or "").lower()
@@ -131,3 +158,42 @@ async def update_github_config_endpoint(config: GitHubConfigUpdate):
     from github_config import save_github_config
     save_github_config(github_token=config.github_token)
     return {"status": "updated", "configured": bool((config.github_token or "").strip())}
+
+
+@router.post("/config/install-langchain")
+async def install_langchain_dependencies():
+    """
+    尝试安装 LangChain 可选依赖（pip install -r requirements-langchain.txt）。
+    供客户端在用户开启「使用 LangChain 进行对话」时调用；失败时客户端提示用户自行安装。
+    """
+    import subprocess
+    import sys
+    import os
+
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    req_file = os.path.join(backend_dir, "requirements-langchain.txt")
+    if not os.path.isfile(req_file):
+        return {
+            "success": False,
+            "message": f"未找到 {req_file}，请确认后端目录正确。",
+            "stderr": "",
+        }
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", req_file],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=backend_dir,
+        )
+        if result.returncode == 0:
+            return {"success": True, "message": "LangChain 依赖安装成功。", "stderr": result.stderr or ""}
+        return {
+            "success": False,
+            "message": result.stderr or result.stdout or f"pip 退出码 {result.returncode}",
+            "stderr": result.stderr or "",
+        }
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "安装超时（120 秒）。请在后端目录自行执行: pip install -r requirements-langchain.txt", "stderr": ""}
+    except Exception as e:
+        return {"success": False, "message": str(e), "stderr": ""}

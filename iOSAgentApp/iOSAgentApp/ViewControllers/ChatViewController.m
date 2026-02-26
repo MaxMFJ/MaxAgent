@@ -1,13 +1,15 @@
 #import "ChatViewController.h"
 #import "SettingsViewController.h"
+#import "ConversationListViewController.h"
 #import "WebSocketService.h"
 #import "ServerConfig.h"
 #import "Message.h"
 #import "MessageCell.h"
 #import "InputView.h"
 #import "ImageZoomViewController.h"
+#import "ConversationManager.h"
 
-@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate>
+@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) InputView *inputView;
@@ -15,7 +17,6 @@
 @property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, strong) UIActivityIndicatorView *statusIndicator;
 
-@property (nonatomic, strong) NSMutableArray<Message *> *messages;
 @property (nonatomic, strong, nullable) Message *currentAssistantMessage;
 @property (nonatomic, strong) NSLayoutConstraint *inputViewBottomConstraint;
 
@@ -26,15 +27,22 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.title = NSLocalizedString(@"app_title", nil);
     self.view.backgroundColor = [UIColor systemBackgroundColor];
-    
-    _messages = [NSMutableArray array];
     
     [self setupNavigationBar];
     [self setupUI];
     [self setupKeyboardObservers];
     [self setupWebSocket];
+    [self updateTitle];
+}
+
+- (void)updateTitle {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    if (manager.currentConversation) {
+        self.title = manager.currentConversation.title;
+    } else {
+        self.title = NSLocalizedString(@"app_title", nil);
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -50,11 +58,17 @@
 #pragma mark - Setup
 
 - (void)setupNavigationBar {
+    UIBarButtonItem *newChatButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"square.and.pencil"] style:UIBarButtonItemStylePlain target:self action:@selector(createNewConversation)];
+    
     UIBarButtonItem *settingsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gear"] style:UIBarButtonItemStylePlain target:self action:@selector(showSettings)];
-    self.navigationItem.rightBarButtonItem = settingsButton;
+    
+    self.navigationItem.rightBarButtonItems = @[settingsButton, newChatButton];
+    
+    UIBarButtonItem *conversationsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"text.bubble"] style:UIBarButtonItemStylePlain target:self action:@selector(showConversationList)];
     
     UIBarButtonItem *clearButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"trash"] style:UIBarButtonItemStylePlain target:self action:@selector(clearChat)];
-    self.navigationItem.leftBarButtonItem = clearButton;
+    
+    self.navigationItem.leftBarButtonItems = @[conversationsButton, clearButton];
 }
 
 - (void)setupUI {
@@ -63,7 +77,7 @@
     _statusBar.backgroundColor = [UIColor systemRedColor];
     [self.view addSubview:_statusBar];
     
-    _statusIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    _statusIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
     _statusIndicator.translatesAutoresizingMaskIntoConstraints = NO;
     _statusIndicator.color = [UIColor whiteColor];
     [_statusBar addSubview:_statusIndicator];
@@ -126,6 +140,49 @@
 
 #pragma mark - Actions
 
+- (void)createNewConversation {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *newConversation = [manager createNewConversation];
+    
+    [self updateTitle];
+    [self.tableView reloadData];
+    [self scrollToBottom];
+    
+    [[WebSocketService sharedService] createNewSession:newConversation.conversationId];
+}
+
+- (void)showConversationList {
+    ConversationListViewController *listVC = [[ConversationListViewController alloc] init];
+    listVC.delegate = self;
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:listVC];
+    [self presentViewController:nav animated:YES completion:nil];
+}
+
+- (void)switchToConversation:(Conversation *)conversation {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    [manager selectConversation:conversation];
+    
+    self.currentAssistantMessage = nil;
+    [self.tableView reloadData];
+    [self scrollToBottom];
+    
+    [[WebSocketService sharedService] createNewSession:conversation.conversationId];
+}
+
+#pragma mark - ConversationListDelegate
+
+- (void)didSelectConversation:(Conversation *)conversation {
+    [self switchToConversation:conversation];
+    [self updateTitle];
+}
+
+- (void)didDeleteConversation:(Conversation *)conversation {
+    if ([conversation.conversationId isEqualToString:[ConversationManager sharedManager].currentConversation.conversationId]) {
+        [self.tableView reloadData];
+        [self updateTitle];
+    }
+}
+
 - (void)showSettings {
     SettingsViewController *settingsVC = [[SettingsViewController alloc] init];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:settingsVC];
@@ -133,14 +190,30 @@
 }
 
 - (void)clearChat {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"clear_chat", nil) message:NSLocalizedString(@"clear_chat_message", nil) preferredStyle:UIAlertControllerStyleAlert];
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
     
-    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"cancel", nil) style:UIAlertActionStyleCancel handler:nil]];
-    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"clear", nil) style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        [self.messages removeAllObjects];
+    if (!currentConv || currentConv.messages.count == 0) {
+        return;
+    }
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"clear_chat", nil) 
+                                                                   message:NSLocalizedString(@"clear_chat_message", nil) 
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"cancel", nil) 
+                                              style:UIAlertActionStyleCancel 
+                                            handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"clear", nil) 
+                                              style:UIAlertActionStyleDestructive 
+                                            handler:^(UIAlertAction *action) {
+        [currentConv.messages removeAllObjects];
+        currentConv.updatedAt = [NSDate date];
         self.currentAssistantMessage = nil;
         [self.tableView reloadData];
-        [[WebSocketService sharedService] clearSession];
+        
+        [[WebSocketService sharedService] clearSession:currentConv.conversationId];
+        [manager saveConversations];
     }]];
     
     [self presentViewController:alert animated:YES completion:nil];
@@ -173,9 +246,14 @@
 
 #pragma mark - Helpers
 
+- (NSMutableArray<Message *> *)currentMessages {
+    return [ConversationManager sharedManager].currentConversation.messages ?: [NSMutableArray array];
+}
+
 - (void)scrollToBottom {
-    if (self.messages.count > 0) {
-        NSIndexPath *lastIndexPath = [NSIndexPath indexPathForRow:self.messages.count - 1 inSection:0];
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    if (messages.count > 0) {
+        NSIndexPath *lastIndexPath = [NSIndexPath indexPathForRow:messages.count - 1 inSection:0];
         [self.tableView scrollToRowAtIndexPath:lastIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:YES];
     }
 }
@@ -214,14 +292,17 @@
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.messages.count;
+    return [self currentMessages].count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MessageCell" forIndexPath:indexPath];
-    Message *message = self.messages[indexPath.row];
-    cell.delegate = self;
-    [cell configureWithMessage:message];
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    if (indexPath.row < (NSInteger)messages.count) {
+        Message *message = messages[indexPath.row];
+        cell.delegate = self;
+        [cell configureWithMessage:message];
+    }
     return cell;
 }
 
@@ -232,9 +313,10 @@
 }
 
 - (UIContextMenuConfiguration *)tableView:(UITableView *)tableView contextMenuConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath point:(CGPoint)point {
-    if (indexPath.row >= (NSInteger)self.messages.count) return nil;
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    if (indexPath.row >= (NSInteger)messages.count) return nil;
     
-    Message *message = self.messages[indexPath.row];
+    Message *message = messages[indexPath.row];
     
     return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
         NSMutableArray<UIMenuElement *> *actions = [NSMutableArray array];
@@ -264,28 +346,37 @@
 }
 
 - (void)editMessage:(Message *)message {
-    NSInteger idx = [self.messages indexOfObject:message];
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    NSInteger idx = [messages indexOfObject:message];
     if (idx == NSNotFound) return;
     
     [self.inputView setText:message.content];
     
-    NSRange range = NSMakeRange(idx, self.messages.count - idx);
-    [self.messages removeObjectsInRange:range];
+    NSRange range = NSMakeRange(idx, messages.count - idx);
+    [messages removeObjectsInRange:range];
     self.currentAssistantMessage = nil;
     
-    [[WebSocketService sharedService] clearSession];
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    if (currentConv) {
+        currentConv.updatedAt = [NSDate date];
+        [[WebSocketService sharedService] clearSession:currentConv.conversationId];
+        [manager saveConversations];
+    }
+    
     [self.tableView reloadData];
     [self scrollToBottom];
 }
 
 - (void)deleteMessage:(Message *)message {
-    NSInteger idx = [self.messages indexOfObject:message];
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    NSInteger idx = [messages indexOfObject:message];
     if (idx == NSNotFound) return;
     
     if (message.role == MessageRoleUser) {
         NSInteger deleteCount = 1;
-        if (idx + 1 < (NSInteger)self.messages.count) {
-            Message *next = self.messages[idx + 1];
+        if (idx + 1 < (NSInteger)messages.count) {
+            Message *next = messages[idx + 1];
             if (next.role == MessageRoleAssistant) {
                 deleteCount = 2;
                 if (next == self.currentAssistantMessage) {
@@ -293,16 +384,24 @@
                 }
             }
         }
-        [self.messages removeObjectsInRange:NSMakeRange(idx, deleteCount)];
+        [messages removeObjectsInRange:NSMakeRange(idx, deleteCount)];
     } else {
-        [self.messages removeObjectAtIndex:idx];
+        [messages removeObjectAtIndex:idx];
         if (message == self.currentAssistantMessage) {
             self.currentAssistantMessage = nil;
         }
     }
     
-    if (self.messages.count == 0) {
-        [[WebSocketService sharedService] clearSession];
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    
+    if (messages.count == 0 && currentConv) {
+        [[WebSocketService sharedService] clearSession:currentConv.conversationId];
+    }
+    
+    if (currentConv) {
+        currentConv.updatedAt = [NSDate date];
+        [manager saveConversations];
     }
     
     [self.tableView reloadData];
@@ -312,34 +411,63 @@
 #pragma mark - InputViewDelegate
 
 - (void)inputView:(InputView *)inputView didSendMessage:(NSString *)message {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    
+    if (!currentConv) {
+        currentConv = [manager createNewConversation];
+    }
+    
     Message *userMessage = [Message userMessageWithContent:message];
-    [self.messages addObject:userMessage];
+    [currentConv.messages addObject:userMessage];
     
     self.currentAssistantMessage = [Message assistantMessage];
-    [self.messages addObject:self.currentAssistantMessage];
+    [currentConv.messages addObject:self.currentAssistantMessage];
+    
+    currentConv.updatedAt = [NSDate date];
+    
+    if (currentConv.messages.count == 2) {
+        NSUInteger maxLength = MIN(30, message.length);
+        currentConv.title = [message substringToIndex:maxLength];
+        [self updateTitle];
+    }
+    
+    [manager saveConversations];
     
     [self.tableView reloadData];
     [self scrollToBottom];
     [inputView clearText];
     
     self.inputView.loading = YES;
-    [[WebSocketService sharedService] sendChatMessage:message];
+    [[WebSocketService sharedService] sendChatMessage:message sessionId:currentConv.conversationId];
 }
 
 - (void)inputViewDidRequestStop:(InputView *)inputView {
     (void)inputView;
     self.inputView.loading = NO;
-    [[WebSocketService sharedService] sendStopStream];
+    
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    
+    if (currentConv) {
+        [[WebSocketService sharedService] sendStopStream:currentConv.conversationId];
+    }
     
     if (self.currentAssistantMessage) {
         self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
         self.currentAssistantMessage.status = MessageStatusComplete;
-        NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+        NSMutableArray<Message *> *messages = [self currentMessages];
+        NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
         if (index != NSNotFound) {
             NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
             [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
         }
         self.currentAssistantMessage = nil;
+        
+        if (currentConv) {
+            currentConv.updatedAt = [NSDate date];
+            [manager saveConversations];
+        }
     }
 }
 
@@ -349,8 +477,19 @@
     [self updateStatusBar:state];
 }
 
-- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId {
-    NSLog(@"Connected with client ID: %@", clientId);
+- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat {
+    NSLog(@"Connected: client=%@, session=%@, running_task=%d, running_chat=%d", 
+          clientId, sessionId, hasRunningTask, hasRunningChat);
+    
+    if (hasRunningChat) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ConversationManager *manager = [ConversationManager sharedManager];
+            if (manager.currentConversation && 
+                [manager.currentConversation.conversationId isEqualToString:sessionId]) {
+                [[WebSocketService sharedService] resumeChat:sessionId];
+            }
+        });
+    }
 }
 
 - (void)webSocketService:(WebSocketService *)service didReceiveContent:(NSString *)content {
@@ -358,7 +497,8 @@
         if (self.currentAssistantMessage) {
             [self.currentAssistantMessage appendContent:content];
             
-            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
                 [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
@@ -388,7 +528,8 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.imageBase64 = base64;
-            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
                 [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
@@ -400,33 +541,57 @@
 
 - (void)webSocketService:(WebSocketService *)service didReceiveUserMessage:(NSString *)content fromClient:(NSString *)clientId clientType:(NSString *)clientType {
     dispatch_async(dispatch_get_main_queue(), ^{
+        ConversationManager *manager = [ConversationManager sharedManager];
+        Conversation *currentConv = manager.currentConversation;
+        
+        if (!currentConv) {
+            currentConv = [manager createNewConversation];
+        }
+        
         Message *userMessage = [Message userMessageWithContent:content];
         userMessage.fromClient = clientId;
         userMessage.fromClientType = clientType;
-        [self.messages addObject:userMessage];
+        [currentConv.messages addObject:userMessage];
         
         self.currentAssistantMessage = [Message assistantMessage];
-        [self.messages addObject:self.currentAssistantMessage];
+        [currentConv.messages addObject:self.currentAssistantMessage];
+        
+        currentConv.updatedAt = [NSDate date];
+        [manager saveConversations];
         
         [self.tableView reloadData];
         [self scrollToBottom];
     });
 }
 
-- (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName {
+- (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName tokenUsage:(NSDictionary<NSString *,NSNumber *> *)tokenUsage {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.status = MessageStatusComplete;
             self.currentAssistantMessage.modelName = modelName;
             
-            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            if (tokenUsage) {
+                NSNumber *totalTokens = tokenUsage[@"total_tokens"];
+                if (totalTokens) {
+                    NSLog(@"[Chat] Token usage: %@", totalTokens);
+                }
+            }
+            
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
                 [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
             }
             
             self.currentAssistantMessage = nil;
+            
+            ConversationManager *manager = [ConversationManager sharedManager];
+            if (manager.currentConversation) {
+                manager.currentConversation.updatedAt = [NSDate date];
+                [manager saveConversations];
+            }
         }
     });
 }
@@ -437,12 +602,19 @@
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
             self.currentAssistantMessage.status = MessageStatusComplete;
-            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
                 [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
             }
             self.currentAssistantMessage = nil;
+            
+            ConversationManager *manager = [ConversationManager sharedManager];
+            if (manager.currentConversation) {
+                manager.currentConversation.updatedAt = [NSDate date];
+                [manager saveConversations];
+            }
         }
     });
 }
@@ -450,7 +622,16 @@
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.inputView.loading = NO;
-        [self.messages removeAllObjects];
+        
+        ConversationManager *manager = [ConversationManager sharedManager];
+        Conversation *currentConv = manager.currentConversation;
+        
+        if (currentConv) {
+            [currentConv.messages removeAllObjects];
+            currentConv.updatedAt = [NSDate date];
+            [manager saveConversations];
+        }
+        
         self.currentAssistantMessage = nil;
         [self.tableView reloadData];
     });
@@ -463,14 +644,51 @@
             self.currentAssistantMessage.content = [NSString stringWithFormat:NSLocalizedString(@"error_format", nil), errorMessage];
             self.currentAssistantMessage.status = MessageStatusError;
             
-            NSInteger index = [self.messages indexOfObject:self.currentAssistantMessage];
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
                 [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
             }
             
             self.currentAssistantMessage = nil;
+            
+            ConversationManager *manager = [ConversationManager sharedManager];
+            if (manager.currentConversation) {
+                manager.currentConversation.updatedAt = [NSDate date];
+                [manager saveConversations];
+            }
         }
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveWebAugmentation:(NSString *)augmentationType query:(NSString *)query {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] Web augmentation: type=%@, query=%@", augmentationType, query);
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveExecutionLog:(NSString *)toolName level:(NSString *)level message:(NSString *)message {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] Execution log [%@] %@: %@", level, toolName, message);
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveSystemNotification:(NSDictionary *)notification unreadCount:(NSInteger)unreadCount {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] System notification: %@ (unread: %ld)", notification, (long)unreadCount);
+    });
+}
+
+- (void)webSocketServiceDidReceiveToolsUpdated:(WebSocketService *)service {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] Tools updated");
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] Resume chat successful: task=%@, buffered=%ld", taskId, (long)bufferedCount);
     });
 }
 

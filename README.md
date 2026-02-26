@@ -1,6 +1,6 @@
-# MacAgent - macOS AI 智能助手
+# Chow Duck - macOS AI 智能助手
 
-基于 SwiftUI + Python 后端的 macOS 本地 AI Agent。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。
+基于 SwiftUI + Python 后端的 macOS 本地 AI Agent（项目目录名 MacAgent）。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。
 
 ---
 
@@ -177,7 +177,6 @@ MacAgent/
 │   └── runtime/                   # RuntimeAdapter, mac_adapter, linux/windows_adapter
 │
 └── docs/
-    ├── 后台功能清单-人工测试审核.md   # 功能清单与测试要点
     └── ...
 ```
 
@@ -228,7 +227,7 @@ def get_all_tools(runtime_adapter=None):
 | 类别 | 方法 | 路径 | 说明 |
 |------|------|------|------|
 | 健康 | GET | /health, /server-status, /connections | 健康与连接数 |
-| 配置 | GET/POST | /config, /config/smtp, /config/github | LLM / 邮件 / GitHub |
+| 配置 | GET/POST | /config, /config/smtp, /config/github | LLM / 邮件 / GitHub；GET 含 langchain_compat，POST 可传 langchain_compat 控制是否启用 LangChain 兼容 |
 | 工具 | GET | /tools | 工具列表 |
 | 工具 | GET/POST | /tools/pending, /tools/approve, /tools/reload | 待审批、审批、重载 |
 | 对话 | POST | /chat | 非流式对话 |
@@ -242,7 +241,6 @@ def get_all_tools(runtime_adapter=None):
 | EvoMap | GET/POST | /evomap/status, register, search, resolve, publish, events, audit | 需 ENABLE_EVOMAP=true |
 | Capsule | GET/POST | /capsules, /capsules/find, /capsules/{id}, /capsules/{id}/execute | 技能胶囊 |
 
-完整列表与测试要点见 [docs/后台功能清单-人工测试审核.md](docs/后台功能清单-人工测试审核.md)。
 
 ---
 
@@ -270,6 +268,19 @@ cd MacAgent/iOSAgentApp && pod install
 ```
 
 安装后使用 `.xcworkspace` 打开项目。
+
+---
+
+## 常见日志说明
+
+- **`LangChain compat: disabled — Chat uses native runner`**  
+  表示当前未开启 LangChain 兼容（配置或环境变量为关闭），对话使用原生 Runner，**不是报错**。若需启用，在设置中打开「使用 LangChain 进行对话」或设置 `ENABLE_LANGCHAIN_COMPAT=true`。
+
+- **`ConnectionClosedError ... keepalive ping timeout`**  
+  表示客户端在约定时间内未响应 WebSocket ping，服务端主动断开连接，**属正常断线**（如应用退到后台、休眠）。重连后即可继续使用。
+
+- **安装 LangChain 依赖后服务自动重载**  
+  若在设置中点击安装 LangChain 后出现大量 `WatchFiles detected changes in 'venv/...'` 并触发重启，已通过 `reload_excludes` 排除 `venv` 目录；若仍发生，可手动重启一次后端即可。
 
 ---
 

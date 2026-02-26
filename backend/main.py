@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MacAgent Backend Server
+Chow Duck Backend Server
 FastAPI server with WebSocket support for the macOS AI Agent
 Supports both ReAct and Autonomous execution modes
 
@@ -71,14 +71,62 @@ setup_log_capture()
 
 # ============== Lifespan ==============
 
+
+def _llm_config_from_persisted():
+    """从 Mac App 持久化的 llm_config.json 构建 LLMConfig，供主模型启动时使用。"""
+    try:
+        from llm_config import load_llm_config, get_persisted_api_key
+    except Exception:
+        return None
+    cfg = load_llm_config()
+    if not cfg:
+        return None
+    provider = (cfg.get("provider") or "deepseek").strip()
+    api_key = (cfg.get("api_key") or "").strip() or get_persisted_api_key()
+    base_url = (cfg.get("base_url") or "").strip() or os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+    model = (cfg.get("model") or "").strip() or os.getenv("LLM_MODEL", "deepseek-chat")
+    return LLMConfig(provider=provider, api_key=api_key, base_url=base_url, model=model)
+
+
+def _cloud_llm_config_for_startup():
+    """
+    自主任务选“远程”时使用的客户端配置。
+    若当前持久化为本地(lmstudio/ollama)，使用上次保存的云端配置(remote_fallback)，否则与主配置一致。
+    """
+    from llm_config import get_remote_fallback_config
+    initial = _llm_config_from_persisted()
+    if not initial:
+        return None
+    provider = (initial.provider or "").strip().lower()
+    if provider in ("ollama", "lmstudio"):
+        fallback = get_remote_fallback_config()
+        if fallback:
+            return LLMConfig(
+                provider=fallback["provider"],
+                api_key=fallback.get("api_key", ""),
+                base_url=fallback.get("base_url", ""),
+                model=fallback.get("model", ""),
+            )
+        # 无远程回退时使用默认 DeepSeek，避免“选远程”仍请求本地 502
+        return LLMConfig(
+            provider="deepseek",
+            api_key=os.getenv("DEEPSEEK_API_KEY", ""),
+            base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com"),
+            model=os.getenv("LLM_MODEL", "deepseek-chat"),
+        )
+    return initial
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 主模型（默认 DeepSeek）
-    llm = LLMClient()
+    # 主模型：优先使用 Mac App 持久化的配置（可为 newapi/deepseek/lmstudio/ollama）
+    initial_config = _llm_config_from_persisted()
+    llm = LLMClient(initial_config)
     set_llm_client(llm)
 
-    # 云端模型：自主任务选择"远程"时始终使用此客户端
-    cloud_llm = LLMClient()
+    # 云端模型：自主任务选择"远程"时使用。若当前为本地(lmstudio/ollama)，用 remote_fallback 或默认 DeepSeek，避免仍请求本地 502
+    cloud_config = _cloud_llm_config_for_startup() or initial_config
+    cloud_llm = LLMClient(cloud_config)
     set_cloud_llm_client(cloud_llm)
 
     from runtime import get_runtime_adapter
@@ -238,15 +286,32 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"SystemMessageService init failed: {e}")
 
-    logger.info("MacAgent backend started (ReAct + Autonomous modes with Model Selection)")
+    logger.info("Chow Duck backend started (ReAct + Autonomous modes with Model Selection)")
+    try:
+        from routes.config import _langchain_installed
+        if _langchain_installed():
+            logger.info("LangChain: installed (pip packages available in this process)")
+        else:
+            logger.info("LangChain: not installed — install with: pip install -r requirements-langchain.txt")
+    except Exception as e:
+        logger.warning("LangChain check failed: %s", e)
+    try:
+        from app_state import get_langchain_compat_enabled
+        compat_enabled = get_langchain_compat_enabled()
+        if compat_enabled:
+            logger.info("LangChain compat: enabled (langchain availability checked on first chat)")
+        else:
+            logger.info("LangChain compat: disabled — Chat uses native runner")
+    except Exception as e:
+        logger.debug("LangChain compat status not logged: %s", e)
     yield
-    logger.info("MacAgent backend shutting down")
+    logger.info("Chow Duck backend shutting down")
 
 
 # ============== App Creation ==============
 
 app = FastAPI(
-    title="MacAgent Backend",
+    title="Chow Duck Backend",
     description="AI Agent backend for macOS automation",
     version="0.1.0",
     lifespan=lifespan,
@@ -280,7 +345,7 @@ if __name__ == "__main__":
         reload=True,
         reload_excludes=["venv", "models", "data", "__pycache__", ".git"],
         log_level="info",
-        ws_ping_interval=30,
-        ws_ping_timeout=60,
+        ws_ping_interval=20,
+        ws_ping_timeout=120,
         timeout_keep_alive=300,
     )

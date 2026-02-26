@@ -1,0 +1,5 @@
+# Optional: LangChain 兼容层依赖（部分引入）
+# 安装: pip install -r requirements.txt -r requirements-langchain.txt
+# 启用: 设置环境变量 ENABLE_LANGCHAIN_COMPAT=true
+langchain-core>=0.3.0
+langchain>=0.3.0

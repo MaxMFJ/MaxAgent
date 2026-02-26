@@ -4,6 +4,10 @@
 "clear_chat_message" = "将清空所有消息，是否继续？";
 "cancel" = "取消";
 "clear" = "清空";
+"new_conversation" = "新对话";
+"conversations" = "对话列表";
+"select_conversation" = "选择一个对话";
+"messages" = "条消息";
 
 /* Connection Status */
 "status_disconnected" = "未连接";

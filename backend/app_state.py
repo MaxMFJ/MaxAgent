@@ -28,7 +28,10 @@ class ServerStatus(str, Enum):
 
 ENABLE_EVOMAP: bool = os.environ.get("ENABLE_EVOMAP", "false").lower() == "true"
 AUTO_TOOL_UPGRADE: bool = os.environ.get("MACAGENT_AUTO_TOOL_UPGRADE", "true").lower() == "true"
-CLOUD_PROVIDERS = {"deepseek", "openai", "newapi"}
+# LangChain 兼容模式（环境变量，可被 data/agent_config.json 覆盖）
+# 实际是否启用由 get_langchain_compat_enabled() 决定：先读配置 > 再读 env > 默认 true
+ENABLE_LANGCHAIN_COMPAT: bool = os.environ.get("ENABLE_LANGCHAIN_COMPAT", "true").lower() == "true"
+CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
 
 
 # ============== Task Tracker ==============
@@ -171,6 +174,22 @@ session_stream_tasks: Dict[str, asyncio.Task] = {}
 
 # ============== Getters / Setters ==============
 
+def get_langchain_compat_enabled() -> bool:
+    """
+    是否启用 LangChain 兼容（供 Chat 选 Runner）。
+    优先级：data/agent_config.json > 环境变量 ENABLE_LANGCHAIN_COMPAT > 默认 true。
+    客户端可通过 POST /config 的 langchain_compat 修改并持久化，无需重启。
+    """
+    try:
+        from agent_config import get_langchain_compat_from_config
+        val = get_langchain_compat_from_config()
+        if val is not None:
+            return val
+    except Exception:
+        pass
+    return os.environ.get("ENABLE_LANGCHAIN_COMPAT", "true").lower() == "true"
+
+
 def get_server_status() -> ServerStatus:
     return server_status
 
@@ -214,6 +233,73 @@ def get_agent_core():
 def set_agent_core(core):
     global agent_core
     agent_core = core
+
+
+class _ChatRunnerWithFallback:
+    """
+    带回退的 Chat Runner：优先使用 LangChain；任一步骤抛错则本次请求回退到原生 AgentCore。
+    保证默认开启兼容时不会因 LangChain 报错导致对话不可用。
+    """
+
+    __slots__ = ("_native_core", "_compat_runner")
+
+    def __init__(self, native_core, compat_runner=None):
+        self._native_core = native_core
+        self._compat_runner = compat_runner
+
+    async def run_stream(self, user_message: str, session_id: str = "default", extra_system_prompt: str = ""):
+        if self._compat_runner is None:
+            async for chunk in self._native_core.run_stream(user_message, session_id=session_id, extra_system_prompt=extra_system_prompt):
+                yield chunk
+            return
+        try:
+            async for chunk in self._compat_runner.run_stream(user_message, session_id=session_id, extra_system_prompt=extra_system_prompt):
+                yield chunk
+        except Exception as e:
+            logger.warning(
+                "LangChain compat run_stream failed, falling back to native runner: %s",
+                e,
+                exc_info=True,
+            )
+            # 避免原生再次添加同一条 user 导致重复
+            try:
+                from agent.context_manager import context_manager
+                ctx = context_manager.get_or_create(session_id)
+                if ctx.recent_messages and ctx.recent_messages[-1].get("role") == "user" and ctx.recent_messages[-1].get("content") == user_message:
+                    ctx.recent_messages.pop()
+            except Exception:
+                pass
+            async for chunk in self._native_core.run_stream(user_message, session_id=session_id, extra_system_prompt=extra_system_prompt):
+                yield chunk
+
+
+def get_chat_runner():
+    """
+    获取当前 Chat 流式执行的 Runner（带回退）。
+    - 若 ENABLE_LANGCHAIN_COMPAT=true 且已安装 langchain，返回「LangChain Runner + 失败回退到原生」的包装；
+    - 否则返回原生 AgentCore。
+    保证默认开启兼容时出错仍可回退到原生，对话可用。
+    """
+    core = agent_core
+    if not core:
+        return None
+    compat_runner = None
+    try:
+        from agent.langchain_compat import get_langchain_chat_runner
+        from agent.prompt_loader import get_system_prompt_for_query
+        if get_langchain_compat_enabled():
+            compat_runner = get_langchain_chat_runner(
+                llm_client=core.llm,
+                registry=core.registry,
+                context_manager=core.context_manager,
+                runtime_adapter=getattr(core, "runtime_adapter", None),
+                system_prompt_fn=get_system_prompt_for_query,
+            )
+    except Exception as e:
+        logger.debug("LangChain chat runner not used: %s", e)
+    if compat_runner is not None:
+        return _ChatRunnerWithFallback(native_core=core, compat_runner=compat_runner)
+    return core
 
 
 def get_autonomous_agent():

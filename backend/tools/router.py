@@ -8,6 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 from .base import ToolResult
+from .middleware import run_pre_hooks, run_post_hooks
 from .registry import ToolRegistry
 from .validator import validate_tool_call
 
@@ -90,8 +91,13 @@ async def execute_tool(
         args = dict(args)
         args = bind_target_fn(name, args)
 
+    # 预执行中间件（可修改 args，如限流、参数补全）
+    args = await run_pre_hooks(name, args)
+
     try:
         result = await reg.execute(name, **args)
+        # 后执行中间件（可修改 result，如截断、格式化、埋点）
+        result = await run_post_hooks(name, args, result)
         return result
     except Exception as e:
         logger.exception(f"Tool {name} execute error")

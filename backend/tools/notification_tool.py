@@ -77,14 +77,14 @@ class NotificationTool(BaseTool):
         if not adapter:
             return ToolResult(success=False, error="当前平台不支持系统通知")
         ok, err = await adapter.show_notification(
-            title or "MacAgent", message,
+            title or "Chow Duck", message,
             subtitle=subtitle, sound=sound
         )
         if not ok:
             return ToolResult(success=False, error=err)
         return ToolResult(success=True, data={
             "message": "通知已发送",
-            "title": title or "MacAgent",
+            "title": title or "Chow Duck",
             "content": message
         })
     
@@ -98,7 +98,7 @@ class NotificationTool(BaseTool):
         if delay_seconds <= 0:
             return await self._send_notification(title, message, None, None)
         
-        title = title or "MacAgent 提醒"
+        title = title or "Chow Duck 提醒"
         
         # 使用 at 命令或简单的延迟
         async def delayed_notify():

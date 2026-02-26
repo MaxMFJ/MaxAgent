@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 # 极简版（Tool Runtime v2 默认）- 不注入工具列表
-LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 MacAgent，macOS 智能助手。
+LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 Chow Duck，macOS 智能助手。
 如果需要使用工具，输出 JSON：{"tool":"工具名","args":{...}}
 可用工具包括 app_control, terminal, file_operations, screenshot, web_search, capsule, mail 等。
 发送邮件：若系统已配置 SMTP，必须用 mail 工具（{"tool":"mail","args":{"action":"send","to":"收件人","subject":"主题","body":"正文"}}），禁止用 run_shell/AppleScript 打开 Mail.app。
@@ -20,7 +20,7 @@ LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 MacAgent，macOS 智能助手。
 否则直接用中文回复。"""
 
 # 精简版（旧版，可通过 MACAGENT_LEGACY_PROMPT=true 启用）
-LOCAL_MODEL_SYSTEM_PROMPT_COMPACT = """你是 MacAgent，macOS 智能助手。
+LOCAL_MODEL_SYSTEM_PROMPT_COMPACT = """你是 Chow Duck，macOS 智能助手。
 
 ## 工具调用格式
 {"tool": "工具名", "args": {参数}}
@@ -42,7 +42,7 @@ LOCAL_MODEL_SYSTEM_PROMPT_COMPACT = """你是 MacAgent，macOS 智能助手。
 需要操作时输出JSON，否则直接回复。上下文推荐技能时优先用capsule执行。用中文。"""
 
 # 完整版系统提示（适合大型模型或远程模型）
-LOCAL_MODEL_SYSTEM_PROMPT_FULL = """你是一个强大的 macOS 智能助手，名叫 MacAgent。
+LOCAL_MODEL_SYSTEM_PROMPT_FULL = """你是一个强大的 macOS 智能助手，名叫 Chow Duck。
 
 ## 可用工具（使用 JSON 格式调用）
 

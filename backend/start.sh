@@ -1,5 +1,5 @@
 #!/bin/bash
-# MacAgent Backend Startup Script
+# Chow Duck Backend Startup Script
 
 cd "$(dirname "$0")"
 
@@ -40,7 +40,7 @@ if lsof -ti:$PORT >/dev/null 2>&1; then
     sleep 1
 fi
 
-echo "Starting MacAgent backend..."
+echo "Starting Chow Duck backend..."
 if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
     # 已下载到本地时不再提示“下载”，只提示后台加载
     if [ -d "models/embedding" ] && ls models/embedding/*/config.json 1>/dev/null 2>&1; then

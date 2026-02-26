@@ -61,6 +61,13 @@ struct TokenUsage: Codable, Equatable {
     }
 }
 
+/// 气泡展示类型，用于可扩展的多种气泡内容（文本/Markdown、工具调用、卡片等）
+enum MessageDisplayKind: Equatable {
+    case standard
+    case toolCall  // 后续可扩展：展示工具调用列表、结果等
+    // 可继续扩展：.card, .codeOnly 等
+}
+
 struct Message: Identifiable, Codable, Equatable {
     let id: UUID
     let role: MessageRole
@@ -71,6 +78,12 @@ struct Message: Identifiable, Codable, Equatable {
     var modelName: String?
     var attachments: [MessageAttachment]?
     var tokenUsage: TokenUsage?
+    
+    /// 由内容/附件/工具调用推导展示类型，便于气泡内按类型渲染不同 UI
+    var displayKind: MessageDisplayKind {
+        if let calls = toolCalls, !calls.isEmpty { return .toolCall }
+        return .standard
+    }
     
     init(
         id: UUID = UUID(),
@@ -199,17 +212,67 @@ struct ToolDefinition: Codable, Identifiable {
     let parameters: [String: AnyCodable]
 }
 
+/// 后端返回的已配置云端提供商，供“远程回退策略”下拉展示
+struct CloudProviderConfigured: Codable {
+    let provider: String
+    let baseUrl: String?
+    let model: String
+    let hasApiKey: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case provider
+        case baseUrl = "base_url"
+        case model
+        case hasApiKey = "has_api_key"
+    }
+}
+
 struct BackendConfig: Codable {
     let provider: String
     let model: String
     let baseUrl: String?
     let hasApiKey: Bool
-    
+    /// 是否启用 LangChain 兼容（对话）
+    let langchainCompat: Bool
+    /// 后端是否已安装 LangChain 依赖（未安装时开关不可选，需先点「安装」）
+    let langchainInstalled: Bool
+    /// 用户显式选择的远程回退提供商（newapi/deepseek/openai），空则用默认 DeepSeek
+    let remoteFallbackProvider: String?
+    /// 已配置的云端提供商列表，用于“远程回退策略”下拉
+    let cloudProvidersConfigured: [CloudProviderConfigured]?
+
     enum CodingKeys: String, CodingKey {
         case provider
         case model
         case baseUrl = "base_url"
         case hasApiKey = "has_api_key"
+        case langchainCompat = "langchain_compat"
+        case langchainInstalled = "langchain_installed"
+        case remoteFallbackProvider = "remote_fallback_provider"
+        case cloudProvidersConfigured = "cloud_providers_configured"
+    }
+
+    init(provider: String, model: String, baseUrl: String?, hasApiKey: Bool, langchainCompat: Bool = true, langchainInstalled: Bool = false, remoteFallbackProvider: String? = nil, cloudProvidersConfigured: [CloudProviderConfigured]? = nil) {
+        self.provider = provider
+        self.model = model
+        self.baseUrl = baseUrl
+        self.hasApiKey = hasApiKey
+        self.langchainCompat = langchainCompat
+        self.langchainInstalled = langchainInstalled
+        self.remoteFallbackProvider = remoteFallbackProvider
+        self.cloudProvidersConfigured = cloudProvidersConfigured
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        provider = try c.decode(String.self, forKey: .provider)
+        model = try c.decode(String.self, forKey: .model)
+        baseUrl = try c.decodeIfPresent(String.self, forKey: .baseUrl)
+        hasApiKey = try c.decode(Bool.self, forKey: .hasApiKey)
+        langchainCompat = try c.decodeIfPresent(Bool.self, forKey: .langchainCompat) ?? true
+        langchainInstalled = try c.decodeIfPresent(Bool.self, forKey: .langchainInstalled) ?? false
+        remoteFallbackProvider = try c.decodeIfPresent(String.self, forKey: .remoteFallbackProvider)
+        cloudProvidersConfigured = try c.decodeIfPresent([CloudProviderConfigured].self, forKey: .cloudProvidersConfigured)
     }
 }
 

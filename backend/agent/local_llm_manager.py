@@ -59,56 +59,95 @@ class LocalLLMManager:
         self._last_check_time: float = 0
         self._check_interval: float = 30.0
 
+    # 502 重试退避（秒）：本地服务启动或模型加载时常短暂返回 502，多等几秒再试
+    _502_BACKOFF = (2.0, 5.0, 8.0)
+    # 与浏览器/标准 API 客户端一致的请求头，避免部分本地服务对缺省头返回 502
+    _API_HEADERS = {"Accept": "application/json", "User-Agent": "MacAgent-LocalLLM/1.0"}
+
+    @staticmethod
+    def _direct_local_url(url: str) -> str:
+        """请求走直连：禁用代理，且 localhost 改为 127.0.0.1 避免代理/IPv6 导致 502（浏览器能访问、后端 502 时多为代理或解析差异）。"""
+        u = url.replace("localhost", "127.0.0.1")
+        return u
+
     async def check_ollama(self, url: str = "http://localhost:11434") -> list[LocalLLMConfig]:
-        """Check Ollama and return configs for all available models"""
+        """Check Ollama and return configs for all available models (retry on 502 with backoff)."""
+        url = self._direct_local_url(url)
         configs: list[LocalLLMConfig] = []
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(f"{url}/api/tags")
-                if response.status_code == 200:
-                    data = response.json()
-                    models = data.get("models", [])
-                    for m in models:
-                        name = m.get("name", "")
-                        if name:
-                            configs.append(LocalLLMConfig(
-                                provider=LocalLLMProvider.OLLAMA,
-                                base_url=f"{url}/v1",
-                                model=name,
-                                api_key="ollama",
-                            ))
-                    if configs:
-                        logger.info(f"Ollama: {len(configs)} models ({', '.join(c.model for c in configs)})")
-                    else:
-                        logger.warning("Ollama running but no models available")
-        except Exception as e:
-            logger.debug(f"Ollama not available: {e}")
+        for attempt in range(len(self._502_BACKOFF) + 1):
+            try:
+                async with httpx.AsyncClient(timeout=8.0, trust_env=False) as client:
+                    response = await client.get(f"{url}/api/tags", headers=self._API_HEADERS)
+                    if response.status_code == 200:
+                        data = response.json()
+                        models = data.get("models", [])
+                        for m in models:
+                            name = m.get("name", "")
+                            if name:
+                                configs.append(LocalLLMConfig(
+                                    provider=LocalLLMProvider.OLLAMA,
+                                    base_url=f"{url}/v1",
+                                    model=name,
+                                    api_key="ollama",
+                                ))
+                        if configs:
+                            logger.info(f"Ollama: {len(configs)} models ({', '.join(c.model for c in configs)})")
+                        else:
+                            logger.warning("Ollama running but no models available")
+                        return configs
+                    if response.status_code == 502 and attempt < len(self._502_BACKOFF):
+                        delay = self._502_BACKOFF[attempt]
+                        logger.debug("Ollama returned 502 (server/model may be starting), retry after %.0fs: %s", delay, (response.text or "")[:200])
+                        await asyncio.sleep(delay)
+                        continue
+            except Exception as e:
+                logger.debug(f"Ollama not available: {e}")
+                if attempt < len(self._502_BACKOFF):
+                    await asyncio.sleep(self._502_BACKOFF[attempt])
         return configs
 
-    async def check_lm_studio(self, url: str = "http://localhost:1234") -> list[LocalLLMConfig]:
-        """Check LM Studio and return configs for all available models"""
+    async def check_lm_studio(self, url: Optional[str] = None) -> list[LocalLLMConfig]:
+        """Check LM Studio and return configs for all available models (retry on 502 with backoff). URL 来自配置（多端口时由 Mac 设置或 llm_config 指定），未配置时默认 1234。"""
+        if url is None or url == "":
+            try:
+                from llm_config import get_lm_studio_base_url
+                url = get_lm_studio_base_url()
+            except Exception:
+                url = "http://localhost:1234"
+        base = self._direct_local_url(url).rstrip("/")
+        if not base.endswith("/v1"):
+            base = f"{base}/v1"
         configs: list[LocalLLMConfig] = []
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(f"{url}/v1/models")
-                if response.status_code == 200:
-                    data = response.json()
-                    models = data.get("data", [])
-                    for m in models:
-                        mid = m.get("id", "")
-                        if mid:
-                            configs.append(LocalLLMConfig(
-                                provider=LocalLLMProvider.LM_STUDIO,
-                                base_url=f"{url}/v1",
-                                model=mid,
-                                api_key="lm-studio",
-                            ))
-                    if configs:
-                        logger.info(f"LM Studio: {len(configs)} models ({', '.join(c.model for c in configs)})")
-                    else:
-                        logger.warning("LM Studio running but no models loaded")
-        except Exception as e:
-            logger.debug(f"LM Studio not available: {e}")
+        for attempt in range(len(self._502_BACKOFF) + 1):
+            try:
+                async with httpx.AsyncClient(timeout=8.0, trust_env=False) as client:
+                    response = await client.get(f"{base}/models", headers=self._API_HEADERS)
+                    if response.status_code == 200:
+                        data = response.json()
+                        models = data.get("data", [])
+                        for m in models:
+                            mid = m.get("id", "")
+                            if mid:
+                                configs.append(LocalLLMConfig(
+                                    provider=LocalLLMProvider.LM_STUDIO,
+                                    base_url=base,
+                                    model=mid,
+                                    api_key="lm-studio",
+                                ))
+                        if configs:
+                            logger.info(f"LM Studio: {len(configs)} models ({', '.join(c.model for c in configs)})")
+                        else:
+                            logger.warning("LM Studio running but no models loaded")
+                        return configs
+                    if response.status_code == 502 and attempt < len(self._502_BACKOFF):
+                        delay = self._502_BACKOFF[attempt]
+                        logger.debug("LM Studio returned 502 (server/model may be starting), retry after %.0fs: %s", delay, (response.text or "")[:200])
+                        await asyncio.sleep(delay)
+                        continue
+            except Exception as e:
+                logger.debug(f"LM Studio not available: {e}")
+                if attempt < len(self._502_BACKOFF):
+                    await asyncio.sleep(self._502_BACKOFF[attempt])
         return configs
 
     @staticmethod
@@ -146,9 +185,14 @@ class LocalLLMManager:
         return max(chat_models, key=score)
 
     async def detect_all_services(self) -> list[LocalLLMConfig]:
-        """Detect Ollama and LM Studio concurrently, return all available models"""
+        """Detect Ollama and LM Studio concurrently, return all available models. LM Studio URL 从 llm_config 读取（支持多端口）。"""
+        try:
+            from llm_config import get_lm_studio_base_url
+            lm_studio_url = get_lm_studio_base_url()
+        except Exception:
+            lm_studio_url = "http://localhost:1234"
         ollama_task = asyncio.create_task(self.check_ollama())
-        lm_task = asyncio.create_task(self.check_lm_studio())
+        lm_task = asyncio.create_task(self.check_lm_studio(url=lm_studio_url))
         ollama_configs, lm_configs = await asyncio.gather(ollama_task, lm_task)
         all_configs = ollama_configs + lm_configs
         self._all_configs = all_configs

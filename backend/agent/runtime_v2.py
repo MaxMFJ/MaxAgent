@@ -36,7 +36,7 @@ from llm.tool_parser_v2 import parse_tool_call
 logger = logging.getLogger(__name__)
 
 # 极简本地模型 System Prompt
-LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 MacAgent，macOS 智能助手。
+LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 Chow Duck，macOS 智能助手。
 如果需要使用工具，输出 JSON：{"tool":"工具名","args":{...}}
 否则直接用中文回复。"""
 

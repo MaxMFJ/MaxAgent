@@ -42,7 +42,7 @@ async def execute_llm_script(
     if not target.endswith(".py"):
         target = target.rstrip("_") + "_tool.py"
 
-    prompt = f"""生成 MacAgent 工具 Python 代码。
+    prompt = f"""生成 Chow Duck 工具 Python 代码。
 
 需求：{plan.plan}
 
@@ -114,7 +114,7 @@ async def execute_cursor_cli(
     if not dispatcher:
         return False, "ResourceDispatcher 不可用"
 
-    task_prompt = f"""创建 MacAgent 工具。
+    task_prompt = f"""创建 Chow Duck 工具。
 
 目标：{plan.goal}
 方案：{plan.plan}
@@ -166,7 +166,7 @@ async def execute_cursor_gui(
     if not dispatcher:
         return False, "ResourceDispatcher 不可用"
 
-    task_prompt = f"""创建 MacAgent 工具。
+    task_prompt = f"""创建 Chow Duck 工具。
 
 目标：{plan.goal}
 方案：{plan.plan}

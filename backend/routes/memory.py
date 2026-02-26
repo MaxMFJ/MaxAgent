@@ -42,8 +42,12 @@ async def memory_status():
 async def local_llm_status():
     manager = get_local_llm_manager()
     client, config = await manager.get_client(force_refresh=True)
-    ollama_ok, ollama_model = await manager.check_ollama()
-    lm_studio_ok, lm_studio_model = await manager.check_lm_studio()
+    ollama_configs = await manager.check_ollama()
+    lm_studio_configs = await manager.check_lm_studio()
+    ollama_ok = len(ollama_configs) > 0
+    ollama_model = ollama_configs[0].model if ollama_configs else None
+    lm_studio_ok = len(lm_studio_configs) > 0
+    lm_studio_model = lm_studio_configs[0].model if lm_studio_configs else None
 
     return {
         "current": {

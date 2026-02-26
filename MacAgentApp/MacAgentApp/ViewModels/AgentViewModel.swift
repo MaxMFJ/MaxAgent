@@ -49,10 +49,35 @@ class AgentViewModel: ObservableObject {
     @AppStorage("ollamaModel") var ollamaModel: String = "deepseek-r1:8b"
     @AppStorage("lmStudioUrl") var lmStudioUrl: String = "http://localhost:1234/v1"
     @AppStorage("lmStudioModel") var lmStudioModel: String = ""
+    /// LM Studio 端口（默认 1234），多实例时可改为 1235、1236 等；修改会同步到 lmStudioUrl
+    var lmStudioPortBinding: Binding<String> {
+        Binding(
+            get: {
+                guard let url = URL(string: self.lmStudioUrl), let p = url.port else { return "1234" }
+                return String(p)
+            },
+            set: { newValue in
+                self.lmStudioUrl = "http://localhost:\(newValue)/v1"
+            }
+        )
+    }
     /// New API 转发，默认使用 cc1 地址，配置说明见语雀文档
     @AppStorage("newApiKey") var newApiKey: String = ""
     @AppStorage("newApiBaseUrl") var newApiBaseUrl: String = "https://cc1.newapi.ai/v1"
     @AppStorage("newApiModel") var newApiModel: String = ""
+    
+    /// ChatGPT (OpenAI)
+    @AppStorage("openaiBaseUrl") var openaiBaseUrl: String = "https://api.openai.com/v1"
+    @AppStorage("openaiModel") var openaiModel: String = "gpt-4o"
+    @AppStorage("openaiApiKey") var openaiApiKey: String = ""
+    /// Gemini
+    @AppStorage("geminiBaseUrl") var geminiBaseUrl: String = ""
+    @AppStorage("geminiModel") var geminiModel: String = ""
+    @AppStorage("geminiApiKey") var geminiApiKey: String = ""
+    /// Claude (Anthropic)
+    @AppStorage("anthropicBaseUrl") var anthropicBaseUrl: String = ""
+    @AppStorage("anthropicModel") var anthropicModel: String = ""
+    @AppStorage("anthropicApiKey") var anthropicApiKey: String = ""
     
     // 邮件 SMTP 配置（用于系统级发信，不依赖 Mail.app）
     @AppStorage("smtpServer") var smtpServer: String = "smtp.qq.com"
@@ -63,6 +88,19 @@ class AgentViewModel: ObservableObject {
     // GitHub Token（拉取开放技能源，提高 API 限额）
     @AppStorage("githubToken") var githubToken: String = ""
     @Published var githubConfigured: Bool = false
+
+    /// 是否使用 LangChain 进行对话（从后端 GET /config 加载）
+    @Published var langchainCompat: Bool = true
+    /// 后端是否已安装 LangChain 依赖（未安装时开关不可选，需先点「安装」）
+    @Published var langchainInstalled: Bool = false
+    /// 远程回退策略：当使用远程模型时调用的提供商（空=默认 DeepSeek，newapi/deepseek/openai 为用户显式选择）
+    @AppStorage("remoteFallbackProvider") var remoteFallbackProvider: String = ""
+    /// 已配置的云端提供商列表（从 GET /config 加载），供“远程回退策略”下拉展示
+    @Published var cloudProvidersConfigured: [CloudProviderConfigured] = []
+    /// 正在执行「安装」时的加载状态
+    @Published var isInstallingLangChain: Bool = false
+    /// 安装依赖失败时的错误信息（用于设置页弹窗）
+    @Published var langchainInstallError: String?
     
     // 待审批工具（签名校验未通过）
     @Published var pendingTools: [PendingTool] = []
@@ -72,11 +110,24 @@ class AgentViewModel: ObservableObject {
     @Published var availableLocalModels: [String] = []
     @Published var isLoadingModels = false
     
+    // MARK: - TTS / STT
+    
+    @AppStorage("ttsEnabled") var ttsEnabled: Bool = false
+    @AppStorage("sttSilenceSeconds") var sttSilenceSeconds: Double = 2.0
+    @AppStorage("sttNoSpeechTimeoutSeconds") var sttNoSpeechTimeoutSeconds: Double = 12.0
+    @Published var isVoiceInputActive: Bool = false
+    let voiceInputService = VoiceInputService()
+    
     // MARK: - Private Properties
     
     private let backendService = BackendService()
     private var cancellables = Set<AnyCancellable>()
     private var currentSendTask: Task<Void, Never>?
+    /// 流式输出时节流：避免每个 chunk 都触发 @Published，减少列表闪烁（100-120ms 一次 UI 更新）
+    private var lastStreamingUIPushTime: Date?
+    private let streamingThrottleInterval: TimeInterval = 0.12
+    /// 标记是否刚创建新 assistant 消息（用于触发滚动到底部）
+    @Published var shouldScrollToBottom: Bool = false
     
     // MARK: - Initialization
     
@@ -86,11 +137,23 @@ class AgentViewModel: ObservableObject {
             newApiBaseUrl = "https://cc1.newapi.ai/v1"
         }
         setupSubscriptions()
+        setupVoiceInput()
         Task { @MainActor in
             loadConversations()
             if currentConversation == nil {
                 newConversation()
             }
+        }
+    }
+    
+    private func setupVoiceInput() {
+        voiceInputService.onShouldSubmit = { [weak self] text in
+            guard let self = self else { return }
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { return }
+            self.isVoiceInputActive = false
+            self.inputText = ""
+            self.sendMessage(withText: trimmed)
         }
     }
     
@@ -171,6 +234,18 @@ class AgentViewModel: ObservableObject {
             configApiKey = newApiKey
             configBaseUrl = newApiBaseUrl
             configModel = newApiModel
+        case "openai":
+            configApiKey = openaiApiKey
+            configBaseUrl = openaiBaseUrl
+            configModel = openaiModel
+        case "gemini":
+            configApiKey = geminiApiKey
+            configBaseUrl = geminiBaseUrl
+            configModel = geminiModel
+        case "anthropic":
+            configApiKey = anthropicApiKey
+            configBaseUrl = anthropicBaseUrl
+            configModel = anthropicModel
         default:
             configApiKey = apiKey
             configBaseUrl = baseUrl
@@ -182,7 +257,8 @@ class AgentViewModel: ObservableObject {
                 provider: provider,
                 apiKey: configApiKey,
                 baseUrl: configBaseUrl,
-                model: configModel
+                model: configModel,
+                remoteFallbackProvider: remoteFallbackProvider
             )
         } catch {
             errorMessage = "配置同步失败: \(error.localizedDescription)"
@@ -223,7 +299,65 @@ class AgentViewModel: ObservableObject {
             githubConfigured = false
         }
     }
-    
+
+    /// 从后端加载当前配置（含 LangChain、远程回退策略、已配置云端列表）
+    func loadBackendConfig() async {
+        do {
+            let cfg = try await backendService.fetchConfig()
+            langchainCompat = cfg.langchainCompat
+            langchainInstalled = cfg.langchainInstalled
+            remoteFallbackProvider = cfg.remoteFallbackProvider ?? ""
+            cloudProvidersConfigured = cfg.cloudProvidersConfigured ?? []
+            // 根据当前主提供商回填对应配置（后端不返回 api_key，保留本地已填）
+            switch cfg.provider.lowercased() {
+            case "openai":
+                openaiBaseUrl = cfg.baseUrl ?? openaiBaseUrl
+                openaiModel = cfg.model
+            case "gemini":
+                geminiBaseUrl = cfg.baseUrl ?? geminiBaseUrl
+                geminiModel = cfg.model
+            case "anthropic":
+                anthropicBaseUrl = cfg.baseUrl ?? anthropicBaseUrl
+                anthropicModel = cfg.model
+            default:
+                break
+            }
+        } catch {
+            // 后端未连接时保留当前值
+        }
+    }
+
+    /// 仅保存 LangChain 开关状态（不执行安装，用于用户勾选/取消勾选时）
+    func setLangChainCompat(_ enabled: Bool) async {
+        langchainInstallError = nil
+        do {
+            try await backendService.updateLangChainCompat(enabled: enabled)
+            langchainCompat = enabled
+        } catch {
+            langchainCompat = !enabled
+            errorMessage = "LangChain 开关保存失败: \(error.localizedDescription)"
+        }
+    }
+
+    /// 用户点击「安装」：安装 LangChain 依赖；成功则开启开关并默认勾选，失败则弹窗提示
+    func installLangChainAndEnable() async {
+        langchainInstallError = nil
+        isInstallingLangChain = true
+        defer { isInstallingLangChain = false }
+        let result = await backendService.installLangChainDependencies()
+        if !result.success {
+            langchainInstallError = result.message
+            return
+        }
+        do {
+            try await backendService.updateLangChainCompat(enabled: true)
+            langchainCompat = true
+            await loadBackendConfig()
+        } catch {
+            langchainInstallError = "安装成功但保存设置失败: \(error.localizedDescription)"
+        }
+    }
+
     func syncGitHubConfig() async {
         do {
             try await backendService.updateGitHubConfig(githubToken: githubToken.isEmpty ? nil : githubToken)
@@ -345,22 +479,24 @@ class AgentViewModel: ObservableObject {
     
     // MARK: - Messaging
     
-    func sendMessage() {
-        guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    /// 发送消息。若传入 text 则使用该文本（如语音识别结果），否则使用 inputText；空字符串会被忽略。
+    func sendMessage(withText text: String? = nil) {
+        let content = (text?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
+            ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { return }
         guard var conversation = currentConversation else { return }
         
-        let userMessage = Message(role: .user, content: inputText)
+        let userMessage = Message(role: .user, content: content)
         conversation.messages.append(userMessage)
         
         let assistantMessage = Message(role: .assistant, content: "", isStreaming: true)
         conversation.messages.append(assistantMessage)
         
-        let messageText = inputText
         inputText = ""
-        
         updateCurrentConversation(conversation)
         isLoading = true
         executionLogs = []
+        shouldScrollToBottom = true
         
         let conversationId = conversation.id.uuidString
         
@@ -371,8 +507,12 @@ class AgentViewModel: ObservableObject {
                     currentSendTask = nil
                 }
             }
-            await sendMessageWithRetry(messageText, sessionId: conversationId, retryCount: 0)
+            await sendMessageWithRetry(content, sessionId: conversationId, retryCount: 0)
         }
+    }
+    
+    func sendMessage() {
+        sendMessage(withText: nil)
     }
     
     func stopTask() {
@@ -380,6 +520,7 @@ class AgentViewModel: ObservableObject {
         currentSendTask?.cancel()
         currentSendTask = nil
         isLoading = false
+        TTSService.shared.stop()
         
         Task {
             await backendService.sendStopStream(sessionId: conversation.id.uuidString)
@@ -394,7 +535,35 @@ class AgentViewModel: ObservableObject {
         }
     }
     
+    func startVoiceInput() {
+        guard !isLoading else { return }
+        voiceInputService.silenceDuration = sttSilenceSeconds
+        voiceInputService.noSpeechTimeout = sttNoSpeechTimeoutSeconds
+        voiceInputService.requestAuthorization { [weak self] granted in
+            guard granted, let self = self else { return }
+            self.isVoiceInputActive = true
+            self.voiceInputService.startRecording()
+        }
+    }
+    
+    func stopVoiceInput() {
+        isVoiceInputActive = false
+        voiceInputService.stopRecording()
+    }
+    
+    /// 语音输入时手动提交当前识别结果（静音/超时也会自动提交）
+    func commitVoiceInput() {
+        let text = voiceInputService.commitCurrentText()
+        isVoiceInputActive = false
+        if !text.isEmpty {
+            sendMessage(withText: text)
+        }
+    }
+    
     private func sendMessageWithRetry(_ messageText: String, sessionId: String, retryCount: Int) async {
+        if ttsEnabled {
+            TTSService.shared.resetStreamState()
+        }
         do {
             var fullContent = ""
             
@@ -403,6 +572,9 @@ class AgentViewModel: ObservableObject {
                 case .content(let text):
                     fullContent += text
                     updateAssistantMessage(content: fullContent, isStreaming: true)
+                    if ttsEnabled {
+                        TTSService.shared.appendAndSpeakStreamedContent(fullContent)
+                    }
                     
                 case .toolCall(let name, let args):
                     let toolCall = ToolCall(
@@ -425,6 +597,9 @@ class AgentViewModel: ObservableObject {
                     
                 case .done(let model, let tokenUsage):
                     updateAssistantMessage(content: fullContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
+                    if ttsEnabled {
+                        TTSService.shared.speakRemainingBuffer()
+                    }
                     
                 case .stopped:
                     updateAssistantMessage(content: fullContent + "\n\n[已终止]", isStreaming: false)
@@ -500,28 +675,38 @@ class AgentViewModel: ObservableObject {
     
     private func updateAssistantMessage(content: String, isStreaming: Bool, modelName: String? = nil, attachments: [MessageAttachment]? = nil, tokenUsage: TokenUsage? = nil) {
         guard var conversation = currentConversation else { return }
+        guard let lastIndex = conversation.messages.lastIndex(where: { $0.role == .assistant }) else { return }
         
-        if let lastIndex = conversation.messages.lastIndex(where: { $0.role == .assistant }) {
-            conversation.messages[lastIndex].content = content
-            conversation.messages[lastIndex].isStreaming = isStreaming
-            if let model = modelName {
-                conversation.messages[lastIndex].modelName = model
-            }
-            if let usage = tokenUsage {
-                conversation.messages[lastIndex].tokenUsage = usage
-            }
-            if let newAttachments = attachments {
-                var existing = conversation.messages[lastIndex].attachments ?? []
-                // 去重：检查是否已存在相同的 attachment（通过 data 比较）
-                for newAtt in newAttachments {
-                    if !existing.contains(where: { $0.data == newAtt.data }) {
-                        existing.append(newAtt)
-                    }
-                }
-                conversation.messages[lastIndex].attachments = existing
-            }
-            updateCurrentConversation(conversation, shouldSave: !isStreaming)
+        conversation.messages[lastIndex].content = content
+        conversation.messages[lastIndex].isStreaming = isStreaming
+        if let model = modelName {
+            conversation.messages[lastIndex].modelName = model
         }
+        if let usage = tokenUsage {
+            conversation.messages[lastIndex].tokenUsage = usage
+        }
+        if let newAttachments = attachments {
+            var existing = conversation.messages[lastIndex].attachments ?? []
+            for newAtt in newAttachments {
+                if !existing.contains(where: { $0.data == newAtt.data }) {
+                    existing.append(newAtt)
+                }
+            }
+            conversation.messages[lastIndex].attachments = existing
+        }
+        
+        if !isStreaming {
+            lastStreamingUIPushTime = nil
+            updateCurrentConversation(conversation, shouldSave: true)
+            return
+        }
+        // 流式时节流：减少 @Published 触发频率，缓解列表闪烁与布局拉扯
+        let now = Date()
+        if let t = lastStreamingUIPushTime, now.timeIntervalSince(t) < streamingThrottleInterval {
+            return
+        }
+        lastStreamingUIPushTime = now
+        updateCurrentConversation(conversation, shouldSave: false)
     }
     
     // MARK: - Autonomous Execution
@@ -541,6 +726,7 @@ class AgentViewModel: ObservableObject {
         
         updateCurrentConversation(conversation)
         isLoading = true
+        shouldScrollToBottom = true
         
         actionLogs = []
         currentIteration = 0
@@ -982,6 +1168,7 @@ class AgentViewModel: ObservableObject {
         
         isLoading = true
         var fullContent = ""
+        if ttsEnabled { TTSService.shared.resetStreamState() }
         
         do {
             for try await chunk in backendService.resumeChat(sessionId: sessionId) {
@@ -989,6 +1176,7 @@ class AgentViewModel: ObservableObject {
                 case .content(let text):
                     fullContent += text
                     updateAssistantMessage(content: fullContent, isStreaming: true)
+                    if ttsEnabled { TTSService.shared.appendAndSpeakStreamedContent(fullContent) }
                     
                 case .toolCall(let name, let args):
                     let toolCall = ToolCall(
@@ -1023,6 +1211,7 @@ class AgentViewModel: ObservableObject {
                     
                 case .done(let model, let tokenUsage):
                     updateAssistantMessage(content: fullContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
+                    if ttsEnabled { TTSService.shared.speakRemainingBuffer() }
                     
                 case .stopped:
                     updateAssistantMessage(content: fullContent + "\n\n[已终止]", isStreaming: false)

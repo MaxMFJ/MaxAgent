@@ -132,11 +132,11 @@ class ResourceDispatcher:
         prompts_dir = os.path.join(project_path, ".cursor", "prompts")
         os.makedirs(prompts_dir, exist_ok=True)
         upgrade_file = os.path.join(prompts_dir, "upgrade.md")
-        content = f"""# MacAgent 工具自我升级任务
+        content = f"""# Chow Duck 工具自我升级任务
 
 **请在本次对话中完成此任务，创建/修改文件后保存。**
 
-**⚠️ 输出位置**：新工具必须创建在 MacAgent 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
+**⚠️ 输出位置**：新工具必须创建在 Chow Duck 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
 
 ---
 
@@ -247,11 +247,11 @@ class ResourceDispatcher:
         prompts_dir = os.path.join(project_path, ".cursor", "prompts")
         os.makedirs(prompts_dir, exist_ok=True)
         upgrade_file = os.path.join(prompts_dir, "upgrade.md")
-        content = f"""# MacAgent 工具自我升级任务
+        content = f"""# Chow Duck 工具自我升级任务
 
 **请在本次对话中完成此任务，创建/修改文件后保存。**
 
-**⚠️ 输出位置**：新工具必须创建在 MacAgent 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
+**⚠️ 输出位置**：新工具必须创建在 Chow Duck 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
 
 ---
 
@@ -318,7 +318,7 @@ class ResourceDispatcher:
                 err = r.error or ""
                 hint = ""
                 if "不允许发送按键" in err or "1002" in err or "not allowed" in err.lower():
-                    hint = "请在 系统设置→隐私与安全性→辅助功能 中，添加运行后端的应用（如 Terminal、MacAgentApp 或 Python），并重启后端。"
+                    hint = "请在 系统设置→隐私与安全性→辅助功能 中，添加运行后端的应用（如 Terminal、Chow Duck 应用或 Python），并重启后端。"
                 logger.warning(f"AppleScript keystroke failed: {r.error}")
                 return (
                     DispatchResult(
@@ -363,7 +363,7 @@ class ResourceDispatcher:
         调度 Cursor 打开项目/文件
         
         Args:
-            project_path: 项目路径，默认 MacAgent 根目录
+            project_path: 项目路径，默认 Chow Duck 项目根目录
             file_path: 要打开的具体文件
             task_prompt: 任务描述，写入 .cursor/prompts/upgrade.md 供 AI 参考
         """
@@ -383,11 +383,11 @@ class ResourceDispatcher:
                 prompts_dir = os.path.join(path, ".cursor", "prompts")
                 os.makedirs(prompts_dir, exist_ok=True)
                 upgrade_file = os.path.join(prompts_dir, "upgrade.md")
-                content = f"""# MacAgent 工具自我升级任务
+                content = f"""# Chow Duck 工具自我升级任务
 
 **请在本次对话中完成此任务，创建/修改文件后保存。**
 
-**⚠️ 输出位置**：新工具必须创建在 MacAgent 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
+**⚠️ 输出位置**：新工具必须创建在 Chow Duck 项目 `tools/generated/` 目录（相对于当前 workspace），禁止创建在 ~/ 或用户主目录。
 
 ---
 

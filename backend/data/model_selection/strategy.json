@@ -1,12 +1,12 @@
 {
   "simple_operation": {
-    "model": "local",
-    "confidence": 0.475,
+    "model": "remote",
+    "confidence": 0.95,
     "stats": {
-      "local_success": 3,
-      "local_total": 8,
-      "remote_success": 0,
-      "remote_total": 1
+      "local_success": 6,
+      "local_total": 11,
+      "remote_success": 11,
+      "remote_total": 12
     }
   },
   "code_generation": {

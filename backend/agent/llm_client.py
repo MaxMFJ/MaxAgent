@@ -46,6 +46,17 @@ class LLMConfig:
             # New API 统一网关，默认 cc1 地址，配置见语雀文档
             self.base_url = self.base_url or "https://cc1.newapi.ai/v1"
             self.api_key = self.api_key or ""
+        elif self.provider == "openai":
+            self.base_url = self.base_url or "https://api.openai.com/v1"
+            self.model = self.model or "gpt-4o"
+        elif self.provider == "gemini":
+            # 通常需使用 OpenAI 兼容网关或 Google 端点，由用户配置
+            self.base_url = self.base_url or ""
+            self.model = self.model or ""
+        elif self.provider == "anthropic":
+            # 通常需使用 OpenAI 兼容网关，由用户配置
+            self.base_url = self.base_url or ""
+            self.model = self.model or ""
 
 
 class LLMClient:
@@ -56,8 +67,15 @@ class LLMClient:
         self._client: Optional[AsyncOpenAI] = None
         self._init_client()
     
+    @staticmethod
+    def _is_local_base_url(url: str) -> bool:
+        if not url:
+            return False
+        u = (url or "").strip().lower()
+        return "localhost" in u or "127.0.0.1" in u
+
     def _init_client(self):
-        """Initialize the OpenAI-compatible client"""
+        """Initialize the OpenAI-compatible client. 本地 base_url 时使用直连(trust_env=False)避免代理导致 502。"""
         import httpx
 
         api_key = self.config.api_key or "dummy"
@@ -67,11 +85,16 @@ class LLMClient:
                 "Requests will fail with 401."
             )
 
-        self._client = AsyncOpenAI(
+        base_url = self.config.base_url or ""
+        timeout = httpx.Timeout(120.0, connect=30.0)
+        kwargs = dict(
             api_key=api_key,
-            base_url=self.config.base_url,
-            timeout=httpx.Timeout(120.0, connect=30.0),
+            base_url=base_url,
+            timeout=timeout,
         )
+        if self._is_local_base_url(base_url):
+            kwargs["http_client"] = httpx.AsyncClient(trust_env=False, timeout=timeout)
+        self._client = AsyncOpenAI(**kwargs)
         logger.info(f"LLM client initialized: provider={self.config.provider}, model={self.config.model}")
     
     def update_config(self, config: LLMConfig):
