@@ -49,6 +49,10 @@ class AgentViewModel: ObservableObject {
     @AppStorage("ollamaModel") var ollamaModel: String = "deepseek-r1:8b"
     @AppStorage("lmStudioUrl") var lmStudioUrl: String = "http://localhost:1234/v1"
     @AppStorage("lmStudioModel") var lmStudioModel: String = ""
+    /// New API 转发，默认使用 cc1 地址，配置说明见语雀文档
+    @AppStorage("newApiKey") var newApiKey: String = ""
+    @AppStorage("newApiBaseUrl") var newApiBaseUrl: String = "https://cc1.newapi.ai/v1"
+    @AppStorage("newApiModel") var newApiModel: String = ""
     
     // 邮件 SMTP 配置（用于系统级发信，不依赖 Mail.app）
     @AppStorage("smtpServer") var smtpServer: String = "smtp.qq.com"
@@ -77,6 +81,10 @@ class AgentViewModel: ObservableObject {
     // MARK: - Initialization
     
     init() {
+        // 一次性迁移：曾用旧默认地址的改为 cc1 默认地址
+        if newApiBaseUrl == "http://localhost:3000/v1" {
+            newApiBaseUrl = "https://cc1.newapi.ai/v1"
+        }
         setupSubscriptions()
         Task { @MainActor in
             loadConversations()
@@ -159,6 +167,10 @@ class AgentViewModel: ObservableObject {
             configApiKey = "lm-studio"
             configBaseUrl = lmStudioUrl
             configModel = lmStudioModel
+        case "newapi":
+            configApiKey = newApiKey
+            configBaseUrl = newApiBaseUrl
+            configModel = newApiModel
         default:
             configApiKey = apiKey
             configBaseUrl = baseUrl
@@ -301,7 +313,9 @@ class AgentViewModel: ObservableObject {
     }
     
     func selectConversation(_ conversation: Conversation) {
-        currentConversation = conversation
+        Task { @MainActor in
+            currentConversation = conversation
+        }
     }
     
     func deleteConversation(_ conversation: Conversation) {
@@ -464,6 +478,26 @@ class AgentViewModel: ObservableObject {
         }
     }
     
+    /// 判断是否为连接类错误（断线、被对端关闭等），用于触发重连重试
+    private func isConnectionError(_ error: Error) -> Bool {
+        let desc = error.localizedDescription.lowercased()
+        if desc.contains("connection reset") || desc.contains("connection refused") ||
+           desc.contains("network connection lost") || desc.contains("not connected") ||
+           desc.contains("connection closed") || desc.contains("broken pipe") {
+            return true
+        }
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .networkConnectionLost, .notConnectedToInternet,
+                 .cannotConnectToHost, .timedOut, .internationalRoamingOff:
+                return true
+            default:
+                break
+            }
+        }
+        return false
+    }
+    
     private func updateAssistantMessage(content: String, isStreaming: Bool, modelName: String? = nil, attachments: [MessageAttachment]? = nil, tokenUsage: TokenUsage? = nil) {
         guard var conversation = currentConversation else { return }
         
@@ -536,12 +570,14 @@ class AgentViewModel: ObservableObject {
         taskComplexity = 0
         executionLogs = []
         
-        do {
-            for try await chunk in backendService.sendAutonomousTask(
-                task,
-                sessionId: sessionId
-            ) {
-                switch chunk {
+        var retryCount = 0
+        retryLoop: while true {
+            do {
+                for try await chunk in backendService.sendAutonomousTask(
+                    task,
+                    sessionId: sessionId
+                ) {
+                    switch chunk {
                 case .modelSelected(let modelType, let reason, let taskType, let complexity):
                     selectedModelType = modelType
                     selectedModelReason = reason
@@ -624,11 +660,25 @@ class AgentViewModel: ObservableObject {
                         completedActions += 1
                         let outputPreview = output?.prefix(100) ?? ""
                         statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ": \(outputPreview)...")\n"
+                        // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
+                        var screenshotAttachment: MessageAttachment?
+                        if let out = output?.data(using: .utf8),
+                           let obj = try? JSONSerialization.jsonObject(with: out) as? [String: Any],
+                           let path = obj["screenshot_path"] as? String ?? obj["path"] as? String,
+                           !path.isEmpty {
+                            screenshotAttachment = MessageAttachment.fromLocalPath(path)
+                        }
+                        if let att = screenshotAttachment {
+                            statusContent += "\n📷 截图已生成\n"
+                            updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [att])
+                        } else {
+                            updateAssistantMessage(content: statusContent, isStreaming: true)
+                        }
                     } else {
                         failedActions += 1
                         statusContent += "   ❌ 失败: \(error ?? "未知错误")\n"
+                        updateAssistantMessage(content: statusContent, isStreaming: true)
                     }
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                     taskProgress?.totalActions = completedActions + failedActions
                     taskProgress?.successfulActions = completedActions
@@ -651,7 +701,8 @@ class AgentViewModel: ObservableObject {
                     statusContent += "\n\(statusIcon) 任务完成\n"
                     statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
                     statusContent += "📝 总结: \(summary)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
+                    updateAssistantMessage(content: statusContent, isStreaming: false)
                     
                 case .content(let text):
                     statusContent += text
@@ -695,17 +746,29 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: false)
                 }
         
+                }
+                break retryLoop
+            } catch is CancellationError {
+                statusContent += "\n\n[已终止]"
+                updateAssistantMessage(content: statusContent, isStreaming: false)
+                return
+            } catch {
+                if retryCount < 1 && isConnectionError(error) {
+                    retryCount += 1
+                    updateAssistantMessage(content: statusContent + "\n\n连接断开，正在重连...", isStreaming: true)
+                    await backendService.reconnect()
+                    if isConnected {
+                        updateAssistantMessage(content: statusContent + "\n已重连，正在重新执行...", isStreaming: true)
+                        continue retryLoop
+                    }
+                }
+                errorMessage = "自主执行失败: \(error.localizedDescription)"
+                updateAssistantMessage(
+                    content: statusContent + "\n❌ 执行失败: \(error.localizedDescription)",
+                    isStreaming: false
+                )
+                return
             }
-            
-        } catch is CancellationError {
-            statusContent += "\n\n[已终止]"
-            updateAssistantMessage(content: statusContent, isStreaming: false)
-        } catch {
-            errorMessage = "自主执行失败: \(error.localizedDescription)"
-            updateAssistantMessage(
-                content: statusContent + "\n❌ 执行失败: \(error.localizedDescription)",
-                isStreaming: false
-            )
         }
     }
     
@@ -736,9 +799,10 @@ class AgentViewModel: ObservableObject {
         var statusContent = "🔄 正在恢复任务...\n"
         var completedActions = 0
         var failedActions = 0
-        
-        do {
-            for try await chunk in backendService.resumeTask(sessionId: sessionId) {
+        var retryCount = 0
+        retryLoop: while true {
+            do {
+                for try await chunk in backendService.resumeTask(sessionId: sessionId) {
                 switch chunk {
                 case .modelSelected(let modelType, let reason, let taskType, let complexity):
                     selectedModelType = modelType
@@ -820,11 +884,25 @@ class AgentViewModel: ObservableObject {
                         completedActions += 1
                         let outputPreview = output?.prefix(100) ?? ""
                         statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ": \(outputPreview)...")\n"
+                        // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
+                        var screenshotAttachment: MessageAttachment?
+                        if let out = output?.data(using: .utf8),
+                           let obj = try? JSONSerialization.jsonObject(with: out) as? [String: Any],
+                           let path = obj["screenshot_path"] as? String ?? obj["path"] as? String,
+                           !path.isEmpty {
+                            screenshotAttachment = MessageAttachment.fromLocalPath(path)
+                        }
+                        if let att = screenshotAttachment {
+                            statusContent += "\n📷 截图已生成\n"
+                            updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [att])
+                        } else {
+                            updateAssistantMessage(content: statusContent, isStreaming: true)
+                        }
                     } else {
                         failedActions += 1
                         statusContent += "   ❌ 失败: \(error ?? "未知错误")\n"
+                        updateAssistantMessage(content: statusContent, isStreaming: true)
                     }
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                     taskProgress?.totalActions = completedActions + failedActions
                     taskProgress?.successfulActions = completedActions
@@ -847,7 +925,8 @@ class AgentViewModel: ObservableObject {
                     statusContent += "\n\(statusIcon) 任务完成\n"
                     statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
                     statusContent += "📝 总结: \(summary)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
+                    updateAssistantMessage(content: statusContent, isStreaming: false)
                     
                 case .content(let text):
                     statusContent += text
@@ -868,14 +947,25 @@ class AgentViewModel: ObservableObject {
                 default:
                     break
                 }
+                }
+                break retryLoop
+            } catch {
+                if retryCount < 1 && isConnectionError(error) {
+                    retryCount += 1
+                    updateAssistantMessage(content: statusContent + "\n连接断开，正在重连...", isStreaming: true)
+                    await backendService.reconnect()
+                    if isConnected {
+                        updateAssistantMessage(content: statusContent + "\n已重连，正在恢复任务...", isStreaming: true)
+                        continue retryLoop
+                    }
+                }
+                errorMessage = "任务恢复失败: \(error.localizedDescription)"
+                updateAssistantMessage(
+                    content: statusContent + "\n❌ 恢复失败: \(error.localizedDescription)",
+                    isStreaming: false
+                )
+                break
             }
-            
-        } catch {
-            errorMessage = "任务恢复失败: \(error.localizedDescription)"
-            updateAssistantMessage(
-                content: statusContent + "\n❌ 恢复失败: \(error.localizedDescription)",
-                isStreaming: false
-            )
         }
         
         isLoading = false

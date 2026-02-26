@@ -32,6 +32,7 @@ class ActionType(Enum):
     GET_SYSTEM_INFO = "get_system_info"
     CLIPBOARD_READ = "clipboard_read"
     CLIPBOARD_WRITE = "clipboard_write"
+    CALL_TOOL = "call_tool"  # 调用已注册工具（screenshot、capsule、terminal 等）
     THINK = "think"
     FINISH = "finish"
 
@@ -82,7 +83,8 @@ class AgentAction:
         """Parse LLM response to extract action (supports DeepSeek/本地模型多种输出格式)"""
         if not response_text or not isinstance(response_text, str):
             return None
-        text = response_text.strip()
+        # 去除 BOM 与不可见字符，避免 LM Studio 等本地模型输出导致解析失败
+        text = response_text.strip().strip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
         if not text:
             return None
 
@@ -92,6 +94,19 @@ class AgentAction:
             if parsed:
                 return parsed
 
+        # 1b. LM Studio 等可能返回未闭合的 ```json 块（流被断开或 max_tokens 截断），按“截断 JSON”尝试修补
+        if "```json" in text or "```" in text:
+            inner = text
+            for prefix in ("```json", "```"):
+                if prefix in inner:
+                    idx = inner.find(prefix) + len(prefix)
+                    inner = inner[idx:].lstrip("\r\n")
+                    break
+            if inner.strip().startswith("{"):
+                parsed = cls._parse_truncated_json_block(inner.strip())
+                if parsed:
+                    return parsed
+
         # 2. 提取所有 { ... } 块，逐个尝试（从后往前，模型常把最终动作放在最后）
         blocks = cls._extract_brace_blocks(text)
         for candidate in reversed(blocks):
@@ -99,14 +114,17 @@ class AgentAction:
             if parsed:
                 return parsed
 
-        # 3. 使用 json_repair 从全文提取
+        # 3. 使用 json_repair 从全文提取（可能返回 list 如 [{...}]，取首元素）
         data = repair_json(text)
-        if data:
-            parsed = cls._dict_to_action(data)
-            if parsed:
-                return parsed
+        if data is not None:
+            if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+                data = data[0]
+            if isinstance(data, dict):
+                parsed = cls._dict_to_action(data)
+                if parsed:
+                    return parsed
 
-        # 4. 直接解析整段
+        # 4. 直接解析整段（可能是纯 JSON 或 ``` 包裹；支持单元素数组 [{...}]）
         try:
             clean = text
             if clean.startswith("```json"):
@@ -117,11 +135,45 @@ class AgentAction:
                 clean = clean[:-3]
             clean = clean.strip()
             data = json.loads(clean)
-            return cls._dict_to_action(data)
+            if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+                data = data[0]
+            if isinstance(data, dict):
+                return cls._dict_to_action(data)
         except (json.JSONDecodeError, KeyError, ValueError):
             pass
 
         return None
+
+    @classmethod
+    def _parse_truncated_json_block(cls, raw: str) -> Optional["AgentAction"]:
+        """尝试修补 LM Studio 等返回的截断 JSON（流断开或 max_tokens 导致未闭合），再解析为动作。"""
+        if not raw.strip().startswith("{"):
+            return None
+        depth = 0
+        for c in raw:
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+        if depth <= 0:
+            return None
+        repaired = raw.rstrip()
+        if repaired.endswith(","):
+            repaired = repaired[:-1]
+        repaired += ', "action_type": "think", "params": {"thought": "输出被截断，继续下一步。"}' + "}" * depth
+        data = repair_json(repaired)
+        if data is None:
+            try:
+                data = json.loads(repaired)
+            except json.JSONDecodeError:
+                return None
+        if not isinstance(data, dict):
+            return None
+        action_type_str = (data.get("action_type") or data.get("action") or "").strip()
+        if not action_type_str:
+            data["action_type"] = "think"
+            data["params"] = data.get("params") or {"thought": (data.get("reasoning") or "输出被截断，继续思考下一步。")[:200]}
+        return cls._dict_to_action(data)
 
     @staticmethod
     def _extract_brace_blocks(text: str) -> list[str]:
@@ -143,12 +195,16 @@ class AgentAction:
 
     @classmethod
     def _dict_to_action(cls, data: dict) -> Optional["AgentAction"]:
-        """从 dict 构建 AgentAction"""
+        """从 dict 构建 AgentAction（兼容 action_type / action / actionType，及空格形式如 run shell）"""
         if not isinstance(data, dict):
             return None
-        action_type_str = (data.get("action_type") or data.get("action") or "").lower().strip()
+        action_type_str = (
+            data.get("action_type") or data.get("action") or data.get("actionType") or ""
+        ).lower().strip()
         if not action_type_str:
             return None
+        # 本地模型（如 LM Studio）可能输出 "run shell"、"get system info"，统一为下划线形式
+        action_type_str = re.sub(r"\s+", "_", action_type_str)
         try:
             action_type = ActionType(action_type_str)
         except ValueError:
@@ -218,6 +274,8 @@ class TaskContext:
     adaptive_max_iterations: int = 50  # Dynamic max that can be adjusted
     retry_count: int = 0
     max_retries: int = 3
+    consecutive_action_failures: int = 0  # 连续动作执行失败次数（think 成功不重置）
+    max_consecutive_action_failures: int = 3  # 达到此次数即停止并返回未完成任务
     status: str = "running"
     stop_reason: Optional[str] = None
     stop_message: Optional[str] = None
@@ -346,6 +404,10 @@ ACTION_SCHEMAS = {
     },
     ActionType.CLIPBOARD_WRITE: {
         "required": ["content"],
+        "optional": []
+    },
+    ActionType.CALL_TOOL: {
+        "required": ["tool_name", "args"],
         "optional": []
     },
     ActionType.THINK: {

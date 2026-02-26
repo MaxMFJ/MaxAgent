@@ -19,6 +19,8 @@ _model_lock = threading.Lock()
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
 ENABLE_VECTOR_SEARCH = os.getenv("ENABLE_VECTOR_SEARCH", "true").lower() == "true"
 # 国内可设 HF_ENDPOINT=https://hf-mirror.com 加速下载
+# 关闭 BGE/sentence_transformers 的 tqdm 进度条，避免被日志/前端误显示为 [ERROR]
+os.environ["TQDM_DISABLE"] = "1"
 
 # 项目内嵌模型目录：若存在则优先从此加载，不再启动时从 Hugging Face 下载
 _BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -189,7 +191,7 @@ class VectorMemoryStore:
             return None
 
         try:
-            embedding = model.encode(text, normalize_embeddings=True)
+            embedding = model.encode(text, normalize_embeddings=True, show_progress_bar=False)
             return np.array(embedding, dtype=np.float32)
         except BrokenPipeError:
             if _retry:
@@ -347,51 +349,67 @@ class VectorMemoryStore:
         self,
         current_query: str,
         max_tokens: int = 2000,
-        recent_count: int = 3,
-        semantic_count: int = 5
+        recent_count: int = 4,
+        semantic_count: int = 3
     ) -> List[Dict[str, Any]]:
         """
-        Get optimized context messages for LLM
-        Combines recent messages with semantically relevant ones
+        Get optimized context messages for LLM.
+        Combines recent messages (连贯性) with semantically relevant ones (相关性).
+        每条消息内容超过 max_msg_chars 时会被截断，避免单条消息消耗过多 token。
         """
+        MAX_MSG_CHARS = 800  # 单条消息最大字符数
+
+        def _truncate(text: str) -> str:
+            if len(text) <= MAX_MSG_CHARS:
+                return text
+            return text[:MAX_MSG_CHARS] + "...[截断]"
+
+        def _estimate_tokens(text: str) -> int:
+            # 中文约 1.5 字符/token，英文约 4 字符/token，取中间值 ~2
+            return len(text) // 2
+
         try:
             messages = []
             seen_ids = set()
             estimated_tokens = 0
-            
-            # 1. 先添加最近的消息（保持连贯性）
+
+            # 1. 最近消息（保持对话连贯性）
             recent = self.get_recent(recent_count)
-            for item in reversed(recent):  # 按时间顺序
+            for item in reversed(recent):
                 if item.id not in seen_ids:
-                    msg_tokens = len(item.content) // 2  # 粗略估计
+                    content = _truncate(item.content)
+                    msg_tokens = _estimate_tokens(content)
                     if estimated_tokens + msg_tokens > max_tokens:
                         break
-                    messages.append({"role": item.role, "content": item.content})
+                    messages.append({"role": item.role, "content": content})
                     seen_ids.add(item.id)
                     estimated_tokens += msg_tokens
-            
-            # 2. 添加语义相关的消息
+
+            # 2. 语义相关的历史消息（BGE 检索，补充与当前查询相关的上下文）
             if current_query:
                 try:
                     relevant = self.search(current_query, top_k=semantic_count)
                     for item in relevant:
                         if item.id not in seen_ids:
-                            msg_tokens = len(item.content) // 2
+                            content = _truncate(item.content)
+                            msg_tokens = _estimate_tokens(content)
                             if estimated_tokens + msg_tokens > max_tokens:
                                 break
-                            messages.append({"role": item.role, "content": item.content})
+                            messages.append({"role": item.role, "content": content})
                             seen_ids.add(item.id)
                             estimated_tokens += msg_tokens
                 except Exception as e:
                     logger.warning(f"Semantic search failed: {e}")
-            
-            logger.info(f"Context optimized: {len(messages)} messages, ~{estimated_tokens} tokens (saved from {len(self.items)} total)")
-            
+
+            logger.info(
+                f"Context optimized: {len(messages)} msgs, ~{estimated_tokens} tokens "
+                f"(from {len(self.items)} total items, recent={recent_count}, semantic={semantic_count})"
+            )
+
             return messages
-            
+
         except Exception as e:
             logger.error(f"get_context_messages error: {e}")
-            # 返回空列表，让上层使用 recent_messages
             return []
 
 

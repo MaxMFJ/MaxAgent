@@ -138,6 +138,7 @@ struct GeneralSettingsContent: View {
                 
                 Picker("", selection: $viewModel.provider) {
                     Text("DeepSeek").tag("deepseek")
+                    Text("New API").tag("newapi")
                     Text("Ollama").tag("ollama")
                     Text("LM Studio").tag("lmstudio")
                 }
@@ -229,6 +230,8 @@ struct ModelSettingsContent: View {
             switch viewModel.provider {
             case "deepseek":
                 deepSeekConfig
+            case "newapi":
+                newApiConfig
             case "ollama":
                 ollamaConfig
             case "lmstudio":
@@ -305,6 +308,60 @@ struct ModelSettingsContent: View {
                 }
                 
                 Link("获取 API Key →", destination: URL(string: "https://platform.deepseek.com/")!)
+                    .font(.caption)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - New API 配置（统一转发网关，OpenAI 兼容，按语雀文档配置）
+    private var newApiConfig: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("New API 配置")
+                .font(.headline)
+            Text("统一 AI 模型网关，支持 OpenAI / Claude / Gemini 等格式转发。默认使用 cc1 地址，请按文档配置 API Key 与模型。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("API Key / Token:")
+                        .frame(width: 100, alignment: .leading)
+                    Group {
+                        if showApiKey {
+                            TextField("输入 Token", text: $viewModel.newApiKey)
+                        } else {
+                            SecureField("输入 Token", text: $viewModel.newApiKey)
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .id(showApiKey)
+                    Button(action: { showApiKey.toggle() }) {
+                        Image(systemName: showApiKey ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                HStack {
+                    Text("API 地址:")
+                        .frame(width: 100, alignment: .leading)
+                    TextField("https://cc1.newapi.ai/v1", text: $viewModel.newApiBaseUrl)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                
+                HStack {
+                    Text("模型:")
+                        .frame(width: 100, alignment: .leading)
+                    TextField("如 gpt-4o、deepseek-chat 等", text: $viewModel.newApiModel)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                
+                Link("New API 配置说明文档 →", destination: URL(string: "https://www.yuque.com/nicaisadasd/fwextu/ekk2q8nrf3ow4k9q")!)
                     .font(.caption)
             }
             .padding()

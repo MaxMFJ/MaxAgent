@@ -62,6 +62,9 @@ if not _root.handlers:
 _root.setLevel(logging.INFO)
 
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+# websockets 的 keepalive ping timeout / ConnectionClosed 是客户端断连时的正常行为，不需要 ERROR 级别
+logging.getLogger("websockets").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 setup_log_capture()
 

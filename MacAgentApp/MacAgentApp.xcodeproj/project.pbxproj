@@ -29,7 +29,6 @@
 		B100000F234567890ABCDEF1 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010234567890ABCDEF1 /* MarkdownParser.swift */; };
 		B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012234567890ABCDEF1 /* RichMarkdownView.swift */; };
 		B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */; };
-		B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037234567890ABCDEF1 /* RichMessageTextView.swift */; };
 		B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000016234567890ABCDEF1 /* CodeBlockView.swift */; };
 		B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000018234567890ABCDEF1 /* MarkdownElements.swift */; };
 		B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A234567890ABCDEF1 /* AsyncImageView.swift */; };
@@ -41,6 +40,7 @@
 		B1000025234567890ABCDEF1 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000026234567890ABCDEF1 /* WelcomeView.swift */; };
 		B1000027234567890ABCDEF1 /* TypingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000028234567890ABCDEF1 /* TypingIndicator.swift */; };
 		B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002A234567890ABCDEF1 /* ViewExtensions.swift */; };
+		B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037234567890ABCDEF1 /* RichMessageTextView.swift */; };
 		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
 		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
@@ -71,7 +71,6 @@
 		B1000010234567890ABCDEF1 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		B1000012234567890ABCDEF1 /* RichMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMarkdownView.swift; sourceTree = "<group>"; };
 		B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineMarkdownText.swift; sourceTree = "<group>"; };
-		B1000037234567890ABCDEF1 /* RichMessageTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMessageTextView.swift; sourceTree = "<group>"; };
 		B1000016234567890ABCDEF1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
 		B1000018234567890ABCDEF1 /* MarkdownElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownElements.swift; sourceTree = "<group>"; };
 		B100001A234567890ABCDEF1 /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncImageView.swift; sourceTree = "<group>"; };
@@ -83,6 +82,7 @@
 		B1000026234567890ABCDEF1 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		B1000028234567890ABCDEF1 /* TypingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingIndicator.swift; sourceTree = "<group>"; };
 		B100002A234567890ABCDEF1 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
+		B1000037234567890ABCDEF1 /* RichMessageTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMessageTextView.swift; sourceTree = "<group>"; };
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -535,6 +535,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = MA8YY74FVW;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -567,6 +568,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = MA8YY74FVW;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;

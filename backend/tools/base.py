@@ -44,37 +44,68 @@ class ToolResult:
             result["error"] = self.error
         return result
     
+    # 发送给 LLM 的工具结果最大字符数（约 1500 token）
+    MAX_RESULT_CHARS = 3000
+
     def to_string(self) -> str:
-        """Convert result to string for LLM consumption (excludes large data like base64)"""
+        """Convert result to string for LLM consumption (excludes large/binary data)"""
         if self.success:
             if isinstance(self.data, dict):
                 import json
-                # 过滤掉大型数据字段，避免 token 超限
                 filtered_data = self._filter_large_data(self.data)
-                return json.dumps(filtered_data, ensure_ascii=False, indent=2)
+                text = json.dumps(filtered_data, ensure_ascii=False, indent=2)
             elif isinstance(self.data, list):
                 import json
-                return json.dumps(self.data, ensure_ascii=False, indent=2)
-            return str(self.data) if self.data else "操作成功"
+                filtered_list = [
+                    self._filter_large_data(item) if isinstance(item, dict) else item
+                    for item in self.data
+                ]
+                text = json.dumps(filtered_list, ensure_ascii=False, indent=2)
+            else:
+                text = str(self.data) if self.data else "操作成功"
+
+            if len(text) > self.MAX_RESULT_CHARS:
+                text = text[: self.MAX_RESULT_CHARS] + f"\n...[结果已截断，原始长度 {len(text)} 字符]"
+            return text
         return f"错误: {self.error}"
-    
+
+    # 已知的二进制/大体积字段名（精确匹配）
+    _BINARY_FIELD_NAMES = {
+        "image_base64", "base64", "screenshot_data", "binary",
+        "raw_data", "encoded", "audio_base64",
+    }
+
     def _filter_large_data(self, data: Dict) -> Dict:
-        """Filter out large data fields like base64 images"""
+        """Filter out binary blobs and oversized string values from tool results"""
         if not isinstance(data, dict):
             return data
-        
+
         filtered = {}
-        large_fields = {"image_base64", "base64", "data", "content"}
-        
         for key, value in data.items():
-            if key in large_fields and isinstance(value, str) and len(value) > 1000:
-                # 替换大型数据为简短描述
-                filtered[key] = f"[{len(value)} 字符的数据，已省略]"
+            if isinstance(value, str):
+                # 已知二进制字段或任何超长字符串
+                is_known_binary = key in self._BINARY_FIELD_NAMES
+                is_oversized = len(value) > 1500
+                if is_known_binary and len(value) > 200:
+                    filtered[key] = f"[二进制数据，{len(value)} 字符，已省略]"
+                elif is_oversized:
+                    filtered[key] = value[:1500] + f"...[截断，共 {len(value)} 字符]"
+                else:
+                    filtered[key] = value
             elif isinstance(value, dict):
                 filtered[key] = self._filter_large_data(value)
+            elif isinstance(value, list):
+                filtered[key] = [
+                    self._filter_large_data(item) if isinstance(item, dict) else item
+                    for item in value[:50]  # 最多保留 50 个元素
+                ]
+                if len(value) > 50:
+                    filtered[key].append(f"...[共 {len(value)} 项，已截断]")
+            elif isinstance(value, bytes):
+                filtered[key] = f"[二进制数据，{len(value)} 字节]"
             else:
                 filtered[key] = value
-        
+
         return filtered
 
 

@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 # 极简版（Tool Runtime v2 默认）- 不注入工具列表
 LOCAL_MODEL_SYSTEM_PROMPT_V2 = """你是 MacAgent，macOS 智能助手。
 如果需要使用工具，输出 JSON：{"tool":"工具名","args":{...}}
-可用工具包括 app_control, terminal, file_operations, screenshot, web_search, capsule 等。
+可用工具包括 app_control, terminal, file_operations, screenshot, web_search, capsule, mail 等。
+发送邮件：若系统已配置 SMTP，必须用 mail 工具（{"tool":"mail","args":{"action":"send","to":"收件人","subject":"主题","body":"正文"}}），禁止用 run_shell/AppleScript 打开 Mail.app。
 上下文推荐技能时用 capsule 工具执行。
 否则直接用中文回复。"""
 
@@ -223,8 +224,8 @@ def supports_function_calling(provider: str, model: str = "") -> bool:
     provider_lower = provider.lower()
     model_lower = model.lower() if model else ""
     
-    # 远程 API 通常支持 function calling
-    if provider_lower in ("deepseek", "openai"):
+    # 远程 API 通常支持 function calling（New API 为 OpenAI 兼容网关）
+    if provider_lower in ("deepseek", "openai", "newapi"):
         return True
     
     # 大多数本地模型不支持或不擅长 function calling

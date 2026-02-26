@@ -8,6 +8,7 @@ Supports both remote (function calling) and local (text parsing) models
 import asyncio
 import json
 import logging
+import os
 from typing import List, Dict, Any, Optional, AsyncGenerator
 
 from .execution_log_handler import QueueLogHandler
@@ -24,7 +25,7 @@ from .task_context_manager import (
 )
 from .agent_state import get_current_task, set_current_task, clear_current_task
 from .context_enhancer import get_context_enhancer
-from .prompt_loader import get_full_system_prompt
+from .prompt_loader import get_full_system_prompt, get_system_prompt_for_query
 from .event_bus import get_event_bus
 from .event_schema import (
     Event,
@@ -89,8 +90,14 @@ class AgentCore:
         """Get all registered tools"""
         return self.registry.list_tools()
     
-    def get_tool_schemas(self) -> List[Dict[str, Any]]:
-        """Get tool schemas for LLM"""
+    def get_tool_schemas(self, query: str = "") -> List[Dict[str, Any]]:
+        """Get tool schemas for LLM, optionally pruned by query relevance"""
+        if query:
+            return self.registry.get_relevant_schemas(
+                query,
+                max_tools=8,
+                always_include=["terminal", "file_operations", "app_control"],
+            )
         return self.registry.get_schemas()
     
     def reset_conversation(self, session_id: str = "default"):
@@ -116,13 +123,13 @@ class AgentCore:
         # 构建消息列表（使用语义搜索优化上下文）
         context_messages = context.get_context_messages(current_query=user_message)
         messages = [
-            {"role": "system", "content": get_full_system_prompt()},
+            {"role": "system", "content": get_system_prompt_for_query(user_message)},
             *context_messages
         ]
         
         logger.info(f"Context: {len(context_messages)} messages for query")
         
-        tool_schemas = self.get_tool_schemas()
+        tool_schemas = self.get_tool_schemas(query=user_message)
         
         for iteration in range(self.max_iterations):
             logger.info(f"Agent iteration {iteration + 1}, session: {session_id}")
@@ -231,7 +238,7 @@ class AgentCore:
         # 构建消息列表（使用增强后的查询进行语义搜索）
         context_messages = context.get_context_messages(current_query=enhanced_message)
         
-        base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_full_system_prompt()
+        base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message)
         combined_extra = "\n\n".join(p for p in [extra_system_prompt, evomap_context] if p)
         system_prompt = f"{base_prompt}\n\n{combined_extra}" if combined_extra else base_prompt
         
@@ -243,14 +250,24 @@ class AgentCore:
         logger.info(f"Context: {len(context_messages)} messages for query, local_mode={use_local_mode}, provider={provider}, model={model_name}")
         
         # 本地模型不传递 tools（通过 prompt 描述工具）
-        tool_schemas = None if use_local_mode else self.get_tool_schemas()
+        tool_schemas = None if use_local_mode else self.get_tool_schemas(query=enhanced_message)
         accumulated_content = ""
         
         truncation_retries = 0
         MAX_TRUNCATION_RETRIES = 2
 
+        # 在线模型连续请求间隔（秒），避免网关「没有可用token」/ upstream error。可通过环境变量覆盖。
+        _delay = float(os.environ.get("LLM_REQUEST_DELAY_SECONDS", "2.0"))
+        if _delay < 0:
+            _delay = 0
+
         for iteration in range(self.max_iterations):
             logger.info(f"Agent stream iteration {iteration + 1}, session: {session_id}, messages: {len(messages)}, local_mode={use_local_mode}")
+            
+            # 在线模型/网关常对同一 token 限制并发，必须等上一轮流式完全结束后再发下一轮，否则易 500。
+            # 非首轮请求前等待，确保网关释放 token 后再发下一请求。
+            if iteration > 0 and not use_local_mode and _delay > 0:
+                await asyncio.sleep(_delay)
             
             tool_calls = []
             current_content = ""

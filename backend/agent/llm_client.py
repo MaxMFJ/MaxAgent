@@ -3,6 +3,7 @@ Unified LLM Client for DeepSeek and Ollama
 Supports both cloud API and local models with a unified interface
 """
 
+import asyncio
 import os
 import json
 import logging
@@ -41,6 +42,10 @@ class LLMConfig:
         elif self.provider == "lmstudio":
             self.base_url = self.base_url or "http://localhost:1234/v1"
             self.api_key = self.api_key or "lm-studio"
+        elif self.provider == "newapi":
+            # New API 统一网关，默认 cc1 地址，配置见语雀文档
+            self.base_url = self.base_url or "https://cc1.newapi.ai/v1"
+            self.api_key = self.api_key or ""
 
 
 class LLMClient:
@@ -146,8 +151,10 @@ class LLMClient:
             "temperature": self.config.temperature,
             "max_tokens": self.config.max_tokens,
             "stream": True,
-            "stream_options": {"include_usage": True},  # 请求在流式响应中包含 token 使用量
         }
+        # stream_options 仅 DeepSeek/OpenAI 原生 API 支持；New API 等兼容网关可能不支持，会导致空响应
+        if self.config.provider in ("deepseek", "openai"):
+            kwargs["stream_options"] = {"include_usage": True}
         
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
@@ -166,10 +173,33 @@ class LLMClient:
             tool_calls_buffer = {}
             chunk_count = 0
             usage_info = None
-            
-            async for chunk in stream:
+            # 单次等待下一个 chunk 的超时（秒）。若 LM Studio 报错但不断开连接，流可能挂起，超时后向前端返回错误并停止旋转。
+            chunk_timeout = 90
+
+            stream_iter = stream.__aiter__()
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(stream_iter.__anext__(), timeout=chunk_timeout)
+                except StopAsyncIteration:
+                    break
+                except asyncio.TimeoutError:
+                    logger.error(
+                        f"LLM stream timeout (no chunk for {chunk_timeout}s). "
+                        f"provider={self.config.provider}, model={self.config.model}. "
+                        "可能原因: LM Studio 报错(如 Channel Error)未正确关闭连接，或模型负载过高。"
+                    )
+                    yield {
+                        "type": "error",
+                        "error": (
+                            "LLM 响应超时。可能原因：\n"
+                            "1. LM Studio 报错（如 Channel Error）未正确传递到客户端；\n"
+                            "2. 模型未加载或负载过高。请查看 LM Studio 日志并重试。"
+                        ),
+                    }
+                    return
+
                 chunk_count += 1
-                
+
                 # 检查是否有 usage 信息（DeepSeek 会在最后一个 chunk 中返回）
                 if hasattr(chunk, 'usage') and chunk.usage:
                     usage_info = {
@@ -230,11 +260,38 @@ class LLMClient:
                     
                     yield {"type": "finish", "finish_reason": finish_reason, "usage": usage_info}
             
+            if chunk_count == 0:
+                logger.warning(
+                    f"LLM stream returned 0 chunks (provider={self.config.provider}, "
+                    f"base_url={self.config.base_url}, model={self.config.model}). "
+                    "可能原因: API 地址需要 /v1 后缀、模型名在服务端未配置、或 Token 无效。"
+                )
             logger.info(f"LLM stream loop ended, total chunks: {chunk_count}")
                     
         except Exception as e:
-            logger.error(f"LLM stream error: {e}", exc_info=True)
-            yield {"type": "error", "error": str(e)}
+            base = (self.config.base_url or "").strip()
+            if not base:
+                base = "(未配置)"
+            logger.error(
+                f"LLM stream error: {e} (provider={self.config.provider}, base_url={base}, model={self.config.model})",
+                exc_info=True,
+            )
+            # 对连接类 / Channel 错误返回友好提示，便于用户在设置中检查 API 与 LM Studio
+            err_msg = str(e)
+            if "Connection" in type(e).__name__ or "Connection" in err_msg or "ConnectError" in err_msg:
+                err_msg = (
+                    f"无法连接到 API 服务（{base}）。请检查：\n"
+                    "1. 网络是否可用；\n"
+                    "2. 设置中「API 地址」是否正确（如 New API 使用 https://cc1.newapi.ai/v1）；\n"
+                    "3. 若为自建服务，是否已启动。\n"
+                    f"原始错误: {e}"
+                )
+            elif "Channel" in err_msg or "channel" in err_msg:
+                err_msg = (
+                    f"LM Studio 返回错误: {e}\n"
+                    "请检查：1) LM Studio 是否已加载模型；2) 模型是否支持当前请求（如视觉模型需传图）；3) 查看 LM Studio 控制台详细错误。"
+                )
+            yield {"type": "error", "error": err_msg}
     
     async def simple_chat(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Simple chat without tools"""

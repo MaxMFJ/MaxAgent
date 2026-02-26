@@ -28,7 +28,7 @@ class ServerStatus(str, Enum):
 
 ENABLE_EVOMAP: bool = os.environ.get("ENABLE_EVOMAP", "false").lower() == "true"
 AUTO_TOOL_UPGRADE: bool = os.environ.get("MACAGENT_AUTO_TOOL_UPGRADE", "true").lower() == "true"
-CLOUD_PROVIDERS = {"deepseek", "openai"}
+CLOUD_PROVIDERS = {"deepseek", "openai", "newapi"}
 
 
 # ============== Task Tracker ==============

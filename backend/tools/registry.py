@@ -65,6 +65,55 @@ class ToolRegistry:
     def get_schemas(self) -> List[Dict[str, Any]]:
         """Get all tool schemas for LLM"""
         return [tool.to_function_schema() for tool in self._tools.values()]
+
+    def get_relevant_schemas(
+        self, query: str, max_tools: int = 8, always_include: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        根据用户查询语义匹配，只返回最相关的工具 schema，大幅减少 token。
+        always_include: 无论匹配结果如何都保留的工具名列表。
+        """
+        all_tools = list(self._tools.values())
+        if len(all_tools) <= max_tools:
+            return self.get_schemas()
+
+        always = set(always_include or [])
+        forced = [t for t in all_tools if t.name in always]
+        candidates = [t for t in all_tools if t.name not in always]
+        remaining_slots = max(1, max_tools - len(forced))
+
+        try:
+            from agent.vector_store import get_embedding_model
+            model = get_embedding_model()
+            if model is not None:
+                import numpy as np
+                tool_texts = [f"{t.name}: {t.description}" for t in candidates]
+                query_emb = model.encode(query, normalize_embeddings=True, show_progress_bar=False)
+                tool_embs = model.encode(tool_texts, normalize_embeddings=True, show_progress_bar=False)
+                sims = np.dot(tool_embs, query_emb)
+                top_idx = np.argsort(sims)[-remaining_slots:][::-1]
+                selected = [candidates[i] for i in top_idx]
+                result = forced + selected
+                logger.info(
+                    f"Tool schema pruned: {len(result)}/{len(all_tools)} "
+                    f"(semantic, top={[t.name for t in selected[:3]]})"
+                )
+                return [t.to_function_schema() for t in result]
+        except Exception as e:
+            logger.debug(f"Semantic tool pruning failed, using keyword fallback: {e}")
+
+        # 关键词回退
+        q_lower = query.lower()
+        scored = []
+        for t in candidates:
+            desc = f"{t.name} {t.description}".lower()
+            score = sum(1 for word in q_lower.split() if word in desc)
+            scored.append((score, t))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        selected = [t for _, t in scored[:remaining_slots]]
+        result = forced + selected
+        logger.info(f"Tool schema pruned: {len(result)}/{len(all_tools)} (keyword)")
+        return [t.to_function_schema() for t in result]
     
     async def execute(self, name: str, **kwargs) -> ToolResult:
         """

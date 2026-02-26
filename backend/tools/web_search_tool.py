@@ -23,6 +23,9 @@ from .base import BaseTool, ToolResult, ToolCategory
 import logging
 logger = logging.getLogger(__name__)
 
+# Wikipedia 要求请求带 User-Agent，否则易返回 403 Forbidden
+WIKIPEDIA_USER_AGENT = "MacAgent/1.0 (Wikipedia summary client; +https://www.mediawiki.org/wiki/API:Main_page)"
+
 
 @dataclass
 class SearchResult:
@@ -940,9 +943,9 @@ class WikipediaTool(BaseTool):
                 "namespace": 0,
                 "format": "json"
             }
-            
+            headers = {"User-Agent": WIKIPEDIA_USER_AGENT}
             async with httpx.AsyncClient() as client:
-                response = await client.get(url, params=params, timeout=10)
+                response = await client.get(url, params=params, headers=headers, timeout=10)
                 data = response.json()
             
             # OpenSearch 返回 [query, [titles], [descriptions], [urls]]
@@ -971,9 +974,9 @@ class WikipediaTool(BaseTool):
             import httpx
             
             url = f"https://{language}.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(query)}"
-            
+            headers = {"User-Agent": WIKIPEDIA_USER_AGENT}
             async with httpx.AsyncClient() as client:
-                response = await client.get(url, timeout=10)
+                response = await client.get(url, headers=headers, timeout=10)
                 
                 if response.status_code == 404:
                     return ToolResult(success=False, error=f"找不到条目: {query}")
@@ -1005,9 +1008,9 @@ class WikipediaTool(BaseTool):
                 "explaintext": True,
                 "format": "json"
             }
-            
+            headers = {"User-Agent": WIKIPEDIA_USER_AGENT}
             async with httpx.AsyncClient() as client:
-                response = await client.get(url, params=params, timeout=15)
+                response = await client.get(url, params=params, headers=headers, timeout=15)
                 data = response.json()
             
             pages = data.get("query", {}).get("pages", {})

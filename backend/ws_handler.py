@@ -37,6 +37,42 @@ HEARTBEAT_INTERVAL = 30  # 服务端心跳间隔（秒）
 
 # ============== Message Handlers ==============
 
+async def _cancel_orphan_tasks(session_id: str):
+    """当 session 内所有客户端都已断开时，取消该 session 的运行中任务"""
+    tracker = get_task_tracker()
+
+    # 取消 autonomous 任务
+    tt = tracker.get_by_session(session_id)
+    if tt and tt.status == AutoTaskStatus.RUNNING and tt.asyncio_task and not tt.asyncio_task.done():
+        tt.asyncio_task.cancel()
+        try:
+            await tt.asyncio_task
+        except asyncio.CancelledError:
+            pass
+        await tracker.finish(tt.task_id, AutoTaskStatus.STOPPED)
+        logger.info(f"Orphan autonomous task cancelled (session: {session_id}, task: {tt.task_id})")
+
+    # 取消 chat 流任务
+    chat_tt = tracker.get_by_session(session_id, task_type=TaskType.CHAT)
+    if chat_tt and chat_tt.status == AutoTaskStatus.RUNNING and chat_tt.asyncio_task and not chat_tt.asyncio_task.done():
+        chat_tt.asyncio_task.cancel()
+        try:
+            await chat_tt.asyncio_task
+        except asyncio.CancelledError:
+            pass
+        await tracker.finish(chat_tt.task_id, AutoTaskStatus.STOPPED)
+        logger.info(f"Orphan chat task cancelled (session: {session_id}, task: {chat_tt.task_id})")
+
+    task = session_stream_tasks.pop(session_id, None)
+    if task and not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        logger.info(f"Orphan stream task cancelled (session: {session_id})")
+
+
 async def _handle_stop(message: dict, websocket: WebSocket, current_session_id: str, actual_client_id: str):
     session_id = message.get("session_id") or message.get("conversation_id") or current_session_id
 
@@ -182,6 +218,10 @@ async def _handle_chat(
                             if not client_gone:
                                 await connection_manager.broadcast_to_session(_sid, img, exclude_client=_cid)
                 else:
+                    # 保证 error 类 chunk 同时带 message 与 error，方便 Mac App 等客户端解析
+                    if chunk_type == "error":
+                        err_text = chunk.get("error") or chunk.get("message") or "未知错误"
+                        chunk = {"type": "error", "error": err_text, "message": err_text}
                     tracker.record_chunk(chat_task_id, chunk)
                     if not client_gone:
                         if not await safe_send_json(websocket, chunk):
@@ -225,7 +265,8 @@ async def _handle_chat(
         except Exception as e:
             final_status = AutoTaskStatus.ERROR
             logger.error(f"Error in stream: {e}", exc_info=True)
-            err_chunk = {"type": "error", "message": str(e)}
+            err_msg = str(e)
+            err_chunk = {"type": "error", "message": err_msg, "error": err_msg}
             tracker.record_chunk(chat_task_id, err_chunk)
             if not client_gone:
                 await safe_send_json(websocket, err_chunk)
@@ -389,6 +430,19 @@ async def _handle_autonomous_task(
     autonomous_agent = get_autonomous_agent()
     task = message.get("task", "")
     session_id = message.get("session_id") or current_session_id
+
+    # 将当前连接加入任务使用的 session，否则 broadcast_to_session(session_id, chunk) 发不到本客户端
+    if session_id != current_session_id:
+        async with connection_manager._lock:
+            if actual_client_id in connection_manager._connections:
+                conn = connection_manager._connections[actual_client_id]
+                old_sid = conn.session_id
+                conn.session_id = session_id
+                if old_sid in connection_manager._session_connections:
+                    connection_manager._session_connections[old_sid].discard(actual_client_id)
+                if session_id not in connection_manager._session_connections:
+                    connection_manager._session_connections[session_id] = set()
+                connection_manager._session_connections[session_id].add(actual_client_id)
 
     enable_model_selection = message.get("enable_model_selection", True)
     prefer_local = message.get("prefer_local", False)
@@ -798,3 +852,7 @@ async def websocket_endpoint(
         except asyncio.CancelledError:
             pass
         await connection_manager.disconnect(actual_client_id)
+
+        remaining = connection_manager.get_session_client_count(current_session_id)
+        if remaining == 0:
+            await _cancel_orphan_tasks(current_session_id)

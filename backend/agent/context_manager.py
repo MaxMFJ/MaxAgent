@@ -27,9 +27,9 @@ class ConversationContext:
     last_active: datetime = field(default_factory=datetime.now)
     
     # 配置
-    max_recent_messages: int = 10  # 保留最近的消息数
+    max_recent_messages: int = 10  # 内存中保留最近的消息数
     use_vector_search: bool = True  # 启用向量搜索
-    max_context_tokens: int = 3000  # 上下文最大 token 数
+    max_context_tokens: int = 2000  # 发送给 LLM 的上下文最大 token 数（从 3000 降低）
     
     def __post_init__(self):
         self._vector_store: Optional[VectorMemoryStore] = None
@@ -90,12 +90,14 @@ class ConversationContext:
         
         try:
             if self.use_vector_search and current_query and len(self.recent_messages) > 3:
-                # 使用向量搜索获取相关上下文
+                # recent_count=4: 保留最近 4 条消息（2 轮对话）维持连贯性
+                # semantic_count=3: 通过 BGE 语义检索补充最相关的历史片段
+                # 这样 BGE 真正发挥裁剪作用，而非返回全部历史
                 context_messages = self.vector_store.get_context_messages(
                     current_query=current_query,
                     max_tokens=self.max_context_tokens,
-                    recent_count=self.max_recent_messages,
-                    semantic_count=5
+                    recent_count=4,
+                    semantic_count=3
                 )
                 
                 if context_messages:

@@ -154,9 +154,35 @@ class LocalLLMManager:
         self._all_configs = all_configs
         return all_configs
 
+    def _get_preferred_local_model(self) -> Optional[str]:
+        """Return user's preferred local model from llm_config if provider is local (ollama/lmstudio)."""
+        try:
+            from llm_config import load_llm_config
+            cfg = load_llm_config()
+            provider = (cfg.get("provider") or "").strip().lower()
+            model = (cfg.get("model") or "").strip()
+            if not model:
+                return None
+            if provider in ("ollama", "lmstudio", "lm_studio"):
+                return model
+            return None
+        except Exception:
+            return None
+
     async def detect_available_service(self) -> LocalLLMConfig:
-        """Detect all local services and pick the best model"""
+        """Detect all local services and pick model: prefer user's saved choice, else best by size."""
         all_configs = await self.detect_all_services()
+        preferred = self._get_preferred_local_model()
+        chosen = None
+        if preferred:
+            for c in all_configs:
+                if self._is_chat_model(c.model) and (c.model == preferred or c.model.endswith("/" + preferred)):
+                    chosen = c
+                    break
+            if chosen:
+                self._current_config = chosen
+                logger.info(f"Using preferred local model: {chosen.provider.value}/{chosen.model}")
+                return chosen
         best = self._pick_best(all_configs)
         if best:
             self._current_config = best

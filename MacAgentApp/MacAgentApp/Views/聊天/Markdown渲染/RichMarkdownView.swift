@@ -14,40 +14,82 @@ private struct WidthPreferenceKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
-/// 统一富文本 + 图片：文本部分用 NSTextView（可选、可复制、链接可点），图片单独渲染。
+/// 段落类型：一段连续文本（用 NSTextView 渲染）或一个代码块（用可折叠 CodeBlockView 渲染）
+private enum UnifiedSegment {
+    case text([MarkdownElement])
+    case code(code: String, language: String?)
+}
+
+/// 统一富文本 + 图片：文本段用 NSTextView（可选、可复制、链接可点），代码块用可折叠 CodeBlockView，图片单独渲染。
 struct UnifiedMarkdownView: View {
     let content: String
-    @State private var elements: [MarkdownElement] = []
     @State private var contentWidth: CGFloat = 400
+    @State private var segmentHeights: [Int: CGFloat] = [:]
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            RichMessageTextView(
-                attributedContent: RichMessageTextView.buildAttributedString(from: textElements),
-                width: max(200, contentWidth)
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(GeometryReader { g in Color.clear.preference(key: WidthPreferenceKey.self, value: g.size.width) })
-            
-            ForEach(Array(imageElements.enumerated()), id: \.offset) { _, element in
-                renderImageElement(element)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .onPreferenceChange(WidthPreferenceKey.self) { contentWidth = $0 }
-        .onAppear { elements = MarkdownParser.parse(content) }
-        .onChange(of: content) { _, newContent in elements = MarkdownParser.parse(newContent) }
+    /// 直接由 content 推导
+    private var elements: [MarkdownElement] {
+        MarkdownParser.parse(content)
     }
     
-    private var textElements: [MarkdownElement] {
-        elements.filter {
+    /// 将元素切成「文本段」与「代码块」交替的列表，不含图片
+    private var segments: [UnifiedSegment] {
+        let nonImage = elements.filter {
             switch $0 { case .image, .base64Image, .localImage: return false; default: return true }
         }
+        var out: [UnifiedSegment] = []
+        var textAccum: [MarkdownElement] = []
+        for el in nonImage {
+            if case .codeBlock(let code, let lang) = el {
+                if !textAccum.isEmpty {
+                    out.append(.text(textAccum))
+                    textAccum = []
+                }
+                out.append(.code(code: code, language: lang))
+            } else {
+                textAccum.append(el)
+            }
+        }
+        if !textAccum.isEmpty { out.append(.text(textAccum)) }
+        return out
     }
     
     private var imageElements: [MarkdownElement] {
         elements.filter {
             switch $0 { case .image, .base64Image, .localImage: return true; default: return false }
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                segmentView(index: index, segment: segment)
+            }
+            ForEach(Array(imageElements.enumerated()), id: \.offset) { _, element in
+                renderImageElement(element)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GeometryReader { g in Color.clear.preference(key: WidthPreferenceKey.self, value: g.size.width) })
+        .onPreferenceChange(WidthPreferenceKey.self) { contentWidth = $0 }
+    }
+    
+    @ViewBuilder
+    private func segmentView(index: Int, segment: UnifiedSegment) -> some View {
+        switch segment {
+        case .text(let els):
+            let binding = Binding<CGFloat>(
+                get: { segmentHeights[index] ?? 40 },
+                set: { segmentHeights[index] = $0 }
+            )
+            RichMessageTextView(
+                attributedContent: RichMessageTextView.buildAttributedString(from: els),
+                width: max(200, contentWidth),
+                reportedHeight: binding
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: max(40, binding.wrappedValue))
+        case .code(let code, let lang):
+            CodeBlockView(code: code, language: lang)
         }
     }
     

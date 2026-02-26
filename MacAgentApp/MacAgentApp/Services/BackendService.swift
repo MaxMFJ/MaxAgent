@@ -686,6 +686,15 @@ class BackendService: ObservableObject {
                                     let output = json["output"] as? String
                                     let error = json["error"] as? String
                                     continuation.yield(.actionResult(actionId: actionId, success: success, output: output, error: error))
+                                    // 后端在 action_result 中单独带上 screenshot_path / image_base64 时，再发一次图片 chunk 以便聊天展示
+                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty {
+                                        if let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                            let mime = json["mime_type"] as? String ?? "image/png"
+                                            continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
+                                        } else {
+                                            continuation.yield(.localImage(path: path))
+                                        }
+                                    }
                                     
                                 case "reflect_start":
                                     continuation.yield(.reflectStart)
@@ -970,6 +979,15 @@ class BackendService: ObservableObject {
                                     let output = json["output"] as? String
                                     let error = json["error"] as? String
                                     continuation.yield(.actionResult(actionId: actionId, success: success, output: output, error: error))
+                                    // 后端在 action_result 中单独带上 screenshot_path / image_base64 时，再发一次图片 chunk 以便聊天展示
+                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty {
+                                        if let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                            let mime = json["mime_type"] as? String ?? "image/png"
+                                            continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
+                                        } else {
+                                            continuation.yield(.localImage(path: path))
+                                        }
+                                    }
                                     
                                 case "reflect_start":
                                     continuation.yield(.reflectStart)

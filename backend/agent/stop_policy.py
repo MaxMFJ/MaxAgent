@@ -444,9 +444,10 @@ class AdaptiveStopPolicy:
         self.loop_detector.record(action_type, action_hash)
         self.cost_tracker.record(token_cost, execution_time_ms)
         
-        # Track consecutive failures
+        # Track consecutive failures（仅在实际工具成功时重置，think 成功不重置，避免“失败+think”交替时永远不停止）
         if success:
-            self.consecutive_failures = 0
+            if action_type != "think":
+                self.consecutive_failures = 0
         else:
             self.consecutive_failures += 1
         

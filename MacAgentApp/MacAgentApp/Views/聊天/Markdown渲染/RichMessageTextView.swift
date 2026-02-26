@@ -8,6 +8,8 @@ struct RichMessageTextView: NSViewRepresentable {
     /// 仅用于「仅文本元素」的预构建内容（与 content 二选一，优先使用）
     var attributedContent: NSAttributedString? = nil
     var width: CGFloat = 500
+    /// 向 SwiftUI 报告内容高度，避免 NSViewRepresentable 被压成 0 高度导致不显示
+    @Binding var reportedHeight: CGFloat
     
     private var effectiveAttributedString: NSAttributedString {
         if let attr = attributedContent { return attr }
@@ -37,6 +39,8 @@ struct RichMessageTextView: NSViewRepresentable {
         ]
         
         textView.textStorage?.setAttributedString(effectiveAttributedString)
+        // 延迟一帧再上报高度，确保 NSTextView 已完成布局（首帧时 container 可能尚未正确 layout）
+        DispatchQueue.main.async { updateReportedHeight(textView: textView) }
         
         return scrollView
     }
@@ -48,6 +52,26 @@ struct RichMessageTextView: NSViewRepresentable {
             textView.textStorage?.setAttributedString(attr)
         }
         textView.textContainer?.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
+        updateReportedHeight(textView: textView)
+    }
+    
+    private func updateReportedHeight(textView: NSTextView) {
+        guard let layoutManager = textView.layoutManager,
+              let container = textView.textContainer else { return }
+        layoutManager.ensureLayout(for: container)
+        let glyphRange = layoutManager.glyphRange(for: container)
+        let newHeight: CGFloat
+        if glyphRange.length > 0 {
+            let usedRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: container)
+            let inset = textView.textContainerInset
+            newHeight = max(24, ceil(usedRect.height + inset.height * 2))
+        } else {
+            newHeight = 24
+        }
+        // 延后到当前 view 更新周期之后再写状态，避免 "Publishing changes from within view updates"
+        Task { @MainActor in
+            reportedHeight = newHeight
+        }
     }
     
     // MARK: - Build NSAttributedString from markdown content

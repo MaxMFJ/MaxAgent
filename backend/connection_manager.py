@@ -126,6 +126,12 @@ class ConnectionManager:
             if cid in self._connections
         ]
 
+    def get_session_client_count(self, session_id: str) -> int:
+        """返回 session 内当前在线的客户端数量"""
+        if session_id not in self._session_connections:
+            return 0
+        return len(self._session_connections[session_id])
+
     def get_stats(self) -> dict:
         type_counts: Dict[str, int] = {}
         for conn in self._connections.values():
