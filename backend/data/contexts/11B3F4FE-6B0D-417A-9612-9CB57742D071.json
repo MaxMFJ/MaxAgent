@@ -1,0 +1,15 @@
+{
+  "session_id": "11B3F4FE-6B0D-417A-9612-9CB57742D071",
+  "recent_messages": [
+    {
+      "role": "user",
+      "content": "截取屏幕给我"
+    },
+    {
+      "role": "assistant",
+      "content": "已为你截取了当前全屏截图，图片已显示在上方。"
+    }
+  ],
+  "created_at": "2026-02-25T18:02:28.464993",
+  "last_active": "2026-02-25T18:02:45.415931"
+}

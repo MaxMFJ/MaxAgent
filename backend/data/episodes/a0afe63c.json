@@ -1,0 +1,19 @@
+{
+  "episode_id": "a0afe63c",
+  "task_description": "发送邮件给675632487@qq.com 报告系统状态",
+  "action_log": [],
+  "result": "已成功发送系统状态报告邮件至 675632487@qq.com。",
+  "success": true,
+  "total_actions": 4,
+  "total_iterations": 4,
+  "execution_time_ms": 0,
+  "user_feedback": null,
+  "strategies_used": [],
+  "reflection": null,
+  "created_at": "2026-02-26T10:49:50.676058",
+  "token_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  }
+}
