@@ -26,6 +26,7 @@ from .stop_policy import (
     create_stop_policy, TaskComplexity
 )
 from .capsule_registry import get_capsule_registry
+from .safety import validate_action_safe
 from tools.router import execute_tool
 
 try:
@@ -385,35 +386,61 @@ class AutonomousAgent:
 
     def _detect_repeated_failure(self, context: TaskContext) -> int:
         """
-        Analyze recent action logs for repetitive failure patterns.
-        Returns escalation level: ESCALATION_NORMAL / FORCE_SWITCH / SKILL_FALLBACK.
+        v3.1: 基于 embedding 相似度或 fallback 到 md5，判断重复失败并返回 escalation 等级。
+        阈值从 app_state (ESCALATION_* ) 读取。
         """
         logs = context.action_logs
         if len(logs) < 2:
             return ESCALATION_NORMAL
+        try:
+            from app_state import (
+                ESCALATION_FORCE_AFTER_N,
+                ESCALATION_SKILL_AFTER_N,
+                ESCALATION_SIMILARITY_THRESHOLD,
+            )
+        except ImportError:
+            ESCALATION_FORCE_AFTER_N, ESCALATION_SKILL_AFTER_N = 2, 3
+            ESCALATION_SIMILARITY_THRESHOLD = 0.85
 
         recent = logs[-5:]
+        failed_logs = [log for log in recent if not log.result.success]
+        if len(failed_logs) < 2:
+            return ESCALATION_NORMAL
+        signatures = []
+        for log in failed_logs:
+            sig_text = f"{log.action.action_type.value}:{log.result.error or str(log.result.output) or ''}"[:300]
+            signatures.append(sig_text)
 
-        # Hash each action's (type + truncated output) to detect similarity
-        hashes: List[str] = []
-        for log in recent:
-            sig = f"{log.action.action_type.value}:{str(log.result.output)[:200]}"
-            hashes.append(hashlib.md5(sig.encode()).hexdigest()[:10])
-
-        # Count how many of the last N are identical
-        last_hash = hashes[-1]
         consecutive_same = 0
-        for h in reversed(hashes):
-            if h == last_hash:
-                consecutive_same += 1
-            else:
-                break
+        last_sig = signatures[-1]
+        try:
+            from .vector_store import encode_text_for_similarity
+            import numpy as np
+            last_emb = encode_text_for_similarity(last_sig)
+            if last_emb is not None:
+                for i in range(len(signatures) - 1, -1, -1):
+                    emb = encode_text_for_similarity(signatures[i])
+                    if emb is not None and np.dot(last_emb, emb) >= ESCALATION_SIMILARITY_THRESHOLD:
+                        consecutive_same += 1
+                    else:
+                        break
+        except Exception as e:
+            logger.debug("Escalation embedding fallback to hash: %s", e)
+            last_emb = None
 
-        if consecutive_same >= 3:
+        if last_emb is None:
+            hashes = [hashlib.md5(s.encode()).hexdigest()[:10] for s in signatures]
+            last_hash = hashes[-1]
+            for h in reversed(hashes):
+                if h == last_hash:
+                    consecutive_same += 1
+                else:
+                    break
+
+        if consecutive_same >= ESCALATION_SKILL_AFTER_N:
             return ESCALATION_SKILL_FALLBACK
-        if consecutive_same >= 2:
+        if consecutive_same >= ESCALATION_FORCE_AFTER_N:
             return ESCALATION_FORCE_SWITCH
-
         return ESCALATION_NORMAL
 
     def _build_escalation_prompt(
@@ -442,6 +469,77 @@ class AutonomousAgent:
             parts.append(skill_guidance)
 
         return "\n\n".join(parts)
+
+    async def _run_mid_loop_reflection(self, context: TaskContext) -> Optional[str]:
+        """
+        v3.1: 中途轻量反思，返回一句改进建议供下一轮 prompt 注入。
+        使用 reflect_llm 或 llm，超时 30s。
+        """
+        try:
+            from app_state import ENABLE_MID_LOOP_REFLECTION
+            if not ENABLE_MID_LOOP_REFLECTION:
+                return None
+        except ImportError:
+            pass
+        client = self.reflect_llm or self.llm
+        if not client:
+            return None
+        recent = context.action_logs[-5:]
+        if len(recent) < 2:
+            return None
+        steps_text = "\n".join(
+            f"  {i+1}. {log.action.action_type.value}: {'成功' if log.result.success else '失败'}"
+            + (f" - {log.result.error[:80]}" if log.result.error else "")
+            for i, log in enumerate(recent)
+        )
+        prompt = f"""任务: {context.task_description}
+
+最近步骤:
+{steps_text}
+
+请用一两句话给出下一步改进建议（不要重复已失败的做法）。直接输出建议，不要 JSON。"""
+        try:
+            if get_timeout_policy is not None:
+                resp = await get_timeout_policy().with_llm_timeout(
+                    client.chat(messages=[{"role": "user", "content": prompt}]),
+                    timeout=30.0,
+                )
+            else:
+                resp = await asyncio.wait_for(client.chat(messages=[{"role": "user", "content": prompt}]), timeout=30.0)
+            content = (resp.get("content") or "").strip()
+            return content[:500] if content else None
+        except Exception as e:
+            logger.debug("Mid-loop reflection failed: %s", e)
+            return None
+
+    async def _generate_plan(self, task: str) -> List[str]:
+        """
+        v3.1 Plan-and-Execute: 生成高层子任务列表，供执行循环参考。
+        返回 sub_tasks: List[str]，失败或未启用时返回空列表。
+        """
+        try:
+            from app_state import ENABLE_PLAN_AND_EXECUTE
+            if not ENABLE_PLAN_AND_EXECUTE:
+                return []
+        except ImportError:
+            return []
+        prompt = f"""请将以下任务拆解为 3-7 个可执行的子步骤，每行一个简短子目标，不要编号不要 JSON。
+任务: {task}
+
+子步骤（每行一条）:"""
+        try:
+            if get_timeout_policy is not None:
+                resp = await get_timeout_policy().with_llm_timeout(self.llm.chat(messages=[{"role": "user", "content": prompt}]))
+            else:
+                resp = await self.llm.chat(messages=[{"role": "user", "content": prompt}])
+            content = (resp.get("content") or "").strip()
+            lines = [ln.strip() for ln in content.split("\n") if ln.strip() and not ln.strip().startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "-", "*"))]
+            if not lines:
+                lines = [ln.strip().lstrip("0123456789.-) ") for ln in content.split("\n") if ln.strip()][:7]
+            return lines[:7] if lines else []
+        except Exception as e:
+            logger.debug("Plan generation failed: %s", e)
+            return []
 
     # ------------------------------------------------------------------
     # Task-start: skill/capsule 扫描与工具提示（避免盲目 run_shell）
@@ -600,6 +698,9 @@ class AutonomousAgent:
         self._escalation_prompt: str = ""
         self._user_context: str = user_context
         self._skill_guidance_cache: Optional[str] = None
+        self._mid_reflection_hint: str = ""  # v3.1 中途反思结果，注入下一轮 prompt
+        self._current_plan: List[str] = []  # v3.1 Plan-and-Execute 子任务列表
+        self._current_plan_index: int = 0
         
         # 任务启动时注入：匹配的 skill/capsule + 工具提示（截图用 call_tool/screencapture）
         self._task_guidance: str = ""
@@ -648,6 +749,18 @@ class AutonomousAgent:
             state_machine = TaskStateMachine(task_id)
             state_machine.transition(TaskState.RUNNING)
             yield {"type": "task_state", "task_id": task_id, "state": state_machine.state.value}
+        
+        # v3.1 Plan-and-Execute: 可选先生成子任务列表
+        try:
+            from app_state import ENABLE_PLAN_AND_EXECUTE
+            if ENABLE_PLAN_AND_EXECUTE:
+                plan = await self._generate_plan(task)
+                if plan:
+                    self._current_plan = plan
+                    self._current_plan_index = 0
+                    yield {"type": "plan_created", "task_id": task_id, "sub_tasks": plan}
+        except Exception as e:
+            logger.debug("Plan-and-Execute init failed: %s", e)
         
         try:
             while True:
@@ -838,11 +951,37 @@ class AutonomousAgent:
                     # 仅在实际工具成功时重置连续动作失败计数，think 成功不重置
                     if action.action_type != ActionType.THINK:
                         context.consecutive_action_failures = 0
+                        # v3.1 成功一步后推进当前子目标索引
+                        plan = getattr(self, "_current_plan", [])
+                        idx = getattr(self, "_current_plan_index", 0)
+                        if plan and idx < len(plan) - 1:
+                            self._current_plan_index = idx + 1
+                
+                # v3.1 中途反思：每 N 步或连续失败时触发，结果写入 _mid_reflection_hint 供下一轮注入
+                try:
+                    from app_state import ENABLE_MID_LOOP_REFLECTION, MID_LOOP_REFLECTION_EVERY_N
+                except ImportError:
+                    ENABLE_MID_LOOP_REFLECTION, MID_LOOP_REFLECTION_EVERY_N = True, 5
+                if ENABLE_MID_LOOP_REFLECTION and len(context.action_logs) >= 2:
+                    if context.current_iteration % MID_LOOP_REFLECTION_EVERY_N == 0 or context.consecutive_action_failures >= 2:
+                        hint = await self._run_mid_loop_reflection(context)
+                        if hint:
+                            self._mid_reflection_hint = hint
                 
                 # Layer 2 & 3: Detect repeated failures and escalate strategy
                 new_level = self._detect_repeated_failure(context)
                 if new_level > self._escalation_level:
                     self._escalation_level = new_level
+                    # v3.1 Replan on escalation (FORCE_SWITCH 或以上)
+                    if new_level >= ESCALATION_FORCE_SWITCH and getattr(self, "_current_plan", None):
+                        try:
+                            replan = await self._generate_plan(context.task_description)
+                            if replan:
+                                self._current_plan = replan
+                                self._current_plan_index = 0
+                                yield {"type": "plan_replanned", "task_id": task_id, "sub_tasks": replan}
+                        except Exception as e:
+                            logger.debug("Replan failed: %s", e)
                     skill_guidance = ""
                     if new_level >= ESCALATION_SKILL_FALLBACK:
                         if self._skill_guidance_cache is None:
@@ -959,9 +1098,25 @@ class AutonomousAgent:
             "{user_context}", user_ctx if user_ctx else ""
         )
 
+        # v3.1: 结构化上下文（可选）+ Goal 重述
+        try:
+            from app_state import USE_SUMMARIZED_CONTEXT, GOAL_RESTATE_EVERY_N
+        except ImportError:
+            USE_SUMMARIZED_CONTEXT = True
+            GOAL_RESTATE_EVERY_N = 6
+        if USE_SUMMARIZED_CONTEXT and hasattr(context, "summarize_history_for_llm"):
+            context_str = context.summarize_history_for_llm(max_recent=5, max_chars=3500)
+        else:
+            context_str = context.get_context_for_llm()
+        if GOAL_RESTATE_EVERY_N and context.current_iteration > 0 and context.current_iteration % GOAL_RESTATE_EVERY_N == 0:
+            context_str = f"【当前目标】原始任务: {context.task_description}\n\n" + context_str
+        plan = getattr(self, "_current_plan", []) or []
+        plan_index = getattr(self, "_current_plan_index", 0)
+        if plan and plan_index < len(plan):
+            context_str += f"\n\n【当前建议子目标】{plan[plan_index]}"
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": context.get_context_for_llm()}
+            {"role": "user", "content": context_str}
         ]
         
         if not context.action_logs:
@@ -993,6 +1148,11 @@ class AutonomousAgent:
             escalation = getattr(self, "_escalation_prompt", "")
             if escalation:
                 result_summary += f"\n\n{escalation}"
+            # v3.1 中途反思建议回写
+            mid_hint = getattr(self, "_mid_reflection_hint", "") or ""
+            if mid_hint:
+                result_summary += f"\n\n【中途反思建议】{mid_hint}"
+                self._mid_reflection_hint = ""
 
             messages.append({
                 "role": "user",
@@ -1046,9 +1206,16 @@ class AutonomousAgent:
             return None
     
     async def _execute_action(self, action: AgentAction) -> ActionResult:
-        """Execute a single action"""
+        """Execute a single action. v3.1: 统一安全校验在入口执行。"""
         start_time = time.time()
-        
+        ok, err = validate_action_safe(action)
+        if not ok:
+            return ActionResult(
+                action_id=action.action_id,
+                success=False,
+                error=err or "安全校验未通过",
+                execution_time_ms=int((time.time() - start_time) * 1000),
+            )
         handler = self._action_handlers.get(action.action_type)
         if not handler:
             return ActionResult(
@@ -1533,21 +1700,8 @@ class AutonomousAgent:
         return {"success": success, "output": summary}
     
     def _is_dangerous_command(self, command: str) -> bool:
-        """Check if command is dangerous"""
-        dangerous_patterns = [
-            "rm -rf /",
-            "rm -rf /*",
-            "rm -rf ~",
-            "mkfs",
-            "dd if=",
-            ":(){:|:&};:",
-            "chmod -R 777 /",
-            "> /dev/sda",
-            "mv /* ",
-        ]
-        
-        command_lower = command.lower()
-        for pattern in dangerous_patterns:
-            if pattern.lower() in command_lower:
-                return True
-        return False
+        """Check if command is dangerous (delegate to safety module)."""
+        ok, _ = validate_action_safe(
+            AgentAction(action_type=ActionType.RUN_SHELL, params={"command": command or ""}, reasoning="")
+        )
+        return not ok

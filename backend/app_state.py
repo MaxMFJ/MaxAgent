@@ -33,6 +33,17 @@ AUTO_TOOL_UPGRADE: bool = os.environ.get("MACAGENT_AUTO_TOOL_UPGRADE", "true").l
 ENABLE_LANGCHAIN_COMPAT: bool = os.environ.get("ENABLE_LANGCHAIN_COMPAT", "true").lower() == "true"
 CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
 
+# v3.1 Feature flags（环境变量可覆盖）
+USE_SUMMARIZED_CONTEXT: bool = os.environ.get("MACAGENT_USE_SUMMARIZED_CONTEXT", "true").lower() == "true"
+GOAL_RESTATE_EVERY_N: int = max(1, int(os.environ.get("MACAGENT_GOAL_RESTATE_EVERY_N", "6")))
+ENABLE_PLAN_AND_EXECUTE: bool = os.environ.get("MACAGENT_ENABLE_PLAN_AND_EXECUTE", "false").lower() == "true"
+ENABLE_MID_LOOP_REFLECTION: bool = os.environ.get("MACAGENT_ENABLE_MID_LOOP_REFLECTION", "true").lower() == "true"
+MID_LOOP_REFLECTION_EVERY_N: int = max(1, int(os.environ.get("MACAGENT_MID_LOOP_REFLECTION_EVERY_N", "5")))
+# Escalation: 连续 N 次“相似失败”触发 FORCE_SWITCH / SKILL_FALLBACK；相似度阈值 0.0~1.0
+ESCALATION_FORCE_AFTER_N: int = max(1, int(os.environ.get("MACAGENT_ESCALATION_FORCE_AFTER_N", "2")))
+ESCALATION_SKILL_AFTER_N: int = max(2, int(os.environ.get("MACAGENT_ESCALATION_SKILL_AFTER_N", "3")))
+ESCALATION_SIMILARITY_THRESHOLD: float = max(0.0, min(1.0, float(os.environ.get("MACAGENT_ESCALATION_SIMILARITY_THRESHOLD", "0.85"))))
+
 
 # ============== Task Tracker ==============
 

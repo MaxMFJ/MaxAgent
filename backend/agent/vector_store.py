@@ -148,6 +148,23 @@ def preload_embedding_model():
     logger.info("BGE embedding loading in background (see 'Embedding model loaded' when RAG is ready)")
 
 
+def encode_text_for_similarity(text: str):
+    """
+    v3.1: 对单段文本编码为归一化向量，供 escalation 等相似度比较。
+    返回 np.ndarray 或 None（模型不可用时）。
+    """
+    model = get_embedding_model()
+    if model is None or not text:
+        return None
+    try:
+        import numpy as np
+        emb = model.encode(text.strip()[:1000], normalize_embeddings=True, show_progress_bar=False)
+        return np.array(emb, dtype=np.float32)
+    except Exception as e:
+        logger.debug("encode_text_for_similarity failed: %s", e)
+        return None
+
+
 @dataclass
 class MemoryItem:
     """A single memory item with embedding"""

@@ -351,6 +351,70 @@ class TaskContext:
         
         return "\n".join(lines)
 
+    # ---------- v3.1 结构化 memory：供上下文压缩与防漂移 ----------
+    def get_structured_history(self) -> List[Dict[str, Any]]:
+        """
+        返回结构化步骤列表，便于压缩/摘要而非纯字符串拼接。
+        每项: iteration, thought, action_type, observation_summary, success
+        """
+        out: List[Dict[str, Any]] = []
+        for log in self.action_logs:
+            obs = ""
+            if log.result.output:
+                obs = str(log.result.output)[:300]
+            if log.result.error:
+                obs = (obs + " [错误: " + log.result.error[:150] + "]").strip()
+            out.append({
+                "iteration": log.iteration,
+                "thought": (log.action.reasoning or "")[:200],
+                "action_type": log.action.action_type.value,
+                "observation_summary": obs,
+                "success": log.result.success,
+            })
+        return out
+
+    def summarize_history_for_llm(
+        self,
+        max_recent: int = 5,
+        max_chars: int = 3500,
+    ) -> str:
+        """
+        在控制 token 的前提下生成给 LLM 的历史上下文。
+        最近 max_recent 条完整保留，更早的每 5 步合并为一行摘要；总长度约 max_chars。
+        v3.1 可替代或与 get_context_for_llm 并存（FeatureFlag 切换）。
+        """
+        structured = self.get_structured_history()
+        if not structured:
+            lines = [f"任务: {self.task_description}", "", f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}"]
+            return "\n".join(lines)
+
+        lines = [f"任务: {self.task_description}", ""]
+        n = len(structured)
+        # 较早部分：每 5 步合并一行
+        if n > max_recent:
+            older = structured[: n - max_recent]
+            for i in range(0, len(older), 5):
+                chunk = older[i : i + 5]
+                successes = sum(1 for s in chunk if s["success"])
+                types = ", ".join(dict.fromkeys(s["action_type"] for s in chunk))
+                lines.append(f"  步骤 {chunk[0]['iteration']}–{chunk[-1]['iteration']}: {types}（成功 {successes}/{len(chunk)}）")
+            lines.append("")
+        # 最近 max_recent 条完整
+        lines.append("最近步骤:")
+        for s in structured[-max_recent:]:
+            status = "✓" if s["success"] else "✗"
+            lines.append(f"  [{status}] {s['action_type']}: {s['thought'][:60]}")
+            if s["observation_summary"]:
+                lines.append(f"      结果: {s['observation_summary'][:180]}")
+        lines.append("")
+        lines.append(f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}")
+        if self.get_success_rate() < 0.5:
+            lines.append(f"⚠️ 成功率较低: {self.get_success_rate():.1%}，请仔细分析错误原因")
+        result = "\n".join(lines)
+        if len(result) > max_chars:
+            result = result[: max_chars] + "\n...(已截断)"
+        return result
+
 
 # Action parameter schemas for validation
 ACTION_SCHEMAS = {
