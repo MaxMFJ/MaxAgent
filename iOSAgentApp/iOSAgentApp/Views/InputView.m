@@ -4,6 +4,8 @@
 
 @property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) UIButton *sendButton;
+@property (nonatomic, strong) UIButton *voiceButton;
+@property (nonatomic, strong) UIButton *autonomousButton;
 @property (nonatomic, strong) UILabel *placeholderLabel;
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) NSLayoutConstraint *textViewHeightConstraint;
@@ -18,6 +20,7 @@
         [self setupUI];
         _enabled = YES;
         _loading = NO;
+        _voiceInputActive = NO;
     }
     return self;
 }
@@ -29,6 +32,21 @@
     separator.translatesAutoresizingMaskIntoConstraints = NO;
     separator.backgroundColor = [UIColor separatorColor];
     [self addSubview:separator];
+    
+    _voiceButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    _voiceButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
+    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateSelected];
+    _voiceButton.tintColor = [UIColor systemGrayColor];
+    [_voiceButton addTarget:self action:@selector(voiceButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_voiceButton];
+    
+    _autonomousButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    _autonomousButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [_autonomousButton setImage:[UIImage systemImageNamed:@"robot" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
+    _autonomousButton.tintColor = [UIColor systemGrayColor];
+    [_autonomousButton addTarget:self action:@selector(autonomousButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_autonomousButton];
     
     _containerView = [[UIView alloc] init];
     _containerView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -69,9 +87,25 @@
         [separator.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:0.5],
         
+        [_voiceButton.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:12],
+        [_voiceButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
+        [_voiceButton.widthAnchor constraintEqualToConstant:40],
+        [_voiceButton.heightAnchor constraintEqualToConstant:40],
+        
         [_containerView.topAnchor constraintEqualToAnchor:self.topAnchor constant:8],
-        [_containerView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:16],
+        [_containerView.leadingAnchor constraintEqualToAnchor:_voiceButton.trailingAnchor constant:4],
         [_containerView.bottomAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-8],
+        
+        [_autonomousButton.leadingAnchor constraintEqualToAnchor:_containerView.trailingAnchor constant:4],
+        [_autonomousButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
+        [_autonomousButton.widthAnchor constraintEqualToConstant:40],
+        [_autonomousButton.heightAnchor constraintEqualToConstant:40],
+        
+        [_sendButton.leadingAnchor constraintEqualToAnchor:_autonomousButton.trailingAnchor constant:4],
+        [_sendButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-12],
+        [_sendButton.bottomAnchor constraintEqualToAnchor:_containerView.bottomAnchor],
+        [_sendButton.widthAnchor constraintEqualToConstant:40],
+        [_sendButton.heightAnchor constraintEqualToConstant:40],
         
         [_textView.topAnchor constraintEqualToAnchor:_containerView.topAnchor constant:2],
         [_textView.leadingAnchor constraintEqualToAnchor:_containerView.leadingAnchor constant:12],
@@ -80,14 +114,21 @@
         _textViewHeightConstraint,
         
         [_placeholderLabel.leadingAnchor constraintEqualToAnchor:_textView.leadingAnchor constant:5],
-        [_placeholderLabel.centerYAnchor constraintEqualToAnchor:_textView.centerYAnchor],
-        
-        [_sendButton.leadingAnchor constraintEqualToAnchor:_containerView.trailingAnchor constant:8],
-        [_sendButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-12],
-        [_sendButton.bottomAnchor constraintEqualToAnchor:_containerView.bottomAnchor],
-        [_sendButton.widthAnchor constraintEqualToConstant:40],
-        [_sendButton.heightAnchor constraintEqualToConstant:40]
+        [_placeholderLabel.centerYAnchor constraintEqualToAnchor:_textView.centerYAnchor]
     ]];
+}
+
+- (void)voiceButtonTapped {
+    if ([self.delegate respondsToSelector:@selector(inputViewDidRequestVoiceInput:)]) {
+        [self.delegate inputViewDidRequestVoiceInput:self];
+    }
+}
+
+- (void)autonomousButtonTapped {
+    NSString *text = [self.textView.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (text.length > 0 && [self.delegate respondsToSelector:@selector(inputView:didRequestSendAsAutonomousTask:)]) {
+        [self.delegate inputView:self didRequestSendAsAutonomousTask:text];
+    }
 }
 
 - (void)sendButtonTapped {
@@ -137,6 +178,13 @@
         [self.sendButton setImage:[UIImage systemImageNamed:@"arrow.up.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
         self.sendButton.tintColor = [UIColor systemBlueColor];
     }
+    self.autonomousButton.enabled = self.enabled && self.textView.text.length > 0 && !self.loading;
+}
+
+- (void)setVoiceInputActive:(BOOL)voiceInputActive {
+    _voiceInputActive = voiceInputActive;
+    self.voiceButton.selected = voiceInputActive;
+    self.voiceButton.tintColor = voiceInputActive ? [UIColor systemRedColor] : [UIColor systemGrayColor];
 }
 
 #pragma mark - UITextViewDelegate

@@ -52,3 +52,16 @@
 
 /* Input */
 "message_placeholder" = "Message...";
+
+/* Voice (TTS / STT) */
+"voice_section" = "Voice";
+"tts_read_reply" = "Read assistant reply (TTS)";
+"stt_voice_input" = "Voice input (STT)";
+"stt_voice_input_hint" = "Tap the microphone next to the input to start; silence sends automatically.";
+"voice_section_footer" = "TTS reads replies on this device. STT uses the microphone for speech-to-text.";
+
+/* Autonomous Task */
+"autonomous_starting" = "Starting autonomous execution...";
+"autonomous_stopped" = "Task stopped.";
+"model_local" = "Local model";
+"model_remote" = "Remote model";

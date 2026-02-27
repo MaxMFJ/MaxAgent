@@ -473,6 +473,22 @@ static inline NSInteger _IntegerFromJSON(id obj) {
     else if ([type isEqualToString:@"resume_chat_streaming"]) {
         NSLog(@"[WebSocket] Resume chat streaming started");
     }
+    else if ([type isEqualToString:@"speak"]) {
+        NSString *text = json[@"text"] ?: json[@"message"] ?: @"";
+        if (text.length > 0 && [self.delegate respondsToSelector:@selector(webSocketService:didReceiveSpeak:)]) {
+            [self.delegate webSocketService:self didReceiveSpeak:text];
+        }
+    }
+    else if ([type isEqualToString:@"model_selected"] || [type isEqualToString:@"task_start"] ||
+             [type isEqualToString:@"task_analysis"] || [type isEqualToString:@"action_plan"] ||
+             [type isEqualToString:@"action_executing"] || [type isEqualToString:@"action_result"] ||
+             [type isEqualToString:@"reflect_start"] || [type isEqualToString:@"reflect_result"] ||
+             [type isEqualToString:@"task_complete"] || [type isEqualToString:@"task_stopped"] ||
+             [type isEqualToString:@"progress_update"]) {
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveAutonomousChunk:)]) {
+            [self.delegate webSocketService:self didReceiveAutonomousChunk:json];
+        }
+    }
     else {
         NSLog(@"[WebSocket] Unhandled message type: %@", type);
     }

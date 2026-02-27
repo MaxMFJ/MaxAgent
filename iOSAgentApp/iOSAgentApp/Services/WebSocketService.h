@@ -35,6 +35,11 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service taskResumeDidFail:(NSString *)message;
 - (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount;
 
+/// 服务端下发朗读指令（如 notification(speak)）
+- (void)webSocketService:(WebSocketService *)service didReceiveSpeak:(NSString *)text;
+/// 自主任务流式 chunk（model_selected, task_start, action_plan, action_result, task_complete 等）
+- (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk;
+
 @end
 
 @interface WebSocketService : NSObject

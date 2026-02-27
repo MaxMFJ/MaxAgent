@@ -21,6 +21,9 @@
 		RES002 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = RES_LAUNCH /* LaunchScreen.storyboard */; };
 		RES003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = RES_LOC_GROUP /* Localizable.strings */; };
 		SVC001 /* WebSocketService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* WebSocketService.m */; };
+		SVC002 /* TTSService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC015 /* TTSService.m */; };
+		SVC003 /* VoiceInputService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC016 /* VoiceInputService.m */; };
+		FRM003 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_SPEECH /* Speech.framework */; };
 		VCT001 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC007 /* ChatViewController.m */; };
 		VCT002 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC008 /* SettingsViewController.m */; };
 		VCT003 /* ImageZoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC011 /* ImageZoomViewController.m */; };
@@ -68,6 +71,11 @@
 		SRC013H /* ConversationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConversationManager.h; sourceTree = "<group>"; };
 		SRC014 /* ConversationListViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ConversationListViewController.m; sourceTree = "<group>"; };
 		SRC014H /* ConversationListViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConversationListViewController.h; sourceTree = "<group>"; };
+		SRC015 /* TTSService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TTSService.m; sourceTree = "<group>"; };
+		SRC015H /* TTSService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TTSService.h; sourceTree = "<group>"; };
+		SRC016 /* VoiceInputService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceInputService.m; sourceTree = "<group>"; };
+		SRC016H /* VoiceInputService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceInputService.h; sourceTree = "<group>"; };
+		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +85,7 @@
 			files = (
 				FRM001 /* AVFoundation.framework in Frameworks */,
 				FRM002 /* AudioToolbox.framework in Frameworks */,
+				FRM003 /* Speech.framework in Frameworks */,
 				97CDC1CBC125030C68B28F0D /* Pods_iOSAgentApp.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -116,6 +125,7 @@
 			children = (
 				FRM_AV /* AVFoundation.framework */,
 				FRM_AUDIO /* AudioToolbox.framework */,
+				FRM_SPEECH /* Speech.framework */,
 				73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */,
 			);
 			name = Frameworks;
@@ -169,6 +179,10 @@
 			children = (
 				SRC004H /* WebSocketService.h */,
 				SRC004 /* WebSocketService.m */,
+				SRC015H /* TTSService.h */,
+				SRC015 /* TTSService.m */,
+				SRC016H /* VoiceInputService.h */,
+				SRC016 /* VoiceInputService.m */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -300,6 +314,8 @@
 				APP002 /* SceneDelegate.m in Sources */,
 				APP003 /* main.m in Sources */,
 				SVC001 /* WebSocketService.m in Sources */,
+				SVC002 /* TTSService.m in Sources */,
+				SVC003 /* VoiceInputService.m in Sources */,
 				MDL001 /* Message.m in Sources */,
 				MDL002 /* ServerConfig.m in Sources */,
 				MDL003 /* Conversation.m in Sources */,

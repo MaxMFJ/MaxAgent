@@ -9,6 +9,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)inputView:(InputView *)inputView didSendMessage:(NSString *)message;
 - (void)inputViewDidRequestStop:(InputView *)inputView;
 
+@optional
+- (void)inputViewDidRequestVoiceInput:(InputView *)inputView;
+- (void)inputView:(InputView *)inputView didRequestSendAsAutonomousTask:(NSString *)text;
+
 @end
 
 @interface InputView : UIView
@@ -16,6 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) id<InputViewDelegate> delegate;
 @property (nonatomic, assign, getter=isEnabled) BOOL enabled;
 @property (nonatomic, assign, getter=isLoading) BOOL loading;
+@property (nonatomic, assign, getter=isVoiceInputActive) BOOL voiceInputActive;
 
 - (void)clearText;
 - (void)setText:(NSString *)text;

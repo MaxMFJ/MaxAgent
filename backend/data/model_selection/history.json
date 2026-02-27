@@ -306,5 +306,49 @@
     "token_usage": 0,
     "quality_score": 0.0,
     "timestamp": "2026-02-26T17:58:40.616185"
+  },
+  {
+    "task_hash": "da6089f7fc86",
+    "task_description": "打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": false,
+    "execution_time_ms": 69178,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-26T18:32:09.314209"
+  },
+  {
+    "task_hash": "7eca689f0d33",
+    "task_description": "你好",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 24070,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-26T18:42:45.274597"
+  },
+  {
+    "task_hash": "7eca689f0d33",
+    "task_description": "你好",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 22957,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-26T18:43:20.716104"
+  },
+  {
+    "task_hash": "edcf4b6885e1",
+    "task_description": "帮我打开微信",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 31426,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-27T09:44:26.493864"
   }
 ]

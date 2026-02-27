@@ -52,3 +52,16 @@
 
 /* Input */
 "message_placeholder" = "输入消息...";
+
+/* Voice (TTS / STT) */
+"voice_section" = "语音";
+"tts_read_reply" = "朗读助手回复 (TTS)";
+"stt_voice_input" = "语音输入 (STT)";
+"stt_voice_input_hint" = "点击输入框旁麦克风开始；静音后自动发送。";
+"voice_section_footer" = "TTS 在本机朗读回复；STT 使用麦克风将语音转为文字。";
+
+/* Autonomous Task */
+"autonomous_starting" = "正在启动自主执行...";
+"autonomous_stopped" = "任务已停止";
+"model_local" = "本地模型";
+"model_remote" = "远程模型";

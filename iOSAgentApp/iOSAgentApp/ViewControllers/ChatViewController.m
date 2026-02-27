@@ -8,6 +8,8 @@
 #import "InputView.h"
 #import "ImageZoomViewController.h"
 #import "ConversationManager.h"
+#import "TTSService.h"
+#import "VoiceInputService.h"
 
 @interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate>
 
@@ -19,10 +21,13 @@
 
 @property (nonatomic, strong, nullable) Message *currentAssistantMessage;
 @property (nonatomic, strong) NSLayoutConstraint *inputViewBottomConstraint;
+@property (nonatomic, strong, nullable) NSTimer *autonomousTimeoutTimer;
 
 @end
 
 @implementation ChatViewController
+
+static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -33,7 +38,27 @@
     [self setupUI];
     [self setupKeyboardObservers];
     [self setupWebSocket];
+    [self setupVoiceInput];
     [self updateTitle];
+}
+
+- (void)setupVoiceInput {
+    __weak typeof(self) wself = self;
+    [VoiceInputService sharedService].onTextUpdate = ^(NSString *interim, NSString *final) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSString *show = interim.length > 0 ? interim : (final ?: @"");
+            [wself.inputView setText:show];
+        });
+    };
+    [VoiceInputService sharedService].onShouldSubmit = ^(NSString *text) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            wself.inputView.voiceInputActive = NO;
+            [wself.inputView setText:@""];
+            if (text.length > 0) {
+                [wself inputView:wself.inputView didSendMessage:text];
+            }
+        });
+    };
 }
 
 - (void)updateTitle {
@@ -159,6 +184,7 @@
 }
 
 - (void)switchToConversation:(Conversation *)conversation {
+    [[TTSService sharedService] stop];
     ConversationManager *manager = [ConversationManager sharedManager];
     [manager selectConversation:conversation];
     
@@ -190,6 +216,7 @@
 }
 
 - (void)clearChat {
+    [[TTSService sharedService] stop];
     ConversationManager *manager = [ConversationManager sharedManager];
     Conversation *currentConv = manager.currentConversation;
     
@@ -439,11 +466,89 @@
     [inputView clearText];
     
     self.inputView.loading = YES;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
+        [[TTSService sharedService] resetStreamState];
+    }
     [[WebSocketService sharedService] sendChatMessage:message sessionId:currentConv.conversationId];
+}
+
+- (void)inputViewDidRequestVoiceInput:(InputView *)inputView {
+    (void)inputView;
+    VoiceInputService *voice = [VoiceInputService sharedService];
+    if (voice.isRecording) {
+        NSString *committed = [voice commitCurrentText];
+        self.inputView.voiceInputActive = NO;
+        [self.inputView setText:@""];
+        if (committed.length > 0) {
+            [self inputView:self.inputView didSendMessage:committed];
+        }
+    } else {
+        [voice startRecording];
+        self.inputView.voiceInputActive = YES;
+    }
+}
+
+- (void)inputView:(InputView *)inputView didRequestSendAsAutonomousTask:(NSString *)text {
+    (void)inputView;
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    if (!currentConv) {
+        currentConv = [manager createNewConversation];
+    }
+    NSString *userContent = [NSString stringWithFormat:@"🤖 [自主任务] %@", text];
+    Message *userMessage = [Message userMessageWithContent:userContent];
+    [currentConv.messages addObject:userMessage];
+    self.currentAssistantMessage = [Message assistantMessage];
+    self.currentAssistantMessage.content = NSLocalizedString(@"autonomous_starting", nil);
+    [currentConv.messages addObject:self.currentAssistantMessage];
+    currentConv.updatedAt = [NSDate date];
+    if (currentConv.messages.count == 2) {
+        NSUInteger maxLength = MIN(30, userContent.length);
+        currentConv.title = [userContent substringToIndex:maxLength];
+        [self updateTitle];
+    }
+    [manager saveConversations];
+    [self.tableView reloadData];
+    [self scrollToBottom];
+    [self.inputView clearText];
+    self.inputView.loading = YES;
+    [self cancelAutonomousTimeout];
+    __weak typeof(self) wself = self;
+    self.autonomousTimeoutTimer = [NSTimer scheduledTimerWithTimeInterval:600 repeats:NO block:^(NSTimer * _Nonnull t) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong typeof(wself) self = wself;
+            if (!self) return;
+            if (self.inputView.loading && self.currentAssistantMessage) {
+                self.inputView.loading = NO;
+                [self.currentAssistantMessage appendContent:@"\n\n[超时未收到完成信号，已停止等待]"];
+                NSMutableArray<Message *> *messages = [self currentMessages];
+                NSInteger idx = [messages indexOfObject:self.currentAssistantMessage];
+                if (idx != NSNotFound) {
+                    [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:idx inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
+                }
+                ConversationManager *m = [ConversationManager sharedManager];
+                if (m.currentConversation) {
+                    m.currentConversation.updatedAt = [NSDate date];
+                    [m saveConversations];
+                }
+                self.currentAssistantMessage = nil;
+            }
+            [self cancelAutonomousTimeout];
+        });
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:self.autonomousTimeoutTimer forMode:NSRunLoopCommonModes];
+    [[WebSocketService sharedService] sendAutonomousTask:text sessionId:currentConv.conversationId];
+}
+
+- (void)cancelAutonomousTimeout {
+    [self.autonomousTimeoutTimer invalidate];
+    self.autonomousTimeoutTimer = nil;
 }
 
 - (void)inputViewDidRequestStop:(InputView *)inputView {
     (void)inputView;
+    [self cancelAutonomousTimeout];
+    [[TTSService sharedService] stop];
     self.inputView.loading = NO;
     
     ConversationManager *manager = [ConversationManager sharedManager];
@@ -496,7 +601,10 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.currentAssistantMessage) {
             [self.currentAssistantMessage appendContent:content];
-            
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
+                NSString *full = self.currentAssistantMessage.content ?: @"";
+                [[TTSService sharedService] appendAndSpeakStreamedContent:full];
+            }
             NSMutableArray<Message *> *messages = [self currentMessages];
             NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
             if (index != NSNotFound) {
@@ -566,6 +674,7 @@
 
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName tokenUsage:(NSDictionary<NSString *,NSNumber *> *)tokenUsage {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.status = MessageStatusComplete;
@@ -593,11 +702,15 @@
                 [manager saveConversations];
             }
         }
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
+            [[TTSService sharedService] speakRemainingBuffer];
+        }
     });
 }
 
 - (void)webSocketServiceDidStop:(WebSocketService *)service {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
@@ -639,6 +752,7 @@
 
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [NSString stringWithFormat:NSLocalizedString(@"error_format", nil), errorMessage];
@@ -689,6 +803,81 @@
 - (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount {
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"[Chat] Resume chat successful: task=%@, buffered=%ld", taskId, (long)bufferedCount);
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveSpeak:(NSString *)text {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[TTSService sharedService] speak:text];
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!self.currentAssistantMessage) return;
+        NSString *type = chunk[@"type"];
+        NSMutableString *append = [NSMutableString string];
+        if ([type isEqualToString:@"model_selected"]) {
+            NSString *modelType = chunk[@"model_type"] ?: @"";
+            NSString *reason = chunk[@"reason"] ?: @"";
+            NSString *icon = [modelType isEqualToString:@"local"] ? @"🏠" : @"☁️";
+            NSString *name = [modelType isEqualToString:@"local"] ? NSLocalizedString(@"model_local", nil) : NSLocalizedString(@"model_remote", nil);
+            [append appendFormat:@"%@ 选择模型: %@\n", icon, name];
+            if (reason.length) [append appendFormat:@"💡 %@\n\n", reason];
+        } else if ([type isEqualToString:@"task_start"]) {
+            [append appendString:@"🚀 任务开始执行...\n"];
+        } else if ([type isEqualToString:@"action_plan"]) {
+            NSDictionary *action = chunk[@"action"];
+            NSString *actionType = ([action isKindOfClass:[NSDictionary class]] ? action[@"action_type"] : nil) ?: @"unknown";
+            NSString *reasoning = ([action isKindOfClass:[NSDictionary class]] ? action[@"reasoning"] : nil) ?: @"";
+            NSNumber *iter = chunk[@"iteration"];
+            [append appendFormat:@"\n📋 步骤 %@: %@\n   → %@\n", iter ? iter.stringValue : @"?", actionType, reasoning];
+        } else if ([type isEqualToString:@"action_executing"]) {
+            NSString *actionType = chunk[@"action_type"] ?: @"";
+            [append appendFormat:@"⏳ 执行中: %@\n", actionType];
+        } else if ([type isEqualToString:@"action_result"]) {
+            id succ = chunk[@"success"];
+            BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
+            NSString *output = chunk[@"output"] ?: @"";
+            NSString *err = chunk[@"error"] ?: @"";
+            if (success && output.length) [append appendFormat:@"   ✓ %@\n", output];
+            else if (err.length) [append appendFormat:@"   ✗ %@\n", err];
+        } else if ([type isEqualToString:@"reflect_start"]) {
+            [append appendString:@"\n🔄 反思中...\n"];
+        } else if ([type isEqualToString:@"reflect_result"]) {
+            NSString *ref = chunk[@"reflection"] ?: chunk[@"error"] ?: @"";
+            if (ref.length) [append appendFormat:@"   %@\n", ref];
+        } else if ([type isEqualToString:@"task_complete"]) {
+            id succ = chunk[@"success"];
+            BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
+            NSString *summary = chunk[@"summary"] ?: @"";
+            [append appendFormat:@"\n%@ 任务完成\n%@\n", success ? @"✅" : @"⚠️", summary];
+        } else if ([type isEqualToString:@"task_stopped"]) {
+            [append appendFormat:@"\n⏹ %@\n", chunk[@"message"] ?: chunk[@"reason"] ?: NSLocalizedString(@"autonomous_stopped", nil)];
+        } else if ([type isEqualToString:@"progress_update"]) {
+            NSString *msg = chunk[@"message"] ?: @"";
+            if (msg.length) [append appendFormat:@"%@\n", msg];
+        }
+        if (append.length > 0) {
+            self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:append];
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
+            if (index != NSNotFound) {
+                [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
+                [self scrollToBottom];
+            }
+        }
+        if ([type isEqualToString:@"task_complete"] || [type isEqualToString:@"task_stopped"] || [type isEqualToString:@"error"]) {
+            [self cancelAutonomousTimeout];
+            self.inputView.loading = NO;
+            self.currentAssistantMessage.status = MessageStatusComplete;
+            ConversationManager *manager = [ConversationManager sharedManager];
+            if (manager.currentConversation) {
+                manager.currentConversation.updatedAt = [NSDate date];
+                [manager saveConversations];
+            }
+            self.currentAssistantMessage = nil;
+        }
     });
 }
 

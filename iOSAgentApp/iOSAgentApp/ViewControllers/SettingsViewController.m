@@ -3,9 +3,14 @@
 #import "WebSocketService.h"
 #import <AVFoundation/AVFoundation.h>
 
+static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
+static NSString * const kUserDefaultsSTTSilenceSeconds = @"sttSilenceSeconds";
+static NSString * const kUserDefaultsSTTNoSpeechTimeoutSeconds = @"sttNoSpeechTimeoutSeconds";
+
 typedef NS_ENUM(NSInteger, SettingsSection) {
     SettingsSectionServer = 0,
     SettingsSectionStatus,
+    SettingsSectionVoice,
     SettingsSectionActions,
     SettingsSectionCount
 };
@@ -18,6 +23,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
 @property (nonatomic, strong) UILabel *modelLabel;
 @property (nonatomic, assign) BOOL isConnected;
 @property (nonatomic, copy, nullable) NSString *currentModel;
+@property (nonatomic, strong) UISwitch *ttsSwitch;
 
 @end
 
@@ -119,6 +125,11 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     }
 }
 
+- (void)ttsSwitchChanged:(UISwitch *)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kUserDefaultsTTSEnabled];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
 - (void)connectButtonTapped {
     [self saveConfig];
     [[WebSocketService sharedService] disconnect];
@@ -180,6 +191,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     switch (section) {
         case SettingsSectionServer: return 2;
         case SettingsSectionStatus: return 2;
+        case SettingsSectionVoice: return 2;
         case SettingsSectionActions: return 2;
         default: return 0;
     }
@@ -189,6 +201,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     switch (section) {
         case SettingsSectionServer: return NSLocalizedString(@"server_configuration", nil);
         case SettingsSectionStatus: return NSLocalizedString(@"status", nil);
+        case SettingsSectionVoice: return NSLocalizedString(@"voice_section", nil);
         case SettingsSectionActions: return NSLocalizedString(@"actions", nil);
         default: return nil;
     }
@@ -197,6 +210,9 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == SettingsSectionServer) {
         return NSLocalizedString(@"server_config_footer", nil);
+    }
+    if (section == SettingsSectionVoice) {
+        return NSLocalizedString(@"voice_section_footer", nil);
     }
     return nil;
 }
@@ -278,6 +294,26 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
             break;
         }
         
+        case SettingsSectionVoice: {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+            if (indexPath.row == 0) {
+                cell.textLabel.text = NSLocalizedString(@"tts_read_reply", nil);
+                if (!self.ttsSwitch) {
+                    self.ttsSwitch = [[UISwitch alloc] init];
+                    [self.ttsSwitch addTarget:self action:@selector(ttsSwitchChanged:) forControlEvents:UIControlEventValueChanged];
+                }
+                self.ttsSwitch.on = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled];
+                cell.accessoryView = self.ttsSwitch;
+            } else {
+                cell.textLabel.text = NSLocalizedString(@"stt_voice_input", nil);
+                cell.detailTextLabel.text = NSLocalizedString(@"stt_voice_input_hint", nil);
+                cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+                cell.detailTextLabel.numberOfLines = 2;
+            }
+            break;
+        }
+        
         case SettingsSectionActions: {
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
             cell.textLabel.textAlignment = NSTextAlignmentCenter;
@@ -300,6 +336,11 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    if (indexPath.section == SettingsSectionVoice && indexPath.row == 0) {
+        [self.ttsSwitch setOn:!self.ttsSwitch.isOn animated:YES];
+        [self ttsSwitchChanged:self.ttsSwitch];
+    }
     
     if (indexPath.section == SettingsSectionActions) {
         if (indexPath.row == 0) {

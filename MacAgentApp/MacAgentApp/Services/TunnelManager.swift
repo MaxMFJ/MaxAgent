@@ -24,6 +24,8 @@ class TunnelManager: ObservableObject {
     private var errorPipe: Pipe?
     private var checkConnectionTask: Task<Void, Never>?
     private var detectExternalTask: Task<Void, Never>?
+    /// 外部 tunnel 检测连续失败次数，用于 control stream 断开后及时显示「已停止」
+    private var externalTunnelFailureCount = 0
     
     struct LogEntry: Identifiable {
         let id = UUID()
@@ -74,25 +76,55 @@ class TunnelManager: ObservableObject {
             var request = URLRequest(url: url)
             request.timeoutInterval = 2
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                await markExternalTunnelUnavailableIfRepeated()
+                return
+            }
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tunnels = json["tunnels"] as? [[String: Any]] else { return }
+                  let tunnels = json["tunnels"] as? [[String: Any]] else {
+                await markExternalTunnelUnavailableIfRepeated()
+                return
+            }
+            var found = false
             for t in tunnels {
                 if let u = t["public_url"] as? String, u.contains("trycloudflare.com") {
-                    await MainActor.run {
-                        if !isTunnelRunning || tunnelURL != u {
+            await MainActor.run {
+                externalTunnelFailureCount = 0  // 检测到有效 tunnel 时重置失败计数
+                if !isTunnelRunning || tunnelURL != u {
                             isTunnelRunning = true
                             tunnelURL = u
                             generateQRCode()
                             startConnectionMonitoring()
                         }
-                        loadExternalTunnelLogs()  // 首次检测或定期刷新日志
+                        loadExternalTunnelLogs()
                     }
+                    found = true
                     return
                 }
             }
-        } catch {}
-        // 未检测到 tunnel：若当前显示为运行中且非本进程启动，保持状态（可能短暂不可用）
+            if !found {
+                await markExternalTunnelUnavailableIfRepeated()
+            }
+        } catch {
+            await markExternalTunnelUnavailableIfRepeated()
+        }
+    }
+
+    /// 外部 tunnel 连续检测失败时置为「已停止」，避免 control stream 断开后仍显示运行中
+    private func markExternalTunnelUnavailableIfRepeated() async {
+        await MainActor.run {
+            guard tunnelProcess == nil else { return }
+            externalTunnelFailureCount += 1
+            if externalTunnelFailureCount >= 2 && isTunnelRunning {
+                isTunnelRunning = false
+                tunnelURL = ""
+                qrCodeImage = nil
+                connectedClients = []
+                checkConnectionTask?.cancel()
+                checkConnectionTask = nil
+                addLog("Tunnel 已断开（无法访问 cloudflared 状态），请重新启动", level: .warning)
+            }
+        }
     }
 
     private func loadExternalTunnelLogs() {
@@ -265,7 +297,8 @@ class TunnelManager: ObservableObject {
         tunnelURL = ""
         qrCodeImage = nil
         connectedClients = []
-        
+        externalTunnelFailureCount = 0
+
         addLog("Tunnel stopped", level: .info)
     }
     
