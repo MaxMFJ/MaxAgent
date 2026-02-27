@@ -3,7 +3,6 @@ LLM 配置持久化
 将用户通过 Mac App 配置的 API key / provider / model 保存到磁盘，
 uvicorn reload 后自动恢复，避免丢失运行时配置。
 """
-
 import json
 import logging
 import os
@@ -11,7 +10,8 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(_BACKEND_DIR, "data")
 CONFIG_FILE = os.path.join(DATA_DIR, "llm_config.json")
 # 与 app_state.CLOUD_PROVIDERS 一致，用于持久化“远程回退”配置（当前为本地时，选“远程”用此配置）
 CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
@@ -140,7 +140,7 @@ def get_remote_fallback_config() -> Optional[dict]:
     }
 
 
-def get_cloud_providers_configured() -> list[dict]:
+def get_cloud_providers_configured() -> list:
     """返回已配置的云端提供商列表，供 Mac 端“远程回退策略”下拉展示。"""
     cfg = load_llm_config()
     providers = cfg.get("providers") or {}

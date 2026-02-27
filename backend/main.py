@@ -4,13 +4,18 @@ Chow Duck Backend Server
 FastAPI server with WebSocket support for the macOS AI Agent
 Supports both ReAct and Autonomous execution modes
 
-模块结构：
+模块结构（详见 docs/backend-structure.md）：
   main.py              - 入口：lifespan、app 创建、路由注册
-  app_state.py         - 全局状态管理（LLM clients、agent_core 等）
-  auth.py              - 认证逻辑
-  connection_manager.py - WebSocket 连接管理 + 广播
-  ws_handler.py        - 主 WebSocket /ws 端点
-  routes/              - HTTP 路由模块（按领域拆分）
+  app_state.py         - 全局状态（LLM/agent 单例、TaskTracker、FeatureFlags）
+  auth.py              - 认证
+  connection_manager.py - WebSocket 连接与 session 广播
+  ws_handler.py        - WebSocket /ws 消息分发
+  config/              - 配置持久化（agent/llm/smtp/github）
+  core/                - v3 框架（错误模型、状态机、限流、超时）
+  agent/               - Agent 能力（对话、自主、自愈、升级等）
+  routes/              - HTTP 路由
+  tools/               - 工具实现
+  runtime/             - 平台适配
 """
 import os
 
@@ -18,7 +23,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
     try:
-        from github_config import apply_github_config
+        from config.github_config import apply_github_config
         apply_github_config()
     except Exception:
         pass
@@ -75,7 +80,7 @@ setup_log_capture()
 def _llm_config_from_persisted():
     """从 Mac App 持久化的 llm_config.json 构建 LLMConfig，供主模型启动时使用。"""
     try:
-        from llm_config import load_llm_config, get_persisted_api_key
+        from config.llm_config import load_llm_config, get_persisted_api_key
     except Exception:
         return None
     cfg = load_llm_config()
@@ -93,7 +98,7 @@ def _cloud_llm_config_for_startup():
     自主任务选“远程”时使用的客户端配置。
     若当前持久化为本地(lmstudio/ollama)，使用上次保存的云端配置(remote_fallback)，否则与主配置一致。
     """
-    from llm_config import get_remote_fallback_config
+    from config.llm_config import get_remote_fallback_config
     initial = _llm_config_from_persisted()
     if not initial:
         return None

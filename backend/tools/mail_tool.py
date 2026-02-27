@@ -97,7 +97,7 @@ class MailTool(BaseTool):
     def _get_smtp_config(self) -> tuple[Optional[str], int, Optional[str], Optional[str]]:
         """从 smtp_config 读取（支持 Mac 设置页 + 环境变量）"""
         try:
-            from smtp_config import get_smtp_config
+            from config.smtp_config import get_smtp_config
             return get_smtp_config()
         except ImportError:
             pass

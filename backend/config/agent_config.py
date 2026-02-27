@@ -2,7 +2,6 @@
 Agent 相关配置持久化（如 LangChain 兼容开关）
 供客户端（Mac/iOS 设置）读写，无需重启后端即可生效
 """
-
 import json
 import logging
 import os
@@ -10,7 +9,9 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+# config 包在 backend/config/，数据目录为 backend/data/
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_DATA_DIR = os.path.join(_BACKEND_DIR, "data")
 CONFIG_FILE = os.path.join(_DATA_DIR, "agent_config.json")
 
 # 默认启用 LangChain 兼容（未安装依赖时自动退化为原生）

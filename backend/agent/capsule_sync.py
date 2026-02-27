@@ -246,7 +246,7 @@ async def sync_capsules_from_sources(
     cache_dir = cache_dir or DEFAULT_CAPSULES_CACHE
     sources = sources or get_capsule_sources()
     try:
-        from github_config import get_github_token
+        from config.github_config import get_github_token
         github_token = github_token or get_github_token()
     except ImportError:
         github_token = github_token or os.environ.get("GITHUB_TOKEN", "")

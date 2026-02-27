@@ -181,7 +181,7 @@ def get_langchain_compat_enabled() -> bool:
     客户端可通过 POST /config 的 langchain_compat 修改并持久化，无需重启。
     """
     try:
-        from agent_config import get_langchain_compat_from_config
+        from config.agent_config import get_langchain_compat_from_config
         val = get_langchain_compat_from_config()
         if val is not None:
             return val

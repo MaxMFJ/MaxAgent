@@ -2,7 +2,6 @@
 GitHub Token 配置：用于拉取开放技能源（Open Skill Sources），提高 API 限额。
 支持环境变量 GITHUB_TOKEN + 文件持久化；Mac 设置页通过 API 写入后在此读取。
 """
-
 import json
 import os
 from pathlib import Path
@@ -15,7 +14,7 @@ _cached: Optional[dict] = None
 def _get_config_path() -> Path:
     global _config_path
     if _config_path is None:
-        base = Path(__file__).resolve().parent
+        base = Path(__file__).resolve().parent.parent  # backend/
         _config_path = base / "data" / "github_config.json"
     return _config_path
 

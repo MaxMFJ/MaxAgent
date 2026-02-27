@@ -229,7 +229,7 @@ async def sync_open_skill_sources(
     """
     cache = get_skills_cache_dir(cache_dir)
     try:
-        from github_config import get_github_token
+        from config.github_config import get_github_token
         token = github_token or get_github_token()
     except ImportError:
         token = github_token or os.environ.get("GITHUB_TOKEN", "")

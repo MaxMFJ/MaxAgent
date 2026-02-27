@@ -33,6 +33,10 @@ try:
     from core.concurrency_limiter import get_concurrency_limiter
 except ImportError:
     get_concurrency_limiter = None
+try:
+    from core.timeout_policy import get_timeout_policy
+except ImportError:
+    get_timeout_policy = None
 
 logger = logging.getLogger(__name__)
 
@@ -404,16 +408,35 @@ async def _autonomous_task_worker(
                     logger.warning(f"System notification for task_complete failed: {e}")
 
     try:
-        if get_concurrency_limiter is not None:
-            async with get_concurrency_limiter().autonomous_slot():
+        async def _run_with_timeout():
+            if get_concurrency_limiter is not None:
+                async with get_concurrency_limiter().autonomous_slot():
+                    await _run_with_limit()
+            else:
                 await _run_with_limit()
+
+        if get_timeout_policy is not None:
+            policy = get_timeout_policy()
+            await asyncio.wait_for(_run_with_timeout(), timeout=policy.autonomous_timeout)
         else:
-            await _run_with_limit()
+            await _run_with_timeout()
 
         done_chunk = {"type": "done"}
         tracker.record_chunk(task_id, done_chunk)
         await connection_manager.broadcast_to_session(session_id, done_chunk)
 
+    except asyncio.TimeoutError:
+        final_status = AutoTaskStatus.ERROR
+        timeout_chunk = {"type": "error", "message": "自主任务执行超时（TimeoutPolicy.autonomous_timeout）"}
+        tracker.record_chunk(task_id, timeout_chunk)
+        await connection_manager.broadcast_to_session(session_id, timeout_chunk)
+        try:
+            get_system_message_service().add_error(
+                "自主任务超时", "任务执行时间超过限制，已自动停止",
+                source="autonomous_task", category=MessageCategory.SYSTEM_ERROR.value,
+            )
+        except Exception as _e:
+            logger.warning(f"Failed to push timeout notification: {_e}")
     except asyncio.CancelledError:
         final_status = AutoTaskStatus.STOPPED
         stopped_chunk = {"type": "stopped", "session_id": session_id}

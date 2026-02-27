@@ -12,13 +12,18 @@ from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
 
+try:
+    from core.timeout_policy import get_timeout_policy
+except ImportError:
+    get_timeout_policy = None
+
 logger = logging.getLogger(__name__)
 
 
 def _default_api_key() -> Optional[str]:
     """优先从持久化配置读取 API key，其次从环境变量"""
     try:
-        from llm_config import get_persisted_api_key
+        from config.llm_config import get_persisted_api_key
         return get_persisted_api_key()
     except Exception:
         return os.getenv("DEEPSEEK_API_KEY")
@@ -131,7 +136,11 @@ class LLMClient:
             kwargs["tool_choice"] = tool_choice
         
         try:
-            response = await self._client.chat.completions.create(**kwargs)
+            create_coro = self._client.chat.completions.create(**kwargs)
+            if get_timeout_policy is not None:
+                response = await get_timeout_policy().with_llm_timeout(create_coro)
+            else:
+                response = await create_coro
             message = response.choices[0].message
             
             result = {
@@ -191,7 +200,11 @@ class LLMClient:
                 content = msg.get('content', '')[:100] if msg.get('content') else 'None'
                 logger.debug(f"Message {len(messages)-3+i}: role={role}, content={content}...")
             
-            stream = await self._client.chat.completions.create(**kwargs)
+            create_coro = self._client.chat.completions.create(**kwargs)
+            if get_timeout_policy is not None:
+                stream = await get_timeout_policy().with_llm_timeout(create_coro)
+            else:
+                stream = await create_coro
             
             tool_calls_buffer = {}
             chunk_count = 0

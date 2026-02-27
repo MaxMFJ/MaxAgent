@@ -1,6 +1,7 @@
 """
 Tool Router - 统一工具执行入口
 从 registry 查找工具，调用真实执行，返回 ToolResult
+v3: 工具执行通过 TimeoutPolicy.with_tool_timeout 包装。
 """
 
 import asyncio
@@ -8,6 +9,11 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 from .base import ToolResult
+
+try:
+    from core.timeout_policy import get_timeout_policy
+except ImportError:
+    get_timeout_policy = None
 from .middleware import run_pre_hooks, run_post_hooks
 from .registry import ToolRegistry
 from .validator import validate_tool_call
@@ -95,10 +101,17 @@ async def execute_tool(
     args = await run_pre_hooks(name, args)
 
     try:
-        result = await reg.execute(name, **args)
+        execute_coro = reg.execute(name, **args)
+        if get_timeout_policy is not None:
+            result = await get_timeout_policy().with_tool_timeout(execute_coro)
+        else:
+            result = await execute_coro
         # 后执行中间件（可修改 result，如截断、格式化、埋点）
         result = await run_post_hooks(name, args, result)
         return result
+    except asyncio.TimeoutError as e:
+        logger.warning(f"Tool {name} timed out: {e}")
+        return ToolResult(success=False, error=f"工具执行超时: {e}")
     except Exception as e:
         logger.exception(f"Tool {name} execute error")
         return ToolResult(success=False, error=str(e))

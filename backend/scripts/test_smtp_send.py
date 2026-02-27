@@ -16,7 +16,7 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 _backend_dir = os.path.dirname(_script_dir)
 sys.path.insert(0, _backend_dir)
 os.chdir(_backend_dir)
-from smtp_config import get_smtp_config
+from config.smtp_config import get_smtp_config
 
 
 def test_send(to_email: str = None):

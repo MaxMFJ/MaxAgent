@@ -31,12 +31,14 @@ from tools.router import execute_tool
 try:
     from core.task_state_machine import TaskStateMachine, TaskState
     from core.error_model import to_agent_error, AgentError, ErrorCategory
+    from core.timeout_policy import get_timeout_policy
 except ImportError:
     TaskStateMachine = None  # type: ignore
     TaskState = None  # type: ignore
     to_agent_error = None
     AgentError = None
     ErrorCategory = None
+    get_timeout_policy = None
 
 logger = logging.getLogger(__name__)
 
@@ -1001,11 +1003,11 @@ class AutonomousAgent:
             import asyncio
             model_info = f"{self.llm.config.provider}/{self.llm.config.model}"
             logger.info(f"Generating action with LLM: {model_info}")
-            # 设置 120 秒超时
-            response = await asyncio.wait_for(
-                self.llm.chat(messages=messages),
-                timeout=120.0
-            )
+            chat_coro = self.llm.chat(messages=messages)
+            if get_timeout_policy is not None:
+                response = await get_timeout_policy().with_llm_timeout(chat_coro)
+            else:
+                response = await asyncio.wait_for(chat_coro, timeout=120.0)
             content = response.get("content", "")
 
             if not content:
@@ -1037,7 +1039,7 @@ class AutonomousAgent:
             return action
             
         except asyncio.TimeoutError:
-            logger.error("LLM request timed out after 120 seconds")
+            logger.error("LLM request timed out (TimeoutPolicy.llm_timeout or 120s fallback)")
             return None
         except Exception as e:
             logger.error(f"Error generating action: {e}")
@@ -1119,16 +1121,15 @@ class AutonomousAgent:
 }}"""
         
         try:
-            # 设置 60 秒超时
-            response = await asyncio.wait_for(
-                client.chat.completions.create(
-                    model=config.model,
-                    messages=[{"role": "user", "content": reflection_prompt}],
-                    temperature=0.3
-                ),
-                timeout=60.0
+            reflect_coro = client.chat.completions.create(
+                model=config.model,
+                messages=[{"role": "user", "content": reflection_prompt}],
+                temperature=0.3
             )
-            
+            if get_timeout_policy is not None:
+                response = await get_timeout_policy().with_llm_timeout(reflect_coro, timeout=60.0)
+            else:
+                response = await asyncio.wait_for(reflect_coro, timeout=60.0)
             content = response.choices[0].message.content
             
             yield {

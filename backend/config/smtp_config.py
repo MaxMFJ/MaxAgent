@@ -2,7 +2,6 @@
 SMTP 配置存储：支持环境变量 + 文件持久化
 Mac App 设置页填写后通过 API 写入，mail_tool 从此模块读取
 """
-
 import json
 import os
 from pathlib import Path
@@ -15,7 +14,7 @@ _cached: Optional[dict] = None
 def _get_config_path() -> Path:
     global _config_path
     if _config_path is None:
-        base = Path(__file__).resolve().parent
+        base = Path(__file__).resolve().parent.parent  # backend/
         _config_path = base / "data" / "smtp_config.json"
     return _config_path
 
@@ -59,7 +58,7 @@ _DOMAIN_SMTP = {
 }
 
 
-def _infer_smtp_from_email(email: str) -> tuple[Optional[str], int]:
+def _infer_smtp_from_email(email: str) -> tuple:
     """根据邮箱地址推断 SMTP 服务器"""
     if not email or "@" not in email:
         return None, 465
@@ -67,7 +66,7 @@ def _infer_smtp_from_email(email: str) -> tuple[Optional[str], int]:
     return _DOMAIN_SMTP.get(domain, (None, 465))
 
 
-def get_smtp_config() -> tuple[Optional[str], int, Optional[str], Optional[str]]:
+def get_smtp_config() -> tuple:
     """
     获取 SMTP 配置：优先环境变量，其次文件，最后根据邮箱域名推断
     返回 (server, port, user, password)

@@ -15,12 +15,12 @@ v3 为**修复底层框架缺陷**的升级，**融合在现有代码中**，不
   `MAX_CONCURRENT_AUTONOMOUS=2`、`MAX_CONCURRENT_LLM=4`，通过 `asyncio.Semaphore` 控制。  
   自主任务入口在 `ws_handler._autonomous_task_worker` 中通过 `autonomous_slot()` 限流。
 
-## Phase 2 占位
+## Phase 2：TimeoutPolicy 已融合
 
 - **统一超时策略** `backend/core/timeout_policy.py`  
-  `TimeoutPolicy`（llm/tool/autonomous/ws_idle 超时）已定义，后续在 LLM/Tool 调用处按需包装。
+  `TimeoutPolicy` 已绑定：`llm_client.chat/chat_stream`、`tools/router.execute_tool`、`autonomous_agent` 内 LLM/反思、`ws_handler` 自主任务整体 `autonomous_timeout`。详见 [v3 升级检查报告](V3_UPGRADE_CHECK.md)。
 
-- 执行轨迹持久化、幂等机制等见顶层 V3 Core Upgrade Plan，按优先级逐步接入。
+- 执行轨迹持久化、幂等机制、审计日志、FeatureFlag 等见顶层 V3 Core Upgrade Plan；当前状态见 [V3_UPGRADE_CHECK.md](V3_UPGRADE_CHECK.md)。
 
 ## Git 本地版本
 

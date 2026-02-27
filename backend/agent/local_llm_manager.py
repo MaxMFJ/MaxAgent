@@ -110,7 +110,7 @@ class LocalLLMManager:
         """Check LM Studio and return configs for all available models (retry on 502 with backoff). URL 来自配置（多端口时由 Mac 设置或 llm_config 指定），未配置时默认 1234。"""
         if url is None or url == "":
             try:
-                from llm_config import get_lm_studio_base_url
+                from config.llm_config import get_lm_studio_base_url
                 url = get_lm_studio_base_url()
             except Exception:
                 url = "http://localhost:1234"
@@ -187,7 +187,7 @@ class LocalLLMManager:
     async def detect_all_services(self) -> list[LocalLLMConfig]:
         """Detect Ollama and LM Studio concurrently, return all available models. LM Studio URL 从 llm_config 读取（支持多端口）。"""
         try:
-            from llm_config import get_lm_studio_base_url
+            from config.llm_config import get_lm_studio_base_url
             lm_studio_url = get_lm_studio_base_url()
         except Exception:
             lm_studio_url = "http://localhost:1234"
@@ -201,7 +201,7 @@ class LocalLLMManager:
     def _get_preferred_local_model(self) -> Optional[str]:
         """Return user's preferred local model from llm_config if provider is local (ollama/lmstudio)."""
         try:
-            from llm_config import load_llm_config
+            from config.llm_config import load_llm_config
             cfg = load_llm_config()
             provider = (cfg.get("provider") or "").strip().lower()
             model = (cfg.get("model") or "").strip()

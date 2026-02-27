@@ -53,7 +53,7 @@ async def get_config():
     if not llm:
         raise HTTPException(status_code=500, detail="LLM client not initialized")
     from app_state import get_langchain_compat_enabled
-    from llm_config import load_llm_config, get_cloud_providers_configured
+    from config.llm_config import load_llm_config, get_cloud_providers_configured
     cfg = load_llm_config()
     return {
         "provider": llm.config.provider,
@@ -81,7 +81,7 @@ async def update_config(config: ConfigUpdate):
 
     # 持久化到磁盘，uvicorn reload 后自动恢复；远程回退由用户显式选择后传入
     try:
-        from llm_config import save_llm_config
+        from config.llm_config import save_llm_config
         save_llm_config(
             provider=new_config.provider,
             api_key=new_config.api_key,
@@ -94,7 +94,7 @@ async def update_config(config: ConfigUpdate):
 
     if config.langchain_compat is not None:
         try:
-            from agent_config import save_agent_config
+            from config.agent_config import save_agent_config
             save_agent_config({"langchain_compat": config.langchain_compat})
         except Exception:
             pass
@@ -123,7 +123,7 @@ async def update_config(config: ConfigUpdate):
 
 @router.get("/config/smtp")
 async def get_smtp_config_endpoint():
-    from smtp_config import load_smtp_config
+    from config.smtp_config import load_smtp_config
     cfg = load_smtp_config()
     return {
         "smtp_server": cfg.get("smtp_server", ""),
@@ -135,7 +135,7 @@ async def get_smtp_config_endpoint():
 
 @router.post("/config/smtp")
 async def update_smtp_config_endpoint(config: SmtpConfigUpdate):
-    from smtp_config import update_smtp_config
+    from config.smtp_config import update_smtp_config
     result = update_smtp_config(
         smtp_server=config.smtp_server,
         smtp_port=config.smtp_port,
@@ -147,7 +147,7 @@ async def update_smtp_config_endpoint(config: SmtpConfigUpdate):
 
 @router.get("/config/github")
 async def get_github_config_endpoint():
-    from github_config import load_github_config
+    from config.github_config import load_github_config
     cfg = load_github_config()
     token = (cfg.get("github_token") or "").strip()
     return {"configured": bool(token)}
@@ -155,7 +155,7 @@ async def get_github_config_endpoint():
 
 @router.post("/config/github")
 async def update_github_config_endpoint(config: GitHubConfigUpdate):
-    from github_config import save_github_config
+    from config.github_config import save_github_config
     save_github_config(github_token=config.github_token)
     return {"status": "updated", "configured": bool((config.github_token or "").strip())}
 
