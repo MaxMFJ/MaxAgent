@@ -28,6 +28,16 @@ from .stop_policy import (
 from .capsule_registry import get_capsule_registry
 from tools.router import execute_tool
 
+try:
+    from core.task_state_machine import TaskStateMachine, TaskState
+    from core.error_model import to_agent_error, AgentError, ErrorCategory
+except ImportError:
+    TaskStateMachine = None  # type: ignore
+    TaskState = None  # type: ignore
+    to_agent_error = None
+    AgentError = None
+    ErrorCategory = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -629,6 +639,13 @@ class AutonomousAgent:
             "task": task,
             "max_iterations": initial_max
         }
+
+        # v3: 显式任务状态机
+        state_machine = None
+        if TaskStateMachine is not None and TaskState is not None:
+            state_machine = TaskStateMachine(task_id)
+            state_machine.transition(TaskState.RUNNING)
+            yield {"type": "task_state", "task_id": task_id, "state": state_machine.state.value}
         
         try:
             while True:
@@ -707,6 +724,8 @@ class AutonomousAgent:
                     # Get stop policy statistics
                     stop_stats = self._stop_policy.get_statistics() if self._stop_policy else {}
                     
+                    if state_machine and TaskState is not None:
+                        state_machine.transition(TaskState.COMPLETED)
                     yield {
                         "type": "task_complete",
                         "task_id": task_id,
@@ -736,8 +755,11 @@ class AutonomousAgent:
                     "action_id": action.action_id,
                     "action_type": action.action_type.value
                 }
-                
+                if state_machine and TaskState is not None:
+                    state_machine.transition(TaskState.WAITING_TOOL)
                 result = await self._execute_action(action)
+                if state_machine and TaskState is not None:
+                    state_machine.transition(TaskState.RUNNING)
                 context.add_action_log(action, result)
                 
                 # Record iteration in stop policy
@@ -789,6 +811,8 @@ class AutonomousAgent:
                                 success=False,
                                 execution_time_ms=execution_time_ms
                             )
+                        if state_machine and TaskState is not None:
+                            state_machine.transition(TaskState.FAILED)
                         yield {
                             "type": "task_stopped",
                             "task_id": task_id,
@@ -856,7 +880,8 @@ class AutonomousAgent:
                                 success=False,
                                 execution_time_ms=execution_time_ms
                             )
-                        
+                        if state_machine and TaskState is not None:
+                            state_machine.transition(TaskState.FAILED)
                         yield {
                             "type": "task_stopped",
                             "task_id": task_id,
@@ -895,7 +920,8 @@ class AutonomousAgent:
                         context.status = "max_iterations_reached"
                         context.stop_reason = "max_iterations"
                         context.completed_at = datetime.now()
-                        
+                        if state_machine and TaskState is not None:
+                            state_machine.transition(TaskState.FAILED)
                         yield {
                             "type": "error",
                             "error": f"达到最大迭代次数 ({self.max_iterations})"
@@ -904,18 +930,24 @@ class AutonomousAgent:
             
         except Exception as e:
             logger.error(f"Autonomous execution error: {e}", exc_info=True)
+            if state_machine and TaskState is not None:
+                state_machine.transition(TaskState.FAILED)
             context.status = "error"
             context.stop_reason = "error"
             context.stop_message = str(e)
             
             if self._stop_policy:
                 self._stop_policy.force_stop(StopReason.ERROR, str(e))
-            
-            yield {
-                "type": "error",
-                "error": str(e),
-                "stop_policy_stats": self._stop_policy.get_statistics() if self._stop_policy else None
-            }
+            err_payload = {"type": "error", "error": str(e)}
+            if AgentError is not None and to_agent_error is not None:
+                try:
+                    ae = to_agent_error(e, category=ErrorCategory.RUNTIME, retryable=False)
+                    err_payload["error_id"] = ae.error_id
+                    err_payload["category"] = ae.category.value
+                except Exception:
+                    pass
+            err_payload["stop_policy_stats"] = self._stop_policy.get_statistics() if self._stop_policy else None
+            yield err_payload
     
     async def _generate_action(self, context: TaskContext) -> Optional[AgentAction]:
         """Generate the next action using LLM with context enrichment."""

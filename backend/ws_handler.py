@@ -29,6 +29,11 @@ from agent.episodic_memory import get_episodic_memory, get_strategy_db, Episode
 from agent.model_selector import get_model_selector
 from agent.local_llm_manager import get_local_llm_manager
 
+try:
+    from core.concurrency_limiter import get_concurrency_limiter
+except ImportError:
+    get_concurrency_limiter = None
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -337,7 +342,7 @@ async def _autonomous_task_worker(
     autonomous_agent = get_autonomous_agent()
     final_status = AutoTaskStatus.COMPLETED
 
-    try:
+    async def _run_with_limit():
         async for chunk in autonomous_agent.run_autonomous(task, session_id=session_id):
             tracker.record_chunk(task_id, chunk)
             await connection_manager.broadcast_to_session(session_id, chunk)
@@ -357,6 +362,7 @@ async def _autonomous_task_worker(
                     logger.warning(f"Failed to push error notification: {_e}")
 
             elif chunk_type == "task_stopped":
+                nonlocal final_status
                 final_status = AutoTaskStatus.STOPPED
                 try:
                     reason = chunk.get("message") or chunk.get("reason") or "未知原因"
@@ -397,6 +403,13 @@ async def _autonomous_task_worker(
                 except Exception as e:
                     logger.warning(f"System notification for task_complete failed: {e}")
 
+    try:
+        if get_concurrency_limiter is not None:
+            async with get_concurrency_limiter().autonomous_slot():
+                await _run_with_limit()
+        else:
+            await _run_with_limit()
+
         done_chunk = {"type": "done"}
         tracker.record_chunk(task_id, done_chunk)
         await connection_manager.broadcast_to_session(session_id, done_chunk)
@@ -422,6 +435,11 @@ async def _autonomous_task_worker(
             logger.warning(f"Failed to push error notification: {_e}")
     finally:
         await tracker.finish(task_id, final_status)
+        # 确保客户端一定能收到结束信号，避免手机端一直转圈（异常/取消时上面只发了 error/stopped，补发 done）
+        try:
+            await connection_manager.broadcast_to_session(session_id, {"type": "done"})
+        except Exception as _e:
+            logger.warning(f"Failed to broadcast done in autonomous worker finally: {_e}")
 
 
 async def _handle_autonomous_task(
