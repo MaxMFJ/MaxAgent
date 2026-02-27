@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_letterboxd-watchlist",
+  "description": "Scrape a public Letterboxd user's watchlist into a CSV/JSONL list of titles and film URLs without logging in. Use when a user asks to export, scrape, or mirror a Letterboxd watchlist, or to build watch-next queues.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Letterboxd Watchlist Scraper\n\nUse the bundled script to scrape a **public** Letterboxd watchlist (no auth).\nAlways ask the user for the Letterboxd username if they did not provide one."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Script] - `scripts/scrape_watchlist.py`\n\n### Basic usage\n\n```bash\nuv run scripts/scrape_watchlist.py <username> --out watchlist.csv\n```\n\n### Robust mode (recommended)\n\n```bash\nuv run scripts/scrape_watchlist.py <username> --out watchlist.jsonl --delay-ms 300 --timeout 30 --retries 2\n```\n\n### Output formats\n\n- `--out *.csv` → `title,link`\n- `--out *.jsonl` → one JSON object per line: `{ \"title\": \"…\", \"link\": \"…\" }`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Notes / gotchas] - Letterboxd usernames are case-insensitive, but must be exact.\n- The script scrapes paginated pages: `/watchlist/page/<n>/`.\n- Stop condition: first page with **no** `data-target-link=\"/film/...\"` poster entries.\n- The scraper validates username format (`[A-Za-z0-9_-]+`) and uses retries + timeout.\n- Default crawl delay is 250ms/page to be polite and reduce transient failures.\n- This is best-effort HTML scraping; if Letterboxd changes markup, adjust the regex in the script."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scope boundary] - This skill only scrapes a public Letterboxd watchlist and writes CSV/JSONL output.\n- Do not read local folders, scan libraries, or perform unrelated follow-up actions unless explicitly requested by the user."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "letterboxd_watchlist"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xnuminous/letterboxd-watchlist/SKILL.md"
+}

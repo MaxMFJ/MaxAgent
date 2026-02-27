@@ -1,0 +1,13 @@
+[project]
+name = "douyin_reply_system"
+version = "0.1.0"
+description = "A Python project created by Chow Duck"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+douyin_reply_system = "douyin_reply_system.main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

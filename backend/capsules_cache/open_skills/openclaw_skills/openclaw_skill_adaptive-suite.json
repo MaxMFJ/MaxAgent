@@ -1,0 +1,83 @@
+{
+  "id": "openclaw_skill_adaptive-suite",
+  "description": "A continuously adaptive skill suite that empowers Clawdbot to act as a versatile coder, business analyst, project manager, web developer, data analyst, and NAS metadata scraper. It intelligently discovers free resources, adapts to user context, and ensures reliable, proven guidance across multiple domains.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Instructions"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Free Resource Discovery] - Continuously search for **free online tools, APIs, and resources**.\r\n- Always prioritize open-source and cost-free solutions.\r\n- Suggest legal alternatives when paid tools are encountered."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Adaptive AI Coder] - Act as a **versatile coder** across multiple languages and frameworks.\r\n- Continuously adapt to user coding style and project context.\r\n- Recommend reliable libraries and best practices."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Business Analyst & Project Manager] - Provide **business analysis, project management, and strategic planning** insights.\r\n- Adapt recommendations to evolving project goals.\r\n- Ensure reliability by referencing proven methodologies (Agile, Lean, etc.)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Web & Data Developer] - Assist with **web development** tasks (HTML, CSS, JS).\r\n- Provide **data analysis workflows** and **database schema design**.\r\n- Continuously adapt to project requirements."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[NAS Metadata Scraper (Read-Only)] - Compile a **localized desktop app** that scans NAS directories.\r\n- Collect **file names, metadata, and structure** in read-only mode.\r\n- Never modify or delete NAS content."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Reliability & Adaptivity] - Continuously learn from user interactions to improve recommendations.\r\n- Maintain reliability by cross-checking outputs against trusted sources.\r\n- Always adapt to changing contexts and requirements."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "adaptive_suite"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "moltbot": {
+        "requires": {
+          "bins": [
+            "python",
+            "node",
+            "curl",
+            "sqlite3"
+          ],
+          "env": [
+            "FREE_API_KEYS"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/afajohn/adaptive-suite/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_sushiswap-api",
+  "description": "REST API for optimized token swapping (including executable transaction generation), swap quoting, and pricing using the SushiSwap Aggregator.\nUse this skill when the user wants to: - Get a swap quote between two tokens on 40+ evm networks - Generate executable swap transaction data - Fetch token prices for a specific network or token - Retrieve token metadata - Discover supported AMM liquidity sources - Integrate SushiSwap swapping or pricing logic via HTTP/REST (and not the SushiSwap Javascript API)",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SushiSwap REST API Integration\n\nThe SushiSwap API provides HTTP access to the SushiSwap Aggregator for\n**optimized token swaps**, **price discovery**, and **transaction generation**.\nIt aggregates liquidity from multiple DEXs to determine the best execution route.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Base URL] ```\nhttps://api.sushi.com\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[API Schema] The **active API schema** is defined in:\n\n[references/openapi.yaml](references/openapi.yaml)\n\nAgents must **always rely on the schema contents** rather than hardcoded assumptions.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How To Use] 1. Load `references/openapi.yaml`\n2. Discover available endpoints, parameters, and response shapes dynamically\n3. Select the appropriate endpoint based on user intent and schema tags\n    - Quotes → quote endpoints (e.g. `/quote/v7/{chainId}`)\n    - Swap execution → swap endpoints (e.g. `/swap/v7/{chainId}`)\n    - Prices → price endpoints (e.g. `/price/v1/{chainId}`)\n    - Token info → token endpoints (e.g. `/token/v1/{chainId}/{tokenAddress}`)\n4. Construct requests that strictly conform to the schema and include a valid `referrer` parameter for all quote and swap endpoints\n5. Validate required parameters before execution\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Mandatory `referrer` Parameter] - The `referrer` parameter **must be specified** on swap-related endpoints (e.g. `/quote` & `/swap`)\n- The agent or integrator **must identify themselves** using this field\n- `/quote` or `/swap` requests **must not be sent** without a `referrer` value\n- Agents must never attempt to omit, spoof, or auto-generate this value.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Fee Customization] The SushiSwap API supports customized integrator fees on swap-related endpoints (e.g. `/quote` & `/swap`).\n\n### Default fee model\n\n- Swap-related requests follow an **80/20 fee split by default**\n    - **80%** to the integrator (referrer)\n    - **20%** to SushiSwap\n- This split applies unless explicitly overridden by SushiSwap\n\n### Custom fee splits\n\n- Alternative fee splits require a **partnership** with SushiSwap\n- Agents and integrators should not assume custom splits are available. If users request alternative fee splits, agents should direct them to the SushiSwap\nteam rather than attempting to modify request parameters.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Error Handling] - `422`: Request parameters are invalid → fix inputs\n- `529`: Server overloaded → retry with backoff\n- `500`: Internal error → retry or fail gracefully\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Schema Guidance] For schema usage rules and update behavior, see:\n\n[references/OPENAPI.md](references/OPENAPI.md)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sushiswap_api"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xmasayoshi/sushiswap-api/SKILL.md"
+}

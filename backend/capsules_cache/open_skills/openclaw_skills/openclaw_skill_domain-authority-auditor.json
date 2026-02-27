@@ -1,0 +1,125 @@
+{
+  "id": "openclaw_skill_domain-authority-auditor",
+  "description": "Use when the user asks to \"audit domain authority\", \"domain trust score\", \"CITE audit\", \"how authoritative is my site\", \"domain credibility check\", \"is my domain trustworthy\", or \"domain credibility score\". Runs a full CITE 40-item domain authority audit, scoring domains across 4 dimensions with weighted scoring by domain type. Produces a detailed report with per-item scores, dimension analysis, veto checks, and a prioritized action plan. For content-level assessment, see content-quality-auditor. For link profile details, see backlink-analyzer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Domain Authority Auditor\n\n> Based on [CITE Domain Rating](https://github.com/aaron-he-zhu/cite-domain-rating). Full benchmark reference: [references/cite-domain-rating.md](../../references/cite-domain-rating.md)\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../content-quality-auditor/) · **domain-authority-auditor** · [entity-optimizer](../entity-optimizer/) · [memory-management](../memory-management/)\n\n</details>\n\nThis skill evaluates domain authority across 40 standardized criteria organized in 4 dimensions. It produces a comprehensive audit report with per-item scoring, dimension and weighted scores by domain type, veto item checks, and a prioritized action plan.\n\n**Sister skill**: [content-quality-auditor](../content-quality-auditor/) evaluates content at th"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Evaluating domain authority before a GEO campaign\n- Benchmarking your domain against competitors\n- Assessing whether a domain is trustworthy as a citation source\n- Running periodic domain health checks\n- After link building campaigns to measure progress\n- Identifying manipulation red flags (PBNs, link farms, penalty history)\n- Planning domain authority improvement strategy\n- Cross-referencing with content-quality-auditor for full 120-item assessment"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Full 40-Item Audit**: Scores every CITE check item as Pass/Partial/Fail\n2. **Dimension Scoring**: Calculates scores for all 4 dimensions (0-100 each)\n3. **Weighted Totals**: Applies domain-type-specific weights for CITE Score\n4. **Veto Detection**: Flags critical manipulation signals (T03, T05, T09)\n5. **Priority Ranking**: Identifies Top 5 improvements sorted by impact\n6. **Action Plan**: Generates specific, actionable improvement steps\n7. **Cross-Reference**: Optionally pairs with CORE-EEAT for combined diagnosis"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Audit Your Domain\n\n```\nAudit domain authority for [domain]\n```\n\n```\nRun a CITE domain audit on [domain] as a [domain type]\n```\n\n### Audit with Domain Type\n\n```\nCITE audit for example.com as an e-commerce site\n```\n\n```\nScore this SaaS domain against the 40-item benchmark: [domain]\n```\n\n### Comparative Audit\n\n```\nCompare domain authority: [your domain] vs [competitor 1] vs [competitor 2]\n```\n\n### Combined Assessment\n\n```\nRun full 120-item assessment on [domain]: CITE domain audit + CORE-EEAT content audit on [sample pages]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~link database + ~~SEO tool + ~~AI monitor + ~~knowledge graph + ~~brand monitor connected:**\nAutomatically pull backlink profiles and link quality metrics from ~~link database, domain authority scores and keyword rankings from ~~SEO tool, AI citation data from ~~AI monitor, entity presence from ~~knowledge graph, and brand mention data from ~~brand monitor.\n\n**With manual data only:**\nAsk the user to provide:\n1. Domain to evaluate\n2. Domain type (if not auto-detectable): Content Publisher, Product & Service, E-commerce, Community & UGC, Tool & Utility, or Authority & Institutional\n3. Backlink data: referring domains count, domain authority, top linking domains\n4. Traffic estimates (from any SEO tool or SimilarWeb)\n5. Competitor domains for comparison (optional)\n\nProceed with the full 40-item audit using provided data. Note in the output which items could not be fully evaluated due to missing access (e.g., AI citation data, knowledge graph queries, WHOIS history)."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests a domain authority audit:\n\n### Step 1: Preparation\n\n```markdown\n### Audit Setup\n\n**Domain**: [domain]\n**Domain Type**: [auto-detected or user-specified]\n**Dimension Weights**: [from domain-type weight table below]\n\n#### Domain-Type Weight Table\n\n> Canonical source: `references/cite-domain-rating.md`. This inline copy is for convenience.\n\n| Dim | Default | Content Publisher | Product & Service | E-commerce | Community & UGC | Tool & Utility | Authority & Institutional |\n|-----|:-------:|:-:|:-:|:-:|:-:|:-:|:-:|\n| C | 35% | **40%** | 25% | 20% | 35% | 25% | **45%** |\n| I | 20% | 15% | **30%** | 20% | 10% | **30%** | 20% |\n| T | 25% | 20% | 25% | **35%** | 25% | 25% | 20% |\n| E | 20% | 25% | 20% | 25% | **30%** | 20% | 15% |\n\n#### Veto Check (Emergency Brake)\n\n| Veto Item | Status | Action |\n|-----------|--------|--------|\n| T03: Link-Traffic Coherence | ✅ Pass / ⚠️ VETO | [If VETO: \"Audit backlink profile; disavow toxic links\"] |\n| T05: Backlink Profile Uniqueness | ✅ Pass / ⚠️ VETO | [If VETO: \"Flag as manipulation network; investigate link sources\"] |\n| T09: Penalty & Deindex History | ✅ Pass / ⚠️ VETO | [If VETO: \"Address penalty first; all other optimization is futile\"] |\n```\n\nIf any veto item triggers, flag it prominently at the top of the report. CITE Score is capped at 39 (Poor) regardless of other scores.\n\n### Step 2: C + I Audit (20 items)\n\nEvaluate each item against the criteria in [references/cite-domain-rating.md](../../references/cite-domain-rating.md).\n\nScore each item:\n- **Pass** = 10 points (fully meets criteria)\n- **Partial** = 5 points (partially meets criteria)\n- **Fail** = 0 points (does not meet criteria)\n\n```markdown\n### C — Citation\n\n| ID | Check Item | Score | Notes |\n|----|-----------|-------|-------|\n| C01 | Referring Domains Volume | Pass/Partial/Fail | [specific observation] |\n| C02 | Referring Domains Quality | Pass/Partial/Fail | [specific observation] |\n| ... | ... | ... | ... |\n| C10 | Link Source Diversity | Pass/P"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[CITE Domain Authority Report] ### Overview\n\n- **Domain**: [domain]\n- **Domain Type**: [type]\n- **Audit Date**: [date]\n- **CITE Score**: [score]/100 ([rating])\n- **Veto Status**: ✅ No triggers / ⚠️ [item] triggered — Score capped at 39\n\n### Dimension Scores\n\n| Dimension | Score | Rating | Weight | Weighted |\n|-----------|-------|--------|--------|----------|\n| C — Citation | [X]/100 | [rating] | [X]% | [X] |\n| I — Identity | [X]/100 | [rating] | [X]% | [X] |\n| T — Trust | [X]/100 | [rating] | [X]% | [X] |\n| E — Eminence | [X]/100 | [rating] | [X]% | [X] |\n| **CITE Score** | | | | **[X]/100** |\n\n**Score Calculation**:\n- CITE Score = C × [w_C] + I × [w_I] + T × [w_T] + E × [w_E]\n\n**Rating Scale**: 90-100 Excellent | 75-89 Good | 60-74 Medium | 40-59 Low | 0-39 Poor\n\n### Per-Item Scores\n\n| ID | Check Item | Score | Notes |\n|----|-----------|-------|-------|\n| C01 | Referring Domains Volume | [Pass/Partial/Fail] | [observation] |\n| C02 | Referring Domains Quality | [Pass/Partial/Fail] | [observation] |\n| ... | ... | ... | ... |\n| E10 | Industry Share of Voice | [Pass/Partial/Fail] | [observation] |\n\n### Top 5 Priority Improvements\n\nSorted by: weight × points lost (highest impact first)\n\n1. **[ID] [Name]** — [specific modification suggestion]\n   - Current: [Fail/Partial] | Potential gain: [X] weighted points\n   - Action: [concrete step]\n\n2. **[ID] [Name]** — [specific modification suggestion]\n   - Current: [Fail/Partial] | Potential gain: [X] weighted points\n   - Action: [concrete step]\n\n3–5. [Same format]\n\n### Action Plan\n\n#### Quick Wins (< 1 week)\n- [ ] [Action 1]\n- [ ] [Action 2]\n\n#### Medium Effort (1-4 weeks)\n- [ ] [Action 3]\n- [ ] [Action 4]\n\n#### Strategic (1-3 months)\n- [ ] [Action 5]\n- [ ] [Action 6]\n\n### Cross-Reference with CORE-EEAT\n\nFor a complete assessment, pair this CITE audit with a CORE-EEAT content audit:\n\n| Assessment | Score | Rating |\n|-----------|-------|--------|\n| CITE (Domain) | [X]/100 | [rating] |\n| CORE-EEAT (Content) | [Run content-quality-auditor on sample pages] | — |\n"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Domain identified and accessible\n- [ ] Domain type confirmed (auto-detected or user-specified)\n- [ ] Backlink data available (at minimum: referring domains count, DA/DR)\n- [ ] If comparative audit, competitor domains also specified\n\n### Output Validation\n- [ ] All 40 items scored (or marked N/A with reason)\n- [ ] All 4 dimension scores calculated correctly\n- [ ] Weighted CITE Score matches domain-type weight configuration\n- [ ] All 3 veto items checked first and flagged if triggered\n- [ ] Top 5 improvements sorted by weighted impact, not arbitrary\n- [ ] Every recommendation is specific and actionable (not generic advice)\n- [ ] Action plan includes concrete steps with effort estimates"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Audit domain authority for cloudhosting.com as a content publisher\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[CITE Domain Authority Report] ### Overview\n\n- **Domain**: cloudhosting.com\n- **Domain Type**: Content Publisher\n- **Audit Date**: 2025-02-03\n- **CITE Score**: 69.9/100 (Medium)\n- **Veto Status**: ✅ No triggers\n\n#### Veto Check (Emergency Brake)\n\n| Veto Item | Status | Action |\n|-----------|--------|--------|\n| T03: Link-Traffic Coherence | ✅ Pass | Link growth correlates with traffic growth |\n| T05: Backlink Profile Uniqueness | ✅ Pass | No PBN patterns detected; diverse link sources |\n| T09: Penalty & Deindex History | ✅ Pass | No manual actions; clean penalty history |\n\n### Dimension Scores\n\n| Dimension | Score | Rating | Weight | Weighted |\n|-----------|-------|--------|--------|----------|\n| C — Citation | 72/100 | Medium | 40% | 28.8 |\n| I — Identity | 58/100 | Low | 15% | 8.7 |\n| T — Trust | 81/100 | Good | 20% | 16.2 |\n| E — Eminence | 65/100 | Medium | 25% | 16.25 |\n| **CITE Score** | | | | **69.9/100** |\n\n**Score Calculation**:\n- CITE Score = 72 × 0.40 + 58 × 0.15 + 81 × 0.20 + 65 × 0.25 = 69.9\n\n**Rating Scale**: 90-100 Excellent | 75-89 Good | 60-74 Medium | 40-59 Low | 0-39 Poor\n\n### Top 5 Priority Improvements\n\nSorted by: weight × points lost (highest impact first)\n\n1. **I01 Knowledge Graph Presence** — Create entity entry in Google Knowledge Graph\n   - Current: Fail | Potential gain: 1.5 weighted points\n   - Action: Create Wikidata entry for CloudHost Inc. with P856 (website), P452 (industry), P571 (inception)\n\n2. **C05 AI Citation Volume** — Increase citations in AI-generated answers\n   - Current: Partial | Potential gain: 2.0 weighted points\n   - Action: Optimize top 10 pages for GEO; add definitive statements AI can quote directly\n\n3. **I03 Brand SERP Control** — Branded SERP shows only 4 of 10 results from owned properties\n   - Current: Partial | Potential gain: 0.75 weighted points\n   - Action: Claim Google Business Profile; build out social profiles; create CrunchBase entry\n\n4. **E04 Content Freshness Cadence** — 40% of content is >12 months without update\n   - Current: Partia"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Start with veto items** — T03, T05, T09 can invalidate the entire score\n2. **Identify domain type first** — Different types have very different weight profiles\n3. **AI citation items (C05-C08) matter most for GEO** — Test by querying AI engines with niche-relevant questions\n4. **Some items need specialized tools** — Knowledge graph queries, AI citation monitoring, and IP diversity analysis may require manual research if tools aren't connected\n5. **Pair with CORE-EEAT for full picture** — Domain authority without content quality (or vice versa) tells only half the story\n6. **Re-audit quarterly** — Domain authority changes slowly; quarterly cadence is sufficient for most domain types\n7. **Compare against competitors** — Absolute scores matter less than relative position in your niche"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Reference Materials] - [CITE Domain Rating](../../references/cite-domain-rating.md) — Full 40-item benchmark with dimension definitions, scoring criteria, domain-type weight tables, and veto items"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Related Skills] - [content-quality-auditor](../content-quality-auditor/) — Page-level content audit (CORE-EEAT 80 items) — the sister skill\n- [backlink-analyzer](../../monitor/backlink-analyzer/) — Deep-dive into backlink profile (feeds C dimension data)\n- [competitor-analysis](../../research/competitor-analysis/) — Compare CITE scores across competitors\n- [performance-reporter](../../monitor/performance-reporter/) — Track CITE score trends over time\n- [geo-content-optimizer](../../build/geo-content-optimizer/) — Page-level GEO optimization; CITE C05-C08 provide domain-level context\n- [memory-management](../memory-management/) — Store domain audit results for tracking\n- [entity-optimizer](../entity-optimizer/) — Entity presence audit; complements CITE I dimension"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "domain_authority_auditor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "geo",
+        "domain authority",
+        "domain audit",
+        "site trust",
+        "credibility",
+        "cite framework",
+        "domain rating",
+        "domain scoring"
+      ],
+      "triggers": [
+        "audit domain authority",
+        "domain trust score",
+        "CITE audit",
+        "how authoritative is my site",
+        "domain credibility check",
+        "domain rating",
+        "site authority",
+        "is my domain trustworthy",
+        "domain credibility score"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/domain-authority-auditor/SKILL.md"
+}

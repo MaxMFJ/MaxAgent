@@ -21,6 +21,7 @@ class TerminalTool(BaseTool):
 - 设置超时限制
 - 指定工作目录
 - 捕获标准输出和错误输出
+- **background**：启动 Flask、Node 开发服务器等长期运行进程时必设为 true，否则会超时失败
 
 安全提示：危险命令（如 rm -rf /）会被拒绝执行。"""
     
@@ -44,6 +45,11 @@ class TerminalTool(BaseTool):
                 "type": "boolean",
                 "description": "是否通过 shell 执行（默认 True）",
                 "default": True
+            },
+            "background": {
+                "type": "boolean",
+                "description": "是否后台运行（Flask、flask run、npm run dev、python app.py 等长期运行进程必须设为 true）",
+                "default": False
             }
         },
         "required": ["command"]
@@ -70,6 +76,7 @@ class TerminalTool(BaseTool):
         working_dir = kwargs.get("working_directory", os.path.expanduser("~"))
         timeout = kwargs.get("timeout", 120)
         use_shell = kwargs.get("shell", True)
+        background = kwargs.get("background", False)
         
         if not command:
             return ToolResult(success=False, error="命令不能为空")
@@ -80,6 +87,10 @@ class TerminalTool(BaseTool):
         working_dir = os.path.expanduser(working_dir)
         if not os.path.exists(working_dir):
             return ToolResult(success=False, error=f"工作目录不存在: {working_dir}")
+        
+        # 后台模式：Flask/开发服务器等长期运行进程，不等待退出
+        if background:
+            return await self._run_background(command, working_dir, use_shell)
         
         try:
             if use_shell:
@@ -108,7 +119,7 @@ class TerminalTool(BaseTool):
                 await process.wait()
                 return ToolResult(
                     success=False,
-                    error=f"命令执行超时（{timeout}秒）",
+                    error=f"命令执行超时（{timeout}秒）。若为 Flask/开发服务器等长期运行进程，请使用 background: true",
                     data={"command": command, "timeout": timeout}
                 )
             
@@ -133,6 +144,38 @@ class TerminalTool(BaseTool):
             return ToolResult(success=False, error="权限不足，无法执行命令")
         except Exception as e:
             return ToolResult(success=False, error=f"执行错误: {str(e)}")
+    
+    async def _run_background(self, command: str, working_dir: str, use_shell: bool) -> ToolResult:
+        """后台运行：启动进程后立即返回，不等待进程退出。适用于 Flask、npm run dev 等长期运行进程。"""
+        log_base = f"/tmp/terminal_bg_{os.getpid()}"
+        stdout_log = f"{log_base}_stdout.log"
+        stderr_log = f"{log_base}_stderr.log"
+        # nohup 确保进程脱离当前会话，& 后台运行；cwd 已由 create_subprocess_shell 设置
+        bg_cmd = f"nohup ({command}) > {stdout_log} 2> {stderr_log} &"
+        process = await asyncio.create_subprocess_shell(
+            bg_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=working_dir
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=5.0)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            return ToolResult(success=False, error="后台启动命令本身超时")
+        # 启动命令（nohup ... &）通常立即返回
+        return ToolResult(
+            success=True,
+            data={
+                "command": command,
+                "mode": "background",
+                "message": f"进程已在后台启动。输出见 {stdout_log} 和 {stderr_log}",
+                "stdout_log": stdout_log,
+                "stderr_log": stderr_log,
+                "working_directory": working_dir
+            }
+        )
     
     def _is_dangerous(self, command: str) -> bool:
         """Check if command matches dangerous patterns"""

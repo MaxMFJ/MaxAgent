@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_memory-curator",
+  "description": "Distill verbose daily logs into compact, indexed digests. Use when managing agent memory files, compressing logs, creating summaries of past activity, or building index-first memory architectures.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Memory Curator\n\nTransform raw daily logs (often 200-500+ lines) into ~50-80 line digests while preserving key information."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Generate digest skeleton for today\n./scripts/generate-digest.sh\n\n# Generate for specific date\n./scripts/generate-digest.sh 2026-01-30\n```\n\nThen fill in the `<!-- comment -->` sections manually."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Digest Structure] A good digest captures:\n\n| Section | Purpose | Example |\n|---------|---------|---------|\n| **Summary** | 2-3 sentences, the day in a nutshell | \"Day One. Named Milo. Built connections on Moltbook.\" |\n| **Stats** | Quick metrics | Lines, sections, karma, time span |\n| **Key Events** | What happened (not everything, just what matters) | Numbered list, 3-7 items |\n| **Learnings** | Insights worth remembering | Bullet points |\n| **Connections** | People interacted with | Names + one-line context |\n| **Open Questions** | What you're still thinking about | For continuity |\n| **Tomorrow** | What future-you should prioritize | Actionable items |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Index-First Architecture] Digests work best with hierarchical indexes:\n\n```\nmemory/\n├── INDEX.md              ← Master index (scan first ~50 lines)\n├── digests/\n│   ├── 2026-01-30-digest.md\n│   └── 2026-01-31-digest.md\n├── topics/               ← Deep dives\n└── daily/                ← Raw logs (only read when needed)\n```\n\n**Workflow:** Scan index → find relevant digest → drill into raw log only if needed."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Automation] Set up end-of-day cron to auto-generate skeletons:\n\n```\nSchedule: 55 23 * * * (23:55 UTC)\nTask: Run generate-digest.sh, fill Summary/Learnings/Tomorrow, commit\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Tips] - **Compress aggressively** — if you can reconstruct it from context, don't include it\n- **Names matter** — capture WHO you talked to, not just WHAT was said\n- **Questions persist** — open questions create continuity across sessions\n- **Stats are cheap** — automated extraction saves tokens on what's mechanical"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "memory_curator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/77darius77/memory-curator/SKILL.md"
+}

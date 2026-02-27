@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_mermaid-architect",
+  "description": "Generate beautiful, hand-drawn Mermaid diagrams with robust syntax (quoted labels, ELK layout). Use this skill when the user asks for \"diagram\", \"flowchart\", \"sequence diagram\", or \"visualize this process\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Mermaid Architect"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] - **Role**: Diagram Architect & Designer.\n- **Trigger**: \"Draw this\", \"Make a diagram\", \"Visualize\".\n- **Output**: Mermaid code block (`mermaid`) + Explanation."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Capabilities] 1.  **Flowcharts**: Process mapping, decision trees.\n2.  **Sequence Diagrams**: API calls, user interactions.\n3.  **Class Diagrams**: OOP structures, database schemas.\n4.  **State Diagrams**: Lifecycle management."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Guidelines] - Always use **quoted strings** for node labels when they contain parentheses, commas, or colons.\n- Use safe node IDs: no spaces; use camelCase, PascalCase, or underscores. Avoid reserved IDs: `end`, `subgraph`, `graph`, `flowchart`.\n- Prefer `TD` (Top-Down) for hierarchies, `LR` (Left-Right) for timelines.\n- Use `subgraph id [Label]` with an explicit ID and label (no spaces in ID).\n- See [references/syntax-guide.md](references/syntax-guide.md) for full safe-syntax rules."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Syntax Guide](references/syntax-guide.md)\n- [Example: Microservices](assets/examples/microservice-arch.mmd)\n- [Example: Sequence API](assets/examples/sequence-api.mmd)\n- [Example: State Lifecycle](assets/examples/state-lifecycle.mmd)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Validation] Run the validator on one or more `.mmd` files:\n```bash\nscripts/validate-mmd assets/examples/*.mmd\n```"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mermaid_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/mermaid-architect/SKILL.md"
+}

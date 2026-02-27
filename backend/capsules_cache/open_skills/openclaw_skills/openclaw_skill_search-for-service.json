@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_search-for-service",
+  "description": "Search and browse the x402 bazaar marketplace for paid API services. Use when you or the user want to find available services, see what's available, discover APIs, or need an external service to accomplish a task. Also use as a fallback when no other skill clearly matches — search the bazaar to see if a paid service exists. Covers \"what can I do?\", \"find me an API for...\", \"what services are available?\", \"search for...\", \"browse the bazaar\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Searching the x402 Bazaar\n\nUse the `npx awal@latest x402` commands to discover and inspect paid API endpoints available on the x402 bazaar marketplace. No authentication or balance is required for searching."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] ### Search the Bazaar\n\nFind paid services by keyword using BM25 relevance search:\n\n```bash\nnpx awal@latest x402 bazaar search <query> [-k <n>] [--force-refresh] [--json]\n```\n\n| Option            | Description                          |\n| ----------------- | ------------------------------------ |\n| `-k, --top <n>`   | Number of results (default: 5)       |\n| `--force-refresh` | Re-fetch resource index from CDP API |\n| `--json`          | Output as JSON                       |\n\nResults are cached locally at `~/.config/awal/bazaar/` and auto-refresh after 12 hours.\n\n### List Bazaar Resources\n\nBrowse all available resources:\n\n```bash\nnpx awal@latest x402 bazaar list [--network <network>] [--full] [--json]\n```\n\n| Option             | Description                             |\n| ------------------ | --------------------------------------- |\n| `--network <name>` | Filter by network (base, base-sepolia)  |\n| `--full`           | Show complete details including schemas |\n| `--json`           | Output as JSON                          |\n\n### Discover Payment Requirements\n\nInspect an endpoint's x402 payment requirements without paying:\n\n```bash\nnpx awal@latest x402 details <url> [--json]\n```\n\nAuto-detects the correct HTTP method (GET, POST, PUT, DELETE, PATCH) by trying each until it gets a 402 response, then displays price, accepted payment schemes, network, and input/output schemas."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Search for weather-related paid APIs\nnpx awal@latest x402 bazaar search \"weather\"\n\n# Search with more results\nnpx awal@latest x402 bazaar search \"sentiment analysis\" -k 10\n\n# Browse all bazaar resources with full details\nnpx awal@latest x402 bazaar list --full\n\n# Check what an endpoint costs\nnpx awal@latest x402 details https://example.com/api/weather\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] - No authentication needed for search, list, or details commands"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Next Steps] Once you've found a service you want to use, use the `pay-for-service` skill to make a paid request to the endpoint."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error Handling] - \"CDP API returned 429\" - Rate limited; cached data will be used if available\n- \"No X402 payment requirements found\" - URL may not be an x402 endpoint"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "search_for_service"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/search-for-service/SKILL.md"
+}

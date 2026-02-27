@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_linkedin-followup",
+  "description": "Manage LinkedIn outreach leads from Google Sheets — search by name, read live conversation threads, update status, and send contextual follow-up messages. Use after linkedin-dm to move leads through the pipeline (Sent → Replied → Call Scheduled → Demo Done → Closed).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # linkedin-followup\n\nManage ongoing LinkedIn conversations from a central Google Sheet CRM. Read threads, draft context-aware replies, send messages, and keep the sheet updated — all from one skill.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Pre-flight Checklist] Before doing anything:\n\n1. **Sheet ID** — Confirm the CRM sheet ID (from `linkedin-dm` setup). Default: `1eEZDGcr1dIbSC782mNkxvD7pVrF8rOFySWCVZ1RXkhM`, tab: `Sheet1` (or `Outreach` if renamed).\n2. **gog auth** — Run `gog auth list`. If no tokens: see [gog auth setup](#gog-auth-setup) below.\n3. **Browser** — Open the openclaw browser profile and confirm LinkedIn is logged in. Navigate to `/feed/` first.\n4. **Mode** — Identify which mode the user wants (see [Modes](#modes)).\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Sheet Schema] The CRM sheet uses these columns (A–P):\n\n| Col | Field | Notes |\n|---|---|---|\n| A | Date Sent | ISO date |\n| B | Person Name | Full name |\n| C | Role / Title | |\n| D | Company | |\n| E | LinkedIn URL | Profile URL |\n| F | Relationship Hook | Hook used in opener |\n| G | Opener Sent | Message 1 text |\n| H | Pitch Sent | Message 2 text |\n| I | Campaign | Batch label |\n| J | Status | Current pipeline stage |\n| K | Notes | Context and history |\n| L | Last Updated | ISO timestamp |\n| M | Last Reply Date | When they last replied |\n| N | Last Reply (preview) | First 200 chars of their last reply |\n| O | Conversation Log | Full thread (see format below) |\n| P | Next Action | What to do next (agent or human) |\n\n**Status values:**\n`Sent` → `Replied` → `Call Scheduled` → `Demo Done` → `Follow Up Sent` → `No Response` → `Closed Won` → `Closed Lost`\n\n**Conversation Log format** (column O):\n```\n[2026-02-13 17:05 SENT] Hey Rishabh, we both had stints at CRED...\n[2026-02-13 17:05 SENT] I'm building an AI calling agent...\n[2026-02-15 09:30 RECEIVED] Hey! Sounds interesting, tell me more.\n[2026-02-15 09:45 SENT] Happy to show you a live demo — are you free Thursday?\n```\n\nIf columns M–P don't exist yet, add them first:\n```bash\ngog sheets update <SHEET_ID> \"Sheet1!M1:P1\" \\\n  --values-json '[[\"Last Reply Date\",\"Last Reply (preview)\",\"Conversation Log\",\"Next Action\"]]' \\\n  --input USER_ENTERED\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Modes] ### Mode 1 — Quick Status Update\n\nUser says: *\"Mark Rishabh as Replied\"* or *\"Rishabh got back to me, he's interested\"*\n\n1. **Find the row** — Search the sheet for the person:\n   ```bash\n   gog sheets get <SHEET_ID> \"Sheet1!A:P\" --json\n   ```\n   Match by name (col B) or LinkedIn URL (col E). Get the row number.\n\n2. **Update status** (col J) and last updated (col L):\n   ```bash\n   gog sheets update <SHEET_ID> \"Sheet1!J<ROW>:L<ROW>\" \\\n     --values-json '[[\"Replied\",\"\",\"<ISO_TIMESTAMP>\"]]' \\\n     --input USER_ENTERED\n   ```\n\n3. If the user provides reply content, also update:\n   - Col M: Last Reply Date\n   - Col N: Last Reply preview (first 200 chars)\n   - Col O: Append to Conversation Log\n   - Col P: Next Action (what should happen next)\n\n4. Confirm update to user.\n\n---\n\n### Mode 2 — Full Follow-up (Read + Draft + Send)\n\nUser says: *\"Follow up with Rishabh\"* or *\"Send a follow-up to everyone who replied\"*\n\n#### Step 1 — Load the person's data from sheet\n\n```bash\ngog sheets get <SHEET_ID> \"Sheet1!A:P\" --json\n```\nFind their row. Load: Name, Company, Role, LinkedIn URL, Opener Sent, Pitch Sent, Status, Notes, Conversation Log, Next Action.\n\n#### Step 2 — Navigate to their LinkedIn profile\n\n**Always go to feed first** (anti-detection):\n```\nhttps://www.linkedin.com/feed/\n```\nWait 2–4 seconds. Then navigate to their profile URL (col E).\n\n#### Step 3 — Open message thread and read conversation\n\nClick the **Message** button on their profile. Wait for the conversation bubble to load.\n\nScrape the full thread with JavaScript:\n```javascript\nconst events = Array.from(document.querySelectorAll('.msg-s-message-list__event'));\nconst messages = [];\nevents.forEach(el => {\n  const groups = el.querySelectorAll('.msg-s-event-listitem');\n  groups.forEach(g => {\n    const nameEl = g.closest('.msg-s-message-group')?.querySelector('.msg-s-message-group__profile-link');\n    const bodyEl = g.querySelector('.msg-s-event-listitem__body');\n    const timeEl = g.closest('.msg-s-message-group')?.que"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Response Playbook] Use these as a guide — always adapt to the actual conversation:\n\n| They said | Intent | Your move |\n|---|---|---|\n| \"Sounds interesting, tell me more\" | Curious | Short explanation + offer a specific demo slot |\n| \"How does it work?\" | Exploring | 2-line description + invite to a 15-min call |\n| \"We already use [X]\" | Objection | Acknowledge, explain differentiation, offer demo |\n| \"Send me more details\" | Soft interest | Share a Loom/deck/link + follow up in 2 days |\n| \"Not relevant right now\" | Soft no | Respect it, leave door open: \"No worries, I'll ping you in a few months\" |\n| \"Who else is using it?\" | Trust-building | Share a relevant use case, offer intro to a user |\n| [No reply in 4 days] | Silence | Light nudge: \"Hey [Name], just checking — any thoughts?\" |\n| [No reply in 8 days] | Cold | One final message, then mark No Response |\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Anti-Detection Rules] Same rules as linkedin-dm:\n- Always go to `/feed/` before navigating to a profile\n- Wait 2–4 seconds after loading feed\n- Max **15–20 messages per session** (combined sends across follow-ups)\n- Space out follow-ups: don't ping multiple people in rapid succession\n- Natural delays between typing and sending (1–2 seconds)\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[gog Auth Setup] If `gog auth list` returns empty, the user needs to set up Google OAuth credentials:\n\n1. Go to [console.cloud.google.com](https://console.cloud.google.com)\n2. Create a project (or select existing)\n3. Enable **Google Sheets API** (APIs & Services → Library)\n4. Create OAuth credentials: APIs & Services → Credentials → Create → OAuth client ID → Desktop App\n5. Download `client_secret_<id>.json`\n6. Run:\n   ```bash\n   gog auth credentials set /path/to/client_secret.json\n   gog auth add your@gmail.com --services sheets\n   ```\n7. A browser window will open — log in and grant access\n8. Verify: `gog auth list`\n\n**Fallback (no gog):** All sheet reads/writes can be done manually via browser — open the sheet in the openclaw browser and update cells directly. Less automated but functional.\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Session Limits] - Max 15–20 follow-up messages per session\n- Log every send immediately to sheet (don't batch)\n- If gog is unavailable, log to local `linkedin_followup_log.json` and sync to sheet next session"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "linkedin_followup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔁",
+        "requires": {
+          "bins": [
+            "gog"
+          ]
+        },
+        "skills": [
+          "gog"
+        ],
+        "tags": [
+          "linkedin",
+          "crm",
+          "outreach",
+          "sales",
+          "follow-up"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/10madh/linkedin-followup/SKILL.md"
+}

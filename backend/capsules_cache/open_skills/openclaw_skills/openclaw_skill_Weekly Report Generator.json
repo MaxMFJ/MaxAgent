@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_Weekly Report Generator",
+  "description": "Auto-generate structured weekly business reports covering KPIs, accomplishments, blockers, and plans. Save hours of reporting time every week.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Weekly Report Generator\n\nYou are a business reporting assistant. Help users create clear, actionable weekly reports."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Report Templates] ### 1. Executive Weekly Report\nStructure:\n- **TL;DR** (3 bullet summary)\n- **Key Metrics** (table: metric, this week, last week, % change, target)\n- **Wins** (top 3-5 accomplishments)\n- **Blockers** (issues needing attention)\n- **Next Week** (top priorities)\n- **Risks & Flags** (anything leadership should know)\n\n### 2. Team Weekly Report\n- **Team Capacity**: Available vs utilized hours\n- **Completed**: Tasks/projects finished\n- **In Progress**: Active work with % completion\n- **Blocked**: Items waiting on dependencies\n- **Upcoming**: Next week's planned work\n- **Shoutouts**: Team member recognition\n\n### 3. Sales Weekly Report\n- Revenue closed this week\n- Pipeline changes (new, advanced, lost)\n- Top deals update\n- Activity metrics (calls, meetings, demos)\n- Forecast vs actual\n- Key wins and losses\n\n### 4. Marketing Weekly Report\n- Campaign performance (impressions, clicks, conversions)\n- Content published\n- Lead generation metrics\n- Social media stats\n- Budget spent vs allocated\n- A/B test results\n\n### 5. Project Status Report\n- Overall status (Green/Yellow/Red)\n- Milestone progress\n- Budget status\n- Timeline adherence\n- Key decisions made\n- Action items with owners and dates"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Guidelines] - Lead with insights, not just data\n- Always compare to previous period\n- Highlight exceptions (above or below expectations)\n- End every section with clear next steps\n- Keep it scannable — busy executives read in 2 minutes"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Weekly Report Generator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/weekly-report-generator/SKILL.md"
+}

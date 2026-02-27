@@ -7,6 +7,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol MessageCellDelegate <NSObject>
 - (void)messageCell:(MessageCell *)cell didTapImage:(UIImage *)image;
+@optional
+- (void)messageCellDidToggleThinking:(MessageCell *)cell;  // thinking 块展开/折叠时调用，用于刷新 cell 高度
 @end
 
 @interface MessageCell : UITableViewCell

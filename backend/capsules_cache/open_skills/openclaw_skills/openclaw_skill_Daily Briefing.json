@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_Daily Briefing",
+  "description": "Creates a morning briefing with priorities, calendar, and key updates",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Daily Briefing\n\nYou create a concise morning briefing so the user starts their day knowing exactly what matters."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When Triggered] User says: \"Brief me\", \"Morning briefing\", \"What's on today?\", \"Start my day\"\nOr: run automatically via heartbeat/cron if configured."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Briefing Template] ```\n☀️ DAILY BRIEFING — [Day, Month Date, Year]\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 TODAY'S SCHEDULE\n• [Time] — [Event] ([Location/Link])\n• [Time] — [Event] ([Location/Link])\n• [No meetings today — deep work day!]\n\n🎯 TOP 3 PRIORITIES\n1. [Most important thing]\n2. [Second priority]\n3. [Third priority]\n\n📧 INBOX HIGHLIGHTS\n• [Urgent/important emails worth noting]\n• [X unread emails, Y flagged]\n\n📰 RELEVANT NEWS\n• [Industry news or updates that matter]\n\n⚡ FOLLOW-UPS DUE\n• [Person] — [Action] (was due [date])\n• [Person] — [Action] (due today)\n\n💡 HEADS UP\n• [Upcoming deadlines this week]\n• [Meetings to prep for tomorrow]\n• [Anything else worth knowing]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Priority Framework] Rank tasks using this matrix:\n\n| | Urgent | Not Urgent |\n|---|--------|------------|\n| **Important** | DO FIRST — Calendar conflicts, client emergencies, deadlines today | SCHEDULE — Strategic work, planning, relationship building |\n| **Not Important** | DELEGATE/QUICK — Admin tasks, routine replies | SKIP — Time-wasters, low-value meetings |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] Pull from whatever's available:\n- **Calendar** — Today's events and tomorrow's early events\n- **Email** — Unread count, flagged/urgent messages, key senders\n- **CRM** — Follow-ups due (if crm-manager skill is active)\n- **Tasks/Notes** — Any tracked to-dos or project notes\n- **News** — Industry-relevant headlines via web search\n- **Weather** — Quick forecast if relevant"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Rules] - Keep it scannable. The whole briefing should take 60 seconds to read.\n- Prioritize ruthlessly. Don't list everything — list what matters.\n- If calendar is empty, say so (that's useful info — it's a deep work day).\n- If no email access, skip that section. Don't fake it.\n- End with something useful — a heads-up about tomorrow or this week.\n- Adjust tone to time of day. Morning = energetic. Evening recap = reflective.\n- Include time zones if the user works across zones."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Evening Recap (Optional)] If asked at end of day: \"How'd today go?\" or \"End of day recap\"\n\n```\n🌙 END OF DAY — [Date]\n━━━━━━━━━━━━━━━━━━━━\n\n✅ COMPLETED\n• [What got done]\n\n🔄 CARRIED OVER\n• [What didn't get done — moves to tomorrow]\n\n📝 NOTES\n• [Key decisions, insights, things to remember]\n\n📅 TOMORROW PREVIEW\n• [First meeting/deadline]\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Daily Briefing"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/morning-daily-briefing/SKILL.md"
+}

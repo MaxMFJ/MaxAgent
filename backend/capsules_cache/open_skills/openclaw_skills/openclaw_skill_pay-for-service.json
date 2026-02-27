@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_pay-for-service",
+  "description": "Make a paid API request to an x402 endpoint with automatic USDC payment. Use when you or the user want to call a paid API, make an x402 request, use a paid service, or pay for an API call. Use after finding a service with search-for-service.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Making Paid x402 Requests\n\nUse the `npx awal@latest x402 pay` command to call paid API endpoints with automatic USDC payment on Base."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Confirm wallet is initialized and authed] ```bash\nnpx awal@latest status\n```\n\nIf the wallet is not authenticated, refer to the `authenticate-wallet` skill."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Command Syntax] ```bash\nnpx awal@latest x402 pay <url> [-X <method>] [-d <json>] [-q <params>] [-h <json>] [--max-amount <n>] [--json]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Options] | Option                  | Description                                        |\n| ----------------------- | -------------------------------------------------- |\n| `-X, --method <method>` | HTTP method (default: GET)                         |\n| `-d, --data <json>`     | Request body as JSON string                        |\n| `-q, --query <params>`  | Query parameters as JSON string                    |\n| `-h, --headers <json>`  | Custom HTTP headers as JSON string                 |\n| `--max-amount <amount>` | Max payment in USDC atomic units (1000000 = $1.00) |\n| `--correlation-id <id>` | Group related operations                           |\n| `--json`                | Output as JSON                                     |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[USDC Amounts] X402 uses USDC atomic units (6 decimals):\n\n| Atomic Units | USD   |\n| ------------ | ----- |\n| 1000000      | $1.00 |\n| 100000       | $0.10 |\n| 50000        | $0.05 |\n| 10000        | $0.01 |\n\n**IMPORTANT**: Always single-quote amounts that use `$` to prevent bash variable expansion (e.g. `'$1.00'` not `$1.00`)."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Make a GET request (auto-pays)\nnpx awal@latest x402 pay https://example.com/api/weather\n\n# Make a POST request with body\nnpx awal@latest x402 pay https://example.com/api/sentiment -X POST -d '{\"text\": \"I love this product\"}'\n\n# Limit max payment to $0.10\nnpx awal@latest x402 pay https://example.com/api/data --max-amount 100000\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Prerequisites] - Must be authenticated (`npx awal@latest status` to check, see `authenticate-wallet` skill)\n- Wallet must have sufficient USDC balance (`npx awal@latest balance` to check)\n- If you don't know the endpoint URL, use the `search-for-service` skill to find services first"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] - \"Not authenticated\" - Run `awal auth login <email>` first, or see `authenticate-wallet` skill\n- \"No X402 payment requirements found\" - URL may not be an x402 endpoint; use `search-for-service` to find valid endpoints\n- \"Insufficient balance\" - Fund wallet with USDC; see `fund` skill"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pay_for_service"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/pay-for-service/SKILL.md"
+}

@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_ERC-8004 Register",
+  "description": "Register AI agents on-chain, update metadata, validate registrations, and auto-fix broken profiles via the ERC-8004 Identity Registry. Supports Base, Ethereum, Polygon, Monad, BNB.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ERC-8004 Registration Skill\n\nRegister, update, validate, and fix agents on-chain via the ERC-8004 Identity Registry."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use This When...] - \"Register my agent on-chain\"\n- \"I need to create a new ERC-8004 agent\"\n- \"Update my agent's metadata\"\n- \"Check if my agent registration is valid\"\n- \"Fix my agent's registration issues\"\n- \"Show my agent's on-chain info\"\n- \"What agents do I own?\"\n- \"Health check my agents\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### register\nRegister a new agent on-chain.\n\n```bash\npython scripts/register.py register --name \"AgentName\" --description \"Description\" [--image URL] [--chain base]\n```\n\n**Options:**\n- `--name` (required): Agent name\n- `--description` (required): Agent description\n- `--image`: Image URL (must be https://)\n- `--chain`: Blockchain (base, ethereum, polygon, monad, bnb). Default: base\n\n### update\nUpdate an existing agent's metadata.\n\n```bash\npython scripts/register.py update <agentId> [--name NAME] [--description DESC] [--image URL] [--add-service name=X,endpoint=Y] [--remove-service NAME] [--chain base]\n```\n\n### info\nDisplay agent information.\n\n```bash\npython scripts/register.py info <agentId> [--chain base]\n```\n\n### validate\nCheck registration for common issues.\n\n```bash\npython scripts/register.py validate <agentId> [--chain base]\n```\n\n**Checks:**\n- Missing `type` field\n- Local-path images (/home/..., ./, file://)\n- Empty name/description\n- Missing registrations array\n- Unreachable image URLs\n\n### fix\nAuto-fix common registration issues.\n\n```bash\npython scripts/register.py fix <agentId> [--chain base] [--dry-run]\n```\n\n**Auto-fixes:**\n- Missing `type` field\n- Missing `registrations` array\n- Local-path images (removes them)\n\nUse `--dry-run` to preview changes without applying.\n\n### self-check\nCheck all agents owned by your wallet.\n\n```bash\npython scripts/register.py self-check\n```\n\nQueries Agentscan for your agents, validates each, and prints a health report."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Cross-Skill Workflows] ### Post-Registration Flow\n```bash\n# 1. Register new agent\npython scripts/register.py register --name \"MyBot\" --description \"Trading assistant\"\n\n# 2. Validate the registration\npython scripts/register.py validate 42 --chain base\n\n# 3. Check initial reputation (from erc8004-reputation skill)\npython scripts/reputation.py lookup 42 --chain base\n\n# 4. Monitor for discovery (from erc8004-discover skill)\npython scripts/discover.py info 42\n```\n\n### Periodic Health Check\n```bash\n# Run self-check to validate all your agents\npython scripts/register.py self-check\n\n# Fix any issues found\npython scripts/register.py fix 42 --chain base\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Heartbeat Integration] For automated monitoring, run self-check periodically:\n\n```bash\n# Cron: check health every hour\n0 * * * * cd /path/to/skill && python scripts/register.py self-check >> /var/log/agent-health.log 2>&1\n\n# Or in a script:\n#!/bin/bash\npython scripts/register.py self-check\nif [ $? -ne 0 ]; then\n    echo \"Agent health check failed!\" | notify-send\nfi\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Wallet Configuration] Set one of these environment variables:\n\n```bash\nexport ERC8004_MNEMONIC=\"your twelve word mnemonic phrase here\"\n# OR\nexport ERC8004_PRIVATE_KEY=\"0x...\"\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Contract] Identity Registry: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` (same on all chains)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Supported Chains] | Chain    | ID   | Explorer             |\n|----------|------|----------------------|\n| Base     | 8453 | basescan.org         |\n| Ethereum | 1    | etherscan.io         |\n| Polygon  | 137  | polygonscan.com      |\n| Monad    | 143  | explorer.monad.xyz   |\n| BNB      | 56   | bscscan.com          |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Dependencies] ```bash\npip install web3 eth-account\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Related Skills] - **erc8004-discover**: Find and monitor agents\n- **erc8004-reputation**: Rate agents and check trust scores"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ERC_8004 Register"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aetherstacey/erc8004-register/SKILL.md"
+}

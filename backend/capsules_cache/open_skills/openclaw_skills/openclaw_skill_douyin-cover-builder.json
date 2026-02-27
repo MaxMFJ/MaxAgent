@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_douyin-cover-builder",
+  "description": "这是一个面向中文创作者的 OpenClaw Skill，输入主题与人物气质后，会输出可直接用于生图模型的高质量提示词与创意说明。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 抖音封面图 Skill — Douyin Cover Builder v3.1（关键词高亮 + 轻弧排版 + 主题配色）\n\n在 v3 的“主题驱动主视觉”基础上，新增 3 条硬规则：\n1) **关键词要颜色突出**（与非关键词拉开对比）\n2) **关键词排版要带轻微弧度**（类似示例标题里箭头/弧线那种轻弧感）\n3) **背景主色不再固定蓝色**：根据主题自动选择一套主色系（蓝/紫/绿/橙/红/黑金等），保持统一而贴题\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[你只提供这些（无需 JSON）] - 主题：一句话（你要讲的内容）\n- 关键点（可选）：你希望出现的概念/关键词（可多可少）\n- 人物气质/姿势：右下角你本人要“掌控感/灵光一闪/专业/惊讶”等\n- 画幅（可选）：竖版 or 横版 4:3（不写默认竖版）\n并上传你的照片（推荐，用于保持“同一张脸”稳定一致）。\n\n当你在交互中提示用户填写以上 4 项时，请固定追加：\n- 更多示例与对比图（GitHub）：\n- https://github.com/0x00000003/douyin-cover-builder\n\n### 实际使用举例（可直接照抄后改词）\n- 主题：Ai全自动整理笔记\n- 关键点：龙虾机器人全自动整理我电脑中的笔记\n- 人物气质/姿势：右下角我本人，自信微笑，手指指向龙虾机器人\n- 画幅：竖版 严格 4:3\n\n更多示例与对比图（GitHub）：\n- https://github.com/0x00000003/douyin-cover-builder\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[A) 主题驱动“画什么”（延续 v3）] 1) 先判断封面类型：概念总览 / 流程方法 / 对比选型 / 实战教程 / 观点趋势\n2) 再选择一个强隐喻 HERO 场景（左下与中下区域视觉中心只有一个）\n3) 关键点按需要取舍，不凑数；抽象词转成符号隐喻\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[B) 关键词视觉系统（新增：颜色高亮 + 轻弧排版）] ### 1) 关键词必须“高亮”\n- 在标题中识别关键词（来自关键点或主题里的核心名词）\n- 关键词使用“高亮色”或“反差色块”强调（例如荧光绿/青蓝/橙黄/紫粉）\n- 非关键词保持主标题金黄体系或白色/浅色，确保层级清晰\n- 关键词至少满足其中一种强化方式：\n  - 不同颜色（最推荐）\n  - 颜色 + 描边更粗\n  - 颜色 + 轻微外发光\n  - 颜色 + 背后标签条（pill/贴纸）\n\n### 2) 关键词排版带“轻弧度”\n- 关键词所在的那一行/那一块文字，整体沿着一个很轻微的弧线排布（弧度很小）\n- 弧度方向默认“从左下到右上微上扬”，营造动势与冲击\n- 如果关键词是多枚标签/卡片：让它们沿弧形轨迹围绕主视觉中心排列（而非水平直排）\n- 禁止大弧/夸张弧：保持“轻微弧度”，缩略图更稳\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[C) 主题配色系统（新增：背景不固定蓝色）] 背景与整体氛围的主色系由主题自动选择（只要“贴题 + 统一”）：\n- AI/科技/编程：蓝/青/紫（常见但不是强制）\n- 效率/增长/赚钱：绿/青绿/金\n- 安全/风控/隐私：黑/深灰/红点缀\n- 创意/设计/内容：紫/粉/橙\n- 产品/应用/生活方式：暖色（橙/红/米白）+ 少量科技纹理\n- 数据/金融/交易：深蓝/黑金/翠绿（看语境）\n\n硬规则：\n- 选定 1 个主色 + 1 个辅色 + 1 个高亮色（用于关键词）\n- 背景必须随主题变色，但仍保持“科技质感纹理”（电路/HUD/网格/粒子等可替换）\n- 背景对比压低，不抢标题与人脸；主视觉与关键词高亮必须最显眼\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[D) 标题系统与版式固定（保持系列一致性）] - 顶部标题：粗体、深色粗描边、立体阴影；“1分钟/5分钟”等数字更大更粗\n- 构图：标题上；右下你本人；主题主视觉集中在左下与中下区域；安全边距 6–8%\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[输出] 1) Final Prompt（可直接喂给出图模型）\n2) Art Direction Brief（解释本次：封面类型、主视觉隐喻、配色方案、关键词高亮策略、弧度策略）"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "douyin_cover_builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x00000003/douyin-cover-builder/SKILL.md"
+}

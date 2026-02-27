@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_MacPowerTools",
+  "description": "A unified suite of power user tools for macOS, combining system cleanup and secure Android file transfer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MacPowerTools\n\nMacPowerTools combines essential utilities for developers and power users into a single, cohesive skill."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] ### System Cleanup\n- **Trash**: Empties the Trash.\n- **Caches**: Cleans old cache files (older than 7 days) from `~/Library/Caches`.\n- **Downloads**: Removes downloads older than 30 days.\n- **Safety**: Defaults to `--dry-run` to prevent accidental deletion.\n\n### Secure File Transfer\n- **Android Integration**: Push files to Android devices via ADB.\n- **Integrity Check**: Verifies SHA256 checksums on both ends.\n- **Safety**: Checks for existing files to prevent accidental overwrites."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] - `cleanup [--force]`: Run the system cleanup. Without `--force`, it performs a dry run.\n- `transfer <source_file> [--dest <remote_path>] [--force]`: Securely transfer a file to a connected Android device."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage Examples] ```bash\n# Clean up system (Dry Run)\ncleanup\n\n# Actually delete files\ncleanup --force\n\n# Transfer a file to Android\ntransfer ./release_build.apk --dest /sdcard/Builds/\n```"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "MacPowerTools"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/mac-power-tools/SKILL.md"
+}

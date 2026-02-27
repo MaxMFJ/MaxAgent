@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_afrexai-startup-metrics-engine",
+  "description": "Complete startup metrics command center — from raw data to investor-ready dashboards. Covers every stage (pre-seed to Series B+), every model (SaaS, marketplace, consumer,  hardware), with diagnostic frameworks, benchmark databases, and board-ready reporting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Startup Metrics Command Center\n\nYour complete system for tracking, diagnosing, and communicating startup health — not just formulas, but the *thinking* behind what to measure, when, and what to do when numbers go wrong.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Phase 1: Metrics Architecture] ### Step 1 — Identify Your Model & Stage\n\nBefore tracking anything, classify yourself:\n\n**Business Model:**\n```yaml\nmodel_type:\n  saas:\n    sub_type: # self-serve | sales-led | PLG | hybrid\n    pricing: # per-seat | usage-based | flat | tiered\n    contract: # monthly | annual | multi-year\n  marketplace:\n    type: # managed | unmanaged | SaaS-enabled\n    unit: # GMV | take-rate | transaction\n  consumer:\n    type: # subscription | ad-supported | freemium | transactional\n    engagement_model: # DAU/MAU | session-based | content\n  hardware_plus_software:\n    type: # device + subscription | IoT | embedded\n```\n\n**Stage (determines what matters):**\n\n| Stage | ARR Range | North Star Focus | Board Cares About |\n|-------|-----------|-------------------|-------------------|\n| Pre-seed | $0-$50K | Engagement + retention signal | Problem-solution fit evidence |\n| Seed | $50K-$500K | Cohort retention + early revenue | Product-market fit signals |\n| Series A | $500K-$3M | Growth efficiency + unit economics | LTV:CAC, NDR, growth rate |\n| Series B | $3M-$15M | Scalability + operating leverage | Rule of 40, magic number, burn multiple |\n| Growth | $15M+ | Capital efficiency + market share | Net margins, NRR, competitive moat |\n\n### Step 2 — Build Your Metric Stack\n\n**Layer 1: Health Vitals (track daily)**\n```\n- Revenue: MRR, ARR, net new MRR\n- Growth: MoM growth rate, WoW for early stage\n- Retention: Logo churn rate, revenue churn rate\n- Cash: Monthly burn, runway in months\n```\n\n**Layer 2: Efficiency (track weekly)**\n```\n- Unit economics: CAC, LTV, LTV:CAC ratio, payback months\n- Sales: Pipeline coverage, win rate, sales cycle length\n- Product: Activation rate, feature adoption, NPS/CSAT\n- Team: Revenue per employee, quota attainment\n```\n\n**Layer 3: Strategic (track monthly)**\n```\n- NDR (Net Dollar Retention)\n- Burn multiple\n- Rule of 40 score\n- Magic number\n- Cohort analysis curves\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 2: The Complete Formula Reference] ### Revenue Metrics\n\n```\nMRR = Σ(active_subscriptions × monthly_price)\nARR = MRR × 12\n\nNet New MRR = New MRR + Expansion MRR - Churned MRR - Contraction MRR\n\nMRR Components:\n  new_mrr:         First-time customer revenue this month\n  expansion_mrr:   Upsell + cross-sell from existing customers\n  churned_mrr:     Revenue lost from customers who left\n  contraction_mrr: Revenue lost from downgrades (customer stayed)\n  reactivation_mrr: Revenue from returning churned customers\n\nMoM Growth = (MRR_current - MRR_previous) / MRR_previous\nCMGR (Compound Monthly Growth Rate) = (MRR_end / MRR_start)^(1/months) - 1\n```\n\n**Why CMGR > MoM:** Monthly growth is noisy. CMGR smooths 6-12 month periods for real trend.\n\n### Unit Economics\n\n```\nCAC = Total_Sales_Marketing_Spend / New_Customers_Acquired\n  - Include: salaries, commissions, tools, ads, events, content costs\n  - Exclude: product/engineering, CS (post-sale)\n  - Time-lag adjustment: match spend to cohort it generated (typically 1-3 month lag)\n\nBlended CAC vs Channel CAC:\n  blended_cac = total_spend / total_new_customers\n  channel_cac = channel_spend / channel_new_customers\n  # Always track both — blended hides channel problems\n\nLTV = ARPU × Gross_Margin% × Average_Customer_Lifetime\n  # Or: LTV = ARPU × Gross_Margin% × (1 / Monthly_Churn_Rate)\n  # Cap at 5 years for conservative estimates\n\nLTV:CAC Ratio — THE ratio:\n  > 5.0  → Under-investing in growth (spend more!)\n  3.0-5.0 → Excellent efficiency\n  1.5-3.0 → Healthy but watch payback period\n  1.0-1.5 → Marginal — fix churn or reduce CAC\n  < 1.0  → Burning cash per customer — STOP and fix\n\nCAC Payback = CAC / (Monthly_ARPU × Gross_Margin%)\n  < 6 months  → Elite (PLG companies)\n  6-12 months → Great\n  12-18 months → Acceptable for enterprise\n  > 18 months → Danger zone (unless >130% NDR)\n```\n\n### Retention & Churn\n\n```\nLogo Churn Rate = Customers_Lost / Customers_Start_of_Period\nRevenue Churn Rate = MRR_Lost / MRR_Start_of_Period\n  # Revenue churn > logo churn = losing big cus"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 3: Diagnostic Framework — PULSE Method] When a metric is off, don't just report it — diagnose it.\n\n### P — Pattern Recognition\n```\nQuestions:\n- Is this a trend (3+ months) or a blip (1 month)?\n- Is it seasonal or structural?\n- Did it change gradually or suddenly?\n- Which cohorts/segments are affected?\n```\n\n### U — Upstream Tracing\n```\nEvery metric has upstream drivers. Trace back:\n\nRevenue declining? →\n  ├── New MRR down? → Lead volume? → Conversion rate? → Channel performance?\n  ├── Expansion down? → Upsell attempts? → Product adoption? → CSM activity?\n  └── Churn up? → Which segment? → Voluntary vs involuntary? → Reasons?\n\nCAC increasing? →\n  ├── Spend up? → Which channels? → CPM/CPC changes?\n  ├── Volume same but cost up? → Market saturation? → Competition?\n  └── Conversion down? → Funnel stage? → Lead quality? → Sales process?\n```\n\n### L — Leverage Point\n```\nFind the highest-impact intervention:\n- Which single metric, if improved 10%, would cascade the most?\n- What's the cheapest/fastest fix vs highest-impact fix?\n- Score: Impact (1-5) × Feasibility (1-5) × Speed (1-5)\n```\n\n### S — So-What Translation\n```\nConvert metric into business language:\n- \"Churn increased 2%\" → \"We'll lose $X00K ARR this year at this rate\"\n- \"CAC payback is 18 months\" → \"Each new customer is cash-negative for 1.5 years\"\n- \"NDR is 95%\" → \"Even with zero new sales, we shrink 5% annually\"\n```\n\n### E — Experiment Design\n```yaml\ndiagnostic_experiment:\n  hypothesis: \"[Metric] is declining because [upstream cause]\"\n  test: \"[Specific action] for [time period]\"\n  success_metric: \"[Metric] improves by [X%] within [timeframe]\"\n  sample: \"[Segment/cohort to test on]\"\n  kill_criteria: \"Stop if [negative signal] within [days]\"\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 4: Cohort Analysis — The Truth Machine] Aggregate metrics lie. Cohorts tell the truth.\n\n### Revenue Cohort Table\n```\nTrack each monthly cohort's MRR over time:\n\n         Month 0   Month 1   Month 3   Month 6   Month 12\nJan '25  $50K      $48K      $45K      $42K      $38K\nFeb '25  $55K      $53K      $50K      $48K      —\nMar '25  $60K      $58K      $57K      $56K      —\nApr '25  $45K      $44K      $43K      —         —\n\nReading this:\n- Jan cohort retained 76% at month 12 → mediocre\n- Mar cohort retained 93% at month 3 → improving! What changed?\n- Apr cohort started smaller but retention looks good\n```\n\n### Engagement Cohort (Non-Revenue Signal)\n```yaml\ncohort_engagement:\n  week_1_activation: # % completing key action within 7 days\n  week_4_habit: # % using product 3+ days in week 4\n  month_3_retention: # % still active at 90 days\n  \n  # Leading indicators of revenue retention\n  # If engagement drops, revenue follows 1-3 months later\n```\n\n### Cohort Red Flags\n```\n🚩 Each new cohort retains worse → product-market fit eroding\n🚩 Large cohorts churn more → scaling quality issues\n🚩 Specific channel cohorts churn fast → bad-fit leads\n🚩 Expansion only in old cohorts → pricing/packaging problem\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 5: Board & Investor Reporting] ### Monthly Investor Update Template\n```yaml\ninvestor_update:\n  subject: \"[Company] — [Month] Update: [One-line headline]\"\n  \n  # 1. TL;DR (3 bullets max)\n  highlights:\n    - \"ARR: $X (+Y% MoM) — [context]\"\n    - \"Key win: [biggest achievement]\"\n    - \"Challenge: [biggest problem + what you're doing]\"\n  \n  # 2. Key Metrics Table\n  metrics:\n    arr: {current: \"\", prior_month: \"\", delta: \"\"}\n    mrr: {current: \"\", growth_mom: \"\"}\n    customers: {total: \"\", new: \"\", churned: \"\"}\n    ndr: \"\"\n    burn_rate: \"\"\n    runway_months: \"\"\n    cash_balance: \"\"\n    \n  # 3. What Happened (5-7 bullets)\n  wins: []\n  challenges: []\n  \n  # 4. What's Next (3-5 bullets)\n  next_month_priorities: []\n  \n  # 5. Asks (be specific!)\n  asks:\n    - intro: \"Looking for intro to [person/company] for [reason]\"\n    - advice: \"Would love 15 min on [specific topic]\"\n    - hiring: \"Seeking [role] — know anyone?\"\n```\n\n### Board Deck Metric Slides\n\n**Slide 1: Business Health Dashboard**\n```\nARR: $___     MoM: ___%     NDR: ___%\nCustomers: ___  New: ___    Churned: ___\nRunway: ___ months          Burn Multiple: ___\n\nTraffic light: 🟢 On track | 🟡 Watch | 🔴 Action needed\n```\n\n**Slide 2: Revenue Waterfall**\n```\nStarting MRR:     $___\n+ New:            $___\n+ Expansion:      $___\n- Contraction:    $___\n- Churn:          $___\n= Ending MRR:     $___\n```\n\n**Slide 3: Unit Economics**\n```\nCAC: $___  →  LTV: $___  →  LTV:CAC: ___x\nPayback: ___ months\nBlended vs top channel efficiency\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 6: Model-Specific Metrics] ### SaaS Additions\n```\nQuick Ratio = (New MRR + Expansion MRR) / (Churned MRR + Contraction MRR)\n  > 4.0 → Very healthy growth\n  2.0-4.0 → Good\n  1.0-2.0 → Sustainable but slow\n  < 1.0 → Shrinking\n\nLogo-to-Revenue Retention Gap:\n  If logo retention 85% but revenue retention 95% → upsell compensates\n  If logo retention 85% and revenue retention 85% → no expansion = problem\n\nExpansion Revenue % = Expansion MRR / Total New MRR\n  > 30% → Healthy at scale\n  # Best SaaS: expansion > new revenue (Twilio was 170% NDR)\n```\n\n### Marketplace Additions\n```\nGMV (Gross Merchandise Value) = Total value of transactions on platform\nTake Rate = Platform Revenue / GMV\n  5-15% → Typical for most marketplaces\n  15-30% → Managed/full-service marketplaces\n  \nSupply-side metrics:\n  supply_liquidity = listings_with_transaction / total_listings\n  time_to_first_match = avg_days_from_listing_to_sale\n  \nDemand-side metrics:\n  search_to_fill = completed_transactions / searches\n  repeat_purchase_rate = returning_buyers / total_buyers\n```\n\n### Consumer/PLG Additions\n```\nDAU/MAU Ratio:\n  > 50% → Exceptional (messaging apps)\n  25-50% → Strong habit (social, productivity)\n  10-25% → Good (media, entertainment)\n  < 10% → Weak engagement\n\nViral Coefficient (K-factor) = Invites_per_User × Conversion_Rate\n  > 1.0 → Viral growth (each user brings >1 new user)\n  0.5-1.0 → Amplified growth\n  < 0.5 → Not viral — need paid acquisition\n\nFree-to-Paid Conversion:\n  PLG benchmark: 2-5% of free users convert\n  Freemium benchmark: 1-3%\n  Enterprise self-serve: 5-15%\n\nTime to Value = Time from signup to \"aha moment\"\n  # Reduce this aggressively — strongest lever for activation\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Phase 7: Metric Manipulation Red Flags] ### Vanity vs Real Metrics\n\n| Vanity (Avoid) | Real (Track) |\n|----------------|--------------|\n| Total signups | Activated users (completed key action) |\n| Page views | Engaged sessions (>2 min or action taken) |\n| \"Pipeline\" | Qualified pipeline (met ICP criteria) |\n| Gross revenue | Net revenue (after refunds + credits) |\n| Total customers | Active customers (logged in last 30d) |\n| Downloads | WAU/MAU |\n| \"Partnerships\" | Revenue from partnerships |\n\n### Common Manipulation Tactics to Watch\n\n```\n🚩 Counting annual contracts as MRR at signing (vs. monthly recognition)\n🚩 Excluding \"one-time\" churns from churn rate\n🚩 Using gross revenue instead of net\n🚩 Measuring CAC without fully-loaded costs\n🚩 Cherry-picking best cohort as \"representative\"\n🚩 Counting reactivations as new customers\n🚩 Using \"committed ARR\" (signed but not live)\n🚩 Trailing-12-month NDR when recent cohorts are worse\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Phase 8: Action Playbooks] ### When CAC Is Too High\n```\n1. Audit channel efficiency — kill bottom 20% channels\n2. Improve activation rate (reduces wasted spend)\n3. Increase conversion at each funnel stage (+10% each = compound effect)\n4. Shift mix: more organic/PLG, less paid\n5. Reduce sales cycle length (lower cost per deal)\n6. Tighten ICP — stop selling to bad-fit customers\n```\n\n### When Churn Is Too High\n```\n1. Segment: which customers churn? (Size, channel, use case)\n2. Time: when do they churn? (Month 1-3 = onboarding, 6-12 = value, 12+ = competition)\n3. Reason: exit survey + CS interviews (top 3 reasons)\n4. Fix activation if month 1-3 churn\n5. Fix value delivery if month 6-12 churn\n6. Fix switching cost / competitive moat if 12+ churn\n```\n\n### When Growth Stalls\n```\n1. Check: is TAM exhausted in current segment? → Expand to adjacent\n2. Check: conversion rates declining? → Product or message fatigue\n3. Check: CAC rising with flat volume? → Channel saturation\n4. Check: expansion revenue flat? → Packaging/pricing problem\n5. Check: sales cycle lengthening? → Market conditions or competition\n```\n\n### When Raising Capital\n```\nMetrics investors care about BY STAGE:\n\nPre-seed: Engagement, retention curves, market size\nSeed: MoM growth (15%+), retention cohorts, early unit economics\nSeries A: $1M+ ARR, 3x+ YoY growth, LTV:CAC > 3, NDR > 100%\nSeries B: $5M+ ARR, path to Rule of 40, burn multiple < 2, sales efficiency\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Quick Commands] - \"Set up metrics for [stage] [model] startup\" → Full metric stack recommendation\n- \"Diagnose [metric]\" → PULSE diagnostic framework\n- \"Build investor update for [month]\" → Template with guidance\n- \"Cohort analysis on [data]\" → Retention curve analysis\n- \"Compare us to benchmarks\" → Gap analysis vs stage-appropriate benchmarks\n- \"What metrics for Series [A/B] raise?\" → Investor-ready checklist\n- \"Calculate unit economics from [data]\" → Full LTV, CAC, payback analysis\n- \"Red flag check\" → Scan metrics for warning signs\n- \"Board deck metrics\" → Generate slide-ready metric views\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Edge Cases] ### Multi-Product Companies\nTrack metrics per product line AND blended. Watch for cross-subsidization where one product's margins mask another's losses.\n\n### Usage-Based Pricing\nMRR is estimated, not contracted. Track committed vs consumed. Expansion is automatic (usage growth), so NDR is naturally higher — compare to usage-based peers, not seat-based.\n\n### Negative Churn via Price Increases\nIf NDR > 100% only because of price increases (not organic expansion), this is fragile. Separate price-driven vs usage-driven expansion.\n\n### Very Early Stage (Pre-Revenue)\nTrack leading indicators: activation rate, engagement frequency, NPS, waitlist growth, organic traffic, time-to-value. Revenue metrics come later — don't force them.\n\n### Seasonal Businesses\nUse YoY comparisons, not MoM. Adjust cohort analysis for seasonal patterns. Build seasonal forecast models.\n\n---\n\n*Built by AfrexAI — turning data into revenue.*"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_startup_metrics_engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-startup-metrics-engine/SKILL.md"
+}

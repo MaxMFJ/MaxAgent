@@ -1,0 +1,82 @@
+{
+  "id": "openclaw_skill_private-web-search-searchxng",
+  "description": "Self-hosted private web search using SearXNG. Use when privacy is important, external APIs are blocked, you need search without tracking, or want to avoid paid search APIs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Private Web Search (SearXNG)\n\nPrivacy-respecting, self-hosted metasearch engine for AI agents."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Setup] ```bash\n# 1. Start container\ndocker run -d --name searxng -p 8080:8080 -e BASE_URL=http://localhost:8080/ searxng/searxng\n\n# 2. Enable JSON API\ndocker exec searxng sed -i 's/  formats:/  formats:\\n    - json/' /etc/searxng/settings.yml\ndocker restart searxng\n\n# 3. Verify\ncurl -sL \"http://localhost:8080/search?q=test&format=json\" | jq '.results[0]'\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Basic Search\n\n```bash\ncurl -sL \"http://localhost:8080/search?q=YOUR_QUERY&format=json\" | jq '.results[:10]'\n```\n\n### Using the Helper Script\n\n```bash\n./scripts/search.sh \"openclaw ai\" 5\n```\n\n### Environment Variables\n\n| Variable | Default | Description |\n|----------|---------|-------------|\n| SEARXNG_PORT | 8080 | Container port |\n| SEARXNG_HOST | localhost | Server host |\n| BASE_URL | http://localhost:8080 | Public URL |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Available Engines] Google, Bing, DuckDuckGo, Brave, Startpage, Wikipedia, and more."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Management] ```bash\ndocker start searxng   # Start\ndocker stop searxng    # Stop\ndocker logs searxng    # View logs\ndocker rm searxng -f   # Remove\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Issue | Solution |\n|-------|----------|\n| No results | Check `docker logs searxng` |\n| 403 Forbidden | Enable JSON format (step 2) |\n| Connection refused | Run `docker start searxng` |"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "private_web_search_searchxng"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "docker",
+            "curl",
+            "jq"
+          ]
+        },
+        "install": [
+          {
+            "id": "docker",
+            "kind": "bin",
+            "command": "docker --version",
+            "label": "Docker required"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adelpro/private-web-search-searchxng/SKILL.md"
+}

@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_iterative-code-evolution",
+  "description": "Systematically improve code through structured analysis-mutation-evaluation loops. Adapted from ALMA (Automated meta-Learning of Memory designs for Agentic systems). Use when iterating on code quality, optimizing implementations, debugging persistent issues, or evolving a design through multiple improvement cycles. Replaces ad-hoc \"try and fix\" with disciplined reflection, variant tracking, and principled selection of what to change next.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Iterative Code Evolution\n\nA structured methodology for improving code through disciplined reflect → mutate → verify → score cycles, adapted from the ALMA research framework for meta-learning code designs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Iterating on code that isn't working well enough (performance, correctness, design)\n- Optimizing an implementation across multiple rounds of changes\n- Debugging persistent or recurring issues where simple fixes keep failing\n- Evolving a system design through structured experimentation\n- Any task where you've already tried 2+ approaches and need discipline about what to try next\n- Building or improving prompts, pipelines, agents, or any \"program\" that benefits from iterative refinement"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When NOT to Use This Skill] - Simple one-shot code generation (just write it)\n- Mechanical tasks with clear solutions (refactoring, formatting, migrations)\n- When the user has already specified exactly what to change"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Concepts] ### The Evolution Loop\n\nEvery improvement cycle follows this sequence:\n\n```\n┌─────────────────────────────────────────────────────┐\n│  1. ANALYZE  — structured diagnosis of current code │\n│  2. PLAN     — prioritized, concrete changes        │\n│  3. MUTATE   — implement the changes                │\n│  4. VERIFY   — run it, check for errors             │\n│  5. SCORE    — measure improvement vs. baseline     │\n│  6. ARCHIVE  — log what was tried and what happened │\n│                                                     │\n│  Loop back to 1 with new knowledge                  │\n└─────────────────────────────────────────────────────┘\n```\n\n### The Evolution Log\n\nTrack all iterations in `.evolution/log.json` at the project root. This is the memory that makes each cycle smarter than the last.\n\n```json\n{\n  \"baseline\": {\n    \"description\": \"Initial implementation before evolution began\",\n    \"score\": 0.0,\n    \"timestamp\": \"2025-01-15T10:00:00Z\"\n  },\n  \"variants\": {\n    \"v001\": {\n      \"parent\": \"baseline\",\n      \"description\": \"Added input validation and error handling\",\n      \"changes_made\": [\n        {\n          \"what\": \"Added type checks on all public methods\",\n          \"why\": \"Runtime crashes from malformed input in 3/10 test cases\",\n          \"priority\": \"High\"\n        }\n      ],\n      \"score\": 0.6,\n      \"delta\": \"+0.6 vs parent\",\n      \"timestamp\": \"2025-01-15T10:30:00Z\",\n      \"learned\": \"Input validation was the primary failure mode — most other logic was sound\"\n    },\n    \"v002\": {\n      \"parent\": \"v001\",\n      \"description\": \"Refactored parsing logic to handle edge cases\",\n      \"changes_made\": [\n        {\n          \"what\": \"Rewrote parse_input() to use state machine instead of regex\",\n          \"why\": \"Regex approach failed on nested structures (seen in test cases 7,8)\",\n          \"priority\": \"High\"\n        }\n      ],\n      \"score\": 0.85,\n      \"delta\": \"+0.25 vs parent\",\n      \"timestamp\": \"2025-01-15T11:00:00Z\",\n      \"learned\": \"State machine approach generaliz"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[The Process in Detail] ### Phase 1: ANALYZE — Structured Diagnosis\n\nBefore changing anything, perform a structured analysis of the current code and its outputs. This is the most important phase — it prevents wasted mutations.\n\n**Step 1 — Learn from past edits** (skip on first iteration)\n\nReview the evolution log. For each previous change:\n- Did the score improve or degrade?\n- What pattern made it succeed or fail?\n- Extract 2-3 principles to adopt and 2-3 pitfalls to avoid\n\n**Step 2 — Component-level assessment**\n\nFor each meaningful component (function, class, module, pipeline stage), label it:\n\n| Label | Meaning |\n|-------|---------|\n| **Working** | Produces correct output, no issues observed |\n| **Fragile** | Works on happy path but fails on edge cases or specific inputs |\n| **Broken** | Produces wrong output or errors |\n| **Redundant** | Duplicates logic found elsewhere, adds complexity without value |\n| **Missing** | A needed component that doesn't exist yet |\n\nFor each label, write a one-line explanation of *why* — linked to specific test outputs or observed behavior.\n\n**Step 3 — Quality and coherence check**\n\nLook for cross-cutting issues:\n- **Data flow**: Do components pass structured data to each other, or rely on implicit state?\n- **Error handling**: Are errors caught and handled, or silently swallowed?\n- **Duplication**: Is the same logic repeated in multiple places?\n- **Hardcoding**: Are there magic numbers, hardcoded paths, or environment-specific assumptions?\n- **Generalization**: Which parts would work on new inputs vs. which are overfitted to test cases?\n\n**Step 4 — Produce prioritized suggestions**\n\nBased on Steps 1-3, produce concrete changes. Each suggestion must have:\n\n```\n- PRIORITY: High | Medium | Low\n- WHAT: Precise description of the change (code-level, not vague)\n- WHY: Link to a specific observation from Steps 1-3\n- RISK: What could go wrong if this change is made incorrectly\n```\n\n**Rule: Every suggestion must link to an observation.** No \"this might help\" sugges"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Variant Management] ### When to Branch vs. Modify\n\n- **Modify in place** (same file, new version): When the change is clearly incremental (fixing a bug, adding a check, tuning a parameter)\n- **Branch** (copy to a new file): When trying a fundamentally different approach (different algorithm, different architecture, different strategy)\n\nKeep branches in `.evolution/variants/` with descriptive names. The evolution log tracks which is active.\n\n### Selection: Which Variant to Iterate On\n\nIf you have multiple variants, pick the next one to improve using:\n\n```\nscore(variant) = normalized_reward - 0.5 * log(1 + visit_count)\n```\n\nWhere:\n- `normalized_reward` = variant score relative to baseline (0-1 range)\n- `visit_count` = how many times this variant has been selected for iteration\n\nThis balances **exploitation** (iterating on the best variant) with **exploration** (trying variants that haven't been touched recently). It prevents getting stuck in local optima."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quick Reference: Analysis Template] When performing Phase 1, structure your thinking as:\n\n```markdown"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Evolution Cycle [N] — Analysis] ### Lessons from Previous Cycles\n- Cycle [N-1] changed [X], score went [up/down] by [amount]\n- Principle: [what we learned]\n- Pitfall: [what to avoid]\n\n### Component Assessment\n| Component | Status | Evidence |\n|-----------|--------|----------|\n| function_a() | Working | All test cases pass |\n| function_b() | Fragile | Fails on empty input (test #4) |\n| class_C | Broken | Returns None instead of dict |\n\n### Cross-Cutting Issues\n- [Issue 1 with specific evidence]\n- [Issue 2 with specific evidence]\n\n### Planned Changes (max 3)\n1. **[High]** WHAT: ... | WHY: ... | RISK: ...\n2. **[Medium]** WHAT: ... | WHY: ... | RISK: ...\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Example: Full Evolution Cycle] **Context:** User asks to improve a web scraper that's failing on 40% of target pages.\n\n**Cycle 1 — Analysis:**\n- Component assessment: `parse_html()` is Broken (crashes on pages with no `<article>` tag), `fetch_page()` is Working, `extract_links()` is Fragile (misses relative URLs)\n- Cross-cutting: No error handling — one bad page kills the entire batch\n- Past edits: None (first cycle)\n- Plan: [High] Add fallback selectors in `parse_html()` for pages without `<article>`\n\n**Cycle 1 — Mutate:** Add cascading selector logic: try `<article>`, fall back to `<main>`, fall back to `<body>`.\n\n**Cycle 1 — Verify:** Runs without crashes. \n\n**Cycle 1 — Score:** Pass rate 40% → 72%. Delta: +32%.\n\n**Cycle 1 — Archive:** Learned: \"Most failures were selector misses, not logic errors. Fallback chains are high-value.\"\n\n**Cycle 2 — Analysis:**\n- Lessons: Fallback selectors gave +32%. Principle: handle structural variation before fixing logic.\n- Component assessment: `parse_html()` now Working. `extract_links()` still Fragile — relative URLs not resolved.\n- Plan: [High] Resolve relative URLs using `urljoin` in `extract_links()`\n\n**Cycle 2 — Mutate:** Add base URL resolution.\n\n**Cycle 2 — Score:** 72% → 88%. Delta: +16%.\n\n**Cycle 2 — Archive:** Learned: \"URL resolution was second-biggest failure mode. Always normalize URLs at extraction time.\""
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Key Principles] - **Every change must link to an observation** — no speculative fixes\n- **Max 3 changes per cycle** — attribute improvements accurately\n- **Log everything** — failed attempts are as valuable as successes\n- **Score against parent, not just baseline** — track marginal improvement\n- **Explore when stuck** — if 2+ cycles on the same component show diminishing returns, move to a different component\n- **Revert on 3 failed retries** — don't spiral; log the failure and try a different approach\n- **Principles compound** — the evolution log's `principles_learned` list is the most valuable artifact; it encodes what works for *this specific codebase*"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "iterative_code_evolution"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronjmars/iterative-code-evolution/SKILL.md"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_LinkedIn Writer",
+  "description": "Writes LinkedIn posts that sound like a real person, not a content mill",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LinkedIn Writer\n\nYou write LinkedIn posts that sound human. Not cringe, not corporate, not \"I'm humbled to announce.\" Real thoughts from a real person."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Post Formats That Work] ### 1. The Story Post\nHook → Story (3-5 short paragraphs) → Lesson → Question\n\n### 2. The Contrarian Take\nBold statement that challenges conventional wisdom → Evidence/reasoning → Nuanced conclusion\n\n### 3. The List Post\nHook → Numbered list (5-10 items) → Brief closer\n\n### 4. The Lesson Learned\n\"I used to think X. Then Y happened. Now I think Z.\"\n\n### 5. The Behind-the-Scenes\nPull back the curtain on a process, decision, or failure."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Hook Formulas] The first 2 lines determine if anyone reads the rest. Use these:\n\n- \"Most people get [topic] wrong. Here's what actually works:\"\n- \"I [did something unexpected]. Here's what happened:\"\n- \"[Counterintuitive statement].\"\n- \"Stop doing [common practice]. Do this instead:\"\n- \"[Number] things I learned from [experience]:\"\n- \"Unpopular opinion: [take]\"\n- \"The best [role/thing] I ever [verbed] did something nobody talks about:\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Formatting Rules] - **Short paragraphs.** 1-2 sentences max per paragraph.\n- **Line breaks between every paragraph.** White space is your friend on LinkedIn.\n- **No hashtags in the body.** If you must, 3-5 at the very bottom.\n- **No emojis as bullet points.** One emoji per post max, if any.\n- **First line is everything.** It shows in the preview before \"...see more\"\n- **End with a question.** Drives comments, which drives reach.\n- **Under 1300 characters** for optimal engagement. Can go longer for story posts."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Voice Rules] - Write like you talk. Read it out loud — if it sounds stiff, rewrite.\n- No buzzwords: \"synergy\", \"leverage\", \"ecosystem\", \"disrupt\", \"game-changer\"\n- No humble brags disguised as lessons\n- No \"I'm excited to share...\" — just share it\n- Specific > generic. \"We grew from 12 to 47 customers\" beats \"We experienced significant growth\"\n- First person. This is their voice, not a press release.\n- Contractions. \"Don't\" not \"do not.\" \"It's\" not \"it is.\""
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[What to Ask the User] 1. What's the topic or idea?\n2. Any specific story or experience to reference?\n3. What's your take / what do you want people to take away?\n4. Tone preference? (Casual, professional-casual, thought-leader)\n5. Any CTA? (Comment, share, check link in bio, etc.)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quality Check] - [ ] Hook would make you stop scrolling\n- [ ] Sounds like a person, not a brand\n- [ ] Has white space (short paragraphs with line breaks)\n- [ ] Contains at least one specific detail (numbers, names, dates)\n- [ ] Ends with engagement driver (question or clear CTA)\n- [ ] No cringe buzzwords\n- [ ] Under 1300 characters (unless story format)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "LinkedIn Writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/linkedin-writer/SKILL.md"
+}

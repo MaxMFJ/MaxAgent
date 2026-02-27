@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_Intelligence Ingestion",
+  "description": "Auto-analyze URLs/info for OpenClaw strategic value, classify, create Obsidian notes, update memory. Use when user shares a URL, article, tweet, or any external info source.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Intelligence Ingestion Skill\n\nWhen the user shares a URL, article, tweet, thread, or any piece of external information, execute this pipeline automatically. Do NOT ask for permission — just process it."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Trigger Conditions] **USE this skill when:**\n- User sends a URL (x.com, github.com, any domain)\n- User pastes article text or tweet content\n- User says \"analyze this\", \"evaluate this\", \"what do you think about this\"\n- User forwards content from Telegram or any messaging surface\n- User shares something and asks about strategic value\n\n**DO NOT USE when:**\n- User is asking a general question unrelated to external content\n- User is asking about internal workspace files\n- User explicitly says they don't want analysis"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Pipeline Steps] ### Step 1: READ — Extract Content\n1. If a URL is provided, read the full content (use `read_url_content` or browser)\n2. If text is pasted, use it directly\n3. If X/Twitter link fails to parse (common), search web for the tweet content\n\n### Step 2: CLASSIFY — What Is This?\nAssign **one primary category** and up to 2 secondary tags:\n\n| Category | Description | Examples |\n|----------|------------|---------|\n| `infra` | Infrastructure / protocols / networking | Pilot Protocol, MCP, networking stacks |\n| `strategy` | Routing / cost / architecture decisions | Model routing, multi-account, fallback chains |\n| `skill` | Agent skills / tools / capabilities | OpenAI Skills, Skill design patterns |\n| `theory` | Conceptual frameworks / mental models | Bayes, decision theory, learning loops |\n| `tutorial` | How-to guides / learning material | Claude Code, OpenClaw tutorials |\n| `product` | Tools / apps / services | LM Studio, new AI models, apps |\n| `community` | OpenClaw ecosystem / discussions | Community posts, feature requests |\n| `threat` | Risks / security / deprecation | API changes, breaking updates, security alerts |\n\n### Step 3: ANALYZE — Strategic Value Assessment\n\nFor each piece of information, evaluate:\n\n```markdown"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Strategic Assessment] - **What is it?** [One sentence]\n- **What can it do for us?** [Specific capability/benefit]\n- **What can we build with it?** [Concrete output/project]\n- **Strategic value:** [🔴 Critical / 🟡 High / 🟢 Medium / ⚪ Low]\n- **Competitive edge:** [What advantage over people who don't have this?]\n- **Relation to active bottleneck:** [Does it relate to context overflow/token saving?]\n```\n\nReference the current engineering bottleneck from `MEMORY.md` → \"Active Engineering Bottleneck\" section.\n\n### Step 4: MAP — Relate to Existing Architecture\n\nCheck against the OpenClaw stack:\n```\nSOUL.md → PRINCIPLES.md → AGENTS.md (Identity Stack)\nMEMORY.md (System State + Bottleneck)\nTOOLS.md (Coprocessors: Codex, Antigravity, LM Studio)\nPilot Protocol (Context Separation Layer - P0)\n```\n\nDetermine which layer this information impacts and note dependencies/synergies with existing components.\n\n### Step 5: STORE — Write Obsidian Note\n\nCreate a note at:\n```\n/Volumes/T7 Shield/Obsidian_Vault/20_Intelligence/YYYYMMDD_AuthorOrSource_ShortTitle.md\n```\n\nFollow this template exactly:\n```markdown\n# [Title]\n\n**Source:** [Link](URL)\n**Date:** YYYY-MM-DD\n**Category:** [Primary Category] / [Secondary Tags]\n**Strategic Value:** [🔴/🟡/🟢/⚪] + one-line reason\n**Relation to Active Bottleneck:** [Yes/No + how]\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Summary] [2-3 paragraphs of core content]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Key Takeaways] [Numbered list of actionable insights]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Impact on OpenClaw Architecture] [How this relates to our stack]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Action Items] [What to do next, if anything]\n\n---\n\n**Keke's Note:** [Opinionated analysis in Keke's voice — direct, no-BS, relate to 阳哥's goals]\n```\n\n### Step 6: REMEMBER — Update Memory\n\n1. **Always** append to today's daily log: `~/.openclaw/workspace/memory/YYYY-MM-DD.md`\n2. **If strategic value is 🔴 Critical**: Also update `MEMORY.md` (Pending Work or Active Bottleneck)\n3. **If it suggests a new principle**: Flag for potential `PRINCIPLES.md` update\n4. **If it's a new tool/service**: Flag for potential `TOOLS.md` update\n\n### Step 7: RESPOND — Summarize to User\n\nReply with a concise summary:\n```\n📥 已摄取: [Title]\n📂 类别: [Category]\n🎯 战略价值: [🔴/🟡/🟢/⚪] [One-line reason]\n💾 已存档: Obsidian → 20_Intelligence/[filename]\n📝 已记录: memory/YYYY-MM-DD.md\n🔗 关联: [Which existing component it relates to]\n⚡ 建议行动: [Next step, if any]\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Edge Cases] - **Multiple URLs in one message**: Process each separately, create separate Obsidian notes\n- **Duplicate/similar content**: Check if similar note exists, merge or reference instead of duplicating\n- **Non-English content**: Analyze in original language, write notes in Chinese (matching existing vault style)\n- **Paywalled/inaccessible content**: Note as \"content unavailable\" and work with whatever user provided\n- **User provides their own analysis**: Incorporate their judgment, don't overwrite — they know their system best"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Quality Checklist] Before completing, verify:\n- [ ] Obsidian note created with correct filename format\n- [ ] Daily memory log updated\n- [ ] Source URL preserved in note\n- [ ] Strategic value assessed against current bottleneck\n- [ ] Keke's Note written with genuine analysis (not generic)\n- [ ] User received confirmation summary"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Intelligence Ingestion"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/openclaw-skill-intelligence-ingestion/SKILL.md"
+}

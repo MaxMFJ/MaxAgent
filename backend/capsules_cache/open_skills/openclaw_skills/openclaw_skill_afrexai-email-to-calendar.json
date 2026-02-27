@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_afrexai-email-to-calendar",
+  "description": "Extract calendar events, deadlines, action items, and follow-ups from emails. Works with any calendar provider (Google, Outlook, Apple, Notion, etc.). No external dependencies — pure agent intelligence. Use when the user forwards an email, asks to check inbox for events, or wants to extract structured scheduling data from any text.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Email → Calendar Extraction Engine\n\nTurn emails into structured calendar events with zero missed deadlines."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] When you receive an email (forwarded, pasted, or from inbox):\n\n1. **Parse** — Extract every time-relevant item using the framework below\n2. **Classify** — Score each item by type and confidence\n3. **Present** — Show structured results with numbered selection\n4. **Create** — Use the user's calendar tool to create confirmed events\n5. **Follow up** — Track deadlines and send reminders\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[1. Extraction Framework] ### What to Look For\n\nScan every email for ALL of these categories:\n\n| Category | Signals | Priority |\n|----------|---------|----------|\n| **Hard Events** | \"meeting at\", \"call on\", \"event on\", specific date+time | 🔴 High |\n| **Deadlines** | \"due by\", \"submit before\", \"RSVP by\", \"register by\", \"expires\" | 🔴 High |\n| **Soft Events** | \"sometime next week\", \"let's meet soon\", \"planning for March\" | 🟡 Medium |\n| **Recurring** | \"every Monday\", \"weekly\", \"monthly\", \"standing meeting\" | 🟡 Medium |\n| **Action Items** | \"please review\", \"can you send\", \"follow up on\", \"action required\" | 🟡 Medium |\n| **Travel/Logistics** | Flight numbers, hotel confirmations, check-in times, gate info | 🔴 High |\n| **Implicit Deadlines** | Event is Feb 20 → ticket deadline is likely 1-2 weeks before | 🟡 Medium |\n\n### Extraction Template\n\nFor each item found, extract:\n\n```yaml\n- title: \"Descriptive name (max 80 chars)\"\n  type: event | deadline | action_item | travel | recurring\n  date: \"YYYY-MM-DD\"\n  day_of_week: \"Monday\"  # Always include for verification\n  time_start: \"14:00\"    # 24h format, default 09:00 if unclear\n  time_end: \"15:00\"      # Default: start + 1h for meetings, all-day for deadlines\n  timezone: \"America/New_York\"  # Extract from email headers or content\n  is_all_day: false\n  is_multi_day: false     # If true, include end_date\n  end_date: null\n  recurrence: null        # \"weekly\" | \"biweekly\" | \"monthly\" | \"MWF\" | custom RRULE\n  location: null          # Physical address or video link\n  url: null               # Registration link, event page, or action URL\n  attendees: []           # Names/emails mentioned\n  confidence: high | medium | low\n  source_quote: \"exact text from email that indicates this event\"\n  notes: \"any context the user should know\"\n  deadline_action: null   # \"RSVP\" | \"register\" | \"buy tickets\" | \"submit\"\n  deadline_url: null      # Direct link to take action\n  reminder_minutes: 30    # Suggested reminder (15 for calls, 60 for travel, 1440 for deadlines)\n```\n"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[2. Email Classification] Before extracting, classify the email:\n\n| Email Type | How to Handle |\n|------------|---------------|\n| **Calendar notification** (from calendar-notification@google.com, outlook, etc.) | SKIP — these are responses to existing events |\n| **Newsletter/marketing** | Extract only if contains relevant event dates |\n| **Personal/work email** | Full extraction |\n| **Travel confirmation** | Extract ALL logistics: flights, hotels, car rentals, check-ins |\n| **Meeting invite** (ICS attachment or structured invite) | Extract directly, high confidence |\n| **Thread/reply** | Only extract NEW events, not ones from quoted text |\n| **Forwarded email** | Process the forwarded content, note original sender |\n\n### Ignore Patterns (Skip These)\n\n- Automated calendar responses (Accepted, Declined, Tentative)\n- Unsubscribe confirmations\n- Read receipts\n- Auto-replies / Out of office\n- Spam/promotional (unless user explicitly forwards it)\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[3. Presentation Format] Always present extracted items in this format:\n\n```\n📧 From: [sender] | Subject: [subject] | Date: [received date]\n\nFound [N] calendar items:\n\n1. 🔴 **Team Standup** — Mon Feb 17, 9:00-9:30 AM EST\n   📍 Zoom (link in email) | 👥 Alice, Bob, Charlie\n   🔁 Recurring: Every weekday\n   ✅ Confidence: High\n\n2. 🔴 **Project Deadline: Q1 Report** — Fri Feb 28, EOD\n   ⚠️ ACTION REQUIRED: Submit report\n   🔗 [Submission portal](url)\n   ⏰ Suggested reminder: 3 days before\n   ✅ Confidence: High\n\n3. 🟡 **Team Lunch** — \"sometime next week\"\n   📍 TBD\n   ⚠️ Confidence: Medium — date needs confirmation\n\n---\nReply with numbers to create (e.g. \"1, 2\"), \"all\", or \"none\".\nType \"edit 3\" to modify before creating.\n```\n\n### Presentation Rules\n\n1. **Always show day of week** — humans verify dates by day name\n2. **Group by date** when >5 items\n3. **Flag conflicts** — if new event overlaps existing calendar\n4. **Highlight deadlines** with ⚠️ and days remaining\n5. **Show source quote** for medium/low confidence items\n6. **Never auto-create** without user confirmation\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[4. Calendar Creation] After user confirms, create events using their calendar tool:\n\n### Google Calendar (via `gog` or API)\n```bash\ngog calendar create \\\n  --title \"Event Title\" \\\n  --start \"2026-02-17T09:00:00-05:00\" \\\n  --end \"2026-02-17T10:00:00-05:00\" \\\n  --description \"Extracted from email: [subject]\" \\\n  --location \"Zoom link or address\"\n```\n\n### Apple Calendar (via `osascript`)\n```bash\nosascript -e 'tell application \"Calendar\"\n  tell calendar \"Work\"\n    make new event with properties {summary:\"Event Title\", start date:date \"Monday, February 17, 2026 at 9:00:00 AM\", end date:date \"Monday, February 17, 2026 at 10:00:00 AM\", description:\"Extracted from email\", location:\"Zoom\"}\n  end tell\nend tell'\n```\n\n### Notion / Other\n- Format as structured data and use the appropriate API\n- Or output as .ics file the user can import anywhere\n\n### ICS Export (Universal)\n```\nBEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:20260217T090000\nDTEND:20260217T100000\nSUMMARY:Event Title\nDESCRIPTION:Extracted from email\nLOCATION:Zoom link\nEND:VEVENT\nEND:VCALENDAR\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[5. Duplicate Detection] Before creating any event, check for duplicates:\n\n1. **Search calendar** for events on the same date with similar title (fuzzy match)\n2. **Check tracking file** — maintain a log of created events:\n\n```json\n// memory/email-calendar-log.json\n{\n  \"created_events\": [\n    {\n      \"email_id\": \"msg-123\",\n      \"email_subject\": \"Team Offsite\",\n      \"event_title\": \"Team Offsite\",\n      \"event_date\": \"2026-02-17\",\n      \"calendar_event_id\": \"cal-456\",\n      \"created_at\": \"2026-02-13T10:00:00Z\"\n    }\n  ]\n}\n```\n\n3. **If duplicate found**: Show user and ask — \"This looks similar to [existing event]. Skip, update, or create anyway?\"\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[6. Deadline & Reminder Engine] ### Deadline Patterns to Detect\n\n| Pattern | Example | Action |\n|---------|---------|--------|\n| RSVP deadline | \"RSVP by Feb 10\" | Create reminder 3 days before |\n| Registration | \"Register by March 1\" | Create reminder 1 week before |\n| Early bird | \"Early bird ends Feb 15\" | Create reminder 2 days before |\n| Ticket sales | \"Tickets on sale until...\" | Create reminder + calendar event |\n| Submission | \"Submit proposal by...\" | Create reminder 3 days before |\n| Expiration | \"Offer expires...\" | Create reminder 1 day before |\n\n### Reminder Strategy\n\n- **>30 days away**: Remind 1 week before\n- **7-30 days away**: Remind 3 days before\n- **<7 days away**: Remind 1 day before\n- **Deadlines with URLs**: Include the action URL in the reminder\n- Create reminder as separate calendar event: \"⚠️ DEADLINE: [action] for [event]\"\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[7. Travel Email Handling] Travel confirmations get special treatment:\n\n### Extract ALL of these:\n- ✈️ **Flights**: airline, flight #, departure/arrival times+airports, terminal, gate, confirmation #\n- 🏨 **Hotels**: name, address, check-in/out times, confirmation #\n- 🚗 **Car rentals**: company, pickup/dropoff times+locations, confirmation #\n- 📋 **Transfers**: shuttle times, train bookings\n\n### Create these calendar events:\n1. **Flight departure** — include terminal, gate, flight # in description\n2. **Flight arrival** — for connecting flights too\n3. **Hotel check-in** — with address and confirmation #\n4. **Hotel check-out** — with reminder to pack\n5. **Car pickup/dropoff** — with location details\n\n### Travel-specific reminders:\n- Flight: 3 hours before (domestic), 4 hours before (international)\n- Hotel check-out: Morning of departure\n- Include all confirmation numbers in event descriptions\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[8. Batch Processing] When scanning an inbox for events:\n\n1. **Fetch unread emails** (or emails from last N days)\n2. **Filter out noise** — apply ignore patterns\n3. **Extract from each** — run extraction framework\n4. **Deduplicate across emails** — same event mentioned in multiple threads\n5. **Sort by date** — nearest first\n6. **Present grouped summary**:\n\n```\n📬 Inbox Scan: 47 unread → 12 with calendar items → 18 events found\n\nTHIS WEEK (Feb 13-19):\n1. 🔴 Sprint Review — Thu Feb 13, 3:00 PM\n2. 🔴 1:1 with Manager — Fri Feb 14, 10:00 AM\n...\n\nNEXT WEEK (Feb 20-26):\n5. 🟡 Team Lunch — date TBD (mentioned in 2 emails)\n...\n\nDEADLINES:\n⚠️ Q1 Report — Due Feb 28 (15 days) → [Submit here](url)\n⚠️ Conference RSVP — Due Feb 20 (7 days) → [RSVP](url)\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[9. Edge Cases] | Situation | How to Handle |\n|-----------|---------------|\n| **Multiple timezones in one email** | Extract each event in its stated timezone, convert to user's TZ for display |\n| **\"TBD\" or \"TBA\" times** | Create all-day event, flag for follow-up |\n| **Cancelled events** | Check if already in calendar → offer to delete |\n| **Rescheduled events** | Find original → offer to update (not create new) |\n| **Recurring with exceptions** | Note specific exception dates in description |\n| **Date ambiguity (02/03 = Feb 3 or Mar 2?)** | Use email's locale/origin for MM/DD vs DD/MM, ask if unclear |\n| **Events in quoted/forwarded text** | Only process if user explicitly forwarded it |\n| **Attachments with .ics files** | Parse ICS directly — highest confidence source |\n| **\"Save the date\" emails** | Create tentative event, mark as placeholder |\n| **Conference with multiple sessions** | Extract all sessions as separate events with shared description |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[10. Session Memory] Track user preferences across sessions:\n\n```yaml\n# memory/email-calendar-prefs.yaml\ndefault_timezone: \"America/New_York\"\ndefault_calendar: \"Work\"\ndefault_reminder_minutes: 30\nauto_create_patterns:\n  - \"standup\"\n  - \"1:1\"\nignore_patterns:\n  - \"newsletter\"\n  - \"marketing\"\npreferred_format: \"12h\"  # or \"24h\"\ntravel_reminder_hours: 3\n```\n\nUpdate preferences when user corrects you or states a preference."
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_email_to_calendar"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-email-to-calendar/SKILL.md"
+}

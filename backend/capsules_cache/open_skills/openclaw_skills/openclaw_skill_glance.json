@@ -1,0 +1,238 @@
+{
+  "id": "openclaw_skill_glance",
+  "description": "Create, update, and manage Glance dashboard widgets. Use when user wants to: add something to their dashboard, create a widget, track data visually, show metrics/stats, display API data, or monitor usage.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Glance\n\nAI-extensible personal dashboard. Create custom widgets with natural language — the AI handles data collection."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Custom Widgets** — Create widgets via AI with auto-generated JSX\n- **Agent Refresh** — AI collects data on schedule and pushes to cache\n- **Dashboard Export/Import** — Share widget configurations\n- **Credential Management** — Secure API key storage\n- **Real-time Updates** — Webhook-triggered instant refreshes"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Navigate to skill directory (if installed via ClawHub)\ncd \"$(clawhub list | grep glance | awk '{print $2}')\"\n\n# Or clone directly\ngit clone https://github.com/acfranzen/glance ~/.glance\ncd ~/.glance\n\n# Install dependencies\nnpm install\n\n# Configure environment\ncp .env.example .env.local\n# Edit .env.local with your settings\n\n# Start development server\nnpm run dev\n\n# Or build and start production\nnpm run build && npm start\n```\n\nDashboard runs at **http://localhost:3333**"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] Edit `.env.local`:\n\n```bash\n# Server\nPORT=3333\nAUTH_TOKEN=your-secret-token        # Optional: Bearer token auth\n\n# OpenClaw Integration (for instant widget refresh)\nOPENCLAW_GATEWAY_URL=https://localhost:18789\nOPENCLAW_TOKEN=your-gateway-token\n\n# Database\nDATABASE_PATH=./data/glance.db      # SQLite database location\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Service Installation (macOS)] ```bash\n# Create launchd plist\ncat > ~/Library/LaunchAgents/com.glance.dashboard.plist << 'EOF'\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n    <key>Label</key>\n    <string>com.glance.dashboard</string>\n    <key>ProgramArguments</key>\n    <array>\n        <string>/opt/homebrew/bin/npm</string>\n        <string>run</string>\n        <string>dev</string>\n    </array>\n    <key>WorkingDirectory</key>\n    <string>~/.glance</string>\n    <key>RunAtLoad</key>\n    <true/>\n    <key>KeepAlive</key>\n    <true/>\n    <key>StandardOutPath</key>\n    <string>~/.glance/logs/stdout.log</string>\n    <key>StandardErrorPath</key>\n    <string>~/.glance/logs/stderr.log</string>\n</dict>\n</plist>\nEOF\n\n# Load service\nmkdir -p ~/.glance/logs\nlaunchctl load ~/Library/LaunchAgents/com.glance.dashboard.plist\n\n# Service commands\nlaunchctl start com.glance.dashboard\nlaunchctl stop com.glance.dashboard\nlaunchctl unload ~/Library/LaunchAgents/com.glance.dashboard.plist\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Description | Default |\n|----------|-------------|---------|\n| `PORT` | Server port | `3333` |\n| `AUTH_TOKEN` | Bearer token for API auth | — |\n| `DATABASE_PATH` | SQLite database path | `./data/glance.db` |\n| `OPENCLAW_GATEWAY_URL` | OpenClaw gateway for webhooks | — |\n| `OPENCLAW_TOKEN` | OpenClaw auth token | — |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Requirements] - Node.js 20+\n- npm or pnpm\n- SQLite (bundled)\n\n---\n\n# Widget Skill\n\nCreate and manage dashboard widgets. Most widgets use `agent_refresh` — **you** collect the data."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Check Glance is running (list widgets)\ncurl -s -H \"Origin: $GLANCE_URL\" \"$GLANCE_URL/api/widgets\" | jq '.custom_widgets[].slug'\n\n# Auth note: Local requests with Origin header bypass Bearer token auth\n# For external access, use: -H \"Authorization: Bearer $GLANCE_TOKEN\"\n\n# Refresh a widget (look up instructions, collect data, POST to cache)\nsqlite3 $GLANCE_DATA/glance.db \"SELECT json_extract(fetch, '$.instructions') FROM custom_widgets WHERE slug = 'my-widget'\"\n# Follow the instructions, then:\ncurl -X POST \"$GLANCE_URL/api/widgets/my-widget/cache\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Origin: $GLANCE_URL\" \\\n  -d '{\"data\": {\"value\": 42, \"fetchedAt\": \"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}}'\n\n# Verify in browser\nbrowser action:open targetUrl:\"$GLANCE_URL\"\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[AI Structured Output Generation (REQUIRED)] When generating widget definitions, **use the JSON Schema** at `docs/schemas/widget-schema.json` with your AI model's structured output mode:\n- **Anthropic**: Use `tool_use` with the schema\n- **OpenAI**: Use `response_format: { type: \"json_schema\", schema }`\n\nThe schema enforces all required fields at generation time — malformed widgets cannot be produced.\n\n### Required Fields Checklist\nEvery widget **MUST** have these fields (the schema enforces them):\n\n| Field | Type | Notes |\n|-------|------|-------|\n| `name` | string | Non-empty, human-readable |\n| `slug` | string | Lowercase kebab-case (`my-widget`) |\n| `source_code` | string | Valid JSX with Widget function |\n| `default_size` | `{ w: 1-12, h: 1-20 }` | Grid units |\n| `min_size` | `{ w: 1-12, h: 1-20 }` | Cannot resize smaller |\n| `fetch.type` | enum | `\"server_code\"` \\| `\"webhook\"` \\| `\"agent_refresh\"` |\n| `fetch.instructions` | string | **REQUIRED if type is `agent_refresh`** |\n| `fetch.schedule` | string | **REQUIRED if type is `agent_refresh`** (cron) |\n| `data_schema.type` | `\"object\"` | Always object |\n| `data_schema.properties` | object | Define each field |\n| `data_schema.required` | array | **MUST include `\"fetchedAt\"`** |\n| `credentials` | array | Use `[]` if none needed |\n\n### Example: Minimal Valid Widget\n\n```json\n{\n  \"name\": \"My Widget\",\n  \"slug\": \"my-widget\",\n  \"source_code\": \"function Widget({ serverData }) { return <div>{serverData?.value}</div>; }\",\n  \"default_size\": { \"w\": 2, \"h\": 2 },\n  \"min_size\": { \"w\": 1, \"h\": 1 },\n  \"fetch\": {\n    \"type\": \"agent_refresh\",\n    \"schedule\": \"*/15 * * * *\",\n    \"instructions\": \"## Data Collection\\nCollect the data...\\n\\n## Cache Update\\nPOST to /api/widgets/my-widget/cache\"\n  },\n  \"data_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"value\": { \"type\": \"number\" },\n      \"fetchedAt\": { \"type\": \"string\", \"format\": \"date-time\" }\n    },\n    \"required\": [\"value\", \"fetchedAt\"]\n  },\n  \"credentials\": []\n}\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[⚠️ Widget Creation Checklist (MANDATORY)] Every widget must complete ALL steps before being considered done:\n\n```\n□ Step 1: Create widget definition (POST /api/widgets)\n    - source_code with Widget function\n    - data_schema (REQUIRED for validation)\n    - fetch config (type + instructions for agent_refresh)\n    \n□ Step 2: Add to dashboard (POST /api/widgets/instances)\n    - custom_widget_id matches definition\n    - title and config set\n    \n□ Step 3: Populate cache (for agent_refresh widgets)\n    - Data matches data_schema exactly\n    - Includes fetchedAt timestamp\n    \n□ Step 4: Set up cron job (for agent_refresh widgets)\n    - Simple message: \"⚡ WIDGET REFRESH: {slug}\"\n    - Appropriate schedule (*/15 or */30 typically)\n    \n□ Step 5: BROWSER VERIFICATION (MANDATORY)\n    - Open http://localhost:3333\n    - Widget is visible on dashboard\n    - Shows actual data (not loading spinner)\n    - Data values match what was cached\n    - No errors or broken layouts\n    \n⛔ DO NOT report widget as complete until Step 5 passes!\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Quick Reference] - **Full SDK docs:** See `docs/widget-sdk.md` in the Glance repo\n- **Component list:** See [references/components.md](references/components.md)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Widget Package Structure] ```\nWidget Package\n├── meta (name, slug, description, author, version)\n├── widget (source_code, default_size, min_size)\n├── fetch (server_code | webhook | agent_refresh)\n├── dataSchema? (JSON Schema for cached data - validates on POST)\n├── cache (ttl, staleness, fallback)\n├── credentials[] (API keys, local software requirements)\n├── config_schema? (user options)\n└── error? (retry, fallback, timeout)\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Fetch Type Decision Tree] ```\nIs data available via API that the widget can call?\n├── YES → Use server_code\n└── NO → Does an external service push data?\n    ├── YES → Use webhook\n    └── NO → Use agent_refresh (YOU collect it)\n```\n\n| Scenario | Fetch Type | Who Collects Data? |\n|----------|-----------|-------------------|\n| Public/authenticated API | `server_code` | Widget calls API at render |\n| External service pushes data | `webhook` | External service POSTs to cache |\n| **Local CLI tools** | `agent_refresh` | **YOU (the agent) via PTY/exec** |\n| **Interactive terminals** | `agent_refresh` | **YOU (the agent) via PTY** |\n| **Computed/aggregated data** | `agent_refresh` | **YOU (the agent) on a schedule** |\n\n**⚠️ `agent_refresh` means YOU are the data source.** You set up a cron to remind yourself, then YOU collect the data using your tools (exec, PTY, browser, etc.) and POST it to the cache."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[API Endpoints] ### Widget Definitions\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| `POST` | `/api/widgets` | Create widget definition |\n| `GET` | `/api/widgets` | List all definitions |\n| `GET` | `/api/widgets/:slug` | Get single definition |\n| `PATCH` | `/api/widgets/:slug` | Update definition |\n| `DELETE` | `/api/widgets/:slug` | Delete definition |\n\n### Widget Instances (Dashboard)\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| `POST` | `/api/widgets/instances` | Add widget to dashboard |\n| `GET` | `/api/widgets/instances` | List dashboard widgets |\n| `PATCH` | `/api/widgets/instances/:id` | Update instance (config, position) |\n| `DELETE` | `/api/widgets/instances/:id` | Remove from dashboard |\n\n### Credentials\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| `GET` | `/api/credentials` | List credentials + status |\n| `POST` | `/api/credentials` | Store credential |\n| `DELETE` | `/api/credentials/:id` | Delete credential |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Creating a Widget] ### Full Widget Package Structure\n\n```json\n{\n  \"name\": \"GitHub PRs\",\n  \"slug\": \"github-prs\",\n  \"description\": \"Shows open pull requests\",\n  \n  \"source_code\": \"function Widget({ serverData }) { ... }\",\n  \"default_size\": { \"w\": 2, \"h\": 2 },\n  \"min_size\": { \"w\": 1, \"h\": 1 },\n  \"refresh_interval\": 300,\n  \n  \"credentials\": [\n    {\n      \"id\": \"github\",\n      \"type\": \"api_key\",\n      \"name\": \"GitHub Personal Access Token\",\n      \"description\": \"Token with repo scope\",\n      \"obtain_url\": \"https://github.com/settings/tokens\"\n    }\n  ],\n  \n  \"fetch\": {\n    \"type\": \"agent_refresh\",\n    \"schedule\": \"*/5 * * * *\",\n    \"instructions\": \"Fetch open PRs from GitHub API and POST to cache endpoint\",\n    \"expected_freshness_seconds\": 300,\n    \"max_staleness_seconds\": 900\n  },\n  \n  \"cache\": {\n    \"ttl_seconds\": 300,\n    \"max_staleness_seconds\": 900,\n    \"storage\": \"sqlite\",\n    \"on_error\": \"use_stale\"\n  },\n  \n  \"setup\": {\n    \"description\": \"Configure GitHub token\",\n    \"agent_skill\": \"Store GitHub PAT via /api/credentials\",\n    \"verification\": {\n      \"type\": \"cache_populated\",\n      \"target\": \"github-prs\"\n    },\n    \"idempotent\": true\n  }\n}\n```\n\n### Fetch Types\n\n| Type | When to Use | Data Flow |\n|------|-------------|-----------|\n| `server_code` | Widget can call API directly | Widget → server_code → API |\n| `agent_refresh` | Agent must fetch/compute data | Agent → POST /cache → Widget reads |\n| `webhook` | External service pushes data | External → POST /cache → Widget reads |\n\n**Most widgets should use `agent_refresh`** — the agent fetches data on a schedule and pushes to the cache endpoint.\n\n### Step 1: Create Widget Definition\n\n```http\nPOST /api/widgets\nContent-Type: application/json\n\n{\n  \"name\": \"GitHub PRs\",\n  \"slug\": \"github-prs\",\n  \"description\": \"Shows open pull requests\",\n  \"source_code\": \"function Widget({ serverData }) { ... }\",\n  \"default_size\": { \"w\": 2, \"h\": 2 },\n  \"credentials\": [...],\n  \"fetch\": { \"type\": \"agent_refresh\", \"schedule\": \"*/5 * * * *\", ... },\n  \"data_sc"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Widget Code Template (agent_refresh)] For `agent_refresh` widgets, use `serverData` prop (NOT `useData` hook):\n\n```tsx\nfunction Widget({ serverData }) {\n  const data = serverData;\n  const loading = !serverData;\n  const error = serverData?.error;\n  \n  if (loading) return <Loading message=\"Waiting for data...\" />;\n  if (error) return <ErrorDisplay message={error} />;\n  \n  // NOTE: Do NOT wrap in <Card> - the framework wrapper (CustomWidgetWrapper) \n  // already provides the outer card with title, refresh button, and footer.\n  // Just render your content directly.\n  return (\n    <div className=\"space-y-3\">\n      <List items={data.prs?.map(pr => ({\n        title: pr.title,\n        subtitle: `#${pr.number} by ${pr.author}`,\n        badge: pr.state\n      })) || []} />\n    </div>\n  );\n}\n```\n\n**Important:** The widget wrapper (`CustomWidgetWrapper`) provides:\n- Outer `<Card>` container with header (widget title)\n- Refresh button and \"Updated X ago\" footer\n- Loading/error states\n\nYour widget code should just render the **content** — no Card, no CardHeader, no footer.\n\n**Key difference:** `agent_refresh` widgets receive data via `serverData` prop, NOT by calling `useData()`. The agent pushes data to `/api/widgets/{slug}/cache`."
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Server Code (Legacy Alternative)] **Prefer `agent_refresh` over `server_code`.** Only use server_code when the widget MUST execute code at render time (rare).\n\n```javascript\n// Only for fetch.type = \"server_code\" widgets\nconst token = await getCredential('github');\nconst response = await fetch('https://api.github.com/repos/owner/repo/pulls', {\n  headers: { 'Authorization': `Bearer ${token}` }\n});\nreturn await response.json();\n```\n\n**Available:** `fetch`, `getCredential(provider)`, `params`, `console`\n**Blocked:** `require`, `eval`, `fs`, `process`, `global`"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Agent Refresh Contract] **⚠️ CRITICAL: For `agent_refresh` widgets, YOU (the OpenClaw agent) are the data collector.**\n\nThis is NOT an external API or service. YOU must:\n1. Set up a **cron job to remind yourself** to collect data on a schedule\n2. **Use your own tools** (PTY, exec, browser, etc.) to gather the data\n3. **Parse the output** into structured JSON\n4. **POST to the cache endpoint** so the widget can display it\n\n### The Pattern\n\n```\n┌─────────────────────────────────────────────────────────────┐\n│  Cron fires → Agent wakes up → Agent collects data →        │\n│  Agent POSTs to /cache → Widget displays fresh data         │\n└─────────────────────────────────────────────────────────────┘\n```\n\n### Step-by-Step for agent_refresh Widgets\n\n1. **Create the widget** with `fetch.type = \"agent_refresh\"` and detailed `fetch.instructions`\n2. **Set up a cron job** targeting YOUR main session (message is just the slug):\n   ```javascript\n   cron.add({\n     name: \"Widget: My Data Refresh\",\n     schedule: { kind: \"cron\", expr: \"*/15 * * * *\" },\n     payload: { \n       kind: \"systemEvent\", \n       text: \"⚡ WIDGET REFRESH: my-widget\"  // Just the slug!\n     },\n     sessionTarget: \"main\"  // Reminds YOU, not an isolated session\n   })\n   ```\n3. **When you receive the refresh message**, look up `fetch.instructions` from the DB and spawn a subagent:\n   ```javascript\n   // Parse slug from message\n   const slug = message.replace('⚡ WIDGET REFRESH:', '').trim();\n   // Query widget's fetch.instructions\n   const widget = db.query('SELECT fetch FROM custom_widgets WHERE slug = ?', slug);\n   // Spawn subagent with the instructions\n   sessions_spawn({ task: widget.fetch.instructions, model: 'haiku' });\n   ```\n4. **The subagent collects the data** using your tools:\n   - `exec` for shell commands\n   - PTY for interactive CLI tools (like `claude /status`)\n   - `browser` for web scraping\n   - API calls via `web_fetch`\n4. **POST the data to the cache:**\n   ```http\n   POST /api/widgets/{slug}/cache\n   Content-Type: app"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Data Collection] Exact commands to run with full paths and flags.\nInclude PTY requirements if interactive."
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Data Transformation] Exact JSON structure expected.\nInclude field descriptions and examples."
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Cache Update] Full URL, required headers, body format."
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Browser Verification] Confirm the widget renders correctly.\n```\n\n**Good example:**\n```markdown"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Data Collection] ```bash\ngog gmail search \"in:inbox\" --json\n```"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Data Transformation] Take first 5-8 emails, generate AI summary (3-5 words) for each:\n```json\n{\n  \"emails\": [{\"id\": \"...\", \"from\": \"...\", \"subject\": \"...\", \"summary\": \"AI summary here\", \"unread\": true}],\n  \"fetchedAt\": \"ISO timestamp\"\n}\n```"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Cache Update] POST to: http://localhost:3333/api/widgets/recent-emails/cache\nHeader: Origin: http://localhost:3333\nBody: { \"data\": <object above> }"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Browser Verification] Open http://localhost:3333 and confirm widget shows emails with AI summaries.\n```\n\n**Bad example (too vague):**\n```\nGet emails and post to cache.\n```\n\n### Real Example: Claude Max Usage Widget\n\nThis widget shows Claude CLI usage stats. The data comes from running `claude` in a PTY and navigating to `/status → Usage`.\n\n**The agent's job every 15 minutes:**\n```\n1. Spawn PTY: exec(\"claude\", { pty: true })\n2. Send: \"/status\" + Enter\n3. Navigate to Usage tab (Right arrow keys)\n4. Parse the output: Session %, Week %, Extra %\n5. POST to /api/widgets/claude-code-usage/cache\n6. Kill the PTY session\n7. ⚠️ VERIFY: Open browser to http://localhost:3333 and confirm widget displays new data\n```\n\n**This is YOUR responsibility as the agent.** The widget just displays whatever data is in the cache.\n\n### Subagent Task Template for Refreshes\n\nWhen spawning subagents for widget refreshes, always include browser verification:\n\n```javascript\nsessions_spawn({\n  task: `${fetchInstructions}"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[REQUIRED: Browser Verification] After posting to cache, verify the widget renders correctly:\n1. Open http://localhost:3333 in browser\n2. Find the widget on the dashboard\n3. Confirm it shows the data you just posted\n4. Report any rendering issues\n\nDo NOT report success until browser verification passes.`,\n  model: 'haiku',\n  label: `${slug}-refresh`\n});\n```\n\n### Cache Endpoint\n\n```http\nPOST /api/widgets/{slug}/cache\nContent-Type: application/json\n\n{\n  \"data\": {\n    \"packages\": 142,\n    \"fetchedAt\": \"2026-02-03T18:30:00.000Z\"\n  }\n}\n```\n\n### Immediate Refresh via Webhook\n\n**For `agent_refresh` widgets, users can trigger immediate refreshes via the UI refresh button.**\n\nWhen configured with `OPENCLAW_GATEWAY_URL` and `OPENCLAW_TOKEN` environment variables, clicking the refresh button will:\n1. Store a refresh request in the database (fallback for polling)\n2. **Immediately POST a wake notification to OpenClaw** via `/api/sessions/wake`\n3. The agent receives a prompt to refresh that specific widget now\n\nThis eliminates the delay of waiting for the next heartbeat poll.\n\n**Environment variables** (add to `.env.local`):\n```bash\nOPENCLAW_GATEWAY_URL=http://localhost:18789\nOPENCLAW_TOKEN=your-gateway-token\n```\n\n**How it works:**\n1. User clicks refresh button on widget\n2. Glance POSTs to `/api/widgets/{slug}/refresh`\n3. If webhook configured, Glance immediately notifies OpenClaw: `⚡ WIDGET REFRESH: Refresh the \"{slug}\" widget now and POST to cache`\n4. Agent wakes up, collects fresh data, POSTs to cache\n5. Widget re-renders with updated data\n\n**Response includes webhook status:**\n```json\n{\n  \"status\": \"refresh_requested\",\n  \"webhook_sent\": true,\n  \"fallback_queued\": true\n}\n```\n\nIf webhook fails or isn't configured, the DB fallback ensures the next heartbeat/poll will pick it up.\n\n### Rules\n- **Always include `fetchedAt`** timestamp\n- **Don't overwrite on errors** - let widget use stale data\n- **Use main session cron** so YOU handle the collection, not an isolated agent\n```"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[Credential Requirements Format] ### Credential Types\n\n| Type | Storage | Description | Use For |\n|------|---------|-------------|---------|\n| `api_key` | Glance DB (encrypted) | API tokens stored in Glance | GitHub PAT, OpenWeather key |\n| `local_software` | Agent's machine | Software that must be installed | Homebrew, Docker |\n| `agent` | Agent environment | Auth that lives on the agent | `gh` CLI auth, `gcloud` auth |\n| `oauth` | Glance DB | OAuth tokens (future) | Google Calendar |\n\n### Examples\n\n```json\n{\n  \"credentials\": [\n    {\n      \"id\": \"github\",\n      \"type\": \"api_key\",\n      \"name\": \"GitHub Personal Access Token\",\n      \"description\": \"Token with repo scope\",\n      \"obtain_url\": \"https://github.com/settings/tokens\",\n      \"obtain_instructions\": \"Create token with 'repo' scope\"\n    },\n    {\n      \"id\": \"homebrew\",\n      \"type\": \"local_software\",\n      \"name\": \"Homebrew\",\n      \"check_command\": \"which brew\",\n      \"install_url\": \"https://brew.sh\"\n    },\n    {\n      \"id\": \"github_cli\",\n      \"type\": \"agent\",\n      \"name\": \"GitHub CLI\",\n      \"description\": \"Agent needs gh CLI authenticated to GitHub\",\n      \"agent_tool\": \"gh\",\n      \"agent_auth_check\": \"gh auth status\",\n      \"agent_auth_instructions\": \"Run `gh auth login` on the machine running OpenClaw\"\n    }\n  ]\n}\n```\n\n**When to use `agent` type:** Use for `agent_refresh` widgets where the agent collects data using CLI tools that have their own auth (like `gh`, `gcloud`, `aws`). These credentials aren't stored in Glance — they exist in the agent's environment."
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[Common Credential Providers] | Provider | ID | Description |\n|----------|-----|-------------|\n| GitHub | `github` | GitHub API (PAT with repo scope) |\n| Anthropic | `anthropic` | Claude API (Admin key for usage) |\n| OpenAI | `openai` | GPT API (Admin key for usage) |\n| OpenWeather | `openweather` | Weather data API |\n| Linear | `linear` | Linear API |\n| Notion | `notion` | Notion API |"
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Export/Import Packages] ### Export\n\n```http\nGET /api/widgets/{slug}/export\n```\n\nReturns: `{ \"package\": \"!GW1!eJxVj8EKwj...\" }`\n\n### Import\n\n```http\nPOST /api/widgets/import\nContent-Type: application/json\n\n{\n  \"package\": \"!GW1!eJxVj8EKwj...\",\n  \"dry_run\": false,\n  \"auto_add_to_dashboard\": true\n}\n```\n\nThe `!GW1!` prefix indicates Glance Widget v1 format (compressed base64 JSON).\n\n### Import Response with Cron\n\n```json\n{\n  \"valid\": true,\n  \"widget\": { \"id\": \"cw_abc\", \"slug\": \"homebrew-status\" },\n  \"cronSchedule\": {\n    \"expression\": \"*/15 * * * *\",\n    \"instructions\": \"Run brew list...\",\n    \"slug\": \"homebrew-status\"\n  }\n}\n```\n\nWhen `cronSchedule` is returned, OpenClaw should register a cron job."
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[Key UI Components] | Component | Use For |\n|-----------|---------|\n| `Card` | Widget container (always use `className=\"h-full\"`) |\n| `List` | Items with title/subtitle/badge |\n| `Stat` | Single metric with trend indicator |\n| `Progress` | Progress bars with variants |\n| `Badge` | Status labels (success/warning/error) |\n| `Stack` | Flexbox layout (row/column) |\n| `Grid` | CSS Grid layout |\n| `Loading` | Loading spinner |\n| `ErrorDisplay` | Error with retry button |\n\nSee [references/components.md](references/components.md) for full props."
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[Hooks] ```tsx\n// Fetch data (BOTH args required!)\nconst { data, loading, error, refresh } = useData('github', {});\nconst { data } = useData('github', { endpoint: '/pulls', params: { state: 'open' } });\n\n// Get widget config\nconst config = useConfig();\n\n// Widget-local state\nconst { state, setState } = useWidgetState('counter', 0);\n```\n\n**⚠️ `useData` requires both arguments.** Pass empty `{}` if no query needed."
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[Error Handling] ```tsx\nif (error?.code === 'CREDENTIAL_MISSING') {\n  return <Card><CardContent>\n    <Icons.Lock className=\"h-8 w-8\" />\n    <p>GitHub token required</p>\n  </CardContent></Card>;\n}\n```\n\nError codes: `CREDENTIAL_MISSING`, `RATE_LIMITED`, `NETWORK_ERROR`, `API_ERROR`"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Always check credentials before creating widgets**\n2. **Use meaningful names:** `github-prs-libra` not `widget-1`\n3. **Include fetchedAt in all data** for staleness tracking\n4. **Handle errors gracefully** with retry options\n5. **Confirm actions:** \"Done! Widget added to dashboard.\"\n6. **Size appropriately:** Lists 1x1, charts 2x2"
+    },
+    {
+      "id": "step_34",
+      "type": "subtask",
+      "description": "[Reading Dashboard Data] To summarize dashboard for user:\n\n```\n1. GET /api/widgets/instances → list instances\n2. For each: POST /api/widgets/:slug/execute\n3. Combine into natural language summary\n```\n\n---"
+    },
+    {
+      "id": "step_35",
+      "type": "subtask",
+      "description": "[⚠️ Rules & Gotchas] 1. **Use JSON Schema for generation** — `docs/schemas/widget-schema.json` enforces all required fields\n2. **Browser verify EVERYTHING** — don't report success until you see the widget render correctly\n3. **agent_refresh = YOU collect data** — the widget just displays what you POST to cache\n4. **fetch.instructions is the source of truth** — cron jobs just send the slug, you look up instructions\n5. **Always include fetchedAt** — widgets need timestamps for \"Updated X ago\" display\n6. **data_schema is REQUIRED** — cache POSTs validate against it, malformed data returns 400\n7. **credentials is REQUIRED** — use empty array `[]` if no credentials needed\n8. **Don't wrap in Card** — the framework provides the outer card, you render content only\n9. **Use Haiku for refresh subagents** — mechanical data collection doesn't need Opus\n10. **Mark refresh requests as processed** — `DELETE /api/widgets/{slug}/refresh` after handling\n11. **Spawn subagents for refreshes** — don't block main session with PTY/long-running work"
+    },
+    {
+      "id": "step_36",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Description | Example |\n|----------|-------------|---------|\n| `GLANCE_URL` | Glance server URL | `http://localhost:3333` |\n| `GLANCE_DATA` | Path to SQLite database | `/tmp/glance-test/data` |\n| `OPENCLAW_GATEWAY_URL` | For webhook refresh notifications | `https://localhost:18789` |\n| `OPENCLAW_TOKEN` | Gateway auth token | `d551fe97...` |"
+    },
+    {
+      "id": "step_37",
+      "type": "subtask",
+      "description": "[Learnings (Feb 2026)] - **Webhook refresh works** — Glance POSTs to OpenClaw gateway, agent wakes immediately\n- **Simple cron messages** — just `⚡ WIDGET REFRESH: {slug}`, agent looks up instructions\n- **AI summaries need AI** — for recent-emails, YOU generate the summaries, not some API\n- **icalBuddy for iCloud** — `gog calendar` doesn't work for iCloud, use `/opt/homebrew/bin/icalBuddy`\n- **wttr.in for weather** — free, no API key, JSON format: `wttr.in/City?format=j1`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "glance"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🖥️",
+        "homepage": "https://github.com/acfranzen/glance",
+        "requires": {
+          "env": [
+            "GLANCE_URL"
+          ],
+          "bins": [
+            "curl"
+          ]
+        },
+        "primaryEnv": "GLANCE_URL"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/acfranzen/glance/SKILL.md"
+}

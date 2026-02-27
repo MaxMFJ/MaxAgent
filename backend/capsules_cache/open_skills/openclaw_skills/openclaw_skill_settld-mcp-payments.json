@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_settld-mcp-payments",
+  "description": "Connect OpenClaw agents to Settld MCP for paid tool calls with quote-bound authorization and verifiable receipts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Settld MCP Payments Skill\n\nThis skill teaches OpenClaw agents to use Settld for paid MCP tool calls."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Enables] - Discover Settld MCP tools (`settld.*`)\n- Run paid tool calls with x402 challenge/authorize/retry flow\n- Return verifiable payment/settlement headers from tool responses\n- Produce audit-grade artifacts and receipts in Settld"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] - Node.js 20+\n- Settld API key (`SETTLD_API_KEY`)\n- Settld API base URL (`SETTLD_BASE_URL`)\n- Tenant id (`SETTLD_TENANT_ID`)\n- Optional paid tools base URL (`SETTLD_PAID_TOOLS_BASE_URL`)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[MCP Server Registration] Use the server definition in `mcp-server.example.json`.\n\nServer command:\n\n- command: `npx`\n- args: `[\"-y\",\"settld-mcp\"]`\n\nRequired env vars:\n\n- `SETTLD_BASE_URL`\n- `SETTLD_TENANT_ID`\n- `SETTLD_API_KEY`\n\nOptional env vars:\n\n- `SETTLD_PAID_TOOLS_BASE_URL`\n- `SETTLD_PROTOCOL`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Agent Usage Pattern] 1. Call `settld.about` to verify connectivity.\n2. For paid search/data calls, use:\n   - `settld.exa_search_paid`\n   - `settld.weather_current_paid`\n3. For agreement lifecycle demo calls, use:\n   - `settld.create_agreement`\n   - `settld.submit_evidence`\n   - `settld.settle_run`\n   - `settld.resolve_settlement`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Smoke Prompts] - \"Call `settld.about` and return the result JSON.\"\n- \"Run `settld.weather_current_paid` for Chicago in fahrenheit and include the `x-settld-*` headers.\""
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Safety Notes] - Treat `SETTLD_API_KEY` as secret input.\n- Do not print full API keys in chat output.\n- Keep paid tools scoped to trusted providers and tenant policy."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "settld_mcp_payments"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aidenlippert/settld-mcp-payments/SKILL.md"
+}

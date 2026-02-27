@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_0xarchive",
+  "description": "Query historical crypto market data from 0xArchive across Hyperliquid, Lighter.xyz, and HIP-3. Covers orderbooks, trades, candles, funding rates, open interest, liquidations, and data quality. Use when the user asks about crypto market data, orderbooks, trades, funding rates, or historical prices on Hyperliquid, Lighter.xyz, or HIP-3.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 0xArchive API Skill\r\n\r\nQuery historical and real-time crypto market data from **0xArchive** using `curl`. Three exchanges are supported: **Hyperliquid** (perps DEX), **Lighter.xyz** (order-book DEX), and **HIP-3** (Hyperliquid builder perps). Data types: orderbooks, trades, candles, funding rates, open interest, liquidations, and data quality metrics."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Authentication] All endpoints require the `x-api-key` header. The key is read from `$OXARCHIVE_API_KEY`.\r\n\r\n```bash\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \"https://api.0xarchive.io/v1/...\"\r\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Exchanges & Coin Naming] | Exchange | Path prefix | Coin format | Examples |\r\n|----------|-------------|-------------|---------|\r\n| Hyperliquid | `/v1/hyperliquid` | UPPERCASE | `BTC`, `ETH`, `SOL` |\r\n| HIP-3 | `/v1/hyperliquid/hip3` | Case-sensitive, `prefix:NAME` | `km:US500`, `xyz:XYZ100` |\r\n| Lighter | `/v1/lighter` | UPPERCASE | `BTC`, `ETH` |\r\n\r\nHyperliquid and Lighter auto-uppercase the symbol server-side. HIP-3 coin names are passed through as-is."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Timestamps] All timestamps are **Unix milliseconds**. Use these shell helpers:\r\n\r\n```bash\r\nNOW=$(( $(date +%s) * 1000 ))\r\nHOUR_AGO=$(( NOW - 3600000 ))\r\nDAY_AGO=$(( NOW - 86400000 ))\r\nWEEK_AGO=$(( NOW - 604800000 ))\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Response Format] Every response follows this shape:\r\n\r\n```json\r\n{\r\n  \"success\": true,\r\n  \"data\": [ ... ],\r\n  \"meta\": {\r\n    \"count\": 100,\r\n    \"request_id\": \"uuid\",\r\n    \"next_cursor\": \"1706000000000\"   // present when more pages exist\r\n  }\r\n}\r\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Endpoint Reference] ### Hyperliquid (`/v1/hyperliquid`)\r\n\r\n| Endpoint | Params | Notes |\r\n|----------|--------|-------|\r\n| `GET /instruments` | -- | List all instruments |\r\n| `GET /instruments/{symbol}` | -- | Single instrument details |\r\n| `GET /orderbook/{symbol}` | `timestamp`, `depth` | Latest or at timestamp |\r\n| `GET /orderbook/{symbol}/history` | `start`, `end`, `limit`, `cursor`, `depth` | Historical snapshots |\r\n| `GET /trades/{symbol}` | `start`, `end`, `limit`, `cursor` | Trade history |\r\n| `GET /candles/{symbol}` | `start`, `end`, `limit`, `cursor`, `interval` | OHLCV candles |\r\n| `GET /funding/{symbol}/current` | -- | Current funding rate |\r\n| `GET /funding/{symbol}` | `start`, `end`, `limit`, `cursor`, `interval` | Funding rate history |\r\n| `GET /openinterest/{symbol}/current` | -- | Current open interest |\r\n| `GET /openinterest/{symbol}` | `start`, `end`, `limit`, `cursor`, `interval` | OI history |\r\n| `GET /liquidations/{symbol}` | `start`, `end`, `limit`, `cursor` | Liquidation events |\r\n| `GET /liquidations/{symbol}/volume` | `start`, `end`, `limit`, `cursor`, `interval` | Aggregated liquidation volume (USD) |\r\n| `GET /liquidations/user/{address}` | `start`, `end`, `limit`, `cursor`, `coin` | Liquidations for a user |\r\n| `GET /freshness/{symbol}` | -- | Data freshness per data type |\r\n| `GET /summary/{symbol}` | -- | Combined market summary (price, funding, OI, volume, liquidations) |\r\n| `GET /prices/{symbol}` | `start`, `end`, `limit`, `cursor`, `interval` | Mark/oracle/mid price history |\r\n\r\n### HIP-3 (`/v1/hyperliquid/hip3`)\r\n\r\nCoin names are **case-sensitive** (e.g., `km:US500`). No liquidation endpoints. Orderbook requires Pro+ tier.\r\n\r\n| Endpoint | Params | Notes |\r\n|----------|--------|-------|\r\n| `GET /instruments` | -- | List HIP-3 instruments |\r\n| `GET /instruments/{coin}` | -- | Single instrument |\r\n| `GET /orderbook/{coin}` | `timestamp`, `depth` | Requires Pro+ tier |\r\n| `GET /orderbook/{coin}/history` | `start`, `end`, `limit`, `cursor`, `depth` | Requir"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Common Parameters] | Param | Type | Description |\r\n|-------|------|-------------|\r\n| `start` | int | Start timestamp (Unix ms). Defaults to 24h ago. |\r\n| `end` | int | End timestamp (Unix ms). Defaults to now. |\r\n| `limit` | int | Max records. Default 100, max 1000 (max 10000 for candles). |\r\n| `cursor` | string | Pagination cursor from `meta.next_cursor`. |\r\n| `interval` | string | Candle interval: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `1d`, `1w`. Default: `1h`. For OI/funding: `5m`, `15m`, `30m`, `1h`, `4h`, `1d`. Omit for raw data. |\r\n| `depth` | int | Orderbook depth (number of price levels per side). |\r\n| `granularity` | string | Lighter orderbook resolution: `checkpoint` (default), `30s`, `10s`, `1s`, `tick`. |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Smart Defaults] When the user does not specify a time range, default to the **last 24 hours**:\r\n\r\n```bash\r\nNOW=$(( $(date +%s) * 1000 ))\r\nDAY_AGO=$(( NOW - 86400000 ))\r\n```\r\n\r\nFor candles with no explicit range, default to a range that makes sense for the interval (e.g., last 7 days for 4h candles, last 30 days for 1d candles)."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Pagination] When `meta.next_cursor` is present in the response, more data is available. Append `&cursor=VALUE` to fetch the next page:\r\n\r\n```bash\r\n# First page\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/trades/BTC?start=$START&end=$END&limit=1000\"\r\n\r\n# Next page (use next_cursor from previous response)\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/trades/BTC?start=$START&end=$END&limit=1000&cursor=1706000000000_12345\"\r\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Tier Limits] | Tier | Price | Coins | Orderbook Depth | Lighter Granularity | Historical Depth | Rate Limit |\r\n|------|-------|-------|-----------------|---------------------|------------------|------------|\r\n| Free | $0 | BTC only (HIP-3: km:US500 only) | 20 levels | -- | 30 days | 15 RPS |\r\n| Build | $49/mo | All | 50 levels | checkpoint, 30s, 10s | 1 year | 50 RPS |\r\n| Pro | $199/mo | All | 100 levels | + 1s | Full history | 150 RPS |\r\n| Enterprise | Custom | All | Full depth | + tick | Full history | Custom |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Error Handling] | HTTP Status | Meaning | Action |\r\n|-------------|---------|--------|\r\n| 400 | Bad request / validation error | Check params (missing start/end, invalid interval) |\r\n| 401 | Missing or invalid API key | Set `$OXARCHIVE_API_KEY` |\r\n| 403 | Tier restriction | Upgrade plan (e.g., non-BTC coin on Free tier) |\r\n| 404 | Symbol not found | Check coin name spelling and exchange |\r\n| 429 | Rate limited | Back off and retry |\r\n\r\nError responses return `{ \"code\": 400, \"error\": \"description\" }`."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Example Queries] ```bash\r\n# List Hyperliquid instruments\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/instruments\" | jq '.data | length'\r\n\r\n# Current BTC orderbook (top 10 levels)\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/orderbook/BTC?depth=10\" | jq '.data'\r\n\r\n# ETH trades from the last hour\r\nNOW=$(( $(date +%s) * 1000 )); HOUR_AGO=$(( NOW - 3600000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/trades/ETH?start=$HOUR_AGO&end=$NOW&limit=100\" | jq '.data'\r\n\r\n# SOL 4h candles for the last week\r\nNOW=$(( $(date +%s) * 1000 )); WEEK_AGO=$(( NOW - 604800000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/candles/SOL?start=$WEEK_AGO&end=$NOW&interval=4h\" | jq '.data'\r\n\r\n# Current BTC funding rate\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/funding/BTC/current\" | jq '.data'\r\n\r\n# BTC open interest aggregated to 1h intervals (last week)\r\nNOW=$(( $(date +%s) * 1000 )); WEEK_AGO=$(( NOW - 604800000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/openinterest/BTC?start=$WEEK_AGO&end=$NOW&interval=1h\" | jq '.data'\r\n\r\n# ETH funding rates aggregated to 4h intervals (last 30 days)\r\nNOW=$(( $(date +%s) * 1000 )); MONTH_AGO=$(( NOW - 2592000000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/funding/ETH?start=$MONTH_AGO&end=$NOW&interval=4h\" | jq '.data'\r\n\r\n# HIP-3 km:US500 candles (last 24h, 1h interval)\r\nNOW=$(( $(date +%s) * 1000 )); DAY_AGO=$(( NOW - 86400000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API_KEY\" \\\r\n  \"https://api.0xarchive.io/v1/hyperliquid/hip3/candles/km:US500?start=$DAY_AGO&end=$NOW&interval=1h\" | jq '.data'\r\n\r\n# Lighter BTC orderbook history (30s granularity, last hour)\r\nNOW=$(( $(date +%s) * 1000 )); HOUR_AGO=$(( NOW - 3600000 ))\r\ncurl -s -H \"x-api-key: $OXARCHIVE_API"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Bash",
+    "agent-skill"
+  ],
+  "capability": [
+    "0xarchive"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "OXARCHIVE_API_KEY"
+          ]
+        },
+        "primaryEnv": "OXARCHIVE_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xfantommenace/0xarchive/SKILL.md"
+}

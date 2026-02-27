@@ -32,7 +32,7 @@ struct AssistantMessageContent: View {
             if message.content.isEmpty && message.isStreaming {
                 TypingIndicator()
             } else {
-                MarkdownText(content: message.content)
+                MarkdownText(content: message.content, isStreaming: message.isStreaming)
             }
             
             if let attachments = message.attachments, !attachments.isEmpty {
@@ -64,7 +64,7 @@ struct AssistantMessageContent: View {
             if message.content.isEmpty && message.isStreaming {
                 TypingIndicator()
             } else {
-                MarkdownText(content: message.content)
+                MarkdownText(content: message.content, isStreaming: message.isStreaming)
             }
             if let attachments = message.attachments, !attachments.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {

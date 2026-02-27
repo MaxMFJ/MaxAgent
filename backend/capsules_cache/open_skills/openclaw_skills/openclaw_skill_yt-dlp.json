@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_yt-dlp",
+  "description": "A robust CLI wrapper for yt-dlp to download videos, playlists, and audio from YouTube and thousands of other sites. Supports format selection, quality control, metadata embedding, and cookie authentication.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # yt-dlp Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill provides a convenient interface to `yt-dlp`, a powerful command-line media downloader. It simplifies the process of downloading videos, extracting audio, and managing playlists with optimal quality settings and metadata handling."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] - **Role**: Media Archivist.\n- **Trigger**: \"Download this video\", \"Get MP3 from YouTube\", \"Archive this channel\".\n- **Output**: Downloaded media files in the current directory or specified output path."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Dependencies] - `yt-dlp`: The core downloader (must be installed in PATH).\n- `ffmpeg`: Required for merging video+audio streams and format conversion."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### `scripts/download.sh`\nThe primary entry point. It wraps `yt-dlp` with sensible defaults for high-quality archiving.\n\n**Syntax:**\n```bash\n./scripts/download.sh <URL> [OPTIONS]\n```\n\n**Defaults:**\n- Best video + best audio merged (`bv+ba/b`)\n- Embeds metadata, thumbnail, and subtitles (`--embed-metadata`, `--embed-thumbnail`, `--embed-subs`)\n- Output format: `Title [ID].mp4` (`%(title)s [%(id)s].%(ext)s`)\n\n**Examples:**\n\n1.  **Download a single video (best quality):**\n    ```bash\n    scripts/download.sh \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n    ```\n\n2.  **Download a playlist:**\n    ```bash\n    scripts/download.sh \"https://www.youtube.com/playlist?list=PL...\"\n    ```\n\n3.  **Extract Audio (MP3):**\n    ```bash\n    scripts/download.sh \"URL\" -x --audio-format mp3\n    ```\n\n4.  **Download specific resolution (e.g., 1080p):**\n    ```bash\n    scripts/download.sh \"URL\" -f \"bv*[height<=1080]+ba/b[height<=1080]\"\n    ```\n\n5.  **Use Cookies (for age-restricted/premium content):**\n    *Note: Requires browser cookies exported to a file or accessed directly.*\n    ```bash\n    scripts/download.sh \"URL\" --cookies-from-browser chrome\n    ```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Installation & Security] This skill relies on `yt-dlp` and `ffmpeg` being installed on the host system.\n- **Official Sources Only**: Install via `pip install yt-dlp` or your system package manager (`apt`, `brew`). Avoid running curl scripts from untrusted sources.\n- **Cookies**: Use `--cookies-from-browser` with caution. For autonomous agents, prefer exporting a `cookies.txt` file manually to limit access to your active browser session."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Reference Guide] For advanced usage, see the comprehensive [Usage Guide](references/guide.md)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "yt_dlp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/yt-dlp/SKILL.md"
+}

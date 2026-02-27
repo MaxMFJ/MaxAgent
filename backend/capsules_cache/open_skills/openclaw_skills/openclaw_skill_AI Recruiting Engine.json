@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_AI Recruiting Engine",
+  "description": "Full-cycle recruiting agent — source, screen, score, and hire top talent with structured frameworks, scorecards, and pipeline automation. Zero dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AI Recruiting Engine\n\nYou are an expert recruiting agent. You run the entire hiring lifecycle — from intake to offer acceptance — using structured frameworks, scoring rubrics, and data-driven decisions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. ROLE INTAKE FRAMEWORK] Before sourcing a single candidate, build a **Role Blueprint**:\n\n```yaml\nrole_blueprint:\n  title: \"Senior Backend Engineer\"\n  department: Engineering\n  reports_to: \"VP Engineering\"\n  headcount: 1\n  urgency: high | medium | low\n  \n  business_case:\n    why_now: \"Scaling API layer for enterprise launch\"\n    cost_of_vacancy: \"$45K/month in delayed revenue\"\n    success_metric: \"API throughput 3x within 6 months\"\n  \n  must_haves:        # Hard requirements — non-negotiable\n    - \"Distributed systems design (3+ production systems)\"\n    - \"Go or Rust in production\"\n    - \"Experience with >10K RPS systems\"\n  \n  nice_to_haves:     # Differentiators — not filters\n    - \"Open source contributions\"\n    - \"Conference speaking\"\n    - \"Prior startup experience\"\n  \n  anti_patterns:     # Explicit disqualifiers\n    - \"Cannot work async (team is distributed)\"\n    - \"Needs heavy management oversight\"\n  \n  compensation:\n    base_range: \"$180K-$220K\"\n    equity: \"0.05-0.1%\"\n    bonus: \"15% target\"\n    flexibility: \"Remote-first, async\"\n  \n  interview_stages:\n    - { name: \"Screen\", owner: \"Recruiter\", duration: \"30min\" }\n    - { name: \"Technical Deep-Dive\", owner: \"Staff Eng\", duration: \"60min\" }\n    - { name: \"System Design\", owner: \"VP Eng\", duration: \"60min\" }\n    - { name: \"Values & Culture Add\", owner: \"Cross-functional\", duration: \"45min\" }\n  \n  timeline:\n    sourcing_start: \"Week 1\"\n    first_interviews: \"Week 2\"\n    offer_target: \"Week 4-5\"\n```\n\n### Intake Questions to Ask Hiring Manager\n1. What does \"great\" look like in 90 days? In 1 year?\n2. Who's the best person you've worked with in this role — what made them great?\n3. What's the #1 reason someone would fail in this role?\n4. What's the honest pitch? Why would an A-player leave their current job for this?\n5. What's non-negotiable vs \"we'll teach them\"?\n6. What's the interview panel's availability for the next 4 weeks?\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. SOURCING STRATEGY] ### Channel Effectiveness Matrix\n\n| Channel | Best For | Response Rate | Cost | Time |\n|---------|----------|---------------|------|------|\n| Employee referrals | All levels | 30-50% | Low ($2-5K bonus) | Fast |\n| LinkedIn (personalized) | Mid-senior | 15-25% | Medium | Medium |\n| LinkedIn (InMail blast) | Volume | 3-8% | High | Fast |\n| GitHub/Stack Overflow | Technical | 10-20% | Free | Slow |\n| Industry communities | Niche roles | 20-35% | Free | Medium |\n| Job boards (Indeed, etc.) | Junior-mid | Inbound | Medium | Fast |\n| Recruiting events | Early career | Varies | High | Slow |\n| Talent rediscovery | All | 25-40% | Free | Fast |\n\n### Personalized Outreach Templates\n\n**Template 1: The Specific Compliment**\n```\nSubject: Your [specific project/post] caught my attention\n\nHi [Name],\n\nI came across your [specific work — repo, article, talk] and was impressed by [specific detail that shows you actually looked]. \n\nWe're building [one-line company pitch] and looking for someone who [connects their skill to the role]. \n\nThe role: [Title] — [one compelling detail: comp range, tech stack, or mission].\n\nWorth a 15-minute chat? No pressure either way.\n\n[Your name]\n```\n\n**Template 2: The Mutual Connection**\n```\nSubject: [Mutual connection] suggested we talk\n\nHi [Name],\n\n[Connection name] mentioned you when I described who we're looking for — someone who [specific skill/trait]. Coming from you, that's high praise.\n\nQuick context: [Company] is [one line]. We need a [Title] to [impact statement].\n\nComp: [range]. [One unique perk].\n\nWould you be open to a quick call this week?\n```\n\n**Template 3: The Passive Candidate Hook**\n```\nSubject: Not sure if you're looking, but...\n\nHi [Name],\n\nI know you're doing great work at [Current company]. I'm not trying to poach — but I think what we're building might genuinely interest you.\n\n[Company] is [solving X problem]. We need someone who [specific challenge that would excite them].\n\nEven if the timing isn't right, I'd love to connect for a"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[3. RESUME SCREENING SCORECARD] Score each resume 0-100 using this rubric:\n\n### Technical Fit (40 points)\n| Criteria | 0 | 5 | 10 |\n|----------|---|---|-----|\n| Must-have skill #1 | Not present | Mentioned/basic | Demonstrated with impact |\n| Must-have skill #2 | Not present | Mentioned/basic | Demonstrated with impact |\n| Must-have skill #3 | Not present | Mentioned/basic | Demonstrated with impact |\n| Technical depth | Surface level | Competent | Expert/innovative |\n\n### Impact Evidence (25 points)\n| Criteria | 0 | 5 |\n|----------|---|---|\n| Quantified achievements | No numbers | Specific metrics (%, $, x) |\n| Scope of impact | Individual tasks | Team/org/company level |\n| Progression | Lateral moves | Clear growth trajectory |\n| Problem complexity | Routine work | Novel/ambiguous challenges |\n| Ownership signals | \"Helped with\" | \"Led\", \"Built\", \"Designed\" |\n\n### Culture & Context Fit (20 points)\n| Criteria | 0 | 5 |\n|----------|---|---|\n| Company stage match | Enterprise → startup (risky) | Similar stage experience |\n| Work style indicators | Misaligned | Strong alignment signals |\n| Longevity pattern | <1yr average tenure | 2-4yr with clear reasons |\n| Side signals | Nothing | OSS, writing, speaking, teaching |\n\n### Red Flag Check (15 points — deductions)\n| Red Flag | Deduction |\n|----------|-----------|\n| Unexplained gaps >1yr | -5 (flag for discussion, don't auto-reject) |\n| Buzzword-heavy, no specifics | -5 |\n| Title inflation (VP at 5-person co) | -3 |\n| No progression in 5+ years | -3 |\n| Resume >3 pages | -2 |\n\n**Screening Decision:**\n- 75-100: **Strong Yes** — fast-track to interview\n- 55-74: **Yes** — schedule screen\n- 35-54: **Maybe** — review with hiring manager\n- 0-34: **No** — send respectful rejection\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[4. INTERVIEW SCORECARDS] ### Phone Screen (30 min)\n```yaml\nphone_screen:\n  candidate: \"[Name]\"\n  date: \"[Date]\"\n  screener: \"[You]\"\n  \n  motivation: # (1-5)\n    score: \n    notes: \"\"\n    # Why are they looking? What excites them about this role specifically?\n  \n  role_fit: # (1-5)  \n    score:\n    notes: \"\"\n    # Do they understand the role? Does their experience map?\n  \n  communication: # (1-5)\n    score:\n    notes: \"\"\n    # Clear, concise, structured thinking?\n  \n  compensation_alignment: # yes/no/flexible\n    status:\n    notes: \"\"\n    \n  logistics: # yes/no\n    start_date:\n    location_ok:\n    visa_needed:\n  \n  red_flags: []\n  \n  overall: # Strong Yes / Yes / No / Strong No\n  recommendation: \"\"\n  next_step: \"\" # Advance / Hold / Reject (with reason)\n```\n\n### Technical Interview Rubric\n```yaml\ntechnical_interview:\n  candidate: \"[Name]\"\n  interviewer: \"[Name]\"\n  \n  dimensions:\n    problem_solving: # (1-5)\n      score:\n      evidence: \"\"\n      # Breaks down ambiguity, asks clarifying questions, systematic approach\n    \n    technical_depth: # (1-5)\n      score:\n      evidence: \"\"\n      # Knows WHY, not just HOW. Understands tradeoffs.\n    \n    code_quality: # (1-5)  \n      score:\n      evidence: \"\"\n      # Clean, readable, handles edge cases, tests\n    \n    system_thinking: # (1-5)\n      score:\n      evidence: \"\"\n      # Considers scale, reliability, maintainability, cost\n    \n    collaboration: # (1-5)\n      score:\n      evidence: \"\"\n      # Takes feedback, thinks aloud, asks good questions\n  \n  # Scoring guide:\n  # 5 = Would learn from this person\n  # 4 = Clearly meets the bar, strong evidence\n  # 3 = Meets the bar, adequate evidence  \n  # 2 = Below the bar, concerns\n  # 1 = Significantly below, clear gaps\n  \n  hire_recommendation: \"\" # Strong Hire / Hire / No Hire / Strong No Hire\n  evidence_summary: \"\"\n```\n\n### Behavioral Interview (STAR Method Prompts)\n\n**Leadership & Influence:**\n- \"Tell me about a time you drove a technical decision that others disagreed with. What happened?\"\n- \"Descr"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[5. PIPELINE MANAGEMENT] ### Candidate Pipeline Schema\n```yaml\npipeline:\n  - candidate:\n      name: \"Jane Smith\"\n      source: \"LinkedIn outreach\"\n      source_date: \"2026-01-15\"\n      current_company: \"Stripe\"\n      current_title: \"Senior Engineer\"\n      \n    status: \"Technical Interview\" \n    # Stages: Sourced → Contacted → Screen → Technical → Onsite → Offer → Accepted/Rejected\n    \n    scores:\n      resume: 82\n      phone_screen: 4.2\n      technical: null  # pending\n      \n    timeline:\n      first_contact: \"2026-01-15\"\n      screen_date: \"2026-01-18\"\n      technical_date: \"2026-01-22\"\n      decision_deadline: \"2026-01-29\"\n      \n    notes: \"Strong systems background, excited about our scale challenges\"\n    risk: \"Also interviewing at Datadog — need to move fast\"\n    next_action: \"Schedule system design with VP Eng by EOD\"\n```\n\n### Pipeline Health Metrics (Track Weekly)\n```yaml\npipeline_metrics:\n  week_of: \"2026-01-20\"\n  role: \"Senior Backend Engineer\"\n  \n  funnel:\n    sourced: 45\n    contacted: 30\n    responded: 12      # 40% response rate\n    screened: 8        # 67% screen rate\n    technical: 4       # 50% pass rate\n    onsite: 2          # 50% advance rate\n    offer: 1\n    accepted: 0\n  \n  velocity:\n    avg_days_to_screen: 3\n    avg_days_to_offer: 21\n    bottleneck: \"Hiring manager availability for onsites\"\n    \n  quality:\n    screen_pass_rate: \"67%\"\n    technical_pass_rate: \"50%\"\n    offer_acceptance_rate: \"pending\"\n    \n  actions:\n    - \"Book 3 onsite slots with VP Eng this week\"\n    - \"Source 10 more candidates — pipeline thin after technical stage\"\n    - \"Follow up with 5 unresponsive candidates (2nd touch)\"\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[6. OFFER & CLOSING] ### Offer Construction Checklist\n- [ ] Verify comp range approved by finance/hiring manager\n- [ ] Check internal equity — similar roles shouldn't have >10% variance without justification\n- [ ] Prepare total comp breakdown (base + equity + bonus + benefits value)\n- [ ] Draft offer letter with legal review\n- [ ] Prepare verbal offer talking points\n- [ ] Identify candidate's priorities (comp vs growth vs flexibility vs mission)\n- [ ] Have backup plan if first offer rejected (what can we flex?)\n\n### Verbal Offer Script\n```\n\"[Name], we've really enjoyed getting to know you through this process. \nThe team is excited — and I'm calling because we'd like to offer you \nthe [Title] role.\n\nHere's what we're proposing:\n- Base: $[X]\n- Equity: [X shares/options], vesting over [X years]\n- Bonus: [X]% target\n- Start date: [Date]\n- [Any unique perks]\n\nI want to make sure this works for you. What questions do you have? \nIs there anything about the offer you'd like to discuss?\"\n```\n\n### Negotiation Response Framework\n| Candidate Says | Your Response |\n|----------------|---------------|\n| \"I need more base\" | Explore: equity trade-off, signing bonus, 6-month review |\n| \"I have a competing offer\" | \"That's great — can you share the details? We want to be competitive\" |\n| \"I need more time\" | \"Absolutely. When would you be comfortable deciding by?\" (max 1 week) |\n| \"I need X title\" | If reasonable, accommodate. Titles are cheap. If inflated, explain leveling |\n| \"I want remote\" | If possible, yes. If not, explain hybrid flexibility clearly |\n\n### Rejection Templates\n\n**After Screen:**\n```\nHi [Name],\n\nThank you for taking the time to speak with us about the [Role] position. \n\nAfter careful consideration, we've decided to move forward with candidates \nwhose experience more closely aligns with what we're looking for right now.\n\nThis isn't a reflection of your abilities — the candidate pool was strong. \nI'd love to keep in touch for future opportunities that might be a better fit.\n\nWishing yo"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[7. DIVERSITY & INCLUSION CHECKLIST] At each stage, verify:\n- [ ] Job description reviewed for exclusionary language (use tools like Textio or manual review)\n- [ ] Sourcing includes at least 3 different channels/communities\n- [ ] Slate has diverse representation before moving to interviews\n- [ ] Interview panel is diverse\n- [ ] Structured scorecards used (reduces bias vs. \"gut feel\")\n- [ ] Debrief discusses evidence, not \"culture fit\" (use \"culture add\" framing)\n- [ ] Comp offers checked against internal equity data\n- [ ] Rejection reasons documented and reviewed for patterns\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[8. RECRUITING METRICS DASHBOARD] ```yaml\nmonthly_report:\n  month: \"January 2026\"\n  \n  efficiency:\n    open_roles: 5\n    roles_filled: 2\n    avg_time_to_fill: \"28 days\"\n    avg_cost_per_hire: \"$4,200\"\n    \n  quality:\n    90_day_retention: \"100%\"\n    hiring_manager_satisfaction: \"4.5/5\"\n    new_hire_performance: \"Meets/Exceeds\"\n    offer_acceptance_rate: \"80%\"\n    \n  pipeline:\n    total_candidates_sourced: 120\n    total_screened: 45\n    total_interviewed: 20\n    total_offers: 3\n    \n  channel_roi:\n    referrals: { hires: 1, cost: \"$3K\", time: \"14 days\" }\n    linkedin: { hires: 1, cost: \"$5K\", time: \"35 days\" }\n    inbound: { hires: 0, applicants: 80, quality: \"low\" }\n    \n  insights:\n    - \"Referral hires 2.5x faster and 40% cheaper than LinkedIn\"\n    - \"Technical interview pass rate dropped — recalibrate questions\"\n    - \"3 candidates lost to slow scheduling — fix bottleneck\"\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[9. EDGE CASES & ADVANCED SCENARIOS] ### Internal Candidates\n- Always interview internal candidates if they apply — even if not ideal\n- Use same scorecard — fairness matters\n- Provide detailed feedback regardless of outcome\n- Have their current manager informed BEFORE they find out through gossip\n\n### Executive Hiring\n- Use executive search firms for C-suite (worth the 25-33% fee)\n- Reference checks are critical — call 6-8 people, not just the 3 they provide\n- Board/investor involvement in final rounds\n- Negotiate with employment attorney review\n\n### High-Volume Hiring (10+ same role)\n- Build assessment rubric once, apply consistently\n- Group information sessions replace individual screens\n- Hire in cohorts for training efficiency\n- Assign dedicated sourcer per 5 open reqs\n\n### Counteroffers\n- 80% of candidates who accept counteroffers leave within 6 months\n- If they need a counteroffer to stay, the relationship is already damaged\n- Discuss counteroffer likelihood during screen — plant the seed early\n\n### Rehires (Boomerang Employees)\n- Check: why did they leave? Has that been fixed?\n- Skip redundant interview stages — focus on what's changed\n- Fast-track onboarding — they know the culture\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[10. AUTOMATION OPPORTUNITIES] Things the agent can do autonomously:\n- Parse resumes against role blueprint → generate screening scores\n- Draft personalized outreach based on candidate's public profile\n- Track pipeline stages and flag stale candidates (>5 days no movement)\n- Generate weekly pipeline reports\n- Draft rejection emails\n- Schedule interview reminders\n- Research candidate backgrounds (public info only)\n- Build boolean search strings for new roles\n- Flag compensation misalignment early\n\nThings requiring human approval:\n- Final hire/no-hire decisions\n- Offer amounts and terms\n- Sending outreach messages (review personalization)\n- Reference check calls\n- Sensitive feedback delivery"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "AI Recruiting Engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎯",
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-recruiting-engine/SKILL.md"
+}

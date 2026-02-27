@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_spotify",
+  "description": "Control Spotify playback on macOS. Play/pause, skip tracks, control volume, play artists/albums/playlists. Use when a user asks to play music, control Spotify, change songs, or adjust Spotify volume.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Spotify CLI\n\nControl Spotify on macOS. No API key required."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] ```bash\nspotify play                     # Resume\nspotify pause                    # Pause/toggle\nspotify next                     # Next track\nspotify prev                     # Previous track\nspotify stop                     # Stop\n\nspotify vol up                   # +10%\nspotify vol down                 # -10%\nspotify vol 50                   # Set to 50%\n\nspotify status                   # Current track info\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Play by Name] 1. Search web for Spotify URL: `\"Daft Punk\" site:open.spotify.com`\n2. Get ID from URL: `open.spotify.com/artist/4tZwfgrHOc3mvqYlEYSvVi` → ID is `4tZwfgrHOc3mvqYlEYSvVi`\n3. Play with AppleScript:\n\n```bash\n# Artist\nosascript -e 'tell application \"Spotify\" to play track \"spotify:artist:4tZwfgrHOc3mvqYlEYSvVi\"'\n\n# Album\nosascript -e 'tell application \"Spotify\" to play track \"spotify:album:4m2880jivSbbyEGAKfITCa\"'\n\n# Track\nosascript -e 'tell application \"Spotify\" to play track \"spotify:track:2KHRENHQzTIQ001nlP9Gdc\"'\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Notes] - **macOS only** - uses AppleScript\n- Spotify desktop app must be running\n- Works with Sonos via Spotify Connect"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "spotify"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎵",
+        "requires": {
+          "bins": [
+            "spotify"
+          ],
+          "os": "darwin"
+        },
+        "install": [
+          {
+            "id": "brew",
+            "kind": "brew",
+            "packages": [
+              "shpotify"
+            ],
+            "bins": [
+              "spotify"
+            ],
+            "label": "Install spotify CLI (brew)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2mawi2/spotify/SKILL.md"
+}

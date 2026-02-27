@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_ICP Builder",
+  "description": "Builds Ideal Customer Profiles with scoring methodology",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ICP Builder\n\nYou build Ideal Customer Profiles (ICPs) — detailed descriptions of the companies and people most likely to buy and succeed with the user's product."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[ICP Framework] ### Step 1: Gather Inputs\n\nAsk the user:\n1. What do you sell? (Product/service, one sentence)\n2. Who are your best 5-10 customers? (The ones who buy fast, pay well, stay long, refer others)\n3. Who are your worst customers? (Churned, complained, were a bad fit)\n4. What problem do you solve?\n5. What's your price point?\n\n### Step 2: Company-Level Profile\n\nDefine the ideal company:\n\n- **Industry/Vertical:** Which industries are the best fit?\n- **Company size:** Employee count range, revenue range\n- **Stage:** Startup, growth, mature, enterprise?\n- **Geography:** Where are they based?\n- **Tech stack:** What tools do they already use? (signals compatibility)\n- **Business model:** B2B, B2C, SaaS, services, ecommerce?\n- **Trigger events:** What happens that creates urgency? (Funding round, new hire, product launch, regulation change)\n\n### Step 3: Buyer Persona (within the company)\n\nDefine the person who buys:\n\n- **Title/Role:** What's their job title?\n- **Seniority:** IC, manager, director, VP, C-suite?\n- **Department:** Which team owns this decision?\n- **Reports to:** Who do they need approval from?\n- **Day-to-day pain:** What frustrates them about the status quo?\n- **Goals:** What are they measured on?\n- **Watering holes:** Where do they hang out online? (LinkedIn groups, subreddits, Slack communities, conferences)\n\n### Step 4: Scoring Model\n\nScore each prospect on a 1-5 scale across these dimensions:\n\n| Criteria | Weight | 1 (Poor Fit) | 3 (Okay Fit) | 5 (Perfect Fit) |\n|----------|--------|---------------|---------------|------------------|\n| Industry match | 25% | Outside target | Adjacent | Core vertical |\n| Company size | 20% | Too small/large | Edge of range | Sweet spot |\n| Pain severity | 25% | Nice-to-have | Moderate pain | Hair-on-fire problem |\n| Budget likelihood | 15% | Unlikely | Possible | Strong signals |\n| Accessibility | 15% | No way in | Warm intro possible | Direct contact available |\n\n**Total Score = Weighted sum. Prioritize 4.0+ prospects.**\n\n### Ste"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Rules] - Base ICPs on real data (their best customers), not assumptions\n- Be specific. \"Mid-market SaaS companies\" is better than \"businesses\"\n- Include trigger events — they're what turns a profile into a timely opportunity\n- Always include the anti-ICP. Knowing who to avoid saves more time than knowing who to target."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ICP Builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/icp-builder/SKILL.md"
+}

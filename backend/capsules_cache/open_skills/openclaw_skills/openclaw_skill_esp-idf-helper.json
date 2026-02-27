@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_esp-idf-helper",
+  "description": "Help develop, build, flash, and debug ESP32/ESP8266 firmware using Espressif ESP-IDF on Linux/WSL. Use when the user asks about ESP-IDF project setup, configuring targets, menuconfig, building, flashing via esptool/idf.py, serial monitor, partition tables, sdkconfig, troubleshooting build/flash/monitor errors, or automating common idf.py workflows from the command line.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # esp-idf-helper"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Goal] Provide a repeatable, command-line-first workflow for ESP-IDF development on Linux/WSL: configure → build → flash → monitor → debug/troubleshoot."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start (typical loop)] ### Method 1: Activate ESP-IDF first (Recommended)\n```bash\n# 1) Source the ESP-IDF environment (once per terminal session)\ncd /path/to/esp-idf\n. ./export.sh\n\n# 1.1) Enable ccache to speed up compilation (recommended)\nexport IDF_CCACHE_ENABLE=1\n\n# 2) Go to your project and build\ncd /path/to/your/project\nidf.py set-target <target>    # Set target chip (once per project)\nidf.py build                 # Compile\nidf.py -p <PORT> -b <BAUD> flash  # Flash to device (optional)\n```\n\n### Common commands\n- `idf.py set-target <target>` — Set chip target: esp32, esp32s2, esp32s3, esp32c3, esp32p4\n- `idf.py menuconfig` — Configure project settings (**must run in a new terminal window**)\n- `idf.py build` — Build the project\n- `idf.py update-dependencies` — Update project component dependencies\n- `idf.py partition-table` — Build partition table and print partition entries\n- `idf.py partition-table-flash` — Flash partition table to device\n- `idf.py storage-flash` — Flash storage filesystem partition\n- `idf.py size` — Show firmware size information\n- `idf.py -p <PORT> -b <BAUD> flash` — Flash firmware (default baud: 1152000)\n- `idf.py -p <PORT> monitor` — Open serial monitor\n- `idf.py -p <PORT> -b <BAUD> monitor` — Open serial monitor with specific baud (e.g. 1152000)\n- `idf.py -p <PORT> -b <BAUD> flash monitor` — Flash then monitor\n- `bash {baseDir}/scripts/monitor_auto_attach.sh --project <PROJECT_DIR> --idf <IDF_DIR> --port <PORT> --baud <BAUD>` — Auto attach serial (usbipd) and retry monitor on open failure\n- `bash {baseDir}/scripts/flash_with_progress.sh --project <PROJECT_DIR> --idf <IDF_DIR> --port <PORT> --mode <MODE>` — Flash with real-time progress output (supports auto usbipd attach retry, error summary, and second retry)\n\n#### flash_with_progress 使用示例\n\n```bash\n# 普通烧录整个固件（带进度）\nbash {baseDir}/scripts/flash_with_progress.sh \\\n  --project <PROJECT_DIR> \\\n  --idf <IDF_DIR> \\\n  --port <PORT> \\\n  --mode flash\n\n# 加密烧录 app（带进度）\nbash {baseDir}/scripts/flash_with_progress.sh \\\n  --pr"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow decision tree] - If the user has **no project yet** → create from example/template; confirm target chip and IDF version.\n- If **build fails** → collect the *first* error lines; identify missing deps/toolchain/cmake/python packages; confirm IDF env.\n- If **flash fails** → confirm PORT permissions/WSL USB passthrough, baud rate, boot mode, correct chip target.\n- If **monitor is gibberish** → wrong baud (monitor uses app baud), wrong serial adapter settings, or wrong console encoding.\n- If **boot loop / panic** → request panic backtrace; decode with `addr2line` (or `idf.py monitor` built-in) and check partition/sdkconfig.\n- If **`[Errno 11] Could not exclusively lock port <PORT>`** → serial port is occupied by another process; force release it with:\n  ```bash\n  sudo fuser -k <PORT>\n  ```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[What to ask the user for (minimal)] 1) Chip target: e.g. `esp32`, `esp32s2`, `esp32s3`, `esp32c3`, `esp32p4`.\n2) ESP-IDF version + how it’s installed/activated (IDF Tools installer vs git clone; `IDF_PATH` / `ESPIDF_ROOT`).\n3) Project path + whether it’s an ESP-IDF project (has `CMakeLists.txt`, `main/`, `sdkconfig`).\n4) Serial port path: use `<PORT>` (e.g. `/dev/ttyUSB0`, `/dev/ttyACM*`, or WSL mapped `/dev/ttyS*`).\n5) Exact failing command + the *first* error block in output."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[串口设备获取（Windows + WSL2）] 先在 Windows PowerShell 找到串口号，再在 WSL2 里映射 USB 设备。\n\n### 安装 usbipd-win（Windows，推荐）\n\n在 **管理员模式** PowerShell 中执行：\n\n```powershell\nwinget install dorssel.usbipd-win\n```\n\n然后查看并映射设备：\n\n```powershell\n# Windows PowerShell：查看 USB 设备与 BUSID\nusbipd list\n\n# 将设备挂载到 WSL（每次重新插拔 USB 后都要重新执行）\nusbipd attach --wsl --busid=<BUSID>\n```\n\n### 串口自动映射（推荐）\n\n可直接使用脚本自动选择并挂载串口设备（优先选择 Connected 区域中的 serial 设备，且优先 STATE=Shared）：\n\n```bash\nbash {baseDir}/scripts/usbipd_attach_serial.sh\n```\n\n常用参数：\n\n```bash\n# 指定 BUSID\nbash {baseDir}/scripts/usbipd_attach_serial.sh --busid <BUSID>\n\n# 指定发行版\nbash {baseDir}/scripts/usbipd_attach_serial.sh --distro <DISTRO>\n\n# 按关键词筛选设备（如 ESP32 / COMxx / CP210x）\nbash {baseDir}/scripts/usbipd_attach_serial.sh --keyword \"ESP32\"\n\n# 仅预览，不执行\nbash {baseDir}/scripts/usbipd_attach_serial.sh --dry-run\n```\n\n说明：\n- 每次 USB 设备重新插拔后，`BUSID` 可能变化，需要重新 `usbipd list` 或重新运行自动映射脚本。\n- 重新插拔 USB 后，通常都要再执行一次 `usbipd attach --wsl --busid=<BUSID>`（脚本会自动执行）。\n- 在 WSL2 内可用 `ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null` 确认串口节点。\n\n### 首次需要手动加载内核模块（WSL 2.3.11+）\n\n在较新的 WSL 版本中，内核采用模块化设计，`vhci_hcd`（虚拟主机控制器接口）驱动可能不会自动加载。\n\n在 WSL 终端执行：\n\n```bash\nsudo modprobe vhci_hcd\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[New Feature: Create ESP-IDF Projects] - **Description**: Create a new ESP-IDF project or create a project from an example in the ESP Component Registry.\n- **Usage**:\n  ```bash\n  idf.py create-project <project_name> <project_path>\n  idf.py create-project-from-example <example_name> <project_path>\n  ```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Flash Encryption Support (加密烧录)] 直接使用 `idf.py` 执行加密/非加密应用烧录：\n\n```bash\n# 加密烧录整个固件 (bootloader + partition table + app)\nidf.py -p <PORT> encrypted-flash\n\n# 加密烧录 app 分区\nidf.py -p <PORT> encrypted-app-flash\n\n# 非加密烧录 app 分区\nidf.py -p <PORT> app-flash\n\n# 非加密烧录整个固件 (bootloader + partition table + app)\nidf.py -p <PORT> flash\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Bundled resources] ### references/\n- `references/esp-idf-cli.md` — concise command patterns + what to paste back when reporting errors.\n- `references/idf-py-help.txt` — captured `idf.py --help` output for quick lookup/search.\n\nTo refresh the help text for your installed ESP-IDF version, run:\n- `scripts/capture_idf_help.sh`\n\n### assets/\nNot used by default."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "esp_idf_helper"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/547895019/esp-idf-helper/SKILL.md"
+}

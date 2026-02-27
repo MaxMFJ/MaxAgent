@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_open-webui",
+  "description": "Complete Open WebUI API integration for managing LLM models, chat completions, Ollama proxy operations, file uploads, knowledge bases (RAG), image generation, audio processing, and pipelines. Use this skill when interacting with Open WebUI instances via REST API - listing models, chatting with LLMs, uploading files for RAG, managing knowledge collections, or executing Ollama commands through the Open WebUI proxy. Requires OPENWEBUI_URL and OPENWEBUI_TOKEN environment variables or explicit parameters.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Open WebUI API Skill\n\nComplete API integration for Open WebUI - a unified interface for LLMs including Ollama, OpenAI, and other providers."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] **Activate this skill when the user wants to:**\n- List available models from their Open WebUI instance\n- Send chat completions to models through Open WebUI\n- Upload files for RAG (Retrieval Augmented Generation)\n- Manage knowledge collections and add files to them\n- Use Ollama proxy endpoints (generate, embed, pull models)\n- Generate images or process audio through Open WebUI\n- Check Ollama status or manage models (load, unload, delete)\n- Create or manage pipelines\n\n**Do NOT activate for:**\n- Installing or configuring Open WebUI server itself (use system admin skills)\n- General questions about what Open WebUI is (use general knowledge)\n- Troubleshooting Open WebUI server issues (use troubleshooting guides)\n- Local file operations unrelated to Open WebUI API"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] ### Environment Variables (Recommended)\n\n```bash\nexport OPENWEBUI_URL=\"http://localhost:3000\"  # Your Open WebUI instance URL\nexport OPENWEBUI_TOKEN=\"your-api-key-here\"    # From Settings > Account in Open WebUI\n```\n\n### Authentication\n\n- Bearer Token authentication required\n- Token obtained from Open WebUI: **Settings > Account**\n- Alternative: JWT token for advanced use cases"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Activation Triggers] **Example requests that SHOULD activate this skill:**\n\n1. \"List all models available in my Open WebUI\"\n2. \"Send a chat completion to llama3.2 via Open WebUI with prompt 'Explain quantum computing'\"\n3. \"Upload /path/to/document.pdf to Open WebUI knowledge base\"\n4. \"Create a new knowledge collection called 'Research Papers' in Open WebUI\"\n5. \"Generate an embedding for 'Open WebUI is great' using the nomic-embed-text model\"\n6. \"Pull the llama3.2 model through Open WebUI Ollama proxy\"\n7. \"Get Ollama status from my Open WebUI instance\"\n8. \"Chat with gpt-4 using my Open WebUI with RAG enabled on collection 'docs'\"\n9. \"Generate an image using Open WebUI with prompt 'A futuristic city'\"\n10. \"Delete the old-model from Open WebUI Ollama\"\n\n**Example requests that should NOT activate this skill:**\n\n1. \"How do I install Open WebUI?\" (Installation/Admin)\n2. \"What is Open WebUI?\" (General knowledge)\n3. \"Configure the Open WebUI environment variables\" (Server config)\n4. \"Troubleshoot why Open WebUI won't start\" (Server troubleshooting)\n5. \"Compare Open WebUI to other UIs\" (General comparison)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow] ### 1. Configuration Check\n\n- Verify `OPENWEBUI_URL` and `OPENWEBUI_TOKEN` are set\n- Validate URL format (http/https)\n- Test connection with GET /api/models or /ollama/api/tags\n\n### 2. Operation Execution\n\nUse the CLI tool or direct API calls:\n\n```bash\n# Using the CLI tool (recommended)\npython3 scripts/openwebui-cli.py --help\npython3 scripts/openwebui-cli.py models list\npython3 scripts/openwebui-cli.py chat --model llama3.2 --message \"Hello\"\n\n# Using curl (alternative)\ncurl -H \"Authorization: Bearer $OPENWEBUI_TOKEN\" \\\n  \"$OPENWEBUI_URL/api/models\"\n```\n\n### 3. Response Handling\n\n- HTTP 200: Success - parse and present JSON\n- HTTP 401: Authentication failed - check token\n- HTTP 404: Endpoint/model not found\n- HTTP 422: Validation error - check request parameters"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Core API Endpoints] ### Chat & Completions\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/api/chat/completions` | POST | OpenAI-compatible chat completions |\n| `/api/models` | GET | List all available models |\n| `/ollama/api/chat` | POST | Native Ollama chat completion |\n| `/ollama/api/generate` | POST | Ollama text generation |\n\n### Ollama Proxy\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/ollama/api/tags` | GET | List Ollama models |\n| `/ollama/api/pull` | POST | Pull/download a model |\n| `/ollama/api/delete` | DELETE | Delete a model |\n| `/ollama/api/embed` | POST | Generate embeddings |\n| `/ollama/api/ps` | GET | List loaded models |\n\n### RAG & Knowledge\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/api/v1/files/` | POST | Upload file for RAG |\n| `/api/v1/files/{id}/process/status` | GET | Check file processing status |\n| `/api/v1/knowledge/` | GET/POST | List/create knowledge collections |\n| `/api/v1/knowledge/{id}/file/add` | POST | Add file to knowledge base |\n\n### Images & Audio\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/api/v1/images/generations` | POST | Generate images |\n| `/api/v1/audio/speech` | POST | Text-to-speech |\n| `/api/v1/audio/transcriptions` | POST | Speech-to-text |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Safety & Boundaries] ### Confirmation Required\n\nAlways confirm before:\n- **Deleting models** (`DELETE /ollama/api/delete`) - Irreversible\n- **Pulling large models** - May take significant time/bandwidth\n- **Deleting knowledge collections** - Data loss risk\n- **Uploading sensitive files** - Privacy consideration\n\n### Redaction & Security\n\n- **Never log the full API token** - Redact to `sk-...XXXX` format\n- **Sanitize file paths** - Verify files exist before upload\n- **Validate URLs** - Ensure HTTPS for external instances\n- **Handle errors gracefully** - Don't expose stack traces with tokens\n\n### Workspace Safety\n\n- File uploads default to workspace directory\n- Confirm before accessing files outside workspace\n- No sudo/root operations required (pure API client)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Examples] ### List Models\n\n```bash\npython3 scripts/openwebui-cli.py models list\n```\n\n### Chat Completion\n\n```bash\npython3 scripts/openwebui-cli.py chat \\\n  --model llama3.2 \\\n  --message \"Explain the benefits of RAG\" \\\n  --stream\n```\n\n### Upload File for RAG\n\n```bash\npython3 scripts/openwebui-cli.py files upload \\\n  --file /path/to/document.pdf \\\n  --process\n```\n\n### Add File to Knowledge Base\n\n```bash\npython3 scripts/openwebui-cli.py knowledge add-file \\\n  --collection-id \"research-papers\" \\\n  --file-id \"doc-123-uuid\"\n```\n\n### Generate Embeddings (Ollama)\n\n```bash\npython3 scripts/openwebui-cli.py ollama embed \\\n  --model nomic-embed-text \\\n  --input \"Open WebUI is great for LLM management\"\n```\n\n### Pull Model (Confirmation Required)\n\n```bash\npython3 scripts/openwebui-cli.py ollama pull \\\n  --model llama3.2:70b\n# Agent must confirm: \"This will download ~40GB. Proceed? [y/N]\"\n```\n\n### Check Ollama Status\n\n```bash\npython3 scripts/openwebui-cli.py ollama status\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] | Error | Cause | Solution |\n|-------|-------|----------|\n| 401 Unauthorized | Invalid or missing token | Verify OPENWEBUI_TOKEN |\n| 404 Not Found | Model/endpoint doesn't exist | Check model name spelling |\n| 422 Validation Error | Invalid parameters | Check request body format |\n| 400 Bad Request | File still processing | Wait for processing completion |\n| Connection refused | Wrong URL | Verify OPENWEBUI_URL |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Edge Cases] ### File Processing Race Condition\n\nFiles uploaded for RAG are processed asynchronously. Before adding to knowledge:\n1. Upload file → get file_id\n2. Poll `/api/v1/files/{id}/process/status` until `status: \"completed\"`\n3. Then add to knowledge collection\n\n### Large Model Downloads\n\nPulling models (e.g., 70B parameters) can take hours. Always:\n- Confirm with user before starting\n- Show progress if possible\n- Allow cancellation\n\n### Streaming Responses\n\nChat completions support streaming. Use `--stream` flag for real-time output or collect full response for non-streaming."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[CLI Tool Reference] The included CLI tool (`scripts/openwebui-cli.py`) provides:\n- Automatic authentication from environment variables\n- Structured JSON output with optional formatting\n- Built-in help for all commands\n- Error handling with user-friendly messages\n- Progress indicators for long operations\n\nRun `python3 scripts/openwebui-cli.py --help` for full usage."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "open_webui"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires Python 3.8+ with requests library, or curl. Works with any Open WebUI instance (local or remote). Internet access required for external instances.",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x7466/open-webui/SKILL.md"
+}

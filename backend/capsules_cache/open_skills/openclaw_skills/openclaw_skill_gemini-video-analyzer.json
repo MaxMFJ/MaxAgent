@@ -1,0 +1,83 @@
+{
+  "id": "openclaw_skill_gemini-video-analyzer",
+  "description": "Native video analysis using Google Gemini API. Upload and analyze video files — describe scenes, extract text/UI, answer questions about content, transcribe speech, identify objects and actions. Use when: (1) User sends a video file and wants it analyzed, (2) Video summarization or description needed, (3) Extracting text, UI elements, or information from screen recordings, (4) Answering questions about video content, (5) Comparing multiple videos, (6) Analyzing tutorials, demos, or walkthroughs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gemini Video Analyzer\n\nAnalyze videos natively using Google Gemini's multimodal API. No frame extraction needed — Gemini processes video at 1 FPS with full motion, audio, and visual understanding."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Analyze a video with default prompt (full description)\nGOOGLE_AI_API_KEY=$GOOGLE_AI_API_KEY python3 {baseDir}/scripts/analyze.py /path/to/video.mp4\n\n# Ask a specific question\nGOOGLE_AI_API_KEY=$GOOGLE_AI_API_KEY python3 {baseDir}/scripts/analyze.py /path/to/video.mp4 \"What text is visible on screen?\"\n\n# Manage uploaded files\nGOOGLE_AI_API_KEY=$GOOGLE_AI_API_KEY python3 {baseDir}/scripts/manage_files.py list\nGOOGLE_AI_API_KEY=$GOOGLE_AI_API_KEY python3 {baseDir}/scripts/manage_files.py cleanup\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Supported Formats] MP4, AVI, MOV, MKV, WebM, FLV, MPEG, MPG, WMV, 3GP — up to 2GB per file."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. Video uploads to Google's Files API (temporary, auto-deletes after 48h)\n2. Gemini processes at 1 frame/sec — understands motion, transitions, audio context\n3. Model generates response based on your prompt\n4. Way better than frame extraction for understanding temporal content"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Use Cases] | Task | Example Prompt |\n|------|---------------|\n| General description | *(default — no prompt needed)* |\n| UI/text extraction | `\"What text and UI elements are visible?\"` |\n| Tutorial summary | `\"Summarize the steps shown in this tutorial\"` |\n| Bug report from video | `\"Describe what went wrong in this screen recording\"` |\n| Meeting notes | `\"Summarize the key points discussed\"` |\n| Content comparison | Upload 2 videos, ask for differences |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration] Set `GOOGLE_AI_API_KEY` in your environment or `.env` file. Get a free key at [aistudio.google.com](https://aistudio.google.com/apikey).\n\nDefault model: `gemini-2.5-flash` (fast, cheap, excellent vision). Override with `--model gemini-2.5-pro` for complex analysis."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Reference] See [references/gemini-files-api.md](references/gemini-files-api.md) for file upload limits, processing details, and advanced options."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gemini_video_analyzer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎬",
+        "requires": {
+          "bins": [
+            "python3",
+            "curl"
+          ],
+          "env": [
+            "GOOGLE_AI_API_KEY"
+          ]
+        },
+        "primaryEnv": "GOOGLE_AI_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/a6-gemini-video-analyzer/SKILL.md"
+}

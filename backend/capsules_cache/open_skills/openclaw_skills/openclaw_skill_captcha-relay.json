@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_captcha-relay",
+  "description": "Human-in-the-loop CAPTCHA solving with two modes: screenshot (default, zero infrastructure) and token relay (requires network access). Screenshot mode captures the page with a grid overlay, sends it to the human, and injects clicks based on their reply. Token relay mode detects CAPTCHA type + sitekey, serves the real widget on a relay page for native solving, and injects the token via CDP.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # CAPTCHA Relay v2\n\nSolve CAPTCHAs by relaying them to a human. Two modes available."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Modes] ### Screenshot Mode (default) — No infrastructure needed\n\nGrid overlay screenshot → send image to human via Telegram → human replies with cell numbers → inject clicks.\n\n- **Zero setup** beyond the skill itself. No Tailscale, no tunnels, no relay server.\n- Works for **any** CAPTCHA type (reCAPTCHA, hCaptcha, sliders, text, etc.)\n- Uses `sharp` for image processing + CDP for screenshots and click injection.\n\n```bash\nnode index.js                       # screenshot mode (default)\nnode index.js --mode screenshot     # explicit\nnode index.js --screenshot          # legacy alias\n```\n\n```js\nconst { solveCaptchaScreenshot } = require('./index');\nconst capture = await solveCaptchaScreenshot({ cdpPort: 18800 });\n// capture.imagePath — annotated screenshot to send to human\n// capture.prompt — text prompt for the human\n```\n\n### Token Relay Mode — Requires network access\n\nDetects CAPTCHA type + sitekey → serves real widget on relay page → human solves natively → token injected via CDP.\n\n- Requires **Tailscale** or a **tunnel** (localtunnel/cloudflared) so the human's device can reach the relay server.\n- Produces a proper CAPTCHA token — more reliable for reCAPTCHA v2, hCaptcha, Turnstile.\n- Best when you have Tailscale already set up.\n\n```bash\nnode index.js --mode relay              # with localtunnel\nnode index.js --mode relay --no-tunnel  # with Tailscale/LAN\n```\n\n```js\nconst { solveCaptcha } = require('./index');\nconst result = await solveCaptcha({ cdpPort: 18800, useTunnel: false });\n// result.relayUrl — URL to send to human\n// result.token — solved CAPTCHA token\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use Each] | Scenario | Mode |\n|----------|------|\n| Quick & easy, no setup | `screenshot` |\n| Any CAPTCHA type (sliders, text, etc.) | `screenshot` |\n| Known CAPTCHA with sitekey (reCAPTCHA, hCaptcha, Turnstile) | `relay` |\n| Tailscale already configured | `relay` |\n| No network access to host | `screenshot` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[CLI Flags] | Flag | Default | Description |\n|------|---------|-------------|\n| `--mode screenshot\\|relay` | `screenshot` | Select solving mode |\n| `--screenshot` | — | Alias for `--mode screenshot` |\n| `--no-inject` | inject | Return token without injecting into browser |\n| `--no-tunnel` | tunnel | Skip tunnel, use local/Tailscale IP (relay mode) |\n| `--timeout N` | 120 | Timeout in seconds |\n| `--cdp-port N` | 18800 | Chrome DevTools Protocol port |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Agent Workflow] ### Screenshot mode (simplest)\n\n1. Call `solveCaptchaScreenshot({ cdpPort })` \n2. Send `capture.imagePath` to human via `message` tool with `capture.prompt`\n3. Human replies with cell numbers (e.g. \"1,3,5,7\")\n4. Call `injectGridClicks(cdpPort, capture, selectedCells)` to click those cells\n\n### Relay mode\n\n1. Call `solveCaptcha({ useTunnel: false })` (Tailscale) or `solveCaptcha()` (tunnel)\n2. Send `result.relayUrl` to human via `message` tool\n3. Wait — resolves when human completes the CAPTCHA\n4. Token is auto-injected; continue automation"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Requirements] - Chrome/Chromium with `--remote-debugging-port=18800`\n- Node.js 18+ and `npm install` (deps: ws, sharp)\n- **Relay mode only:** Tailscale or internet for tunnel"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "captcha_relay"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xclanky/captcha-relay/SKILL.md"
+}

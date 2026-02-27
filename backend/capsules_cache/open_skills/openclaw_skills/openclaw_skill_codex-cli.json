@@ -1,0 +1,124 @@
+{
+  "id": "openclaw_skill_codex-cli",
+  "description": "Use OpenAI Codex CLI for coding tasks. Triggers: codex, code review, fix CI, refactor code, implement feature, coding agent, gpt-5-codex. Enables Clawdbot to delegate coding work to Codex CLI as a subagent or direct tool.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenAI Codex CLI Skill\n\nUse OpenAI Codex CLI (`codex`) for coding tasks including code review, refactoring, bug fixes, CI repairs, and feature implementation. Codex CLI runs locally on your machine with full filesystem access."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - User asks for code changes, refactoring, or implementation\n- CI/build failures need fixing\n- Code review before commit/push\n- Large codebase exploration or explanation\n- Tasks requiring file editing + command execution\n- When GPT-5-Codex model strengths are needed (code generation, tool use)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation & Auth] Codex CLI requires ChatGPT Plus/Pro/Business/Enterprise subscription.\n\n```bash\n# Install\nnpm i -g @openai/codex\n\n# Authenticate (opens browser for OAuth)\ncodex login\n\n# Or use API key\nprintenv OPENAI_API_KEY | codex login --with-api-key\n\n# Verify auth\ncodex login status\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Commands] ### Interactive Mode (TUI)\n```bash\ncodex                           # Launch interactive terminal UI\ncodex \"explain this codebase\"   # Start with a prompt\ncodex --cd ~/projects/myapp     # Set working directory\n```\n\n### Non-Interactive (Scripting)\n```bash\ncodex exec \"fix the CI failure\"                    # Run and exit\ncodex exec --full-auto \"add input validation\"      # Auto-approve workspace writes\ncodex exec --json \"list all API endpoints\"         # JSON output for parsing\ncodex exec -i screenshot.png \"match this design\"   # With image input\n```\n\n### Session Management\n```bash\ncodex resume               # Pick from recent sessions\ncodex resume --last        # Continue most recent\ncodex resume <SESSION_ID>  # Resume specific session\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Slash Commands (In TUI)] | Command | Purpose |\n|---------|---------|\n| `/model` | Switch model (gpt-5-codex, gpt-5) |\n| `/approvals` | Set approval mode (Auto, Read Only, Full Access) |\n| `/review` | Code review against branch, uncommitted changes, or specific commit |\n| `/diff` | Show Git diff including untracked files |\n| `/compact` | Summarize conversation to free context |\n| `/init` | Generate AGENTS.md scaffold |\n| `/status` | Show session config and token usage |\n| `/undo` | Revert most recent turn |\n| `/new` | Start fresh conversation |\n| `/mcp` | List configured MCP tools |\n| `/mention <path>` | Attach file to conversation |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Approval Modes] | Mode | Behavior |\n|------|----------|\n| **Auto** (default) | Read/edit/run commands in workspace; asks for outside access |\n| **Read Only** | Browse files only; requires approval for changes |\n| **Full Access** | Full machine access including network (use sparingly) |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Key Flags] | Flag | Purpose |\n|------|---------|\n| `--model, -m <model>` | Override model (gpt-5-codex, gpt-5) |\n| `--cd, -C <path>` | Set working directory |\n| `--add-dir <path>` | Add additional writable roots |\n| `--image, -i <path>` | Attach image(s) to prompt |\n| `--full-auto` | Workspace write + approve on failure |\n| `--sandbox <mode>` | read-only, workspace-write, danger-full-access |\n| `--json` | Output newline-delimited JSON |\n| `--search` | Enable web search tool |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Clawdbot Integration Patterns] ### Pattern 1: Direct exec Tool\nCall Codex from Clawdbot's exec tool for coding tasks:\n\n```bash\n# In Clawdbot session\nexec codex exec --full-auto --cd ~/projects/medreport \"fix the TypeScript errors in src/components\"\n```\n\n### Pattern 2: Subagent Delegation\nSpawn a coding subagent that uses Codex:\n\n```json5\n// In agents.defaults or per-agent config\n{\n  agents: {\n    list: [\n      {\n        id: \"coder\",\n        workspace: \"~/clawd-coder\",\n        model: \"openai-codex/gpt-5.2\",  // Uses Codex auth\n        tools: {\n          allow: [\"exec\", \"read\", \"write\", \"edit\", \"apply_patch\", \"process\"]\n        }\n      }\n    ]\n  }\n}\n```\n\n### Pattern 3: CLI Backend Fallback\nConfigure Codex as a text-only fallback:\n\n```json5\n{\n  agents: {\n    defaults: {\n      cliBackends: {\n        \"codex-cli\": {\n          command: \"codex\",\n          args: [\"exec\", \"--full-auto\"],\n          output: \"text\",\n          sessionArg: null  // Codex manages its own sessions\n        }\n      }\n    }\n  }\n}\n```\n\n### Pattern 4: MCP Server Mode\nRun Codex as an MCP server for other agents:\n\n```bash\ncodex mcp-server  # Exposes Codex tools via stdio MCP\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Clawdbot Config: OpenAI Codex Provider] Use your ChatGPT Pro subscription via the `openai-codex` provider:\n\n```json5\n{\n  agents: {\n    defaults: {\n      model: { primary: \"openai-codex/gpt-5.2\" },\n      models: {\n        \"openai-codex/gpt-5.2\": { alias: \"Codex\" },\n        \"anthropic/claude-opus-4-5\": { alias: \"Opus\" }\n      }\n    }\n  }\n}\n```\n\nAuth syncs automatically from `~/.codex/auth.json` to Clawdbot's auth profiles."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Code Review Workflow] ```bash\n# Interactive review\ncodex\n/review  # Choose: branch, uncommitted, or specific commit\n\n# Non-interactive\ncodex exec \"review the changes in this PR against main branch\"\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Multi-Directory Projects] ```bash\n# Work across monorepo packages\ncodex --cd apps/frontend --add-dir ../backend --add-dir ../shared\n\n# Or in TUI\ncodex --cd ~/projects/myapp --add-dir ~/projects/shared-lib\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Custom Slash Commands] Create reusable prompts in `~/.codex/prompts/`:\n\n```markdown\n<!-- ~/.codex/prompts/pr.md -->\n---\ndescription: Prepare and open a draft PR\nargument-hint: [BRANCH=<name>] [TITLE=\"<title>\"]\n---\n\nCreate branch `dev/$BRANCH` if specified.\nStage and commit changes with a clear message.\nOpen a draft PR with title $TITLE or auto-generate one.\n```\n\nInvoke: `/prompts:pr BRANCH=feature-auth TITLE=\"Add OAuth flow\"`"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[MCP Integration] Add MCP servers to extend Codex:\n\n```bash\n# Add stdio server\ncodex mcp add github -- npx @anthropic/mcp-server-github\n\n# Add HTTP server\ncodex mcp add docs --url https://mcp.deepwiki.com/mcp\n\n# List configured\ncodex mcp list\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Web Search] Enable in `~/.codex/config.toml`:\n\n```toml\n[features]\nweb_search_request = true\n\n[sandbox_workspace_write]\nnetwork_access = true\n```\n\nThen Codex can search for current docs, APIs, etc."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Start with `/init`** to create AGENTS.md with repo-specific instructions\n2. **Use `/review` before commits** for AI code review\n3. **Set `/approvals` appropriately** — Auto for trusted repos, Read Only for exploration\n4. **Use `--add-dir`** for monorepos instead of `danger-full-access`\n5. **Resume sessions** to maintain context across coding sessions\n6. **Attach images** for UI work, design specs, error screenshots"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Example Workflows] ### Fix CI Failure\n```bash\ncodex exec --full-auto \"The CI is failing on the lint step. Fix all ESLint errors.\"\n```\n\n### Refactor Component\n```bash\ncodex exec --cd src/components \"Refactor UserProfile.tsx to use React Query instead of useEffect for data fetching\"\n```\n\n### Implement Feature from Spec\n```bash\ncodex exec -i spec.png --cd ~/projects/app \"Implement this feature based on the design spec\"\n```\n\n### Code Review PR\n```bash\ncodex exec \"Review the diff between main and feature/auth branch. Focus on security issues.\"\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Issue | Solution |\n|-------|----------|\n| Auth fails | Run `codex logout` then `codex login` |\n| Commands blocked | Check `/approvals`, may need `--full-auto` |\n| Out of context | Use `/compact` to summarize |\n| Wrong directory | Use `--cd` flag or check `/status` |\n| Model unavailable | Verify subscription tier supports model |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[References] - [Codex CLI Overview](https://developers.openai.com/codex/cli)\n- [Codex CLI Features](https://developers.openai.com/codex/cli/features)\n- [Codex CLI Reference](https://developers.openai.com/codex/cli/reference)\n- [Slash Commands Guide](https://developers.openai.com/codex/cli/slash-commands)\n- [AGENTS.md Spec](https://agents.md)\n- [Codex GitHub](https://github.com/openai/codex)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "codex_cli"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamsardo/codex-sub-agents/SKILL.md"
+}

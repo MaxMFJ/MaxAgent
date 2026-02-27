@@ -1,0 +1,159 @@
+{
+  "id": "openclaw_skill_afrexai-okr-engine",
+  "description": "Complete OKR & Strategy Execution system — from company vision to weekly execution. Covers goal hierarchy, OKR writing methodology, scoring rubrics, alignment cascading, KPI dashboards, review cadences, team accountability, and quarterly planning rituals. Use when setting goals, running planning cycles, tracking OKRs, building KPI dashboards, running retrospectives, or aligning team work to strategy. Trigger on: \"OKR\", \"objectives\", \"key results\", \"goal setting\", \"quarterly planning\", \"KPIs\", \"strategy execution\", \"annual planning\", \"team goals\", \"alignment\", \"review cadence\", \"what should we focus on\", \"prioritize\", \"goal tracking\", \"north star metric\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OKR & Strategy Execution Engine\n\n> Set bold objectives. Measure what matters. Execute with discipline. Review ruthlessly.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Health Check (/8)] Before building anything, score your current goal system:\n\n| Signal | ✅ Healthy | ❌ Broken |\n|--------|-----------|-----------|\n| Written goals exist | Documented, shared | In someone's head |\n| Goals have metrics | Every goal is measurable | \"Improve customer experience\" |\n| Cascade is clear | Team goals → company goals | Disconnected silos |\n| Review cadence exists | Weekly check-ins happen | Goals set then forgotten |\n| Scoring is honest | Red/yellow/green with data | Everything is \"on track\" |\n| Goals are ambitious | 70% hit rate = healthy | 100% hit rate = sandbagging |\n| Resource allocation matches | Top goals get most time | Urgent eats important |\n| Retros happen | Quarterly learning cycles | Same mistakes repeat |\n\n**Score: /8** → ≤3 = rebuild from scratch, 4-5 = fix gaps, 6+ = optimize\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 1: Strategic Foundation] ### Vision Statement (Revisit Annually)\n\nYour vision is a direction, not a destination. 1-2 sentences max.\n\n**Formula:** `We exist to [verb] [who] by [how], creating a world where [outcome].`\n\n**Quality test:**\n- [ ] Inspiring (makes people want to show up)\n- [ ] Directional (eliminates options that don't fit)\n- [ ] Timeless (wouldn't change if product/market shifts)\n- [ ] Memorable (can recite without reading)\n\n### Mission Statement\n\nMission = how you pursue the vision right now. Changes every 2-5 years.\n\n**Formula:** `We [what we do] for [who] by [unique approach], delivering [measurable impact].`\n\n### North Star Metric\n\nOne metric that captures the core value you deliver. Everything else is a supporting metric.\n\n**Selection criteria:**\n1. Reflects customer value delivered (not vanity)\n2. Leading indicator of revenue (not lagging)\n3. Measurable weekly (not annually)\n4. Every team can influence it (not one department)\n\n**By business type:**\n\n| Business Type | North Star Metric | Why |\n|---------------|------------------|-----|\n| SaaS | Weekly Active Users or NRR | Usage = value = retention |\n| Marketplace | Transactions per week | Liquidity = value for both sides |\n| E-commerce | Revenue per visitor | Combines traffic quality + conversion + AOV |\n| Services | Monthly recurring revenue | Predictable value delivery |\n| Media/Content | Engaged time per user | Attention = ad/subscription value |\n| B2B Enterprise | Expansion revenue % | Proves ongoing value post-sale |\n\n### Strategic Pillars (3-5 Max)\n\nPillars are the 3-5 themes that your goals cluster around. They persist for 1-3 years.\n\n```yaml\nstrategic_pillars:\n  - name: \"Product-Led Growth\"\n    description: \"Make the product the primary acquisition and expansion engine\"\n    north_star_contribution: \"Drives WAU through self-serve onboarding\"\n    \n  - name: \"Enterprise Readiness\"\n    description: \"Build features and processes that enterprise buyers require\"\n    north_star_contribution: \"Drives NRR through larger deal"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 2: Annual Planning] ### Annual Goal Template\n\nSet 3-5 annual goals. Each must connect to a strategic pillar.\n\n```yaml\nannual_goal:\n  id: \"AG-2026-01\"\n  statement: \"Reach $1M ARR through product-led acquisition\"\n  pillar: \"Product-Led Growth\"\n  why_now: \"Market window closing, competitors raising Series A\"\n  success_metric: \"ARR ≥ $1M by Dec 31\"\n  current_baseline: \"$120K ARR\"\n  milestones:\n    q1: \"$250K ARR\"\n    q2: \"$450K ARR\"\n    q3: \"$700K ARR\"\n    q4: \"$1M ARR\"\n  dependencies:\n    - \"Hire 2 engineers by Feb\"\n    - \"Launch self-serve by March\"\n  risk_factors:\n    - \"Churn > 5% monthly kills growth math\"\n    - \"Engineering capacity if hiring delayed\"\n  owner: \"CEO + CRO\"\n```\n\n### Annual Planning Ritual (1-2 Days)\n\n**Pre-work (1 week before):**\n- Each leader submits: top 3 wins, top 3 misses, top 3 opportunities for next year\n- Finance provides: revenue forecast, budget constraints, headcount plan\n- Product provides: competitive landscape, customer feedback themes\n\n**Day 1: Review & Align**\n1. Score last year's goals honestly (30 min)\n2. External landscape review — market, competitors, macro (45 min)\n3. Internal capability review — what are we great at? where do we suck? (30 min)\n4. Confirm/update vision, mission, pillars (30 min)\n5. Brainstorm annual goal candidates — aim for 10-15 (60 min)\n\n**Day 2: Prioritize & Commit**\n1. Score candidates on Impact × Feasibility matrix (45 min)\n2. Select top 3-5 — kill the rest explicitly (30 min)\n3. Define success metrics and quarterly milestones (60 min)\n4. Assign owners — one person per goal (15 min)\n5. Identify top 3 risks and mitigations (30 min)\n6. Write up and share within 48 hours\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 3: OKR Writing Methodology] ### The OKR Formula\n\n```\nOBJECTIVE: [Qualitative, inspiring, time-bound statement]\n  KR1: [Metric] from [baseline] to [target] by [date]\n  KR2: [Metric] from [baseline] to [target] by [date]\n  KR3: [Metric] from [baseline] to [target] by [date]\n```\n\n### Objective Quality Rules\n\n| Rule | Good | Bad |\n|------|------|-----|\n| Qualitative | \"Become the fastest way to onboard\" | \"Increase onboarding by 30%\" |\n| Inspiring | \"Delight enterprise buyers\" | \"Complete enterprise features\" |\n| Time-bound | \"This quarter\" (implicit) | No deadline |\n| Achievable-ish | 70% confidence of hitting | 100% or 10% confidence |\n| Verb-forward | \"Launch\", \"Build\", \"Dominate\" | \"Continue\", \"Maintain\" |\n| No metrics in objective | Described in key results | \"Achieve 50% growth\" |\n\n### Key Result Quality Checklist\n\nEvery KR must pass ALL of these:\n\n- [ ] **Measurable** — a number, not a judgment (\"increase NPS from 32 to 50\" not \"improve satisfaction\")\n- [ ] **Has a baseline** — you know where you are today\n- [ ] **Has a target** — specific number, not directional (\"to 50\" not \"higher\")\n- [ ] **Outcome-based** — measures the result, not the activity (\"reduce churn to 3%\" not \"launch retention emails\")\n- [ ] **Within your control** — your team can actually influence this\n- [ ] **Verifiable** — someone else can confirm if it was hit\n- [ ] **Not a task** — tasks go in your project plan, not your OKRs\n\n### KR Scoring (0.0 — 1.0)\n\n| Score | Meaning | Signal |\n|-------|---------|--------|\n| 0.0 - 0.3 | Failed to make progress | Wrong goal or wrong approach |\n| 0.4 - 0.6 | Made progress but fell short | Decent goal, execution gap |\n| 0.7 | Hit target (this is the goal!) | Sweet spot — ambitious but achievable |\n| 0.8 - 1.0 | Exceeded target | Either amazing execution or goal was too easy |\n\n**Healthy OKR program: average score across all KRs = 0.6-0.7**\n- Average > 0.8 = goals are too safe (sandbagging)\n- Average < 0.4 = goals are too aggressive or execution is broken\n\n### OKR Anti-Patterns\n\n| Anti"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 4: Alignment & Cascading] ### Cascade Architecture\n\n```\nCOMPANY OKRs (CEO + leadership)\n  ↓ aligns to\nTEAM/DEPARTMENT OKRs (team leads)\n  ↓ aligns to\nINDIVIDUAL OKRs or COMMITMENTS (ICs)\n```\n\n### Alignment Rules\n\n1. **Every team OKR must support at least one company OKR** — if it doesn't, why are you doing it?\n2. **Not everything cascades down literally** — team interprets company goals through their lens\n3. **Bottom-up input is mandatory** — teams propose OKRs, leadership adjusts, not top-down dictation\n4. **Cross-team dependencies are explicit** — if your KR depends on another team, write it down\n5. **Max 60% of capacity on OKRs** — leave 40% for operational work, fires, and innovation\n\n### Alignment Map Template\n\n```yaml\nalignment_map:\n  company_objective: \"Become the fastest way to onboard\"\n  \n  team_contributions:\n    - team: \"Product\"\n      objective: \"Rebuild onboarding to be self-serve\"\n      key_results: [\"TTFV < 2 days\", \"Self-serve conversion 18%\"]\n      \n    - team: \"Marketing\"\n      objective: \"Make onboarding quality a core brand message\"\n      key_results: [\"Case studies published: 5\", \"Onboarding-focused content: 40% of output\"]\n      \n    - team: \"Success\"\n      objective: \"Eliminate onboarding as a churn driver\"\n      key_results: [\"30-day churn from onboarding issues: < 2%\", \"Onboarding CSAT: > 4.5\"]\n      \n  cross_dependencies:\n    - from: \"Marketing\"\n      to: \"Product\"\n      need: \"New onboarding screenshots and demo environment by week 3\"\n    - from: \"Success\"\n      to: \"Product\"\n      need: \"In-app feedback widget for onboarding flows\"\n```\n\n### Individual Commitments (For ICs)\n\nNot everyone needs formal OKRs. For individual contributors:\n\n```yaml\nindividual_commitment:\n  name: \"Alex\"\n  quarter: \"Q1 2026\"\n  role: \"Senior Engineer\"\n  \n  commitments:\n    - description: \"Ship onboarding wizard v2\"\n      supports_kr: \"TTFV < 2 days\"\n      milestones:\n        - \"Design complete by Jan 15\"\n        - \"MVP in staging by Feb 1\"\n        - \"GA with telemetry by Feb 15\"\n      \n   "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 5: KPI Dashboard] ### KPI Selection Framework\n\nKPIs are always-on metrics. OKRs are quarterly focus areas. They complement each other.\n\n**KPI categories:**\n\n| Category | Purpose | Examples |\n|----------|---------|---------|\n| **Health** | Is the business alive? | MRR, burn rate, runway |\n| **Growth** | Are we getting bigger? | MoM growth, new customers, expansion |\n| **Efficiency** | Are we getting better? | CAC, LTV/CAC, magic number |\n| **Quality** | Are customers happy? | NPS, CSAT, churn rate |\n| **Velocity** | Are we moving fast? | Cycle time, deployment frequency |\n\n### KPI Dashboard YAML\n\n```yaml\nkpi_dashboard:\n  cadence: \"weekly\"\n  \n  health_metrics:\n    - name: \"MRR\"\n      current: \"$85K\"\n      target: \"$100K\"\n      trend: \"up\"  # up/down/flat\n      status: \"yellow\"  # green/yellow/red\n      \n    - name: \"Gross Burn\"\n      current: \"$45K/mo\"\n      target: \"< $50K/mo\"\n      trend: \"flat\"\n      status: \"green\"\n      \n    - name: \"Runway\"\n      current: \"18 months\"\n      target: \"> 12 months\"\n      trend: \"flat\"\n      status: \"green\"\n  \n  growth_metrics:\n    - name: \"New Customers (Monthly)\"\n      current: 12\n      target: 20\n      trend: \"up\"\n      status: \"yellow\"\n      \n    - name: \"Net Revenue Retention\"\n      current: \"108%\"\n      target: \"> 110%\"\n      trend: \"up\"\n      status: \"yellow\"\n  \n  quality_metrics:\n    - name: \"Monthly Churn Rate\"\n      current: \"4.2%\"\n      target: \"< 3%\"\n      trend: \"down\"  # down is good for churn\n      status: \"red\"\n      \n    - name: \"NPS\"\n      current: 42\n      target: \"> 50\"\n      trend: \"up\"\n      status: \"yellow\"\n```\n\n### Metric Hygiene Rules\n\n1. **Every metric has an owner** — one person updates it weekly\n2. **Every metric has a source of truth** — where does the number come from?\n3. **Every metric has thresholds** — green/yellow/red defined in advance\n4. **Review weekly, act on red** — yellow is a watch, red is an action item\n5. **Limit to 10-15 KPIs** — more = nobody reads the dashboard\n6. **Separate leading from lagging** — leadin"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Phase 6: Review Cadences] ### Weekly Check-In (30 min)\n\n**Purpose:** Are we on track this week? Any blockers?\n\n**Format:**\n```\n1. KPI dashboard review (5 min)\n   - Any metric turn red since last week?\n   - Action owner for each red metric\n\n2. OKR confidence update (10 min)\n   - Each KR owner: confidence score (0.0-1.0) + one sentence why\n   - Flag anything that dropped > 0.2 since last week\n\n3. Top 3 priorities this week (10 min)\n   - Each team member: what are you working on?\n   - Does it connect to an OKR? If not, why?\n\n4. Blockers & asks (5 min)\n   - What's stuck? Who can unblock it?\n```\n\n**Rules:**\n- No status presentations — update a shared doc BEFORE the meeting\n- Meeting is for discussion, not information transfer\n- If everything is green and no blockers, cancel the meeting (seriously)\n\n### Monthly Review (60 min)\n\n**Purpose:** Are we on track this quarter? Should we adjust?\n\n```\n1. KPI trend review (15 min)\n   - Month-over-month trends for all KPIs\n   - 3 metrics that improved most, 3 that degraded most\n\n2. OKR mid-quarter assessment (20 min)\n   - Score each KR honestly\n   - Identify at-risk KRs — what's the rescue plan?\n   - Any KR that's clearly going to miss 0.3 → discuss kill or pivot\n\n3. Resource check (10 min)\n   - Are the right people working on the right things?\n   - Any reallocation needed?\n\n4. Learnings & adjustments (15 min)\n   - What surprised us this month?\n   - What would we do differently?\n   - Document decisions in meeting notes\n```\n\n### Quarterly Planning & Retrospective (Half Day)\n\n**Morning: Retrospective (2 hours)**\n```\n1. Score all KRs (30 min)\n   - Final 0.0-1.0 score for each KR\n   - Brief narrative: what happened and why\n\n2. Objective-level scoring (15 min)\n   - Average KR scores per objective\n   - Did we achieve the spirit of the objective?\n\n3. What worked? (20 min)\n   - Practices, decisions, approaches that drove results\n   - Capture for repetition\n\n4. What didn't? (20 min)\n   - What failed, was abandoned, or underperformed?\n   - Root cause: wrong goal? wron"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Phase 7: Accountability & Scoring] ### OKR Scoring Template\n\n```yaml\nokr_score:\n  quarter: \"Q1 2026\"\n  team: \"Growth\"\n  \n  objective: \"Make self-serve onboarding so good that word-of-mouth becomes our #1 channel\"\n  objective_score: 0.6  # weighted average of KRs + qualitative judgment\n  \n  key_results:\n    - id: \"KR1\"\n      metric: \"TTFV\"\n      baseline: \"7 days\"\n      target: \"< 2 days\"\n      actual: \"3.2 days\"\n      score: 0.5\n      narrative: \"Rebuilt wizard but edge cases with enterprise SSO added 2 days for 30% of users\"\n      \n    - id: \"KR2\"\n      metric: \"Self-serve conversion\"\n      baseline: \"8%\"\n      target: \"18%\"\n      actual: \"14%\"\n      score: 0.6\n      narrative: \"Improved significantly but pricing page redesign delayed to Q2\"\n      \n    - id: \"KR3\"\n      metric: \"Organic referral signups\"\n      baseline: \"12/month\"\n      target: \"50/month\"\n      actual: \"38/month\"\n      score: 0.7\n      narrative: \"Referral program launched week 4, ramped well. On trajectory for 50+ in Q2\"\n  \n  lessons:\n    - \"SSO complexity was underestimated — involve security team in planning\"\n    - \"Referral program should have launched week 1, not week 4\"\n    - \"Pricing page has massive impact on conversion — prioritize in Q2\"\n  \n  carry_forward:\n    - \"Enterprise SSO onboarding optimization\"\n    - \"Pricing page redesign\"\n```\n\n### Grading Culture\n\n**Healthy scoring culture:**\n- 0.7 is a WIN — it means you set ambitious targets and mostly hit them\n- Consistent 1.0 across the board = goals are too easy, push harder\n- Consistent 0.3 = goals are disconnected from reality, recalibrate\n- Misses are learning opportunities, not punishment\n- Sandbagging (setting easy goals to look good) is worse than failing on ambitious ones\n\n**Red flags in scoring:**\n- Every team scores 0.8+ every quarter → sandbagging epidemic\n- Scores are always exactly 0.7 → people are gaming the target\n- Teams argue about scoring definitions after the quarter → define measurement upfront\n- No one cares about the scores → OKRs aren't connected to ac"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Phase 8: Common Scenarios] ### Scenario 1: First Time Setting OKRs\n\n**Start simple:**\n1. Set 2 company objectives with 3 KRs each (that's it)\n2. Review weekly for one quarter\n3. Score honestly at end of quarter\n4. Add team-level OKRs in Q2 if Q1 worked\n\n**Common first-timer mistakes:**\n- Setting 8 objectives → pick 2-3\n- Making KRs into task lists → focus on outcomes\n- Not reviewing weekly → put it on the calendar NOW\n- Changing goals mid-quarter → lock them, learn from the miss\n\n### Scenario 2: OKRs for a Solo Founder / Solopreneur\n\n```yaml\nsolo_okr:\n  quarter: \"Q1 2026\"\n  \n  objective_1: \"Build a revenue engine that doesn't depend on my time\"\n  key_results:\n    - \"Monthly recurring revenue from $2K to $8K\"\n    - \"Percentage of revenue from productized offers: 0% to 60%\"\n    - \"Hours worked per $1K revenue: 40 to 15\"\n  \n  objective_2: \"Establish market authority in [niche]\"\n  key_results:\n    - \"Email list from 200 to 1,000 subscribers\"\n    - \"Inbound leads per month from 3 to 15\"\n    - \"Published content pieces: 0 to 12\"\n  \n  weekly_ritual: \"Friday 30 min — update KR numbers, plan next week's top 3\"\n  monthly_ritual: \"Last Friday — full review, adjust tactics (not goals)\"\n```\n\n### Scenario 3: Pivoting Mid-Quarter\n\nSometimes the world changes and your OKRs become irrelevant.\n\n**Decision framework:**\n1. Is this a temporary disruption or a fundamental shift? → Temporary = stay the course\n2. Would continuing the OKR waste more than 20% of remaining quarter capacity? → Yes = pivot\n3. Can you modify KRs without changing the objective? → Try this first\n\n**If you pivot:**\n- Score original OKRs as-is with narrative explaining the pivot\n- Set new OKRs for remaining time with appropriately scaled targets\n- Don't pretend the pivot didn't happen — document the learning\n\n### Scenario 4: OKRs Across Remote/Async Teams\n\n- **Written over verbal** — all OKR updates in shared doc, not meetings\n- **Async weekly updates** — each person posts by Friday EOD\n- **Sync monthly** — video call for the monthly review o"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Phase 9: Goal Quality Scoring Rubric (0-100)] | Dimension | Weight | 0-25 (Poor) | 50 (Okay) | 75-100 (Excellent) |\n|-----------|--------|-------------|-----------|---------------------|\n| **Ambition** | 15% | Obviously achievable | Moderate stretch | 60-70% confidence, would be proud to hit |\n| **Measurability** | 20% | Vague, subjective | Has a metric but fuzzy measurement | Specific number, clear source, baseline documented |\n| **Alignment** | 15% | Doesn't connect to strategy | Loosely related | Directly supports a pillar + annual goal |\n| **Outcome Focus** | 20% | List of tasks/activities | Mix of outputs and outcomes | Pure outcome — measures the result, not the work |\n| **Ownership** | 10% | \"The team\" or unassigned | Team-level but no individual | One person accountable, they wrote the OKR |\n| **Time-Bound** | 10% | No deadline | \"This quarter\" | Specific milestones within the quarter |\n| **Independence** | 10% | Entirely dependent on other teams | Some dependency, documented | Primarily within your control |\n\n**Scoring guide:**\n- 80-100: Ship it — this is a well-crafted OKR\n- 60-79: Good foundation, tighten weak dimensions\n- 40-59: Needs significant rework before committing\n- Below 40: Start over — this isn't an OKR yet\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Phase 10: Tools & Templates] ### Quarterly OKR One-Pager\n\n```markdown\n# Q[X] 20XX OKRs — [Team Name]"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Context] - Annual goal this supports: [reference]\n- Key assumption: [what must be true for these to matter]\n- Biggest risk: [what could derail us]"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Objective 1: [Inspiring statement]] | KR | Baseline | Target | Owner | Confidence |\n|----|----------|--------|-------|------------|\n| [metric] | [current] | [target] | [name] | [0.0-1.0] |\n| [metric] | [current] | [target] | [name] | [0.0-1.0] |\n| [metric] | [current] | [target] | [name] | [0.0-1.0] |\n\n**Key initiatives:** [2-3 bullet points of HOW]"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Objective 2: [Inspiring statement]] [same format]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Dependencies] - Need from [team]: [what] by [when]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[What we're NOT doing this quarter] - [Explicit list of things we're deprioritizing]\n```\n\n### Weekly Update Template\n\n```markdown\n# Weekly OKR Update — [Date]"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[KPI Status] | Metric | Last Week | This Week | Status |\n|--------|-----------|-----------|--------|\n| [metric] | [value] | [value] | 🟢/🟡/🔴 |"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[OKR Confidence] | KR | Last | Now | Δ | Note |\n|----|------|-----|---|------|\n| [KR1] | 0.6 | 0.5 | ↓ | [why it dropped] |"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Top 3 This Week] 1. [priority] → supports [KR]\n2. [priority] → supports [KR]\n3. [priority] → operational"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Blockers] - [blocker] → need [action] from [person]\n```\n\n### Retrospective Template\n\n```yaml\nretrospective:\n  quarter: \"Q1 2026\"\n  date: \"2026-04-01\"\n  \n  scores:\n    - objective: \"[text]\"\n      score: 0.65\n      key_results:\n        - kr: \"[text]\"\n          score: 0.7\n        - kr: \"[text]\"\n          score: 0.5\n        - kr: \"[text]\"\n          score: 0.75\n  \n  overall_average: 0.65\n  \n  wins:\n    - \"[what worked and why]\"\n    - \"[what worked and why]\"\n  \n  misses:\n    - \"[what failed and root cause]\"\n    - \"[what failed and root cause]\"\n  \n  keep_doing:\n    - \"[practice to continue]\"\n  \n  start_doing:\n    - \"[new practice]\"\n  \n  stop_doing:\n    - \"[practice to eliminate]\"\n  \n  carry_forward_to_next_quarter:\n    - \"[unfinished work worth continuing]\"\n```\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Phase 11: Advanced Patterns] ### OKRs + Agile Integration\n\n**Sprint planning connection:**\n- Each sprint should advance at least one KR\n- Sprint goals reference which KR they support\n- Sprint retro includes: \"did this sprint move our OKRs?\"\n- If 3+ sprints pass without OKR progress, something is misaligned\n\n### Stretch Goals vs Committed Goals\n\n**Google-style two-tier approach:**\n- **Committed OKRs** (expect 1.0): must-hit goals with consequences for missing\n- **Aspirational OKRs** (expect 0.7): ambitious stretch goals where 0.7 is success\n\n**When to use which:**\n- Revenue targets customers depend on → Committed\n- Innovation or market expansion → Aspirational\n- Operational SLAs → Committed\n- Culture/employer brand → Aspirational\n\n### Leading vs Lagging Indicator Design\n\nEvery KR should ideally have a leading indicator you track weekly:\n\n| Lagging KR (quarterly) | Leading Indicator (weekly) |\n|------------------------|---------------------------|\n| Revenue from $X to $Y | Pipeline generated this week |\n| Churn from 5% to 3% | Health score distribution changes |\n| NPS from 32 to 50 | Support ticket resolution time |\n| Conversion from 8% to 18% | Onboarding completion rate |\n| New hires: 5 | Candidates in pipeline by stage |\n\n### Multi-Team OKR Dependencies\n\n```yaml\ndependency_contract:\n  provider_team: \"Platform\"\n  consumer_team: \"Growth\"\n  deliverable: \"Self-serve SSO integration\"\n  needed_by: \"2026-02-15\"\n  provider_kr: \"Ship 3 enterprise features\"\n  consumer_kr: \"Enterprise onboarding TTFV < 3 days\"\n  escalation_date: \"2026-02-01\"  # if not on track by this date, escalate\n  status: \"on_track\"\n```\n\n### OKRs for Non-Typical Roles\n\n**Support/Ops teams:**\n- Objective: \"Deliver world-class support that turns users into advocates\"\n- KRs: First response time, CSAT, escalation rate, knowledge base deflection %\n\n**HR/People teams:**\n- Objective: \"Build a hiring engine that attracts top talent faster\"\n- KRs: Time-to-fill, offer acceptance rate, 90-day retention, hiring manager satisfaction\n\n**Finance te"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Phase 12: 10 OKR Commandments] 1. **Less is more** — 3 objectives × 3 KRs = plenty. More = dilution.\n2. **Outcomes over outputs** — Measure what changed, not what you did.\n3. **Honest scoring or don't bother** — A dishonest 0.7 is worse than an honest 0.3.\n4. **Weekly rhythm or it dies** — OKRs without regular check-ins are decoration.\n5. **One owner per OKR** — Shared ownership = no ownership.\n6. **Lock goals, iterate tactics** — Don't change the OKR mid-quarter; change how you pursue it.\n7. **Ambitious is calibrated** — 70% hit rate is the target. Not 100%, not 30%.\n8. **Alignment ≠ top-down dictation** — Teams propose, leadership aligns.\n9. **Say what you're NOT doing** — Every yes requires explicit nos.\n10. **OKRs ≠ performance reviews** — Use them as input, not the grade.\n\n---"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[10 Common Mistakes] | # | Mistake | Fix |\n|---|---------|-----|\n| 1 | Too many OKRs | Max 3-5 objectives company-wide |\n| 2 | KRs are tasks | Rewrite as measurable outcomes |\n| 3 | No baseline | You can't improve what you haven't measured |\n| 4 | Set and forget | Weekly reviews are non-negotiable |\n| 5 | 100% hit rate | You're sandbagging — aim higher |\n| 6 | Changing goals mid-quarter | Lock them; learn from the miss |\n| 7 | OKRs in a spreadsheet nobody opens | Put them where daily work happens |\n| 8 | No retrospective | Without learning, cycles are just calendars |\n| 9 | Top-down only | Bottom-up input creates buy-in and better goals |\n| 10 | Conflating KPIs and OKRs | KPIs = always-on health; OKRs = quarterly focus |\n\n---"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Natural Language Commands] - \"Set OKRs for Q[X]\" → Phase 3 template + scoring\n- \"Score our OKRs\" → Phase 7 scoring template\n- \"Run quarterly planning\" → Phase 6 full retrospective + planning ritual\n- \"Create KPI dashboard\" → Phase 5 dashboard YAML\n- \"Check OKR alignment\" → Phase 4 alignment map\n- \"Write annual goals\" → Phase 2 annual goal template\n- \"Weekly OKR update\" → Phase 6 weekly template\n- \"Grade this OKR\" → Phase 9 rubric (0-100)\n- \"Plan our retro\" → Phase 6 retrospective template\n- \"Help me write a key result\" → Phase 3 quality checklist\n- \"What's our north star?\" → Phase 1 north star selection\n- \"OKRs for solo founder\" → Phase 8 Scenario 2"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_okr_engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-okr-engine/SKILL.md"
+}

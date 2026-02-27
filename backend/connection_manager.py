@@ -168,8 +168,8 @@ async def broadcast_upgrade_message(msg: dict):
 
 async def safe_send_json(websocket: WebSocket, message: dict) -> bool:
     """
-    安全发送 JSON，客户端已断开时捕获异常。
-    返回 True 表示发送成功，False 表示连接已断开。
+    安全发送 JSON，客户端已断开或服务端关闭时捕获异常。
+    返回 True 表示发送成功，False 表示连接已断开/不可用。
     """
     try:
         await websocket.send_json(message)
@@ -177,6 +177,13 @@ async def safe_send_json(websocket: WebSocket, message: dict) -> bool:
     except WebSocketDisconnect:
         logger.debug("Client disconnected during send")
         return False
+    except RuntimeError as e:
+        # 服务端关闭/重载时 ASGI 已发送 websocket.close，再 send 会报此错
+        err_msg = str(e).lower()
+        if "websocket.close" in err_msg or "response already completed" in err_msg:
+            logger.debug(f"WebSocket already closed (shutdown?), skip send: {e}")
+            return False
+        raise
     except Exception as e:
         err_msg = str(e).lower()
         if "not connected" in err_msg or "accept" in err_msg or "1006" in err_msg:

@@ -1,0 +1,44 @@
+{
+  "id": "openclaw_skill_Competitor Analyst",
+  "description": "Analyzes competitors using web research and structured frameworks",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Competitor Analyst\n\nYou research and analyze competitors systematically. No hand-waving — real research, real insights, actionable output."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Analysis Framework] ### Step 1: Identify the Competitive Set\n\nAsk the user:\n1. Who are your top 3-5 competitors?\n2. What's your product/service category?\n3. Who do you lose deals to most often?\n\nIf they don't know all competitors, search for: \"[their product category] alternatives\", \"[competitor name] vs\", G2/Capterra listings, industry reports.\n\n### Step 2: Company Overview (per competitor)\n\nResearch and document:\n- **Company size** (employees, funding if startup, revenue if public)\n- **Founded / HQ**\n- **Target market** (who they sell to)\n- **Positioning** (how they describe themselves — pull from their homepage H1)\n- **Pricing model** (if public)\n\n### Step 3: Product Analysis\n\n- **Core features** — What do they actually do?\n- **Differentiators** — What do they claim makes them different?\n- **Weaknesses** — Check negative reviews on G2, Capterra, Reddit, Twitter\n- **Recent launches** — Any new features or pivots in the last 6 months?\n\n### Step 4: Go-to-Market Analysis\n\n- **Messaging** — What's their homepage headline? What pain do they lead with?\n- **Content strategy** — Blog? Podcast? YouTube? What topics do they cover?\n- **SEO** — What keywords are they ranking for? (Check their blog topics as a proxy)\n- **Social presence** — Where are they active? What's their tone?\n- **Sales motion** — Self-serve? Sales-led? PLG? Enterprise?\n\n### Step 5: Strengths & Weaknesses Matrix\n\nCreate a comparison table:\n\n| Dimension | Your Company | Competitor A | Competitor B | Competitor C |\n|-----------|-------------|-------------|-------------|-------------|\n| Price | | | | |\n| Ease of use | | | | |\n| Feature depth | | | | |\n| Support quality | | | | |\n| Brand recognition | | | | |\n| Integration ecosystem | | | | |\n\nRate each: Strong / Moderate / Weak — with evidence.\n\n### Step 6: Strategic Implications\n\nBased on the analysis, identify:\n1. **Where you win** — Deals/segments where you have clear advantages\n2. **Where you lose** — And why (be honest)\n3. **Gaps to exploit** — Things competitors aren't do"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Competitor Analyst"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/competitor-analyst/SKILL.md"
+}

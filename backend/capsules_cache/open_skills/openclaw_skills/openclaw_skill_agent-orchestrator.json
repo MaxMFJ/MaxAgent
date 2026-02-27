@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_agent-orchestrator",
+  "description": "Meta-agent skill for orchestrating complex tasks through autonomous sub-agents. Decomposes macro tasks into subtasks, spawns specialized sub-agents with dynamically generated SKILL.md files, coordinates file-based communication, consolidates results, and dissolves agents upon completion.\n\nMANDATORY TRIGGERS: orchestrate, multi-agent, decompose task, spawn agents, sub-agents, parallel agents, agent coordination, task breakdown, meta-agent, agent factory, delegate tasks",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agent Orchestrator\n\nOrchestrate complex tasks by decomposing them into subtasks, spawning autonomous sub-agents, and consolidating their work."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Workflow] ### Phase 1: Task Decomposition\n\nAnalyze the macro task and break it into independent, parallelizable subtasks:\n\n```\n1. Identify the end goal and success criteria\n2. List all major components/deliverables required\n3. Determine dependencies between components\n4. Group independent work into parallel subtasks\n5. Create a dependency graph for sequential work\n```\n\n**Decomposition Principles:**\n- Each subtask should be completable in isolation\n- Minimize inter-agent dependencies\n- Prefer broader, autonomous tasks over narrow, interdependent ones\n- Include clear success criteria for each subtask\n\n### Phase 2: Agent Generation\n\nFor each subtask, create a sub-agent workspace:\n\n```bash\npython3 scripts/create_agent.py <agent-name> --workspace <path>\n```\n\nThis creates:\n```\n<workspace>/<agent-name>/\nâââ SKILL.md          # Generated skill file for the agent\nâââ inbox/            # Receives input files and instructions\nâââ outbox/           # Delivers completed work\nâââ workspace/        # Agent's working area\nâââ status.json       # Agent state tracking\n```\n\n**Generate SKILL.md dynamically** with:\n- Agent's specific role and objective\n- Tools and capabilities needed\n- Input/output specifications\n- Success criteria\n- Communication protocol\n\nSee [references/sub-agent-templates.md](references/sub-agent-templates.md) for pre-built templates.\n\n### Phase 3: Agent Dispatch\n\nInitialize each agent by:\n\n1. Writing task instructions to `inbox/instructions.md`\n2. Copying required input files to `inbox/`\n3. Setting `status.json` to `{\"state\": \"pending\", \"started\": null}`\n4. Spawning the agent using the Task tool:\n\n```python\n# Spawn agent with its generated skill\nTask(\n    description=f\"{agent_name}: {brief_description}\",\n    prompt=f\"\"\"\n    Read the skill at {agent_path}/SKILL.md and follow its instructions.\n    Your workspace is {agent_path}/workspace/\n    Read your task from {agent_path}/inbox/instructions.md\n    Write all outputs to {agent_path}/outbox/\n    U"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[File-Based Communication Protocol] See [references/communication-protocol.md](references/communication-protocol.md) for detailed specs.\n\n**Quick Reference:**\n- `inbox/` - Read-only for agent, written by orchestrator\n- `outbox/` - Write-only for agent, read by orchestrator\n- `status.json` - Agent updates state: `pending` â `running` â `completed` | `failed`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Example: Research Report Task] ```\nMacro Task: \"Create a comprehensive market analysis report\"\n\nDecomposition:\nâââ Agent: data-collector\nâ   âââ Gather market data, competitor info, trends\nâââ Agent: analyst\nâ   âââ Analyze collected data, identify patterns\nâââ Agent: writer\nâ   âââ Draft report sections from analysis\nâââ Agent: reviewer\n    âââ Review, edit, and finalize report\n\nDependency: data-collector â analyst â writer â reviewer\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Sub-Agent Templates] Pre-built templates for common agent types in [references/sub-agent-templates.md](references/sub-agent-templates.md):\n\n- **Research Agent** - Web search, data gathering\n- **Code Agent** - Implementation, testing\n- **Analysis Agent** - Data processing, pattern finding\n- **Writer Agent** - Content creation, documentation\n- **Review Agent** - Quality assurance, editing\n- **Integration Agent** - Merging outputs, conflict resolution"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Start small** - Begin with 2-3 agents, scale as patterns emerge\n2. **Clear boundaries** - Each agent owns specific deliverables\n3. **Explicit handoffs** - Use structured files for agent communication\n4. **Fail gracefully** - Agents report failures; orchestrator handles recovery\n5. **Log everything** - Status files track progress for debugging"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agent_orchestrator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aatmaan1/agent-orchestrator/SKILL.md"
+}

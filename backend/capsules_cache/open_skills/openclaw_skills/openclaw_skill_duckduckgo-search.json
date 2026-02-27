@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_duckduckgo-search",
+  "description": "Performs web searches using DuckDuckGo to retrieve real-time information from the internet. Use when the user needs to search for current events, documentation, tutorials, or any information that requires web search capabilities.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # DuckDuckGo Web Search Skill\n\n这个技能通过 DuckDuckGo 搜索引擎实现网络搜索功能，帮助获取实时信息。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[功能特性] - 🔍 基于 DuckDuckGo 的隐私友好型搜索\n- 📰 支持新闻搜索\n- 🖼️ 支持图片搜索\n- 📹 支持视频搜索\n- 🌐 无需 API Key，免费使用\n- 🔒 保护隐私，不追踪用户"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[安装] ```bash\n# 使用 uv 安装（推荐）\nuv pip install duckduckgo-search\n\n# 或使用 pip 安装\npip install duckduckgo-search\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[快速开始] ### 命令行方式\n\n```bash\n# 基础文本搜索\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text('Python tutorial', max_results=5))\n    for r in results:\n        print(f\\\"标题: {r['title']}\\\")\n        print(f\\\"链接: {r['href']}\\\")\n        print(f\\\"摘要: {r['body']}\\\")\n        print('---')\n\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[搜索类型] ### 1. 文本搜索 (Text Search)\n\n最常用的搜索方式，返回网页结果：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nquery = 'your search query'\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text(\n        query,\n        region='cn-zh',      # 地区设置：cn-zh(中国), us-en(美国), wt-wt(全球)\n        safesearch='moderate', # 安全搜索：on, moderate, off\n        timelimit='m',       # 时间范围：d(天), w(周), m(月), y(年), None(不限)\n        max_results=10       # 最大结果数\n    ))\n    \n    for i, r in enumerate(results, 1):\n        print(f\\\"{i}. {r['title']}\\\")\n        print(f\\\"   URL: {r['href']}\\\")\n        print(f\\\"   摘要: {r['body'][:100]}...\\\")\n        print()\n\"\n```\n\n### 2. 新闻搜索 (News Search)\n\n搜索最新新闻：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.news(\n        'AI technology',\n        region='wt-wt',\n        safesearch='moderate',\n        timelimit='d',       # d=过去24小时, w=过去一周, m=过去一月\n        max_results=10\n    ))\n    \n    for r in results:\n        print(f\\\"📰 {r['title']}\\\")\n        print(f\\\"   来源: {r['source']}\\\")\n        print(f\\\"   时间: {r['date']}\\\")\n        print(f\\\"   链接: {r['url']}\\\")\n        print()\n\"\n```\n\n### 3. 图片搜索 (Image Search)\n\n搜索图片资源：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.images(\n        'cute cats',\n        region='wt-wt',\n        safesearch='moderate',\n        size='Medium',       # Small, Medium, Large, Wallpaper\n        type_image='photo',  # photo, clipart, gif, transparent, line\n        layout='Square',     # Square, Tall, Wide\n        max_results=10\n    ))\n    \n    for r in results:\n        print(f\\\"🖼️ {r['title']}\\\")\n        print(f\\\"   图片: {r['image']}\\\")\n        print(f\\\"   缩略图: {r['thumbnail']}\\\")\n        print(f\\\"   来源: {r['source']}\\\")\n        print()\n\"\n```\n\n### 4. 视频搜索 (Video Search)\n\n搜索视频内容：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.videos(\n        'Python programming',\n        region='wt-wt',\n        safesea"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[实用脚本] ### 通用搜索函数\n\n创建一个可复用的搜索脚本：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nimport json\n\ndef web_search(query, search_type='text', max_results=5, region='wt-wt', timelimit=None):\n    '''\n    执行 DuckDuckGo 搜索\n    \n    参数:\n        query: 搜索关键词\n        search_type: 搜索类型 (text, news, images, videos)\n        max_results: 最大结果数\n        region: 地区 (cn-zh, us-en, wt-wt)\n        timelimit: 时间限制 (d, w, m, y)\n    '''\n    with DDGS() as ddgs:\n        if search_type == 'text':\n            results = list(ddgs.text(query, region=region, timelimit=timelimit, max_results=max_results))\n        elif search_type == 'news':\n            results = list(ddgs.news(query, region=region, timelimit=timelimit, max_results=max_results))\n        elif search_type == 'images':\n            results = list(ddgs.images(query, region=region, max_results=max_results))\n        elif search_type == 'videos':\n            results = list(ddgs.videos(query, region=region, timelimit=timelimit, max_results=max_results))\n        else:\n            results = []\n    \n    return results\n\n# 使用示例\nquery = 'Python 3.12 new features'\nresults = web_search(query, search_type='text', max_results=5)\n\nprint(f'🔍 搜索: {query}')\nprint(f'📊 找到 {len(results)} 个结果')\nprint()\n\nfor i, r in enumerate(results, 1):\n    print(f\\\"{i}. {r['title']}\\\")\n    print(f\\\"   {r['href']}\\\")\n    print(f\\\"   {r['body'][:150]}...\\\")\n    print()\n\"\n```\n\n### 搜索并保存结果\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nimport json\nfrom datetime import datetime\n\nquery = 'latest tech news'\noutput_file = f'search_results_{datetime.now().strftime(\\\"%Y%m%d_%H%M%S\\\")}.json'\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text(query, max_results=10))\n\n# 保存到 JSON 文件\nwith open(output_file, 'w', encoding='utf-8') as f:\n    json.dump({\n        'query': query,\n        'timestamp': datetime.now().isoformat(),\n        'results': results\n    }, f, ensure_ascii=False, indent=2)\n\nprint(f'✅ 搜索结果已保存到: {output_file}')\nprint(f'📊 共 {len(results)} 条结果')\n\"\n```\n\n### 多关键词批量搜索\n\n`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[参数说明] ### 地区代码 (region)\n\n| 代码 | 地区 |\n|------|------|\n| `cn-zh` | 中国 |\n| `us-en` | 美国 |\n| `uk-en` | 英国 |\n| `jp-jp` | 日本 |\n| `kr-kr` | 韩国 |\n| `wt-wt` | 全球 (无地区限制) |\n\n### 时间限制 (timelimit)\n\n| 值 | 含义 |\n|----|------|\n| `d` | 过去 24 小时 |\n| `w` | 过去一周 |\n| `m` | 过去一月 |\n| `y` | 过去一年 |\n| `None` | 不限制 |\n\n### 安全搜索 (safesearch)\n\n| 值 | 含义 |\n|----|------|\n| `on` | 严格过滤 |\n| `moderate` | 适度过滤 (默认) |\n| `off` | 关闭过滤 |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[错误处理] ```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nfrom duckduckgo_search.exceptions import DuckDuckGoSearchException\n\ntry:\n    with DDGS() as ddgs:\n        results = list(ddgs.text('test query', max_results=5))\n        print(f'✅ 搜索成功，找到 {len(results)} 个结果')\nexcept DuckDuckGoSearchException as e:\n    print(f'❌ 搜索出错: {e}')\nexcept Exception as e:\n    print(f'❌ 未知错误: {e}')\n\"\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[使用代理] 如果需要使用代理：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\n# 设置代理\nproxy = 'http://127.0.0.1:7890'  # 替换为你的代理地址\n\nwith DDGS(proxy=proxy) as ddgs:\n    results = list(ddgs.text('test query', max_results=5))\n    print(f'通过代理搜索成功，找到 {len(results)} 个结果')\n\"\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[常见问题] **安装失败？**\n```bash\n# 确保 pip 是最新版本\npip install --upgrade pip\npip install duckduckgo-search\n\n# 或使用 uv\nuv pip install duckduckgo-search\n```\n\n**搜索无结果？**\n```bash\n# 检查网络连接\n# 尝试使用代理\n# 减少搜索关键词复杂度\n# 检查地区设置是否正确\n```\n\n**请求被限制？**\n```bash\n# 在多次搜索之间添加延迟\nimport time\ntime.sleep(1)  # 等待 1 秒\n\n# 减少单次请求的结果数量\nmax_results=5  # 而不是 50\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[与其他工具集成] ### 结合 browser-use 获取详细内容\n\n```bash\n# 1. 先用 DuckDuckGo 搜索\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text('Python async tutorial', max_results=1))\n    if results:\n        url = results[0]['href']\n        print(f'URL: {url}')\n\"\n\n# 2. 用 browser-use 打开并获取详细内容\nbrowser-use open <url_from_search>\nbrowser-use state\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[注意事项] ⚠️ **使用建议**：\n\n1. **遵守使用频率限制**：避免短时间内大量请求\n2. **合理设置结果数量**：不要一次请求过多结果\n3. **添加适当延迟**：批量搜索时在请求之间添加 `time.sleep()`\n4. **处理异常情况**：始终添加错误处理代码\n5. **尊重版权**：搜索结果仅供参考，注意内容版权"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "Bash(duckduckgo-search:*),",
+    "Bash(python:*),",
+    "Bash(pip:*),",
+    "Bash(uv:*)",
+    "agent-skill"
+  ],
+  "capability": [
+    "duckduckgo_search"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/10e9928a/duckduckgo-search/SKILL.md"
+}

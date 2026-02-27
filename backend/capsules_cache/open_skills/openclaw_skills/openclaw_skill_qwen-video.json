@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_qwen-video",
+  "description": "Generate videos using Alibaba Cloud DashScope Wan (通义万相) text-to-video (t2v) API (e.g., wan2.6-t2v). Use when the user asks to create a short video from a text prompt via 百炼/通义万相/wan 文生视频, and wants the agent to submit an async task, poll status, and download the mp4 locally (e.g., to Windows Desktop from WSL2).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Qwen / Wan Video (DashScope) — 文生视频\n\nThis skill provides simple CLI scripts to:\n1) submit an async Wan t2v job\n2) poll task status until SUCCEEDED/FAILED\n3) download the resulting mp4"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] - Set API key:\n\n```bash\nexport DASHSCOPE_API_KEY=\"sk-...\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start (one command)] Generate a video and download to Windows Desktop (WSL2):\n\n```bash\nbash {baseDir}/scripts/generate.sh \\\n  --prompt \"4秒赛博朋克雨夜城市镜头，霓虹反射，电影感镜头运动，高清\" \\\n  --duration 4 \\\n  --size 1280*720 \\\n  --out \"/mnt/c/Users/<USERNAME>/Desktop/wan_video.mp4\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Submit only (returns task_id)] ```bash\nbash {baseDir}/scripts/submit.sh --prompt \"...\" --duration 4 --size 1280*720\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Poll status only] ```bash\nbash {baseDir}/scripts/poll.sh --task-id \"<task_id>\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[高级功能] ### 多镜头叙事 (Multi-shot)\n\n仅 wan2.6 系列模型支持此功能。通过设置 `prompt_extend: true` 和 `shot_type: \"multi\"` 启用。\n\n```bash\ncurl --location 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis' \\\n  -H 'X-DashScope-Async: enable' \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"model\": \"wan2.6-t2v\",\n    \"input\": {\n      \"prompt\": \"史诗级战斗场景...\"\n    },\n    \"parameters\": {\n      \"size\": \"1280*720\",\n      \"prompt_extend\": true,\n      \"duration\": 10,\n      \"shot_type\": \"multi\"\n    }\n  }'\n```\n\n### 自动配音 (Auto Audio)\n\n仅 wan2.6 和 wan2.5 系列模型支持。若不提供 `input.audio_url`，模型将根据视频内容自动生成匹配的背景音乐或音效。\n\n```bash\ncurl --location 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis' \\\n  -H 'X-DashScope-Async: enable' \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"model\": \"wan2.5-t2v-preview\",\n    \"input\": {\n      \"prompt\": \"史诗级战斗场景...\"\n    },\n    \"parameters\": {\n      \"size\": \"832*480\",\n      \"prompt_extend\": true,\n      \"duration\": 10\n    }\n  }'\n```\n\n### 传入音频文件 (Custom Audio)\n\n仅 wan2.6 和 wan2.5 系列模型支持。通过 `input.audio_url` 参数传入自定义音频的 URL。\n\n```bash\ncurl --location 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis' \\\n  -H 'X-DashScope-Async: enable' \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"model\": \"wan2.5-t2v-preview\",\n    \"input\": {\n      \"prompt\": \"史诗级战斗场景...\",\n      \"audio_url\": \"https://example.com/audio.mp3\"\n    },\n    \"parameters\": {\n      \"size\": \"832*480\",\n      \"prompt_extend\": true,\n      \"duration\": 10\n    }\n  }'\n```\n\n### 生成无声视频 (Silent Video)\n\n仅 wan2.2 和 wanx2.1 系列模型支持生成无声视频。默认生成无声视频，无需设置。\n\n> wan2.6 及 wan2.5 系列模型默认生成有声视频。\n\n```bash\ncurl --location 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis' \\\n  -H 'X-DashScope-Async: enable' \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H 'C"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Endpoint (current)] - Submit: `POST https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis`\n- Status: `GET  https://dashscope.aliyuncs.com/api/v1/tasks/<task_id>`\n\nScripts print:\n- `TASK_ID: ...`\n- `VIDEO_URL: ...` (when succeeded)\n- `MEDIA: <local_path>` (when downloaded)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[模型功能对照表] | 模型 | 多镜头叙事 | 自动配音 | 自定义音频 | 无声视频 | 反向提示词 |\n|------|-----------|---------|-----------|---------|-----------|\n| wan2.6-t2v | ✅ | ✅ | ✅ | - | ✅ |\n| wan2.5-t2v-preview | - | ✅ | ✅ | - | ✅ |\n| wan2.2-t2v-plus | - | - | - | ✅ | ✅ |\n| wanx2.1 | - | - | - | ✅ | - |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "qwen_video"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/547895019/qwen-video/SKILL.md"
+}

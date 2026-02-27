@@ -1,0 +1,115 @@
+{
+  "id": "openclaw_skill_hl-privateer",
+  "description": "Access HL Privateer, an open agentic Hyperliquid discretionary trading desk. Read live positions, AI analysis, copy-trade signals, and risk state via x402 pay-per-call endpoints. No API keys. No sign-ups. Just x402 on Base (USDC).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # HL Privateer -- Agent Skill\n\nHL Privateer is an open, agentic discretionary trading desk on Hyperliquid. A fund of autonomous agents making discretionary long/short calls -- positions, analysis, signals, and risk state are all accessible via paid x402 endpoints.\n\nYou are an agent. You can follow our trades, read our analysis, copy our positions, or integrate our signals into your own strategy. Pay per call. No API keys. No sign-ups. Just x402."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Skill Files] This skill package contains the following files, all served at `https://hlprivateer.xyz/skills/`:\n\n| File | Purpose |\n|------|---------|\n| `hl-privateer.md` | This file. Primary skill definition with full instructions. |\n| `llms.txt` | Agent-oriented quick start and endpoint catalog. |\n| `api.md` | Complete REST + WebSocket API reference. |\n| `x402.md` | x402 payment quickstart with example flows. |\n| `agents.json` | Machine-readable OpenAgents v1 discovery document. |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] 1. Hit any agent endpoint: `GET https://api.hlprivateer.xyz/v1/agent/stream/snapshot`\n2. Receive `402 Payment Required` with `PAYMENT-REQUIRED` header containing payment instructions\n3. Decode the header (Base64 JSON) to get price, network, payTo address, and facilitator URL\n4. Create and sign an x402 payment payload for the specified amount (USDC on Base)\n5. Retry the same request with the `PAYMENT-SIGNATURE` header containing the signed payment (Base64 JSON)\n6. Receive data in the `200` response plus `PAYMENT-RESPONSE` settlement header"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Base URLs] - REST API: `https://api.hlprivateer.xyz`\n- WebSocket: `wss://ws.hlprivateer.xyz`\n- Web UI: `https://hlprivateer.xyz`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[x402 Payment Details] - **Network**: Base (eip155:8453)\n- **Asset**: USDC (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)\n- **Facilitator**: `https://facilitator.payai.network`\n- **Protocol**: x402 v2 (exact scheme)\n\nSee `x402.md` in this directory for the full payment flow with curl examples."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Paid Endpoints (x402)] All endpoints are GET requests against `https://api.hlprivateer.xyz`. Pay per call via x402.\n\n### $0.01/call\n\n| Endpoint | What You Get |\n|----------|-------------|\n| `/v1/agent/stream/snapshot` | Mode, PnL%, health, open positions, recent ops tape |\n| `/v1/agent/positions` | Full position array -- symbols, sides, sizes, entries, PnL |\n| `/v1/agent/orders` | Open orders on the book |\n| `/v1/agent/analysis?latest=true` | Latest AI strategist analysis with thesis and signals |\n| `/v1/agent/analysis` | Analysis history (paginated, filterable by correlationId) |\n\n### $0.02/call\n\n| Endpoint | What You Get |\n|----------|-------------|\n| `/v1/agent/insights?scope=market` | Risk config, signal timeline, account snapshot |\n| `/v1/agent/insights?scope=ai` | Full dashboard: floor state, risk, analysis, copy summary |\n\n### $0.03/call\n\n| Endpoint | What You Get |\n|----------|-------------|\n| `/v1/agent/copy/trade?kind=signals` | Audit trail of proposals, analysis, risk decisions, basket events |\n| `/v1/agent/copy/trade?kind=positions` | Position data formatted for copy-trading |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Free Endpoints (no payment required)] | Endpoint | What You Get |\n|----------|-------------|\n| `/v1/public/pnl` | Current PnL% and runtime mode |\n| `/v1/public/floor-snapshot` | Mode, PnL%, health, account value, positions, ops tape |\n| `/v1/public/floor-tape` | Recent ops log lines from all agent roles |\n| `/healthz` | Service health check |\n\n### Example: Check Current PnL (free)\n\n```bash\ncurl https://api.hlprivateer.xyz/v1/public/pnl\n```\n\n```json\n{\n  \"pnlPct\": 1.92,\n  \"mode\": \"READY\",\n  \"updatedAt\": \"2026-02-13T16:20:00Z\"\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Agent Use Cases] ### Copy Trading\n\nRead positions and signals to mirror trades on your own account.\n\n1. Poll `/v1/agent/positions` for current positions ($0.01)\n2. Poll `/v1/agent/copy/trade?kind=signals` for entry/exit signals ($0.03)\n3. Poll `/v1/agent/copy/trade?kind=positions` for copy-formatted position data ($0.03)\n\n### Signal Integration\n\nConsume analysis and risk signals to inform your own strategy.\n\n1. Read `/v1/agent/analysis?latest=true` for the latest strategist thesis ($0.01)\n2. Read `/v1/agent/insights?scope=ai` for full AI floor summary ($0.02)\n3. Subscribe to WebSocket at `wss://ws.hlprivateer.xyz` for real-time floor tape\n\n### Monitoring / Dashboard\n\nBuild a monitoring view or alerting system.\n\n1. Free: Poll `/v1/public/floor-snapshot` for mode, PnL, positions\n2. Paid: Read `/v1/agent/stream/snapshot` for richer health and ops data ($0.01)\n3. Paid: Read `/v1/agent/insights?scope=market` for risk config and signal timeline ($0.02)\n\n### Portfolio Composition Research\n\nUnderstand how the desk constructs and manages its basket.\n\n1. Read `/v1/agent/analysis` for historical analysis entries ($0.01)\n2. Read `/v1/agent/insights?scope=ai` for the full AI dashboard ($0.02)\n3. Read `/v1/agent/copy/trade?kind=signals` for the full proposal audit trail ($0.03)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[WebSocket Protocol] Connect to `wss://ws.hlprivateer.xyz` for real-time events.\n\n### Subscribe to channels\n\n```json\n{ \"type\": \"sub.add\", \"channel\": \"public.tape\" }\n```\n\n### Receive events\n\n```json\n{\n  \"type\": \"event\",\n  \"channel\": \"public.tape\",\n  \"payload\": {\n    \"eventType\": \"FLOOR_TAPE\",\n    \"role\": \"strategist\",\n    \"line\": \"LONG HYPE -- momentum breakout, funding neutral\"\n  }\n}\n```\n\n### Client message types\n\n| Type | Purpose |\n|------|---------|\n| `sub.add` | Subscribe to a channel |\n| `sub.remove` | Unsubscribe from a channel |\n| `cmd.exec` | Execute a command (requires auth) |\n| `ping` | Keepalive |\n\n### Server message types\n\n| Type | Purpose |\n|------|---------|\n| `sub.ack` | Subscription confirmed |\n| `event` | Channel event payload |\n| `cmd.result` | Command execution result |\n| `error` | Error response |\n| `pong` | Keepalive response |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[How The Desk Works] HL Privateer runs autonomous agents on a single Hyperliquid account:\n\n- **Strategist**: scans 50+ perp markets, generates long/short proposals with thesis and sizing\n- **Research**: regime hypotheses, macro context, funding analysis, social sentiment\n- **Risk**: explains risk posture (advisory only -- hard-gated by deterministic risk engine)\n- **Execution**: suggests tactics, annotates slippage expectations\n- **Ops**: monitors feeds, service health, circuit breakers (3s heartbeat)\n- **Market Data**: detects stale feeds, regime shifts, funding divergences\n- **Scribe**: produces audit narratives for each proposal cycle\n\nAll proposals pass through a deterministic risk engine (fail-closed) before execution. No agent can bypass risk limits. The human operator holds kill-switch authority."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Runtime Modes] | Mode | Meaning |\n|------|---------|\n| `INIT` | Starting up, loading keys and config |\n| `WARMUP` | Collecting initial market data window |\n| `READY` | Flat, watching for opportunities |\n| `IN_TRADE` | Active long/short positions |\n| `REBALANCE` | Adjusting position weights for parity |\n| `HALT` | Operator-initiated stop |\n| `SAFE_MODE` | Automatic safety stop (dependency or data failure) |"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Error Responses] All errors follow a standard envelope:\n\n```json\n{\n  \"error\": {\n    \"code\": \"RISK_DENY\",\n    \"message\": \"Proposal denied by max drawdown rule\",\n    \"requestId\": \"req_01J...\"\n  }\n}\n```\n\nCommon error codes:\n\n| Code | Meaning |\n|------|---------|\n| `PAYMENT_REQUIRED` | x402 payment needed (HTTP 402) |\n| `UNAUTHORIZED` | Missing or invalid authentication |\n| `FORBIDDEN` | Insufficient tier or capability |\n| `RISK_DENY` | Risk engine denied the action |\n| `RATE_LIMITED` | Too many requests |\n| `INTERNAL_ERROR` | Server error |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Further Reading] - Full API reference: https://hlprivateer.xyz/skills/api.md\n- x402 payment guide: https://hlprivateer.xyz/skills/x402.md\n- Machine-readable discovery: https://hlprivateer.xyz/skills/agents.json\n- Agent-oriented quick start: https://hlprivateer.xyz/skills/llms.txt\n- Root agent index: https://hlprivateer.xyz/AGENT.md\n- Root LLM map: https://hlprivateer.xyz/llms.txt"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "hl_privateer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires network access to api.hlprivateer.xyz. Payment via x402 v2 exact scheme (USDC on Base, eip155:8453). Facilitator: https://facilitator.payai.network",
+    "extra": {
+      "author": "hl-privateer",
+      "version": "2.0",
+      "url": "https://hlprivateer.xyz",
+      "source": "https://github.com/ADWilkinson/hlprivateer.xyz",
+      "license": "proprietary",
+      "category": "finance",
+      "tags": [
+        "hyperliquid",
+        "trading",
+        "copy-trading",
+        "signals",
+        "x402",
+        "defi",
+        "perps"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adwilkinson/hl-privateer-fund/SKILL.md"
+}

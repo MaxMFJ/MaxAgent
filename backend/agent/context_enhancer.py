@@ -9,6 +9,7 @@ import time
 from typing import List, Dict, Any, Optional
 
 from .local_llm_manager import get_local_llm_manager, LocalLLMProvider
+from .llm_utils import extract_text_from_content
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,8 @@ class ContextEnhancer:
                 timeout=15.0,
             )
 
-            content = response.choices[0].message.content.strip()
+            raw = getattr(response.choices[0].message, "content", None)
+            content = extract_text_from_content(raw).strip()
 
             import json
             if "{" in content and "}" in content:
@@ -189,7 +191,8 @@ class ContextEnhancer:
                 timeout=15.0
             )
             
-            summary = response.choices[0].message.content.strip()
+            raw = getattr(response.choices[0].message, "content", None)
+            summary = extract_text_from_content(raw).strip()
             logger.info(f"Context summary generated: {summary[:50]}...")
             return summary
             

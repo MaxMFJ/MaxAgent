@@ -7,6 +7,7 @@ Open Skill Sources — 内置的开源技能仓库列表与拉取逻辑。
 内置源：
   - anthropics/skills — Anthropic 官方示例技能
   - skillcreatorai/Ai-Agent-Skills — 社区技能集（47+）
+  - openclaw/skills — OpenClaw/ClawHub 技能库（5700+，ClawHub 官方备份）
 """
 
 import asyncio
@@ -47,7 +48,29 @@ BUILTIN_SOURCES: List[Dict[str, Any]] = [
         "enabled": True,
         "description": "社区技能集 — 47+ 技能涵盖开发、文档、创意、商务、效率",
     },
+    {
+        "id": "openclaw_skills",
+        "name": "OpenClaw Skills (ClawHub)",
+        "owner": "openclaw",
+        "repo": "skills",
+        "branch": "main",
+        "path": "skills",
+        "enabled": True,
+        "id_prefix": "openclaw_",
+        "description": "OpenClaw/ClawHub 官方技能库 — 5700+ 社区技能（GitHub、开发、效率等）",
+    },
 ]
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """递归移除 surrogate 等非法 Unicode，避免 'utf-8' codec can't encode surrogates 错误"""
+    if isinstance(obj, str):
+        return obj.encode("utf-8", errors="replace").decode("utf-8")
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    return obj
 
 
 def get_skills_cache_dir(base: Optional[Path] = None) -> Path:
@@ -71,15 +94,20 @@ def _load_sources_from_config() -> List[Dict[str, Any]]:
 
 def get_enabled_sources(extra_sources: Optional[List[Dict]] = None) -> List[Dict[str, Any]]:
     """返回所有已启用的开源技能源（内置 + 配置文件 + 额外传入）。"""
+    config_sources = _load_sources_from_config()
+    disabled_ids = {s.get("id") for s in config_sources if s.get("id") and s.get("enabled") is False}
     seen_ids = set()
     sources: List[Dict[str, Any]] = []
 
     for s in BUILTIN_SOURCES:
-        if s.get("enabled", True) and s.get("id") not in seen_ids:
+        sid = s.get("id", "")
+        if sid in disabled_ids:
+            continue
+        if s.get("enabled", True) and sid not in seen_ids:
             sources.append(s)
-            seen_ids.add(s.get("id"))
+            seen_ids.add(sid)
 
-    for s in _load_sources_from_config():
+    for s in config_sources:
         sid = s.get("id", "")
         if s.get("enabled", True) and sid and sid not in seen_ids:
             sources.append(s)
@@ -141,7 +169,10 @@ async def _scan_for_skills(
     try:
         async with session.get(api_url) as resp:
             if resp.status == 403:
-                logger.warning("GitHub API rate limit — try setting GITHUB_TOKEN")
+                logger.warning(
+                    "GitHub API 403. 请确认: 1) Mac 设置→GitHub Token 已保存 "
+                    "2) Token 有效未过期 3) openclaw 有 5700+ 技能请求量大，可在 config/capsule_sources.json 设 enabled:false 禁用"
+                )
                 return []
             if resp.status != 200:
                 return []
@@ -229,8 +260,13 @@ async def sync_open_skill_sources(
     """
     cache = get_skills_cache_dir(cache_dir)
     try:
-        from config.github_config import get_github_token
+        from config.github_config import get_github_token, apply_github_config
+        apply_github_config()  # 确保使用最新 token（Mac 设置页可能刚保存）
         token = github_token or get_github_token()
+        if token:
+            logger.info("GitHub token configured for open skills sync")
+        else:
+            logger.warning("No GitHub token — API rate limit may apply (60/hour unauthenticated)")
     except ImportError:
         token = github_token or os.environ.get("GITHUB_TOKEN", "")
     all_sources = get_enabled_sources(sources)
@@ -257,12 +293,19 @@ async def sync_open_skill_sources(
             if capsules:
                 src_dir = cache / src_id
                 src_dir.mkdir(parents=True, exist_ok=True)
+                id_prefix = src.get("id_prefix", "")
                 for cap in capsules:
                     cid = cap.get("id", "unknown")
+                    if id_prefix and not cid.startswith(id_prefix):
+                        cap["id"] = f"{id_prefix}{cid}"
+                        cid = cap["id"]
+                    if id_prefix == "openclaw_" and cap.get("metadata") is not None:
+                        cap["metadata"]["original_format"] = "openclaw_skill"
                     safe_name = f"{cid}.json".replace("/", "_")
                     out_path = src_dir / safe_name
+                    cap_safe = _sanitize_for_json(cap)
                     with open(out_path, "w", encoding="utf-8") as f:
-                        json.dump(cap, f, ensure_ascii=False, indent=2)
+                        json.dump(cap_safe, f, ensure_ascii=False, indent=2)
                 result["synced"] += 1
                 result["total_skills"] += len(capsules)
                 logger.info(f"Open skills sync [{src_id}]: {len(capsules)} skills cached")

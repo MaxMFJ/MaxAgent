@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_fennec-seo-audit-en",
+  "description": "Uses Fennec SEO Auditor results to audit a URL. Invoke when user wants a quick on‑page/technical SEO health check or to verify favicon/meta/schema and GEO readiness.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Fennec SEO Audit Skill (with Fennec SEO Auditor Extension)\n\nThis Skill is designed to work together with the Chrome extension **Fennec SEO Auditor** to run a quick SEO health check on any given page.\n\nTypical use cases:\n\n- Get a fast overview of a page’s SEO basics (title, meta, headings, canonicals, etc.)\n- Verify favicon, Open Graph and structured data exposure\n- Spot common technical issues (HTTP status code, redirects, indexability, robots rules)\n- Judge whether a page is “GEO‑ready” as a candidate source for RAG / LLM answers\n\n> Chrome extension link:  \n> https://chromewebstore.google.com/detail/fennec-seo-auditor/fifppiokpmlgceojhfdjbjjapbephcdo\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to invoke this Skill] Use `fennec-seo-audit-en` when:\n\n- The user provides a URL and asks for a **quick SEO audit / health check**\n- The user wants to confirm favicon / meta / Open Graph / structured data are implemented correctly\n- A new article / landing page has just been published and needs a basic SEO / GEO review\n- The user wants to use a real page as a **GEO example**, to see how well it exposes:\n  - indexability signals\n  - semantic structure\n  - brand / entity signals\n\nAvoid using this Skill as:\n\n- A full‑site crawler or large‑scale technical audit (it’s better suited for spot checks)\n- A replacement for log analysis or server‑level diagnostics\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Human steps (what the user does with the browser)] 1. Install and enable the **Fennec SEO Auditor** Chrome extension  \n   Link: `https://chromewebstore.google.com/detail/fennec-seo-auditor/fifppiokpmlgceojhfdjbjjapbephcdo`\n\n2. Open the target page you want to audit  \n   (e.g. a blog post, product detail page, homepage, documentation page)\n\n3. Click the **Fennec SEO Auditor** icon in the browser toolbar:\n   - Run the standard audit (On‑page / HTML / Links / Images, etc.)\n   - Wait for the extension to finish and show the report\n\n4. Share the key parts of the report with the assistant:\n   - Either copy key findings as text\n   - Or summarize / extract the main issues\n   - Screenshots are fine too if the platform supports them\n\nThe assistant will then interpret the audit and turn it into a clear action plan.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Assistant responsibilities when this Skill is invoked] When `fennec-seo-audit-en` is triggered, the assistant should:\n\n1. Make sure the user has run Fennec SEO Auditor on the target URL (and guide them if not).\n\n2. Parse and structure the audit output, covering at least:\n   - **Page basics**: URL, title, meta description, H1/H2, main intent\n   - **Technical layer**: HTTP status, canonical, index directives, robots and sitemap hints\n   - **Content & readability**: length, keyword coverage, duplication, thin or low‑value sections\n   - **Media & links**: image ALT attributes, internal link structure, external links / broken links\n   - **Brand & GEO signals**: favicon, brand / organization info, logo exposure, Schema.org markup\n\n3. Highlight **high‑priority issues** that are likely to affect:\n   - indexability and crawling\n   - CTR and snippet quality\n   - perceived trust / authority\n\n4. Provide concrete, implementable recommendations for each important issue, not just a restatement of the report.\n\n5. Add a **GEO / RAG perspective**, for example:\n   - Is the page easy for a retrieval system to index and match semantically?\n   - Are there clear entity signals (Organization / Person / Product, etc.) that help LLMs trust this source?\n   - Does the page risk being treated as “thin / spammy / boilerplate” content?\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Recommended output structure] When responding based on Fennec SEO Auditor results, the assistant should aim for a structure like:\n\n1. **Page overview**\n   - URL, title, H1, target intent / query\n\n2. **Issue summary (with priorities)**\n   - High / Medium / Low priority list\n\n3. **Detailed findings and fixes**\n   - Meta & snippets (title, description, OG tags)\n   - Content & headings\n   - Internal links & anchors\n   - Technical / indexability\n   - Media (images, ALT text)\n   - Structured data & entity signals\n\n4. **GEO / RAG perspective**\n   - How well this page can be retrieved, re‑ranked and cited by LLMs\n   - Additional suggestions (e.g. add FAQ schema, clarify sections, add data / sources)\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes and constraints] - The assistant **does not** directly control the browser or extension; it relies on the user to run Fennec and share the output.\n- Recommendations should balance:\n  - Classic SEO (crawlability, rankings, CTR, readability)\n  - GEO / LLM needs (structured signals, semantic clarity, trustworthy sources, clear entities)\n- The assistant should avoid generic advice and tie recommendations back to:\n  - the user’s actual page\n  - the specific issues reported by Fennec SEO Auditor."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fennec_seo_audit_en"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2winter-dev/fennecseo-audit/SKILL.md"
+}

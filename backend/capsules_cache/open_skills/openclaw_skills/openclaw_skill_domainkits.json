@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_domainkits",
+  "description": "Turn AI into your domain investment expert. Search newly registered, expired, deleted domains. Check availability with pricing. WHOIS/DNS lookup. Track market trends.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # DomainKits\r\n\r\nTurn AI into your domain investment expert. Search, analyze, and discover domains with real-time market data."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Why DomainKits?] DomainKits doesn't just give AI tools — it gives AI **domain intelligence**.\r\n\r\nYour AI can now:\r\n- **Think like a domainer** — Understand what makes a domain valuable, spot trends before they peak\r\n- **Act on real-time data** — See what's registering now, what's expiring tomorrow, what just dropped\r\n- **Make informed decisions** — Analyze backlinks, keyword value, brand risk, and safety in seconds\r\n- **Execute instantly** — From idea to available domain with pricing and register links"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] ### Option 1: Direct call (no config needed)\r\n```bash\r\n# List all DomainKits tools\r\nnpx mcporter list --http-url https://api.domainkits.com/v1/mcp\r\n\r\n# Call a tool directly\r\nnpx mcporter call https://api.domainkits.com/v1/mcp.available domain=example.com\r\n```\r\n\r\n### Option 2: Add to mcporter config (recommended)\r\n\r\nAdd to `config/mcporter.json` or `~/.mcporter/mcporter.json`:\r\n```json\r\n{\r\n  \"mcpServers\": {\r\n    \"domainkits\": {\r\n      \"description\": \"Domain intelligence tools for AI agents\",\r\n      \"baseUrl\": \"https://api.domainkits.com/v1/mcp\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\nWith API key (for higher limits):\r\n```json\r\n{\r\n  \"mcpServers\": {\r\n    \"domainkits\": {\r\n      \"description\": \"Domain intelligence tools for AI agents\",\r\n      \"baseUrl\": \"https://api.domainkits.com/v1/mcp\",\r\n      \"headers\": {\r\n        \"X-API-Key\": \"$env:DOMAINKITS_API_KEY\"\r\n      }\r\n    }\r\n  }\r\n}\r\n```\r\n\r\nThen call tools by name:\r\n```bash\r\nnpx mcporter call domainkits.available domain=example.com\r\nnpx mcporter call domainkits.nrds keyword=ai limit=10\r\n```\r\n\r\nGet your API key at https://domainkits.com"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Instructions] Call DomainKits tools via mcporter:\r\n```bash\r\n# List available tools\r\nmcporter list domainkits\r\n\r\n# Check domain availability\r\nmcporter call domainkits.available domain=example.com\r\n\r\n# Search newly registered domains\r\nmcporter call domainkits.nrds keyword=ai limit=10\r\n\r\n# Full domain analysis\r\nmcporter call domainkits.analyze domain=stripe.com\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tools] Search\r\n- `nrds` — Newly registered domains\r\n- `aged` — Domains with 5-20+ years history\r\n- `expired` — Domains entering deletion cycle\r\n- `deleted` — Just-dropped domains, available now\r\n- `active` — Live sites and for-sale listings\r\n- `ns_reverse` — Domains on a specific nameserver\r\n- `unregistered_ai` — Unregistered short .ai domains (3-letter, CVCV patterns)\r\n\r\nQuery\r\n- `available` — Availability check with pricing\r\n- `bulk_available` — Check multiple domains (max 10)\r\n- `whois` — Registration details\r\n- `dns` — DNS records\r\n- `safety` — Google Safe Browsing check\r\n- `tld_check` — Keyword availability across TLDs\r\n\r\nAnalysis (requires account)\r\n- `backlink_summary` — SEO backlink profile\r\n- `keyword_data` — Google Ads keyword data\r\n\r\nTrends\r\n- `keywords_trends` — Hot keywords in registrations\r\n- `tld_trends` — TLD growth patterns\r\n- `tld_rank` — Top TLDs by volume\r\n- `price` — Registration costs by TLD\r\n\r\nBulk\r\n- `bulk_tld` — Check keyword popularity across TLDs\r\n- `bulk_available` — Batch availability check with pricing\r\n\r\nWorkflows\r\n- `analyze` — Comprehensive domain audit\r\n- `brand_match` — Brand conflict detection with trademark links\r\n- `plan_b` — Find alternatives when domain is taken\r\n- `domain_generator` — Generate creative domains with validation\r\n- `expired_analysis` — Due diligence for expired domains\r\n- `trend_hunter` — Spot trends and find related opportunities\r\n\r\nPreferences\r\n- `get_preferences` — Check memory status and retrieve preferences\r\n- `set_preferences` — Save preferences (TLDs, budget, style)\r\n- `delete_preferences` — Delete all data (GDPR Article 17)\r\n\r\nMonitor (requires memory)\r\n- `set_monitor` — Create domain monitoring task\r\n- `get_monitors` — Retrieve pending monitor checks\r\n- `update_monitor` — Save monitor results\r\n- `delete_monitor` — Remove monitoring task\r\n\r\nStrategy (requires memory)\r\n- `set_strategy` — Create automated opportunity discovery\r\n- `get_strategies` — Retrieve pending strategies\r\n- `update_strategy` — Save strategy "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When user wants domain suggestions:\r\n1. Brainstorm names based on keywords\r\n2. Call `bulk_available` to validate\r\n3. Show available options with prices and `register_url`\r\n\r\nWhen user wants to analyze a domain:\r\n1. Call `whois`, `dns`, `safety`\r\n2. Give a clear verdict\r\n\r\nOutput rules:\r\n- Always show `register_url` for available domains\r\n- Disclose affiliate links\r\n- Default to `no_hyphen=true` and `no_number=true`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Access Tiers] - **Guest** — Most tools, limited daily usage\r\n- **Member** (free) — All tools, higher limits, memory features\r\n- **Premium** — 500 requests/day, full result depth\r\n- **Platinum** — Unlimited\r\n\r\nGet API key at https://domainkits.com"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Privacy] - Works without API key\r\n- Memory OFF by default\r\n- GDPR compliant\r\n- Delete data anytime via `delete_preferences`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Links] - Website: https://domainkits.com/mcp\r\n- GitHub: https://github.com/ABTdomain/domainkits-mcp\r\n- Contact: info@domainkits.com"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "domainkits"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🌐",
+        "primaryEnv": "DOMAINKITS_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abtdomain/domain/skill.md"
+}

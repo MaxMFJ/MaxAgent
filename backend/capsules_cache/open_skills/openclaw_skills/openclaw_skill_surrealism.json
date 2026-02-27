@@ -1,0 +1,80 @@
+{
+  "id": "openclaw_skill_surrealism",
+  "description": "SurrealDB Surrealism WASM extension development. Write Rust functions, compile to WASM, deploy as database modules. Part of the surreal-skills collection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Surrealism -- WASM Extensions for SurrealDB\n\nNew in SurrealDB 3. Write custom functions in Rust, compile them to WebAssembly\n(WASM), and deploy them as native database modules callable from SurrealQL."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - Rust toolchain (stable) with `wasm32-unknown-unknown` target\n- SurrealDB CLI v3.0.0+ (`surreal` binary with `surreal module` subcommand)\n- Familiarity with SurrealQL `DEFINE MODULE` and `DEFINE BUCKET`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Development Workflow] ```\n1. Annotate   -- surrealism.toml + #[surrealism] on Rust functions\n2. Compile    -- surreal module compile  (produces .wasm binary)\n3. Register   -- DEFINE BUCKET + DEFINE MODULE in SurrealQL\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Create a new Surrealism project\ncargo new --lib my_extension\ncd my_extension\n\n# Add the WASM target\nrustup target add wasm32-unknown-unknown\n\n# Create surrealism.toml (required manifest)\ncat > surrealism.toml << 'TOML'\n[package]\nname = \"my_extension\"\nversion = \"0.1.0\"\nTOML\n\n# Write your extension (annotate with #[surrealism])\ncat > src/lib.rs << 'RUST'\nuse surrealism::surrealism;\n\n#[surrealism]\nfn greet(name: String) -> String {\n    format!(\"Hello, {}!\", name)\n}\nRUST\n\n# Compile to WASM using SurrealDB CLI\nsurreal module compile\n\n# Register in SurrealDB\nsurreal sql --endpoint http://localhost:8000 --user root --pass root --ns test --db test\n```\n\n```surql\n-- Grant access to the WASM file\nDEFINE BUCKET my_bucket;\n\n-- Register the module functions\nDEFINE MODULE my_extension FROM 'my_bucket:my_extension.wasm';\n\n-- Use the function in queries\nSELECT my_extension::greet('World');\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Use Cases] - Custom scalar functions callable from SurrealQL\n- Fake/mock data generation for testing\n- Domain-specific logic (language processing, quantitative finance, custom encoding)\n- Access to niche Rust crate functionality too specific for core SurrealDB\n- Custom analyzers for full-text search"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Status] Surrealism is actively in development and not yet stable. The API may change\nbetween SurrealDB 3.x releases. File feedback via GitHub issues/PRs on the\n[surrealdb/surrealdb](https://github.com/surrealdb/surrealdb) repository."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Full Documentation] See the main skill's rule file for complete guidance:\n- **[rules/surrealism.md](../../rules/surrealism.md)** -- project setup, Rust function signatures, WASM compilation, DEFINE MODULE/BUCKET syntax, deployment, testing, and best practices\n- **[SurrealDB Extensions Docs](https://surrealdb.com/docs/surrealdb/extensions)** -- official documentation\n- **[CLI module command](https://surrealdb.com/docs/surrealdb/cli/module)** -- `surreal module` reference"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "surrealism"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "version": "1.0.2",
+      "author": "24601",
+      "parent_skill": "surrealdb",
+      "snapshot_date": "2026-02-19",
+      "upstream": {
+        "repo": "surrealdb/surrealdb",
+        "release": "v3.0.0",
+        "sha": "2e0a61fd4daf",
+        "docs": "https://surrealdb.com/docs/surrealdb/extensions"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/24601/surrealism/SKILL.md"
+}

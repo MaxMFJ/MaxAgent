@@ -1,0 +1,137 @@
+{
+  "id": "openclaw_skill_backlink-analyzer",
+  "description": "Use when the user asks to \"analyze backlinks\", \"check link profile\", \"find toxic links\", \"link building opportunities\", \"off-page SEO\", \"who links to me\", \"I have spammy links\", \"how do I get more backlinks\", or \"disavow links\". Analyzes backlink profiles to understand link authority, identify toxic links, discover link building opportunities, and monitor competitor link acquisition. Essential for off-page SEO strategy. For internal link analysis, see internal-linking-optimizer. For competitor link profiles, see competitor-analysis.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Backlink Analyzer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../rank-tracker/) · **backlink-analyzer** · [performance-reporter](../performance-reporter/) · [alert-manager](../alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill helps you analyze, monitor, and optimize your backlink profile. It identifies link quality, discovers opportunities, and tracks competitor link building activities."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Auditing your current backlink profile\n- Identifying toxic or harmful links\n- Discovering link building opportunities\n- Analyzing competitor backlink strategies\n- Monitoring new and lost links\n- Evaluating link quality for outreach\n- Preparing for link disavow"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Profile Analysis**: Comprehensive backlink profile overview\n2. **Quality Assessment**: Evaluates link authority and relevance\n3. **Toxic Link Detection**: Identifies harmful links\n4. **Competitor Analysis**: Compares link profiles across competitors\n5. **Opportunity Discovery**: Finds link building prospects\n6. **Trend Monitoring**: Tracks link acquisition over time\n7. **Disavow Guidance**: Helps create disavow files"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Analyze Your Profile\n\n```\nAnalyze backlink profile for [domain]\n```\n\n### Find Opportunities\n\n```\nFind link building opportunities by analyzing [competitor domains]\n```\n\n### Detect Issues\n\n```\nCheck for toxic backlinks on [domain]\n```\n\n### Compare Profiles\n\n```\nCompare backlink profiles: [your domain] vs [competitor domains]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~link database + ~~SEO tool connected:**\nAutomatically pull comprehensive backlink profiles including referring domains, anchor text distribution, link quality metrics (DA/DR), link velocity, and toxic link detection from ~~link database. Competitor backlink data from ~~SEO tool for gap analysis.\n\n**With manual data only:**\nAsk the user to provide:\n1. Backlink export CSV (with source domains, anchor text, link type)\n2. Referring domains list with authority metrics\n3. Competitor domains for comparison\n4. Recent link gains/losses if tracking changes\n5. Any known toxic or spammy links\n\nProceed with the full analysis using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests backlink analysis:\n\n1. **Generate Profile Overview**\n\n   ```markdown\n   ## Backlink Profile Overview\n   \n   **Domain**: [domain]\n   **Analysis Date**: [date]\n   \n   ### Key Metrics\n   \n   | Metric | Value | Industry Avg | Status |\n   |--------|-------|--------------|--------|\n   | Total Backlinks | [X] | [Y] | [Above/Below avg] |\n   | Referring Domains | [X] | [Y] | [status] |\n   | Domain Authority | [X] | [Y] | [status] |\n   | Domain Rating | [X] | [Y] | [status] |\n   | Dofollow Links | [X] ([Y]%) | [Z]% | [status] |\n   | Nofollow Links | [X] ([Y]%) | [Z]% | [status] |\n   \n   ### Link Velocity\n   \n   | Period | New Links | Lost Links | Net Change |\n   |--------|-----------|------------|------------|\n   | Last 30 days | [X] | [Y] | [+/-Z] |\n   | Last 90 days | [X] | [Y] | [+/-Z] |\n   | Last year | [X] | [Y] | [+/-Z] |\n   \n   ### Authority Distribution\n   \n   ```\n   DA 80-100: ████ [X]%\n   DA 60-79:  ██████ [X]%\n   DA 40-59:  ████████████ [X]%\n   DA 20-39:  ████████████████ [X]%\n   DA 0-19:   ██████████ [X]%\n   ```\n   \n   **Profile Health Score**: [X]/100\n   ```\n\n2. **Analyze Link Quality**\n\n   ```markdown\n   ## Link Quality Analysis\n   \n   ### Top Quality Backlinks\n   \n   | Source Domain | DA | Link Type | Anchor | Target Page |\n   |---------------|-----|-----------|--------|-------------|\n   | [domain 1] | [DA] | Editorial | [anchor] | [page] |\n   | [domain 2] | [DA] | Guest Post | [anchor] | [page] |\n   | [domain 3] | [DA] | Resource | [anchor] | [page] |\n   \n   ### Link Type Distribution\n   \n   | Type | Count | Percentage | Assessment |\n   |------|-------|------------|------------|\n   | Editorial | [X] | [Y]% | ✅ High quality |\n   | Guest posts | [X] | [Y]% | ✅ Good |\n   | Resource pages | [X] | [Y]% | ✅ Good |\n   | Directory | [X] | [Y]% | ⚠️ Moderate |\n   | Forum/Comments | [X] | [Y]% | ⚠️ Low quality |\n   | Sponsored/Paid | [X] | [Y]% | ⚠️ Risky |\n   \n   ### Anchor Text Analysis\n   \n   | Anchor Type | Count | Percentage | Status |\n   |----"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Target domain backlink data is complete and current\n- [ ] Competitor domains specified for comparison analysis\n- [ ] Backlink data includes necessary fields (source domain, anchor text, link type)\n- [ ] Authority metrics available (DA/DR or equivalent)\n\n### Output Validation\n- [ ] Every metric cites its data source and collection date\n- [ ] Toxic link assessments include risk justification\n- [ ] Link opportunity recommendations are specific and actionable\n- [ ] Source of each data point clearly stated (~~link database data, ~~SEO tool data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Find link building opportunities by analyzing HubSpot, Salesforce, and Mailchimp\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Link Intersection Analysis] ### Sites linking to 2+ competitors (not you)\n\n| Domain | DA | HubSpot | Salesforce | Mailchimp | Opportunity |\n|--------|-----|---------|------------|-----------|-------------|\n| g2.com | 91 | ✅ | ✅ | ✅ | Get listed/reviewed |\n| capterra.com | 89 | ✅ | ✅ | ✅ | Submit for review |\n| entrepreneur.com | 92 | ✅ | ✅ | ❌ | Pitch guest post |\n| techcrunch.com | 94 | ✅ | ❌ | ✅ | PR/news pitch |\n\n### Top 5 Immediate Opportunities\n\n1. **G2.com** (DA 91) - All competitors listed\n   - Action: Create detailed G2 profile\n   - Effort: Low\n   - Impact: High authority + referral traffic\n\n2. **Entrepreneur.com** (DA 92) - 2 competitors have links\n   - Action: Pitch contributed article\n   - Effort: High\n   - Impact: High authority + brand exposure\n\n3. **MarketingProfs** (DA 75) - All competitors featured\n   - Action: Apply for expert contribution\n   - Effort: Medium\n   - Impact: Relevant audience + quality link\n\n### Estimated Impact\n\nIf you acquire links from top 10 opportunities:\n- New referring domains: +10\n- Average DA of new links: 82\n- Estimated ranking impact: +2-5 positions for competitive keywords\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Quality over quantity** - One DA 80 link beats ten DA 20 links\n2. **Monitor regularly** - Catch lost links and toxic links early\n3. **Study competitors** - Learn from their link building success\n4. **Diversify your profile** - Mix of link types and anchors\n5. **Disavow carefully** - Only disavow clearly toxic links"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Link Quality Assessment Framework] ### Link Quality Scoring Matrix\n\n| Factor | Weight | Score 1 (Low) | Score 3 (Medium) | Score 5 (High) |\n|--------|--------|--------------|------------------|----------------|\n| Domain Authority | 25% | DR <20 | DR 20-50 | DR 50+ |\n| Topical Relevance | 25% | Unrelated niche | Broadly related | Same niche/topic |\n| Traffic to Page | 15% | No traffic | Some traffic | Significant traffic |\n| Link Position | 15% | Footer/sidebar | Body (generic) | Body (contextual, editorial) |\n| Anchor Text | 10% | Generic/naked URL | Partial match | Descriptive, natural |\n| Follow Status | 10% | Nofollow/UGC | Sponsored (disclosed) | Dofollow, editorial |\n\n**Link Quality Score** = Sum(Factor x Weight) — High (4-5), Medium (2.5-3.9), Low (<2.5)\n\n### Toxic Link Identification Criteria\n\n| Red Flag | Risk Level | Action |\n|----------|-----------|--------|\n| From PBN (Private Blog Network) | Critical | Disavow |\n| Paid link without nofollow | Critical | Contact webmaster, then disavow |\n| From hacked/spam site | Critical | Disavow |\n| Exact match anchor from low-quality site | High | Monitor, consider disavow |\n| From link farm / directory network | High | Disavow |\n| From irrelevant foreign language site | Medium | Monitor |\n| Sitewide footer/sidebar link | Medium | Request removal or nofollow |\n| From scraper/auto-generated content | Medium | Disavow |\n| Reciprocal link schemes | Low-Medium | Reduce reciprocal ratio |"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Link Building Strategy Matrix] ### Strategy Comparison\n\n| Strategy | Difficulty | Scalability | Link Quality | Time to Results | Best For |\n|----------|-----------|-------------|-------------|-----------------|---------|\n| **Guest Posting** | Medium | Medium | Medium-High | 1-3 months | Building relationships + links |\n| **Digital PR** | High | High | Very High | 2-6 months | Brand authority + high-DR links |\n| **Broken Link Building** | Low-Medium | Medium | Medium | 1-2 months | Quick wins at scale |\n| **Resource Page Links** | Low | Low | Medium | 1-2 months | Niche-relevant links |\n| **HARO/Source Pitching** | Medium | Medium | High | 1-3 months | Authority + press mentions |\n| **Original Research** | High | Very High | Very High | 3-6 months | Long-term link magnet |\n| **Free Tools/Calculators** | Very High | Very High | Very High | 6-12 months | Passive link acquisition |\n| **Skyscraper Technique** | Medium | Low | Medium-High | 2-4 months | Outranking specific content |\n| **Unlinked Mentions** | Low | Low | High | 1-2 weeks | Converting existing brand mentions |\n| **Community Engagement** | Low | Low | Low-Medium | Ongoing | Niche authority building |\n\n### Link Building Cadence\n\n| Site Stage | Monthly Link Target | Strategy Focus |\n|-----------|-------------------|---------------|\n| New site (0-6 months) | 5-10 quality links | Guest posts, resource pages, HARO |\n| Growing (6-18 months) | 10-25 quality links | Digital PR, original research, skyscraper |\n| Established (18+ months) | Maintenance + strategic | Passive from content, digital PR campaigns |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Outreach Best Practices] ### Email Outreach Framework\n\n**Subject Line Formulas:**\n- \"Quick question about [their article title]\"\n- \"Resource for your [topic] page\"\n- \"[Mutual connection] suggested I reach out\"\n- \"Found a broken link on [their page]\"\n\n**Email Structure:**\n1. Personal hook (reference their specific content — prove you read it)\n2. Value proposition (what's in it for them, not you)\n3. The ask (specific, easy to act on)\n4. Social proof (brief — one line max)\n5. Easy opt-out (no pressure)\n\n### Outreach Response Rate Benchmarks\n\n| Approach | Average Response Rate | Average Link Win Rate |\n|----------|---------------------|---------------------|\n| Broken link building | 8-12% | 3-5% |\n| Guest post pitching | 5-10% | 2-4% |\n| Resource page outreach | 6-10% | 2-4% |\n| Unlinked mention | 15-25% | 10-15% |\n| HARO pitching | 3-8% | 1-3% |\n| Digital PR campaign | 5-15% | 2-8% |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Link Quality Rubric](./references/link-quality-rubric.md) — Quality scoring matrix with weighted factors and toxic link identification criteria\n- [Outreach Templates](./references/outreach-templates.md) — Email frameworks, subject line formulas, and response rate benchmarks"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Related Skills] - [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) — Backlink data feeds directly into CITE C dimension; run after this analysis for full domain scoring\n- [competitor-analysis](../../research/competitor-analysis/) — Full competitor analysis\n- [content-gap-analysis](../../research/content-gap-analysis/) — Create linkable content\n- [alert-manager](../alert-manager/) — Set up link alerts\n- [performance-reporter](../performance-reporter/) — Include in reports\n- [entity-optimizer](../../cross-cutting/entity-optimizer/) — Branded backlinks strengthen entity signals"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "backlink_analyzer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "low",
+      "tags": [
+        "seo",
+        "backlinks",
+        "link building",
+        "link profile",
+        "toxic links",
+        "off-page seo",
+        "link authority",
+        "domain authority",
+        "link acquisition"
+      ],
+      "triggers": [
+        "analyze backlinks",
+        "check link profile",
+        "find toxic links",
+        "link building opportunities",
+        "off-page SEO",
+        "backlink audit",
+        "link quality",
+        "who links to me",
+        "I have spammy links",
+        "how do I get more backlinks",
+        "disavow links"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/backlink-analyzer/SKILL.md"
+}

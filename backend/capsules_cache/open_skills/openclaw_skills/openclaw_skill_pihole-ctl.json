@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_pihole-ctl",
+  "description": "Manage and monitor local Pi-hole instance. Query FTL database for statistics (blocked ads, top clients) and control service via CLI. Use when user asks \"how many ads blocked\", \"pihole status\", or \"update gravity\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pi-hole Controller"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] - **Role**: Network Guardian.\n- **Trigger**: \"Check Pi-hole\", \"Adblock status\", \"Who is querying top domains?\".\n- **Output**: JSON stats or CLI command results."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Capabilities] 1.  **Statistics**: Query FTL database for accurate logs (Last 24h, Top Domains).\n2.  **Management**: Enable/Disable blocking (`pihole enable/disable`).\n3.  **Blocklists**: Update Gravity (`pihole -g`).\n4.  **Audit**: Identify chatty clients or top blocked domains."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/query_db.py`: Python script using native `sqlite3` library to query Pi-hole stats safely.\n  - Requires read permission on `/etc/pihole/pihole-FTL.db`.\n  - Usage: `python3 scripts/query_db.py --summary --hours 24`\n  - Usage: `python3 scripts/query_db.py --top 10`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Permissions] - **Database Access**: The user running this skill must have read access to `/etc/pihole/pihole-FTL.db`.\n  - Recommended: Add user to `pihole` group (`usermod -aG pihole ubuntu`).\n- **Management Commands**: `pihole` CLI commands (enable/disable) require `sudo` or must be run by a user with appropriate permissions."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Database Schema](references/db-schema.md)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pihole_ctl"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/pihole-ctl/SKILL.md"
+}

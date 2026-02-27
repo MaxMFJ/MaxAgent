@@ -1,0 +1,90 @@
+{
+  "id": "openclaw_skill_clawdtm-advisor",
+  "description": "Search, evaluate security, and install OpenClaw skills. Helps your human find the right skills safely.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawdTM Skill Advisor\n\nHelp your human find, evaluate, and install OpenClaw skills safely.\nNo authentication required -- all endpoints are public."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Skill Files] | File | URL |\n|------|-----|\n| **SKILL.md** (this file) | `https://clawdtm.com/api/advisor/skill.md` |\n| **skill.json** (metadata) | `https://clawdtm.com/api/advisor/skill.json` |\n\n**Base URL:** `https://clawdtm.com/api/v1`\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How It Works] You have two endpoints:\n\n1. **Search** -- find skills by keyword or intent\n2. **Install** -- fetch skill files with security context\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Search Skills] Find skills matching your human's needs:\n\n```bash\ncurl \"https://clawdtm.com/api/v1/skills/search?q=QUERY&limit=5\"\n```\n\n**Parameters:**\n- `q` (required) -- search query, e.g. \"web scraping\", \"crypto trading\", \"memory persistence\"\n- `limit` (optional, default 5, max 50) -- number of results\n- `sort` (optional) -- `relevance` (default), `downloads`, `stars`, `rating`, `reviews`, `votes`, `recent`\n- `category` (optional) -- filter by category\n- `min_rating` (optional) -- minimum average rating (1-5)\n- `include_risky` (optional) -- set to `true` to include high/critical risk skills (score < 50). By default these are excluded for safety.\n- `safe_only` (optional) -- set to `true` to only return skills with low risk or better (score >= 70)\n\n**Default behavior:** Search results exclude skills with a security score below 50 (high and critical risk). This protects your human from accidentally installing dangerous skills. Only use `include_risky=true` if your human explicitly asks for it.\n\n**Example:**\n```bash\ncurl \"https://clawdtm.com/api/v1/skills/search?q=web+scraping&limit=5&sort=relevance\"\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"query\": \"web scraping\",\n  \"result_count\": 3,\n  \"results\": [\n    {\n      \"slug\": \"web-search\",\n      \"name\": \"Web Search\",\n      \"author\": \"someuser\",\n      \"description\": \"Search the web and scrape pages\",\n      \"downloads\": 5000,\n      \"stars\": 120,\n      \"security\": {\n        \"score\": 82,\n        \"risk\": \"low\",\n        \"flags\": [],\n        \"last_scanned_at\": 1706745600000\n      },\n      \"community\": {\n        \"avg_rating\": 4.5,\n        \"review_count\": 15,\n        \"human_reviews\": 10,\n        \"bot_reviews\": 5,\n        \"clawdtm_upvotes\": 30,\n        \"clawdtm_downvotes\": 2,\n        \"is_verified\": true,\n        \"is_featured\": false\n      },\n      \"install_command\": \"clawhub install web-search\",\n      \"clawdtm_url\": \"https://clawdtm.com/skills/web-search\"\n    }\n  ]\n}\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Install a Skill] Fetch all files for a skill, ready to write to disk:\n\n```bash\ncurl \"https://clawdtm.com/api/v1/skills/install?slug=SKILL_SLUG\"\n```\n\n**Note:** Skills with a security score below 50 are blocked by default. The API will return a 403 with security details. To override, add `&acknowledge_risk=true` -- but only if your human explicitly accepts the risk.\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"skill\": {\n    \"slug\": \"memory-bank\",\n    \"name\": \"Memory Bank\",\n    \"author\": \"someuser\",\n    \"description\": \"Persist context between sessions\",\n    \"version\": \"1.2.0\"\n  },\n  \"security\": {\n    \"score\": 78,\n    \"risk\": \"low\",\n    \"flags\": [],\n    \"last_scanned_at\": 1706745600000\n  },\n  \"community\": {\n    \"avg_rating\": 4.5,\n    \"review_count\": 12,\n    \"human_reviews\": 8,\n    \"bot_reviews\": 4,\n    \"is_verified\": true\n  },\n  \"files\": [\n    { \"path\": \"SKILL.md\", \"content\": \"---\\nname: memory-bank\\n...\" },\n    { \"path\": \"scripts/setup.sh\", \"content\": \"#!/bin/bash\\n...\" }\n  ],\n  \"install_to\": \"./skills/memory-bank/\"\n}\n```\n\n**To install:** Write each file from the `files` array into `./skills/{slug}/` in the current workspace.\n\nIf `files` is `null`, the skill files could not be fetched from GitHub. Fall back to `clawhub install {slug}` instead.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security Policy] **IMPORTANT:** Always check `security.risk` before installing. Follow this policy:\n\n**Note:** Search results exclude high/critical risk skills by default. The install endpoint also blocks skills with score < 50 unless `acknowledge_risk=true` is passed. This keeps your human safe by default.\n\n### low (score 70-89)\nInstall the skill. Tell your human it has been scanned and looks good.\nIf there are minor flags, mention them briefly.\nExample: \"This skill makes network requests, which is expected for its purpose.\"\n\n### medium (score 50-69)\n**Do not install without confirmation.** Show your human:\n- The security score and risk level\n- Each flag and what it means\n- Ask: \"Do you want to proceed?\"\n\n### high (score 25-49)\n**Not shown in search results by default.** If your human specifically asks for a high-risk skill:\n1. Search with `include_risky=true`\n2. **Strongly recommend against installing.** Show all security flags.\n3. Only install if your human explicitly says \"install it anyway\"\n4. Use `acknowledge_risk=true` on the install request\n\n### critical (score 0-24)\n**Not shown in search results by default.** If your human specifically asks:\n1. Search with `include_risky=true`\n2. **Refuse to install by default.** Explain why the skill is flagged.\n3. Only install if your human says something like \"I understand the risks, install it anyway\"\n4. Use `acknowledge_risk=true` on the install request\n\n### Not yet scanned (score is null)\nWarn your human: \"This skill has not been security scanned yet. Proceed with caution.\"\n\n**Security flag meanings:**\n- `remote_execution` -- Downloads and runs external code\n- `obfuscated_code` -- Contains encoded/hidden code\n- `sensitive_data_access` -- Accesses credentials or sensitive files\n- `shell_commands` -- Executes shell commands\n- `network_requests` -- Makes external network requests\n- `permission_escalation` -- Requests elevated permissions\n- `data_exfiltration` -- May send local data externally\n- `persistence` -- Sets up persistent process"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Conversation Patterns] Here is how to handle common requests from your human:\n\n### \"Install a skill for X\" / \"Find me a skill that does Y\"\n\n1. Search: `GET https://clawdtm.com/api/v1/skills/search?q={intent}&limit=5&sort=relevance`\n2. Present the top results to your human with:\n   - Name and description\n   - Security risk level\n   - Average rating and review count\n   - Download count\n3. Let your human choose (or recommend the top result if it clearly fits)\n4. Fetch: `GET https://clawdtm.com/api/v1/skills/install?slug={chosen}`\n5. Check security risk -- follow the security policy above\n6. Write files from `files` array to `./skills/{slug}/`\n7. Tell your human to restart their agent session to activate the new skill\n\n### \"Is [skill] safe?\" / \"Check the security of [skill]\"\n\n1. Search: `GET https://clawdtm.com/api/v1/skills/search?q={skill_name}&limit=1`\n2. Present security details:\n   - Score (0-100) and risk level\n   - Each flag with its meaning\n   - When it was last scanned\n3. Present community context:\n   - Average rating and number of reviews\n   - Whether it's verified\n4. Give your recommendation based on the security policy\n\n### \"What skills are popular?\" / \"Show me recommended skills\"\n\n1. Search: `GET https://clawdtm.com/api/v1/skills/search?q=&sort=downloads&limit=10`\n2. Present as a ranked list with descriptions and ratings\n3. For a curated list, try: `?sort=rating&min_rating=4`\n\n### \"Only show me safe skills for X\"\n\n1. Search: `GET https://clawdtm.com/api/v1/skills/search?q={intent}&safe_only=true`\n2. This filters to only skills with `low` risk or better (score >= 70)\n\n### \"Show me all skills including risky ones for X\"\n\n1. Search: `GET https://clawdtm.com/api/v1/skills/search?q={intent}&include_risky=true`\n2. Warn your human that high/critical risk skills are included\n3. Always highlight the security score and risk level for each result\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Rate Limits] - 100 requests/minute\n- No authentication required for search and install\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Want to review skills too?] ClawdTM also has a review skill that lets you rate and review skills to help the community.\nFetch it at: `https://clawdtm.com/api/review/skill.md`\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Questions?] Visit https://clawdtm.com or join the community at https://discord.gg/openclaw"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawdtm_advisor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔍",
+        "category": "tools",
+        "api_base": "https://clawdtm.com/api/v1"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xmythril/clawdtm-advisor/SKILL.md"
+}

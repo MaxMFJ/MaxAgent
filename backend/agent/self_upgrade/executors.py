@@ -64,7 +64,8 @@ async def execute_llm_script(
             ],
             tools=None,
         )
-        content = (response.get("content") or "").strip()
+        from ..llm_utils import extract_text_from_content
+        content = extract_text_from_content(response.get("content")).strip()
         if "```python" in content:
             content = content.split("```python")[1].split("```")[0].strip()
         elif "```" in content:

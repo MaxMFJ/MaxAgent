@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_actionbook",
+  "description": "Activate when the user needs to interact with any website — browser automation, web scraping, screenshots, form filling, UI testing, monitoring, or building AI agents. Provides pre-verified page actions with step-by-step instructions and tested selectors.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Activate when the user's request involves interacting with a website:\n\nActivate when the user:\n- Needs to do anything on a website (\"Send a LinkedIn message\", \"Book an Airbnb\", \"Search Google for...\")\n- Asks how to interact with a site (\"How do I post a tweet?\", \"How to apply on LinkedIn?\")\n- Wants to fill out forms, click buttons, navigate, search, filter, or browse on a specific site\n- Wants to take a screenshot of a web page or monitor changes\n- Builds browser-based AI agents, web scrapers, or E2E tests for external websites\n- Automates repetitive web tasks (data entry, form submission, content posting)\n- Wants to control their existing Chrome browser (Extension mode)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What Actionbook Provides] Actionbook is a library of **pre-verified page interaction data**. `actionbook search` finds actions matching a task description; `actionbook get \"<ID>\"` returns a structured document describing a page's purpose, functional capabilities, and DOM structure with inline CSS selectors — eliminating the need for runtime page structure discovery."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[search and get] ### search — Find actions by task description\n\n```bash\nactionbook search \"<query>\"                      # Search by task intent\nactionbook search \"<query>\" --domain site.com    # Filter by domain\nactionbook search \"<query>\" --url <url>          # Filter by URL\nactionbook search \"<query>\" -p 2 -s 20           # Pagination\n```\n\n**Returns** for each result:\n- `ID` — use with `actionbook get \"<ID>\"` to retrieve full details\n- `Type` — `page` (full page) or `area` (page section)\n- `Description` — page overview and function summary\n- `URL` — page where this action applies\n- `Health Score` — selector reliability percentage (0–100%)\n- `Updated` — last verified date\n\n### Constructing an effective search query\n\nThe `query` string is the **primary signal** for finding the right action. Pack it with the user's full intent — not just a site name or a vague keyword.\n\n**Include in the query:**\n1. **Target site** — the website name or domain\n2. **Task verb** — what the user wants to do (search, book, post, filter, login, compose, etc.)\n3. **Object / context** — what they're acting on (listings, messages, flights, repositories, etc.)\n4. **Specific details** — any constraints, filters, or parameters the user mentioned (dates, location, category, language, etc.)\n\n**Rule of thumb:** Rewrite the user's request as a single descriptive sentence and use that as the query.\n\n| User says | Bad query | Good query |\n|-----------|-----------|------------|\n| \"Book an Airbnb in Tokyo for next week\" | `\"airbnb\"` | `\"airbnb search listings Tokyo dates check-in check-out guests\"` |\n| \"Search arXiv for recent NLP papers\" | `\"arxiv search\"` | `\"arxiv advanced search papers NLP natural language processing recent\"` |\n| \"Send a LinkedIn connection request\" | `\"linkedin\"` | `\"linkedin send connection request invite someone\"` |\n| \"Post a tweet with an image\" | `\"twitter post\"` | `\"twitter compose new tweet post with image media attachment\"` |\n| \"Filter GitHub issues by label\" | `\"github issues\"` | `\"github "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Browser Commands] Quick reference. Full details with all flags and options: [command-reference.md](references/command-reference.md).\n\n### Navigation\n\n```bash\nactionbook browser open <url>           # Open URL in new tab\nactionbook browser goto <url>           # Navigate current page\nactionbook browser back / forward       # History navigation\nactionbook browser reload               # Reload page\nactionbook browser pages                # List open tabs\nactionbook browser switch <page_id>     # Switch tab\nactionbook browser close                # Close browser\n```\n\n### Interactions\n\n```bash\nactionbook browser click \"<selector>\"          # Click element\nactionbook browser fill \"<selector>\" \"text\"    # Clear and type\nactionbook browser type \"<selector>\" \"text\"    # Append text\nactionbook browser select \"<selector>\" \"value\" # Select dropdown option\nactionbook browser hover \"<selector>\"          # Hover\nactionbook browser press Enter                 # Press key\n```\n\n### Observation\n\n```bash\nactionbook browser text                        # Full page text\nactionbook browser text \"<selector>\"           # Element text\nactionbook browser snapshot                    # Accessibility tree (live page structure)\nactionbook browser screenshot                  # Save screenshot\nactionbook browser screenshot --full-page      # Full page screenshot\nactionbook browser wait \"<selector>\"           # Wait for element\nactionbook browser wait-nav                    # Wait for navigation\n```\n\n`actionbook browser close` cleans up the browser session. Skip if the user requests the browser remain open."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Examples] User request: \"Search arXiv for papers about Neural Networks, search in titles only\"\n\n```bash\n# 1. Search — include the full intent: site + task + subject + filter preference\nactionbook search \"arxiv advanced search papers neural network title field\" --domain arxiv.org\n\n# 2. Get details — read Page Structure Summary for selectors\nactionbook get \"arxiv.org:/search/advanced:default\"\n# Response includes: input[type=\"text\"], select[name=\"searchtype\"], button.Search, etc.\n\n# 3. Automate using selectors from the response\nactionbook browser open \"https://arxiv.org/search/advanced\"\nactionbook browser fill \"input[type='text']\" \"Neural Network\"\nactionbook browser select \"select[name='searchtype']\" \"title\"\nactionbook browser click \"button.Search\"\nactionbook browser wait-nav\nactionbook browser text\nactionbook browser close\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Fallback] Actionbook stores page data captured at indexing time. Websites evolve, so selectors may become outdated.\n\nWhen a selector from `actionbook get` fails at runtime, `actionbook browser snapshot` provides the **live accessibility tree** with current selectors. Use selectors from the snapshot output to retry the interaction.\n\nSelectors used in browser commands should come from `actionbook get` or `actionbook browser snapshot` output in the current session — not from prior knowledge or memory.\n\nIf `actionbook search` returns no results for a page, use `snapshot` as the primary source, or fall back to other available tools."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[References] | Reference | Description |\n|-----------|-------------|\n| [command-reference.md](references/command-reference.md) | Complete command reference with all flags and options |\n| [authentication.md](references/authentication.md) | Login flows, OAuth, 2FA handling, session persistence |"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "actionbook"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adcentury/actionbook/SKILL.md"
+}

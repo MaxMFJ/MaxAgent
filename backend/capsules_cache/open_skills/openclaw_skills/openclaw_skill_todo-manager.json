@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_todo-manager",
+  "description": "管理待办事项。添加、查看、完成、删除待办。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Todo Manager - 待办事项管理"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[功能] ### 添加待办\n```\n/todo add <事项>\n/todo + <事项>\n```\n\n### 查看待办\n```\n/todo list\n/todo ls\n```\n\n### 完成待办\n```\n/todo done <编号>\n/todo <编号> done\n```\n\n### 删除待办\n```\n/todo rm <编号>\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[存储] 待办文件：`~/.openclaw/workspace/todos.md`\n\n格式：\n```markdown\n# 待办事项\n\n- [ ] 任务1\n- [x] 任务2\n- [ ] 任务3"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[已完成] - 任务2 (2026-02-24)\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[使用示例] 用户：\"/todo add 健身训练\"\n→ 添加待办：健身训练\n\n用户：\"/todo list\"\n→ 显示所有待办\n\n用户：\"/todo done 1\"\n→ 标记第一个待办为完成\n\n---\n*Todo Manager Skill*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "todo_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aeoleader/todo-manager/SKILL.md"
+}

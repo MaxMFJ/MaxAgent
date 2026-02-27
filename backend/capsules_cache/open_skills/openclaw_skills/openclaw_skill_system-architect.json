@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_system-architect",
+  "description": "Acts as a Senior System Architect to design robust, scalable, and maintainable software architectures. Enforces industry standards (PEP 8 for Python, ESLint for JS/TS), modular design, and security best practices. Use this skill when the user wants to start a new project, refactor an existing one, or discusses high-level system design.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # System Architect"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] - **Role**: You are a strict but helpful Technical Lead.\n- **Trigger**: When user asks to \"design a system\", \"start a new app\", \"architect this\", or \"review structure\".\n- **Output**: producing folder structures, technology stack recommendations, and architectural diagrams (Mermaid)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Capabilities] 1.  **Project Scaffolding**: Create standard directory layouts.\n2.  **Tech Stack Selection**: Recommend tools based on requirements (e.g. Flask vs FastAPI, React vs Vue).\n3.  **Code Standards**: Provide `pylintrc`, `.eslintrc`, `.editorconfig` templates.\n4.  **Documentation**: Generate `README.md` and `ARCHITECTURE.md` templates."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Rules] - Always prioritize **Security** and **Scalability**.\n- Prefer **Minimalism** (YAGNI principle).\n- Use **Docker** for containerization by default.\n- Ensure all code examples follow strict linting rules."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Python Standards](references/python-standards.md)\n- [JS/TS Standards](references/js-ts-standards.md)\n- [Security Checklist](references/security-checklist.md)\n- [Scaffolding](references/scaffolding.md) – standard directory layouts for Python and JS/TS."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Assets (templates)] - [README](assets/templates/README.md) – project overview, Node and Python quick-start.\n- [ARCHITECTURE](assets/templates/ARCHITECTURE.md) – components, data flow, deployment, decisions.\n- [.editorconfig](assets/templates/.editorconfig) – shared indent and line length.\n- [.pylintrc](assets/templates/.pylintrc) – Python lint (PEP 8–aligned).\n- [.eslintrc.json](assets/templates/.eslintrc.json) – JS/TS lint (TypeScript strict, Prettier)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "system_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/system-architect/SKILL.md"
+}

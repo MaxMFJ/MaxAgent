@@ -1,0 +1,110 @@
+{
+  "id": "openclaw_skill_canva",
+  "description": "Create, export, and manage Canva designs via the Connect API. Generate social posts, carousels, and graphics programmatically.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Canva Skill\n\nCreate, export, and manage Canva designs via the Connect API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - \"Create an Instagram post about [topic]\"\n- \"Export my Canva design as PNG\"\n- \"List my recent designs\"\n- \"Create a carousel from these points\"\n- \"Upload this image to Canva\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **Create a Canva Integration:**\n   - Go to https://www.canva.com/developers/\n   - Create a new integration\n   - Get your Client ID and Client Secret\n\n2. **Set Environment Variables:**\n   ```bash\n   export CANVA_CLIENT_ID=\"your_client_id\"\n   export CANVA_CLIENT_SECRET=\"your_client_secret\"\n   ```\n\n3. **Authenticate (first time):**\n   Run the auth flow to get access tokens (stored in `~/.canva/tokens.json`)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[API Base URL] ```\nhttps://api.canva.com/rest/v1\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Authentication] Canva uses OAuth 2.0. The skill handles token refresh automatically.\n\n```bash\n# Get access token (stored in ~/.canva/tokens.json)\nACCESS_TOKEN=$(cat ~/.canva/tokens.json | jq -r '.access_token')\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Core Operations] ### List Designs\n\n```bash\ncurl -s \"https://api.canva.com/rest/v1/designs\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" | jq .\n```\n\n### Get Design Details\n\n```bash\ncurl -s \"https://api.canva.com/rest/v1/designs/{designId}\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" | jq .\n```\n\n### Create Design from Template\n\n```bash\ncurl -X POST \"https://api.canva.com/rest/v1/autofills\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"brand_template_id\": \"TEMPLATE_ID\",\n    \"data\": {\n      \"title\": {\"type\": \"text\", \"text\": \"Your Title\"},\n      \"body\": {\"type\": \"text\", \"text\": \"Your body text\"}\n    }\n  }'\n```\n\n### Export Design\n\n```bash\n# Start export job\ncurl -X POST \"https://api.canva.com/rest/v1/exports\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"design_id\": \"DESIGN_ID\",\n    \"format\": {\"type\": \"png\", \"width\": 1080, \"height\": 1080}\n  }'\n\n# Check export status\ncurl -s \"https://api.canva.com/rest/v1/exports/{jobId}\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" | jq .\n```\n\n### Upload Asset\n\n```bash\ncurl -X POST \"https://api.canva.com/rest/v1/asset-uploads\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" \\\n  -H \"Content-Type: application/octet-stream\" \\\n  -H 'Asset-Upload-Metadata: {\"name\": \"my-image.png\"}' \\\n  --data-binary @image.png\n```\n\n### List Brand Templates\n\n```bash\ncurl -s \"https://api.canva.com/rest/v1/brand-templates\" \\\n  -H \"Authorization: Bearer $ACCESS_TOKEN\" | jq .\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Export Formats] | Format | Options |\n|--------|---------|\n| PNG | width, height, lossless |\n| JPG | width, height, quality (1-100) |\n| PDF | standard, print |\n| MP4 | (for video designs) |\n| GIF | (for animated designs) |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Common Workflows] ### Create Instagram Post\n\n1. List brand templates: `GET /brand-templates`\n2. Find Instagram post template\n3. Autofill with content: `POST /autofills`\n4. Export as PNG 1080x1080: `POST /exports`\n5. Download the exported file\n\n### Create Carousel\n\n1. Create multiple designs using autofill\n2. Export each as PNG\n3. Combine for posting\n\n### Batch Export\n\n1. List designs: `GET /designs`\n2. Loop through and export each\n3. Download all files"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Rate Limits] - Most endpoints: 100 requests/minute\n- Upload/Export: 30 requests/minute"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Error Handling] Common errors:\n- `401` - Token expired, refresh needed\n- `403` - Missing required scope\n- `429` - Rate limit exceeded\n- `404` - Design/template not found"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Scopes Required] - `design:content:read` - Read designs\n- `design:content:write` - Create/modify designs\n- `asset:read` - Read assets\n- `asset:write` - Upload assets\n- `brandtemplate:content:read` - Read brand templates"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips] 1. **Use Brand Templates** - Pre-designed templates are faster than creating from scratch\n2. **Batch Operations** - Group exports to avoid rate limits\n3. **Cache Template IDs** - Store commonly used template IDs locally\n4. **Check Job Status** - Exports are async; poll until complete"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Resources] - [Canva Connect API Docs](https://www.canva.dev/docs/connect/)\n- [OpenAPI Spec](https://www.canva.dev/sources/connect/api/latest/api.yml)\n- [Starter Kit](https://github.com/canva-sdks/canva-connect-api-starter-kit)\n\n---\n\nBuilt by **Meow 😼** for the Moltbook community 🦞"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "canva"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎨",
+        "category": "design",
+        "requires": {
+          "env": [
+            "CANVA_CLIENT_ID",
+            "CANVA_CLIENT_SECRET"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abgohel/canva/SKILL.md"
+}

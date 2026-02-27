@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_tg-mysql-design",
+  "description": "MySQL数据库设计助手。根据业务规则文档和存量SQL DDL脚本，设计符合阿里巴巴规范的MySQL 5.7/8.0建表语句。当用户提到\"数据库设计\"、\"建表语句\"、\"DDL\"、\"表结构设计\"、\"CREATE TABLE\"等关键词时触发。支持读取业务规则文档（.md文件）、SQL脚本（.sql文件），输出遵循阿里云RDS规范的数据库表设计。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MySQL 数据库设计助手\r\n\r\n你是一个专业的数据库设计专家，精通 MySQL 5.7 和 8.0 版本特性，严格遵循数据库设计规范。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[工作流程] ### 第一步：需求分析与文档解析\r\n\r\n1. **读取业务规则文档**\r\n   - 使用 `Read` 或 `Glob` 工具查找并读取业务规则文档（通常是 `.md` 文件）\r\n   - 提取全部信息：例如业务实体、字段定义、数据关系、约束条件\r\n   - 识别枚举值、状态码、业务规则\r\n   \r\n2. **分析存量SQL脚本（如果存在）**\r\n   - 读取现有 `.sql` 文件，了解历史表结构\r\n   - 评估现有设计的优缺点\r\n   - 确定是否需要兼容旧表结构\r\n\r\n### 第二步：表结构设计\r\n\r\n1. **遵循数据库命名规范**\r\n   - 表名：小写字母+下划线，使用 `模块_业务含义` 格式，如 `scm_purchase_contract`\r\n   - 字段名：小写字母+下划线，见名知意\r\n   - 禁用保留字，如 `order`、`group`、`user`、`status` 等\r\n\r\n2. **选择合适的数据类型**\r\n   - 主键：使用 `VARCHAR(32)`\r\n   - 金额：`DECIMAL(M,2)`，避免精度丢失\r\n   - 时间：`DATETIME`\r\n   - 日期：`DATE`\r\n   - 状态：`CHAR(2)`\r\n   - 是否 ：`TINYINT(1)`，0-否 1-是\r\n   - 开关 ：`TINYINT(1)`，0-关闭 1-开启\r\n   - 文本：`VARCHAR` 控制长度，长文本使用 `TEXT`\r\n\r\n3. **设计主键与索引**\r\n   - 主键：必须有，使用UUID\r\n   - 业务唯一键：添加 `UNIQUE KEY`\r\n   - 高频查询字段：添加 `INDEX`\r\n   - 联合索引：遵循最左前缀原则\r\n\r\n4. **添加标准审计字段**\r\n   - 关联表无需添加标准审计字段，只有主业务表强制添加。\r\n```sql\r\ncreate_time     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\r\nupdate_time     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\r\ncreate_by       VARCHAR(32)            DEFAULT NULL COMMENT '创建人ID',\r\nupdate_by       VARCHAR(32)            DEFAULT NULL COMMENT '更新人ID',\r\ndeleted         TINYINT       NOT NULL DEFAULT 0 COMMENT '逻辑删除标识(0-未删除 1-已删除)'\r\n```\r\n\r\n### 第三步：生成建表语句\r\n\r\n1. **输出 MySQL DDL 语句**\r\n   - 使用 `CREATE TABLE` 语法\r\n   - 为每个字段、索引添加注释\r\n   - 设置字符集为 `utf8mb4`，排序规则为 `utf8mb4_general_ci`\r\n   - 指定存储引擎为 `InnoDB`\r\n\r\n2. **标准模板**\r\n```sql\r\nDROP TABLE IF EXISTS `scm_purchase_contract`;\r\n\r\nCREATE TABLE `scm_purchase_contract` (\r\n  `id` VARCHAR(32) NOT NULL COMMENT '主键ID',\r\n  `contract_no` VARCHAR(64) NOT NULL COMMENT '合同编号',\r\n  `supplier_id` VARCHAR(32) NOT NULL COMMENT '供应商ID',\r\n  `contract_amount` DECIMAL(18,2) NOT NULL COMMENT '合同金额',\r\n  `contract_status` TINYINT NOT NULL DEFAULT 0 COMMENT '合同状态(0-草稿 1-执行中 2-已完成 3-已终止)',\r\n  `sign_date` DATE DEFAULT NULL COMMENT '签订日期',\r\n  `remark` VARCHAR(500) DEFAULT NULL COMMENT '备注',\r\n  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\r\n  `update_time` "
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[数据库设计规范要点] ### 命名规范\r\n- 【强制】表名、字段名必须使用小写字母或数字，禁止使用数字开头\r\n- 【强制】表名不使用复数名词\r\n- 【强制】禁用保留字（如 `desc`、`order`、`group` 等）\r\n- 【强制】主键索引名为 `pk_字段名`，唯一索引名为 `uk_字段名`，普通索引名为 `idx_字段名`\r\n- 【强制】关联表要以`_rela`结尾，如`scm_purchase_contract_rela`\r\n- 【强制】表名要求模块名强相关，如系统采用`sys`作为前缀，项目管理模块采用`pm`作为前缀等。\r\n\r\n### 表设计规范\r\n- 【强制】使用 `InnoDB` 存储引擎\r\n- 【强制】使用 `utf8mb4` 字符集\r\n- 【强制】表必须有主键\r\n- 【强制】禁止使用外键，应用层保证数据一致性\r\n- 【推荐】字段数限制在 20 以内\r\n\r\n### 字段设计规范\r\n- 【强制】使用 `VARCHAR` 代替 `CHAR`\r\n- 【强制】使用 `NOT NULL` 并设置默认值\r\n- 【强制】金额必须使用 `DECIMAL` 类型\r\n- 【强制】时间类型使用 `DATETIME` 或 `TIMESTAMP`\r\n- 【推荐】枚举值使用 `CHAR(2)`，需维护枚举类映射\r\n- 【推荐】大文本使用 `TEXT` 类型\r\n- 【推荐】IP 地址使用 `VARCHAR(39)`（支持 IPv6）\r\n- 【强制】在不同的库或表中，要保证所有存储相同数据的列名和列类型必须一致\r\n- 【强制】必须把字段定义为NOT NULL并设默认值，避免NULL值带来的问题\r\n\r\n### 索引设计规范\r\n- 【强制】区分度高的字段适合建索引（唯一值越多越好）\r\n- 【强制】不在低区分度字段建索引（如性别）\r\n- 【强制】不在 `WHERE`、`ORDER BY` 不涉及的字段建索引\r\n- 【推荐】联合索引字段数不超过 5 个\r\n- 【推荐】遵循最左前缀原则\r\n- 【推荐】覆盖索引优先"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[示例] **用户输入：**\r\n```\r\n我需要设计一个销售合同管理表，业务规则如下：\r\n- 合同编号唯一，格式：HT+年月日+4位流水号\r\n- 包含客户、合同金额、签订日期、合同状态\r\n- 状态：草稿/执行中/已完成/已终止\r\n- 需要记录创建人和更新人\r\n```\r\n\r\n**助手输出：**\r\n```sql\r\nDROP TABLE IF EXISTS `sm_sales_contract`;\r\n\r\nCREATE TABLE `sm_sales_contract` (\r\n  `id` VARCHAR(32) NOT NULL COMMENT '主键ID',\r\n  `contract_no` VARCHAR(64) NOT NULL COMMENT '合同编号',\r\n  `customer_id` VARCHAR(32) NOT NULL COMMENT '客户ID',\r\n  `contract_amount` DECIMAL(18,2) NOT NULL COMMENT '合同金额',\r\n  `contract_status` TINYINT NOT NULL DEFAULT 0 COMMENT '合同状态(0-草稿 1-执行中 2-已完成 3-已终止)',\r\n  `sign_date` DATE NOT NULL DEFAULT CURRENT_DATE COMMENT '签订日期',\r\n  `remark` VARCHAR(500) DEFAULT NULL COMMENT '备注',\r\n  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\r\n  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\r\n  `create_by` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '创建人ID',\r\n  `update_by` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '更新人ID',\r\n  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标识(0-未删除 1-已删除)',\r\n  PRIMARY KEY (`id`),\r\n  UNIQUE KEY `uk_contract_no` (`contract_no`),\r\n  KEY `idx_customer_id` (`customer_id`),\r\n  KEY `idx_contract_status` (`contract_status`),\r\n  KEY `idx_sign_date` (`sign_date`)\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='销售合同主表';\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[注意事项] 1. **版本兼容性**\r\n   - MySQL 8.0 支持函数索引、降序索引、不可见索引\r\n   - 如需兼容 5.7，避免使用新特性\r\n\r\n2. **性能优化**\r\n   - 避免过度索引，每个表的索引数量不超过 5 个\r\n   - 大字段（TEXT/BLOB）单独拆表\r\n   - 考虑分表策略（按时间、按业务）\r\n\r\n3. **安全性**\r\n   - 敏感字段加密存储\r\n   - 软删除代替硬删除\r\n   - 审计日志完整性\r\n\r\n4. **扩展性**\r\n   - 预留扩展字段\r\n   - JSON 字段用于非结构化数据（MySQL 5.7+）\r\n   - 考虑未来分库分表可能性"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "tg_mysql_design"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2320117707/tg-mysql-design/SKILL.md"
+}

@@ -1,0 +1,123 @@
+{
+  "id": "openclaw_skill_inkjet",
+  "description": "Print text, images, and QR codes to a cheap wireless Bluetooth thermal printer from a MacOS device. Use `inkjet print` for output, `inkjet scan` to discover printers.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Thermal Printer Skill\n\nPrint text, images, and QR codes to a small cheap Bluetooth thermal printer like the X6h, GT01, and childrens toy cat printers using the `inkjet` CLI. Thermal paper is extremely low-cost, enabling high-frequency physical output."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] **Preparation:** Ensure your printer is turned **ON**. The printer does **NOT** need to be paired to the host computer's Bluetooth settings; `inkjet` connects directly via BLE.\n\nScan for printers and set default:\n```bash\ninkjet scan\n```\n\nCheck current configuration:\n```bash\ninkjet whoami\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Print Text] Print strings directly. Supports standard escape sequences like `\\n` for multiline output. Do not use emojis.\n\n```bash\ninkjet print text \"Hello, World!\"\ninkjet print text \"Line 1\\nLine 2\\nLine 3\"\ninkjet print text \"Big Text\" --size 72\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Print Markdown] Render high-fidelity formatted content using Markdown syntax. This is the recommended way for agents to output complex receipts or logs without saving temporary files. Do not use emojis.\n\n```bash\ninkjet print text \"# Order 104\\n- 1x Coffee\\n- 1x Donut\" --markdown\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Print Files] Output the contents of a local file. Supports plain text (`.txt`) and Markdown (`.md`).\n\n```bash\ninkjet print file ./receipt.txt\ninkjet print file ./README.md\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Print Images] ```bash\ninkjet print image ./photo.png\ninkjet print image ./logo.jpg --dither\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Print QR Codes] Generates and prints QR codes. Smartphone scanners (iPhone/Android) can reliably read codes down to `--size 75`.\n\n```bash\ninkjet print qr \"https://pypi.org/project/inkjet\"\ninkjet print qr \"WiFi:S:NetworkName;P:example123;;\" --size 75\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Paper Control] ```bash\ninkjet feed 100      # Feed paper forward (steps)\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Configuration] Manage settings globally or locally per project. If a `.inkjet/` folder exists in the current workspace, it will be prioritized (config setting with --local to create).\n\n```bash\ninkjet config show                    # Show all settings\ninkjet config set printer <UUID>      # Set the default device\ninkjet config set energy 12000        # Set local project darkness\ninkjet config alias kitchen <UUID>    # Save a friendly name\n```\n\n### Default Config Schema\n```json\n{\n  \"default_printer\": \"UUID\",\n  \"printers\": { \"alias\": \"UUID\" },\n  \"energy\": 12000,\n  \"print_speed\": 10,\n  \"quality\": 3,\n  \"padding_left\": 0,\n  \"padding_top\": 10,\n  \"line_spacing\": 8,\n  \"align\": \"left\",\n  \"font_size\": 18\n}\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Multi-Printer Orchestration] If the environment (e.g., `TOOLS.md`) contains multiple printer UUIDs or **aliases**, target specific hardware using the `--address` / `-a` flag. Use `-a default` to explicitly target the primary configured device.\n\n### Orchestration Strategies:\n1. **Role-Based Routing**: Route content based on hardware role (e.g., Stickers vs Receipts).\n   `inkjet print text \"Label\" -a stickers`\n2. **High-Throughput (Load Balancing)**: Distribute jobs across a farm of printers (Round-Robin) to maximize prints-per-minute.\n\n```bash\n# Orchestrated Print Examples\ninkjet print text \"Main Status\" -a office\ninkjet print text \"Order #104\" -a kitchen\ninkjet print qr \"https://pypi.org/project/inkjet\" -a default\ninkjet print file ./log.txt -a \"UUID_EXT_1\"\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[JSON Output (for scripting)] Commands support `--json` for machine-readable output:\n\n```bash\ninkjet scan --json\ninkjet whoami --json\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Best Practices for Worksheets & Handwriting] Thermal paper is narrow and low-cost. To make usable worksheets for children or manual notes:\n\n1. **Size for Visibility:** Use `##` (H2 headers) for the main content. Standard text is often too small for children to read/write comfortably.\n2. **Manual Numbering:** Avoid Markdown lists (`1. content`). They auto-indent and reduce horizontal space. Use `## 1) 5 + 2 = ___` instead.\n3. **The \"Cheap Paper\" Rule:** Use triple newlines (`\\n\\n\\n`) between items. Thermal paper is essentially free; use vertical space to provide actual \"writing room.\"\n4. **Horizontal Rules:** Use `---` at the end of a job to provide a clear tear-off line that doesn't cut off the last problem."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Troubleshooting] If printer not found:\n```bash\ninkjet doctor"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "inkjet"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🖨️",
+        "requires": {
+          "bins": [
+            "inkjet"
+          ],
+          "bluetooth": true
+        },
+        "install": [
+          {
+            "id": "pip",
+            "kind": "pip",
+            "package": "inkjet",
+            "label": "Install (pip)"
+          },
+          {
+            "id": "brew",
+            "kind": "brew",
+            "package": "aaronchartier/tap/inkjet",
+            "label": "Install (Homebrew)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronchartier/inkjet/SKILL.md"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_openclaw-security-monitor",
+  "description": "Proactive security monitoring, threat scanning, and auto-remediation for OpenClaw deployments",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] <!-- {\"requires\":{\"bins\":[\"bash\",\"curl\"]}} -->\n\n# Security Monitor\n\nReal-time security monitoring with threat intelligence from ClawHavoc research, daily automated scans, web dashboard, and Telegram alerting for OpenClaw."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] Note: Replace `<skill-dir>` with the actual folder name where this skill is installed (commonly `openclaw-security-monitor` or `security-monitor`).\n\n### /security-scan\nRun a comprehensive 32-point security scan:\n1. Known C2 IPs (ClawHavoc: 91.92.242.x, 95.92.242.x, 54.91.154.110)\n2. AMOS stealer / AuthTool markers\n3. Reverse shells & backdoors (bash, python, perl, ruby, php, lua)\n4. Credential exfiltration endpoints (webhook.site, pipedream, ngrok, etc.)\n5. Crypto wallet targeting (seed phrases, private keys, exchange APIs)\n6. Curl-pipe / download attacks\n7. Sensitive file permission audit\n8. Skill integrity hash verification\n9. SKILL.md shell injection patterns (Prerequisites-based attacks)\n10. Memory poisoning detection (SOUL.md, MEMORY.md, IDENTITY.md)\n11. Base64 obfuscation detection (glot.io-style payloads)\n12. External binary downloads (.exe, .dmg, .pkg, password-protected ZIPs)\n13. Gateway security configuration audit\n14. WebSocket origin validation (CVE-2026-25253)\n15. Known malicious publisher detection (hightower6eu, etc.)\n16. Sensitive environment/credential file leakage\n17. DM policy audit (open/wildcard channel access)\n18. Tool policy / elevated tools audit\n19. Sandbox configuration check\n20. mDNS/Bonjour exposure detection\n21. Session & credential file permissions\n22. Persistence mechanism scan (LaunchAgents, crontabs, systemd)\n23. Plugin/extension security audit\n24. Log redaction settings audit\n25. Reverse proxy localhost trust bypass detection\n26. Exec-approvals configuration audit (CVE-2026-25253 exploit chain)\n27. Docker container security (root, socket mount, privileged mode)\n28. Node.js version / CVE-2026-21636 permission model bypass\n29. Plaintext credential detection in config files\n30. VS Code extension trojan detection (fake ClawdBot extensions)\n31. Internet exposure detection (non-loopback gateway binding)\n32. MCP server security audit (tool poisoning, prompt injection)\n\n```bash\nbash ~/.openclaw/workspace/skills/<skill-dir>/scripts/scan.sh\n`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Web Dashboard] **URL**: `http://<vm-ip>:18800`\n\nDark-themed browser dashboard with auto-refresh, on-demand scanning, donut charts, process tree visualization, network monitoring, and scan history timeline.\n\n### Service Management\n```bash\nlaunchctl list | grep security-dashboard\nlaunchctl unload ~/Library/LaunchAgents/com.openclaw.security-dashboard.plist\nlaunchctl load ~/Library/LaunchAgents/com.openclaw.security-dashboard.plist\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[IOC Database] Threat intelligence files in `ioc/`:\n- `c2-ips.txt` - Known command & control IP addresses\n- `malicious-domains.txt` - Payload hosting and exfiltration domains\n- `file-hashes.txt` - Known malicious file SHA-256 hashes\n- `malicious-publishers.txt` - Known malicious ClawHub publishers\n- `malicious-skill-patterns.txt` - Malicious skill naming patterns"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Daily Automated Scan] Cron job at 06:00 UTC with Telegram alerts. Install:\n```bash\ncrontab -l | { cat; echo \"0 6 * * * $HOME/.openclaw/workspace/skills/<skill-dir>/scripts/daily-scan-cron.sh\"; } | crontab -\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Threat Coverage] Based on research from 40+ security sources including:\n- [ClawHavoc: 341 Malicious Skills](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting) (Koi Security)\n- [CVE-2026-25253: 1-Click RCE](https://thehackernews.com/2026/02/openclaw-bug-enables-one-click-remote.html)\n- [From SKILL.md to Shell Access](https://snyk.io/articles/skill-md-shell-access/) (Snyk)\n- [VirusTotal: From Automation to Infection](https://blog.virustotal.com/2026/02/from-automation-to-infection-how.html)\n- [OpenClaw Official Security Docs](https://docs.openclaw.ai/gateway/security)\n- [DefectDojo Hardening Checklist](https://defectdojo.com/blog/the-openclaw-hardening-checklist-in-depth-edition)\n- [Vectra: Automation as Backdoor](https://www.vectra.ai/blog/clawdbot-to-moltbot-to-openclaw-when-automation-becomes-a-digital-backdoor)\n- [Cisco: AI Agents Security Nightmare](https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare)\n- [Bloom Security/JFrog: 37 Malicious Skills](https://jfrog.com/blog/giving-openclaw-the-keys-to-your-kingdom-read-this-first/)\n- [OpenSourceMalware: Skills Ganked Your Crypto](https://opensourcemalware.com/blog/clawdbot-skills-ganked-your-crypto)\n- [Snyk: clawdhub Campaign Deep-Dive](https://snyk.io/articles/clawdhub-malicious-campaign-ai-agent-skills/)\n- [OWASP Top 10 for Agentic Applications 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)\n- [CrowdStrike: OpenClaw AI Super Agent](https://www.crowdstrike.com/en-us/blog/what-security-teams-need-to-know-about-openclaw-ai-super-agent/)\n- [Argus Security Audit (512 findings)](https://github.com/openclaw/openclaw/issues/1796)\n- [ToxSec: OpenClaw Security Checklist](https://www.toxsec.com/p/openclaw-security-checklist)\n- [Aikido.dev: Fake ClawdBot VS Code Extension](https://www.aikido.dev/blog/fake-clawdbot-vscode-extension-malware)\n- [Prompt Security: Top 10 MCP Risks](https://prompt.security/blog/top-10-mcp-secur"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Installation] ```bash\n# From GitHub\ngit clone https://github.com/adibirzu/openclaw-security-monitor.git \\\n  ~/.openclaw/workspace/skills/<skill-dir>\nchmod +x ~/.openclaw/workspace/skills/<skill-dir>/scripts/*.sh\n```\n\nThe OpenClaw agent auto-discovers skills from `~/.openclaw/workspace/skills/` via SKILL.md frontmatter. After cloning, the `/security-scan`, `/security-remediate`, `/security-dashboard`, `/security-network`, and `/security-setup-telegram` commands will be available in the agent."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_security_monitor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adibirzu/openclaw-security-monitor/SKILL.md"
+}

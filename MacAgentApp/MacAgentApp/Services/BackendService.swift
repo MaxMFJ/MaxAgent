@@ -21,6 +21,8 @@ enum StreamChunk {
     case reflectStart
     case reflectResult(reflection: String)
     case taskComplete(taskId: String, success: Bool, summary: String, totalActions: Int)
+    /// 解析重试提示（非错误，任务继续）
+    case retry(message: String)
 }
 
 @MainActor
@@ -1158,6 +1160,11 @@ class BackendService: ObservableObject {
                                     continuation.finish()
                                     return
                                     
+                                case "retry":
+                                    let retryMsg = json["message"] as? String ?? "正在重试解析…"
+                                    continuation.yield(.retry(message: retryMsg))
+                                    continue
+                                
                                 case "error":
                                     let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
                                     continuation.yield(.error(errorMsg))

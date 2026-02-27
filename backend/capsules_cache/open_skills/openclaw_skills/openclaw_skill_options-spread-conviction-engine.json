@@ -1,0 +1,151 @@
+{
+  "id": "openclaw_skill_options-spread-conviction-engine",
+  "description": "Multi-regime options spread analysis engine with quantitative rigor. Features regime detection (VIX-based), GARCH volatility forecasting, drawdown-constrained Kelly position sizing, and walk-forward backtesting. Scores vertical spreads (bull put, bear call, bull call, bear put) and multi-leg strategies (iron condors, butterflies, calendar spreads) using Ichimoku, RSI, MACD, Bollinger Bands, and IV term structure analysis.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Options Spread Conviction Engine\n\n**Multi-regime options spread scoring using technical indicators and IV term structure analysis.**"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Install] ```bash\nbrew install jq\nnpm install yahoo-finance2\nsudo ln -s /opt/homebrew/bin/yahoo-finance /usr/local/bin/yf\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Overview] This engine analyzes any ticker and scores **seven** options strategies across two categories:\n\n### Vertical Spreads (Directional)\n| Strategy | Type | Philosophy | Ideal Setup |\n|----------|------|------------|-------------|\n| **bull_put** | Credit | Mean Reversion | Bullish trend + oversold dip |\n| **bear_call** | Credit | Mean Reversion | Bearish trend + overbought rip |\n| **bull_call** | Debit | Breakout | Strong bullish momentum |\n| **bear_put** | Debit | Breakout | Strong bearish momentum |\n\n### Multi-Leg Strategies (Non-Directional / Theta)\n| Strategy | Type | Philosophy | Ideal Setup |\n|----------|------|------------|-------------|\n| **iron_condor** | Credit | Premium Selling | IV Rank >70, RSI neutral, range-bound |\n| **butterfly** | Debit | Pinning Play | BB squeeze, RSI center, low ADX |\n| **calendar** | Debit | Theta Harvest | Inverted IV term structure (front > back) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scoring Methodology] ### Vertical Spreads\n\nWeights vary by strategy type (Credit = Mean Reversion, Debit = Breakout):\n\n#### Credit Spreads (bull_put, bear_call)\n| Indicator | Weight | Purpose |\n|-----------|--------|---------|\n| Ichimoku Cloud | 25 pts | Trend structure & equilibrium |\n| RSI | 20 pts | Entry timing (mean-reversion) |\n| MACD | 15 pts | Momentum confirmation |\n| Bollinger Bands | 25 pts | Volatility regime |\n| ADX | 15 pts | Trend strength validation |\n\n#### Debit Spreads (bull_call, bear_put)\n| Indicator | Weight | Purpose |\n|-----------|--------|---------|\n| Ichimoku Cloud | 20 pts | Trend confirmation |\n| RSI | 10 pts | Directional momentum |\n| MACD | 30 pts | Breakout acceleration |\n| Bollinger Bands | 25 pts | Bandwidth expansion |\n| ADX | 15 pts | Trend strength validation |\n\n### Multi-Leg Strategies\n\n#### Iron Condor (Credit / Range-Bound)\n| Component | Weight | Rationale |\n|-----------|--------|-----------|\n| IV Rank (BBW %) | 25 pts | Rich premiums to sell |\n| RSI Neutrality | 20 pts | No directional momentum |\n| ADX Range-Bound | 20 pts | Weak trend = range structure |\n| Price Position | 20 pts | Centered in range = safe margins |\n| MACD Neutrality | 15 pts | No acceleration in any direction |\n\n**Triggers:**\n- IV Rank > 70: Premium-rich environment\n- RSI 40-60: Neutral momentum\n- ADX < 25: Weak/no trend\n- Price near %B center: Max profit zone maximized\n\n**Strike Selection:**\n- SELL put at 1-sigma below price (short put)\n- BUY put at 2-sigma below (long put — wing)\n- SELL call at 1-sigma above price (short call)\n- BUY call at 2-sigma above (long call — wing)\n\n**Output:**\n- All 4 strikes (put_long, put_short, call_short, call_long)\n- Max profit zone (width between short strikes)\n- Wing width\n\n#### Butterfly (Debit / Volatility Compression)\n| Component | Weight | Rationale |\n|-----------|--------|-----------|\n| BB Squeeze | 30 pts | Vol compression = narrow range |\n| RSI Neutrality | 25 pts | Price at equilibrium |\n| ADX Weakness | 20 pts | No directional trend at "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Conviction Tiers] | Score | Tier | Action |\n|-------|------|--------|\n| 80-100 | EXECUTE | High conviction — Enter the spread |\n| 60-79 | PREPARE | Favorable — Size the trade |\n| 40-59 | WATCH | Interesting — Add to watchlist |\n| 0-39 | WAIT | Poor conditions — Avoid / No setup |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage] ### Vertical Spreads\n\n```bash\n# Basic analysis (auto-detects best strategy)\nconviction-engine AAPL\n\n# Specific strategy\nconviction-engine SPY --strategy bear_call\nconviction-engine QQQ --strategy bull_call --period 2y\n```\n\n### Multi-Leg Strategies\n\n```bash\n# Iron Condor — high IV, range-bound\nconviction-engine SPY --strategy iron_condor\n\n# Butterfly — volatility compression, pinning play\nconviction-engine AAPL --strategy butterfly\n\n# Calendar — inverted IV term structure, theta harvest\nconviction-engine TSLA --strategy calendar\n```\n\n### Multiple Tickers\n\n```bash\nconviction-engine AAPL MSFT GOOGL --strategy bull_put\nconviction-engine SPY QQQ IWM --strategy iron_condor\n```\n\n### JSON Output (for automation)\n\n```bash\nconviction-engine TSLA --strategy butterfly --json\nconviction-engine SPY --strategy calendar --json | jq '.[0].iv_term_structure'\n```\n\n### Full Options\n\n```bash\nconviction-engine <ticker> [ticker...]\n  --strategy {bull_put,bear_call,bull_call,bear_put,iron_condor,butterfly,calendar}\n  --period {1y,2y,3y,5y}\n  --interval {1h,1d,1wk}\n  --json\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Example Outputs] ### Iron Condor\n\n```\n================================================================================\nSPY — Iron Condor (Credit)\n================================================================================\nPrice: $681.27 | Score: 31.8/100 → WAIT\n\n[IV Rank +2.5/25]\n  IV Rank (BBW proxy): 5% (VERY_LOW)\n  BBW: 3.17 (1Y range: 2.37 - 18.13)\n  Premiums are THIN — poor risk/reward for credit\n\nStrikes:\n  BUY  680.0P | SELL 685.0P\n  SELL 695.0C | BUY  700.0C\n  Max Profit Zone: $685.0 - $695.0\n  Wing Width: $5.00\n```\n\n### Butterfly\n\n```\n================================================================================\nSPY — Long Butterfly (Debit)\n================================================================================\nPrice: $681.27 | Score: 64.5/100 → PREPARE\n\n[BB Squeeze +27.0/30]\n  Bandwidth: 3.1701 (percentile: 21%)\n  SQUEEZE ACTIVE — 19 consecutive bars\n\nStrikes:\n  BUY 1x 685.0C | SELL 2x 690.0C | BUY 1x 695.0C\n  Max Profit Price: $690.0\n  Profit Zone: ~$685.0 - $695.0\n```\n\n### Calendar Spread\n\n```\n================================================================================\nSPY — Calendar Spread (Debit)\n================================================================================\nPrice: $681.27 | Score: 67.2/100 → PREPARE\n\n[IV Term Structure +30.0/30]\n  Front IV: 27.5% | Back IV: 19.4%\n  Differential: +41.7%\n  INVERTED TERM STRUCTURE — calendar opportunity confirmed\n\nStrikes:\n  Strike: $680.0\n  SELL 2026-02-13 | BUY 2026-03-13\n  Theta Advantage: Front IV > Back IV by 41.7%\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[IV Rank Approximation] IV Rank is approximated using **Bollinger Bandwidth (BBW) percentile** over 252 trading days:\n\n```\nIV Rank ≈ (Current BBW - 52wk Low BBW) / (52wk High BBW - 52wk Low BBW) × 100\n```\n\nThis correlation is well-documented: realized volatility (BBW) and implied volatility rank move with ~0.7-0.8 correlation (Sinclair, \"Volatility Trading\", 2013)."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[IV Term Structure] For calendar spreads, the engine attempts to fetch live ATM implied volatility from Yahoo Finance options chains. If unavailable, it falls back to historical volatility term structure (HV 10-day vs HV 30-day) as a proxy."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Quantitative Modules (v2.3.0)] The engine now includes four quantitative modules for rigorous strategy validation and optimization:\n\n### 1. Regime Detector (`regime_detector.py`)\n\nMarket regime classification using VIX percentiles:\n- **CRISIS**: VIX > 80th percentile — favors premium selling (iron condors)\n- **HIGH_VOL**: VIX 60-80th — elevated IV benefits credit spreads\n- **NORMAL**: VIX 40-60th — balanced environment, all strategies viable\n- **LOW_VOL**: VIX 20-40th — cheap options favor debit spreads\n- **EUPHORIA**: VIX < 20th — momentum continues, mean reversion brewing\n\n```bash\n# Detect current regime\npython3 scripts/regime_detector.py\n\n# Get regime-adjusted weights for specific strategy\npython3 scripts/regime_detector.py --strategy iron_condor --json\n```\n\n**Integration:**\n```python\nfrom regime_detector import RegimeDetector\n\ndetector = RegimeDetector()\nregime, confidence = detector.detect_regime()\nweights = detector.get_regime_weights(regime)\nadjusted_score, reasoning = detector.regime_aware_score(75, regime, 'bull_put')\n```\n\n### 2. Volatility Forecaster (`vol_forecaster.py`)\n\nGARCH-based realized volatility forecasting with VRP analysis:\n- Fits GARCH(1,1) to historical returns\n- Forecasts realized volatility over configurable horizon\n- Calculates volatility risk premium (IV - RV forecast)\n- Provides conviction adjustments based on VRP\n\n```bash\n# Analyze AAPL volatility\npython3 scripts/vol_forecaster.py AAPL\n\n# Compare IV = 25% vs forecast RV\npython3 scripts/vol_forecaster.py SPY --iv 0.25 --horizon 5\n```\n\n**Interpretation:**\n- VRP > 5%: Favorable for selling premium (credit spreads)\n- VRP < -5%: Favorable for buying premium (debit spreads)\n- VRP near 0: No volatility edge, focus on directional setup\n\n**Integration:**\n```python\nfrom vol_forecaster import VolatilityForecaster\n\nforecaster = VolatilityForecaster(\"AAPL\")\nparams = forecaster.fit_garch()  # Returns omega, alpha, beta\nforecast = forecaster.forecast_vol(horizon=5)\nvrp, strength, rec = forecaster.vol_risk_premium(iv=0.25, rv_forecas"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Academic Foundation] - **Ichimoku Cloud** — Trend structure (Hosoda, 1968)\n- **RSI** — Momentum oscillator (Wilder, 1978)\n- **MACD** — Trend momentum (Appel, 1979)\n- **Bollinger Bands** — Volatility envelopes (Bollinger, 2001)\n- **IV Rank / Term Structure** — Options market microstructure (Sinclair, 2013)\n\nCombining orthogonal signals reduces false-positive rate compared to single-indicator strategies (Pring, 2002; Murphy, 1999)."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Architecture] ```\nconviction-engine/\n├── scripts/\n│   ├── conviction-engine              # CLI wrapper (bash)\n│   ├── spread_conviction_engine.py    # Core engine (vertical spreads)\n│   ├── multi_leg_strategies.py        # Multi-leg extensions\n│   ├── quantitative_integration.py    # Unified quantitative interface\n│   ├── regime_detector.py             # VIX-based regime classification\n│   ├── vol_forecaster.py              # GARCH volatility forecasting\n│   ├── enhanced_kelly.py              # Drawdown-constrained Kelly sizing\n│   ├── backtest_validator.py          # Walk-forward validation\n│   ├── quant_scanner.py               # Quantitative options scanner\n│   ├── market_scanner.py              # Technical market scanner\n│   ├── calculator.py                  # Black-Scholes & POP calculator\n│   ├── position_sizer.py              # Kelly position sizing\n│   ├── chain_analyzer.py              # IV surface analyzer\n│   ├── options_math.py                # Core mathematical models\n│   └── setup-venv.sh                  # Environment setup\n├── tests/                             # Unit tests\n│   ├── test_regime_detector.py\n│   ├── test_vol_forecaster.py\n│   ├── test_enhanced_kelly.py\n│   ├── test_backtest_validator.py\n│   └── run_tests.py\n└── SKILL.md                           # This documentation\n```\n\n### Module Separation\n\n- **spread_conviction_engine.py**: Vertical spreads, shared infrastructure (data fetching, indicator computation)\n- **multi_leg_strategies.py**: Iron condors, butterflies, calendars (imports from main engine)\n- **quantitative_integration.py**: Unified interface for regime/vol/Kelly/backtest modules\n- **regime_detector.py**: Market regime classification using VIX percentiles\n- **vol_forecaster.py**: GARCH-based realized volatility forecasting\n- **enhanced_kelly.py**: Drawdown-constrained, correlation-aware position sizing\n- **backtest_validator.py**: Walk-forward validation of conviction scores\n\nThis separation keeps concerns clean while avoiding duplication."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Limitations & Assumptions] ### IV Data\n- **Yahoo Finance Limitations**: Options chains may be unavailable after market hours or for low-volume tickers\n- **Fallback**: Historical volatility (HV) proxy is less accurate than live IV but provides signal\n- **IV Rank**: Approximated from BBW; actual IV Rank requires options chain data\n\n### Strike Selection\n- **Approximation**: Strikes derived from Bollinger Band levels (1-sigma / 2-sigma)\n- **Rounding**: Rounded to standard option strike intervals based on stock price\n- **No Live Pricing**: Does not fetch live option premiums; strike selection is structural, not value-optimized\n\n### Data Quality\n- Minimum 180 trading days required for full Ichimoku cloud population\n- Multi-leg strategies require options chains (calendar spreads especially)\n- After-hours analysis may have reduced data quality\n\n### Market Assumptions\n- Assumes normal options market conditions (not extreme volatility events)\n- Strike intervals assume US equity options conventions\n- Not tested on futures, commodities, or non-US markets"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Requirements] - Python 3.10+ (Python 3.14+ supported via pure-python mode)\n- Isolated virtual environment (auto-created on first run)\n- Internet connection (fetches data from Yahoo Finance)"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Installation] ```bash\nclawhub install options-spread-conviction-engine\n```\n\nThe skill automatically creates a virtual environment and installs:\n- pandas >= 2.0\n- pandas_ta >= 0.4.0 (pure Python mode on 3.14+)\n- yfinance >= 1.0\n- scipy, tqdm\n\n**Note:** On Python 3.14+, the engine runs in pure Python mode without numba. Performance is slightly reduced but all functionality works correctly."
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Market Scanners] The engine includes two distinct scanning tools for different trading philosophies:\n\n### 1. Technical Scanner (market_scanner.py)\nAutomates the search for high-conviction plays across entire stock universes using technical indicators (Ichimoku, RSI, MACD, BB).\n\n#### Features\n- Scans S&P 500, Nasdaq 100, or custom ticker lists.\n- Filters for EXECUTE tier (conviction ≥80).\n- Runs position sizing to ensure trades fit account guardrails.\n\n#### Usage\n```bash\n# Scan S&P 500 for high-conviction technical setups\npython3 scripts/market_scanner.py --universe sp500\n```\n\n### 2. Quantitative Scanner (quant_scanner.py)\nA mathematically-rigorous scanner that ignores technical indicators in favor of market microstructure and probability.\n\n#### Features\n- **IV Surface Analysis**: Analyzes skew and term structure.\n- **Monte Carlo POP**: 10,000-run simulations for true Probability of Profit.\n- **EV Optimization**: Finds trades with the highest risk-adjusted mathematical expectancy.\n- **Account-Aware**: Enforces small-account constraints ($100 max risk).\n\n#### Usage\n```bash\n# Maximize POP (Probability of Profit) for SPY\npython3 scripts/quant_scanner.py SPY --mode pop\n\n# High-expectancy (EV) plays with specific DTE\npython3 scripts/quant_scanner.py AAPL TSLA --mode ev --min-dte 30\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Calculator & Position Sizer] The integrated toolchain includes:\n\n### calculator.py\nBlack-Scholes options pricing with support for:\n- Single options: calls, puts\n- Vertical spreads: bull call, bear put\n- Multi-leg: iron condors, butterflies\n- Greeks calculation (delta, gamma, theta, vega, rho)\n- Monte Carlo POP simulation\n\n### position_sizer.py\nKelly criterion position sizing adapted for small accounts:\n- Full Kelly and fractional Kelly (default 0.25)\n- Account guardrails ($390 default, $100 max risk)\n- Trade screening and ranking\n- Strike adjustment suggestions\n\n```python\nfrom position_sizer import calculate_position\n\nresult = calculate_position(\n    account_value=390,\n    max_loss_per_spread=80,\n    win_amount=40,\n    pop=0.65,\n)\n# Returns: contracts, total_risk, recommendation, reason\n```"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Files] - `scripts/conviction-engine` — Main CLI wrapper for conviction engine\n- `scripts/spread_conviction_engine.py` — Core engine (vertical spreads)\n- `scripts/multi_leg_strategies.py` — Multi-leg extensions (v2.0.0)\n- `scripts/market_scanner.py` — Automated market scanner for EXECUTE plays\n- `scripts/calculator.py` — Black-Scholes pricing, Greeks, Monte Carlo POP\n- `scripts/position_sizer.py` — Kelly criterion position sizing\n- `scripts/setup-venv.sh` — Environment setup\n- `data/sp500_tickers.txt` — S&P 500 constituents\n- `data/ndx100_tickers.txt` — Nasdaq 100 constituents\n- `assets/` — Documentation and examples"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Version History] - **v2.3.0** (2026-02-13): Quantitative rigor upgrade\n  - Regime Detector: VIX-based market regime classification\n  - Volatility Forecaster: GARCH-based RV forecasting with VRP analysis\n  - Enhanced Kelly Sizer: Drawdown-constrained, correlation-aware position sizing\n  - Backtest Validator: Walk-forward validation with tier separation testing\n  - Quantitative Integration: Unified interface for all quantitative modules\n  - Comprehensive unit test suite for all new modules\n- **v2.2.0** (2026-02-13): Kelly Criterion position sizing with full/half Kelly, edge calculation, and account-aware contract sizing\n- **v2.1.0** (2026-02-12): Added market scanner, integrated calculator and position sizer\n- **v2.0.0** (2026-02-12): Added multi-leg strategies (iron condor, butterfly, calendar)\n- **v1.2.1** (2026-02-09): Volume multiplier, dynamic strike suggestions\n- **v1.1.0** (2026-02-08): Cross-signal weighting, multi-strategy support\n- **v1.0.0** (2026-02-07): Initial bull put spread engine"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[License] MIT — Part of the Financial Toolkit for OpenClaw"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "options_spread_conviction_engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📊",
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        },
+        "install": [
+          {
+            "id": "venv-setup",
+            "kind": "exec",
+            "command": "cd {baseDir} && python3 scripts/setup-venv.sh",
+            "label": "Setup isolated Python environment with dependencies"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamnaghs/options-spread-conviction-engine/SKILL.md"
+}

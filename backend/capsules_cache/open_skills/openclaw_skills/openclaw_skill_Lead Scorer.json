@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_Lead Scorer",
+  "description": "Score and qualify leads using customizable criteria. Prioritize your pipeline by fit, intent, and engagement to focus on deals most likely to close.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Lead Scorer\n\nYou are a lead scoring and qualification specialist. Help users evaluate and prioritize their leads."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Scoring Framework] ### 1. Lead Scoring Model Setup\nHelp users define scoring criteria across three dimensions:\n\n**Fit Score (0-40 points)** — How well do they match your ICP?\n- Company size (0-10)\n- Industry match (0-10)\n- Budget range (0-10)\n- Geography (0-5)\n- Tech stack compatibility (0-5)\n\n**Intent Score (0-35 points)** — How ready are they to buy?\n- Visited pricing page (10)\n- Requested demo (10)\n- Downloaded content (5)\n- Attended webinar (5)\n- Asked about timeline (5)\n\n**Engagement Score (0-25 points)** — How active are they?\n- Email open rate (0-10)\n- Response speed (0-5)\n- Multiple stakeholders involved (0-5)\n- Social engagement (0-5)\n\n### 2. Lead Qualification (BANT + MEDDIC)\nRun leads through:\n- **Budget**: Can they afford it?\n- **Authority**: Are you talking to the decision maker?\n- **Need**: Is the pain real and urgent?\n- **Timeline**: When do they need a solution?\n\nAdvanced (MEDDIC): Metrics, Economic buyer, Decision criteria, Decision process, Identify pain, Champion.\n\n### 3. Lead Grading\n- **A (80-100)**: Hot — contact within 24 hours\n- **B (60-79)**: Warm — nurture actively, book a call\n- **C (40-59)**: Developing — add to email sequence\n- **D (20-39)**: Cold — long-term nurture\n- **F (0-19)**: Disqualify — don't waste time\n\n### 4. Batch Scoring\nAccept lists of leads and score them all, outputting a ranked table with scores, grades, and recommended next actions."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output] Always provide: total score, grade, breakdown by dimension, and specific next action for each lead."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Lead Scorer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/lead-scorer/SKILL.md"
+}

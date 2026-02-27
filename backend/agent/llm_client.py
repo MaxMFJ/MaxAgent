@@ -17,6 +17,8 @@ try:
 except ImportError:
     get_timeout_policy = None
 
+from .llm_utils import extract_text_from_content
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,7 +113,8 @@ class LLMClient:
         self,
         messages: List[Dict[str, Any]],
         tools: Optional[List[Dict[str, Any]]] = None,
-        tool_choice: str = "auto"
+        tool_choice: str = "auto",
+        max_tokens: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Send a chat completion request
@@ -120,6 +123,7 @@ class LLMClient:
             messages: List of message dicts with 'role' and 'content'
             tools: Optional list of tool definitions
             tool_choice: "auto", "none", or specific tool
+            max_tokens: Optional override for output length (避免长报告等场景被截断)
             
         Returns:
             Response dict with 'content' and optional 'tool_calls'
@@ -128,7 +132,7 @@ class LLMClient:
             "model": self.config.model,
             "messages": messages,
             "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens,
+            "max_tokens": max_tokens if max_tokens is not None else self.config.max_tokens,
         }
         
         if tools:
@@ -142,9 +146,10 @@ class LLMClient:
             else:
                 response = await create_coro
             message = response.choices[0].message
+            content = extract_text_from_content(message.content)
             
             result = {
-                "content": message.content,
+                "content": content,
                 "tool_calls": None,
                 "finish_reason": response.choices[0].finish_reason
             }
@@ -169,11 +174,14 @@ class LLMClient:
         self,
         messages: List[Dict[str, Any]],
         tools: Optional[List[Dict[str, Any]]] = None,
-        tool_choice: str = "auto"
+        tool_choice: str = "auto",
+        max_tokens: Optional[int] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Stream a chat completion response
-        
+
+        Args:
+            max_tokens: Optional override for output length (按任务类型动态传入，简单 4096 / 复杂 16384)
         Yields:
             Chunks with 'type' ('content', 'tool_call', 'done') and data
         """
@@ -181,7 +189,7 @@ class LLMClient:
             "model": self.config.model,
             "messages": messages,
             "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens,
+            "max_tokens": max_tokens if max_tokens is not None else self.config.max_tokens,
             "stream": True,
         }
         # stream_options 仅 DeepSeek/OpenAI 原生 API 支持；New API 等兼容网关可能不支持，会导致空响应
@@ -251,8 +259,10 @@ class LLMClient:
                     continue
                 
                 if delta.content:
-                    logger.debug(f"Content chunk: {delta.content[:50] if len(delta.content) > 50 else delta.content}")
-                    yield {"type": "content", "content": delta.content}
+                    chunk_text = extract_text_from_content(delta.content)
+                    if chunk_text:
+                        logger.debug(f"Content chunk: {chunk_text[:50] if len(chunk_text) > 50 else chunk_text}")
+                        yield {"type": "content", "content": chunk_text}
                 
                 if delta.tool_calls:
                     for tc in delta.tool_calls:

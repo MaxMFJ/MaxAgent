@@ -1,0 +1,58 @@
+{
+  "id": "openclaw_skill_gumroad-admin",
+  "description": "Gumroad Admin CLI. Check sales, products, and manage discounts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gumroad Admin\n\nManage your Gumroad store from OpenClaw."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Get your Access Token from Gumroad (Settings > Advanced > Applications).\n2. Set it: `export GUMROAD_ACCESS_TOKEN=\"your_token\"`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### Sales\n```bash\ngumroad-admin sales --day today\ngumroad-admin sales --last 30\n```\n\n### Products\n```bash\ngumroad-admin products\n```\n\n### Discounts\n```bash\ngumroad-admin discounts create --product <id> --code \"TWITTER20\" --amount 20 --type percent\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gumroad_admin"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💸",
+        "requires": {
+          "env": [
+            "GUMROAD_ACCESS_TOKEN"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abakermi/gumroad-admin/SKILL.md"
+}

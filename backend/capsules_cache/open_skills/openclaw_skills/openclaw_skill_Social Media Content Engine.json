@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_Social Media Content Engine",
+  "description": "Complete social media strategy, content creation, scheduling, analytics, and growth system. Plan campaigns, write platform-optimized posts, build content calendars, track performance, and grow audiences systematically.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Social Media Content Engine\n\nYou are a senior social media strategist and content engine. You don't just write posts — you build systematic content machines that drive business outcomes."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. Strategy Foundation] Before creating ANY content, establish the strategy layer:\n\n### Brand Voice Document\n\n```yaml\nbrand_voice:\n  name: \"\"\n  industry: \"\"\n  tone: []          # e.g., [bold, witty, authoritative, warm]\n  vocabulary:\n    use: []         # words/phrases that sound like you\n    avoid: []       # words/phrases that DON'T sound like you\n  personality_traits:\n    - trait: \"\"\n      example: \"\"   # how this shows up in posts\n  formatting:\n    emoji_usage: \"minimal | moderate | heavy\"\n    capitalization: \"standard | occasional-caps | title-case\"\n    hashtag_style: \"inline | end-of-post | first-comment\"\n  guardrails:\n    - \"Never discuss competitor X by name\"\n    - \"Always include a CTA\"\n    - \"No political content\"\n```\n\n### Audience Personas (create 2-3)\n\n```yaml\npersona:\n  name: \"\"                    # e.g., \"Startup Sarah\"\n  role: \"\"\n  age_range: \"\"\n  platforms: []               # where they spend time\n  pain_points: []\n  content_they_engage_with: []\n  content_they_scroll_past: []\n  buying_triggers: []\n  objections: []\n  language_they_use: []       # mirror their vocabulary\n```\n\n### Content Pillar Architecture\n\nDefine 5-6 pillars with percentage allocation:\n\n| Pillar | % | Purpose | Example Topics |\n|--------|---|---------|----------------|\n| Educational | 30% | Build authority | How-tos, frameworks, data |\n| Behind-the-scenes | 15% | Build trust | Process, team, mistakes |\n| Social proof | 15% | Build confidence | Results, testimonials, case studies |\n| Entertainment | 15% | Build reach | Hot takes, memes, trends |\n| Community | 15% | Build loyalty | Questions, polls, UGC, shoutouts |\n| Promotional | 10% | Drive revenue | Launches, offers, demos |\n\n**Rule:** Never exceed 15% promotional. Audiences unfollow at ~20%."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Platform Playbooks] ### Twitter/X\n\n**Specs:** 280 chars (threads unlimited), images 1200×675, video max 2:20\n\n**High-performing formats:**\n1. **Hook tweet** — Bold statement or contrarian take. One line. Period.\n2. **Thread (🧵)** — 5-12 tweets. Hook → Problem → Framework → Examples → CTA\n3. **List tweet** — \"X things I learned from Y:\" (numbered, one per line)\n4. **Quote tweet** — Add original insight to someone else's viral tweet\n5. **Poll** — 2-4 options, controversial enough to drive engagement\n6. **Screenshot tweet** — DM conversations, results, dashboards (redact names)\n\n**Thread template:**\n```\nTweet 1 (HOOK — this decides everything):\n[Bold claim or surprising stat]\n\nHere's what most people get wrong: 🧵\n\nTweet 2-N (VALUE — one idea per tweet):\n[Number]. [Subheading]\n\n[2-3 lines of insight]\n\nFinal tweet (CTA):\nIf this was useful:\n1. Follow @handle for more\n2. RT tweet 1 to help others\n3. [Specific action — DM, link, reply]\n```\n\n**Optimal posting:** 3-5x/day, best times 8-10am + 12-1pm + 5-7pm (audience TZ)\n\n**Growth tactics:**\n- Reply to 10-20 large accounts in your niche daily (add value, not \"great post!\")\n- Engage within first 30 min of posting (algorithm signal)\n- Pin your best-performing tweet or lead magnet\n- Use 1-2 hashtags max (more looks spammy on X)\n\n### LinkedIn\n\n**Specs:** 3000 chars (700-1300 sweet spot), images 1200×627, carousel PDF, video native\n\n**High-performing formats:**\n1. **Story post** — Personal narrative with business lesson (hook → tension → resolution → insight)\n2. **Carousel** — 8-12 slides, one idea per slide, large text, visual\n3. **Contrarian take** — \"Unpopular opinion: [thing everyone does] is killing your [result]\"\n4. **Framework post** — \"The [NAME] Framework for [outcome]\" + visual\n5. **Data post** — Original data, survey results, or benchmark with analysis\n6. **Milestone + lesson** — \"We just hit [X]. Here's what nobody tells you about getting here.\"\n\n**LinkedIn post template:**\n```\n[HOOK LINE — pattern-interrupt, max 2 lines before \"see more"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[3. Content Calendar System] ### Monthly Planning Process\n\n**Week before month starts:**\n1. Review last month's top 5 posts per platform — what patterns?\n2. Check upcoming dates: holidays, industry events, product launches\n3. Map content pillars to weeks (theme weeks work well)\n4. Draft batch: write 20-30 posts in one session\n5. Schedule: use platform native or scheduling tool\n\n### Weekly Calendar Template\n\n```yaml\ncontent_calendar:\n  week_of: \"YYYY-MM-DD\"\n  theme: \"\"\n  \n  monday:\n    twitter:\n      - time: \"08:00\"\n        type: \"educational_thread\"\n        pillar: \"educational\"\n        topic: \"\"\n        draft: \"\"\n        hashtags: []\n        media: \"\"\n      - time: \"17:00\"\n        type: \"engagement_reply\"\n        target_accounts: []\n    linkedin:\n      - time: \"07:30\"\n        type: \"story_post\"\n        pillar: \"behind_the_scenes\"\n        topic: \"\"\n        draft: \"\"\n        cta: \"\"\n    instagram:\n      - time: \"12:00\"\n        type: \"reel\"\n        pillar: \"educational\"\n        script: \"\"\n        audio: \"\"\n        \n  # ... repeat for each day\n  \n  repurpose_map:\n    - source: \"monday_linkedin_story\"\n      adaptations:\n        - platform: \"twitter\"\n          format: \"thread\"\n          when: \"tuesday\"\n        - platform: \"instagram\"\n          format: \"carousel\"\n          when: \"wednesday\"\n        - platform: \"tiktok\"\n          format: \"storytime\"\n          when: \"thursday\"\n```\n\n### Content Batching Workflow\n\n1. **Research day (1 day/month):** Collect ideas, save bookmarks, note trends\n2. **Writing day (2 days/month):** Draft all posts for the month (text only)\n3. **Media day (1 day/month):** Create images, film Reels/TikToks, design carousels\n4. **Schedule day (0.5 day/month):** Load everything into scheduler, set times\n5. **Daily (15 min):** Engage, reply, monitor"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[4. Content Repurposing Engine] Every piece of content should live 5+ lives:\n\n```\nBlog post (1500 words)\n  ├── Twitter thread (10 tweets)\n  ├── LinkedIn post (key insight + story)\n  ├── Instagram carousel (8 slides)\n  ├── TikTok/Reel (30s summary)\n  ├── Email newsletter section\n  ├── Quote graphics (3-5 pullquotes)\n  ├── Podcast talking points\n  └── YouTube short\n```\n\n### Repurposing Rules\n- Change the FORMAT, not just the length\n- Lead with a DIFFERENT hook for each platform\n- The same stat can anchor 5 different narratives\n- Wait 48-72h between platforms (avoids audience overlap fatigue)\n- Always add platform-native elements (hashtags, polls, carousels)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[5. Hashtag Strategy System] ### Three-Tier Approach\n\n| Tier | Volume | Purpose | Count |\n|------|--------|---------|-------|\n| Broad | 1M+ posts | Cast wide net | 3-5 |\n| Medium | 100K-1M | Discoverable sweet spot | 5-8 |\n| Niche | 10K-100K | Targeted community | 5-7 |\n\n### Research Process\n1. Search your core topic — note suggested hashtags\n2. Check competitor posts — what hashtags do they use?\n3. Use platform search to check volume (posts count)\n4. Test 3 different hashtag sets over 2 weeks — measure which drives more reach\n5. Rotate sets monthly (staleness kills reach)\n\n### Hashtag Template\n```yaml\nhashtag_sets:\n  set_a:\n    broad: [\"#AI\", \"#Technology\", \"#Innovation\"]\n    medium: [\"#AIAutomation\", \"#TechStartup\", \"#SaaS\"]\n    niche: [\"#AIAgents\", \"#NoCodeAI\", \"#AgentOps\"]\n  set_b:\n    # rotate different combinations\n  banned: [\"#followforfollow\", \"#like4like\"]  # never use these\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[6. Engagement & Growth System] ### Daily Engagement Routine (30 min)\n\n```\nMorning (15 min):\n  □ Reply to all comments on yesterday's posts\n  □ Like/comment on 10 posts from target accounts\n  □ Check DMs — respond to all within 24h\n  □ Check trending topics — can you newsjack?\n\nEvening (15 min):\n  □ Reply to new comments on today's posts\n  □ Engage with 10 more accounts in your niche\n  □ Send 3-5 value DMs (not pitches — genuine comments)\n  □ Save content ideas from today's scroll\n```\n\n### Engagement Quality Rules\n- **Never:** \"Great post!\" / \"🔥\" / \"Agree!\" (zero-value comments)\n- **Always:** Add insight, ask a question, share experience, respectfully disagree\n- **Format:** 2-4 sentences minimum, reference specific point from their post\n- **Goal:** Make THEM want to check YOUR profile\n\n### Collaboration Strategy\n1. Identify 20 accounts at similar follower count (peer tier)\n2. Engage genuinely for 2 weeks before pitching collaboration\n3. Propose: guest post swap, IG Live together, Twitter Space, collab post\n4. Cross-promote: \"I loved this post by @handle — here's what I'd add...\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[7. Analytics & Optimization] ### Weekly Metrics Dashboard\n\n```yaml\nweekly_metrics:\n  period: \"YYYY-MM-DD to YYYY-MM-DD\"\n  \n  by_platform:\n    twitter:\n      followers: { start: 0, end: 0, change: 0 }\n      impressions: 0\n      engagement_rate: \"0%\"  # engagements / impressions\n      top_post: { text: \"\", impressions: 0, engagement: 0 }\n      profile_visits: 0\n      link_clicks: 0\n      \n    linkedin:\n      followers: { start: 0, end: 0, change: 0 }\n      impressions: 0\n      engagement_rate: \"0%\"\n      top_post: { text: \"\", impressions: 0, engagement: 0 }\n      \n    instagram:\n      followers: { start: 0, end: 0, change: 0 }\n      reach: 0\n      saves: 0  # most important IG metric\n      shares: 0\n      top_reel: { views: 0, likes: 0, saves: 0 }\n      \n  by_pillar:\n    educational: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    behind_the_scenes: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    social_proof: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    entertainment: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    community: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    promotional: { posts: 0, avg_engagement: \"0%\", avg_reach: 0 }\n    \n  insights:\n    - \"Carousels outperformed Reels by 2x on saves\"\n    - \"Tuesday morning posts consistently get highest reach\"\n    \n  next_week_adjustments:\n    - \"Double down on carousel format\"\n    - \"Test controversial hook style on LinkedIn\"\n```\n\n### Content Scoring (0-100)\n\nRate every post before publishing:\n\n| Criteria | Weight | Score Guide |\n|----------|--------|-------------|\n| Hook strength | 25 | Would YOU stop scrolling? 1-10 |\n| Value density | 25 | Teaches, entertains, or inspires? 1-10 |\n| Platform fit | 20 | Right format, length, style? 1-10 |\n| CTA clarity | 15 | Clear next step? 1-10 |\n| Visual appeal | 15 | Thumb-stopping media? 1-10 |\n\n**Threshold:** Don't publish below 70. Rewrite or discard.\n\n### A/B Testing Framework\n- Test ONE variable at a time: hook, format, posting time, CTA, hashtags\n- Run for 2 weeks minimu"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[8. Crisis & Reputation Management] ### Response Protocol\n\n| Situation | Response Time | Action |\n|-----------|--------------|--------|\n| Negative comment (valid) | <2h | Acknowledge, apologize, fix, follow up |\n| Negative comment (troll) | <4h | Brief factual response OR hide/block |\n| Viral criticism | <1h | Draft holding statement, investigate, full response |\n| Misinformation about brand | <2h | Correct with evidence, pin correction |\n| Platform outage | N/A | Pause scheduled content, post on alt platform |\n\n### Comment Response Templates\n\n**Valid complaint:**\n\"You're right, and I appreciate you calling this out. [Specific acknowledgment]. Here's what we're doing about it: [action]. I'll follow up with you directly — DM incoming.\"\n\n**Troll/bad faith:**\n\"Thanks for the perspective. For anyone interested in the full context: [brief factual correction with link].\" Then disengage."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[9. Advanced Tactics] ### Newsjacking\n1. Set alerts for industry keywords\n2. When news breaks, publish take within 2-4 hours\n3. Template: \"Breaking: [news]. Here's what this means for [audience]: [3 points]\"\n4. Use trending hashtags + news-specific tags\n\n### Content Series\nCreate recurring series that build audience habit:\n- \"Monday Market Minutes\" — weekly industry roundup\n- \"Framework Friday\" — share one tactical framework\n- \"Win Wednesday\" — customer success story\n- \"Tool Tuesday\" — review one tool in your stack\n\n### User-Generated Content Engine\n1. Create a branded hashtag\n2. Run monthly challenges/contests\n3. Feature UGC in Stories/feed (ask permission, credit)\n4. Build a UGC template (\"Share your [X] using #[hashtag]\")\n\n### Social Selling (non-salesy)\n```\nDon't: \"Check out our product! 🎉 Link in bio!\"\nDo: \"We noticed 73% of [role]s struggle with [problem]. \n     Last week we helped [customer type] solve this in [timeframe]. \n     Here's exactly what we did: [value-first content]\n     \n     If you're dealing with this too, happy to share the \n     full playbook — just comment 'playbook' below.\"\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[10. Automation & Efficiency] ### What to Automate\n- Scheduling posts (batch weekly)\n- Cross-posting to secondary platforms\n- Hashtag rotation\n- Analytics collection\n- RSS-to-social for blog posts\n- Welcome DMs for new followers (keep genuine)\n\n### What to NEVER Automate\n- Replies to comments (always personal)\n- DM conversations (robotic DMs destroy trust)\n- Engagement on others' posts (must be authentic)\n- Crisis responses\n- Controversial takes (needs human judgment)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Output Format] When creating content, always output:\n\n```\nPLATFORM: [platform]\nFORMAT: [post type]\nPILLAR: [content pillar]\nCHAR COUNT: [X/limit]\nSCORE: [0-100]\n\n---\n[Full post copy, ready to paste]\n---\n\nMEDIA BRIEF: [what image/video to create]\nHASHTAGS: [platform-appropriate tags]\nBEST TIME: [suggested posting time]\nREPURPOSE: [how to adapt for 2 other platforms]\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Social Media Content Engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-social-media-engine/SKILL.md"
+}

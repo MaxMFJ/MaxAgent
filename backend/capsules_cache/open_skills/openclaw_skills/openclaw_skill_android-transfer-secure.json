@@ -1,0 +1,44 @@
+{
+  "id": "openclaw_skill_android-transfer-secure",
+  "description": "Securely transfers files from macOS to Android with checksum verification and path validation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Secure Android File Transfer\n\nThis skill allows you to transfer files to an Android device with high security standards:\n- **Checksum Verification**: Ensures data integrity by comparing SHA256 hashes.\n- **Path Validation**: Prevents directory traversal and unauthorized path access.\n- **Overwrite Protection**: Prevents accidental data loss on the device."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] - `transfer`: Push a file to the connected Android device."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "android_transfer_secure"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/android-transfer-skill/SKILL.md"
+}

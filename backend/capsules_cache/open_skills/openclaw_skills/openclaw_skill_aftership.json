@@ -1,0 +1,75 @@
+{
+  "id": "openclaw_skill_aftership",
+  "description": "AfterShip — package tracking, delivery notifications, estimated delivery dates, and courier detection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 📬 AfterShip\n\nAfterShip — package tracking, delivery notifications, estimated delivery dates, and courier detection."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `AFTERSHIP_API_KEY` | ✅ | AfterShip API key |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List all trackings\npython3 {{baseDir}}/scripts/aftership.py list-trackings --page \"1\" --limit \"50\" --keyword <value>\n\n# Get tracking details\npython3 {{baseDir}}/scripts/aftership.py get-tracking --slug <value> --tracking-number <value>\n\n# Create tracking\npython3 {{baseDir}}/scripts/aftership.py create-tracking --tracking-number <value> --slug <value> --title <value> --emails <value> --phones <value>\n\n# Delete tracking\npython3 {{baseDir}}/scripts/aftership.py delete-tracking --slug <value> --tracking-number <value>\n\n# Retrack expired tracking\npython3 {{baseDir}}/scripts/aftership.py retrack --slug <value> --tracking-number <value>\n\n# Detect courier for tracking number\npython3 {{baseDir}}/scripts/aftership.py detect-courier --tracking-number <value>\n\n# List all supported couriers\npython3 {{baseDir}}/scripts/aftership.py list-couriers\n\n# Get last checkpoint\npython3 {{baseDir}}/scripts/aftership.py get-last-checkpoint --slug <value> --tracking-number <value>\n\n# Get notification settings\npython3 {{baseDir}}/scripts/aftership.py list-notifications --slug <value> --tracking-number <value>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/aftership.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aftership"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "📬",
+        "requires": {
+          "env": [
+            "AFTERSHIP_API_KEY"
+          ]
+        },
+        "primaryEnv": "AFTERSHIP_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/aftership/SKILL.md"
+}

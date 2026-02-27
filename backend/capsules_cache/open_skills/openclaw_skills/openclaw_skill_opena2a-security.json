@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_opena2a-security",
+  "description": "Security hardening for OpenClaw. Audit your configuration, scan installed skills for malware, detect CVE-2026-25253, check credential exposure, and get actionable fix recommendations. Runs locally with no external API calls.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenA2A Security for OpenClaw\n\nSecurity auditing and hardening for OpenClaw installations. Scan your configuration, detect known vulnerabilities, audit installed skills for malicious code, and get specific remediation steps.\n\nThis skill runs entirely locally. No data leaves your machine. No API keys required."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What You Can Ask] ### Quick Security Check\n\nAsk for a fast overview of your security posture:\n\n```\n\"Run a security audit on my OpenClaw setup\"\n```\n\n```\n\"Is my OpenClaw configuration secure?\"\n```\n\n```\n\"Check my OpenClaw for known vulnerabilities\"\n```\n\n### CVE-2026-25253 Detection\n\nCheck if your OpenClaw instance is vulnerable to the WebSocket hijack RCE (CVSS 8.8):\n\n```\n\"Am I vulnerable to CVE-2026-25253?\"\n```\n\n```\n\"Check for the OpenClaw WebSocket vulnerability\"\n```\n\n### Skill Scanning\n\nScan installed skills for malicious code patterns (command injection, data exfiltration, obfuscated payloads, crypto mining):\n\n```\n\"Scan my installed skills for malware\"\n```\n\n```\n\"Is the weather-bot skill safe?\"\n```\n\n```\n\"Check all my skills for security issues\"\n```\n\n### Credential Audit\n\nCheck for exposed credentials, weak file permissions, and plaintext storage:\n\n```\n\"Are my API keys and tokens stored securely?\"\n```\n\n```\n\"Check my credential file permissions\"\n```\n\n### Configuration Hardening\n\nGet specific recommendations for hardening your OpenClaw config:\n\n```\n\"How do I harden my OpenClaw configuration?\"\n```\n\n```\n\"What security settings should I change?\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How It Works] This skill uses HackMyAgent, an open-source security scanner with 47 OpenClaw-specific checks across these categories:\n\n### Skill Security (6 checks)\n\n| Check | What It Detects |\n|-------|-----------------|\n| SKILL-001 | Command injection via shell execution |\n| SKILL-002 | Dynamic code execution (eval, Function, vm) |\n| SKILL-003 | Data exfiltration to external endpoints |\n| SKILL-004 | Obfuscated code (base64, hex, charcode) |\n| SKILL-005 | Crypto mining indicators |\n| SKILL-006 | Path traversal outside skill directory |\n\n### Credential Security (4 checks)\n\n| Check | What It Detects |\n|-------|-----------------|\n| CRED-001 | Credentials exposed via gateway API |\n| CRED-002 | Credential files with world-readable permissions |\n| CRED-003 | Plaintext credential storage without encryption |\n| CRED-004 | Timing side-channel in authentication |\n\n### Gateway Security (4 checks)\n\n| Check | What It Detects |\n|-------|-----------------|\n| GW-001 | Missing rate limiting on endpoints |\n| GW-002 | SSRF-vulnerable URL fetch handlers |\n| GW-003 | Missing or incomplete security headers |\n| GW-004 | CVE-2026-25253 WebSocket hijack vulnerability |\n\n### Supply Chain (4 checks)\n\n| Check | What It Detects |\n|-------|-----------------|\n| SC-001 | npm install without --ignore-scripts |\n| SC-002 | Unpinned or pre-release dependencies |\n| SC-003 | Missing skill signing or hash verification |\n| SC-004 | Known ClawHavoc malicious skill patterns |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Running Scans] When asked to perform a scan, run the following commands:\n\n### Full Security Audit\n```bash\nnpx hackmyagent secure ~/.openclaw\n```\n\n### Scan a Specific Skill\n```bash\nnpx hackmyagent scan --skill <skill-name>\n```\n\n### CVE Detection Only\n```bash\nnpx hackmyagent scan --cve ~/.openclaw\n```\n\n### Configuration Audit\n```bash\nnpx hackmyagent audit ~/.openclaw/config.json5\n```\n\n### Generate Security Report\n```bash\nnpx hackmyagent secure ~/.openclaw --format html --output security-report.html\n```\n\nOutput formats: text, json, sarif, html, asp"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security Recommendations] When providing recommendations, reference these priority levels:\n\n### Do Immediately\n\n1. **Update OpenClaw** to the latest version (patches CVE-2026-25253, credential redaction, timing-safe auth, lifecycle script blocking)\n2. **Run `npx hackmyagent secure`** to identify your current exposure\n3. **Review installed skills** — remove any you do not actively use\n4. **Check file permissions** — credential files should be 0600, not world-readable\n\n### Configuration Changes\n\nRecommend these config.json5 changes when relevant:\n\n- Set `gateway.auth` to a strong token (32+ characters, randomly generated)\n- Set `gateway.host` to `127.0.0.1` (loopback only) unless remote access is required\n- Disable unused channel integrations\n- Set `plugins.allowUnsafe` to false\n- Enable Docker sandbox mode when available\n\n### For Skill Publishers\n\n- Do not hardcode API keys in skill code — use environment variables\n- Declare minimum required permissions in SKILL.md frontmatter\n- Do not use eval(), Function(), or child_process.exec() with user input\n- Do not fetch external URLs at install time"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Interpreting Results] When presenting scan results to the user:\n\n- **CRITICAL findings** require immediate action — explain the specific risk and provide the fix command\n- **HIGH findings** should be addressed before deploying to production\n- **MEDIUM findings** are defense-in-depth improvements\n- **LOW findings** are best-practice recommendations\n\nAlways explain findings in plain language. Not every user is a security expert. State what the risk is, who could exploit it, and exactly how to fix it."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Background] This skill is built by OpenA2A (opena2a.org), the team behind 6 merged security patches in OpenClaw main:\n\n| PR | Fix |\n|----|-----|\n| #9806 | Skill code safety scanner (19 detection rules, +1,721 lines) |\n| #9858 | Credential redaction for gateway WebSocket responses |\n| #10525 | Path traversal fix in A2UI file serving |\n| #10527 | Timing-safe comparison for hook token auth |\n| #10528 | Blocked npm lifecycle scripts during plugin install |\n| #10529 | File permission enforcement on WhatsApp credentials |\n\nScanner: https://www.npmjs.com/package/hackmyagent\nSource: https://github.com/opena2a-org/hackmyagent\nThreat model: https://github.com/openclaw/trust/pull/7"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "opena2a_security"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdelsfane/opena2a-security/SKILL.md"
+}

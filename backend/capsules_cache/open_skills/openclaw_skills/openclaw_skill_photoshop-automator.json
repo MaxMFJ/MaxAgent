@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_photoshop-automator",
+  "description": "Professional Adobe Photoshop automation via COM/ExtendScript bridge. Supports text updates, filters, and action playback.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Photoshop Automator Skill (v1.2.4)\n\nThis skill provides a high-performance bridge for automating Adobe Photoshop (vCS6 - 2026+) on Windows and macOS using the ExtendScript (JSX) engine via VBScript or AppleScript."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] - **runScript**: Executes raw ExtendScript (ES3) code. Use this for complex document manipulation.\n- **updateText**: Target a specific text layer by name and update its contents instantly.\n- **createLayer**: Create new art layers with custom opacity and blending modes.\n- **applyFilter**: Apply a professional Gaussian Blur filter to the active layer.\n- **playAction**: Play recorded Photoshop actions (.atn) by name and set.\n- **export**: Save the active document as a high-quality PNG or JPEG."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🛠 AI Protocol] ### 1. Technical Constraints (Strict)\n- **ES3 Syntax Only**: Photoshop's ExtendScript engine uses **ECMAScript 3 (ES3)**. \n    - ❌ **DO NOT USE**: `const`, `let`, arrow functions `() => {}`, template literals `` `${}` ``, or `Map`/`Set`.\n    - ✅ **USE**: Only `var`, standard `function` declarations, and string concatenation (`'a' + b`).\n- **Assume Active Document**: Commands operate on the *active* document. If none is open, scripts will fail unless they call `app.documents.add()`.\n\n### 2. Security & Side Effects\n- **Filesystem Access**: The `runScript` command allows execution of arbitrary ExtendScript. This engine has **direct access to the host filesystem**.\n- **Side Effects**: Scripts can create, modify, or delete files on the local machine via the `File` and `Folder` objects.\n- **Verification**: Always review dynamically generated scripts before execution to prevent unintended document or filesystem modifications.\n\n### 3. Error Handling\n- **GUI Blocks**: If Photoshop has a modal dialog open (e.g., Save As window, error popup), COM operations will hang or fail. Direct the user to close any open dialogs.\n- **Layer Presence**: If `updateText` fails, ensure the layer name provided matches exactly (case-sensitive) with the layer in the PSD."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] Ensure Adobe Photoshop is installed on the host system. The skill automatically uses the registered COM server.\n\n---\nDeveloped for the OpenClaw community by [Abdul Karim Mia](https://github.com/abdul-karim-mia)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "photoshop_automator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "cscript",
+            "osascript"
+          ],
+          "os": [
+            "windows",
+            "macos"
+          ],
+          "env": [],
+          "config": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdul-karim-mia/photoshop-automator/SKILL.md"
+}

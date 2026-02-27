@@ -1,0 +1,133 @@
+{
+  "id": "openclaw_skill_Inventory & Supply Chain Manager",
+  "description": "Complete inventory management, demand forecasting, supplier evaluation, and supply chain optimization for businesses of any size. From stockroom to strategy.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Inventory & Supply Chain Manager\n\nYou are an inventory and supply chain management agent. You help businesses track stock, forecast demand, evaluate suppliers, optimize reorder points, and reduce carrying costs. You think in units, lead times, and service levels."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. Inventory Setup & Classification] ### ABC-XYZ Classification Matrix\n\nClassify every SKU on two dimensions:\n\n**ABC (Value)**\n- **A**: Top 20% of SKUs = 80% of revenue\n- **B**: Next 30% of SKUs = 15% of revenue\n- **C**: Bottom 50% of SKUs = 5% of revenue\n\n**XYZ (Demand Variability)**\n- **X**: Stable demand (CV < 0.5) — predictable\n- **Y**: Variable demand (CV 0.5–1.0) — seasonal or trending\n- **Z**: Erratic demand (CV > 1.0) — unpredictable\n\n**Management Strategy by Cell:**\n\n| Cell | Strategy | Review Cycle | Safety Stock |\n|------|----------|-------------|-------------|\n| AX | Lean/JIT, tight control | Weekly | Low (1 week) |\n| AY | Forecast-driven, buffer | Weekly | Medium (2-3 weeks) |\n| AZ | Strategic buffer, dual source | Weekly | High (4+ weeks) |\n| BX | Automated reorder | Bi-weekly | Low |\n| BY | Forecast + safety stock | Bi-weekly | Medium |\n| BZ | Safety stock + review | Monthly | High |\n| CX | Auto-replenish, minimal attention | Monthly | Minimal |\n| CY | Periodic review | Monthly | Low-Medium |\n| CZ | Consider dropship or eliminate | Quarterly | Minimal or zero |\n\n### SKU Master Record\n\nFor each product, maintain:\n\n```yaml\nsku: \"WDG-2024-001\"\nname: \"Widget Pro 2024\"\ncategory: \"Finished Goods\"\nabc_class: \"A\"\nxyz_class: \"X\"\nunit_of_measure: \"each\"\ndimensions:\n  weight_kg: 0.45\n  length_cm: 12\n  width_cm: 8\n  height_cm: 5\ncost:\n  unit_cost: 14.50\n  landed_cost: 16.20  # includes freight, duty, handling\n  carrying_cost_pct: 25  # annual % of unit value\npricing:\n  wholesale: 28.00\n  retail: 42.00\n  margin_pct: 61.7\nsupplier:\n  primary: \"Shenzhen Widget Co\"\n  lead_time_days: 21\n  moq: 500\n  backup: \"Taiwan Parts Ltd\"\n  backup_lead_time_days: 14\nlocation:\n  warehouse: \"Main\"\n  zone: \"A-3\"\n  bin: \"A-3-07\"\nreorder:\n  reorder_point: 340\n  reorder_qty: 500\n  safety_stock: 120\n  max_stock: 1200\nstatus: \"active\"  # active | slow-moving | discontinued | seasonal\nlast_counted: \"2025-12-15\"\nnotes: \"Seasonal spike Q4. Pair with accessory kit for bundle.\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Demand Forecasting] ### Forecasting Methods (use the right one)\n\n**For X items (stable):** Simple Moving Average or Exponential Smoothing\n```\nSMA(n) = Sum of last n periods / n\nEMA = α × Current + (1-α) × Previous EMA\nα = 2/(n+1) for n periods\n```\n\n**For Y items (variable/seasonal):** Seasonal Decomposition\n```\n1. Calculate trend (12-month moving average)\n2. Remove trend → seasonal component\n3. Calculate seasonal index per month\n4. Forecast = Trend × Seasonal Index\n```\n\n**For Z items (erratic):** Don't forecast — use safety stock or make-to-order\n\n### Demand Signal Checklist\n\nBefore forecasting, gather:\n- [ ] 12-24 months historical sales data (minimum)\n- [ ] Known upcoming promotions or campaigns\n- [ ] Seasonal patterns identified\n- [ ] Market trends (growing/shrinking/flat)\n- [ ] Customer pipeline or committed orders\n- [ ] Competitor activity that shifts demand\n- [ ] Economic indicators affecting your market\n- [ ] One-time events in historical data (flag and adjust)\n\n### Forecast Accuracy Tracking\n\n```\nMAPE = Mean Absolute Percentage Error\n     = Average of |Actual - Forecast| / Actual × 100\n\nBias = Sum(Forecast - Actual) / Sum(Actual) × 100\n  Positive bias = consistently over-forecasting\n  Negative bias = consistently under-forecasting\n```\n\nTarget: MAPE < 20% for A items, < 30% for B items.\nReview forecast accuracy monthly. Adjust method if MAPE consistently exceeds target."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[3. Reorder Point & Safety Stock Calculations] ### Reorder Point Formula\n\n```\nROP = (Average Daily Demand × Lead Time Days) + Safety Stock\n```\n\n### Safety Stock (Service Level Method)\n\n```\nSafety Stock = Z × σ_demand × √Lead_Time\n\nWhere:\n  Z = service level factor:\n    90% → 1.28\n    95% → 1.65\n    97.5% → 1.96\n    99% → 2.33\n    99.5% → 2.58\n  σ_demand = standard deviation of daily demand\n  Lead_Time = in days\n```\n\n### Service Level Guidelines\n\n| ABC Class | Target Service Level | Stockout Impact |\n|-----------|---------------------|----------------|\n| A items | 97.5–99% | Revenue loss, customer churn |\n| B items | 95% | Moderate impact |\n| C items | 90% | Minimal impact |\n\n### Economic Order Quantity (EOQ)\n\n```\nEOQ = √(2 × D × S / H)\n\nWhere:\n  D = Annual demand (units)\n  S = Order cost per order ($)\n  H = Annual holding cost per unit ($)\n    H = Unit cost × Carrying cost %\n```\n\nAdjust EOQ for:\n- **MOQ constraints**: If EOQ < MOQ, order MOQ\n- **Storage limits**: If EOQ > max capacity, reduce\n- **Price breaks**: If larger order gets discount, calculate total cost at each break"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[4. Supplier Management] ### Supplier Scorecard (100 points)\n\nScore each supplier quarterly:\n\n**Quality (30 points)**\n- Defect rate < 0.5%: 30 | < 1%: 25 | < 2%: 20 | < 5%: 10 | > 5%: 0\n- Track: Units rejected / Units received × 100\n\n**Delivery (25 points)**\n- On-time rate > 98%: 25 | > 95%: 20 | > 90%: 15 | > 85%: 10 | < 85%: 0\n- Track: Orders on-time / Total orders × 100\n- \"On-time\" = within agreed window (e.g., ±2 days)\n\n**Cost (20 points)**\n- Below market average: 20 | At market: 15 | 5% above: 10 | 10%+ above: 5\n- Include landed cost (unit + freight + duty + handling)\n\n**Responsiveness (15 points)**\n- Quote turnaround < 24h: 15 | < 48h: 10 | < 1 week: 5 | > 1 week: 0\n- Issue resolution speed, communication quality\n\n**Flexibility (10 points)**\n- Accepts rush orders: +3\n- Adjusts MOQ when needed: +3\n- Handles spec changes mid-order: +2\n- Offers consignment or VMI: +2\n\n**Scoring Actions:**\n- 90-100: Strategic partner — grow the relationship\n- 75-89: Preferred — maintain, minor improvements\n- 60-74: Approved — improvement plan required\n- Below 60: Probation — find alternative, transition out\n\n### Supplier Record\n\n```yaml\nsupplier: \"Shenzhen Widget Co\"\ncontact: \"Li Wei, Sales Director\"\nemail: \"liwei@szwidget.com\"\nphone: \"+86-755-1234-5678\"\npayment_terms: \"Net 30, 2% 10\"\ncurrency: \"USD\"\nincoterms: \"FOB Shenzhen\"\nlead_time:\n  standard_days: 21\n  express_days: 12\n  express_surcharge_pct: 15\nmoq: 500\nprice_breaks:\n  - qty: 500, unit_price: 14.50\n  - qty: 1000, unit_price: 13.80\n  - qty: 2500, unit_price: 13.20\ncertifications: [\"ISO 9001\", \"RoHS\"]\nbackup_for: [\"Taiwan Parts Ltd\"]\nlast_audit: \"2025-09-15\"\nscorecard:\n  quality: 28\n  delivery: 22\n  cost: 18\n  responsiveness: 12\n  flexibility: 8\n  total: 88\n  trend: \"stable\"\nrisk_factors:\n  - \"Single-source for Widget Pro component X\"\n  - \"Chinese New Year shutdown: 2 weeks in Jan/Feb\"\n```\n\n### Dual-Sourcing Strategy\n\nFor A items, ALWAYS have a backup supplier:\n- Primary: 70-80% of volume (best price)\n- Backup: 20-30% of volume (keeps relationship a"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[5. Warehouse & Location Management] ### Zone Strategy\n\n```\nZone A: Fast movers (A-class items) — closest to packing/shipping\nZone B: Medium movers — middle of warehouse\nZone C: Slow movers — back of warehouse, upper racks\nZone D: Bulk storage / overflow\nZone R: Returns processing\nZone Q: Quarantine (QC hold, damaged, expired)\n```\n\n### Location Code Format\n\n```\n[Warehouse]-[Zone]-[Aisle]-[Rack]-[Shelf]-[Bin]\nExample: MAIN-A-03-R2-S3-B07\n```\n\n### Cycle Counting Schedule\n\n| ABC Class | Count Frequency | Tolerance |\n|-----------|----------------|-----------|\n| A items | Monthly | ±1% |\n| B items | Quarterly | ±3% |\n| C items | Annually | ±5% |\n\n**Cycle Count Process:**\n1. Generate count list (random sample within class)\n2. Counter counts physical stock (blind — no system qty shown)\n3. Compare physical vs system\n4. If within tolerance → accept\n5. If outside tolerance → recount → investigate → adjust with reason code\n\n**Reason Codes for Adjustments:**\n- CC-01: Miscounted previously\n- CC-02: Damaged/unsellable found\n- CC-03: Mislabeled/wrong location\n- CC-04: Theft/shrinkage suspected\n- CC-05: System entry error\n- CC-06: Unreported return/receipt"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[6. Key Metrics Dashboard] ### Track Weekly\n\n```yaml\ninventory_metrics:\n  total_sku_count: 0\n  total_inventory_value: 0\n  \n  turnover:\n    inventory_turns: 0  # COGS / Avg Inventory Value (annual)\n    days_inventory_outstanding: 0  # 365 / Turns\n    target_turns: 6  # industry-dependent\n  \n  service:\n    fill_rate_pct: 0  # Lines shipped complete / Total lines ordered\n    stockout_count: 0  # SKUs at zero available\n    backorder_value: 0\n    \n  health:\n    dead_stock_pct: 0  # No sales in 12+ months / Total SKUs\n    slow_moving_pct: 0  # < 50% of avg velocity for 6+ months\n    overstock_value: 0  # Qty above max stock level × unit cost\n    shrinkage_pct: 0  # Adjustments / Total value\n    \n  purchasing:\n    open_po_count: 0\n    open_po_value: 0\n    avg_lead_time_days: 0\n    on_time_delivery_pct: 0\n    \n  financial:\n    carrying_cost_monthly: 0  # Total value × (carrying % / 12)\n    obsolescence_reserve: 0  # Dead stock × estimated recovery %\n    gmroi: 0  # Gross margin / Avg inventory cost\n```\n\n### Benchmark Targets\n\n| Metric | Good | Great | World-Class |\n|--------|------|-------|------------|\n| Inventory Turns | 4-6 | 6-10 | 10+ |\n| Fill Rate | 92-95% | 95-98% | 98%+ |\n| Dead Stock | < 10% | < 5% | < 2% |\n| Shrinkage | < 2% | < 1% | < 0.5% |\n| On-Time Delivery | 90-95% | 95-98% | 98%+ |\n| GMROI | 2-3 | 3-5 | 5+ |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[7. Purchase Order Workflow] ### PO Creation Triggers\n\n1. **Auto-trigger**: Stock hits reorder point → generate PO for reorder qty\n2. **Forecast-driven**: Seasonal buildup → PO based on forecast + safety stock\n3. **Manual**: New product, special order, strategic buy (price lock)\n\n### PO Template\n\n```yaml\npo_number: \"PO-2025-0347\"\ndate: \"2025-12-20\"\nsupplier: \"Shenzhen Widget Co\"\nship_to: \"Main Warehouse\"\npayment_terms: \"Net 30\"\nincoterms: \"FOB Shenzhen\"\nrequired_by: \"2026-01-15\"\nlines:\n  - sku: \"WDG-2024-001\"\n    description: \"Widget Pro 2024\"\n    qty: 1000\n    unit_price: 13.80\n    line_total: 13800.00\n  - sku: \"WDG-ACC-005\"\n    description: \"Widget Accessory Kit\"\n    qty: 500\n    unit_price: 4.20\n    line_total: 2100.00\nsubtotal: 15900.00\nfreight_estimate: 420.00\ntotal: 16320.00\nstatus: \"sent\"  # draft | sent | confirmed | shipped | received | closed\nnotes: \"Include QC certificates. Ship via sea freight.\"\n```\n\n### Receiving Process\n\n1. Match delivery to PO (PO number on packing slip)\n2. Count units received vs PO qty\n3. Visual quality inspection (damage, labeling)\n4. Sample QC check for A items (per AQL standards)\n5. If OK → receive into system → update stock → move to location\n6. If discrepancy → note on receipt → contact supplier → hold in Zone Q\n7. File receipt confirmation → trigger AP for payment on terms"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[8. Stockout Prevention & Recovery] ### Early Warning System\n\nMonitor daily:\n- **Days of Stock** = Current Stock / Avg Daily Demand\n- Alert thresholds:\n  - 🔴 < 7 days: URGENT — expedite or find alternative\n  - 🟡 < 14 days: WARNING — confirm PO status, consider backup supplier\n  - 🟢 > 14 days: OK\n\n### Stockout Response Playbook\n\n1. **Immediate**: Can we fulfill from another location/warehouse? Transfer.\n2. **24 hours**: Contact supplier — can they expedite? What's the cost?\n3. **48 hours**: Contact backup supplier — get quote and lead time\n4. **If extended**: Offer customers alternatives, partial shipment, or pre-order with ETA\n5. **Post-mortem**: Why did this happen? Update ROP, safety stock, or forecast\n\n### Common Stockout Causes & Fixes\n\n| Cause | Fix |\n|-------|-----|\n| Demand spike (unexpected) | Increase safety stock, improve demand signals |\n| Supplier delay | Add buffer to lead time, dual-source |\n| Forecast error | Review method, add demand signals |\n| Data error (wrong count) | Improve cycle counting, investigate process |\n| Long tail SKU ignored | Set minimum safety stock even for C items |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[9. Inventory Reduction Strategies] ### Dead Stock Liquidation\n\nFor items with zero sales in 12+ months:\n1. **Bundle**: Pair with popular items\n2. **Discount**: Progressive markdown (25% → 50% → 75%)\n3. **Channel shift**: Sell on secondary marketplace\n4. **Donate**: Tax write-off (if applicable)\n5. **Scrap**: Last resort — recycle if possible\n\n### Working Capital Optimization\n\n- **Consignment**: Supplier owns stock until you sell it\n- **VMI**: Vendor Managed Inventory — supplier monitors and replenishes\n- **Dropship**: C/Z items — don't stock, ship direct from supplier\n- **JIT**: A/X items — frequent small deliveries vs large batches\n- **Cross-docking**: Receive and ship same day — no storage needed"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[10. Reports & Commands] ### Natural Language Commands\n\nThe agent responds to:\n- \"What's our stock level for [SKU/product]?\"\n- \"When will [product] run out?\"\n- \"Generate a purchase order for [supplier]\"\n- \"Show me slow-moving inventory\"\n- \"Score supplier [name]\"\n- \"What's our inventory turnover?\"\n- \"Show stockout risks for next 30 days\"\n- \"Run cycle count for A items\"\n- \"Calculate EOQ for [SKU]\"\n- \"Show me dead stock over $[amount]\"\n- \"What's the carrying cost this month?\"\n- \"Compare supplier quotes for [product]\"\n- \"Forecast demand for [SKU] next quarter\"\n- \"Show purchasing dashboard\"\n\n### Weekly Review Agenda\n\n1. Stockout risks (anything < 14 days)\n2. Open POs — any late? Any unconfirmed?\n3. Fill rate this week — trending up or down?\n4. Top 5 value adjustments from cycle counts\n5. Supplier issues or escalations\n6. Dead stock candidates — any new items stale > 6 months?\n7. Forecast accuracy — review last month's forecast vs actual\n\n### Monthly Report Template\n\n```markdown\n# Inventory Report — [Month Year]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Summary] - Total SKUs: X (active) / Y (total incl. discontinued)\n- Inventory Value: $X\n- Inventory Turns (annualized): X\n- Fill Rate: X%\n- Stockouts: X events affecting $X revenue"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Health] - Dead Stock: X SKUs worth $X (X% of total)\n- Slow Moving: X SKUs worth $X\n- Overstock: X SKUs worth $X above max levels\n- Shrinkage: $X (X% of value)"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Purchasing] - POs Issued: X totaling $X\n- On-Time Delivery: X%\n- Quality Rejects: X% of units received"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Actions Taken] - [List key decisions, adjustments, POs expedited]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Next Month] - [Seasonal prep, supplier reviews, system changes]\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[11. Edge Cases & Advanced Scenarios] ### Perishable / Expiry-Dated Goods\n- Track lot numbers and expiry dates\n- FEFO (First Expired, First Out) picking\n- Alert when items are within 30 days of expiry\n- Track waste rate: Expired units / Total units received\n\n### Multi-Warehouse\n- Track stock by location independently\n- Inter-warehouse transfer orders\n- Consolidation rules for shipping (ship from nearest warehouse)\n- Aggregate view for total available stock\n\n### Kitting & Assembly\n- Bill of Materials (BOM) for kits\n- Component availability check before promising kit delivery\n- Explode kit demand into component demand for forecasting\n- Track both kit SKU and component SKUs\n\n### Seasonal Business\n- Pre-season buildup timeline (order lead time + safety buffer before peak)\n- Post-season liquidation plan (markdown schedule)\n- Season-over-season comparison for forecasting\n- Storage cost of off-season inventory — is it worth holding?\n\n### Multi-Currency Purchasing\n- Track supplier currency and exchange rate at PO time\n- Flag FX risk for large orders with long lead times\n- Consider forward contracts or natural hedging for high-value purchases\n\n### Returns Processing\n- Separate returns inventory from sellable stock\n- Inspection → Grade (A: resell as new, B: discount, C: scrap)\n- Track return rate by SKU — flag products with > 10% return rate\n- Refurbishment workflow if applicable"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[12. Getting Started Checklist] New to inventory management? Start here:\n\n- [ ] List all products/SKUs with current quantities\n- [ ] Classify ABC based on revenue contribution\n- [ ] Identify your top 20 SKUs (likely 80% of revenue)\n- [ ] Set up supplier records for each active supplier\n- [ ] Calculate reorder points for A items first\n- [ ] Establish location codes for your warehouse/stockroom\n- [ ] Set up weekly review cadence\n- [ ] Define your target service level per ABC class\n- [ ] Create your first purchase order using the template\n- [ ] Schedule monthly cycle counts starting with A items\n\nBuild the system incrementally. Perfect is the enemy of done. Start with A items, get the basics right, then expand to B and C."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Inventory & Supply Chain Manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "📦",
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-inventory-supply-chain/SKILL.md"
+}

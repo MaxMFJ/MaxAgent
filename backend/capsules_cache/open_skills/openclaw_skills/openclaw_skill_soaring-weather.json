@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_soaring-weather",
+  "description": "Segelflug- und Thermikvorhersage mit Thermik-Score (0-10). Nutze diesen Skill wenn der User nach Segelflugwetter, Thermik, Streckenflugbedingungen, Flugwetter fuer Segelflieger oder Gleitschirmflieger fragt - auch indirekt wie \"lohnt sich Samstag fliegen?\", \"wie wird die Thermik?\", \"Segelflugwetter Wochenende?\" oder \"kann ich am Sonntag einen Streckenflug machen?\" oder \"Wettercheck Werdenfels\". Der Skill ruft Open-Meteo (ICON-D2) ab und liefert eine Profi-Einschaetzung mit Tagesablauf, Steigwerten, Basishöhe, Alpen-Besonderheiten (Foehn, Hangflug) und Warnungen.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Soaring Weather – Thermikvorhersage für Segelflieger v2.0\n\nScoring-Engine mit 11 gewichteten Parametern inkl. Windscherung, Höhenfeuchte,\nFöhn-Erkennung, Hangflug-Bonus und Gewittersicherheits-Cap."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Schritt 1: Region erfragen] ```bash\npython3 {baseDir}/scripts/run_forecast.py --list-regions\n```\n\nStelle dem User die Optionen zur Auswahl:\n\n> Für welche Region möchtest du die Thermikvorhersage?\n> 1. 🏔️ Werdenfels / Bayerischer Alpenordrand\n> 2. 🏔️ Inntal / Nordtiroler Alpen\n> 3. ⛰️ Schwäbische Alb\n> 4. 🌲 Schwarzwald\n> 5. 🌾 Norddeutsches Flachland\n> 6. 📍 Eigene Koordinaten eingeben\n\nFalls der User bereits eine Region nennt, überspringe die Frage."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Schritt 2: Vorhersage abrufen] ```bash\npython3 {baseDir}/scripts/run_forecast.py --region <region_id> [--days 3]\n```\n\nOder mit eigenen Koordinaten:\n\n```bash\npython3 {baseDir}/scripts/run_forecast.py --lat <lat> --lon <lon> --name \"Name\"\n```\n\nDas Script gibt JSON auf stdout aus, Logs auf stderr."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Schritt 3: Ergebnis formatieren] ### Tagesübersicht (pro Tag)\n\n```\n[Emoji] THERMIK-VORHERSAGE – [Standortname]\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 [Wochentag], [Datum]\n🏆 SCORE: [X]/10 — [Label]\n\n🌡️ Thermik-Kern:\n   Steigwerte: ~[X] m/s | Basis: [X]m MSL | BLH: [X]m AGL\n   CAPE max: [X] J/kg\n\n💨 Wind: ⌀[X] km/h | Windscherung: [X] km/h (10m→850hPa)\n💧 Höhenluft (700hPa): [X]% r.F. → [trocken/normal/feucht]\n🌍 Boden: [Feuchte-Bewertung]\n\n[🏔️ Hangflug-Bonus: +X Punkte – Nordwindlage günstig]  ← nur wenn relevant\n[⚠️ Warnungen]\n\n📊 Tagesablauf:\n   09-12: [◉◉◉◎◎] ~[X]m/s · BLH [X]m\n   12-15: [◉◉◉◉◎] ~[X]m/s · BLH [X]m\n   15-18: [◉◉◉◉◉] ~[X]m/s · BLH [X]m\n   18-20: [◉◉◎◎◎] ~[X]m/s · BLH [X]m\n```\n\n### Score-Emoji und Labels\n- 0–2:  ❌ Kein Segelflugwetter\n- 2–4:  🌥️ Eingeschränkt\n- 4–6:  ⛅ Ordentlicher Tag\n- 6–8:  ☀️ Guter Tag\n- 8–10: 🔥 Hammertag!\n\n### Wichtige Warnungstypen\n- 🔴 FÖHN: Score gecappt, Turbulenz am Alpenrand\n- 🔴 Gewittergefahr (CAPE >2000 oder LI <-6): Score hard cap bei 4.5\n- 🔴 Cb-Gefahr: Feuchte 700hPa >65% + CAPE >800 → Score -2\n- ⚠️ Überentwicklung: Früh starten, 14:00 landen\n- ⚠️ Windscherung >30 km/h: Thermikschläuche destabilisiert\n\n### Hangflug-Bonus (nur Alpen)\nWird angezeigt wenn Score >0 Bonus. Erkläre kurz die Windrichtung.\nKein Bonus bei Föhn oder Niederschlag."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Schritt 4: Links anbieten] Am Ende immer:\n- DHV Wetter: https://www.dhv.de/wetter/dhv-wetter/\n- SkySight: https://skysight.io\n- TopMeteo: https://europe.topmeteo.eu/de/\n- DWD Segelflug: https://www.dwd.de/DE/fachnutzer/luftfahrt/kg_segel/segel_node.html\n- Soaringmeteo (WRF 2km): https://soaringmeteo.org/v2\n- aufwin.de: https://aufwin.de"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Parameter-Details] → Siehe `{baseDir}/references/scoring_params.md` für alle Schwellwerte,\n  Gewichte, Formeln und Regionstypen."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Kurzübersicht Scoring-Parameter] | Parameter              | Gewicht | Besonderheit                          |\n|------------------------|---------|---------------------------------------|\n| Grenzschichthöhe BLH   | 18%     | Wichtigster Einzelparameter           |\n| CAPE                   | 12%     | Hard cap bei >2000 J/kg               |\n| Bewölkung low+mid      | 12%     | Cu-Thermik-Bonus bei 15–50%           |\n| Direkte Strahlung      | 10%     | Antrieb der Thermik                   |\n| Lifted Index           | 8%      | Hard cap bei <-6                      |\n| Wind 10m               | 8%      | Zu stark = schlecht                   |\n| Bodenfeuchte           | 8%      | Trockener Boden = bessere Thermik     |\n| **Windscherung →850hPa** | **7%** | **NEU: zerzaust Thermikschläuche**    |\n| **RH 700hPa**          | **7%**  | **NEU: Cb-Früherkennung**             |\n| Vortages-Regen         | 5%      | —                                     |\n| Spread T-Td            | 5%      | Wolkenbasishöhe                       |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "soaring_weather"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/achimace/thermikbuddy/SKILL.md"
+}

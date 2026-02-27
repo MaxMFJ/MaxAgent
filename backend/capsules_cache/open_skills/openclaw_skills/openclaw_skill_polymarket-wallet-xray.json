@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_polymarket-wallet-xray",
+  "description": "X-ray any Polymarket wallet — skill level, entry quality, bot detection, and edge analysis. Queries Polymarket's public APIs, no authentication needed. Inspired by @thejayden's \"Autopsy of a Polymarket Whale\" analysis.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket Wallet X-Ray\n\nAnalyze **any** Polymarket wallet's trading patterns, skill level, and edge detection.\n\n**No authentication needed.** Queries Polymarket's public CLOB API directly.\n\n**Inspired by:** [The Autopsy: How to Read the Mind of a Polymarket Whale](https://x.com/thejayden/status/2020891572389224878) by [@thejayden](https://x.com/thejayden)\n\n> This skill implements the forensic trading analysis framework developed by @thejayden. Read the original post to understand the philosophy behind Time Profitable, hedge checks, bot detection, and accumulation signals.\n\n> **This is an analysis tool, not a trading signal.** The skill returns forensic metrics for ANY Polymarket wallet — your agent uses them to UNDERSTAND traders, learn patterns, and make informed decisions. This is for education and research, not for blindly copying positions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[⚠️ Important Disclaimer] **Past performance does not guarantee future results.** A wallet's historical metrics tell you about:\n- ✅ How they traded *in the past*\n- ✅ Their *historical* win rate and entry quality\n- ❌ NOT whether their strategy will work going forward\n\n**Why copying is risky:**\n- Market conditions change constantly\n- A trader's edge might have been luck, timing, or specific to historical events\n- Slippage and fees erode thin edges to zero\n- Other traders copying the same strategy destroy the edge\n\n**Use this skill to:**\n- ✅ Learn what skilled traders look like (metrics, behavior)\n- ✅ Identify potential anomalies (bots, arbitrageurs)\n- ✅ Understand trader psychology (FOMO vs. discipline)\n- ✅ Inform your own strategy decisions\n\n**DO NOT use this skill to:**\n- ❌ Automatically copytrade wallets\n- ❌ Expect to replicate their returns\n- ❌ Trade on these metrics without understanding why\n- ❌ Risk significant capital on patterns you don't understand"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when you want to:\n- **Learn how skilled traders operate** — What metrics separate winners from losers?\n- **Understand trading psychology** — Who chases prices? Who has discipline?\n- **Detect bots and anomalies** — Identify suspicious patterns for research\n- **Research arbitrage activity** — Find wallets with hedged positions (educational)\n- **Compare trader profiles** — What does a consistent trader look like vs. a lucky one?\n- **Inform your own strategy** — Use patterns as input to YOUR decision-making, not as direct signals\n\n**NOT for:**\n- Copying trades blindly or automatically\n- Assuming past returns = future returns\n- Making large bets on these metrics alone"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Analyze a single wallet\npython wallet_xray.py 0x1234...abcd\n\n# Analyze wallet + only look at specific market\npython wallet_xray.py 0x1234...abcd \"Bitcoin\"\n\n# Compare two wallets head-to-head\npython wallet_xray.py 0x1111... 0x2222... --compare\n\n# Find wallets matching criteria (top Time Profitable in market)\npython wallet_xray.py \"Will BTC hit $100k?\" --top-wallets 5 --dry-run\n\n# Check your account status\npython scripts/status.py\n```\n\n**APIs Used (Public, No Auth Required):**\n- Gamma API: `https://gamma-api.polymarket.com` — Market search\n- CLOB API: `https://clob.polymarket.com` — Trade history and orderbook"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[What You Get Back] The skill returns comprehensive forensic metrics:\n\n```json\n{\n  \"wallet\": \"0x1234...abcd\",\n  \"total_trades\": 156,\n  \"total_period_hours\": 42.5,\n  \"profitability\": {\n    \"time_profitable_pct\": 75.3,\n    \"win_rate_pct\": 68.2,\n    \"avg_profit_per_win\": 0.035,\n    \"avg_loss_per_loss\": -0.018,\n    \"realized_pnl_usd\": 2450.00\n  },\n  \"entry_quality\": {\n    \"avg_slippage_bps\": 28,\n    \"quality_rating\": \"B+\",\n    \"assessment\": \"Good entries, occasional FOMO\"\n  },\n  \"behavior\": {\n    \"is_bot_detected\": false,\n    \"trading_intensity\": \"high\",\n    \"avg_seconds_between_trades\": 45,\n    \"price_chasing\": \"moderate\",\n    \"accumulation_signal\": \"growing\"\n  },\n  \"edge_detection\": {\n    \"hedge_check_combined_avg\": 0.98,\n    \"has_arbitrage_edge\": false,\n    \"assessment\": \"No locked-in edge; relies on direction\"\n  },\n  \"risk_profile\": {\n    \"max_drawdown_pct\": 12.5,\n    \"volatility\": \"medium\",\n    \"max_position_concentration\": 0.22\n  },\n  \"recommendation\": \"Good trader. Skilled entries, disciplined sizing. Good metrics for learning from. Not advice to copytrade.\"\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Fetch trade history** — Download all trades this wallet made from Polymarket via Simmer API\n2. **Compute profitability timeline** — When were they underwater vs. profitable?\n3. **Analyze entry quality** — Did they buy at optimal prices or chase?\n4. **Detect trading patterns** — Bot (inhuman speed) vs. human (deliberate timing)?\n5. **Check for arbitrage** — Combined YES+NO avg < $1.00? (Potential structural edge — depends on execution and fees)\n6. **Assess behavior** — FOMO accumulation? Disciplined sizing? Rotating positions?\n7. **Generate recommendation** — Is this wallet worth following? What's the risk?"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Understanding the Metrics] ### ⏱️ **Time Profitable** (e.g., 75.3%)\nWallet was profitable (not underwater) for 75% of their trading period. This wallet endured only 25% painful drawdowns — that's discipline.\n\n- **>80%** = Sniper-like (skilled entries, holds through drawdowns)\n- **50-80%** = Solid (good discipline)\n- **<50%** = Risky (likely panic-held losses)\n\n### 🎯 **Entry Quality** (e.g., 28 bps average slippage)\nThey buy near the best available price. 28 basis points is normal for active traders. No evidence of FOMO market orders.\n\n- **<20 bps** = Expert. Limit orders, patience.\n- **20-40 bps** = Good. Balanced speed/price.\n- **>50 bps** = Weak. Chasing prices.\n\n### 🤖 **Bot Detection** (e.g., false)\nAverage 45 seconds between trades. This is human. A bot would be <1 second.\n\n- **<5 sec** = Likely bot. Avoid unless you know it's a legitimate market maker.\n- **5-30 sec** = Possible bot.\n- **>30 sec** = Human.\n\n### 💰 **Hedge Check** (e.g., combined avg 0.98)\nIf they bought YES at $0.70 and NO at $0.30, combined = $1.00. This wallet spent exactly what they should to be neutral.\n\nIf combined < $1.00, they may have entered with a structural edge (lower combined cost than $1 payout). Actual profit depends on execution, fees, and spread.\n\n- **< $0.95** = Strong potential edge. Likely institutional/pro.\n- **$0.95-1.00** = Slight edge detected.\n- **> $1.00** = No edge; betting on direction."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Usage Examples] ### **Example 1: Learning from a skilled trader (Analysis)**\n\n```python\nimport subprocess\nimport json\n\n# Analyze a wallet known for skilled trading\nresult = subprocess.run(\n    [\"python\", \"wallet_xray.py\", \"0x123...abc\", \"--json\"],\n    capture_output=True,\n    text=True\n)\ndata = json.loads(result.stdout)\n\n# LEARN from their profile, don't copy blindly\ntime_prof = data[\"profitability\"][\"time_profitable_pct\"]\nentry_qual = data[\"entry_quality\"][\"quality_rating\"]\n\nprint(f\"📊 What this trader does well:\")\nprint(f\"  • Time Profitable: {time_prof}% (disciplined)\")\nprint(f\"  • Entry Quality: {entry_qual} (patient buyer)\")\nprint(f\"  • Behavior: {data['behavior']['accumulation_signal']} (not FOMO)\")\n\n# THEN: Ask yourself\n# - Why are they profitable? (skill or luck?)\n# - Can I replicate their decision-making process?\n# - Do I have their capital size, timing, or information?\n```\n\n### **Example 2: Research anomalies (Education)**\n\n```python\n# Analyze multiple wallets to understand patterns\nwallets = [\"0x111...\", \"0x222...\", \"0x333...\"]\n\nprint(\"Comparing trader profiles:\")\nfor wallet in wallets:\n    result = subprocess.run(\n        [\"python\", \"wallet_xray.py\", wallet, \"--json\"],\n        capture_output=True,\n        text=True\n    )\n    data = json.loads(result.stdout)\n\n    is_bot = \"🤖 BOT\" if data[\"behavior\"][\"is_bot_detected\"] else \"👤 HUMAN\"\n    print(f\"\\n{wallet}: {is_bot}\")\n    print(f\"  Win Rate: {data['profitability']['win_rate_pct']}%\")\n    print(f\"  Time Profitable: {data['profitability']['time_profitable_pct']}%\")\n\n# Use this data to understand what successful trading LOOKS LIKE\n# Then build your own strategy based on these insights\n```\n\n### **Example 3: Informed decision-making (NOT blind copying)**\n\n```python\n# Analyze before you decide what to do\nresult = subprocess.run(\n    [\"python\", \"wallet_xray.py\", \"0x123...abc\", \"--json\"],\n    capture_output=True,\n    text=True\n)\ndata = json.loads(result.stdout)\n\n# Make an INFORMED decision based on analysis + YOUR OWN JUDGMENT\nif "
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Running the Skill] **Analyze a single wallet (default):**\n```bash\npython wallet_xray.py 0x1234...abcd\n```\n\n**Analyze wallet for a specific market:**\n```bash\npython wallet_xray.py 0x1234...abcd \"Bitcoin\"\n```\n\n**Output as JSON (for scripts):**\n```bash\npython wallet_xray.py 0x1234...abcd --json\n```\n\n**Compare two wallets:**\n```bash\npython wallet_xray.py 0x1111... 0x2222... --compare\n```\n\n**Limit analysis to recent trades (faster):**\n```bash\npython wallet_xray.py 0x1234...abcd --limit 100\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Wallet has no trades\"**\n- This wallet hasn't traded yet, or all trades are too old\n- Try a wallet you know is active\n\n**\"Market not found\"**\n- The market query didn't match anything on Polymarket\n- Try a more specific market name or leave it blank to analyze all markets\n\n**\"Analysis took too long\"**\n- For wallets with >500 trades, analysis can take 30+ seconds\n- Use `--limit 100` to analyze only recent trades for faster results\n\n**\"API rate limited\"**\n- You're analyzing many wallets in quick succession\n- Wait a minute before trying again, or use `--limit` to speed up individual analyses\n\n**\"Connection error\"**\n- Check that Polymarket's CLOB API is reachable: `curl https://clob.polymarket.com/trades`\n- If down, try again later or use `--limit 50` to reduce load"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Credits] This skill is based on the forensic trading analysis framework from [@thejayden's \"Autopsy of a Polymarket Whale\"](https://x.com/thejayden/status/2020891572389224878).\n\nThe original post shows how to:\n- Spot fake gurus (high PnL, terrible entries)\n- Detect bots (inhuman trading speed)\n- Find arbitrage opportunities (hedged positions)\n- Understand trader psychology (FOMO vs. discipline)\n\nAll metrics and analysis patterns used here are derived from that work. If you find this useful, give the original post a read and follow [@thejayden](https://x.com/thejayden)."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Links] - **Full Simmer API Reference:** [simmer.markets/docs.md](https://simmer.markets/docs.md)\n- **Original Analysis:** [The Autopsy: How to Read the Mind of a Polymarket Whale](https://x.com/thejayden/status/2020891572389224878)\n- **Dashboard:** [simmer.markets/dashboard](https://simmer.markets/dashboard)\n- **Support:** [Telegram](https://t.me/+m7sN0OLM_780M2Fl)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_wallet_xray"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔍",
+        "requires": {
+          "env": [],
+          "pip": []
+        },
+        "cron": null,
+        "autostart": false
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-wallet-xray/SKILL.md"
+}

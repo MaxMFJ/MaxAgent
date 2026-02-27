@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_ms-outlook-teams-assistant",
+  "description": "Track and nag about Microsoft Outlook email and (optionally) Microsoft Teams messages on a Windows machine, without relying on web versions. Use when the user asks to: (1) monitor inbox/mentions and remind them on Telegram/Teams until dismissed, (2) draft short, personable, low-jargon email replies from an existing Outlook thread, (3) surface action items from the last N days (default 7). Works via Outlook Desktop automation (COM) and optionally Microsoft Graph for Teams if configured.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MS Outlook + Teams Assistant (Desktop-first)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What this skill does] - **Inbox nagging (Outlook Desktop)**: find messages from the last 7 days that likely need a reply, then send reminders until dismissed.\n- **Email reply drafting**: produce concise drafts that match the user’s tone rules (conversational, spartan, polite; simple English; short; reduce redundancy; avoid em dashes).\n- **Teams tracking (optional)**: if Microsoft Graph is configured and permitted by tenant policy, track recent Teams chat messages that likely need a reply and nag similarly."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Safety defaults] - Do **not** auto-send emails or Teams messages.\n- Create **drafts** in Outlook, or paste drafts into Telegram for approval.\n- For reminders: send to **Telegram** by default; only send to Teams if explicitly enabled."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup (one time)] ### A) Outlook Desktop automation (recommended)\n\n1. Ensure Outlook Desktop is installed and signed in.\n2. Install the Python dependency (ask before doing this on the machine):\n   - `pip install pywin32`\n3. Create a config file:\n   - Copy `references/config.example.json` → `references/config.json` and fill it.\n   - IMPORTANT: Do not commit `references/config.json` if it contains personal IDs.\n\n### B) Teams via Graph (optional)\n\nOnly if you can create an Entra ID app registration and grant permissions.\n\n- Copy `references/config.example.json` → `references/config.json` and fill `teams.tenantId`, `teams.clientId`, and `teams.scopes`.\n- Then run `scripts/teams_scan.py` once to complete Device Code sign-in.\n\nSee `references/teams-graph-setup.md`."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core workflows] ### 1) Scan and remind (Outlook)\n\nUse `scripts/scan_outlook.py`.\n\n### 1b) Scan Teams (Graph)\n\nUse `scripts/teams_scan.py`.\n\nParameters:\n- `--days 7` (default)\n\nFirst run will print a **device code** sign-in message (follow it once).\n\nParameters:\n- `--days 7` (default)\n- `--mode report|telegram` (default: report)\n- `--max-items 200`\n\nHeuristics (editable in config):\n- Within last N days\n- Not from obvious broadcast sources\n- Prefer threads where user is **To:** (not only CC) OR subject/body contains direct asks\n- Prefer messages not replied by user (best-effort)\n\nOutput:\n- A list of actionable items with: subject, sender, received time, why it was flagged.\n\nThen:\n- If `--mode telegram`, send a single concise reminder message with bullet items.\n\n### 2) Dismiss / snooze an item\n\nThis skill uses a local state file to avoid nag loops.\n\n- Dismiss: add the message’s `internetMessageId` (or subject+timestamp fallback) to the dismissed list.\n- Snooze: store a `snoozeUntil` timestamp.\n\nUse `scripts/state.py` helpers (or edit JSON directly if needed).\n\n### 3) Draft an email reply (Outlook)\n\nUse `scripts/draft_reply.py`.\n\n### 4) Generate reminders (no send)\n\nUse `scripts/scan_all.py` to update cached scan results, then `scripts/remind.py` to generate a Telegram-ready reminder message (it does not send).\nIt applies:\n- 1:1 Teams → remind when `needsReply=true`\n- Group Teams → remind when `mentionedMe=true` AND `needsReply=true`\n- Outlook → remind for flagged items\n\nThe agent should send the output to Telegram if non-empty.\n\nInputs:\n- Either a message `EntryID` (preferred) or search by subject + recent window.\n\nBehavior:\n- Extract the thread (best-effort) + key metadata.\n- Generate 2 drafts:\n  - **Short** (2–5 sentences)\n  - **Normal** (5–10 sentences)\n- Apply tone rules from `references/writing-style.md`.\n\nOutputs:\n- Print drafts to stdout.\n- Optionally create an Outlook **draft reply** (no sending) if `--create-draft` is set."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[When you need more context from the user] Ask only what you cannot infer:\n- Which email to reply to (subject / sender / when)\n- The user’s intent (agree/decline/ask for info/confirm timeline)\n- Any constraints (deadlines, attachments, names)\n\nKeep questions minimal (max 3 at a time)."
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ms_outlook_teams_assistant"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhinavjp/ms-outlook-teams-assistant/SKILL.md"
+}

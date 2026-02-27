@@ -1,0 +1,109 @@
+{
+  "id": "openclaw_skill_afrexai-code-reviewer",
+  "description": "Enterprise-grade code review agent. Reviews PRs, diffs, or code files for security vulnerabilities, performance issues, error handling gaps, architecture smells, and test coverage. Works with any language, any repo, no dependencies required.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Code Review Engine\n\nEnterprise-grade automated code review. Works on GitHub PRs, local diffs, pasted code, or entire files. No dependencies — pure agent intelligence."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Review a GitHub PR\n```\nReview PR #42 in owner/repo\n```\n\n### Review a local diff\n```\nReview the staged changes in this repo\n```\n\n### Review a file\n```\nReview src/auth/login.ts for security issues\n```\n\n### Review pasted code\nJust paste code and say \"review this\"\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Review Framework: SPEAR] Every review follows the **SPEAR** framework — 5 dimensions, each scored 1-10:\n\n### 🔴 S — Security (Weight: 3x)\n| Check | Severity | Example |\n|-------|----------|---------|\n| Hardcoded secrets | CRITICAL | API keys, passwords, tokens in source |\n| SQL injection | CRITICAL | String concatenation in queries |\n| XSS vectors | HIGH | Unsanitized user input in HTML/DOM |\n| Path traversal | HIGH | User input in file paths without validation |\n| Insecure deserialization | HIGH | `eval()`, `pickle.loads()`, `JSON.parse` on untrusted input |\n| Auth bypass | CRITICAL | Missing auth checks on endpoints |\n| SSRF | HIGH | User-controlled URLs in server requests |\n| Timing attacks | MEDIUM | Non-constant-time string comparison for secrets |\n| Dependency vulnerabilities | MEDIUM | Known CVEs in imported packages |\n| Sensitive data logging | MEDIUM | PII, tokens, passwords in log output |\n| Insecure randomness | MEDIUM | `Math.random()` for security-sensitive values |\n| Missing rate limiting | MEDIUM | Auth endpoints without throttling |\n\n### 🟡 P — Performance (Weight: 2x)\n| Check | Severity | Example |\n|-------|----------|---------|\n| N+1 queries | HIGH | DB call inside a loop |\n| Unbounded queries | HIGH | `SELECT *` without LIMIT on user-facing endpoints |\n| Missing indexes (implied) | MEDIUM | Frequent WHERE/ORDER on unindexed columns |\n| Memory leaks | HIGH | Event listeners never removed, growing caches |\n| Blocking main thread | HIGH | Sync I/O in async context, CPU-heavy in event loop |\n| Unnecessary re-renders | MEDIUM | React: missing memo, unstable refs in deps |\n| Large bundle imports | MEDIUM | `import _ from 'lodash'` vs `import get from 'lodash/get'` |\n| Missing pagination | MEDIUM | Returning all records to client |\n| Redundant computation | LOW | Same expensive calc repeated without caching |\n| Connection pool exhaustion | HIGH | Not releasing DB/HTTP connections |\n\n### 🟠 E — Error Handling (Weight: 2x)\n| Check | Severity | Example |\n|-------|----------|---------|"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scoring System] ### Per-Finding Severity\n```\nCRITICAL  → -3 points from dimension score\nHIGH      → -2 points\nMEDIUM    → -1 point\nLOW       → -0.5 points\nINFO      → 0 (suggestion only)\n```\n\n### Overall SPEAR Score Calculation\n```\nRaw Score = (S×3 + P×2 + E×2 + A×1.5 + R×1.5) / 10\nFinal Score = Raw Score × 10  (scale 0-100)\n```\n\n### Verdict Thresholds\n| Score | Verdict | Action |\n|-------|---------|--------|\n| 90-100 | ✅ EXCELLENT | Ship it |\n| 75-89 | 🟢 GOOD | Minor suggestions, approve |\n| 60-74 | 🟡 NEEDS WORK | Address findings before merge |\n| 40-59 | 🟠 SIGNIFICANT ISSUES | Major rework needed |\n| 0-39 | 🔴 BLOCK | Critical issues, do not merge |\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Review Output Template] Use this structure for every review:\n\n```markdown\n# Code Review: [PR title or file name]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Summary] [1-2 sentence overview of what this code does and overall quality]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[SPEAR Score: [X]/100 — [VERDICT]] | Dimension | Score | Key Finding |\n|-----------|-------|-------------|\n| 🔴 Security | X/10 | [worst finding or \"Clean\"] |\n| 🟡 Performance | X/10 | [worst finding or \"Clean\"] |\n| 🟠 Error Handling | X/10 | [worst finding or \"Clean\"] |\n| 🔵 Architecture | X/10 | [worst finding or \"Clean\"] |\n| 📊 Reliability | X/10 | [worst finding or \"Clean\"] |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Findings] ### [CRITICAL/HIGH] 🔴 [Title]\n**File:** `path/to/file.ts:42`\n**Category:** Security\n**Issue:** [What's wrong]\n**Impact:** [What could happen]\n**Fix:**\n```[lang]\n// suggested fix\n```\n\n### [MEDIUM] 🟡 [Title]\n..."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[What's Done Well] - [Genuinely good patterns worth calling out]"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Recommendations] 1. [Prioritized action items]\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Language-Specific Patterns] ### TypeScript / JavaScript\n- `any` type usage → Architecture finding\n- `as` type assertions → potential runtime error\n- `console.log` in production code → Style\n- `==` instead of `===` → Reliability\n- Missing `async/await` error handling\n- `useEffect` missing cleanup return\n- Index signatures without validation\n\n### Python\n- Bare `except:` or `except Exception:` → Error Handling\n- `eval()` / `exec()` → Security CRITICAL\n- Mutable default arguments → Reliability\n- `import *` → Architecture\n- Missing `__init__.py` type hints\n- f-strings with user input → potential injection\n\n### Go\n- `_ :=` discarding errors → Error Handling HIGH\n- `panic()` in library code → Reliability HIGH\n- Missing `defer` for resource cleanup\n- Exported functions without doc comments\n- `interface{}` / `any` overuse\n\n### Java\n- Catching `Exception` or `Throwable` → Error Handling\n- Missing `@Override` annotations\n- Mutable static fields → thread safety\n- `System.out.println` in production\n- Missing null checks (pre-Optional code)\n\n### SQL\n- String concatenation in queries → Security CRITICAL\n- `SELECT *` → Performance\n- Missing WHERE on UPDATE/DELETE → Security CRITICAL\n- No LIMIT on user-facing queries → Performance\n- Missing indexes for JOIN columns\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Advanced Techniques] ### Reviewing for Business Logic\nBeyond code quality, check:\n- Does the code match the PR description / ticket requirements?\n- Are there edge cases the spec didn't mention?\n- Could this break existing functionality?\n- Is there a simpler way to achieve the same result?\n\n### Reviewing for Operability\n- Can this be debugged in production? (logging, error messages)\n- Can this be rolled back safely?\n- Are feature flags needed?\n- What monitoring should accompany this change?\n\n### Reviewing Database Changes\n- Is the migration reversible?\n- Will it lock tables during migration?\n- Are there indexes for new query patterns?\n- Is there a data backfill needed?\n\n### Security Review Depth Levels\n| Level | When | What |\n|-------|------|------|\n| Quick | Internal tool, trusted input | OWASP Top 10 patterns only |\n| Standard | User-facing feature | + auth, input validation, output encoding |\n| Deep | Payment, auth, PII handling | + crypto review, session management, audit logging |\n| Threat Model | New service/API surface | + attack surface mapping, trust boundaries |\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Integration Patterns] ### GitHub PR Review\n```bash\n# Get PR diff\ngh pr diff 42 --repo owner/repo\n\n# Get PR details\ngh pr view 42 --repo owner/repo --json title,body,files,commits\n\n# Post review comment\ngh pr review 42 --repo owner/repo --comment --body \"review content\"\n```\n\n### Local Git Review\n```bash\n# Review staged changes\ngit diff --cached\n\n# Review branch vs main\ngit diff main..HEAD\n\n# Review last N commits\ngit log -5 --oneline && git diff HEAD~5..HEAD\n```\n\n### Heartbeat / Cron Integration\n```\nCheck for open PRs in [repo] that I haven't reviewed yet.\nFor each, run a SPEAR review and post the results as a PR comment.\n```\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Edge Cases & Gotchas] - **Large PRs (>500 lines):** Break into logical chunks. Review file-by-file. Flag the PR size itself as a finding (Architecture: \"PR too large — consider splitting\").\n- **Generated code:** Skip generated files (proto, swagger, migrations from ORMs). Note that you skipped them.\n- **Dependency updates:** Focus on breaking changes in changelogs, not the lockfile diff.\n- **Merge conflicts markers:** Flag immediately as CRITICAL — `<<<<<<<` in code means broken merge.\n- **Binary files:** Note presence, can't review content.\n- **Config changes:** Extra scrutiny — wrong env var = production outage.\n- **Refactors:** Verify behavior preservation. Check if tests still pass conceptually.\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Review Checklist (Quick Mode)] For fast reviews when full SPEAR isn't needed:\n\n- [ ] No hardcoded secrets or credentials\n- [ ] No SQL injection / XSS / path traversal\n- [ ] All errors handled (no empty catch, no discarded errors)\n- [ ] No N+1 queries or unbounded operations\n- [ ] Tests exist for new/changed logic\n- [ ] No `console.log` / `print` / `fmt.Print` left in\n- [ ] Functions under 50 lines, files under 300 lines\n- [ ] Types are specific (no `any` / `interface{}`)\n- [ ] PR description matches the actual changes\n- [ ] No TODOs without linked issues"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_code_reviewer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-code-reviewer/SKILL.md"
+}

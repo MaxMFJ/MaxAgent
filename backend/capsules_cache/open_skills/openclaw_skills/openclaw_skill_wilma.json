@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_wilma",
+  "description": "Access Finland's Wilma school system from AI agents. Fetch schedules, homework, exams, grades, messages, and news via the wilma CLI. Start with `wilma summary --json` for a full daily briefing, or drill into specific data with individual commands.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Wilma Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Wilma is the Finnish school information system used by schools and municipalities to share messages, news, exams, schedules, homework, and other student-related updates with parents/guardians.\n\nUse the `wilma` / `wilmai` CLI in non-interactive mode to retrieve Wilma data for AI agents. Prefer `--json` outputs and avoid interactive prompts."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ### Install\n```bash\nnpm i -g @wilm-ai/wilma-cli\n```\n\n1. Ensure the user has run the interactive CLI once to create `~/.config/wilmai/config.json`.\n2. Use non-interactive commands with `--json`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core tasks] ### Daily briefing (start here)\n```bash\nwilma summary --student <id|name> --json\nwilma summary --all-students --json\n```\nReturns today's and tomorrow's schedule, upcoming exams, recent homework, recent news, and recent messages in one call. This is the best starting point for any parent-facing summary.\n\n### Schedule\n```bash\nwilma schedule list --when today --student <id|name> --json\nwilma schedule list --when tomorrow --student <id|name> --json\nwilma schedule list --when week --student <id|name> --json\n```\n\n### Homework\n```bash\nwilma homework list --student <id|name> --json\n```\n\n### Upcoming exams\n```bash\nwilma exams list --student <id|name> --json\n```\n\n### Exam grades\n```bash\nwilma grades list --student <id|name> --json\n```\n\n### List students\n```bash\nwilma kids list --json\n```\n\n### News and messages\n```bash\nwilma news list --student <id|name> --json\nwilma news read <id> --student <id|name> --json\nwilma messages list --student <id|name> --folder inbox --json\nwilma messages read <id> --student <id|name> --json\n```\n\n### Fetch data for all students\nAll list commands support `--all-students`:\n```bash\nwilma summary --all-students --json\nwilma homework list --all-students --json\nwilma exams list --all-students --json\n```\n\nYou can also pass a name fragment for `--student` (fuzzy match)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Notes] - If no `--student` is provided, the CLI uses the last selected student from `~/.config/wilmai/config.json` (or `$XDG_CONFIG_HOME/wilmai/config.json`).\n- If multiple students exist and no default is set, the CLI will print a helpful error with the list of students.\n- When the account has multiple students, `--student` is **required** for read commands.\n- If auth expires or the CLI says no saved profile, re-run `wilma` interactively or use `wilma config clear` to reset.\n- Run `wilma update` to update the CLI to the latest version."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Actionability guidance (for parents)] Wilma contains a mix of urgent items and general info. When summarizing for parents, prioritize **actionable** items:\n\n**Include** items that:\n- Require action or preparation (forms, replies, permissions, materials to bring).\n- Announce a deadline or time-specific requirement.\n- Describe a schedule deviation or noteworthy event (trips, themed days, school closures, exams).\n- Mention homework, exams, or upcoming deadlines.\n\n**De-prioritize** items that:\n- Are purely informational with no action, deadline, or schedule impact.\n- Are generic announcements unrelated to the target period.\n\nWhen in doubt, **include** and let the parent decide. Prefer a short, structured summary with dates and IDs."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Scripts] Use `scripts/wilma-cli.sh` for a stable wrapper around the CLI."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Links] - **GitHub:** https://github.com/aikarjal/wilmai\n- **Website:** https://wilm.ai"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "wilma"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "wilma"
+          ],
+          "configPaths": [
+            "~/.config/wilmai/config.json"
+          ]
+        },
+        "install": [
+          {
+            "id": "node",
+            "kind": "node",
+            "package": "@wilm-ai/wilma-cli",
+            "bins": [
+              "wilma"
+            ],
+            "label": "Install Wilma CLI (npm)"
+          }
+        ],
+        "credentials": {
+          "note": "Requires a local Wilma config file (~/.config/wilmai/config.json or $XDG_CONFIG_HOME/wilmai/config.json) created by running the CLI interactively once. This stores Wilma session credentials for accessing student data."
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aikarjal/wilma/SKILL.md"
+}

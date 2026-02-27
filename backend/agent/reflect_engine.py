@@ -12,6 +12,7 @@ from datetime import datetime
 from openai import AsyncOpenAI
 
 from .action_schema import TaskContext, ActionLog
+from .llm_utils import extract_text_from_content
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,8 @@ class ReflectEngine:
                 temperature=0.3
             )
             
-            content = response.choices[0].message.content
+            raw = getattr(response.choices[0].message, "content", None)
+            content = extract_text_from_content(raw)
             return ReflectResult.from_llm_response(content)
             
         except Exception as e:
@@ -213,7 +215,8 @@ class ReflectEngine:
                 temperature=0.3
             )
             
-            content = response.choices[0].message.content
+            raw = getattr(response.choices[0].message, "content", None)
+            content = extract_text_from_content(raw)
             
             text = content.strip()
             if text.startswith("```json"):
@@ -287,7 +290,8 @@ class ReflectEngine:
                 temperature=0.3
             )
             
-            content = response.choices[0].message.content
+            raw = getattr(response.choices[0].message, "content", None)
+            content = extract_text_from_content(raw)
             
             text = content.strip()
             if text.startswith("```json"):

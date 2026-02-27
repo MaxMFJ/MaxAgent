@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_line-client",
+  "description": "LINE messaging integration via Chrome extension gateway. Send/read LINE messages, manage contacts, groups, profile, and reactions. Authenticate with QR code login. Provides HMAC-signed API access through the Chrome extension gateway (line-chrome-gw.line-apps.com).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LINE Client Skill\n\nFull LINE messaging client via the Chrome extension gateway JSON API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Repo & Files] - **Repo:** `/data/workspace/line-client` ([github.com/2manslkh/line-api](https://github.com/2manslkh/line-api))\n- **Main client:** `src/chrome_client.py` → `LineChromeClient`\n- **QR login:** `src/auth/qr_login.py` → `QRLogin`\n- **HMAC signer:** `src/hmac/signer.js` (Node.js, auto-starts on port 18944)\n- **Token storage:** `~/.line-client/tokens.json`\n- **Certificate cache:** `~/.line-client/sqr_cert`\n- **WASM files:** `lstm.wasm` + `lstmSandbox.js` (required, in repo root)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```python\nimport json\nfrom pathlib import Path\nfrom src.chrome_client import LineChromeClient\n\ntokens = json.loads((Path.home() / \".line-client\" / \"tokens.json\").read_text())\nclient = LineChromeClient(auth_token=tokens[\"auth_token\"])\n\n# Send a message\nclient.send_message(\"U...\", \"Hello!\")\n\n# Get profile\nprofile = client.get_profile()\n```\n\nTokens expire in ~7 days. If expired (`APIError(10051)`), re-run QR login."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[QR Login (Authentication)] QR login requires user interaction: scan QR on phone + enter PIN.\n\n```python\nfrom src.hmac import HmacSigner\nfrom src.auth.qr_login import QRLogin\nimport qrcode\n\nsigner = HmacSigner(mode=\"server\")\nlogin = QRLogin(signer)\nresult = login.run(\n    on_qr=lambda url: send_qr_image_to_user(qrcode.make(url)),\n    on_pin=lambda pin: send_pin_to_user_IMMEDIATELY(pin),  # TIME SENSITIVE!\n    on_status=lambda msg: print(msg),\n)\n# result.auth_token, result.mid, result.refresh_token\n```\n\n**Critical:** The PIN must reach the user within ~60 seconds. Send it the instant `on_pin` fires.\n\n### QR Login State Machine\n1. `createSession` → session ID\n2. `createQrCode` → callback URL (append `?secret={curve25519_pubkey}&e2eeVersion=1`)\n3. `checkQrCodeVerified` — poll until scan (uses `X-Line-Session-ID`, no `origin` header)\n4. **`verifyCertificate`** — MUST be called even if it fails (required state transition!)\n5. `createPinCode` → 6-digit PIN (skip if cert verified in step 4)\n6. `checkPinCodeVerified` — poll until user enters PIN\n7. `qrCodeLoginV2` → JWT token + certificate + refresh token\n\n### Server-Side Login Script\n```bash\npython scripts/qr_login_server.py /tmp/qr.png\n```\nEmits JSON events on stdout: `{\"event\": \"qr\", \"path\": \"...\", \"url\": \"...\"}`, `{\"event\": \"pin\", \"pin\": \"123456\"}`, `{\"event\": \"done\", \"mid\": \"U...\"}`."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[All API Methods] ### Contacts & Friends\n\n| Method | Args | Description |\n|--------|------|-------------|\n| `get_profile()` | — | Get your own profile (displayName, mid, statusMessage, etc.) |\n| `get_contact(mid)` | mid: str | Get a single contact's profile |\n| `get_contacts(mids)` | mids: list[str] | Get multiple contacts |\n| `get_all_contact_ids()` | — | List all friend MIDs |\n| `find_contact_by_userid(userid)` | userid: str | Search by LINE ID |\n| `find_and_add_contact_by_mid(mid)` | mid: str | Add friend by MID |\n| `find_contacts_by_phone(phones)` | phones: list[str] | Search by phone numbers |\n| `add_friend_by_mid(mid)` | mid: str | Add friend (RelationService) |\n| `get_blocked_contact_ids()` | — | List blocked MIDs |\n| `get_blocked_recommendation_ids()` | — | List blocked recommendations |\n| `block_contact(mid)` | mid: str | Block a contact |\n| `unblock_contact(mid)` | mid: str | Unblock a contact |\n| `block_recommendation(mid)` | mid: str | Block a friend suggestion |\n| `update_contact_setting(mid, flag, value)` | mid, flag: int, value: str | Update contact setting (e.g. mute) |\n| `get_favorite_mids()` | — | List favorited contact MIDs |\n| `get_recommendation_ids()` | — | List friend suggestions |\n\n### Messages\n\n| Method | Args | Description |\n|--------|------|-------------|\n| `send_message(to, text, ...)` | to: str, text: str, reply_to: str (opt) | Send a text message. Supports replies via `reply_to=message_id` |\n| `unsend_message(message_id)` | message_id: str | Unsend/delete a sent message |\n| `get_recent_messages(chat_id, count=50)` | chat_id: str | Get latest messages in a chat |\n| `get_previous_messages(chat_id, end_seq, count=50)` | chat_id, end_seq: int | Paginated history (older messages) |\n| `get_messages_by_ids(message_ids)` | message_ids: list[str] | Fetch specific messages |\n| `get_message_boxes(count=50)` | — | Get chat list with last message (inbox view) |\n| `get_message_boxes_by_ids(chat_ids)` | chat_ids: list[str] | Get specific chats with last message |\n| `ge"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[MID Format] LINE identifies entities by MID:\n- `U...` or `u...` → User (toType=0)\n- `C...` or `c...` → Group chat (toType=2)\n- `R...` or `r...` → Room (toType=1)\n\nThe client auto-detects `toType` from the MID prefix when sending messages."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[HMAC Signing] All API calls require `X-Hmac` header. The WASM signer handles this automatically:\n- Derives key from version \"3.7.1\" + access token via proprietary KDF (in lstm.wasm)\n- Signs `path + body` → base64 → `X-Hmac`\n- Server mode: ~13ms/sign (Node.js HTTP server on port 18944, auto-started)\n- Subprocess mode: ~2s/sign (fallback)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] ```python\nfrom src.chrome_client import APIError\n\ntry:\n    client.send_message(mid, \"test\")\nexcept APIError as e:\n    print(e.code, e.api_message)\n    # 10051 = session expired / invalid\n    # 10052 = HTTP error from backend\n    # 10102 = invalid arguments\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Architecture] ```\nUser's Phone (LINE app)\n    ↕ (scan QR / enter PIN)\nLINE Servers (line-chrome-gw.line-apps.com)\n    ↕ (JSON REST + X-Hmac signing)\nLineChromeClient (this repo)\n    ↕ (WASM HMAC via Node.js signer)\nlstm.wasm + lstmSandbox.js\n```\n\nThe Chrome Gateway translates JSON ↔ Thrift internally. We never deal with Thrift binary — everything is clean JSON."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "line_client"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2manslkh/line-client/SKILL.md"
+}

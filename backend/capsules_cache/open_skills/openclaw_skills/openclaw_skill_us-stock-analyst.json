@@ -1,0 +1,118 @@
+{
+  "id": "openclaw_skill_us-stock-analyst",
+  "description": "Professional US stock analysis with financial data, news, social sentiment, and multi-model AI. Comprehensive reports at $0.02-0.10 per analysis.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # US Stock Analyst 📈\n\n**Professional equity analysis powered by AIsa's unified API platform.**\n\nOne API key. Complete market intelligence. AI-powered insights."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🔥 What Can You Do?] ### Investment Research\n```\n\"Analyze NVDA: financial metrics, analyst estimates, insider trades, \nnews sentiment, and AI-powered valuation\"\n```\n\n### Portfolio Monitoring\n```\n\"Track my portfolio (AAPL, MSFT, GOOGL): daily updates on metrics, \nnews, and sentiment changes\"\n```\n\n### Earnings Analysis\n```\n\"Full Tesla Q4 earnings analysis: results vs estimates, guidance, \nprice reaction, analyst updates\"\n```\n\n### Competitor Analysis\n```\n\"Compare AMD vs NVDA: financials, growth, valuation, market sentiment\"\n```\n\n### Screening & Discovery\n```\n\"Find tech stocks with P/E < 30, revenue growth > 20%, \nand positive insider activity\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nexport AISA_API_KEY=\"your-key\"\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 📊 Financial Data (MarketPulse APIs)\n\n**Real-time Financial Metrics**\n```bash\ncurl \"https://api.aisa.one/apis/v1/financial/financial-metrics/snapshot?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\nReturns: Market cap, P/E ratio, revenue, EPS, profit margin, ROE, debt/equity, and more.\n\n**Historical Stock Prices**\n```bash\n# Daily prices for last 30 days\ncurl \"https://api.aisa.one/apis/v1/financial/prices?ticker=AAPL&start_date=2025-01-01&end_date=2025-01-31&interval=day&interval_multiplier=1\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# 5-minute intraday data\ncurl \"https://api.aisa.one/apis/v1/financial/prices?ticker=AAPL&start_date=2025-02-07&end_date=2025-02-07&interval=minute&interval_multiplier=5\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Financial Statements**\n```bash\n# All statements (income, balance, cash flow)\ncurl \"https://api.aisa.one/apis/v1/financial/financial_statements/all?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Analyst Estimates**\n```bash\n# EPS forecasts and ratings\ncurl \"https://api.aisa.one/apis/v1/financial/analyst/eps?ticker=AAPL&period=annual\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Insider Trading**\n```bash\n# Track insider buy/sell activity\ncurl \"https://api.aisa.one/apis/v1/financial/insider/trades?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Institutional Ownership**\n```bash\n# See who owns the stock\ncurl \"https://api.aisa.one/apis/v1/financial/institutional/ownership?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**SEC Filings**\n```bash\n# Access 10-K, 10-Q, 8-K filings\ncurl \"https://api.aisa.one/apis/v1/financial/sec/filings?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n---\n\n### 📰 News & Research\n\n**Company News**\n```bash\ncurl \"https://api.aisa.one/apis/v1/financial/news?ticker=AAPL&limit=10\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Web Search (News & Articles)**\n```bash\ncurl -X POST \"https://api.aisa.one/apis/v1/"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Python Client] ```bash\n# Basic analysis\npython3 {baseDir}/scripts/stock_analyst.py analyze --ticker AAPL\n\n# Standard analysis with multiple models\npython3 {baseDir}/scripts/stock_analyst.py analyze --ticker NVDA --depth standard --models gpt-4 claude-3-opus\n\n# Deep analysis (all data sources)\npython3 {baseDir}/scripts/stock_analyst.py analyze --ticker TSLA --depth deep\n\n# Quick screening\npython3 {baseDir}/scripts/stock_analyst.py analyze --ticker MSFT --depth quick\n\n# Save report to file\npython3 {baseDir}/scripts/stock_analyst.py analyze --ticker GOOGL --output report.json\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Analysis Depth Options] | Mode | Time | Cost | Data Sources |\n|------|------|------|--------------|\n| **quick** | ~10s | $0.01-0.02 | Metrics, News, Twitter, Basic AI |\n| **standard** | ~20s | $0.02-0.05 | + Analyst Estimates, Insider Trades, YouTube |\n| **deep** | ~30s | $0.05-0.10 | + Statements, Institutional, SEC, Research |\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Reference] | Category | Endpoint | Method | Cost |\n|----------|----------|--------|------|\n| **Financial Metrics** | `/financial/financial-metrics/snapshot` | GET | $0.002 |\n| **Stock Prices** | `/financial/prices` | GET | $0.001 |\n| **News** | `/financial/news` | GET | $0.001 |\n| **Statements** | `/financial/financial_statements/*` | GET | $0.002 |\n| **Analyst Estimates** | `/financial/analyst/eps` | GET | $0.002 |\n| **Insider Trades** | `/financial/insider/trades` | GET | $0.001 |\n| **Institutional** | `/financial/institutional/ownership` | GET | $0.001 |\n| **SEC Filings** | `/financial/sec/filings` | GET | $0.001 |\n| **Web Search** | `/scholar/search/web` | POST | $0.001 |\n| **Scholar Search** | `/scholar/search/scholar` | POST | $0.002 |\n| **Twitter** | `/twitter/tweet/advanced_search` | GET | $0.0004 |\n| **YouTube** | `/youtube/search` | GET | $0.002 |\n| **LLM** | `/v1/chat/completions` | POST | Token-based |\n\nEvery response includes `usage.cost` and `usage.credits_remaining`.\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example Output] ```json\n{\n  \"ticker\": \"NVDA\",\n  \"analysis_date\": \"2025-02-07T10:30:00Z\",\n  \n  \"investment_summary\": \"NVIDIA maintains dominant position in AI chip market with strong data center revenue growth. Recent Blackwell launch positions company for continued expansion...\",\n  \n  \"key_metrics\": {\n    \"market_cap\": 1780500000000,\n    \"pe_ratio\": 68.5,\n    \"revenue\": 60922000000,\n    \"revenue_growth\": 1.26,\n    \"profit_margin\": 0.489,\n    \"roe\": 1.152\n  },\n  \n  \"sentiment_analysis\": {\n    \"sentiment\": \"bullish\",\n    \"confidence\": \"high\",\n    \"key_themes\": [\"AI dominance\", \"Data center growth\", \"Blackwell launch\"],\n    \"summary\": \"Overwhelmingly positive sentiment following Q4 earnings beat\"\n  },\n  \n  \"valuation\": {\n    \"assessment\": \"fairly_valued\",\n    \"price_target_12m\": 850.00,\n    \"reasoning\": \"Premium valuation justified by AI market leadership and strong growth trajectory\"\n  },\n  \n  \"data_sources\": {\n    \"Financial Metrics\": \"Available\",\n    \"Stock News\": 10,\n    \"Analyst Estimates\": \"Available\",\n    \"Insider Trades\": 15,\n    \"Twitter\": \"Available\",\n    \"YouTube\": 5\n  }\n}\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Pricing] **Analysis Costs:**\n- Quick: $0.01-0.02 per stock\n- Standard: $0.02-0.05 per stock\n- Deep: $0.05-0.10 per stock\n\n**Comparison:**\n- Bloomberg Terminal: $2,000/month\n- FactSet: $1,000/month\n- Traditional Analyst Report: $50-500 each\n- **AIsa Stock Analyst: $0.02-0.10 each** ✨\n\n**Cost Breakdown:**\n```\nStandard Analysis ($0.02-0.05):\n├── Financial Metrics: $0.002\n├── Stock Prices: $0.001\n├── Company News: $0.001\n├── Analyst Estimates: $0.002\n├── Insider Trades: $0.001\n├── Twitter: $0.0004\n├── YouTube: $0.002\n└── LLM Analysis: $0.01-0.04\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Use Cases] ### 1. Investment Research\nScreen and analyze stocks before investing:\n```python\nanalyst.analyze_stock(\"NVDA\", depth=\"deep\")\n```\n\n### 2. Portfolio Monitoring\nDaily updates on your holdings:\n```python\nfor ticker in [\"AAPL\", \"MSFT\", \"GOOGL\"]:\n    report = analyst.analyze_stock(ticker, depth=\"quick\")\n```\n\n### 3. Earnings Season\nComprehensive earnings analysis:\n```python\nanalyst.analyze_stock(\"TSLA\", depth=\"standard\")\n# Check estimates, actual results, guidance, reaction\n```\n\n### 4. Insider Tracking\nMonitor insider activity:\n```python\nreport = analyst.analyze_stock(\"META\", depth=\"standard\")\nprint(report['raw_data']['insider_trades'])\n```\n\n### 5. Sentiment Analysis\nTrack market perception:\n```python\nreport = analyst.analyze_stock(\"COIN\", depth=\"standard\")\nprint(report['sentiment_analysis'])\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Compliance] **Disclaimer (Always Included):**\n> This analysis is for informational purposes only and should not be \n> considered personalized investment advice. Please conduct your own \n> research and consult with licensed financial advisors before making \n> investment decisions.\n\n**Regulatory Compliance:**\n- SEC Rule 15c2-1 (not investment advice)\n- FINRA regulations (informational only)\n- GDPR data privacy compliant\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Get Started] 1. Sign up at [aisa.one](https://aisa.one)\n2. Get your API key\n3. Add credits (pay-as-you-go, minimum $5)\n4. Set environment variable: `export AISA_API_KEY=\"your-key\"`\n5. Run analysis: `python scripts/stock_analyst.py analyze --ticker AAPL`\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Full API Documentation] - **API Reference**: https://aisa.mintlify.app/api-reference/introduction\n- **Complete Docs**: https://aisa.mintlify.app/llms.txt\n- **Support**: support@aisa.one\n- **Discord**: https://discord.gg/aisa\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[About AIsa] **AIsa** - Unified API infrastructure for AI agents.\n\nSingle API Key. Pay-Per-Use. Agent-Native.\n\n- Website: https://aisa.one\n- Documentation: https://aisa.mintlify.app"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "us_stock_analyst"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📈",
+        "requires": {
+          "bins": [
+            "curl",
+            "python3"
+          ],
+          "env": [
+            "AISA_API_KEY"
+          ]
+        },
+        "primaryEnv": "AISA_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xjordansg-yolo/openclaw-aisa-us-stock-analyst/US%20Stock%20Analyst%200210v1/SKILL.md"
+}

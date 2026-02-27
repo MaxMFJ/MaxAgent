@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_xint",
+  "description": "X Intelligence CLI — search, analyze, and engage on X/Twitter from the terminal. Use when: (1) user says \"x research\", \"search x for\", \"search twitter for\", \"what are people saying about\", \"what's twitter saying\", \"check x for\", \"x search\", \"search x\", \"find tweets about\", \"monitor x for\", \"track followers\", (2) user is working on  something where recent X discourse would provide useful context (new library releases,  API changes, product launches, cultural events, industry drama), (3) user wants to find  what devs/experts/community thinks about a topic, (4) user needs real-time monitoring (\"watch\"), (5) user wants AI-powered analysis (\"analyze\", \"sentiment\", \"report\"). Also supports: bookmarks, likes, following (read/write), trending topics, Grok AI analysis, and cost tracking. Export as JSON, JSONL (pipeable), CSV, or Markdown. Non-goals: Not for posting tweets, not for DMs, not for enterprise features. Requires OAuth for user-context operations (bookmarks, likes, following, diff).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # xint — X Intelligence CLI\n\nGeneral-purpose agentic research over X/Twitter. Decompose any research question into targeted searches, iteratively refine, follow threads, deep-dive linked content, and synthesize into a sourced briefing.\n\nFor X API details (endpoints, operators, response format): read `references/x-api.md`."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Security Considerations] This skill requires sensitive credentials. Follow these guidelines:\n\n### Credentials\n- **X_BEARER_TOKEN**: Required for X API. Treat as a secret - prefer exported environment variables (optional project-local `.env`)\n- **XAI_API_KEY**: Optional, needed for AI analysis. Also a secret\n- **X_CLIENT_ID**: Optional, needed for OAuth. Less sensitive but don't expose publicly\n- **XAI_MANAGEMENT_API_KEY**: Optional, for collections management\n\n### File Writes\n- This skill writes to its own `data/` directory: cache, exports, snapshots, OAuth tokens\n- OAuth tokens stored with restrictive permissions (chmod 600)\n- Review exported data before sharing - may contain sensitive search queries\n\n### Webhooks\n- `watch` and `stream` can send data to webhook endpoints\n- Remote endpoints must use `https://` (`http://` is accepted only for localhost/loopback)\n- Optional host allowlist: `XINT_WEBHOOK_ALLOWED_HOSTS=hooks.example.com,*.internal.example`\n- Avoid sending sensitive search queries or token-bearing URLs to third-party destinations\n\n### Runtime Notes\n- This file documents usage and safety controls for the CLI only.\n- Network listeners are opt-in (`mcp --sse`) and disabled by default\n- Webhook delivery is opt-in (`--webhook`) and disabled by default\n\n### Installation\n- For Bun: prefer OS package managers over `curl | bash` when possible\n- Verify any installer scripts before running\n\n### MCP Server (Optional)\n- `bun run xint.ts mcp` starts a local MCP server exposing xint commands as tools\n- Default mode is stdio/local integration; no inbound web server unless `--sse` is explicitly enabled\n- Respect `--policy read_only|engagement|moderation` and budget guardrails"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[CLI Tool] All commands run from the project directory:\n\n```bash\n# Set your environment variables\nexport X_BEARER_TOKEN=\"your-token\"\n```\n\n### Search\n\n```bash\nbun run xint.ts search \"<query>\" [options]\n```\n\n**Options:**\n- `--sort likes|impressions|retweets|recent` — sort order (default: likes)\n- `--since 1h|3h|12h|1d|7d` — time filter (default: last 7 days). Also accepts minutes (`30m`) or ISO timestamps.\n- `--min-likes N` — filter by minimum likes\n- `--min-impressions N` — filter by minimum impressions\n- `--pages N` — pages to fetch, 1-5 (default: 1, 100 tweets/page)\n- `--limit N` — max results to display (default: 15)\n- `--quick` — quick mode: 1 page, max 10 results, auto noise filter, 1hr cache, cost summary\n- `--from <username>` — shorthand for `from:username` in query\n- `--quality` — filter low-engagement tweets (>=10 likes, post-hoc)\n- `--no-replies` — exclude replies\n- `--sentiment` — AI-powered per-tweet sentiment analysis (via Grok). Shows positive/negative/neutral/mixed with scores.\n- `--save` — save results to `data/exports/`\n- `--json` — raw JSON output\n- `--jsonl` — one JSON object per line (optimized for Unix pipes: `| jq`, `| tee`)\n- `--csv` — CSV output for spreadsheet analysis\n- `--markdown` — markdown output for research docs\n\nAuto-adds `-is:retweet` unless query already includes it. All searches display estimated API cost.\n\n**Examples:**\n```bash\nbun run xint.ts search \"AI agents\" --sort likes --limit 10\nbun run xint.ts search \"from:elonmusk\" --sort recent\nbun run xint.ts search \"(opus 4.6 OR claude) trading\" --pages 2 --save\nbun run xint.ts search \"$BTC (revenue OR fees)\" --min-likes 5\nbun run xint.ts search \"AI agents\" --quick\nbun run xint.ts search \"AI agents\" --quality --quick\nbun run xint.ts search \"solana memecoins\" --sentiment --limit 20\nbun run xint.ts search \"startup funding\" --csv > funding.csv\nbun run xint.ts search \"AI\" --jsonl | jq 'select(.metrics.likes > 100)'\n```\n\n### Profile\n\n```bash\nbun run xint.ts profile <username> [--count N] [--replies] ["
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[xAI X Search (No Cookies/GraphQL)] For “recent sentiment / what X is saying” without using cookies/GraphQL, use xAI’s hosted `x_search` tool.\n\nScript:\n\n```bash\npython3 scripts/xai_x_search_scan.py --help\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[xAI Collections Knowledge Base (Files + Collections)] Store first-party artifacts (reports, logs) in xAI Collections and semantic-search them later.\n\nScript:\n\n```bash\npython3 scripts/xai_collections.py --help\n```\n\nEnv:\n- `XAI_API_KEY` (api.x.ai): file upload + search\n- `XAI_MANAGEMENT_API_KEY` (management-api.x.ai): collections management + attaching documents\n\nNotes:\n- Never print keys.\n- Prefer `--dry-run` when wiring new cron jobs.\n\n### Watch (Real-Time Monitoring)\n\n```bash\nbun run xint.ts watch \"<query>\" [options]\n```\n\nPolls a search query on an interval, shows only new tweets. Great for monitoring topics during catalysts, tracking mentions, or feeding live data into downstream tools.\n\n**Options:**\n- `--interval <dur>` / `-i` — poll interval: `30s`, `1m`, `5m`, `15m` (default: 5m)\n- `--webhook <url>` — POST new tweets as JSON to this URL (`https://` required for remote hosts)\n- `--jsonl` — output as JSONL instead of formatted text (for piping to `tee`, `jq`, etc.)\n- `--quiet` — suppress per-poll headers (just show tweets)\n- `--limit N` — max tweets to show per poll\n- `--sort likes|impressions|retweets|recent` — sort order\n\nPress `Ctrl+C` to stop — prints session stats (duration, total polls, new tweets found, total cost).\n\n**Examples:**\n```bash\nbun run xint.ts watch \"solana memecoins\" --interval 5m\nbun run xint.ts watch \"@vitalikbuterin\" --interval 1m\nbun run xint.ts watch \"AI agents\" -i 30s --webhook https://hooks.example.com/ingest\nbun run xint.ts watch \"breaking news\" --jsonl | tee -a feed.jsonl\n```\n\n**Agent usage:** Use `watch` when you need continuous monitoring of a topic. For one-off checks, use `search` instead. The watch command auto-stops if the daily budget is exceeded.\n\n### Diff (Follower Tracking)\n\n```bash\nbun run xint.ts diff <@username> [options]\n```\n\nTracks follower/following changes over time using local snapshots. First run creates a baseline; subsequent runs show who followed/unfollowed since last check.\n\n**Options:**\n- `--following` — track who the user follows (instead of their followers)\n- `--"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Research Loop (Agentic)] When doing deep research (not just a quick search), follow this loop:\n\n### 1. Decompose the Question into Queries\n\nTurn the research question into 3-5 keyword queries using X search operators:\n\n- **Core query**: Direct keywords for the topic\n- **Expert voices**: `from:` specific known experts\n- **Pain points**: Keywords like `(broken OR bug OR issue OR migration)`\n- **Positive signal**: Keywords like `(shipped OR love OR fast OR benchmark)`\n- **Links**: `url:github.com` or `url:` specific domains\n- **Noise reduction**: `-is:retweet` (auto-added), add `-is:reply` if needed\n\n### 2. Search and Extract\n\nRun each query via CLI. After each, assess:\n- Signal or noise? Adjust operators.\n- Key voices worth searching `from:` specifically?\n- Threads worth following via `thread` command?\n- Linked resources worth deep-diving?\n\n### 3. Follow Threads\n\nWhen a tweet has high engagement or is a thread starter:\n```bash\nbun run xint.ts thread <tweet_id>\n```\n\n### 4. Deep-Dive Linked Content\n\nSearch results now include article titles and descriptions from the X API (shown as `📰` in output). Use these to decide which links are worth a full read, then fetch with `xint article`:\n\n```bash\nbun run xint.ts article <url>               # terminal display\nbun run xint.ts article <url> --json         # structured output\nbun run xint.ts article <url> --full         # no truncation\n```\n\nPrioritize links that:\n- Multiple tweets reference\n- Come from high-engagement tweets\n- Have titles/descriptions suggesting depth (not just link aggregators)\n- Point to technical resources directly relevant to the question\n\n### 5. Analyze with Grok\n\nFor complex research, pipe search results into Grok for synthesis:\n```bash\nbun run xint.ts search \"topic\" --json | bun run xint.ts analyze --pipe \"Summarize themes and sentiment\"\n```\n\n### 6. Synthesize\n\nGroup findings by theme, not by query:\n\n```\n### [Theme/Finding Title]\n\n[1-2 sentence summary]\n\n- @username: \"[key quote]\" (NL, NI) [Tweet](url)\n- @username2: \"[another per"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Cost Management] All API calls are tracked in `data/api-costs.json`. The budget system warns when approaching limits but does not block calls (passive).\n\n**X API v2 pay-per-use rates:**\n- Tweet reads (search, bookmarks, likes, profile): ~$0.005/tweet\n- Full-archive search: ~$0.01/tweet\n- Write operations (like, unlike, bookmark, unbookmark): ~$0.01/action\n- Profile lookups: ~$0.005/lookup\n- Follower/following lookups: ~$0.01/page\n- Trends: ~$0.10/request\n- Grok AI (sentiment/analyze/report): billed by xAI separately (not X API)\n\nDefault daily budget: $1.00 (adjustable via `costs budget set <N>`)."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Refinement Heuristics] - **Too much noise?** Add `-is:reply`, use `--sort likes`, narrow keywords\n- **Too few results?** Broaden with `OR`, remove restrictive operators\n- **Crypto spam?** Add `-$ -airdrop -giveaway -whitelist`\n- **Expert takes only?** Use `from:` or `--min-likes 50`\n- **Substance over hot takes?** Search with `has:links`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[File Structure] ```\nxint/\n├── SKILL.md           (this file — agent instructions)\n├── xint.ts            (CLI entry point)\n├── lib/\n│   ├── api.ts         (X API wrapper: search, thread, profile, tweet)\n│   ├── article.ts     (full article content fetcher via xAI web_search)\n│   ├── bookmarks.ts   (bookmark read — OAuth)\n│   ├── cache.ts       (file-based cache, 15min TTL)\n│   ├── costs.ts       (API cost tracking & budget)\n│   ├── engagement.ts  (likes, like/unlike, following, bookmark write — OAuth)\n│   ├── followers.ts   (follower/following tracking + snapshot diffs)\n│   ├── format.ts      (terminal, markdown, CSV, JSONL formatters)\n│   ├── grok.ts        (xAI Grok analysis integration)\n│   ├── oauth.ts       (OAuth 2.0 PKCE auth + token refresh)\n│   ├── report.ts      (intelligence report generation)\n│   ├── sentiment.ts   (AI-powered sentiment analysis via Grok)\n│   ├── trends.ts      (trending topics — API + search fallback)\n│   └── watch.ts       (real-time monitoring with polling)\n├── data/\n│   ├── api-costs.json  (cost tracking data)\n│   ├── oauth-tokens.json (OAuth tokens — chmod 600)\n│   ├── watchlist.json  (accounts to monitor)\n│   ├── exports/        (saved research)\n│   ├── snapshots/      (follower/following snapshots for diff)\n│   └── cache/          (auto-managed)\n└── references/\n    └── x-api.md        (X API endpoint reference)\n```"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "xint"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xnyk/xint/SKILL.md"
+}

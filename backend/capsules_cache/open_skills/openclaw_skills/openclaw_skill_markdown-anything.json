@@ -1,0 +1,72 @@
+{
+  "id": "openclaw_skill_markdown-anything",
+  "description": "Convert PDF, DOCX, XLSX, PPTX, images, audio, and 25+ file formats to clean Markdown using the Markdown Anything API.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Markdown Anything\n\nConvert files to clean, structured Markdown using the [Markdown Anything](https://markdownanything.com) API. Supports PDF, DOCX, XLSX, PPTX, images, audio, and 25+ formats."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] Set your API token as an environment variable. Get one from **Settings > API Tokens** in your [Markdown Anything workspace](https://markdownanything.com/workspaces).\n\n```\nMDA_API_TOKEN=mda_your_token_here\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] Use the `mda-convert` tool when the user asks to:\n\n- Convert a file to Markdown\n- Extract text from a PDF, document, image, or audio file\n- Turn a document into Markdown for use in a prompt or workflow"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tools] ### mda-convert\n\nConverts a file to Markdown. Run `scripts/convert.sh` with the file path as the first argument.\n\n**Arguments:**\n- `$1` — Path to the file to convert\n\n**Optional environment variables:**\n- `MDA_ENHANCED_AI=true` — Use Enhanced AI for scanned documents, images, and audio (costs extra credits)\n- `MDA_INCLUDE_METADATA=true` — Include document metadata in the response\n- `MDA_OPTIMIZE_TOKENS=true` — Optimize output for LLM token efficiency\n\n**Example:**\n```\nscripts/convert.sh /path/to/document.pdf\n```\n\nThe tool outputs the converted Markdown to stdout.\n\n### mda-credits\n\nCheck your remaining credit balance. Run `scripts/credits.sh` with no arguments.\n\n**Example:**\n```\nscripts/credits.sh\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security & Privacy] - Files are sent to `https://markdownanything.com/api/v1/convert` for processing\n- Your API token is sent via the `Authorization` header\n- No data is stored locally beyond the conversion result\n- See [Markdown Anything Privacy Policy](https://markdownanything.com/privacy) for data handling details"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "markdown_anything"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "📝",
+        "requires": {
+          "env": [
+            "MDA_API_TOKEN"
+          ]
+        },
+        "primaryEnv": "MDA_API_TOKEN",
+        "files": [
+          "scripts/*"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adiologydev/markdown-anything/SKILL.md"
+}

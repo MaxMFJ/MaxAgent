@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_outlook-delegate",
+  "description": "Read, search, and manage Outlook emails and calendar via Microsoft Graph API with delegate support. Your AI assistant authenticates as itself but accesses the owner's mailbox/calendar as a delegate. Modified for delegate access from https://clawhub.ai/jotamed/outlook",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Outlook Delegate Skill\n\nAccess another user's Outlook/Microsoft 365 email and calendar as a **delegate** via Microsoft Graph API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Delegate Architecture] This skill is designed for scenarios where:\n- **Your AI assistant** has its own Microsoft 365 account (e.g., `assistant@domain.com`)\n- **The owner** has granted the assistant delegate access to their mailbox/calendar\n- The assistant authenticates as itself but accesses the owner's resources\n\n### What Changed from Direct Access\n\n| Feature | Direct Access (`/me`) | Delegate Access (`/users/{id}`) |\n|---------|----------------------|--------------------------------|\n| API Base | `/me/messages` | `/users/{owner}/messages` |\n| Send Email | Appears \"From: Owner\" | Appears \"From: Assistant on behalf of Owner\" |\n| Calendar | Full control | Based on permission level granted |\n| Permissions | Mail.ReadWrite, Mail.Send | Mail.ReadWrite.Shared, Mail.Send.Shared, Calendars.ReadWrite.Shared |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Configuration] ### Config File: `~/.outlook-mcp/config.json`\n\n```json\n{\n  \"client_id\": \"your-app-client-id\",\n  \"client_secret\": \"your-app-client-secret\",\n  \"owner_email\": \"owner@domain.com\",\n  \"delegate_email\": \"assistant@domain.com\"\n}\n```\n\nThe `owner_email` is the mailbox the assistant will access as a delegate."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup Requirements] ### 1. Azure AD App Registration\n\nThe app registration needs **delegated permissions** (not application permissions):\n\n- `Mail.ReadWrite.Shared` - Read/write access to shared mailboxes\n- `Mail.Send.Shared` - Send mail on behalf of others\n- `Calendars.ReadWrite.Shared` - Read/write shared calendars\n- `User.Read` - Read assistant's own profile\n- `offline_access` - Refresh tokens\n\n### 2. Exchange Delegate Permissions (Admin or Owner)\n\nThe owner must grant the assistant delegate access via Exchange/Outlook:\n\n**PowerShell (Admin):**\n```powershell\n# Grant mailbox access\nAdd-MailboxPermission -Identity \"owner@domain.com\" -User \"assistant@domain.com\" -AccessRights FullAccess\n\n# Grant Send-on-Behalf\nSet-Mailbox -Identity \"owner@domain.com\" -GrantSendOnBehalfTo \"assistant@domain.com\"\n\n# Grant calendar access (Editor = can create/modify events)\nAdd-MailboxFolderPermission -Identity \"owner@domain.com:\\Calendar\" -User \"assistant@domain.com\" -AccessRights Editor -SharingPermissionFlags Delegate\n```\n\n**Or via Outlook Settings:**\nThe owner can add the assistant as a delegate in Outlook → File → Account Settings → Delegate Access.\n\n### 3. Token Flow\n\nThe assistant authenticates as itself via OAuth2, then accesses the owner's resources using the `/users/{owner@domain.com}/` endpoint."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage] ### Token Management\n```bash\n./scripts/outlook-token.sh refresh   # Refresh expired token\n./scripts/outlook-token.sh test      # Test connection to BOTH accounts\n./scripts/outlook-token.sh get       # Print access token\n```\n\n### Reading Owner's Emails\n```bash\n./scripts/outlook-mail.sh inbox [count]           # Owner's inbox\n./scripts/outlook-mail.sh unread [count]          # Owner's unread\n./scripts/outlook-mail.sh search \"query\" [count]  # Search owner's mail\n./scripts/outlook-mail.sh from <email> [count]    # Owner's mail from sender\n./scripts/outlook-mail.sh read <id>               # Read email content\n```\n\n### Managing Owner's Emails\n```bash\n./scripts/outlook-mail.sh mark-read <id>          # Mark as read\n./scripts/outlook-mail.sh mark-unread <id>        # Mark as unread\n./scripts/outlook-mail.sh flag <id>               # Flag as important\n./scripts/outlook-mail.sh delete <id>             # Move to trash\n./scripts/outlook-mail.sh archive <id>            # Move to archive\n./scripts/outlook-mail.sh move <id> <folder>      # Move to folder\n```\n\n### Sending Emails (On Behalf Of Owner)\n```bash\n./scripts/outlook-mail.sh send <to> <subj> <body>  # Send on behalf of owner\n./scripts/outlook-mail.sh reply <id> \"body\"        # Reply on behalf of owner\n```\n\n**Note:** Emails will show \"Assistant on behalf of Owner\" in the From field.\n\n### Owner's Calendar\n```bash\n./scripts/outlook-calendar.sh events [count]      # Owner's upcoming events\n./scripts/outlook-calendar.sh today               # Owner's today\n./scripts/outlook-calendar.sh week                # Owner's week\n./scripts/outlook-calendar.sh read <id>           # Event details\n./scripts/outlook-calendar.sh free <start> <end>  # Owner's availability\n```\n\n### Creating Events on Owner's Calendar\n```bash\n./scripts/outlook-calendar.sh create <subj> <start> <end> [location]\n./scripts/outlook-calendar.sh quick <subject> [time]\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Endpoint Changes] The key change is replacing `/me` with `/users/{owner_email}`:\n\n```bash\n# Direct access (old)\nAPI=\"https://graph.microsoft.com/v1.0/me\"\n\n# Delegate access (new)\nOWNER=$(jq -r '.owner_email' \"$CONFIG_FILE\")\nAPI=\"https://graph.microsoft.com/v1.0/users/$OWNER\"\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Send-on-Behalf Implementation] When sending mail as a delegate, you must specify the `from` address:\n\n```json\n{\n  \"message\": {\n    \"subject\": \"Meeting follow-up\",\n    \"from\": {\n      \"emailAddress\": {\n        \"address\": \"owner@domain.com\"\n      }\n    },\n    \"toRecipients\": [{\"emailAddress\": {\"address\": \"recipient@example.com\"}}],\n    \"body\": {\"contentType\": \"Text\", \"content\": \"...\"}\n  }\n}\n```\n\nThe recipient sees: **\"Assistant on behalf of Owner <owner@domain.com>\"**"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Permissions Summary] | Action | Required Permission | Exchange Setting |\n|--------|-------------------|-----------------|\n| Read owner's mail | Mail.ReadWrite.Shared | FullAccess or Reviewer |\n| Modify owner's mail | Mail.ReadWrite.Shared | FullAccess or Editor |\n| Send as owner | Mail.Send.Shared | SendOnBehalf |\n| Read owner's calendar | Calendars.ReadWrite.Shared | Reviewer+ |\n| Create events on owner's calendar | Calendars.ReadWrite.Shared | Editor |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Access denied\" or \"403 Forbidden\"**\n→ Check that the assistant has MailboxPermission on the owner's mailbox\n\n**\"The mailbox is not found\"**\n→ Verify `owner_email` in config.json is correct\n\n**\"Insufficient privileges\"**\n→ App registration missing `.Shared` permissions (check Azure AD)\n\n**Emails send but don't show \"on behalf of\"**\n→ Missing SendOnBehalf permission. Run:\n```powershell\nSet-Mailbox -Identity \"owner@domain.com\" -GrantSendOnBehalfTo \"assistant@domain.com\"\n```\n\n**\"Token expired\"**\n→ Run `outlook-token.sh refresh`"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Security Considerations] 1. **Audit Trail**: All actions by the assistant are logged in the owner's mailbox audit log\n2. **Token Storage**: Credentials stored in `~/.outlook-mcp/` - protect this directory\n3. **Scope Limitation**: The assistant only has access to what the owner explicitly grants\n4. **Revocation**: The owner can revoke access anytime via Delegate settings"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Files] - `~/.outlook-mcp/config.json` - Client ID, secret, and owner/delegate emails\n- `~/.outlook-mcp/credentials.json` - OAuth tokens (access + refresh)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Changelog] ### v1.0.0 (Delegate Edition)\n- **Breaking**: API calls now use `/users/{owner}` instead of `/me`\n- Added: `owner_email` and `delegate_email` config fields\n- Added: Send-on-behalf support with proper `from` field\n- Changed: Permissions to `.Shared` variants\n- Added: Delegate setup documentation\n- Added: Token test validates access to owner's mailbox\n- Based on outlook v1.3.0 by jotamed (https://clawhub.ai/jotamed/outlook)"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "outlook_delegate"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/87marc/outlook-skill-clawhub/SKILL.md"
+}

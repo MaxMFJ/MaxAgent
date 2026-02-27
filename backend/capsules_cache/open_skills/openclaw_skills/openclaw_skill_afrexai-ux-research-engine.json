@@ -1,0 +1,164 @@
+{
+  "id": "openclaw_skill_afrexai-ux-research-engine",
+  "description": "Complete UX Research & Design system — user discovery, persona building, journey mapping, usability testing, research synthesis, and design validation. Zero dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # UX Research Engine ⚡\n\nComplete UX research methodology — from discovery to validated design decisions. No scripts, no APIs, no dependencies. Pure agent skill.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Phase 1: Research Planning] ### Research Brief YAML\n\n```yaml\nproject: \"[Product/Feature Name]\"\nresearch_question: \"[What do we need to learn?]\"\nbusiness_context:\n  objective: \"[Business goal this research supports]\"\n  decision: \"[What decision will this research inform?]\"\n  stakeholders: [\"PM\", \"Design Lead\", \"Engineering\"]\n  deadline: \"YYYY-MM-DD\"\nscope:\n  product_area: \"[Feature/flow being studied]\"\n  user_segment: \"[Who are we studying?]\"\n  geographic: \"[Regions/markets]\"\nmethodology: \"[See selection matrix below]\"\nsample_size: \"[See calculator below]\"\ntimeline:\n  planning: \"Week 1\"\n  recruiting: \"Week 1-2\"\n  fieldwork: \"Week 2-3\"\n  analysis: \"Week 3-4\"\n  reporting: \"Week 4\"\nbudget:\n  participant_incentives: \"$X\"\n  tools: \"$X\"\n  total: \"$X\"\nsuccess_criteria:\n  - \"[Specific insight we need]\"\n  - \"[Confidence level required]\"\n  - \"[Actionable output format]\"\n```\n\n### Method Selection Matrix\n\n| Method | Best For | Sample Size | Time | Cost | Confidence |\n|--------|----------|-------------|------|------|------------|\n| User Interviews | Deep \"why\" understanding, exploring unknowns | 5-15 | 2-4 weeks | $$ | High (qualitative) |\n| Usability Testing | Finding interaction problems, validating flows | 5-8 per round | 1-2 weeks | $$ | High (behavioral) |\n| Surveys | Quantifying attitudes, measuring satisfaction | 100-400+ | 1-2 weeks | $ | High (statistical) |\n| Card Sorting | Information architecture, navigation labels | 15-30 (open), 30+ (closed) | 1 week | $ | Medium |\n| Diary Studies | Long-term behavior, context of use | 10-15 | 2-6 weeks | $$$ | High (longitudinal) |\n| A/B Testing | Comparing specific design variants | 1000+ per variant | 1-4 weeks | $ | Very High |\n| Contextual Inquiry | Understanding real environment, workflows | 4-8 | 2-3 weeks | $$$ | Very High |\n| Tree Testing | Validating IA without visual design | 50+ | 1 week | $ | High |\n| First-Click Testing | Navigation effectiveness | 30-50 | 1 week | $ | Medium |\n| Concept Testing | Early-stage idea validation | 8-15 | 1-2 weeks | "
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 2: Participant Recruiting] ### Screener Template\n\n```yaml\nscreener:\n  title: \"[Study Name] Participant Screener\"\n  target_profile:\n    demographics:\n      age_range: \"[e.g., 25-45]\"\n      location: \"[e.g., US-based]\"\n      language: \"[e.g., English-fluent]\"\n    behavioral:\n      product_usage: \"[e.g., Uses [product] 3+ times/week]\"\n      experience_level: \"[e.g., 1+ year with similar tools]\"\n      recent_activity: \"[e.g., Made a purchase in last 30 days]\"\n    psychographic:\n      decision_maker: \"[e.g., Primary household purchaser]\"\n      tech_comfort: \"[e.g., Comfortable with mobile apps]\"\n  \n  screening_questions:\n    - question: \"How often do you use [product category]?\"\n      type: \"single-select\"\n      options: [\"Daily\", \"Weekly\", \"Monthly\", \"Rarely\", \"Never\"]\n      qualify: [\"Daily\", \"Weekly\"]\n      disqualify: [\"Never\"]\n    \n    - question: \"Which of these tools do you currently use?\"\n      type: \"multi-select\"\n      options: [\"Tool A\", \"Tool B\", \"Tool C\", \"None\"]\n      qualify_min: 1\n      \n    - question: \"What is your primary role?\"\n      type: \"single-select\"\n      options: [\"Developer\", \"Designer\", \"PM\", \"Marketing\", \"Other\"]\n      qualify: [\"Developer\", \"Designer\", \"PM\"]\n    \n    - question: \"Have you participated in a UX study in the last 6 months?\"\n      type: \"single-select\"\n      options: [\"Yes\", \"No\"]\n      disqualify: [\"Yes\"]  # Avoid professional participants\n  \n  anti-patterns:\n    - \"Works at a competitor or in UX research\"\n    - \"Family/friends of team members\"\n    - \"Participated in study for this product before\"\n  \n  incentive: \"$75 for 60-min session\"\n  \n  recruiting_channels:\n    - channel: \"Existing user database\"\n      quality: \"★★★★★\"\n      cost: \"Free\"\n    - channel: \"UserTesting.com / UserInterviews.com\"\n      quality: \"★★★★\"\n      cost: \"$50-150/participant\"\n    - channel: \"Social media recruitment\"\n      quality: \"★★★\"\n      cost: \"Free-$$\"\n    - channel: \"Craigslist / local posting\"\n      quality: \"★★\"\n      cost: \"$\"\n```\n\n### Recruiting Quality Checklist\n- "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 3: User Interviews] ### Interview Guide Template\n\n```markdown\n# Interview Guide: [Study Name]\nDuration: 60 minutes\nModerator: [Name]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup (5 min)] - Thank participant, confirm recording consent\n- \"There are no right or wrong answers — we're learning from YOUR experience\"\n- \"Feel free to be critical — honest feedback helps us improve\"\n- \"I didn't design this, so you won't hurt my feelings\""
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Warm-Up (5 min)] - \"Tell me about your role and what a typical day looks like\"\n- \"How does [product area] fit into your work?\""
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Core Questions (35 min)] ### Context & Current Behavior\n1. \"Walk me through the last time you [did the task we're studying]\"\n   - Probe: \"What happened next?\"\n   - Probe: \"How did that make you feel?\"\n   - Probe: \"What would you have preferred to happen?\"\n\n2. \"What tools/methods do you currently use for [task]?\"\n   - Probe: \"What do you like about that approach?\"\n   - Probe: \"What frustrates you?\"\n   - Probe: \"How long have you been doing it this way?\"\n\n3. \"Can you show me how you typically [task]?\" (if remote: screen share)\n\n### Pain Points & Needs\n4. \"What's the hardest part about [task]?\"\n   - Probe: \"How often does that happen?\"\n   - Probe: \"What do you do when that happens?\"\n   - Probe: \"How much time/money does that cost you?\"\n\n5. \"If you could wave a magic wand and change one thing about [experience], what would it be?\"\n\n6. \"Tell me about a time when [process] went really wrong\"\n   - Probe: \"What was the impact?\"\n   - Probe: \"How was it resolved?\"\n\n### Mental Models\n7. \"How would you explain [concept] to a colleague?\"\n8. \"What do you expect to happen when you [action]?\"\n9. \"Where would you look for [information/feature]?\"\n\n### Priorities & Trade-offs\n10. \"If you had to choose between [speed vs accuracy / ease vs power], which matters more? Why?\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Concept Reaction (10 min) — if applicable] - Show prototype/concept\n- \"What's your first impression?\"\n- \"What would you use this for?\"\n- \"What's missing?\"\n- \"Would this replace what you currently use? Why/why not?\""
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Wrap-Up (5 min)] - \"Is there anything else about [topic] we should know?\"\n- \"Who else should we talk to about this?\"\n- Thank participant, confirm incentive delivery\n```\n\n### Interview Quality Rules\n1. **80/20 rule**: Participant talks 80%, you talk 20%\n2. **Never ask \"Would you use this?\"** — people can't predict future behavior\n3. **Ask about past behavior**, not hypothetical futures\n4. **Follow the energy** — when they get animated, dig deeper\n5. **Silence is a tool** — pause 5 seconds after they answer; they'll elaborate\n6. **\"Tell me more about that\"** — your most powerful phrase\n7. **Watch for say/do gaps** — note when claimed behavior contradicts observed behavior\n8. **Record everything** — audio minimum, video ideal, notes always\n\n### Note-Taking Template (Per Interview)\n\n```yaml\nparticipant:\n  id: \"P01\"\n  date: \"YYYY-MM-DD\"\n  demographics: \"[age, role, experience level]\"\n  session_duration: \"58 min\"\n\nkey_quotes:\n  - quote: \"[Exact words]\"\n    timestamp: \"12:34\"\n    context: \"[What prompted this]\"\n    theme: \"[Emerging theme tag]\"\n\nobservations:\n  behaviors:\n    - \"[What they DID, not what they said]\"\n  emotions:\n    - \"[Frustration when..., delight when..., confusion at...]\"\n  workarounds:\n    - \"[Creative solutions they've built]\"\n\npain_points:\n  - pain: \"[Specific problem]\"\n    severity: \"[1-5]\"\n    frequency: \"[daily/weekly/monthly/rarely]\"\n    current_solution: \"[How they cope]\"\n    \nneeds:\n  - need: \"[Unmet need identified]\"\n    type: \"[functional/emotional/social]\"\n    evidence: \"[Quote or behavior that reveals this]\"\n\nsurprises:\n  - \"[Anything unexpected — these are gold]\"\n\nmoderator_notes:\n  - \"[Post-session reflection, what to adjust for next interview]\"\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Phase 4: Persona Building] ### Data-Driven Persona Template\n\n```yaml\npersona:\n  name: \"[Realistic name — not cutesy]\"\n  photo: \"[Representative stock photo description]\"\n  archetype: \"[1-3 word label, e.g., 'The Overwhelmed Manager']\"\n  \n  demographics:\n    age: \"[Range or specific]\"\n    role: \"[Job title / life stage]\"\n    experience: \"[Years with product/domain]\"\n    tech_proficiency: \"[Novice / Intermediate / Advanced / Expert]\"\n    environment: \"[Office / remote / mobile / field]\"\n  \n  # MOST IMPORTANT SECTION\n  goals:\n    primary: \"[The #1 thing they're trying to accomplish]\"\n    secondary:\n      - \"[Supporting goal]\"\n      - \"[Supporting goal]\"\n    underlying: \"[The emotional/social need behind the functional goal]\"\n  \n  frustrations:\n    - frustration: \"[Specific pain point]\"\n      frequency: \"[How often — from research data]\"\n      severity: \"[1-5]\"\n      current_workaround: \"[What they do today]\"\n      evidence: \"[P03, P07, P11 mentioned this]\"\n  \n  behaviors:\n    usage_pattern: \"[When, where, how often they engage]\"\n    decision_process: \"[How they evaluate options]\"\n    information_sources: \"[Where they learn / get help]\"\n    social_influence: \"[Who influences their decisions]\"\n    key_workflows:\n      - \"[Task 1 — frequency — duration]\"\n      - \"[Task 2 — frequency — duration]\"\n  \n  mental_models:\n    - \"[How they think about [concept] — often surprising]\"\n    - \"[Vocabulary they use — not our jargon]\"\n  \n  motivations:\n    gains: \"[What success looks like to them]\"\n    fears: \"[What failure looks like]\"\n    triggers: \"[What prompts them to act]\"\n    barriers: \"[What stops them from acting]\"\n  \n  quotes:\n    - \"\\\"[Real quote from research that captures this persona]\\\"\"\n    - \"\\\"[Another revealing quote]\\\"\"\n  \n  design_implications:\n    must_have:\n      - \"[Feature/quality this persona absolutely needs]\"\n    should_have:\n      - \"[Important but not dealbreaker]\"\n    must_avoid:\n      - \"[Things that will drive this persona away]\"\n    communication_style: \"[How to talk to this perso"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Phase 5: Journey Mapping] ### Journey Map Template\n\n```yaml\njourney_map:\n  title: \"[Persona] — [Goal/Scenario]\"\n  persona: \"[Which persona]\"\n  scenario: \"[Specific situation triggering this journey]\"\n  \n  stages:\n    - stage: \"1. Awareness / Trigger\"\n      duration: \"[Time in this stage]\"\n      goals: \"[What they want to accomplish]\"\n      actions:\n        - \"[Step they take]\"\n        - \"[Step they take]\"\n      touchpoints:\n        - \"[Where they interact — website, app, email, phone, in-person]\"\n      thoughts:\n        - \"\\\"[What they're thinking — from research]\\\"\"\n      emotions:\n        rating: 3  # 1=frustrated, 3=neutral, 5=delighted\n        feeling: \"[Curious but uncertain]\"\n      pain_points:\n        - \"[Problem encountered]\"\n      opportunities:\n        - \"[How we could improve this moment]\"\n    \n    - stage: \"2. Consideration / Research\"\n      # ... same structure\n    \n    - stage: \"3. Decision / Sign-Up\"\n      # ... same structure\n    \n    - stage: \"4. Onboarding / First Use\"\n      # ... same structure\n    \n    - stage: \"5. Regular Use / Value Realization\"\n      # ... same structure\n    \n    - stage: \"6. Expansion / Advocacy (or Churn)\"\n      # ... same structure\n  \n  moments_of_truth:\n    - moment: \"[Critical make-or-break interaction]\"\n      stage: \"[Which stage]\"\n      current_experience: \"[What happens now — score 1-5]\"\n      desired_experience: \"[What should happen — score 1-5]\"\n      gap: \"[Difference = priority]\"\n      \n  service_blueprint_layer:  # Optional — behind-the-scenes\n    - stage: \"[Stage name]\"\n      frontstage: \"[What user sees]\"\n      backstage: \"[What team does]\"\n      support_systems: \"[Tools/processes involved]\"\n      failure_points: \"[Where things break down]\"\n```\n\n### Emotion Curve Scoring\nPlot emotions across the journey:\n```\n5 ★ Delighted  ──────────╮          ╭──\n4 ☺ Happy               │          │\n3 😐 Neutral    ──╮      │    ╭─────╯\n2 😟 Frustrated    │      │    │\n1 😤 Angry         ╰──────╯────╯\n                  Stage1  Stage2  Stage3  Stage4  Stage"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Phase 6: Usability Testing] ### Test Plan Template\n\n```yaml\nusability_test:\n  study_name: \"[Name]\"\n  objective: \"[What design question are we answering?]\"\n  \n  format:\n    type: \"[Moderated / Unmoderated]\"\n    location: \"[Remote / In-person / Lab]\"\n    device: \"[Desktop / Mobile / Tablet / Cross-device]\"\n    duration: \"60 min\"\n    recording: \"[Screen + audio + face camera]\"\n  \n  prototype:\n    fidelity: \"[Paper / Wireframe / Hi-fi / Live product]\"\n    tool: \"[Figma / InVision / Live URL]\"\n    scope: \"[Which flows are testable]\"\n    known_limitations: \"[What won't work in the prototype]\"\n  \n  participants:\n    target: 5-8\n    criteria: \"[From screener — link to Phase 2]\"\n    incentive: \"$75\"\n  \n  tasks:\n    - task_id: \"T1\"\n      scenario: \"You need to [context]. Using this app, [goal].\"\n      success_criteria: \n        - \"[Specific completion definition]\"\n      time_limit: \"5 min\"\n      priority: \"critical\"  # critical / important / nice-to-know\n      metrics:\n        - completion_rate\n        - time_on_task\n        - error_count\n        - satisfaction_rating\n    \n    - task_id: \"T2\"\n      scenario: \"[Next task...]\"\n      # ... same structure\n  \n  post_task_questions:\n    - \"On a scale of 1-7, how easy was that? (SEQ)\"\n    - \"What did you expect to happen when you [action]?\"\n    - \"Was anything confusing?\"\n  \n  post_test_questions:\n    - \"SUS (System Usability Scale) — 10 questions\"\n    - \"What was the easiest part?\"\n    - \"What was the most frustrating part?\"\n    - \"Would you use this? Why/why not?\"\n    - \"What's missing?\"\n```\n\n### Task Writing Rules\n1. **Set the scene** — give context, not instructions (\"You want to book a flight to NYC next Friday\" NOT \"Click the search button\")\n2. **Don't use interface words** — say \"find\" not \"navigate to,\" say \"purchase\" not \"add to cart and checkout\"\n3. **Make it realistic** — use scenarios from actual research data\n4. **One goal per task** — don't combine (\"book a flight AND a hotel\")\n5. **Order: easy → hard** — build confidence before complex tasks\n\n##"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Phase 7: Research Synthesis] ### Affinity Mapping Process\n\n1. **Extract**: Pull every observation, quote, behavior onto individual notes\n2. **Cluster**: Group similar notes (bottom-up, not top-down)\n3. **Label**: Name each cluster with a theme (use participant language)\n4. **Hierarchy**: Group clusters into meta-themes\n5. **Prioritize**: Rank by frequency × impact\n\n### Theme Template\n\n```yaml\ntheme:\n  name: \"[Theme label — use participant language]\"\n  description: \"[2-3 sentence summary]\"\n  \n  evidence:\n    participant_count: \"8/12 participants\"\n    segments_affected: [\"Persona A\", \"Persona B\"]\n    \n    quotes:\n      - participant: \"P03\"\n        quote: \"\\\"[Exact quote]\\\"\"\n      - participant: \"P07\"\n        quote: \"\\\"[Exact quote]\\\"\"\n    \n    behaviors_observed:\n      - \"[What they did]\"\n      - \"[Pattern across participants]\"\n    \n    data_points:\n      - \"[Any quantitative support — survey %, analytics, etc.]\"\n  \n  impact:\n    on_users: \"[How this affects their experience]\"\n    on_business: \"[Revenue, retention, acquisition, support cost impact]\"\n    severity: \"High\"  # High / Medium / Low\n  \n  insight: \"[The 'so what' — what does this mean for design?]\"\n  \n  recommendations:\n    - recommendation: \"[Specific, actionable change]\"\n      effort: \"M\"\n      impact: \"High\"\n      confidence: \"High\"  # based on evidence strength\n```\n\n### Insight Formula\n\nEvery insight must follow: **Observation + Evidence + So What + Now What**\n\n> \"Users consistently [OBSERVATION] — seen in [X/Y participants, with supporting quotes]. This matters because [SO WHAT — impact on goals/business]. We should [NOW WHAT — specific recommendation].\"\n\n**Bad insight:** \"Users found the navigation confusing\"\n**Good insight:** \"7 of 12 participants couldn't find the settings page within 30 seconds. 4 looked in the profile menu, 2 used search, 1 gave up. This maps to 15% of support tickets ('How do I change my password'). Moving settings to the top-level nav and adding a search shortcut would reduce discovery time and cut related su"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Phase 8: Research Report] ### Executive Summary Template\n\n```markdown\n# [Study Name] — Research Report"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[TL;DR (3 bullet max)] - [Most important finding + recommendation]\n- [Second most important finding + recommendation]  \n- [Third most important finding + recommendation]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Study Overview] - **Method:** [e.g., 12 semi-structured interviews + 5 usability tests]\n- **Participants:** [e.g., 12 mid-market SaaS PMs, 2-8 years experience]\n- **Duration:** [e.g., 3 weeks, Jan 5-26 2026]\n- **Confidence:** [High / Medium / Low — based on sample + methodology]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Key Findings] ### Finding 1: [Title] ⚠️ [Severity: Critical/High/Medium/Low]\n**What we found:** [2-3 sentences with evidence]\n**Why it matters:** [Business impact]\n**Recommendation:** [Specific action]\n**Effort:** [S/M/L] | **Impact:** [High/Med/Low]\n\n### Finding 2: [Title]\n..."
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Personas Updated] [Link to updated persona YAML files]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Journey Map] [Link to journey map]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Design Recommendations (Prioritized)] | # | Recommendation | Finding | Effort | Impact | Priority |\n|---|---------------|---------|--------|--------|----------|\n| 1 | [Action] | F1 | S | High | P0 — Do now |\n| 2 | [Action] | F3 | M | High | P1 — Next sprint |\n| 3 | [Action] | F2 | L | Medium | P2 — Backlog |"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[What We Still Don't Know] - [Open questions for future research]\n- [Hypotheses to validate]"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Appendix] - Screener criteria\n- Interview guide\n- Raw data location\n- Participant demographics\n```\n\n---"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Phase 9: Design Validation] ### Design Critique Framework (CAMPS)\n\n| Dimension | Questions to Ask |\n|-----------|-----------------|\n| **Clarity** | Can users understand what this is and what to do within 5 seconds? |\n| **Alignment** | Does this solve the problem identified in research? For the right persona? |\n| **Mental Model** | Does it match how users think about this task? (from interview data) |\n| **Priority** | Does the visual hierarchy match user task priority? |\n| **Simplicity** | Can anything be removed without losing function? |\n\n### Prototype Review Checklist\n\n```yaml\ndesign_review:\n  screen: \"[Screen name]\"\n  reviewer: \"[Name]\"\n  date: \"YYYY-MM-DD\"\n  \n  research_alignment:\n    - check: \"Addresses top pain point from research\"\n      status: \"✅ / ❌ / ⚠️\"\n      notes: \"[Which finding this addresses]\"\n    - check: \"Uses language from user interviews (not internal jargon)\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Matches mental model revealed in research\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Works for primary persona AND doesn't break for secondary\"\n      status: \"✅ / ❌ / ⚠️\"\n  \n  usability:\n    - check: \"Primary action is visually dominant\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Error states designed and messaged\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Empty states designed (first use, no data, no results)\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Loading states designed\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Edge cases handled (long text, missing data, permissions)\"\n      status: \"✅ / ❌ / ⚠️\"\n  \n  accessibility:\n    - check: \"Color contrast meets WCAG AA (4.5:1 text, 3:1 UI)\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Touch targets ≥44px\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Information not conveyed by color alone\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Logical reading/tab order\"\n      status: \"✅ / ❌ / ⚠️\"\n    - check: \"Alt text for meaningful images\"\n      status: \"✅ / ❌ / ⚠️\"\n  \n  overall_score: \"[1-5]\"\n  ship_decision: \"Ready / Needs changes / Needs testing / Needs r"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Phase 10: Research Operations] ### Research Repository Structure\n\n```\nresearch/\n├── YYYY/\n│   ├── Q1/\n│   │   ├── [study-name]/\n│   │   │   ├── plan.yaml          # Research brief\n│   │   │   ├── screener.yaml      # Recruiting criteria\n│   │   │   ├── guide.md           # Interview/test guide\n│   │   │   ├── notes/             # Per-participant notes\n│   │   │   │   ├── P01.yaml\n│   │   │   │   └── P02.yaml\n│   │   │   ├── synthesis/         # Themes, affinity maps\n│   │   │   ├── personas/          # Updated personas\n│   │   │   ├── journey-maps/      # Updated maps\n│   │   │   ├── report.md          # Final report\n│   │   │   └── recordings/        # Session recordings (link)\n│   │   └── [next-study]/\n│   └── Q2/\n├── personas/                      # Master persona library\n│   ├── persona-a.yaml\n│   └── persona-b.yaml\n├── journey-maps/                  # Master journey maps\n├── insights-database.yaml         # Cross-study insight tracker\n└── research-calendar.yaml         # Planned studies\n```\n\n### Cross-Study Insight Tracker\n\n```yaml\ninsights_database:\n  - insight_id: \"INS-001\"\n    theme: \"[Category]\"\n    insight: \"[The insight]\"\n    first_found: \"2026-01-15\"\n    studies: [\"Study A\", \"Study C\", \"Study F\"]\n    evidence_strength: \"Strong\"  # 3+ studies\n    status: \"Addressed\"  # Open / In Progress / Addressed / Won't Fix\n    design_response: \"[What was done]\"\n    impact_measured: \"[Before/after metric if available]\"\n```\n\n### Research Impact Tracking\n\n| Metric | How to Measure | Target |\n|--------|---------------|--------|\n| Findings → shipped features | % of recommendations implemented within 2 quarters | >60% |\n| Pre/post usability scores | SUS score before vs after changes | +10 points |\n| Support ticket reduction | Related ticket volume after design change | -25% |\n| Task completion rate | Usability test success rate over time | >85% |\n| Time on task | Average task time trend | Decreasing |\n| Stakeholder confidence | Post-study survey: \"How useful was this?\" | >4/5 |\n\n---"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Quick Commands] | Command | What It Does |\n|---------|-------------|\n| \"Plan a research study for [topic]\" | Generate research brief YAML |\n| \"Build a screener for [audience]\" | Generate screening questionnaire |\n| \"Create interview guide for [topic]\" | Generate interview questions and structure |\n| \"Build persona from [data/notes]\" | Synthesize data into persona YAML |\n| \"Map the journey for [persona + goal]\" | Generate journey map |\n| \"Plan usability test for [prototype]\" | Generate test plan with tasks |\n| \"Run heuristic evaluation of [screen/flow]\" | Score against Nielsen's 10 |\n| \"Synthesize findings from [study]\" | Generate themes and insights |\n| \"Write research report for [study]\" | Generate executive summary and recommendations |\n| \"Score this research [report/study]\" | Evaluate against quality rubric |\n| \"Review this design against research\" | CAMPS critique + alignment check |\n| \"Set up research repository\" | Create folder structure and templates |\n\n---"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Edge Cases] ### Small Budget / No Recruiting Budget\n- Guerrilla testing: coffee shop intercepts (5 min tests, buy them a coffee)\n- Internal users: use colleagues from different departments (not product/design team)\n- Social media: post in relevant communities for volunteers\n- Existing users: email opt-in for research panel\n\n### Remote-Only Research\n- Video call with screen share (Zoom, Google Meet)\n- Async: Loom recordings of tasks + written responses\n- Unmoderated: UserTesting.com, Maze, Lookback\n- Diary studies: use messaging apps (WhatsApp, Telegram) for daily check-ins\n\n### Stakeholder Pushback (\"We don't have time for research\")\n- \"5 users, 1 week, 3 critical findings\" — the minimum viable study\n- Pair research with existing touchpoints (support calls, sales demos)\n- Frame as risk reduction: \"Would you rather discover this before or after launch?\"\n- Show past research ROI (support ticket reduction, conversion improvement)\n\n### Conflicting Findings\n- Check sample composition — different segments may have different needs\n- Prioritize by business impact: which segment is more valuable?\n- Run a survey to quantify: \"60% prefer A, 40% prefer B\"\n- Consider designing for both (progressive disclosure, personalization)\n\n### International / Cross-Cultural Research\n- Don't just translate — localize scenarios and contexts\n- Account for cultural response bias (e.g., reluctance to criticize in some cultures)\n- Use local moderators when possible\n- Adjust incentives to local norms\n- Watch for design patterns that don't transfer (icons, colors, reading direction)\n\n### Accessibility Research\n- Recruit participants with disabilities (screen reader users, motor impairments, cognitive differences)\n- Test with actual assistive technology, not simulation\n- Include in regular studies (at least 1 participant with accessibility needs per study)\n- WCAG compliance testing is NOT a substitute for research with disabled users\n\n---\n\n*Built by AfrexAI — Autonomous Intelligence for Business*"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_ux_research_engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-ux-research-engine/SKILL.md"
+}

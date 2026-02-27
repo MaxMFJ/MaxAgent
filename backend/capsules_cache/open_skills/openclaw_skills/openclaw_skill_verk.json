@@ -1,0 +1,78 @@
+{
+  "id": "openclaw_skill_verk",
+  "description": "Manage tasks, projects, and workflows in Verk — AI-powered task management. Create, update, assign, and track tasks. Add comments, change status, list automation flows.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Verk Task Management\n\nYou can manage tasks, projects, and automation flows in Verk using the `verk-cli.mjs` CLI tool."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Available Commands] ### Tasks\n\n- **List tasks**: `node scripts/verk-cli.mjs tasks list [--status STATUS] [--priority PRIORITY] [--search QUERY]`\n- **Get task**: `node scripts/verk-cli.mjs tasks get <taskId>`\n- **Create task**: `node scripts/verk-cli.mjs tasks create --title \"Title\" [--description \"Desc\"] [--status STATUS] [--priority PRIORITY] [--assigned userId1,userId2]`\n- **Update task**: `node scripts/verk-cli.mjs tasks update <taskId> [--title \"New Title\"] [--status STATUS] [--priority PRIORITY] [--assigned userId1,userId2]`\n- **Delete task**: `node scripts/verk-cli.mjs tasks delete <taskId>`\n- **Comment on task**: `node scripts/verk-cli.mjs tasks comment <taskId> --text \"Comment text\"`\n\n### Projects\n\n- **List projects**: `node scripts/verk-cli.mjs projects list`\n\n### Flows (Automation Workflows)\n\n- **List flows**: `node scripts/verk-cli.mjs flows list`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Valid Values] - **Status**: `Backlog`, `Todo`, `In-Progress`, `Review`, `Done`\n- **Priority**: `Urgent`, `High`, `Medium`, `Low`, `None`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[When to Use Each Command] - When asked to see what tasks exist, use `tasks list`. Add `--status` or `--priority` to filter, or `--search` to find specific tasks.\n- When asked about a specific task, use `tasks get <taskId>`.\n- When asked to create a task, use `tasks create` with at least a `--title`.\n- When asked to update, change, or modify a task, use `tasks update <taskId>` with the fields to change.\n- When asked to mark a task as done/complete, use `tasks update <taskId> --status Done`.\n- When asked to assign a task, use `tasks update <taskId> --assigned userId`.\n- When asked to delete or remove a task, use `tasks delete <taskId>`.\n- When asked to comment on or add a note to a task, use `tasks comment <taskId> --text \"...\"`.\n- When asked about projects, use `projects list`.\n- When asked about automation workflows, use `flows list`.\n- To see comments on a task, use `tasks get <taskId>` — comments are included in the task response."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] All commands return JSON. Parse the output to extract relevant information for the user. When listing tasks, summarize key fields (title, status, priority, assignee) rather than dumping raw JSON."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# List all high-priority tasks\nnode scripts/verk-cli.mjs tasks list --priority High\n\n# Create a task and assign it\nnode scripts/verk-cli.mjs tasks create --title \"Review Q2 roadmap\" --priority High --status Todo\n\n# Mark a task as done\nnode scripts/verk-cli.mjs tasks update task-abc123 --status Done\n\n# Add a comment\nnode scripts/verk-cli.mjs tasks comment task-abc123 --text \"Completed the review, looks good\"\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "verk"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "⚡",
+        "requires": {
+          "env": [
+            "VERK_API_KEY",
+            "VERK_ORG_ID"
+          ],
+          "bins": [
+            "node"
+          ]
+        },
+        "primaryEnv": "VERK_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhibavishi/verk/SKILL.md"
+}

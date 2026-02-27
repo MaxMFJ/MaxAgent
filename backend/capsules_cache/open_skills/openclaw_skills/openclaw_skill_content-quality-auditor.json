@@ -1,0 +1,127 @@
+{
+  "id": "openclaw_skill_content-quality-auditor",
+  "description": "Use when the user asks to \"audit content quality\", \"EEAT score\", \"content quality check\", \"CORE-EEAT audit\", \"how good is my content\", \"is my content good enough to rank\", \"EEAT check\", or \"rate my content quality\". Runs a full CORE-EEAT 80-item content quality audit, scoring content across 8 dimensions with weighted scoring by content type. Produces a detailed report with per-item scores, dimension analysis, and a prioritized action plan. For SEO-specific page checks, see on-page-seo-auditor. For domain-level assessment, see domain-authority-auditor.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Content Quality Auditor\n\n> Based on [CORE-EEAT Content Benchmark](https://github.com/aaron-he-zhu/core-eeat-content-benchmark). Full benchmark reference: [references/core-eeat-benchmark.md](../../references/core-eeat-benchmark.md)\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · **content-quality-auditor** · [domain-authority-auditor](../domain-authority-auditor/) · [entity-optimizer](../entity-optimizer/) · [memory-management](../memory-management/)\n\n</details>\n\nThis skill evaluates content quality across 80 standardized criteria organized in 8 dimensions. It produces a comprehensive audit report with per-item scoring, dimension and system scores, weighted totals by content type, and a prioritized action plan."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Auditing content quality before publishing\n- Evaluating existing content for improvement opportunities\n- Benchmarking content against CORE-EEAT standards\n- Comparing content quality against competitors\n- Assessing both GEO readiness (AI citation potential) and SEO strength (source credibility)\n- Running periodic content quality checks as part of a content maintenance program\n- After writing or optimizing content with seo-content-writer or geo-content-optimizer"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Full 80-Item Audit**: Scores every CORE-EEAT check item as Pass/Partial/Fail\n2. **Dimension Scoring**: Calculates scores for all 8 dimensions (0-100 each)\n3. **System Scoring**: Computes GEO Score (CORE) and SEO Score (EEAT)\n4. **Weighted Totals**: Applies content-type-specific weights for final score\n5. **Veto Detection**: Flags critical trust violations (T04, C01, R10)\n6. **Priority Ranking**: Identifies Top 5 improvements sorted by impact\n7. **Action Plan**: Generates specific, actionable improvement steps"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Audit Content\n\n```\nAudit this content against CORE-EEAT: [content text or URL]\n```\n\n```\nRun a content quality audit on [URL] as a [content type]\n```\n\n### Audit with Content Type\n\n```\nCORE-EEAT audit for this product review: [content]\n```\n\n```\nScore this how-to guide against the 80-item benchmark: [content]\n```\n\n### Comparative Audit\n\n```\nAudit my content vs competitor: [your content] vs [competitor content]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~web crawler + ~~SEO tool connected:**\nAutomatically fetch page content, extract HTML structure, check schema markup, verify internal/external links, and pull competitor content for comparison.\n\n**With manual data only:**\nAsk the user to provide:\n1. Content text, URL, or file path\n2. Content type (if not auto-detectable): Product Review, How-to Guide, Comparison, Landing Page, Blog Post, FAQ Page, Alternative, Best-of, or Testimonial\n3. Optional: competitor content for benchmarking\n\nProceed with the full 80-item audit using provided data. Note in the output which items could not be fully evaluated due to missing access (e.g., backlink data, schema markup, site-level signals)."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests a content quality audit:\n\n### Step 1: Preparation\n\n```markdown\n### Audit Setup\n\n**Content**: [title or URL]\n**Content Type**: [auto-detected or user-specified]\n**Dimension Weights**: [loaded from content-type weight table]\n\n#### Veto Check (Emergency Brake)\n\n| Veto Item | Status | Action |\n|-----------|--------|--------|\n| T04: Disclosure Statements | ✅ Pass / ⚠️ VETO | [If VETO: \"Add disclosure banner at page top immediately\"] |\n| C01: Intent Alignment | ✅ Pass / ⚠️ VETO | [If VETO: \"Rewrite title and first paragraph\"] |\n| R10: Content Consistency | ✅ Pass / ⚠️ VETO | [If VETO: \"Verify all data before publishing\"] |\n```\n\nIf any veto item triggers, flag it prominently at the top of the report and recommend immediate action before continuing the full audit.\n\n### Step 2: CORE Audit (40 items)\n\nEvaluate each item against the criteria in [references/core-eeat-benchmark.md](../../references/core-eeat-benchmark.md).\n\nScore each item:\n- **Pass** = 10 points (fully meets criteria)\n- **Partial** = 5 points (partially meets criteria)\n- **Fail** = 0 points (does not meet criteria)\n\n```markdown\n### C — Contextual Clarity\n\n| ID | Check Item | Score | Notes |\n|----|-----------|-------|-------|\n| C01 | Intent Alignment | Pass/Partial/Fail | [specific observation] |\n| C02 | Direct Answer | Pass/Partial/Fail | [specific observation] |\n| ... | ... | ... | ... |\n| C10 | Semantic Closure | Pass/Partial/Fail | [specific observation] |\n\n**C Score**: [X]/100\n\n### O — Organization\n\n| ID | Check Item | Score | Notes |\n|----|-----------|-------|-------|\n| O01 | Heading Hierarchy | Pass/Partial/Fail | [specific observation] |\n| ... | ... | ... | ... |\n\n**O Score**: [X]/100\n\n### R — Referenceability\n\n[Same format]\n\n**R Score**: [X]/100\n\n### E — Exclusivity\n\n[Same format]\n\n**E Score**: [X]/100\n```\n\n### Step 3: EEAT Audit (40 items)\n\nSame format for Exp, Ept, A, T dimensions.\n\n```markdown\n### Exp — Experience\n\n| ID | Check Item | Score | Notes |\n|----|-----------|-------|---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[CORE-EEAT Audit Report] ### Overview\n\n- **Content**: [title]\n- **Content Type**: [type]\n- **Audit Date**: [date]\n- **Total Score**: [score]/100 ([rating])\n- **GEO Score**: [score]/100 | **SEO Score**: [score]/100\n- **Veto Status**: ✅ No triggers / ⚠️ [item] triggered\n\n### Dimension Scores\n\n| Dimension | Score | Rating | Weight | Weighted |\n|-----------|-------|--------|--------|----------|\n| C — Contextual Clarity | [X]/100 | [rating] | [X]% | [X] |\n| O — Organization | [X]/100 | [rating] | [X]% | [X] |\n| R — Referenceability | [X]/100 | [rating] | [X]% | [X] |\n| E — Exclusivity | [X]/100 | [rating] | [X]% | [X] |\n| Exp — Experience | [X]/100 | [rating] | [X]% | [X] |\n| Ept — Expertise | [X]/100 | [rating] | [X]% | [X] |\n| A — Authority | [X]/100 | [rating] | [X]% | [X] |\n| T — Trust | [X]/100 | [rating] | [X]% | [X] |\n| **Weighted Total** | | | | **[X]/100** |\n\n**Score Calculation**:\n- GEO Score = (C + O + R + E) / 4\n- SEO Score = (Exp + Ept + A + T) / 4\n- Weighted Score = Σ (dimension_score × content_type_weight)\n\n**Rating Scale**: 90-100 Excellent | 75-89 Good | 60-74 Medium | 40-59 Low | 0-39 Poor\n\n### N/A Item Handling\n\nWhen an item cannot be evaluated (e.g., A01 Backlink Profile requires site-level data not available):\n\n1. Mark the item as \"N/A\" with reason\n2. Exclude N/A items from the dimension score calculation\n3. Dimension Score = (sum of scored items) / (number of scored items x 10) x 100\n4. If more than 50% of a dimension's items are N/A, flag the dimension as \"Insufficient Data\" and exclude it from the weighted total\n5. Recalculate weighted total using only dimensions with sufficient data, re-normalizing weights to sum to 100%\n\n**Example**: Authority dimension with 8 N/A items and 2 scored items (A05=8, A07=5):\n- Dimension score = (8+5) / (2 x 10) x 100 = 65\n- But 8/10 items are N/A (>50%), so flag as \"Insufficient Data -- Authority\"\n- Exclude A dimension from weighted total; redistribute its weight proportionally to remaining dimensions\n\n### Per-Item Scores\n\n#### CORE — Conte"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Content source identified (text, URL, or file path)\n- [ ] Content type confirmed (auto-detected or user-specified)\n- [ ] Content is substantial enough for meaningful audit (≥300 words)\n- [ ] If comparative audit, competitor content also provided\n\n### Output Validation\n- [ ] All 80 items scored (or marked N/A with reason)\n- [ ] All 8 dimension scores calculated correctly\n- [ ] Weighted total matches content-type weight configuration\n- [ ] Veto items checked and flagged if triggered\n- [ ] Top 5 improvements sorted by weighted impact, not arbitrary\n- [ ] Every recommendation is specific and actionable (not generic advice)\n- [ ] Action plan includes concrete steps with effort estimates"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Audit this blog post against CORE-EEAT: [paste of 'Best Project Management Tools for Remote Teams 2025']\"\n\n**Output** (partial -- showing one dimension to demonstrate format):\n\n```markdown"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[CORE-EEAT Audit Report] ### Overview\n\n- **Content**: \"Best Project Management Tools for Remote Teams 2025\"\n- **Content Type**: Blog Post / Comparison\n- **Audit Date**: 2025-06-15\n- **Veto Status**: No triggers\n\n### C -- Contextual Clarity (scored dimension example)\n\n| ID  | Check Item         | Score   | Points | Notes                                                       |\n|-----|--------------------|---------|--------|-------------------------------------------------------------|\n| C01 | Intent Alignment   | Pass    | 10     | Matches \"best X\" comparison intent; title and body aligned  |\n| C02 | Direct Answer      | Partial | 5      | Answer appears in first 300 words but no summary box        |\n| C03 | Query Coverage     | Pass    | 10     | Covers \"project management tools\", \"remote team software\", \"best PM tools\" |\n| C04 | Definition First   | Pass    | 10     | Key terms (\"PM tool\", \"async collaboration\") defined on first use |\n| C05 | Topic Scope        | Partial | 5      | States what's covered but not what's excluded               |\n| C06 | Audience Targeting | Pass    | 10     | Explicitly targets \"remote team leads and managers\"         |\n| C07 | Semantic Coherence | Pass    | 10     | Logical flow: intro > criteria > tools > comparison > verdict |\n| C08 | Use Case Mapping   | Pass    | 10     | Decision matrix for team size, budget, and features         |\n| C09 | FAQ Coverage       | Fail    | 0      | No FAQ section despite long-tail potential (\"free PM tools for small teams\") |\n| C10 | Semantic Closure   | Partial | 5      | Conclusion present but doesn't loop back to opening promise |\n\n**C Dimension Score**: 75/100 (Good)\n**Blog Post weight for C**: 25%\n**Weighted contribution**: 18.75\n\n#### Priority Improvements from C Dimension\n\n1. **C09 FAQ Coverage** -- Add FAQ section with 3-5 long-tail questions\n   - Current: Fail (0) | Potential gain: 2.5 weighted points\n   - Action: Add FAQ with \"Are there free PM tools for small remote teams?\", \"How to migrate between PM tools?\", et"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Start with veto items** — T04, C01, R10 are deal-breakers regardless of total score\n   > These veto items are consistent with the CORE-EEAT benchmark (Section 3), which defines them as items that can override the overall score.\n2. **Focus on high-weight dimensions** — Different content types prioritize different dimensions\n3. **GEO-First items matter most for AI visibility** — Prioritize items tagged GEO 🎯 if AI citation is the goal\n4. **Some EEAT items need site-level data** — Don't penalize content for things only observable at the site level (backlinks, brand recognition)\n5. **Use the weighted score, not just the raw average** — A product review with strong Exclusivity matters more than strong Authority\n6. **Re-audit after improvements** — Run again to verify score improvements and catch regressions\n7. **Pair with CITE for domain-level context** — A high content score on a low-authority domain signals a different priority than the reverse; run [domain-authority-auditor](../domain-authority-auditor/) for the full 120-item picture"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Reference Materials] - [CORE-EEAT Content Benchmark](../../references/core-eeat-benchmark.md) — Full 80-item benchmark with dimension definitions, scoring criteria, and GEO-First item markers"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Related Skills] - [domain-authority-auditor](../domain-authority-auditor/) — Domain-level CITE audit (40 items) — the sister skill for full 120-item assessment\n- [seo-content-writer](../../build/seo-content-writer/) — Write content that scores high on CORE dimensions\n- [geo-content-optimizer](../../build/geo-content-optimizer/) — Optimize for GEO-First items\n- [content-refresher](../../optimize/content-refresher/) — Update content to improve weak dimensions\n- [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) — Technical on-page audit (complements this skill)\n- [technical-seo-checker](../../optimize/technical-seo-checker/) — Technical signals contributing to trust dimension\n- [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) — Linking quality signals for content audit\n- [memory-management](../memory-management/) — Store audit results for tracking over time\n- [entity-optimizer](../entity-optimizer/) — Entity presence audit across Knowledge Graph and AI systems\n- [performance-reporter](../../monitor/performance-reporter/) — Track content quality trends over time"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "content_quality_auditor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "high",
+      "tags": [
+        "seo",
+        "geo",
+        "content audit",
+        "eeat",
+        "content quality",
+        "content scoring",
+        "quality assessment",
+        "expertise",
+        "authority",
+        "trust"
+      ],
+      "triggers": [
+        "audit content quality",
+        "EEAT score",
+        "content quality check",
+        "CORE-EEAT audit",
+        "how good is my content",
+        "content assessment",
+        "quality score",
+        "is my content good enough to rank",
+        "EEAT check",
+        "rate my content quality"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/content-quality-auditor/SKILL.md"
+}

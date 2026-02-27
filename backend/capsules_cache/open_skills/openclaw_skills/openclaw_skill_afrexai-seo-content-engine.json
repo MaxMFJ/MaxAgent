@@ -1,0 +1,215 @@
+{
+  "id": "openclaw_skill_afrexai-seo-content-engine",
+  "description": "Complete SEO content creation system for AI agents. Research keywords, analyze competitors, write optimized articles, and track rankings — all through natural conversation. No APIs required.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SEO Content Engine\n\nTurn your AI agent into a full SEO content team. Research → Plan → Write → Optimize → Publish — all in natural language.\n\nNo APIs. No subscriptions. Just smart agent workflows using web search and structured frameworks.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. Keyword Research Framework] ### Seed Expansion\nWhen given a topic, expand it systematically:\n\n1. **Core keyword**: The main term (e.g., \"project management software\")\n2. **Long-tail variants**: Add modifiers — best, top, free, for [audience], vs, alternative, review, how to, guide\n3. **Question keywords**: How/What/Why/When/Where + core keyword\n4. **Problem keywords**: What pain does this solve? (\"team missing deadlines\", \"project overruns\")\n5. **Comparison keywords**: \"[Product A] vs [Product B]\", \"[Product] alternatives\"\n\n### Search Intent Classification\n\nFor each keyword, classify intent:\n\n| Intent | Signal Words | Content Type |\n|--------|-------------|--------------|\n| **Informational** | how to, what is, guide, tutorial, why | How-to guide, explainer, tutorial |\n| **Commercial** | best, top, review, comparison, vs | Listicle, comparison, review |\n| **Transactional** | buy, pricing, discount, free trial, download | Product page, landing page |\n| **Navigational** | [brand name], login, support, docs | Brand page (skip — low value) |\n\n### Competition Analysis (Using Web Search)\n\nFor each target keyword:\n\n```\nStep 1: Search the exact keyword\nStep 2: Analyze top 5 results:\n  - What type of content ranks? (listicle, guide, review)\n  - What's the average word count? (check article length)\n  - What subtopics do ALL top results cover? (table stakes)\n  - What subtopics do NONE cover? (your opportunity)\n  - Who wrote them? (big brand = harder, niche blog = beatable)\nStep 3: Score opportunity:\n  - Mostly forums/Reddit in top 5 = HIGH opportunity (no dedicated content)\n  - All big brands (Forbes, HubSpot) = LOW opportunity (hard to outrank)\n  - Mix of niche sites = MEDIUM opportunity (winnable with better content)\n```\n\n### Keyword Prioritization Matrix\n\nScore each keyword (1-5 per dimension):\n\n| Dimension | 1 (Low) | 5 (High) |\n|-----------|---------|----------|\n| **Relevance** | Tangentially related | Core topic |\n| **Intent match** | Informational only | Commercial/transactional |\n| **Competition g"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Content Planning] ### Content Brief Template\n\nBefore writing ANY article, create this brief:\n\n```markdown\n# Content Brief: [Title]\n\n**Target keyword**: [primary keyword]\n**Secondary keywords**: [3-5 related terms to weave in naturally]\n**Search intent**: [informational/commercial/transactional]\n**Target word count**: [based on competitor analysis]\n**Content type**: [guide/listicle/comparison/review/case study]"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Audience] - Who is searching this? [persona]\n- What do they already know? [beginner/intermediate/advanced]\n- What do they want to DO after reading? [action]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Must-Cover Subtopics (from competitor analysis)] 1. [Topic all competitors cover — table stakes]\n2. [Topic all competitors cover — table stakes]\n3. ..."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Differentiation Angles (our edge)] 1. [Topic NO competitor covers — our advantage]\n2. [Fresh data/perspective they're missing]\n3. [Practical template/tool they don't provide]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Internal Links] - Link TO: [existing content on your site]\n- Link FROM: [update these older articles to link to this one]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[CTA] - Primary: [what should the reader do?]\n- Secondary: [email signup, related article, tool]\n```\n\n### Content Calendar Structure\n\nOrganize articles into clusters:\n\n```\nPILLAR PAGE: \"Complete Guide to [Topic]\" (3,000-5,000 words)\n├── CLUSTER: \"How to [Subtopic A]\" (1,500-2,500 words)\n├── CLUSTER: \"Best [Subtopic B] for [Audience]\" (2,000-3,000 words)\n├── CLUSTER: \"[Subtopic C] vs [Subtopic D]\" (1,500-2,000 words)\n├── CLUSTER: \"[Subtopic E] Template + Examples\" (1,000-1,500 words)\n└── CLUSTER: \"Common [Topic] Mistakes\" (1,500-2,000 words)\n```\n\nEach cluster article links back to the pillar. The pillar links to all clusters. This builds topical authority.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[3. Writing Framework] ### Article Structure (The HBCFC Formula)\n\nEvery article follows this skeleton:\n\n#### H — Hook (first 100 words)\n- Open with a specific stat, question, or bold claim\n- NO generic intros (\"In today's fast-paced world...\")\n- State what the reader will get and why it matters\n- Include primary keyword naturally in first paragraph\n\n#### B — Bridge (setup the problem)\n- Acknowledge the reader's pain or goal\n- Show you understand their situation\n- Create tension: \"Most advice on X misses Y\"\n- Transition to your solution\n\n#### C — Core Content (the meat — 80% of word count)\n- Use H2s for major sections, H3s for subsections\n- Every H2 should work as a standalone answer to a question\n- Include at minimum:\n  - **One data point or stat per section** (search for current data)\n  - **One practical example or template** per major section\n  - **One \"pro tip\" callout** per 500 words\n  - **Bullet lists** for scannable items (readers skim)\n- Natural keyword placement: primary keyword in 2-3 H2s, secondary keywords in H3s and body\n\n#### F — FAQ Section (5-7 questions)\n- Pull from \"People Also Ask\" in search results\n- Answer concisely (40-60 words each)\n- Include primary/secondary keywords naturally\n- This section generates FAQ rich snippets in Google\n\n#### C — Conclusion + CTA (final 150-200 words)\n- Summarize 3 key takeaways (bullet points)\n- Restate the primary keyword naturally\n- Clear call to action (one CTA only — don't dilute)\n\n### Writing Rules\n\n1. **Sentence variety**: Mix short (5-8 words) with medium (12-18) and occasional long (20-25). Never three long sentences in a row.\n2. **Paragraph length**: 2-4 sentences max. One-sentence paragraphs are fine for emphasis.\n3. **Active voice**: \"The tool analyzes data\" not \"Data is analyzed by the tool\"\n4. **Specific > vague**: \"Increased conversions by 34%\" not \"significantly improved results\"\n5. **No filler phrases**: Cut \"it's important to note that\", \"in order to\", \"at the end of the day\"\n6. **Transition words**: Use sparingly and var"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[4. On-Page SEO Checklist] Run this checklist on every article before publishing:\n\n### Title Tag (H1)\n- [ ] Contains primary keyword (preferably near the beginning)\n- [ ] Under 60 characters (won't get truncated in search)\n- [ ] Compelling — would YOU click this in search results?\n- [ ] Includes a power word (ultimate, complete, proven, essential)\n- [ ] Includes current year if relevant (e.g., \"Best X in 2026\")\n\n### Meta Description\n- [ ] 150-160 characters\n- [ ] Contains primary keyword\n- [ ] Includes a benefit or outcome\n- [ ] Has a call to action (\"Learn how\", \"Discover\", \"Find out\")\n- [ ] Unique (not duplicated from another page)\n\n### URL Slug\n- [ ] Short (3-5 words)\n- [ ] Contains primary keyword\n- [ ] No stop words (the, and, of, etc.)\n- [ ] Hyphens between words\n- [ ] Example: `/best-project-management-tools`\n\n### Headings\n- [ ] Only ONE H1 (the title)\n- [ ] H2s for major sections (5-8 per article)\n- [ ] H3s for subsections within H2s\n- [ ] At least 2 H2s contain primary or secondary keywords\n- [ ] Headings are descriptive (not \"Part 1\", \"Section A\")\n\n### Content\n- [ ] Minimum 1,500 words (2,000+ for competitive keywords)\n- [ ] Primary keyword appears 4-8 times naturally\n- [ ] Secondary keywords appear 1-3 times each\n- [ ] At least one internal link per 500 words\n- [ ] At least 2-3 external links to authoritative sources\n- [ ] Images every 300-500 words (stock photos, diagrams, screenshots)\n- [ ] All images have descriptive alt text\n\n### Technical\n- [ ] Schema markup defined (Article type at minimum)\n- [ ] Table of contents for articles over 2,000 words\n- [ ] Mobile-friendly formatting (no wide tables, reasonable image sizes)\n- [ ] No broken links\n\n### Schema Markup Template (Article)\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Article\",\n  \"headline\": \"[Title]\",\n  \"description\": \"[Meta description]\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"[Author]\"\n  },\n  \"datePublished\": \"[YYYY-MM-DD]\",\n  \"dateModified\": \"[YYYY-MM-DD]\",\n  \"publisher\": {\n    \"@type\": \"Organiza"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[5. Content Types — Templates] ### Template A: \"Best [X] for [Y]\" Listicle\n\n```markdown\n# Best [X] for [Y] in [Year]\n\n[Hook: Stat about the problem or market size]\n[Bridge: Why choosing the right X matters for Y]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Quick Comparison Table] | Product | Best For | Price | Rating |\n|---------|----------|-------|--------|"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[1. [Product Name] — Best Overall] ### Why It Stands Out\n### Key Features\n### Pricing\n### Who It's For\n### Downsides\n\n[Repeat for 7-10 products]"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[How We Evaluated] [Methodology — builds trust]"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Final Verdict] ```\n\n### Template B: \"How to [X]\" Guide\n\n```markdown\n# How to [X]: Step-by-Step Guide ([Year])\n\n[Hook: What you'll achieve by the end]\n[Bridge: Common mistakes people make with X]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[What You'll Need] [Prerequisites, tools, time estimate]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Step 1: [Action Verb + Outcome]] [Detailed instructions]\n[Screenshot or example]\n[Pro tip callout]\n\n[Repeat for each step]"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Next Steps] ```\n\n### Template C: \"[X] vs [Y]\" Comparison\n\n```markdown\n# [X] vs [Y]: Which Is Better in [Year]?\n\n[Hook: The core difference in one sentence]\n[Bridge: When to choose X vs Y]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Quick Verdict] [TL;DR comparison — who should choose what]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Overview Comparison] | Feature | X | Y |\n|---------|---|---|"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[[Feature Category 1]: [X] vs [Y]] ### How [X] Handles It\n### How [Y] Handles It\n### Winner: [X/Y] because [reason]\n\n[Repeat for 5-7 feature categories]"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Our Recommendation] ```\n\n### Template D: Ultimate Guide (Pillar Page)\n\n```markdown\n# The Ultimate Guide to [Topic] ([Year])\n\n[Hook: Why this topic matters now]\n[Bridge: What this guide covers that others don't]"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Chapter 1: [Foundational Concept]] [Explain the basics — link to cluster article for deep dive]"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Chapter 2: [Core Strategy]] [Main approach — link to how-to cluster]"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Chapter 3: [Tools & Resources]] [Curated list — link to comparison cluster]"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[Chapter 4: [Advanced Techniques]] [Expert-level tactics]"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[Chapter 5: [Common Mistakes]] [What to avoid — link to mistakes cluster]"
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[Chapter 6: [Case Studies / Examples]] [Real-world applications]"
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Conclusion + What to Do Next] ```\n\n---"
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[6. Content Optimization Workflow] ### Pre-Publish Optimization\n\n```\n1. READABILITY CHECK\n   - Flesch Reading Ease: aim for 60-70 (8th-9th grade level)\n   - No paragraphs over 4 sentences\n   - No sentences over 25 words without a break\n   - Subheading every 250-300 words\n\n2. KEYWORD DENSITY CHECK\n   - Primary keyword: 0.5-1.5% density (not higher)\n   - If over 1.5%: replace some instances with synonyms\n   - If under 0.5%: add naturally in body paragraphs\n\n3. LINK AUDIT\n   - Internal links: 3-5 per 1,500 words minimum\n   - External links: 2-3 to authoritative sources (.gov, .edu, industry leaders)\n   - No orphan pages (every article linked from at least one other)\n\n4. MEDIA CHECK\n   - Featured image with alt text\n   - In-content images/diagrams every 300-500 words\n   - Tables where data comparison exists\n   - Callout boxes for key takeaways\n\n5. CTA CHECK\n   - One primary CTA (not competing CTAs)\n   - CTA appears at end and optionally mid-article\n   - CTA is specific (\"Download the template\" not \"Learn more\")\n```\n\n### Post-Publish Actions\n\n```\n1. INDEX REQUEST\n   - Submit URL to Google Search Console\n   - Share on social media (generates initial signals)\n\n2. INTERNAL LINKING UPDATE\n   - Find 3-5 existing articles related to this topic\n   - Add contextual links from those articles to this new one\n   - This distributes link equity and helps discovery\n\n3. MONITOR (Week 1-4)\n   - Track ranking position for target keyword\n   - Monitor organic impressions in Search Console\n   - Check bounce rate and time on page\n\n4. UPDATE CYCLE\n   - Refresh content every 6-12 months\n   - Update stats, add new sections, improve based on search performance\n   - Articles that rank page 2 (positions 11-20) = highest ROI to update\n```\n\n---"
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[7. Content Scoring Rubric] Score every article before publishing (aim for 85+):\n\n| Criteria | Points | How to Score |\n|----------|--------|-------------|\n| **Keyword optimization** | /15 | Title + H2s + natural body placement |\n| **Content depth** | /20 | Covers all subtopics competitors cover + unique angles |\n| **Readability** | /15 | Short paragraphs, varied sentences, scannable |\n| **Practical value** | /15 | Templates, examples, actionable steps (not just theory) |\n| **Structure** | /10 | Clear H2/H3 hierarchy, logical flow, TOC for long articles |\n| **Internal links** | /5 | 3+ contextual internal links |\n| **External links** | /5 | 2+ authoritative external references |\n| **Media** | /5 | Images, tables, or diagrams present |\n| **Meta tags** | /5 | Title < 60 chars, description 150-160 chars, both include keyword |\n| **CTA clarity** | /5 | Single clear CTA with specific action |\n| **TOTAL** | /100 | |\n\n**Score guide:**\n- 90-100: Publish immediately — strong ranking potential\n- 80-89: Publish with minor tweaks noted\n- 70-79: Needs revision — likely missing depth or optimization\n- Below 70: Rewrite — significant gaps\n\n---"
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[8. SEO Agent Commands] Use natural language to trigger these workflows:\n\n| Command | What It Does |\n|---------|-------------|\n| \"Research keywords for [topic]\" | Full keyword expansion + prioritization matrix |\n| \"Analyze competitors for [keyword]\" | Top 5 SERP analysis with content gaps |\n| \"Create a content brief for [keyword]\" | Full brief using the template above |\n| \"Write an article about [topic]\" | Full article using HBCFC framework + on-page checklist |\n| \"Optimize this article for [keyword]\" | Run the optimization workflow on existing content |\n| \"Score this article\" | Apply the 100-point scoring rubric |\n| \"Plan a content cluster for [topic]\" | Pillar + 5-6 cluster articles with internal linking map |\n| \"Generate schema for this article\" | Article + FAQ JSON-LD markup |\n| \"Create a [listicle/guide/comparison]\" | Use the specific template for that content type |\n| \"Audit my SEO\" | Full on-page checklist against provided content |\n\n---"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[9. Advanced Techniques] ### Semantic SEO (Topic Authority)\nDon't just target one keyword — own the entire topic:\n1. Map ALL subtopics in your niche using keyword research\n2. Create content for each subtopic (content cluster model)\n3. Interlink everything with contextual anchor text\n4. Google rewards sites that comprehensively cover a topic\n\n### Featured Snippet Optimization\nTo win featured snippets (position 0):\n- **Paragraph snippets**: Answer the question in 40-60 words directly under an H2 that IS the question\n- **List snippets**: Use ordered/unordered lists with clear H2\n- **Table snippets**: Use HTML tables with clear headers\n- Target keywords where current snippets are weak or missing\n\n### Content Freshness Signals\nGoogle favors fresh content for time-sensitive queries:\n- Include the current year in titles where relevant\n- Update stats and data annually\n- Add \"Last updated: [date]\" to articles\n- Republish with new publish date after major updates\n\n### E-E-A-T Signals (Experience, Expertise, Authority, Trust)\n- **Experience**: Include first-hand examples (\"When I tested this...\")\n- **Expertise**: Cite specific data, reference methodology\n- **Authority**: Link to/from authoritative sources, get cited by others\n- **Trust**: Clear author bios, about page, contact info, HTTPS, privacy policy\n\n---\n\n*Built by [AfrexAI](https://afrexai-cto.github.io/context-packs/) — AI agent infrastructure for businesses that ship.*"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_seo_content_engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "version": "1.0.0",
+        "author": "AfrexAI",
+        "license": "MIT",
+        "tags": [
+          "seo",
+          "content",
+          "writing",
+          "blog",
+          "marketing",
+          "articles",
+          "keywords"
+        ],
+        "category": "marketing"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-seo-content-engine/SKILL.md"
+}

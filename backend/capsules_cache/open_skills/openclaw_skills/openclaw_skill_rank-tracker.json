@@ -1,0 +1,150 @@
+{
+  "id": "openclaw_skill_rank-tracker",
+  "description": "Use when the user asks to \"track rankings\", \"check keyword positions\", \"ranking changes\", \"monitor SERP positions\", \"how am I ranking\", \"where do I rank for this keyword\", \"did my rankings change\", or \"keyword position tracking\". Tracks and analyzes keyword ranking positions over time for both traditional search results and AI-generated responses. Monitors ranking changes, identifies trends, and alerts on significant movements. For automated alerting, see alert-manager. For comprehensive reports, see performance-reporter.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Rank Tracker\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · **rank-tracker** · [backlink-analyzer](../backlink-analyzer/) · [performance-reporter](../performance-reporter/) · [alert-manager](../alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill helps you track, analyze, and report on keyword ranking positions over time. It monitors both traditional SERP rankings and AI/GEO visibility to provide comprehensive search performance insights."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Setting up ranking tracking for new campaigns\n- Monitoring keyword position changes\n- Analyzing ranking trends over time\n- Comparing rankings against competitors\n- Tracking SERP feature appearances\n- Monitoring AI Overview inclusions\n- Creating ranking reports for stakeholders"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Position Tracking**: Records and tracks keyword rankings\n2. **Trend Analysis**: Identifies ranking patterns over time\n3. **Movement Detection**: Flags significant position changes\n4. **Competitor Comparison**: Benchmarks against competitors\n5. **SERP Feature Tracking**: Monitors featured snippets, PAA\n6. **GEO Visibility Tracking**: Tracks AI citation appearances\n7. **Report Generation**: Creates ranking performance reports"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Set Up Tracking\n\n```\nSet up rank tracking for [domain] targeting these keywords: [keyword list]\n```\n\n### Analyze Rankings\n\n```\nAnalyze ranking changes for [domain] over the past [time period]\n```\n\n### Compare to Competitors\n\n```\nCompare my rankings to [competitor] for [keywords]\n```\n\n### Generate Reports\n\n```\nCreate a ranking report for [domain/campaign]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~search console + ~~analytics + ~~AI monitor connected:**\nAutomatically pull ranking positions from ~~SEO tool, search impressions/clicks from ~~search console, traffic data from ~~analytics, and AI Overview citation tracking from ~~AI monitor. Daily automated rank checks with historical trend data.\n\n**With manual data only:**\nAsk the user to provide:\n1. Keyword ranking positions (current and historical if available)\n2. Target keyword list with search volumes\n3. Competitor domains and their ranking positions for key terms\n4. SERP feature status (featured snippets, PAA appearances)\n5. AI Overview citation data (if tracking GEO metrics)\n\nProceed with the full analysis using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests rank tracking or analysis:\n\n1. **Set Up Keyword Tracking**\n\n   ```markdown\n   ## Rank Tracking Setup\n   \n   ### Tracking Configuration\n   \n   **Domain**: [domain]\n   **Tracking Location**: [country/city]\n   **Device**: [Mobile/Desktop/Both]\n   **Language**: [language]\n   **Update Frequency**: [Daily/Weekly/Monthly]\n   \n   ### Keywords to Track\n   \n   | Keyword | Volume | Current Rank | Type | Priority |\n   |---------|--------|--------------|------|----------|\n   | [keyword 1] | [vol] | [rank] | Primary | High |\n   | [keyword 2] | [vol] | [rank] | Primary | High |\n   | [keyword 3] | [vol] | [rank] | Secondary | Medium |\n   | [keyword 4] | [vol] | [rank] | Long-tail | Medium |\n   | [keyword 5] | [vol] | [rank] | Brand | High |\n   \n   ### Competitor Tracking\n   \n   Track these competitors for benchmark:\n   1. [Competitor 1] - [domain]\n   2. [Competitor 2] - [domain]\n   3. [Competitor 3] - [domain]\n   \n   ### Tracking Categories\n   \n   | Category | Keywords | Description |\n   |----------|----------|-------------|\n   | Brand | [X] | Brand name variations |\n   | Product | [X] | Product-related terms |\n   | Informational | [X] | Educational queries |\n   | Commercial | [X] | Buying intent terms |\n   ```\n\n2. **Record Current Rankings**\n\n   ```markdown\n   ## Current Ranking Snapshot\n   \n   **Date**: [date]\n   **Domain**: [domain]\n   \n   ### Ranking Overview\n   \n   | Position Range | Keyword Count | % of Total |\n   |----------------|---------------|------------|\n   | #1 | [X] | [X]% |\n   | #2-3 | [X] | [X]% |\n   | #4-10 | [X] | [X]% |\n   | #11-20 | [X] | [X]% |\n   | #21-50 | [X] | [X]% |\n   | #51-100 | [X] | [X]% |\n   | Not ranking | [X] | [X]% |\n   \n   ### Position Distribution\n   \n   ```\n   Position 1:     ████████ [X] keywords\n   Position 2-3:   ██████ [X] keywords\n   Position 4-10:  ████████████████ [X] keywords\n   Position 11-20: ████████████ [X] keywords\n   Position 21+:   ██████████ [X] keywords\n   ```\n   \n   ### Detailed Rankings\n   \n   | Keyword |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Keywords list is complete with search volumes\n- [ ] Target domain and tracking location are specified\n- [ ] Competitor domains identified for comparison\n- [ ] Historical baseline data available or initial tracking period set\n\n### Output Validation\n- [ ] Every metric cites its data source and collection date\n- [ ] Ranking changes include context (vs. previous period)\n- [ ] Significant movements have explanations or investigation notes\n- [ ] Source of each data point clearly stated (~~SEO tool data, ~~search console data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Analyze my ranking changes for the past month\"\n\n**Output**:\n\n```markdown\n# Ranking Analysis: [current month, year]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Summary] Your average position improved from 15.3 to 12.8 (-2.5 positions = better)\nKeywords in top 10 increased from 12 to 17 (+5)"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Biggest Wins] | Keyword | Old | New | Change | Possible Cause |\n|---------|-----|-----|--------|----------------|\n| email marketing tips | 18 | 5 | +13 | Likely driven by content refresh |\n| best crm software | 24 | 11 | +13 | Correlates with new backlinks acquired |\n| sales automation | 15 | 7 | +8 | Correlates with schema markup addition |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Needs Attention] | Keyword | Old | New | Change | Action |\n|---------|-----|-----|--------|--------|\n| marketing automation | 4 | 12 | -8 | Likely displaced by new HubSpot guide |\n\n**Recommended**: Update your marketing automation guide with [current year] statistics and examples.\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Track consistently** - Same time, same device, same location\n2. **Include enough keywords** - 50-200 for meaningful data\n3. **Segment by intent** - Track brand, commercial, informational separately\n4. **Monitor competitors** - Context makes your data meaningful\n5. **Track SERP features** - Position 1 without snippet may lose to position 4 with snippet\n6. **Include GEO metrics** - AI visibility increasingly important"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Rank Change Analysis Framework] ### Why Rankings Move — Root Cause Taxonomy\n\n| Category | Causes | Detection Method |\n|----------|--------|-----------------|\n| **Algorithm Updates** | Google core update, helpful content update, spam update | Check Google Search Status Dashboard, SEO news |\n| **Competitor Action** | New content published, content updated, new backlinks | Monitor competitor pages, SERP changes |\n| **Your Changes** | Content edit, technical change, migration | Cross-reference with deploy/change log |\n| **SERP Feature Changes** | New featured snippet, AI Overview added/removed | SERP monitoring tools |\n| **Seasonal Patterns** | Predictable demand shifts | Year-over-year comparison |\n| **Technical Issues** | Crawl errors, speed degradation, indexing problems | Search Console, crawl reports |\n| **Link Profile Changes** | Lost backlinks, new backlinks, disavow | Backlink monitoring |\n\n### Rank Change Response Protocol\n\n| Change | Timeframe | Action |\n|--------|-----------|--------|\n| Drop 1-3 positions | Wait 1-2 weeks | Monitor — may be normal fluctuation |\n| Drop 3-5 positions | Investigate within 1 week | Check for technical issues, competitor changes |\n| Drop 5-10 positions | Investigate immediately | Full diagnostic: technical, content, links |\n| Drop off page 1 | Emergency response | Comprehensive audit + recovery plan |\n| Position gained | Document and learn | What worked? Can you replicate? |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Position Distribution Benchmarks] ### Click-Through Rate by Position\n\n| Position | Desktop CTR | Mobile CTR | Notes |\n|----------|------------|------------|-------|\n| #1 | 31.7% | 24.0% | 10x more than position #10 |\n| #2 | 14.7% | 13.1% | ~50% drop from #1 |\n| #3 | 10.7% | 9.5% | Significant value |\n| #4 | 6.7% | 6.1% | Still above fold usually |\n| #5 | 5.1% | 4.6% | Often near fold |\n| #6 | 4.1% | 3.5% | Below fold on most devices |\n| #7 | 3.4% | 2.8% | Rapidly diminishing |\n| #8 | 2.9% | 2.3% | |\n| #9 | 2.5% | 1.9% | |\n| #10 | 2.2% | 1.6% | Bottom of page 1 |\n| #11-20 | <1.5% | <1.0% | Page 2 — minimal visibility |\n\n_Note: CTR varies significantly by query type, SERP features, and industry. These are averages._\n\n### CTR Impact of SERP Features\n\n| SERP Feature Present | Effect on Organic CTR |\n|---------------------|---------------------|\n| Featured Snippet (you own) | +20-30% CTR for your result |\n| Featured Snippet (competitor) | -15-25% CTR for position #1 |\n| AI Overview | -10-30% CTR for all organic results |\n| PAA boxes | -5-10% CTR for positions 3-6 |\n| Shopping results | -10-20% CTR for commercial queries |\n| Knowledge Panel | -5-15% CTR for navigational queries |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[SERP Volatility Context] ### Algorithm Update Impact Assessment\n\n| Update Type | Typical Impact | Recovery Time | Response Strategy |\n|------------|---------------|---------------|-------------------|\n| Core update | ±20-50% traffic shifts | 3-6 months (next core update) | Improve content quality broadly |\n| Helpful Content | Content quality focused | 1-3 months | Remove/improve unhelpful content |\n| Spam update | Penalizes manipulative tactics | Varies (may require disavow) | Clean up link profile, remove spam |\n| Product Reviews | Review content specific | 1-2 months | Improve review depth and expertise |\n| Link Spam | Targets artificial links | 2-4 months | Disavow toxic links, build quality links |"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Tracking Configuration Best Practices] | Setting | Recommendation | Why |\n|---------|---------------|-----|\n| Check frequency | Daily for top 20 keywords; weekly for others | Balance accuracy vs. API costs |\n| Location settings | Match target market; track local separately | Rankings vary by location |\n| Device tracking | Track mobile AND desktop separately | Mobile rankings differ significantly |\n| Competitor tracking | Track 3-5 competitors for key terms | Context for your own movements |\n| SERP features | Track which features appear | Explain CTR changes |\n| Keyword grouping | Group by topic cluster, intent, funnel stage | Identify patterns, not just keywords |"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Tracking Setup Guide](./references/tracking-setup-guide.md) — Configuration best practices, device/location settings, and SERP feature tracking setup"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Related Skills] - [keyword-research](../../research/keyword-research/) — Find keywords to track\n- [serp-analysis](../../research/serp-analysis/) — Understand SERP composition\n- [alert-manager](../alert-manager/) — Set up ranking alerts\n- [performance-reporter](../performance-reporter/) — Comprehensive reporting\n- [memory-management](../../cross-cutting/memory-management/) — Store ranking history in project memory"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "rank_tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "geo",
+        "rank tracking",
+        "keyword positions",
+        "serp monitoring",
+        "ranking trends",
+        "position tracking",
+        "ai ranking"
+      ],
+      "triggers": [
+        "track rankings",
+        "check keyword positions",
+        "ranking changes",
+        "monitor SERP positions",
+        "how am I ranking",
+        "keyword tracking",
+        "position monitoring",
+        "where do I rank for this keyword",
+        "did my rankings change",
+        "keyword position tracking"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/rank-tracker/SKILL.md"
+}

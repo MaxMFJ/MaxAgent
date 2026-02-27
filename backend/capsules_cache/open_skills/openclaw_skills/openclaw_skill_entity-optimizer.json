@@ -1,0 +1,146 @@
+{
+  "id": "openclaw_skill_entity-optimizer",
+  "description": "Use when the user asks to \"optimize entity presence\", \"build knowledge graph\", \"improve knowledge panel\", \"entity audit\", \"establish brand entity\", \"Google does not know my brand\", \"no knowledge panel\", or \"establish my brand as an entity\". Works standalone with public search and AI query testing; supercharged when you connect ~~knowledge graph + ~~SEO tool + ~~AI monitor for automated entity analysis. For structured data implementation, see schema-markup-generator. For content-level AI optimization, see geo-content-optimizer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Entity Optimizer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../content-quality-auditor/) · [domain-authority-auditor](../domain-authority-auditor/) · **entity-optimizer** · [memory-management](../memory-management/)\n\n</details>\n\nThis skill audits, builds, and maintains entity identity across search engines and AI systems. Entities — the people, organizations, products, and concepts that search engines and AI systems recognize as distinct things — are the foundation of how both Google and LLMs decide *what you are* and *whether to cite you*.\n\n**Why entities matter for SEO + GEO:**\n\n- **SEO**: Google's Knowledge Graph powers Knowledge Panels, rich results, and entity-based ranking signals. A well-defined entity earns SERP real estate.\n- **GEO**: AI systems reso"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Establishing a new brand/person/product as a recognized entity\n- Auditing current entity presence across Knowledge Graph, Wikidata, and AI systems\n- Improving or correcting a Knowledge Panel\n- Building entity associations (entity ↔ topic, entity ↔ industry)\n- Resolving entity disambiguation issues (your entity confused with another)\n- Strengthening entity signals for AI citation\n- After launching a new brand, product, or organization\n- Preparing for a site migration (preserving entity identity)\n- Running periodic entity health checks"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Entity Audit**: Evaluates current entity presence across search and AI systems\n2. **Knowledge Graph Analysis**: Checks Google Knowledge Graph, Wikidata, and Wikipedia status\n3. **AI Entity Resolution Test**: Queries AI systems to see how they identify and describe the entity\n4. **Entity Signal Mapping**: Identifies all signals that establish entity identity\n5. **Gap Analysis**: Finds missing or weak entity signals\n6. **Entity Building Plan**: Creates actionable plan to establish or strengthen entity presence\n7. **Disambiguation Strategy**: Resolves confusion with similarly-named entities"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Entity Audit\n\n```\nAudit entity presence for [brand/person/organization]\n```\n\n```\nHow well do search engines and AI systems recognize [entity name]?\n```\n\n### Build Entity Presence\n\n```\nBuild entity presence for [new brand] in the [industry] space\n```\n\n```\nEstablish [person name] as a recognized expert in [topic]\n```\n\n### Fix Entity Issues\n\n```\nMy Knowledge Panel shows incorrect information — fix entity signals for [entity]\n```\n\n```\nAI systems confuse [my entity] with [other entity] — help me disambiguate\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~knowledge graph + ~~SEO tool + ~~AI monitor + ~~brand monitor connected:**\nQuery Knowledge Graph API for entity status, pull branded search data from ~~SEO tool, test AI citation with ~~AI monitor, track brand mentions with ~~brand monitor.\n\n**With manual data only:**\nAsk the user to provide:\n1. Entity name, type (Person, Organization, Brand, Product, Creative Work, Event)\n2. Primary website / domain\n3. Known existing profiles (Wikipedia, Wikidata, social media, industry directories)\n4. Top 3-5 topics/industries the entity should be associated with\n5. Any known disambiguation issues (other entities with same/similar name)\n\nWithout tools, Claude provides entity optimization strategy and recommendations based on information the user provides. The user must run search queries, check Knowledge Panels, and test AI responses to supply the raw data for analysis.\n\nProceed with the audit using public search results, AI query testing, and SERP analysis. Note which items require tool access for full evaluation."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests entity optimization:\n\n### Step 1: Entity Discovery\n\nEstablish the entity's current state across all systems.\n\n```markdown\n### Entity Profile\n\n**Entity Name**: [name]\n**Entity Type**: [Person / Organization / Brand / Product / Creative Work / Event]\n**Primary Domain**: [URL]\n**Target Topics**: [topic 1, topic 2, topic 3]\n\n#### Current Entity Presence\n\n| Platform | Status | Details |\n|----------|--------|---------|\n| Google Knowledge Panel | ✅ Present / ❌ Absent / ⚠️ Incorrect | [details] |\n| Wikidata | ✅ Listed / ❌ Not listed | [QID if exists] |\n| Wikipedia | ✅ Article / ⚠️ Mentioned only / ❌ Absent | [notability assessment] |\n| Google Knowledge Graph API | ✅ Entity found / ❌ Not found | [entity ID, types, score] |\n| Schema.org on site | ✅ Complete / ⚠️ Partial / ❌ Missing | [Organization/Person/Product schema] |\n\n#### AI Entity Resolution Test\n\n**Note**: Claude cannot directly query other AI systems or perform real-time web searches without tool access. When running without ~~AI monitor or ~~knowledge graph tools, ask the user to run these test queries and report the results, or use the user-provided information to assess entity presence.\n\nTest how AI systems identify this entity by querying:\n- \"What is [entity name]?\"\n- \"Who founded [entity name]?\" (for organizations)\n- \"What does [entity name] do?\"\n- \"[entity name] vs [competitor]\"\n\n| AI System | Recognizes Entity? | Description Accuracy | Cites Entity's Content? |\n|-----------|-------------------|---------------------|------------------------|\n| ChatGPT | ✅ / ⚠️ / ❌ | [accuracy notes] | [yes/no/partially] |\n| Claude | ✅ / ⚠️ / ❌ | [accuracy notes] | [yes/no/partially] |\n| Perplexity | ✅ / ⚠️ / ❌ | [accuracy notes] | [yes/no/partially] |\n| Google AI Overview | ✅ / ⚠️ / ❌ | [accuracy notes] | [yes/no/partially] |\n```\n\n### Step 2: Entity Signal Audit\n\nEvaluate entity signals across 6 categories. For the detailed 47-signal checklist with verification methods, see [references/entity-signal-checkli"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Entity Optimization Report] ### Overview\n\n- **Entity**: [name]\n- **Entity Type**: [type]\n- **Audit Date**: [date]\n\n### Signal Category Summary\n\n| Category | Status | Key Findings |\n|----------|--------|-------------|\n| Structured Data | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n| Knowledge Base | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n| Consistency (NAP+E) | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n| Content-Based | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n| Third-Party | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n| AI-Specific | ✅ Strong / ⚠️ Gaps / ❌ Missing | [key findings] |\n\n### Critical Issues\n\n[List any issues that severely impact entity recognition — disambiguation problems, incorrect Knowledge Panel, missing from Knowledge Graph entirely]\n\n### Top 5 Priority Actions\n\nSorted by: impact on entity recognition × effort required\n\n1. **[Signal]** — [specific action]\n   - Impact: [High/Medium] | Effort: [Low/Medium/High]\n   - Why: [explanation of how this improves entity recognition]\n\n2. **[Signal]** — [specific action]\n   - Impact: [High/Medium] | Effort: [Low/Medium/High]\n   - Why: [explanation]\n\n3–5. [Same format]\n\n### Entity Building Roadmap\n\n#### Week 1-2: Foundation (Structured Data + Consistency)\n- [ ] Implement/fix Organization or Person schema with full properties\n- [ ] Add sameAs links to all authoritative profiles\n- [ ] Audit and fix NAP+E consistency across all platforms\n- [ ] Ensure About page is entity-rich and well-structured\n\n#### Month 1: Knowledge Bases\n- [ ] Create or update Wikidata entry with complete properties\n- [ ] Ensure CrunchBase / industry directory profiles are complete\n- [ ] Build Wikipedia notability (or plan path to notability)\n- [ ] Submit to relevant authoritative directories\n\n#### Month 2-3: Authority Building\n- [ ] Secure mentions on authoritative industry sites\n- [ ] Build co-citation signals with established entities\n- [ ] Create topical content clusters that reinforce entity-topic associations\n- [ ] Pursue PR "
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Entity name and type identified\n- [ ] Primary domain/website confirmed\n- [ ] Target topics/industries specified\n- [ ] Disambiguation context provided (if entity name is common)\n\n### Output Validation\n- [ ] All 6 signal categories evaluated\n- [ ] AI entity resolution tested with at least 3 queries\n- [ ] Knowledge Panel status checked\n- [ ] Wikidata/Wikipedia status verified\n- [ ] Schema.org markup on primary site audited\n- [ ] Every recommendation is specific and actionable\n- [ ] Roadmap includes concrete steps with timeframes\n- [ ] Cross-reference with CORE-EEAT A07/A08 and CITE I01-I10 noted"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Audit entity presence for CloudMetrics, our B2B SaaS analytics platform at cloudmetrics.io\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Entity Optimization Report] ### Entity Profile\n\n**Entity Name**: CloudMetrics\n**Entity Type**: Organization (B2B SaaS)\n**Primary Domain**: cloudmetrics.io\n**Target Topics**: analytics platform, business intelligence, enterprise analytics\n\n### AI Entity Resolution Test\n\nQueries tested with results reported by user:\n\n| Query | Result | Assessment |\n|-------|--------|------------|\n| \"What is CloudMetrics?\" | Described as \"an analytics tool\" with no further detail | Partial recognition -- generic description, no mention of B2B focus or key features |\n| \"Best analytics platforms for enterprises\" | CloudMetrics not mentioned in any AI response | Not recognized as a player in the enterprise analytics space |\n| \"CloudMetrics vs Datadog\" | Correctly identified as a competitor to Datadog, but feature comparison was incomplete and partially inaccurate | Partial -- entity is associated with the right category but attributes are thin |\n| \"Who founded CloudMetrics?\" | No answer found by any AI system tested | Entity leadership not present in AI knowledge bases |\n\n### Entity Health Summary\n\n| Signal Category | Status | Key Findings |\n|-----------------|--------|--------------|\n| Knowledge Graph | ❌ Missing | No Wikidata entry exists; no Google Knowledge Panel triggers for branded queries |\n| Structured Data | ⚠️ Partial | Organization schema present on homepage with name, url, and logo; missing Person schema for CEO and leadership team; no sameAs links to external profiles |\n| Web Presence | ✅ Strong | Consistent NAP across LinkedIn, Twitter/X, G2, and Crunchbase; social profiles link back to cloudmetrics.io; branded search returns owned properties in top 5 |\n| Content-Based | ⚠️ Partial | About page exists but opens with marketing copy rather than an entity-defining statement; no dedicated author pages for leadership |\n| Third-Party | ⚠️ Partial | Listed on G2 and Crunchbase; 2 industry publication mentions found; no awards or analyst coverage |\n| AI-Specific | ❌ Weak | AI systems have only surface-level aw"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Start with Wikidata** — It's the single most influential editable knowledge base; a complete Wikidata entry with references often triggers Knowledge Panel creation within weeks\n2. **sameAs is your most powerful Schema.org property** — It directly tells search engines \"I am this entity in the Knowledge Graph\"; always include Wikidata URL first\n3. **Test AI recognition before and after** — Query ChatGPT, Claude, Perplexity, and Google AI Overview before optimizing, then again after; this is the most direct GEO metric\n4. **Entity signals compound** — Unlike content SEO, entity signals from different sources reinforce each other; 5 weak signals together are stronger than 1 strong signal alone\n5. **Consistency beats completeness** — A consistent entity name and description across 10 platforms beats a perfect profile on just 2\n6. **Don't neglect disambiguation** — If your entity name is shared with anything else, disambiguation is the first priority; all other signals are wasted if they're attributed to the wrong entity\n7. **Pair with CITE I-dimension for domain context** — Entity audit tells you how well the entity is recognized; CITE Identity (I01-I10) tells you how well the domain represents that entity; use both together"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Entity Type Reference] ### Entity Types and Key Signals\n\n| Entity Type | Primary Signals | Secondary Signals | Key Schema |\n|-------------|----------------|-------------------|------------|\n| **Person** | Author pages, social profiles, publication history | Speaking, awards, media mentions | Person, ProfilePage |\n| **Organization** | Registration records, Wikidata, industry listings | Press coverage, partnerships, awards | Organization, Corporation |\n| **Brand** | Trademark, branded search volume, social presence | Reviews, brand mentions, visual identity | Brand, Organization |\n| **Product** | Product pages, reviews, comparison mentions | Awards, expert endorsements, market share | Product, SoftwareApplication |\n| **Creative Work** | Publication record, citations, reviews | Awards, adaptations, cultural impact | CreativeWork, Book, Movie |\n| **Event** | Event listings, press coverage, social buzz | Sponsorships, speaker profiles, attendance | Event |\n\n### Disambiguation Strategy by Situation\n\n| Situation | Strategy |\n|-----------|----------|\n| **Common name, unique entity** | Strengthen all signals; let signal volume resolve ambiguity |\n| **Name collision with larger entity** | Add qualifier consistently (e.g., \"Acme Software\" not just \"Acme\"); use sameAs extensively; build topic-specific authority that differentiates |\n| **Name collision with similar entity** | Geographic, industry, or product qualifiers; ensure Schema @id is unique and consistent; prioritize Wikidata disambiguation |\n| **Abbreviation/acronym conflict** | Prefer full name in structured data; use abbreviation only in contexts where entity is already established |\n| **Merged or renamed entity** | Redirect old entity signals; update all structured data; create explicit \"formerly known as\" content; update Wikidata |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Knowledge Panel Optimization] ### Claiming and Editing\n\n1. **Google Knowledge Panel**: Claim via Google's verification process (search for entity → click \"Claim this knowledge panel\")\n2. **Bing Knowledge Panel**: Driven by Wikidata and LinkedIn — update those sources\n3. **AI Knowledge**: Driven by training data — ensure authoritative sources describe entity correctly\n\n### Common Knowledge Panel Issues\n\n| Issue | Root Cause | Fix |\n|-------|-----------|-----|\n| No panel appears | Entity not in Knowledge Graph | Build Wikidata entry + structured data + authoritative mentions |\n| Wrong image | Image sourced from incorrect page | Update Wikidata image; ensure preferred image on About page and social profiles |\n| Wrong description | Description pulled from wrong source | Edit Wikidata description; ensure About page has clear entity description in first paragraph |\n| Missing attributes | Incomplete structured data | Add properties to Schema.org markup and Wikidata entry |\n| Wrong entity shown | Disambiguation failure | Strengthen unique signals; add qualifiers; resolve Wikidata disambiguation |\n| Outdated info | Source data not updated | Update Wikidata, About page, and all profile pages |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Wikidata Best Practices] ### Creating a Wikidata Entry\n\n1. **Check notability**: Entity must have at least one authoritative reference\n2. **Create item**: Add label, description, and aliases in relevant languages\n3. **Add statements**: instance of, official website, social media links, founding date, founders, industry\n4. **Add identifiers**: official website (P856), social media IDs, CrunchBase ID, ISNI, VIAF\n5. **Add references**: Every statement should have a reference to an authoritative source\n\n**Important**: Wikipedia's Conflict of Interest (COI) policy prohibits individuals and organizations from creating or editing articles about themselves. Instead of directly editing Wikipedia: (1) Focus on building notability through independent reliable sources (press coverage, industry publications, academic citations); (2) If you believe a Wikipedia article is warranted, consider engaging an independent Wikipedia editor through the Requested Articles process; (3) Ensure all claims about the entity are verifiable through third-party sources before any Wikipedia involvement.\n\n### Key Wikidata Properties by Entity Type\n\n| Property | Code | Person | Org | Brand | Product |\n|----------|------|:------:|:---:|:-----:|:-------:|\n| instance of | P31 | human | organization type | brand | product type |\n| official website | P856 | yes | yes | yes | yes |\n| occupation / industry | P106/P452 | yes | yes | — | — |\n| founded by | P112 | — | yes | yes | — |\n| inception | P571 | — | yes | yes | yes |\n| country | P17 | yes | yes | — | — |\n| social media | various | yes | yes | yes | yes |\n| employer | P108 | yes | — | — | — |\n| developer | P178 | — | — | — | yes |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[AI Entity Optimization] ### How AI Systems Resolve Entities\n\n```\nUser query → Entity extraction → Entity resolution → Knowledge retrieval → Answer generation\n```\n\nAI systems follow this pipeline:\n1. **Extract** entity mentions from the query\n2. **Resolve** each mention to a known entity (or fail → \"I'm not sure\")\n3. **Retrieve** associated knowledge about the entity\n4. **Generate** response citing sources that confirmed the entity's attributes\n\n### Signals AI Systems Use for Entity Resolution\n\n| Signal Type | What AI Checks | How to Optimize |\n|-------------|---------------|-----------------|\n| **Training data presence** | Was entity in pre-training corpus? | Get mentioned in high-quality, widely-crawled sources |\n| **Retrieval augmentation** | Does entity appear in live search results? | Strong SEO presence for branded queries |\n| **Structured data** | Can entity be matched to Knowledge Graph? | Complete Wikidata + Schema.org |\n| **Contextual co-occurrence** | What topics/entities appear alongside? | Build consistent topic associations across content |\n| **Source authority** | Are sources about entity trustworthy? | Get mentioned by authoritative, well-known sources |\n| **Recency** | Is information current? | Keep all entity profiles and content updated |\n\n### Entity-Specific GEO Tactics\n\n1. **Define clearly**: First paragraph of About page and key pages should define the entity in a way AI can quote directly\n2. **Be consistent**: Use identical entity description across all platforms\n3. **Build associations**: Create content that explicitly connects entity to target topics\n4. **Earn mentions**: Third-party authoritative mentions are stronger entity signals than self-description\n5. **Stay current**: Outdated entity information causes AI to lose confidence and stop citing"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Reference Materials] Detailed guides for entity optimization:\n- [references/entity-signal-checklist.md](./references/entity-signal-checklist.md) — Complete signal checklist with verification methods\n- [references/knowledge-graph-guide.md](./references/knowledge-graph-guide.md) — Wikidata, Wikipedia, and Knowledge Graph optimization playbook"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Related Skills] - [content-quality-auditor](../content-quality-auditor/) — CORE-EEAT items A07 (Knowledge Graph Presence) and A08 (Entity Consistency) directly relate\n- [domain-authority-auditor](../domain-authority-auditor/) — CITE I01-I10 (Identity dimension) measures entity signals at domain level\n- [schema-markup-generator](../../build/schema-markup-generator/) — Generate Organization, Person, Product, and other entity schema\n- [geo-content-optimizer](../../build/geo-content-optimizer/) — Entity signals feed AI citation probability\n- [competitor-analysis](../../research/competitor-analysis/) — Compare entity presence against competitors\n- [backlink-analyzer](../../monitor/backlink-analyzer/) — Branded backlinks strengthen entity signals\n- [performance-reporter](../../monitor/performance-reporter/) — Track branded search and Knowledge Panel metrics\n- [memory-management](../memory-management/) — Store entity audit results for tracking over time"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "entity_optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "high",
+      "tags": [
+        "seo",
+        "geo",
+        "entity optimization",
+        "knowledge graph",
+        "knowledge panel",
+        "brand entity",
+        "entity disambiguation",
+        "wikidata",
+        "structured entities"
+      ],
+      "triggers": [
+        "optimize entity presence",
+        "build knowledge graph",
+        "improve knowledge panel",
+        "entity audit",
+        "establish brand entity",
+        "knowledge panel",
+        "entity disambiguation",
+        "Google doesn't know my brand",
+        "no knowledge panel",
+        "establish my brand as an entity"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/entity-optimizer/SKILL.md"
+}

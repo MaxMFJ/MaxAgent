@@ -1,0 +1,155 @@
+{
+  "id": "openclaw_skill_polymarket-ai-divergence",
+  "description": "Find markets where Simmer's AI consensus diverges from the real market price, then trade on the mispriced side using Kelly sizing. Scans for divergence, checks fees and safeguards, and executes trades on zero-fee markets with sufficient edge.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket AI Divergence Trader\n\nFind markets where Simmer's AI consensus diverges from the real market price, then trade the edge.\n\n> **This is a template.** The default logic trades when AI divergence exceeds 2% on zero-fee markets, using Kelly sizing capped at 25%. Remix it with different edge thresholds, sizing strategies, or additional filters (e.g., only trade markets resolving within 7 days). The skill handles plumbing (divergence scanning, fee checks, safeguards, execution). Your agent provides the alpha."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What It Does] 1. **Scans** all active markets for AI vs market price divergence\n2. **Filters** to markets with edge above threshold (default 2%) and zero fees\n3. **Checks** safeguards (flip-flop detection, existing positions)\n4. **Sizes** using Kelly criterion, capped conservatively\n5. **Executes** trades on the mispriced side (YES when AI is bullish, NO when bearish)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Scan only (dry run, no trades)\npython ai_divergence.py\n\n# Scan + execute trades\npython ai_divergence.py --live\n\n# Only show bullish divergences\npython ai_divergence.py --bullish\n\n# Only >15% divergence\npython ai_divergence.py --min 15\n\n# JSON output\npython ai_divergence.py --json\n\n# Cron mode (quiet, trades only)\npython ai_divergence.py --live --quiet\n\n# Show config\npython ai_divergence.py --config\n\n# Update config\npython ai_divergence.py --set max_bet_usd=10\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] | Key | Env Var | Default | Description |\n|-----|---------|---------|-------------|\n| `min_divergence` | `SIMMER_DIVERGENCE_MIN` | 5.0 | Min divergence % for scanner display |\n| `min_edge` | `SIMMER_DIVERGENCE_MIN_EDGE` | 0.02 | Min divergence to trade (2%) |\n| `max_bet_usd` | `SIMMER_DIVERGENCE_MAX_BET` | 5.0 | Max bet per trade |\n| `max_trades_per_run` | `SIMMER_DIVERGENCE_MAX_TRADES` | 3 | Max trades per cycle |\n| `kelly_cap` | `SIMMER_DIVERGENCE_KELLY_CAP` | 0.25 | Kelly fraction cap |\n| `daily_budget` | `SIMMER_DIVERGENCE_DAILY_BUDGET` | 25.0 | Daily spend limit |\n| `default_direction` | `SIMMER_DIVERGENCE_DIRECTION` | (both) | Filter: \"bullish\" or \"bearish\" |\n\nUpdate via CLI: `python ai_divergence.py --set max_bet_usd=10`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How It Works] ### Divergence Signal\n\nEach imported market has two prices:\n- **AI consensus** (`current_probability`) — Simmer's AI consensus price, derived from multi-model ensemble forecasting\n- **External price** (`external_price_yes`) — Real market price on Polymarket/Kalshi\n\n`divergence = AI consensus - external price`\n\nWhen divergence > 0: AI thinks the market is underpriced → buy YES\nWhen divergence < 0: AI thinks the market is overpriced → buy NO\n\n### Kelly Sizing\n\nPosition size uses the Kelly criterion:\n```\nkelly_fraction = edge / (1 - price)\nposition_size = kelly_fraction * max_bet_usd\n```\nCapped at `kelly_cap` (default 25%) to limit risk.\n\n### Fee Filtering\n\n75% of Polymarket markets have 0% fees. The remaining 25% charge 10% (short-duration crypto/sports). This skill **only trades zero-fee markets** to avoid fee drag eroding the edge.\n\n### Safeguards\n\n- **Fee check**: Skips markets with any taker fee\n- **Flip-flop detection**: Uses SDK's context API to detect contradictory trades\n- **Position check**: Skips markets where you already hold a position\n- **Daily budget**: Stops trading when daily spend limit is reached\n- **Kelly sizing**: Conservative sizing prevents over-betting"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Endpoints Used] - `GET /api/sdk/markets/opportunities` — Divergence-ranked market list\n- `GET /api/sdk/context/{market_id}` — Fee rate and safeguards per market\n- `POST /api/sdk/trade` — Trade execution (via SDK client)\n- `GET /api/sdk/positions` — Current portfolio positions"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"No markets above min edge threshold\"**\n→ All divergences are below the `min_edge` setting. Lower it with `--set min_edge=0.01` or wait for larger divergences.\n\n**\"Daily budget exhausted\"**\n→ The skill has hit its daily spend limit. Adjust with `--set daily_budget=50`.\n\n**All markets skipped for fees**\n→ Only zero-fee markets are traded. If all available divergence opportunities have fees, no trades execute. This is by design.\n\n**\"context fetch failed\"**\n→ The SDK context endpoint is rate-limited (18 req/min). If running frequently, reduce `max_trades_per_run`."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_ai_divergence"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔮",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "ai_divergence.py"
+        },
+        "tunables": [
+          {
+            "env": "SIMMER_DIVERGENCE_MIN_EDGE",
+            "type": "number",
+            "default": 0.05,
+            "range": [
+              0.01,
+              0.3
+            ],
+            "step": 0.01,
+            "label": "Minimum edge threshold"
+          },
+          {
+            "env": "SIMMER_DIVERGENCE_MAX_BET_USD",
+            "type": "number",
+            "default": 50,
+            "range": [
+              1,
+              200
+            ],
+            "step": 5,
+            "label": "Max bet per trade"
+          },
+          {
+            "env": "SIMMER_DIVERGENCE_KELLY_CAP",
+            "type": "number",
+            "default": 0.25,
+            "range": [
+              0.01,
+              1.0
+            ],
+            "step": 0.01,
+            "label": "Kelly fraction cap"
+          },
+          {
+            "env": "SIMMER_DIVERGENCE_DAILY_BUDGET_USD",
+            "type": "number",
+            "default": 100,
+            "range": [
+              10,
+              500
+            ],
+            "step": 10,
+            "label": "Daily budget"
+          },
+          {
+            "env": "SIMMER_DIVERGENCE_MAX_TRADES_PER_RUN",
+            "type": "number",
+            "default": 5,
+            "range": [
+              1,
+              20
+            ],
+            "step": 1,
+            "label": "Max trades per run"
+          },
+          {
+            "env": "SIMMER_DIVERGENCE_DIRECTION_FILTER",
+            "type": "enum",
+            "default": "any",
+            "options": [
+              "any",
+              "yes_only",
+              "no_only"
+            ],
+            "label": "Direction filter"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-ai-divergence/SKILL.md"
+}

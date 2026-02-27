@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_virtualbox",
+  "description": "Control and manage VirtualBox virtual machines directly from openclaw. Start, stop, snapshot, clone, configure and monitor VMs using VBoxManage CLI. Supports full lifecycle management including VM creation, network configuration, shared folders, and performance monitoring.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # VirtualBox Skill\n\nControl and manage VirtualBox virtual machines directly from openclaw using the VBoxManage command-line interface. This skill provides comprehensive VM lifecycle management, configuration, and monitoring capabilities."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ### Prerequisites\n1. VirtualBox must be installed on the host system\n2. VBoxManage CLI must be accessible (usually in PATH after VirtualBox installation)\n3. User must have appropriate permissions to control VMs\n\n### Verify Installation\n```bash\nVBoxManage --version\n```\n\n### Common Paths\n- **Linux**: `/usr/bin/VBoxManage` or `/usr/local/bin/VBoxManage`\n- **macOS**: `/Applications/VirtualBox.app/Contents/MacOS/VBoxManage`\n- **Windows**: `C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### VM Lifecycle Management\n- Create, start, stop, pause, and delete VMs\n- Manage VM states (running, paused, saved, powered off)\n- Force stop and ACPI shutdown options\n- Reset and restart VMs\n\n### Configuration Management\n- Modify VM settings (CPU, RAM, storage)\n- Configure network adapters and modes\n- Set up shared folders\n- Manage USB device passthrough\n\n### Snapshot & Cloning\n- Create and restore snapshots\n- Clone existing VMs\n- Export/Import appliances\n\n### Monitoring & Information\n- List all VMs and their states\n- Get detailed VM information\n- Monitor VM metrics and performance\n- View logs and debugging info"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### List All VMs\n\n```bash\n# List all registered VMs\nVBoxManage list vms\n\n# List running VMs only\nVBoxManage list runningvms\n\n# Get detailed info about all VMs (JSON-like output)\nVBoxManage list vms --long\n```\n\n### VM Information\n\n```bash\n# Get detailed info about a specific VM\nVBoxManage showvminfo \"VM_NAME\"\n\n# Get info in machine-readable format\nVBoxManage showvminfo \"VM_NAME\" --machinereadable\n```\n\n### Start a VM\n\n```bash\n# Start VM with GUI\nVBoxManage startvm \"VM_NAME\"\n\n# Start VM headless (no GUI)\nVBoxManage startvm \"VM_NAME\" --type headless\n\n# Start VM with separate UI process\nVBoxManage startvm \"VM_NAME\" --type separate\n```\n\n### Stop a VM\n\n```bash\n# ACPI shutdown (graceful, like pressing power button)\nVBoxManage controlvm \"VM_NAME\" acpipowerbutton\n\n# Power off (hard stop, like pulling plug)\nVBoxManage controlvm \"VM_NAME\" poweroff\n\n# Save state (hibernate)\nVBoxManage controlvm \"VM_NAME\" savestate\n\n# Pause VM\nVBoxManage controlvm \"VM_NAME\" pause\n\n# Resume paused VM\nVBoxManage controlvm \"VM_NAME\" resume\n\n# Reset VM (hard reboot)\nVBoxManage controlvm \"VM_NAME\" reset\n```\n\n### Create a New VM\n\n```bash\n# Create a new VM\nVBoxManage createvm --name \"NewVM\" --register\n\n# Set OS type\nVBoxManage modifyvm \"NewVM\" --ostype \"Ubuntu_64\"\n\n# Set memory (RAM in MB)\nVBoxManage modifyvm \"NewVM\" --memory 4096\n\n# Set CPU count\nVBoxManage modifyvm \"NewVM\" --cpus 2\n\n# Create a virtual disk\nVBoxManage createhd --filename \"/path/to/NewVM.vdi\" --size 50000\n\n# Add storage controller\nVBoxManage storagectl \"NewVM\" --name \"SATA Controller\" --add sata\n\n# Attach virtual disk\nVBoxManage storageattach \"NewVM\" --storagectl \"SATA Controller\" \\\n  --port 0 --device 0 --type hdd --medium \"/path/to/NewVM.vdi\"\n\n# Attach ISO for installation\nVBoxManage storageattach \"NewVM\" --storagectl \"SATA Controller\" \\\n  --port 1 --device 0 --type dvddrive --medium \"/path/to/install.iso\"\n```\n\n### Clone a VM\n\n```bash\n# Full clone (all disks copied)\nVBoxManage clonevm \"SourceVM\" --name \"ClonedVM\" --register\n\n# Linked "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Practical Examples] ### Quick VM Status Check\n\n```bash\n# Check if a specific VM is running\nVBoxManage list runningvms | grep \"VM_NAME\"\n\n# Get all VMs with their states\nVBoxManage list vms --long | grep -E \"Name:|State:\"\n```\n\n### Automated VM Startup Script\n\n```bash\n#!/bin/bash\n# Start VMs in headless mode\nfor vm in \"WebServer\" \"Database\" \"Cache\"; do\n  echo \"Starting $vm...\"\n  VBoxManage startvm \"$vm\" --type headless\n  sleep 10\ndone\necho \"All VMs started\"\n```\n\n### Backup Script with Snapshots\n\n```bash\n#!/bin/bash\nVM_NAME=\"ProductionVM\"\nDATE=$(date +%Y%m%d_%H%M%S)\nSNAPSHOT_NAME=\"Backup_$DATE\"\n\n# Create snapshot\nVBoxManage snapshot \"$VM_NAME\" take \"$SNAPSHOT_NAME\" \\\n  --description \"Automated backup $DATE\"\n\n# Keep only last 5 snapshots\nSNAPSHOTS=$(VBoxManage snapshot \"$VM_NAME\" list --machinereadable | grep SnapshotName | wc -l)\nif [ $SNAPSHOTS -gt 5 ]; then\n  OLDEST=$(VBoxManage snapshot \"$VM_NAME\" list --machinereadable | grep SnapshotName | head -1 | cut -d'\"' -f4)\n  VBoxManage snapshot \"$VM_NAME\" delete \"$OLDEST\"\nfi\n```\n\n### Complete VM Cloning Workflow\n\n```bash\n#!/bin/bash\nSOURCE_VM=\"TemplateVM\"\nNEW_VM=\"DevVM_$(date +%s)\"\n\n# Ensure source is stopped\nVBoxManage controlvm \"$SOURCE_VM\" poweroff 2>/dev/null\n\n# Take a clean snapshot first\nVBoxManage snapshot \"$SOURCE_VM\" take \"PreClone\"\n\n# Clone the VM\nVBoxManage clonevm \"$SOURCE_VM\" --name \"$NEW_VM\" --register\n\n# Modify the clone\nVBoxManage modifyvm \"$NEW_VM\" --memory 2048 --cpus 2\n\n# Start the clone\nVBoxManage startvm \"$NEW_VM\" --type headless\n\necho \"Cloned VM '$NEW_VM' is now running\"\n```\n\n### Network Port Forwarding Setup\n\n```bash\n#!/bin/bash\nVM_NAME=\"WebServer\"\n\n# SSH access\nVBoxManage modifyvm \"$VM_NAME\" --natpf1 \"ssh,tcp,,2222,,22\"\n\n# HTTP access\nVBoxManage modifyvm \"$VM_NAME\" --natpf1 \"http,tcp,,8080,,80\"\n\n# HTTPS access\nVBoxManage modifyvm \"$VM_NAME\" --natpf1 \"https,tcp,,8443,,443\"\n\n# Verify\nVBoxManage showvminfo \"$VM_NAME\" | grep \"NIC 1 Rule\"\n```\n\n### Monitor Resource Usage\n\n```bash\n#!/bin/bash\nVM_NAME=\"ProductionVM\"\n\n# Setup me"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Common Issues & Solutions] ### VM Won't Start\n```bash\n# Check VM state\nVBoxManage showvminfo \"VM_NAME\" | grep State\n\n# Check for locked files\nVBoxManage showvminfo \"VM_NAME\" | grep -i lock\n\n# Try starting with verbose output\nVBoxManage startvm \"VM_NAME\" --type headless 2>&1\n```\n\n### Cannot Delete VM\n```bash\n# Ensure VM is stopped\nVBoxManage controlvm \"VM_NAME\" poweroff\n\n# Check for attached media\nVBoxManage showvminfo \"VM_NAME\" | grep -E \"Storage|Medium\"\n\n# Force unregister if needed\nVBoxManage unregistervm \"VM_NAME\" --delete\n```\n\n### Network Issues\n```bash\n# Check adapter status\nVBoxManage showvminfo \"VM_NAME\" | grep -A 10 \"NIC 1\"\n\n# Reset network adapter\nVBoxManage modifyvm \"VM_NAME\" --nic1 none\nVBoxManage modifyvm \"VM_NAME\" --nic1 nat\n\n# Verify host-only interface exists\nVBoxManage list hostonlyifs\n```\n\n### Performance Issues\n```bash\n# Check current allocation\nVBoxManage showvminfo \"VM_NAME\" | grep -E \"Memory|CPU\"\n\n# Increase resources (VM must be stopped)\nVBoxManage modifyvm \"VM_NAME\" --memory 8192 --cpus 4\n\n# Enable hardware acceleration\nVBoxManage modifyvm \"VM_NAME\" --hwvirtex on --nestedpaging on\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Important Notes] 1. **VM Names with Spaces**: Always quote VM names containing spaces\n   ```bash\n   VBoxManage startvm \"My Production VM\"\n   ```\n\n2. **UUIDs vs Names**: Both VM names and UUIDs work interchangeably\n   ```bash\n   VBoxManage startvm \"VM_NAME\"\n   VBoxManage startvm \"12345678-1234-1234-1234-123456789abc\"\n   ```\n\n3. **Running vs Stopped Operations**:\n   - `controlvm` - operates on running VMs\n   - `modifyvm` - operates on stopped VMs (mostly)\n\n4. **Headless Mode**: Always use `--type headless` for server environments without GUI\n\n5. **Permissions**: Some operations require elevated permissions or membership in specific groups (e.g., `vboxusers` on Linux)\n\n6. **Guest Additions**: Required for:\n   - Shared clipboard\n   - Drag and drop\n   - Shared folders auto-mount\n   - Guest control commands\n   - Seamless mode"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[OS Types Reference] Common OS types for `--ostype` parameter:\n- `Windows11_64` - Windows 11 (64-bit)\n- `Windows10_64` - Windows 10 (64-bit)\n- `Ubuntu_64` - Ubuntu Linux (64-bit)\n- `Debian_64` - Debian Linux (64-bit)\n- `Fedora_64` - Fedora Linux (64-bit)\n- `ArchLinux_64` - Arch Linux (64-bit)\n- `macOS_ARM64` - macOS on Apple Silicon\n- `macOS_128` - macOS on Intel (64-bit)\n- `FreeBSD_64` - FreeBSD (64-bit)\n- `Other_64` - Other OS (64-bit)\n\nGet full list with:\n```bash\nVBoxManage list ostypes\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Quick Reference Card] | Operation | Command |\n|-----------|---------|\n| List VMs | `VBoxManage list vms` |\n| Start VM | `VBoxManage startvm \"NAME\" --type headless` |\n| Stop VM | `VBoxManage controlvm \"NAME\" acpipowerbutton` |\n| Force Stop | `VBoxManage controlvm \"NAME\" poweroff` |\n| VM Info | `VBoxManage showvminfo \"NAME\"` |\n| Snapshot | `VBoxManage snapshot \"NAME\" take \"SnapName\"` |\n| Restore | `VBoxManage snapshot \"NAME\" restore \"SnapName\"` |\n| Clone | `VBoxManage clonevm \"SRC\" --name \"NEW\" --register` |\n| Delete | `VBoxManage unregistervm \"NAME\" --delete` |\n| Modify RAM | `VBoxManage modifyvm \"NAME\" --memory 4096` |\n| Modify CPU | `VBoxManage modifyvm \"NAME\" --cpus 2` |\n| Port Forward | `VBoxManage modifyvm \"NAME\" --natpf1 \"rule,tcp,,host,,guest\"` |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Requirements] - **Required Binary**: `VBoxManage` (part of VirtualBox installation)\n- **Permissions**: User must have VM management permissions\n- **Guest Additions**: Required for guest control and enhanced features"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "virtualbox"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🖥️",
+        "requires": {
+          "bins": [
+            "VBoxManage"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xfratex/virtualboxmanager/SKILL.md"
+}

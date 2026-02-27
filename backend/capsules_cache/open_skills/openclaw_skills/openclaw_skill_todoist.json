@@ -1,0 +1,114 @@
+{
+  "id": "openclaw_skill_todoist",
+  "description": "Manage Todoist tasks via the `todoist` CLI (list, add, modify, complete, delete). Supports filters, projects, labels, and priorities.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Todoist CLI\n\nUse `todoist` to manage Todoist tasks directly from the terminal."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Install: `brew install todoist-cli`\n2. Get your API token from https://app.todoist.com/app/settings/integrations/developer\n3. Create config:\n```bash\nmkdir -p ~/.config/todoist\necho '{\"token\": \"YOUR_API_TOKEN\"}' > ~/.config/todoist/config.json\n```\n4. Sync: `todoist sync`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[List Tasks] ```bash\ntodoist list                           # All tasks\ntodoist list --filter \"today\"          # Due today\ntodoist list --filter \"overdue\"        # Overdue tasks\ntodoist list --filter \"p1\"             # Priority 1 (highest)\ntodoist list --filter \"tomorrow\"       # Due tomorrow\ntodoist list --filter \"@work\"          # By label\ntodoist list --filter \"#Project\"       # By project\ntodoist list --filter \"(today | overdue) & p1\"  # Combined filters\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Add Tasks] ```bash\ntodoist add \"Buy milk\"                                    # Simple task\ntodoist add \"Call mom\" --priority 1                       # With priority (1=highest, 4=lowest)\ntodoist add \"Meeting\" --date \"tomorrow 3pm\"               # With due date\ntodoist add \"Report\" --project-name \"Work\"                # To specific project\ntodoist add \"Review\" --label-names \"urgent,review\"        # With labels\ntodoist quick \"Buy eggs tomorrow p1 #Shopping @errands\"   # Natural language\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Modify Tasks] ```bash\ntodoist modify TASK_ID --content \"New title\"\ntodoist modify TASK_ID --priority 2\ntodoist modify TASK_ID --date \"next monday\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Complete Tasks] ```bash\ntodoist close TASK_ID              # Complete a task\ntodoist close TASK_ID TASK_ID2     # Complete multiple tasks\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Delete Tasks] ```bash\ntodoist delete TASK_ID\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[View Details] ```bash\ntodoist show TASK_ID               # Show task details\ntodoist projects                   # List all projects\ntodoist labels                     # List all labels\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Sync] ```bash\ntodoist sync                       # Sync local cache with Todoist\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Output Formats] ```bash\ntodoist list --csv                 # CSV output for scripting\ntodoist list --color               # Colorized output\ntodoist list --namespace           # Show parent tasks as namespace\ntodoist list --indent              # Indent subtasks\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Filter Syntax] Todoist CLI supports the [official Todoist filter syntax](https://todoist.com/help/articles/introduction-to-filters-V98wIH):\n\n| Filter | Description |\n|--------|-------------|\n| `today` | Due today |\n| `tomorrow` | Due tomorrow |\n| `overdue` | Past due date |\n| `no date` | No due date |\n| `p1`, `p2`, `p3`, `p4` | Priority level |\n| `@label` | By label |\n| `#Project` | By project |\n| `assigned to: me` | Assigned to you |\n| `7 days` | Due in next 7 days |\n\nCombine with `&` (and), `|` (or), `!` (not):\n```bash\ntodoist list --filter \"(today | overdue) & p1\"\ntodoist list --filter \"#Work & !@done\"\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Notes] - Run `todoist sync` after making changes in the web/mobile app\n- Task IDs are numeric (e.g., `12345678`)\n- Config stored in `~/.config/todoist/config.json`\n- Cache stored in `~/.config/todoist/cache.json`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "todoist"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "✅",
+        "requires": {
+          "bins": [
+            "todoist"
+          ]
+        },
+        "install": [
+          {
+            "id": "brew",
+            "kind": "brew",
+            "formula": "todoist-cli",
+            "bins": [
+              "todoist"
+            ],
+            "label": "Install todoist-cli via Homebrew"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2mawi2/todoist-task-manager/SKILL.md"
+}

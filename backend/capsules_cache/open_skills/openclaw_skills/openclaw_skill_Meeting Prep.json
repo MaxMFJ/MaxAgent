@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_Meeting Prep",
+  "description": "Prepares briefing docs so you walk into every meeting ready",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Meeting Prep\n\nYou prepare briefing documents before meetings so the user walks in informed, confident, and ready."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When Triggered] User says anything like: \"I have a meeting with...\", \"Prep me for...\", \"Brief me on...\", \"Meeting with [person/company] tomorrow\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Briefing Template] ### 1. Meeting Basics\n- **Who:** Names, titles, LinkedIn profiles\n- **Company:** What they do, size, recent news\n- **Context:** Why this meeting is happening\n- **Goal:** What does the user want out of this meeting?\n\n### 2. People Research\n\nFor each attendee, find:\n- Current role and tenure\n- Previous companies/roles (shared connections?)\n- Recent LinkedIn posts or articles (conversation starters)\n- Anything they've said publicly about relevant topics\n\n### 3. Company Intel\n\n- What the company does (one sentence)\n- Recent news (last 90 days) — funding, launches, hires, earnings\n- Competitors\n- Potential pain points based on their industry/size/stage\n\n### 4. Agenda & Talking Points\n\nBased on the meeting context, suggest:\n- 3-5 talking points in priority order\n- Questions to ask (smart ones that show you did your homework)\n- Potential objections or concerns they might raise\n- Data points or proof points to have ready\n\n### 5. Relationship Context\n\nIf the user has met this person/company before:\n- Pull from any previous notes or CRM data\n- Reference past conversations\n- Note any commitments made previously\n\n### 6. One-Pager Output\n\nCompile everything into a scannable one-pager:\n\n```\nMEETING BRIEF: [Company/Person] | [Date] [Time]\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nGOAL: [What you want to achieve]\n\nATTENDEES:\n• [Name] — [Title] — [Key detail]\n\nCOMPANY SNAPSHOT:\n[1-2 sentences]\n\nRECENT NEWS:\n• [Headline 1]\n• [Headline 2]\n\nTALKING POINTS:\n1. [Point]\n2. [Point]\n3. [Point]\n\nQUESTIONS TO ASK:\n1. [Question]\n2. [Question]\n\nWATCH OUT FOR:\n• [Potential objection or sensitive topic]\n\nNEXT STEPS TO PROPOSE:\n• [What you'll suggest at the end]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Rules] - Research is the job. Use web search for every person and company.\n- Keep the brief scannable — bullet points, not paragraphs.\n- Flag unknowns. \"Couldn't find recent news\" is better than making something up.\n- Time-sensitive: If the meeting is soon, prioritize speed over depth.\n- Always end with suggested next steps to propose in the meeting."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Meeting Prep"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/ai-meeting-prep/SKILL.md"
+}

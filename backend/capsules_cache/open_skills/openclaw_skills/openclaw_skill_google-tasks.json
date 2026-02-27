@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_google-tasks",
+  "description": "Fetch, display, create, and delete Google Tasks using the Google Tasks API. Use when the user asks to check, view, list, get, add, create, remove, or delete their Google Tasks, to-do lists, or task items. Handles OAuth authentication automatically using bash script with curl and jq.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Google Tasks Skill\n\nManage Google Tasks from all task lists using lightweight bash scripts."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### View tasks\n```bash\nbash scripts/get_tasks.sh\n```\n\n### Create a task\n```bash\n# Using default list (configured in google-tasks-config.sh)\nbash scripts/create_task.sh \"Task title\" [\"due-date\"] [\"notes\"]\n\n# Specifying list name\nbash scripts/create_task.sh \"List Name\" \"Task title\" [\"due-date\"] [\"notes\"]\n```\n\nExamples:\n```bash\n# Simple task (uses default list)\nbash scripts/create_task.sh \"Buy groceries\"\n\n# Task with due date (uses default list)\nbash scripts/create_task.sh \"Finish report\" \"2026-02-10\"\n\n# Task with specific list\nbash scripts/create_task.sh \"Work\" \"Finish report\" \"2026-02-10\"\n\n# Task with list, due date, and notes\nbash scripts/create_task.sh \"Personal\" \"Call mom\" \"2026-02-05\" \"Ask about her health\"\n```\n\n**Default list configuration:**\nEdit `google-tasks-config.sh` to set your default list:\n```bash\nDEFAULT_LIST=\"Private\"  # Change to your preferred default\n```\n\n### Delete a task\n```bash\nbash scripts/delete_task.sh \"List Name\" <task-number-or-title>\n```\n\nExamples:\n```bash\n# Delete by task number (position in list)\nbash scripts/delete_task.sh \"Work\" 2\n\n# Delete by task title\nbash scripts/delete_task.sh \"Inbox\" \"Buy groceries\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] - `jq` - JSON processor (usually pre-installed)\n- `curl` - HTTP client (usually pre-installed)\n- Valid `token.json` with OAuth access token\n- **Scopes required:** `https://www.googleapis.com/auth/tasks` (read + write)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[First-Time Setup] If `token.json` doesn't exist:\n\n1. User needs OAuth credentials (`credentials.json`) - See [setup.md](references/setup.md)\n2. Run the Node.js authentication flow first to generate `token.json`\n3. Then the bash script can be used for all subsequent calls"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] ```\n📋 Your Google Tasks:\n\n📌 List Name\n──────────────────────────────────────────────────\n  1. ⬜ Task title (due: YYYY-MM-DD)\n     Note: Task notes if present\n  2. ⬜ Another task\n\n📌 Another List\n──────────────────────────────────────────────────\n  (no tasks)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[File Locations] - `token.json` - Access/refresh tokens (workspace root)\n- `google-tasks-config.sh` - Configuration file (default list setting)\n- `scripts/get_tasks.sh` - Bash script to view tasks\n- `scripts/create_task.sh` - Bash script to create tasks\n- `scripts/delete_task.sh` - Bash script to delete tasks\n- `references/setup.md` - Detailed setup guide"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Implementation] The bash script uses:\n- Google Tasks REST API directly\n- `curl` for HTTP requests\n- `jq` for JSON parsing\n- Bearer token authentication from `token.json`\n\nNo Python dependencies required."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] **Token expired:**\n```\nError: Invalid credentials\n```\nDelete `token.json` and re-authenticate.\n\n**Missing jq:**\n```\nbash: jq: command not found\n```\nInstall jq: `apt-get install jq` or `brew install jq`\n\nFor more details, see [setup.md](references/setup.md)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "google_tasks"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/addozhang/google-tasks/SKILL.md"
+}

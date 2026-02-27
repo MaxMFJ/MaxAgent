@@ -1,0 +1,60 @@
+{
+  "id": "openclaw_skill_openclaw-switch",
+  "description": "Manage multi-provider model switching and fallback chains in OpenClaw. \"OpenClaw Switch\" helps users set up automatic model failover (e.g. 429 rate-limit → fallback), switch primary models, view current fallback chains, and configure heartbeat/subagent routing. Works with any provider (Gemini, OpenAI, Anthropic, NVIDIA, Ollama, etc.).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Switch\n\nThe missing model manager for OpenClaw. Switch models, visualize fallback chains, and manage multi-provider setups."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\n# Show current model, fallback chain, heartbeat & subagent config\nbash {baseDir}/scripts/openclaw-switch.sh status\n\n# List all available models across all providers\nbash {baseDir}/scripts/openclaw-switch.sh list\n\n# Switch primary model (by number from list)\nbash {baseDir}/scripts/openclaw-switch.sh switch 2\n\n# Show fallback chain only\nbash {baseDir}/scripts/openclaw-switch.sh fallback\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How it works] OpenClaw natively supports `model.fallbacks` — when the primary model returns an error (429, 500, etc.), the next model in the chain is tried automatically. OpenClaw Switch helps users **configure, visualize, and toggle** this chain.\n\n### Typical setup\n\nRegister multiple providers in `openclaw.json`, each with its own API key:\n\n```json\n{\n  \"models\": {\n    \"providers\": {\n      \"provider-a\": { \"apiKey\": \"...\", \"models\": [{ \"id\": \"model-1\" }] },\n      \"provider-b\": { \"apiKey\": \"...\", \"models\": [{ \"id\": \"model-2\" }] }\n    }\n  },\n  \"agents\": {\n    \"defaults\": {\n      \"model\": {\n        \"primary\": \"provider-a/model-1\",\n        \"fallbacks\": [\"provider-b/model-2\"]\n      }\n    }\n  }\n}\n```\n\n### Use cases\n\n- **Same provider, two API keys** (e.g. paid + free Gemini) — register as separate providers\n- **Cross-provider failover** (e.g. Gemini → OpenAI → local Ollama)\n- **Cost optimization** — route heartbeat/subagents to cheaper or free models"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Security] The bundled script:\n\n- **Never transmits** API keys or config data over the network\n- **Never logs** full API keys (masks all but first 8 chars)\n- Uses only `bash` + `python3` stdlib — **zero external dependencies**\n- Source is < 150 lines — **fully auditable in 2 minutes**"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_switch"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "bin": {
+          "openclaw-switch": "scripts/openclaw-switch.sh"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/openclaw-switch/SKILL.md"
+}

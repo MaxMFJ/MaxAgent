@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_searxng",
+  "description": "Privacy-respecting metasearch using your local SearXNG instance. Search the web, images, news, and more without external API dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SearXNG Search\n\nSearch the web using your local SearXNG instance - a privacy-respecting metasearch engine."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] ### Web Search\n```bash\nuv run {baseDir}/scripts/searxng.py search \"query\"              # Top 10 results\nuv run {baseDir}/scripts/searxng.py search \"query\" -n 20        # Top 20 results\nuv run {baseDir}/scripts/searxng.py search \"query\" --format json # JSON output\n```\n\n### Category Search\n```bash\nuv run {baseDir}/scripts/searxng.py search \"query\" --category images\nuv run {baseDir}/scripts/searxng.py search \"query\" --category news\nuv run {baseDir}/scripts/searxng.py search \"query\" --category videos\n```\n\n### Advanced Options\n```bash\nuv run {baseDir}/scripts/searxng.py search \"query\" --language en\nuv run {baseDir}/scripts/searxng.py search \"query\" --time-range day\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Configuration] **Required:** Set the `SEARXNG_URL` environment variable to your SearXNG instance:\n\n```bash\nexport SEARXNG_URL=https://your-searxng-instance.com\n```\n\nOr configure in your Clawdbot config:\n```json\n{\n  \"env\": {\n    \"SEARXNG_URL\": \"https://your-searxng-instance.com\"\n  }\n}\n```\n\nDefault (if not set): `http://localhost:8080`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Features] - 🔒 Privacy-focused (uses your local instance)\n- 🌐 Multi-engine aggregation\n- 📰 Multiple search categories\n- 🎨 Rich formatted output\n- 🚀 Fast JSON mode for programmatic use"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[API] Uses your local SearXNG JSON API endpoint (no authentication required by default)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "searxng"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔍",
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        },
+        "config": {
+          "env": {
+            "SEARXNG_URL": {
+              "description": "SearXNG instance URL",
+              "default": "http://localhost:8080",
+              "required": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abk234/searxng/SKILL.md"
+}

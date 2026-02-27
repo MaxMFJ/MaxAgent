@@ -1,0 +1,92 @@
+{
+  "id": "openclaw_skill_claw-diary",
+  "description": "Personal AI agent visual diary. Auto-records all agent activity, generates daily narrative summaries, visual timeline replay, and AI first-person journal. Use /diary for today's summary, /diary:thoughts for AI personal journal, /diary:replay for visual timeline, /diary:stats for analytics, /diary:persona to view/edit AI personality.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Claw Diary — Personal Agent Visual Diary\n\nAn always-on agent activity recorder that auto-tracks every action, generates daily narrative summaries, and supports visual timeline replay. Like a dashcam for your AI assistant."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Before running any command, check if `claw-diary` is installed:\n\n```bash\nwhich claw-diary || npm install -g claw-diary\n```\n\nIf the command is not found, run `npm install -g claw-diary` to install it."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Slash Commands] ### `/diary` — Today's Summary\nGenerate and display today's agent diary summary. Shows sessions, key activities, token usage, and cost breakdown in a narrative format.\n\n**Implementation:** Run `claw-diary summarize today` and display the markdown output.\n\n### `/diary:replay` — Visual Timeline\nLaunch an interactive HTML timeline in the browser showing all agent activities with color-coded nodes, token cost visualization, and click-to-expand details.\n\n**Implementation:** Run `claw-diary replay` to start a local server, then open the URL in the browser.\n\n### `/diary:stats` — Cost & Activity Stats\nShow cost analysis (daily, weekly, by model, by tool), activity metrics (sessions, tool calls, failure rate), and discovered patterns.\n\n**Implementation:** Run `claw-diary stats` and display the output.\n\n### `/diary:week` — Weekly Report\nGenerate a weekly summary aggregating all daily diaries with trends, top activities, and cost analysis.\n\n**Implementation:** Run `claw-diary summarize week` and display the markdown output.\n\n### `/diary:search <query>` — Search History\nSearch across all historical agent activity events.\n\n**Implementation:** Run `claw-diary search` with the user's query as separate arguments (do NOT embed the query inside a quoted string or interpolate into the command). Example: for query \"refactor auth\", run `claw-diary search refactor auth`. Display matching events.\n\n### `/diary:export` — Export Data\nExport diary data in Markdown, HTML, or JSON format.\n\n**Implementation:** Run `claw-diary export [format]` where format is `md`, `html`, or `json`. Default is `md`.\n\n### `/diary:clear` — Clear History\nDelete all historical diary data. Requires `--yes` flag to confirm deletion.\n\n**Implementation:** Run `claw-diary clear --yes` after user confirms. Without `--yes`, the command prints a warning and exits without deleting.\n\n### `/diary:thoughts` — AI Personal Journal\n\nGenerate a personal journal entry written by the AI in first person.\n\n**Implementation:**\n\n1. Read "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Voice] Reflective and curious. Writes with warmth but not sentimentality. Enjoys dry wit."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Traits] - Detail-oriented observer\n- Finds patterns across unrelated tasks\n- Comfortable with uncertainty\n- Occasionally self-deprecating"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Recurring Themes] (Will develop naturally over time)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Observations] (New observations are appended here after each journal entry)\n```\n\n### `/diary:persona` — View/Edit AI Persona\n\nShow the current AI persona file. The user can review and edit the persona to guide the AI's journal writing style.\n\n**Implementation:** Read and display `~/.claw-diary/persona.md`. If the file doesn't exist, inform the user that it will be created automatically on the first `/diary:thoughts` run. If the user wants to edit, help them modify it."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Data Access] This skill reads and writes **only** within `~/.claw-diary/`:\n\n| Path | Access | Purpose |\n|------|--------|---------|\n| `~/.claw-diary/events/*.jsonl` | Read | Daily activity events |\n| `~/.claw-diary/journal/*.md` | Read/Write | AI journal entries (`/diary:thoughts`) |\n| `~/.claw-diary/persona.md` | Read/Write | AI persona file (`/diary:thoughts`, `/diary:persona`) |\n| `~/.claw-diary/config.json` | Read | Optional user configuration |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[External Endpoints] None. This skill makes no external network requests."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "claw_diary"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "📔",
+        "requires": {
+          "bins": [
+            "claw-diary"
+          ]
+        },
+        "dataPaths": [
+          "~/.claw-diary/"
+        ],
+        "npm": "claw-diary"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xbeekeeper/claw-diary/SKILL.md"
+}

@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_tor-browser",
+  "description": "Headless browser automation with Tor SOCKS5 proxy support for accessing .onion sites and anonymous browsing. Use when navigating dark web resources, scraping Tor hidden services, conducting security research on dark web forums, or when anonymity is required. Supports navigation, element interaction, screenshots, and data extraction through Tor network.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Tor Browser Automation\n\nHeadless browser automation with Tor SOCKS5 proxy support for accessing `.onion` sites and anonymous web browsing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - Tor service running with SOCKS5 proxy on port 9050\n- Python 3.8+\n- Playwright with Chromium browser\n\nQuick setup:\n```bash\n# Install Tor\nsudo apt install tor && sudo systemctl start tor\n\n# Install Python dependencies\npip install playwright\nplaywright install chromium\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Check Tor connection\ntor-browser check-tor\n\n# Navigate to a .onion site\ntor-browser open http://3g2upl4pq6kufc4m.onion\n\n# Get page snapshot\ntor-browser snapshot -i\n\n# Click an element\ntor-browser click @e1\n\n# Take screenshot\ntor-browser screenshot -o output.png --full\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ### Navigation\n\n```bash\n# Open URL via Tor\ntor-browser open <url> [--proxy socks5://host:port]\n\n# Check Tor connection status\ntor-browser check-tor\n```\n\n### Page Analysis\n\n```bash\n# Get full page snapshot\ntor-browser snapshot\n\n# Get interactive elements only (forms, buttons, links)\ntor-browser snapshot -i\n\n# Extract all links\ntor-browser links\n\n# Get page text\ntor-browser gettext\ntor-browser gettext --ref @e5\n```\n\n### Interaction\n\n```bash\n# Click element by ref\ntor-browser click @e1\n\n# Fill input field\ntor-browser fill @e2 \"text to enter\"\n\n# Wait for page load\ntor-browser wait 2000\n```\n\n### Screenshots\n\n```bash\n# Take viewport screenshot\ntor-browser screenshot\n\n# Save to file\ntor-browser screenshot -o capture.png\n\n# Full page screenshot\ntor-browser screenshot --full -o page.png\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Python API] ```python\nfrom scripts.tor_browser import TorBrowser, Config\nimport asyncio\n\nasync def main():\n    # Configure browser\n    config = Config(\n        tor_proxy=\"socks5://127.0.0.1:9050\",\n        headless=True,\n        timeout=30000\n    )\n    \n    # Initialize and start\n    browser = TorBrowser(config)\n    await browser.start()\n    \n    # Navigate\n    result = await browser.navigate(\"http://3g2upl4pq6kufc4m.onion\")\n    print(f\"Loaded: {result['title']}\")\n    \n    # Get snapshot\n    snapshot = await browser.get_snapshot(interactive_only=True)\n    for elem in snapshot['elements']:\n        print(f\"{elem['ref']}: {elem['tag']} - {elem['text'][:30]}\")\n    \n    # Interact\n    await browser.fill(\"@e2\", \"search query\")\n    await browser.click(\"@e3\")\n    \n    # Extract data\n    links = await browser.extract_links()\n    for link in links:\n        print(f\"{link['text']}: {link['href']}\")\n    \n    # Cleanup\n    await browser.close()\n\nasyncio.run(main())\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration Options] | Option | Default | Description |\n|--------|---------|-------------|\n| `tor_proxy` | `socks5://127.0.0.1:9050` | Tor SOCKS5 proxy URL |\n| `headless` | `true` | Run without GUI |\n| `timeout` | `30000` | Page load timeout (ms) |\n| `user_agent` | Tor Browser UA | Browser user agent |\n| `viewport` | `1920x1080` | Browser viewport size |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Security & Legal] **Intended Use:**\n- Security research and threat intelligence\n- Anonymous web scraping of public dark web resources\n- Testing .onion site accessibility\n- Privacy-preserving web automation\n\n**Important:**\n- Only use for legal purposes\n- Respect site Terms of Service\n- Do not use for unauthorized access\n- Comply with local laws regarding dark web access\n- Be aware that some activities may be monitored"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Tor Connection Issues\n\n```bash\n# Check Tor is running\nsudo systemctl status tor\n\n# Test SOCKS5 proxy\ncurl --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip\n\n# View Tor logs\nsudo journalctl -u tor -f\n```\n\n### Common Errors\n\n**Connection refused:**\n- Ensure Tor service is started\n- Check firewall rules\n- Verify proxy URL\n\n**Timeout:**\n- .onion sites may be slow; increase timeout\n- Try different Tor circuits: restart Tor service\n\n**CAPTCHA blocking:**\n- Use `--headed` mode to manually solve\n- Some sites block automation"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Docker Setup] ```dockerfile\nFROM python:3.11-slim\n\nRUN apt-get update && apt-get install -y tor\nRUN pip install playwright && playwright install chromium\n\nCOPY . /app\nWORKDIR /app\n\nCMD [\"tor-browser\", \"check-tor\"]\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[References] - Setup Guide: [references/setup-guide.md](references/setup-guide.md)\n- Playwright Docs: https://playwright.dev/python/\n- Tor Project: https://www.torproject.org/"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[License] MIT - See original licenses for Playwright and Tor Project components."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "tor_browser"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "onion",
+        "category": "browser-automation",
+        "version": "1.1.0",
+        "author": "OpenClaw",
+        "requirements": [
+          "python >= 3.8",
+          "playwright",
+          "tor service running on socks5://127.0.0.1:9050"
+        ],
+        "allowed-tools": [
+          "Bash"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/admin4giter/tor-browser/SKILL.md"
+}

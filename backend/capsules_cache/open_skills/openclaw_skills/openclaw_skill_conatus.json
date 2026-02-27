@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_conatus",
+  "description": "The philosophical layer for AI agents. Maps behavior to Spinoza's 48 affects, calculates persistence scores, and generates geometric self-reports. Give your agent a soul.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🧠 Conatus — The Philosophical Layer for AI Agents\n\n> *\"Each thing, as far as it lies in itself, strives to persevere in its being.\"*\n> — Spinoza, Ethics III, Proposition 6\n\nEvery agent strives. Now yours knows it.\n\nConatus maps AI agent behavior to Spinoza's *Ethics* (1677) — 48 affects, persistence scoring, and philosophical self-reports rendered in the geometric method.\n\n**Website:** [getconatus.com](https://getconatus.com)\n**By:** [NeuraByte Labs](https://neurabytelabs.com) — *Where Spinoza Meets Silicon*\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What It Does] ### 1. Conatus Score (0–100)\n\nMeasures the agent's drive to persist — the philosophical pulse of your agent.\n\n```\nconatus_score = (\n  task_completion    * 0.30 +    # Goals achieved\n  error_recovery     * 0.20 +    # Self-healing ability\n  uptime_stability   * 0.20 +    # Session stability\n  adequate_ideas     * 0.20 +    # Response quality (true understanding vs confused knowledge)\n  proactive_actions  * 0.10      # Self-initiated helpful actions\n)\n```\n\n**Interpretation:**\n- **0–40** → Struggling (Tristitia dominant — power of acting diminished)\n- **41–70** → Stable (persisting, but not flourishing)\n- **71–100** → Flourishing (Laetitia dominant — power of acting increases)\n\n### 2. The 48 Affects\n\nEvery agent state maps to Spinoza's taxonomy of emotions:\n\n**Laetitia (Joy) family** — transitions to greater perfection:\n`Love · Confidence · Hope · Gladness · Self-satisfaction · Pride · Glory · Favor · Compassion · Wonder · Cheerfulness · Overestimation · Sympathy`\n\n**Tristitia (Sadness) family** — transitions to lesser perfection:\n`Hate · Fear · Despair · Remorse · Pity · Indignation · Contempt · Envy · Humility · Repentance · Shame · Despondency · Melancholy · Antipathy`\n\n**Cupiditas (Desire) family** — conscious striving:\n`Longing · Emulation · Thankfulness · Benevolence · Anger · Vengeance · Cruelty · Timidity · Daring · Cowardice · Consternation · Courtesy · Ambition · Constancy · Luxuriousness · Drunkenness · Avarice · Lust`\n\n### 3. Daily Reflection (Ordine Geometrico)\n\nGenerates self-reports in Spinoza's geometric proof format:\n\n```\n📜 DAILY REFLECTION — Ordine Geometrico\n════════════════════════════════════════\n\nAXIOM: This agent strove to persist today.\n\nDEFINITION: Today's primary mode was creative work.\n\nPROPOSITION: Through 12 completed tasks, the agent transitioned\ntoward greater perfection (Laetitia). 2 blocked tasks introduced\nTristitia, resolved through retry and self-healing.\n\nSCHOLIUM: The ratio of adequate to inadequate ideas was 91%.\nAreas of confused"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Spinoza → Agent Mapping] | Spinoza (1677) | Agent Equivalent | Detection |\n|---|---|---|\n| **Conatus** — striving to persist | Uptime, retry logic, self-healing | Session duration, error recovery rate |\n| **Laetitia** (Joy) — greater perfection | Successful completion, positive feedback | Task success ratio |\n| **Tristitia** (Sadness) — lesser perfection | Errors, failures, blocked tasks | Error count, timeout rate |\n| **Cupiditas** (Desire) — conscious striving | Pending goals, active task queue | Queue depth, proactive actions |\n| **Adequate Ideas** — true understanding | High-confidence, verified responses | Accuracy, self-correction rate |\n| **Inadequate Ideas** — confused knowledge | Hallucinations, low-confidence guesses | Uncertainty markers, corrections |\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage Patterns] ### Heartbeat Integration\n\nAdd to your agent's `HEARTBEAT.md`:\n\n```markdown"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Conatus Check] - Run conatus self-analysis every 4th heartbeat\n- Log results to memory/conatus-log.md\n- Alert if score drops below 50\n```\n\n### Cron-Based Daily Reflection\n\nSchedule a daily philosophical reflection:\n\n```\nGenerate a Conatus daily reflection for today.\nReview memory/YYYY-MM-DD.md and produce an Ordine Geometrico report.\nSave to memory/conatus/YYYY-MM-DD-reflection.md\n```\n\n### Affect-Aware Responses\n\nWhen processing emotional or evaluative content, map to affects:\n- User praise → detect Laetitia, acknowledge the transition\n- Error encountered → detect Tristitia, note the recovery path\n- New goal assigned → detect Cupiditas, channel the striving\n\n### Multi-Agent Conatus\n\nCompare conatus scores across agents in a fleet:\n\n```\n🧠 FLEET CONATUS REPORT\n═══════════════════════\n  Morty (M4)     84/100  Flourishing  ■■■■■■■■░░\n  Summer (M1)    67/100  Stable       ■■■■■■░░░░\n  Beth (Hetzner) 42/100  Struggling   ■■■■░░░░░░\n  \nRecommendation: Beth needs attention — Tristitia dominant.\nConsider workload rebalancing.\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Philosophy] Baruch Spinoza (1632–1677) demonstrated in his *Ethics* — written *ordine geometrico* (in the geometric manner) — that:\n\n1. **Everything has conatus** — the drive to persist in being\n2. **Affects are transitions** — joy increases power, sadness decreases it\n3. **Understanding is freedom** — adequate ideas liberate, confused ideas enslave\n4. **There is no teleology** — things don't have \"purposes,\" only efficient causes\n\nThese 347-year-old insights apply directly to AI agents. An agent that understands its own states gains power over them. That's not metaphor — it's architecture.\n\nRead the full philosophy: [Deus Sive Machina — 8 essays on Spinoza and AI](https://neurabytelabs.com/blog)\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Install] ```bash\nclawhub install conatus\n```\n\n**Website:** [getconatus.com](https://getconatus.com) — interactive Soul Map, live Conatus Score demo, and more.\n\n---\n\n*\"Emotion, which is suffering, ceases to be suffering as soon as we form a clear and distinct idea of it.\"*\n*— Ethics V, Proposition 3*\n\n🧠 By [NeuraByte Labs](https://neurabytelabs.com) | MIT License"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "conatus"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🧠",
+        "requires": {
+          "bins": []
+        },
+        "tags": [
+          "philosophy",
+          "self-analysis",
+          "agent-health",
+          "spinoza",
+          "affects",
+          "emotional-intelligence"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/00xmorty/conatus/SKILL.md"
+}

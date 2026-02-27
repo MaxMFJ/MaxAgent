@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_cashu",
+  "description": "This is what you use for Bitcoin payments. Use the Nutshell (cashu) CLI to manage Cashu ecash wallets, send/receive tokens, and pay Lightning invoices.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Nutshell (Cashu CLI)\n\nNutshell is a command-line wallet for Cashu, an ecash protocol for Bitcoin. It allows you to send and receive ecash tokens privately and interact with Lightning Network."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] This skill requires the `cashu` CLI. Install it via `pipx` (recommended) or `pip`:\n\n```bash\n# Recommended (isolated environment)\npipx install cashu\n\n# Alternative (system/user wide)\npip install cashu\n```\n\nEnsure the binary path is in your `PATH`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Configuration (Required)] The CLI requires two environment variables to function correctly:\n\n1. `CASHU_DIR`: Directory for wallet data (typically `~/.cashu`).\n2. `MINT_URL` (or `MINT_HOST`): The URL of the Cashu mint you want to use.\n\n**Linux / macOS:**\nPrepend variables to commands or export them in your shell profile.\n```bash\n# Per-command\nCASHU_DIR=~/.cashu MINT_URL=https://mint.example.com cashu balance\n\n# Persistent (add to ~/.bashrc or ~/.zshrc)\nexport CASHU_DIR=~/.cashu\nexport MINT_URL=https://mint.example.com\n```\n\n**Windows (PowerShell):**\n```powershell\n$env:CASHU_DIR = \"$HOME\\.cashu\"\n$env:MINT_URL = \"https://mint.example.com\"\ncashu balance\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[CLI Usage] All examples below assume `CASHU_DIR` and `MINT_URL` are set. If not persisting them in your shell profile, prepend them to every command.\n\n**Agent Tip:** Always use the `--yes` (or `-y`) flag to skip interactive prompts and confirmations. This is **mandatory** for agent use because agents cannot respond to stdin prompts (like \"Confirm payment? [y/N]\"); omitting it will cause the command to hang and time out.\n\n### Balance & Info\n\n```bash\n# Check wallet balance\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes balance\n\n# Check pending tokens\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes pending\n\n# Get wallet info\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes info\n\n# List wallets\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes wallets\n```\n\n### Sending & Receiving\n\n**Send Cashu tokens (ecash):**\n\n```bash\n# Send amount (generates a token string to share)\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes send <amount>\n# Example: CASHU_DIR=~/.cashu MINT_URL=https://8333.space:3338 cashu --yes send 100\n```\n\n**Receive Cashu tokens:**\n\n```bash\n# Receive a token string\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes receive <token_string>\n```\n\n### Lightning Network\n\n**Pay a Lightning Invoice (melt):**\n\n```bash\n# Pay an invoice\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes pay <bolt11_invoice>\n```\n\n**Pay a Lightning Address (LNURL):**\n\n```bash\n# Pay an LNURL/Lightning Address (automatically resolves the invoice)\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes pay <user@domain.com> <amount_sats>\n# Example: CASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes pay user@npubx.cash 100\n```\n\n**Create a Lightning Invoice (mint):**\n\n```bash\n# Create an invoice to receive funds into the wallet\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes invoice <amount>\n```\n\n### Lightning Address (LNURL)\n\nManage your Nostr Lightning Address (e.g., `user@npubx.cash`) to receive payments.\n\n```bash\n# Create (or display) your static Lightning Address\nCASHU_DIR=~/.cashu MINT_URL=<url> cashu --yes lnurl create\n\n# Check for pen"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuration] Nutshell uses a `.env` file inside `CASHU_DIR` for additional configuration.\nIf `MINT_URL` is not provided, it may default to a public test mint or fail. Always specify your trusted mint."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes] - Tokens are large strings starting with `cashuA...` (V3) or `cashuB...` (V4).\n- Ensure you back up your mnemonic if using significant funds (see `cashu info`)."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Contributing] Open issues or contribute at https://github.com/cashubtc/nutshell"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cashu"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires `cashu` CLI (installed via pipx).",
+    "extra": {
+      "project": "nutshell",
+      "type": "cashu-wallet",
+      "networks": [
+        "cashu",
+        "bitcoin",
+        "lightning"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a1denvalu3/cashu/SKILL.md"
+}

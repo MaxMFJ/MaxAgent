@@ -1,0 +1,62 @@
+{
+  "id": "openclaw_skill_security-guardian",
+  "description": "Automated security auditing for OpenClaw projects. Scans for hardcoded secrets (API keys, tokens) and container vulnerabilities (CVEs) using Trivy. Provides structured reports to help maintain a clean and secure codebase.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Security Guardian\n\nSystem for automated security auditing and credential protection."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Workflows] ### 1. Secret Scanning\nScan specific project directories for hardcoded credentials. \n- **Tool**: `scripts/scan_secrets.py`\n- **Usage**: `python3 $WORKSPACE/skills/security-guardian/scripts/scan_secrets.py <path_to_project>`\n- **Workflow**:\n    1. Execute scan on a specific project or directory.\n    2. If findings are reported (exit code 1):\n        - Review the file and line number.\n        - **Transition**: Move the secret to a secure vault (e.g., using the `mema-vault` skill).\n        - **Redact**: Replace the plaintext secret in the source code with an environment variable or a vault lookup call.\n\n### 2. Container Vulnerability Scan\nAnalyze Docker images for vulnerabilities prior to deployment.\n- **Tool**: `scripts/scan_container.sh`\n- **Usage**: `bash $WORKSPACE/skills/security-guardian/scripts/scan_container.sh <image_name>`\n- **Logic**: Identify `HIGH` and `CRITICAL` severities. Recommend base image updates or security patches."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Security Guardrails] - **Scope Limitation**: Avoid scanning system-level directories. Focus only on relevant project workspaces.\n- **Credential Isolation**: Hardcoded secrets are considered a high-severity finding.\n- **Dependencies**: Container scanning requires `trivy` to be installed on the host system."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Integration] - **Vaulting**: This skill identifies leaks. Remediation should be performed using a dedicated credential manager like `mema-vault`."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "security_guardian"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "skills": [
+            "mema-vault"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/security-guardian/SKILL.md"
+}

@@ -22,7 +22,8 @@ struct ChatView: View {
                 ScrollView {
                     Group {
                         if let conversation = viewModel.currentConversation {
-                            LazyVStack(alignment: .leading, spacing: 16) {
+                            // 使用 VStack 而非 LazyVStack，避免悬停时布局变化导致滚动跳动（SwiftUI 已知问题）
+                            VStack(alignment: .leading, spacing: 16) {
                                 ForEach(conversation.messages) { message in
                                     MessageBubble(message: message)
                                         .id(message.id)

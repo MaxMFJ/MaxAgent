@@ -1,0 +1,95 @@
+{
+  "id": "openclaw_skill_openclaw-architect",
+  "description": "Design, configure, debug, and optimize OpenClaw AI agent deployments. Master guide for gateway configuration, openclaw.json settings, model routing and fallback chains, skills development and publishing, cron job scheduling, memory systems (Qdrant, Neo4j, SQLite), Docker infrastructure, and Tailscale VPN networking. Includes config analyzer that audits your openclaw.json and suggests improvements, plus health checker that validates all OpenClaw subsystems. Built for AI agents — Python stdlib only, no dependencies. Use for OpenClaw setup, gateway debugging, skill building, cron management, model optimization, cost reduction, and infrastructure troubleshooting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🏗️ OpenClaw Architect\n\nThe definitive skill for understanding, configuring, debugging, and optimizing OpenClaw deployments. Built from real production experience."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Analyze configurations** — audit openclaw.json and suggest improvements\n- **Health check systems** — validate all OpenClaw subsystems in one command\n- **Configure model routing** — set up primary models, fallback chains, cost tiers\n- **Build skills** — SKILL.md format, CLI design, publishing to ClawHub\n- **Debug gateway issues** — troubleshoot errors, cron failures, session crashes\n- **Optimize performance** — model selection, cost reduction, context management\n- **Manage cron jobs** — scheduling, error handling, retry patterns\n- **Configure memory systems** — Qdrant, Neo4j, SQLite integration\n- **Deploy infrastructure** — Docker, Tailscale VPN, networking\n- **Post-update verification** — checklist for safe OpenClaw upgrades"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `OPENCLAW_WORKSPACE` | ✅ | Path to OpenClaw workspace directory |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nPY=~/.openclaw/workspace/.venv/bin/python3\n\n# Analyze your openclaw.json configuration\n$PY skills/openclaw-architect/scripts/config_analyzer.py\n\n# Health check all OpenClaw systems\n$PY skills/openclaw-architect/scripts/health_check.py\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Config Analyzer\n```bash\n# Audit current configuration\n$PY skills/openclaw-architect/scripts/config_analyzer.py\n\n# Analyze a specific config file\n$PY skills/openclaw-architect/scripts/config_analyzer.py --config /path/to/openclaw.json\n```\n\n### Health Check\n```bash\n# Check all subsystems\n$PY skills/openclaw-architect/scripts/health_check.py\n\n# Check specific subsystem\n$PY skills/openclaw-architect/scripts/health_check.py --check gateway\n$PY skills/openclaw-architect/scripts/health_check.py --check cron\n$PY skills/openclaw-architect/scripts/health_check.py --check memory\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[References] | File | Description |\n|------|-------------|\n| `references/architecture-overview.md` | How OpenClaw works end-to-end |\n| `references/config-reference.md` | All openclaw.json options documented |\n| `references/skills-guide.md` | Building and publishing skills |\n| `references/cron-guide.md` | Cron job scheduling and patterns |\n| `references/memory-guide.md` | Memory system configuration |\n| `references/troubleshooting.md` | Common fixes and debugging |\n| `references/optimization-tips.md` | Performance tuning guide |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Architecture Principles] 1. **Brain-First** — Strategic content → Mem0/Qdrant/Neo4j/SQLite. Markdown = operational logs only.\n2. **Fault-Tolerant** — Always configure 2+ fallback models. Test each one works.\n3. **Credit-Aware** — Monitor usage, auto-switch tiers, alert before exhaustion.\n4. **Skills = Publishing** — Every reusable pattern becomes a ClawHub skill.\n5. **Self-Monitoring** — System watches its own health, uptime, costs via cron.\n6. **Automate Repetition** — If it happens twice → cron job or script."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/config_analyzer.py` | Audits openclaw.json configuration |\n| `{baseDir}/scripts/health_check.py` | Validates all OpenClaw subsystems |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Output Format] All commands output structured text with clear pass/fail indicators and actionable recommendations."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Data Policy] This skill reads local configuration files only. No data is sent to external services.\n\n---\n\nBuilt by [M. Abidi](https://www.agxntsix.ai)\n\n[LinkedIn](https://www.linkedin.com/in/mohammad-ali-abidi) · [YouTube](https://youtube.com/@aiwithabidi) · [GitHub](https://github.com/aiwithabidi) · [Book a Call](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🏗️",
+        "requires": {
+          "env": [
+            "OPENCLAW_WORKSPACE"
+          ]
+        },
+        "primaryEnv": "OPENCLAW_WORKSPACE",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/a6-openclaw-architect/SKILL.md"
+}

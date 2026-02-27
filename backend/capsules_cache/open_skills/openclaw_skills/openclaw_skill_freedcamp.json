@@ -1,0 +1,100 @@
+{
+  "id": "openclaw_skill_freedcamp",
+  "description": "Manage Freedcamp tasks, projects, groups, comments, notifications, and task lists via HMAC-SHA1 API credentials.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Freedcamp\n\nThis skill provides a dependency-free Node.js CLI that calls the Freedcamp REST API (v1) using **HMAC-SHA1 secured credentials** (API Key + API Secret).\n\n- Script: `{baseDir}/scripts/freedcamp.mjs`\n- Auth: `FREEDCAMP_API_KEY` + `FREEDCAMP_API_SECRET`\n- Output: **JSON only** (stdout), suitable for agents and automation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Obtain your Freedcamp API key and secret from your Freedcamp account settings.\n2. Provide both values as environment variables.\n\n### Common injection patterns\n\n- Shell env (local testing):\n\n  ```\n  export FREEDCAMP_API_KEY=\"...\"\n  export FREEDCAMP_API_SECRET=\"...\"\n  ```\n\n- OpenClaw config (recommended): set `skills.entries.freedcamp.apiKey` and `skills.entries.freedcamp.env.FREEDCAMP_API_SECRET` so secrets are injected only for the agent run.\n\n### Configure via OpenClaw CLI (recommended)\n\n```bash\nopenclaw config set skills.entries.freedcamp.enabled true\nopenclaw config set skills.entries.freedcamp.apiKey \"YOUR_API_KEY\"\nopenclaw config set skills.entries.freedcamp.env.FREEDCAMP_API_SECRET \"YOUR_API_SECRET\"\n```\n\n**Verify what is stored:**\n\n```bash\nopenclaw config get skills.entries.freedcamp\n```\n\n**Remove stored credentials:**\n\n```bash\nopenclaw config unset skills.entries.freedcamp.apiKey\nopenclaw config unset skills.entries.freedcamp.env.FREEDCAMP_API_SECRET\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[First calls (sanity + discovery)] - Who am I / session info:\n\n  `node {baseDir}/scripts/freedcamp.mjs me`\n\n- List all groups, projects, and apps:\n\n  `node {baseDir}/scripts/freedcamp.mjs groups-projects`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[ID resolution] When the user provides project names, resolve to IDs using:\n\n- `groups-projects` returns all groups with their projects, including project IDs and names\n- Use the exact `project_name` from the output for other commands\n\nAvoid guessing a project ID when multiple matches exist."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core: tasks] ### List tasks in a project\n\n`node {baseDir}/scripts/freedcamp.mjs tasks --project <project_id> --all`\n\n### List tasks with filters\n\n`node {baseDir}/scripts/freedcamp.mjs tasks --project <project_id> --status in_progress,not_started --assigned_to 2,-1`\n\nUseful filters:\n- `--status` comma-separated: `not_started`, `completed`, `in_progress`, `invalid`, `review`\n- `--assigned_to` comma-separated user IDs. `0` = unassigned, `-1` = everyone\n- `--due_from YYYY-MM-DD` / `--due_to YYYY-MM-DD`\n- `--created_from YYYY-MM-DD` / `--created_to YYYY-MM-DD`\n- `--list_status active|archived|all`\n- `--with_archived true` to include tasks from archived projects\n- `--limit <n>` (max 200 per page, default 200)\n- `--offset <n>` for pagination\n\n### Get a single task (with comments and files)\n\n`node {baseDir}/scripts/freedcamp.mjs task <task_id>`\n\n### Create a task\n\n`node {baseDir}/scripts/freedcamp.mjs create-task --project <project_id> --title \"Task title\"`\n\nWith optional description and task list:\n\n`node {baseDir}/scripts/freedcamp.mjs create-task --project <project_id> --title \"Task title\" --description \"Details here\" --task_group <task_group_id>`\n\n### Update a task\n\n`node {baseDir}/scripts/freedcamp.mjs update-task <task_id> --title \"New title\" --status in_progress`\n\nStatus values: `not_started` (0), `completed` (1), `in_progress` (2), `invalid` (3), `review` (4)\n\n### Create a task by project name\n\n`node {baseDir}/scripts/freedcamp.mjs create-task-by-name --project_name \"My Project\" --app_name \"Tasks\" --title \"New task\"`\n\nResolves the project name to an ID using session data. Currently supports the Tasks app."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Task lists (groups)] - List task lists for a project:\n\n  `node {baseDir}/scripts/freedcamp.mjs task-lists --project <project_id>`\n\n- Specify app (default is Tasks / app_id 2):\n\n  `node {baseDir}/scripts/freedcamp.mjs task-lists --project <project_id> --app_id 2`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Comments] - Add a comment to any item:\n\n  `node {baseDir}/scripts/freedcamp.mjs comment <item_id> --app_name \"Tasks\" --text \"My comment\"`\n\nComments are automatically wrapped in `<p>` tags. You can also pass raw HTML:\n\n  `node {baseDir}/scripts/freedcamp.mjs comment <item_id> --app_name \"Tasks\" --html \"<p>Bold <b>text</b></p>\"`\n\n### App names for comments\n\nWhen adding comments, the `--app_name` must be one of:\nTasks, Discussions, Milestones, Time, Files, Issue Tracker, Wikis, CRM, Passwords, Calendar, Planner, Translations"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notifications] - Fetch recent notifications (last 60 days):\n\n  `node {baseDir}/scripts/freedcamp.mjs notifications`\n\n- Mark a notification as read:\n\n  `node {baseDir}/scripts/freedcamp.mjs mark-read <notification_uid>`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Data model reference] ### Task statuses\n\n| Name | Value | CLI flag |\n|---|---|---|\n| Not Started | 0 | `not_started` |\n| Completed | 1 | `completed` |\n| In Progress | 2 | `in_progress` |\n| Invalid | 3 | `invalid` |\n| Review | 4 | `review` |\n\n### Priorities\n\n| Name | Value |\n|---|---|\n| None | 0 |\n| Low | 1 |\n| Medium | 2 |\n| High | 3 |\n\n### App types\n\n| ID | Name | Key |\n|---|---|---|\n| 2 | Tasks | TODOS |\n| 3 | Discussions | DISCUSSIONS |\n| 4 | Milestones | MILESTONES |\n| 5 | Time | TIME |\n| 6 | Files | FILES |\n| 13 | Issue Tracker | BUGTRACKER |\n| 14 | Wikis | WIKI |\n| 16 | CRM | CRM |\n| 17 | Passwords | PASSMAN |\n| 19 | Calendar | CALENDAR |\n| 47 | Planner | PLANNER |\n| 48 | Translations | TRANSLATIONS |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Important notes] - Comments must contain HTML. Plain text passed via `--text` is auto-wrapped in `<p>` tags.\n- Task pagination max is 200 per request; use `--offset` for more.\n- Session is cached locally and auto-refreshes on 401 errors.\n- The `--all` flag on `tasks` auto-paginates to fetch every result."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Out of scope] - Invoices and Invoices Plus APIs are not exposed.\n- \"Bot personality\" is not embedded; configure behavior in your agent prompt."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "freedcamp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "FREEDCAMP_API_KEY",
+            "FREEDCAMP_API_SECRET"
+          ]
+        },
+        "primaryEnv": "FREEDCAMP_API_KEY",
+        "homepage": "https://freedcamp.com"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agrublev/freedcamp-agent-skill/SKILL.md"
+}

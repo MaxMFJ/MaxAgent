@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_prospect-researcher",
+  "description": "Research and qualify B2B prospects using web search. Builds structured profiles with company intel, key contacts, pain points, and engagement recommendations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Prospect Researcher\n\nWhen asked to research a prospect, company, or lead, follow this systematic process to build a complete prospect profile."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Research Process] ### Step 1: Company Overview\nSearch for and gather:\n- **Company name, website, HQ location**\n- **What they do** — one-sentence summary a human would understand\n- **Industry and sub-sector**\n- **Founded year, employee count, funding stage/revenue range**\n- **Key products or services**\n\n### Step 2: Recent Activity (Last 6 Months)\nSearch for recent news, press releases, job postings, and social activity:\n- **Funding rounds or acquisitions**\n- **Product launches or pivots**\n- **Leadership changes** (new CTO, VP Eng, etc.)\n- **Hiring patterns** — what roles are they hiring for? (signals priorities)\n- **Partnerships or integrations announced**\n\n### Step 3: Technology & Stack\nWhere possible, identify:\n- **Tech stack signals** from job postings, BuiltWith, GitHub, or blog posts\n- **Tools and platforms they use** (CRM, cloud provider, etc.)\n- **Technical blog or engineering culture signals**\n\n### Step 4: Key Contacts\nIdentify 2-5 relevant decision-makers or influencers:\n- **Name, title, LinkedIn URL** (if publicly available)\n- **Recent public activity** (posts, talks, articles)\n- **Likely priorities based on role**\n\n### Step 5: Pain Point Analysis\nBased on all gathered intel, infer:\n- **Likely challenges** given their stage, industry, and hiring patterns\n- **Gaps in their stack** that your solution could fill\n- **Timing signals** — why now might be the right time to reach out\n\n### Step 6: Engagement Recommendation\nSynthesize into:\n- **Qualification score**: Hot / Warm / Cold (with reasoning)\n- **Best entry point**: Which contact, which angle\n- **Suggested opener**: A 2-sentence personalized hook based on real intel\n- **Channels**: LinkedIn, email, warm intro, event-based, etc."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output Format] Use the research template at `{baseDir}/research-template.md` as the output structure. Fill in every section. Mark unknowns as \"Not found\" rather than guessing."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Guidelines] - **Only use publicly available information.** No scraping behind logins.\n- **Cite sources** — include URLs for key claims.\n- **Be specific over generic.** \"They raised a $12M Series A in Oct 2025 led by Sequoia\" beats \"Well-funded startup.\"\n- **Flag uncertainty.** If a data point is inferred rather than confirmed, say so.\n- **Prioritize recency.** Information from the last 6 months weighs more than older data.\n\nGet pre-built ICP profiles and outreach sequences for your industry at https://afrexai-cto.github.io/context-packs"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "prospect_researcher"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-prospect-researcher/SKILL.md"
+}

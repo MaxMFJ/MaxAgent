@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_pinterest",
+  "description": "Search and browse Pinterest pins, get pin details, and send actual images to the user via Telegram/messaging. Use when the user wants to find inspiration, search for images/ideas, or browse Pinterest content. Sends images directly, not just links.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pinterest Skill\n\nSearch, browse, and share Pinterest pins — sends actual images to chat, not just links."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Search & Send Images] ### Step 1: Search Pinterest\n```\nbrowser action=navigate url=\"https://www.pinterest.com/search/pins/?q=YOUR+SEARCH+TERMS\"\nbrowser action=snapshot\n```\n\n### Step 2: Get High-Res Image URLs\nFrom the snapshot, find image URLs. Pinterest images follow this pattern:\n- Thumbnail: `https://i.pinimg.com/236x/...`\n- Medium: `https://i.pinimg.com/564x/...`\n- **High-res: `https://i.pinimg.com/originals/...`**\n\nTo get high-res: replace `236x` or `564x` with `originals` in the URL.\n\n### Step 3: Send Images to User\n**Send actual image (not link!):**\n```\nmessage action=send media=\"https://i.pinimg.com/originals/xx/xx/image.jpg\" message=\"Pin description here\"\n```\n\n**Send multiple images:**\n```\nmessage action=send media=\"https://i.pinimg.com/originals/...\" message=\"Option 1: Modern minimal\"\nmessage action=send media=\"https://i.pinimg.com/originals/...\" message=\"Option 2: Cozy rustic\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Detailed Pin Workflow] 1. **Navigate** to Pinterest search\n2. **Snapshot** to see results\n3. **Click** on a pin for details (gets larger image)\n4. **Screenshot** the pin detail page OR extract originals URL\n5. **Send image** via message tool with `media=` parameter\n\n### Getting Original Images\nWhen on a pin detail page:\n- Look for `<img>` with `src` containing `i.pinimg.com`\n- Convert to originals: `https://i.pinimg.com/originals/{hash}.jpg`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Example: \"Find me minimalist desk setups\"] ```\n# 1. Search\nbrowser action=navigate url=\"https://www.pinterest.com/search/pins/?q=minimalist+desk+setup\"\nbrowser action=snapshot\n\n# 2. Extract image URLs from snapshot (look for i.pinimg.com)\n# 3. Convert to high-res originals\n\n# 4. Send images\nmessage action=send media=\"https://i.pinimg.com/originals/ab/cd/ef123.jpg\" message=\"Clean white desk with plant 🌿\"\nmessage action=send media=\"https://i.pinimg.com/originals/gh/ij/kl456.jpg\" message=\"Wooden desk, natural light ☀️\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Alternative: Screenshot Method] If image URL extraction is tricky, screenshot the pin:\n```\nbrowser action=navigate url=\"https://www.pinterest.com/pin/123456/\"\nbrowser action=screenshot\n# Then send the screenshot file\nmessage action=send filePath=\"/path/to/screenshot.jpg\" message=\"Here's the pin!\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Method (For User's Own Content)] Requires OAuth token setup — see `references/oauth-setup.md`\n\n```bash\nexport PINTEREST_ACCESS_TOKEN=\"your_token\"\npython3 scripts/pinterest_api.py boards\npython3 scripts/pinterest_api.py board-pins <board_id>\npython3 scripts/pinterest_api.py pin <pin_id>\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Key Points] - ✅ **Always send images directly** using `media=` parameter\n- ✅ Use `originals` URLs for high-res\n- ❌ Don't just send links — send the actual image\n- 💡 If URL doesn't work, screenshot the pin and send that"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[References] - OAuth setup: `references/oauth-setup.md`\n- API endpoints: `references/api-reference.md`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pinterest"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xs4m1337/pinterest/SKILL.md"
+}

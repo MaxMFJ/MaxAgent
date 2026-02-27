@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_clawpost",
+  "description": "AI-powered social media publishing for LinkedIn and X (Twitter) with algorithm optimization and scheduling.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Social Media Publisher Skill\n\nClawPost helps you create, manage, and publish content to LinkedIn and X (Twitter) — with AI-assisted writing, drafts, scheduling, and direct publishing via API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Getting Started] If the user doesn't have an account or API key yet, walk them through these steps:\n\n1. **Sign up** at [clawpost.dev](https://clawpost.dev) — sign in with LinkedIn.\n2. **Connect platforms** — In the Dashboard, connect LinkedIn and/or X (Twitter) accounts.\n3. **Add credits** — Go to Dashboard → Billing and top up credits (minimum $5). Credits are used for AI generation features.\n4. **Generate an API key** — Go to Dashboard → Settings → API Keys → Generate New Key. The key starts with `claw_`.\n5. **Set the environment variable**:\n   ```bash\n   export CLAW_API_KEY=\"claw_your_key_here\"\n   ```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] Required environment variable:\n- `CLAW_API_KEY` — your API key (starts with `claw_`). Generate one following the steps above.\n\nOptional:\n- `CLAW_API_URL` — defaults to `https://clawpost.dev`. Only set this if using a self-hosted instance.\n\nAll endpoints are under `{{CLAW_API_URL}}/api/claw/v1/` (default: `https://clawpost.dev/api/claw/v1/`)."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Authentication] Every request needs the header:\n```\nAuthorization: Bearer {{CLAW_API_KEY}}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Important: Passing JSON in shell commands] When sending JSON data with curl, **always use a heredoc** to avoid shell escaping issues with quotes and special characters:\n```bash\ncurl -s -X POST URL \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d @- <<'EOF'\n{\"key\": \"value\"}\nEOF\n```\nAll examples below use this pattern. Do **not** use `-d '{...}'` with single quotes — it breaks when content contains quotes, newlines, or special characters."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Response Format] All responses follow this shape:\n```json\n{\n  \"success\": true,\n  \"message\": \"Human-readable summary\",\n  \"data\": { ... },\n  \"error\": { \"code\": \"ERROR_CODE\", \"details\": \"...\" }\n}\n```\n\nAlways read the `message` field — it's designed to be relayed directly to the user."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Endpoints] ### Check Status\nVerify your API key works and see what's connected.\n```bash\ncurl -s {{CLAW_API_URL}}/api/claw/v1/status \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\n\n### List Connected Platforms\n```bash\ncurl -s {{CLAW_API_URL}}/api/claw/v1/platforms \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\n\n### Check Credits\n```bash\ncurl -s {{CLAW_API_URL}}/api/claw/v1/credits \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\n\n### List Posts\nFilter by status (`draft`, `published`, `scheduled`, `failed`) and platform (`linkedin`, `twitter`).\n```bash\ncurl -s \"{{CLAW_API_URL}}/api/claw/v1/posts?status=draft&platform=linkedin&limit=10\" \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\n\n### X Post History\nRetrieve your X (Twitter) post history from the cached profile data. This is a read-only endpoint - no credits are used.\n\nQuery parameters:\n- `type` - `posts`, `replies`, or `all` (default: `all`)\n- `limit` - max results, 1-100 (default: `20`)\n- `period` - `7d`, `30d`, `90d`, or `all` (default: `all`)\n\n```bash\ncurl -s \"{{CLAW_API_URL}}/api/claw/v1/history/x?type=posts&period=30d&limit=10\" \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\n\nThe response includes a `summary` object with aggregated metrics (`totalPosts`, `totalReplies`, `totalLikes`, `totalRetweets`, `totalRepliesReceived`, `totalImpressions`, `topPost`) and a `posts` array with individual tweet details, metrics, media, and reply context.\n\n### Get Single Post\n```bash\ncurl -s {{CLAW_API_URL}}/api/claw/v1/posts/POST_ID \\\n  -H \"Authorization: Bearer {{CLAW_API_KEY}}\"\n```\nEach post includes an `availableActions` array (e.g., `[\"publish\", \"schedule\", \"update\", \"delete\"]`).\n\n#### Post Object Fields\n\nEvery post includes a `postType` field:\n- `\"original\"` — a regular post composed by the user\n- `\"quote\"` — a quote tweet of another post (X only)\n- `\"reply\"` — a reply to another post (X only)\n- `\"remix\"` — an original tweet inspired by another post (X only)\n\nWhen `postType` is `\"quote\"`, `\"reply\"`, or `\"remix"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Workflow Tips] 1. **Quick publish**: Use `/publish` to post immediately without creating a draft.\n2. **Review flow**: Create a draft with `/drafts`, refine with `/ai/refine`, then publish with `/posts/ID/publish`.\n3. **Cross-post**: Make separate calls for LinkedIn and Twitter — each is a separate post.\n4. **Check before publishing**: Call `/platforms` to verify the target platform is connected.\n5. **Twitter limit**: Tweets must be ≤ 280 characters. The API will reject longer content with a clear message."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Codes] | Code | Meaning |\n|------|---------|\n| `UNAUTHORIZED` | Invalid or revoked API key |\n| `NOT_FOUND` | Post or resource doesn't exist |\n| `VALIDATION_ERROR` | Bad input (missing content, too long, invalid date) |\n| `CONFLICT` | Can't perform action (e.g., already published) |\n| `PLATFORM_NOT_CONNECTED` | Target social platform isn't linked |\n| `INSUFFICIENT_CREDITS` | Not enough credits for AI operations |\n| `NO_AI_KEY` | No AI API key configured |\n| `RATE_LIMITED` | Too many requests (60/min general, 10/min publish) |\n| `INTERNAL_ERROR` | Something went wrong server-side |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawpost"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📱",
+        "homepage": "https://clawpost.dev",
+        "primaryEnv": "CLAW_API_KEY",
+        "requires": {
+          "env": [
+            "CLAW_API_KEY"
+          ],
+          "bins": [
+            "curl"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/acidias/clawpost-2/SKILL.md"
+}

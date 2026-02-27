@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_config-guardian",
+  "description": "Validate and safeguard OpenClaw config updates (openclaw.json or openclaw config set/apply). Use this skill whenever changing gateway config, models, channels, agents, tools, sessions, or routing. Enforces backup, schema validation, and safe rollback before restarts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Config Guardian"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Use this workflow whenever editing `~/.openclaw/openclaw.json` or running `openclaw config set/apply`. It prevents invalid config, creates backups, validates against schema, and enables rollback."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow (use every time)] 1. **Preflight**\n   - Confirm the requested change and scope.\n   - Check for sensitive keys (tokens, credentials).\n\n2. **Backup**\n   - Run `scripts/backup_config.sh` to create a timestamped snapshot.\n\n3. **Validate (before change)**\n   - Run `scripts/validate_config.sh`.\n   - If validation fails, stop and report.\n\n4. **Apply change**\n   - Prefer `openclaw config set <path> <value>` for small changes.\n   - For complex edits, edit the file directly and keep diffs minimal.\n\n5. **Validate (after change)**\n   - Run `scripts/validate_config.sh` again.\n   - If it fails, restore from backup with `scripts/restore_config.sh`.\n\n6. **Restart (only with explicit approval)**\n   - If change requires restart, ask for approval first.\n   - Use `openclaw gateway restart`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Guardrails] - **Never** restart or apply config without explicit user approval.\n- **Never** remove keys or reorder blocks unless requested.\n- **Always** keep a backup before edits.\n- If unsure about schema: run `openclaw doctor --non-interactive` and stop on errors."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/backup_config.sh` — create timestamped backup\n- `scripts/validate_config.sh` — validate config via OpenClaw doctor\n- `scripts/diff_config.sh` — diff current config vs backup\n- `scripts/restore_config.sh` — restore backup"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Validation] - Use `openclaw doctor --non-interactive` for schema validation\n- This checks against the actual schema that the gateway uses\n- Warns about unknown keys, invalid types, and security issues"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "config_guardian"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdhilabs/config-guardian/SKILL.md"
+}

@@ -1,0 +1,44 @@
+{
+  "id": "openclaw_skill_mac-cleanup",
+  "description": "Cleans up system caches, trash, and old downloads on macOS.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Mac Cleanup Skill\n\nThis skill helps you reclaim disk space on your MacBook Pro by cleaning up:\n- **System Caches**: Clears the user cache directory (`~/Library/Caches`).\n- **Trash**: Empties the Trash (`~/.Trash`).\n- **Old Downloads**: Deletes files in `~/Downloads` that are older than 30 days."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] - `cleanup`: standardized command to run the cleanup script."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mac_cleanup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/mac-clean-skill/SKILL.md"
+}

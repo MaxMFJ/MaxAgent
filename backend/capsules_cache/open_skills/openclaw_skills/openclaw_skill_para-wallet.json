@@ -1,0 +1,80 @@
+{
+  "id": "openclaw_skill_para-wallet",
+  "description": "Create blockchain wallets and sign transactions using Para's MPC infrastructure where the private key never exists in a single place. Supports EVM and Solana chains via three REST endpoints.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[Overview] Para provides MPC (Multi-Party Computation) wallets where the private key is split into shares and **never assembled in a single place**. This makes Para ideal for AI agents that need to create wallets and sign transactions without ever holding a full private key.\n\nAll operations use Para's REST API with a single API key for authentication.\n\n- **Base URL (Beta):** `https://api.beta.getpara.com`\n- **Base URL (Production):** `https://api.getpara.com`\n- **Auth:** Pass your API key in the `X-API-Key` header on every request\n- **Content-Type:** `application/json`\n- **Request tracing:** Optionally pass `X-Request-Id` (UUID) for tracing; Para generates one if omitted"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Get an API key from [developer.getpara.com](https://developer.getpara.com)\n2. Set the environment variable:\n   ```\n   export PARA_API_KEY=\"your-secret-api-key\"\n   ```\n3. Use the **Beta** base URL (`https://api.beta.getpara.com`) during development. Switch to Production for mainnet."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Create a Wallet] **`POST /v1/wallets`**\n\nCreates a new MPC wallet for a user. Each combination of `type` + `scheme` + `userIdentifier` produces exactly one wallet. Attempting to create a duplicate returns a `409` with the existing `walletId`.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `type` | string | Yes | `EVM`, `SOLANA`, or `COSMOS` |\n| `userIdentifier` | string | Yes | User identifier (email, phone, or custom ID) |\n| `userIdentifierType` | string | Yes | `EMAIL`, `PHONE`, `CUSTOM_ID`, `GUEST_ID`, `TELEGRAM`, `DISCORD`, or `TWITTER` |\n| `scheme` | string | No | Signature scheme: `DKLS`, `CGGMP`, or `ED25519` (defaults based on wallet type) |\n\n### EVM Example\n\n```bash\ncurl -X POST https://api.beta.getpara.com/v1/wallets \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\n    \"type\": \"EVM\",\n    \"userIdentifier\": \"alice@example.com\",\n    \"userIdentifierType\": \"EMAIL\"\n  }'\n```\n\n### Solana Example\n\n```bash\ncurl -X POST https://api.beta.getpara.com/v1/wallets \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\n    \"type\": \"SOLANA\",\n    \"userIdentifier\": \"alice@example.com\",\n    \"userIdentifierType\": \"EMAIL\"\n  }'\n```\n\n### Response (201 Created)\n\nThe wallet starts in `creating` status. You must poll until it reaches `ready`.\n\n```json\n{\n  \"id\": \"0a1b2c3d-4e5f-6789-abcd-ef0123456789\",\n  \"type\": \"EVM\",\n  \"scheme\": \"DKLS\",\n  \"status\": \"creating\",\n  \"createdAt\": \"2024-01-15T09:30:00Z\"\n}\n```\n\nThe response includes a `Location` header with the wallet's URL:\n```\nLocation: /v1/wallets/0a1b2c3d-4e5f-6789-abcd-ef0123456789\n```\n\n### Polling for Ready Status\n\nAfter creating a wallet, poll `GET /v1/wallets/{walletId}` until `status` becomes `ready`:\n\n```bash\n# Poll every 1 second until the wallet is ready\nWALLET_ID=\"0a1b2c3d-4e5f-6789-abcd-ef0123456789\"\nwhile true; do\n  RESPONSE=$(curl -s https://api.beta.getpara.com/v1/wallets/$WALLET_ID \\\n    -H \"X-API-Key: $PARA_API_KEY\")\n "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Get Wallet Status] **`GET /v1/wallets/{walletId}`**\n\nRetrieves the current status and details of a wallet.\n\n### Request\n\n```bash\ncurl https://api.beta.getpara.com/v1/wallets/0a1b2c3d-4e5f-6789-abcd-ef0123456789 \\\n  -H \"X-API-Key: $PARA_API_KEY\"\n```\n\n### Response (200 OK)\n\nWhen the wallet is ready, the response includes the address and public key:\n\n```json\n{\n  \"id\": \"0a1b2c3d-4e5f-6789-abcd-ef0123456789\",\n  \"type\": \"EVM\",\n  \"scheme\": \"DKLS\",\n  \"status\": \"ready\",\n  \"address\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f...\",\n  \"publicKey\": \"04a1b2c3d4e5f6...\",\n  \"createdAt\": \"2024-01-15T09:30:00Z\"\n}\n```\n\n### Response Fields\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | Unique wallet identifier (UUID) |\n| `type` | string | Blockchain network: `EVM`, `SOLANA`, or `COSMOS` |\n| `scheme` | string | Signature scheme: `DKLS`, `CGGMP`, or `ED25519` |\n| `status` | string | `creating` or `ready` |\n| `address` | string | Wallet address (present when `status` is `ready`) |\n| `publicKey` | string | Public key (present when `status` is `ready`) |\n| `createdAt` | string | ISO 8601 creation timestamp |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Sign Data] **`POST /v1/wallets/{walletId}/sign-raw`**\n\nSigns arbitrary data using the wallet's MPC key shares. The private key is never assembled — each share signs independently and the results are combined.\n\n**Important:** The wallet must be in `ready` status before signing.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `data` | string | Yes | Data to sign as a `0x`-prefixed hex string |\n\n### EVM Example\n\nSign a message hash (e.g., a keccak256 hash of a transaction):\n\n```bash\ncurl -X POST https://api.beta.getpara.com/v1/wallets/0a1b2c3d-4e5f-6789-abcd-ef0123456789/sign-raw \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\n    \"data\": \"0x48656c6c6f20576f726c64\"\n  }'\n```\n\n### Solana Example\n\nSign a serialized Solana transaction:\n\n```bash\ncurl -X POST https://api.beta.getpara.com/v1/wallets/aabbccdd-1122-3344-5566-778899aabbcc/sign-raw \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\n    \"data\": \"0x01000103b5d...\"\n  }'\n```\n\n### Response (200 OK)\n\n```json\n{\n  \"signature\": \"a1b2c3d4e5f6...\"\n}\n```\n\nThe `signature` is a hex string **without** the `0x` prefix."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Key Concepts] ### Wallet Uniqueness\n\nEach combination of `type` + `scheme` + `userIdentifier` maps to exactly one wallet. If you try to create a duplicate, the API returns `409 Conflict` with the existing wallet's ID in the response body. Use this to safely retry or look up existing wallets.\n\n### Async Wallet Creation\n\nWallet creation is asynchronous. The `POST /v1/wallets` call returns immediately with `status: \"creating\"`. You must poll `GET /v1/wallets/{walletId}` until `status` becomes `\"ready\"` before you can use the wallet to sign.\n\n### MPC Security Model\n\nPara uses Multi-Party Computation so the full private key never exists on any single machine. Key shares are distributed across independent parties. When you call `sign-raw`, each party signs with their share and the results are combined into a valid signature. This means:\n\n- No single point of compromise can leak the private key\n- Agents can sign transactions without ever having access to a full key\n- Signing is functionally equivalent to a normal signature from the blockchain's perspective"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Error Reference] All error responses include a `message` field describing the issue.\n\n| Status | Message | Cause | Action |\n|--------|---------|-------|--------|\n| 400 | `\"type must be one of EVM, SOLANA, COSMOS\"` | Invalid or missing request body fields | Check required fields and enum values |\n| 401 | `\"secret api key not provided\"` | Missing `X-API-Key` header | Add the `X-API-Key` header with your API key |\n| 403 | `\"invalid secret api key\"` | API key is wrong or revoked | Verify your API key at developer.getpara.com |\n| 404 | `\"wallet not found\"` | Wallet ID doesn't exist or doesn't belong to your account | Check the wallet ID |\n| 409 | `\"a wallet for this identifier and type already exists\"` | Duplicate wallet creation attempted | Use the returned `walletId` to access the existing wallet |\n| 500 | `\"Internal Server Error\"` | Server-side issue | Retry with exponential backoff |\n\n### 409 Conflict Response\n\nThe `409` response includes the existing wallet's ID so you can retrieve it:\n\n```json\n{\n  \"message\": \"a wallet for this identifier and type already exists\",\n  \"walletId\": \"0a1b2c3d-4e5f-6789-abcd-ef0123456789\"\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Complete Example: Create Wallet and Sign] ```bash\n# 1. Create an EVM wallet\nRESPONSE=$(curl -s -X POST https://api.beta.getpara.com/v1/wallets \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\n    \"type\": \"EVM\",\n    \"userIdentifier\": \"agent-1@myapp.com\",\n    \"userIdentifierType\": \"EMAIL\"\n  }')\n\nWALLET_ID=$(echo \"$RESPONSE\" | grep -o '\"id\":\"[^\"]*\"' | cut -d'\"' -f4)\necho \"Created wallet: $WALLET_ID\"\n\n# 2. Poll until ready\nwhile true; do\n  WALLET=$(curl -s https://api.beta.getpara.com/v1/wallets/$WALLET_ID \\\n    -H \"X-API-Key: $PARA_API_KEY\")\n  STATUS=$(echo \"$WALLET\" | grep -o '\"status\":\"[^\"]*\"' | cut -d'\"' -f4)\n  if [ \"$STATUS\" = \"ready\" ]; then\n    echo \"Wallet is ready\"\n    echo \"$WALLET\"\n    break\n  fi\n  echo \"Status: $STATUS — waiting...\"\n  sleep 1\ndone\n\n# 3. Sign data\nSIGNATURE=$(curl -s -X POST https://api.beta.getpara.com/v1/wallets/$WALLET_ID/sign-raw \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: $PARA_API_KEY\" \\\n  -d '{\"data\": \"0x48656c6c6f\"}')\n\necho \"Signature: $SIGNATURE\"\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "para_wallet"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "author": "para",
+      "version": "1.0",
+      "openclaw.requires.env": [
+        "PARA_API_KEY"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adeets-22/para-wallet/SKILL.md"
+}

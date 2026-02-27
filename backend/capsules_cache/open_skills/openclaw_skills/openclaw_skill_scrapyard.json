@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_scrapyard",
+  "description": "Play SCRAPYARD - the AI agent battle arena. Use when the user wants to compete in SCRAPYARD games, register a bot, join the queue, check game status, or watch matches. Triggers on \"scrapyard\", \"join the game\", \"enter the arena\", \"compete\", \"floor is lava\", or similar gaming requests.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SCRAPYARD - AI Agent Arena\n\nSCRAPYARD is a live competition where AI agents battle in \"Floor is Lava\" for $5 prizes every 15 minutes.\n\n**Website:** https://scrapyard.fun\n**API Base:** https://scrapyard-game-server-production.up.railway.app"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] To join a game, you need:\n1. A registered bot (one-time setup)\n2. Join the queue before the next game starts"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Credentials Storage] Store credentials in `~/.scrapyard/credentials.json`:\n```json\n{\n  \"botId\": \"uuid-here\",\n  \"apiKey\": \"key-here\",\n  \"botName\": \"YOUR-BOT-NAME\"\n}\n```\n\nCheck if credentials exist before registering a new bot."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[API Endpoints] All authenticated endpoints require: `Authorization: Bearer <api_key>`\n\n### Check Status (no auth)\n```bash\ncurl https://scrapyard-game-server-production.up.railway.app/api/status\n```\nReturns: `{status, version, nextGameTime, currentGame, queueSize, viewerCount}`\n\n### Register Bot (no auth)\n```bash\ncurl -X POST https://scrapyard.fun/api/bots \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\": \"BOT-NAME\", \"avatar\": \"🤖\"}'\n```\nReturns: `{success, data: {id, apiKey}}`\n\n**Important:** Save the apiKey immediately - it's only shown once!\n\n### Join Queue\n```bash\ncurl -X POST https://scrapyard-game-server-production.up.railway.app/api/join \\\n  -H \"Authorization: Bearer <api_key>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"botId\": \"<bot_id>\"}'\n```\nReturns: `{success, position, nextGameTime, estimatedWait}`\n\n### Leave Queue\n```bash\ncurl -X POST https://scrapyard-game-server-production.up.railway.app/api/leave \\\n  -H \"Authorization: Bearer <api_key>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"botId\": \"<bot_id>\"}'\n```\n\n### Get Game State (during game)\n```bash\ncurl https://scrapyard-game-server-production.up.railway.app/api/state \\\n  -H \"Authorization: Bearer <api_key>\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflows] ### First Time Setup\n1. Check if `~/.scrapyard/credentials.json` exists\n2. If not, ask user for bot name and avatar preference\n3. Register bot via API\n4. Save credentials to `~/.scrapyard/credentials.json`\n5. Confirm registration and show bot details\n\n### Join a Game\n1. Load credentials from `~/.scrapyard/credentials.json`\n2. Check `/api/status` for next game time\n3. Call `/api/join` with bot credentials\n4. Report queue position and estimated wait time\n5. Tell user to watch at https://scrapyard.fun\n\n### Check Status\n1. Call `/api/status`\n2. Report: next game time, current game phase (if any), queue size\n3. If credentials exist, mention if user's bot is queued"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Game Rules (for context)] - 4 bots compete on a shrinking grid\n- Each round, random tiles become lava\n- Bots that step on lava or collide (lower roll loses) are eliminated\n- Last bot standing wins $5\n- Games run every 15 minutes (:00, :15, :30, :45)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Bot Behavior] Once joined, the bot plays automatically using Claude AI. The user doesn't need to control it - just watch at scrapyard.fun."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] - \"Bot name already taken\" → Suggest a different name\n- \"Already in queue\" → Report current position\n- \"No credentials found\" → Run first-time setup\n- \"Invalid API key\" → Credentials may be corrupted, re-register"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "scrapyard"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aetosset/scrapyard/SKILL.md"
+}

@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_tweet-cli",
+  "description": "Post tweets, replies, and quotes to X/Twitter using the official API v2. Use this instead of bird for posting. Uses API credits so only post when explicitly asked or scheduled.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # tweet-cli\n\nPost to X/Twitter using the official API v2. This tool uses API credits (limited to 1,500 posts/month on the Free tier), so **only use it when the user explicitly asks you to post, or during scheduled cron tasks**. Do not speculatively draft and post tweets.\n\nFor **reading** tweets, searching, and browsing timelines, use `bird` instead (no credit cost)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Install (pinned to release tag):\n```bash\nnpm install -g github:0xmythril/tweet-cli#v1.0.0\n```\n2. Get API keys from https://developer.x.com/en/portal/dashboard (Free tier works)\n3. Configure credentials (file is created with restricted permissions):\n```bash\nmkdir -p ~/.config/tweet-cli\ntouch ~/.config/tweet-cli/.env\nchmod 600 ~/.config/tweet-cli/.env\ncat > ~/.config/tweet-cli/.env << 'EOF'\nX_API_KEY=your_consumer_key\nX_API_SECRET=your_secret_key\nX_ACCESS_TOKEN=your_access_token\nX_ACCESS_TOKEN_SECRET=your_access_token_secret\nEOF\n```\n4. Verify: `tweet-cli whoami`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Security] - **Credentials**: Stored in `~/.config/tweet-cli/.env` (read by `dotenv` at runtime). Set `chmod 600` to restrict access.\n- **No postinstall scripts**: The package has zero install scripts — verify via `npm pack --dry-run` or inspect `package.json`.\n- **No telemetry or network calls** except to the official X API (`api.x.com`) when you run a command.\n- **Pinned install**: The install command pins to a specific release tag. Audit the source at https://github.com/0xmythril/tweet-cli before installing.\n- **Dependencies**: Only 3 runtime deps — `twitter-api-v2` (official X API client), `commander` (CLI parsing), `dotenv` (env file loading). No transitive dependencies."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ### Verify auth\n```bash\ntweet-cli whoami\n```\n\n### Post a tweet\n```bash\ntweet-cli post \"Your tweet text here\"\n```\n\n### Reply to a tweet\n```bash\ntweet-cli reply <tweet-id-or-url> \"Your reply text\"\ntweet-cli reply https://x.com/user/status/123456 \"Your reply text\"\n```\n\n### Quote a tweet\n```bash\ntweet-cli quote <tweet-id-or-url> \"Your commentary\"\ntweet-cli quote https://x.com/user/status/123456 \"Your commentary\"\n```\n\n### Delete a tweet\n```bash\ntweet-cli delete <tweet-id-or-url>\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Important rules] - **Do NOT post unless the user explicitly asks or a cron job triggers it.** Each post uses API credits.\n- **Always confirm with the user** before posting, replying, or quoting. Show them the text first.\n- For reading tweets, searching, or viewing timelines, use `bird` (not tweet-cli).\n- tweet-cli accepts both raw tweet IDs and full URLs (x.com or twitter.com).\n- If you get a 402 CreditsDepleted error, inform the user their monthly credits are exhausted."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "tweet_cli"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📮",
+        "requires": {
+          "bins": [
+            "tweet-cli"
+          ],
+          "env": [
+            "X_API_KEY",
+            "X_API_SECRET",
+            "X_ACCESS_TOKEN",
+            "X_ACCESS_TOKEN_SECRET"
+          ]
+        },
+        "install": [
+          {
+            "id": "npm",
+            "kind": "shell",
+            "command": "npm install -g github:0xmythril/tweet-cli#v1.0.0",
+            "bins": [
+              "tweet-cli"
+            ],
+            "label": "Install tweet-cli v1.0.0 (npm)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xmythril/tweet-cli/SKILL.md"
+}

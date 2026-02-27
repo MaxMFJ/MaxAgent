@@ -888,6 +888,15 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     [self presentViewController:zoomVC animated:YES completion:nil];
 }
 
+- (void)messageCellDidToggleThinking:(MessageCell *)cell {
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
+    if (indexPath) {
+        [UIView performWithoutAnimation:^{
+            [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+        }];
+    }
+}
+
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }

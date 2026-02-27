@@ -1,0 +1,86 @@
+{
+  "id": "openclaw_skill_strava-python",
+  "description": "Query Strava activities, stats, and workout data using Python/stravalib with interactive setup",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Strava Python\n\nQuery your Strava activities, stats, and workout data through OpenClaw using Python and stravalib.\n\n**Why this skill vs others:** Uses Python/stravalib with an interactive setup wizard (vs curl-based skills requiring manual JSON configuration)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] - Python 3.7+\n- `stravalib` package\n- Strava API credentials (free)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] 1. **Install dependencies:**\n   ```bash\n   pip install stravalib\n   ```\n\n2. **Run setup:**\n   ```bash\n   python3 setup.py\n   ```\n\n   This will:\n   - Guide you through creating a Strava API app\n   - Handle OAuth authentication\n   - Save credentials to `~/.strava_credentials.json`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] **Recent activities:**\n```bash\npython3 strava_control.py recent\n```\n\n**Weekly/monthly stats:**\n```bash\npython3 strava_control.py stats\n```\n\n**Last activity:**\n```bash\npython3 strava_control.py last\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Examples] Ask OpenClaw:\n- \"Show my recent Strava activities\"\n- \"What are my Strava stats this week?\"\n- \"What was my last Strava workout?\""
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Files] - `strava_control.py` - Main controller script\n- `setup.py` - Interactive setup wizard\n- `SKILL.md` - This file\n- `~/.strava_credentials.json` - Credentials (auto-generated)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Notes] - Requires Strava account (free)\n- API credentials are personal and should not be shared\n- Rate limits: 100 requests per 15 minutes, 1,000 daily"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "strava_python"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🏃",
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        },
+        "install": [
+          {
+            "id": "pip",
+            "kind": "pip",
+            "package": "stravalib",
+            "label": "Install stravalib (pip)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abclark/strava-python/SKILL.md"
+}

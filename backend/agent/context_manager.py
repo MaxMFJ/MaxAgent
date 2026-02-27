@@ -23,6 +23,7 @@ class ConversationContext:
     """
     session_id: str
     recent_messages: List[Dict[str, Any]] = field(default_factory=list)
+    created_files: List[str] = field(default_factory=list)  # 本会话中通过工具创建/写入的文件绝对路径
     created_at: datetime = field(default_factory=datetime.now)
     last_active: datetime = field(default_factory=datetime.now)
     
@@ -33,6 +34,26 @@ class ConversationContext:
     
     def __post_init__(self):
         self._vector_store: Optional[VectorMemoryStore] = None
+        self._vector_store_synced: bool = False  # 标记是否已从 recent_messages 同步到 vector_store
+    
+    def _sync_recent_to_vector_store(self) -> None:
+        """
+        将 recent_messages 同步到 vector_store。
+        用于从磁盘加载会话时，确保 BGE 向量检索有完整历史可搜，避免长对话丢失上下文。
+        """
+        if self._vector_store_synced or not self.recent_messages or not self.use_vector_search:
+            return
+        try:
+            vs = self.vector_store
+            for msg in self.recent_messages:
+                role = msg.get("role")
+                content = msg.get("content")
+                if role and content and content.strip():
+                    vs.add(role, content.strip())
+            self._vector_store_synced = True
+            logger.info(f"Synced {len(self.recent_messages)} messages to vector store for session {self.session_id}")
+        except Exception as e:
+            logger.warning(f"Failed to sync recent_messages to vector store: {e}")
     
     @property
     def vector_store(self) -> VectorMemoryStore:
@@ -81,18 +102,29 @@ class ConversationContext:
         if len(self.recent_messages) > self.max_recent_messages:
             self.recent_messages = self.recent_messages[-self.max_recent_messages:]
     
+    def add_created_file(self, path: str) -> None:
+        """记录本会话中通过工具创建/写入的文件路径（用于后续追问时 LLM 能告知用户位置）"""
+        if not path or not path.strip():
+            return
+        abs_path = os.path.abspath(os.path.expanduser(path.strip()))
+        if abs_path not in self.created_files:
+            self.created_files.append(abs_path)
+            logger.info(f"Session {self.session_id}: recorded created file {abs_path}")
+    
     def get_context_messages(self, current_query: str = "") -> List[Dict[str, Any]]:
         """
-        Get optimized context messages for LLM
-        Uses semantic search to find relevant historical context
+        Get optimized context messages for LLM.
+        Uses BGE 向量检索 + 最近消息，保证「纯追问」能看到完整历史，减少误判执行。
+        企业级：与 query_classifier(intent=information) + execution_guard 配合使用。
         """
         logger.debug(f"get_context_messages called with {len(self.recent_messages)} recent messages, use_vector_search={self.use_vector_search}")
         
         try:
             if self.use_vector_search and current_query and len(self.recent_messages) > 3:
+                # 从磁盘加载的会话：vector_store 为空，需先将 recent_messages 同步进去
+                self._sync_recent_to_vector_store()
                 # recent_count=4: 保留最近 4 条消息（2 轮对话）维持连贯性
                 # semantic_count=3: 通过 BGE 语义检索补充最相关的历史片段
-                # 这样 BGE 真正发挥裁剪作用，而非返回全部历史
                 context_messages = self.vector_store.get_context_messages(
                     current_query=current_query,
                     max_tokens=self.max_context_tokens,
@@ -100,20 +132,23 @@ class ConversationContext:
                     semantic_count=3
                 )
                 
-                if context_messages:
+                # 保护：vector_store 返回过少（如 BGE 未加载、embedding 失败）时回退到 recent_messages
+                min_expected = min(4, len(self.recent_messages))
+                if context_messages and len(context_messages) >= min_expected:
                     result = []
-                    # 添加上下文提示
                     if len(context_messages) > self.max_recent_messages:
                         result.append({
                             "role": "system",
                             "content": "[以下是与当前问题相关的历史对话上下文]"
                         })
-                    
                     result.extend(context_messages)
                     logger.info(f"Returning {len(result)} messages from vector search")
                     return result
-                else:
-                    logger.debug("Vector search returned empty, falling back to recent_messages")
+                elif context_messages:
+                    logger.debug(
+                        f"Vector search returned only {len(context_messages)} msgs (expected >= {min_expected}), "
+                        f"falling back to recent_messages"
+                    )
         except Exception as e:
             logger.warning(f"Vector search failed, using recent messages: {e}")
         
@@ -129,6 +164,8 @@ class ConversationContext:
     def clear(self):
         """Clear conversation history"""
         self.recent_messages = []
+        self.created_files = []
+        self._vector_store_synced = False
         if self._vector_store:
             self._vector_store.clear()
         clear_vector_store(self.session_id)
@@ -178,6 +215,7 @@ class ContextManager:
                     for m in context.recent_messages
                     if m.get("content")
                 ],
+                "created_files": context.created_files,
                 "created_at": context.created_at.isoformat(),
                 "last_active": context.last_active.isoformat()
             }
@@ -202,6 +240,7 @@ class ContextManager:
             
             context = ConversationContext(session_id=session_id)
             context.recent_messages = data.get("recent_messages", [])
+            context.created_files = data.get("created_files", [])
             context.created_at = datetime.fromisoformat(data.get("created_at", datetime.now().isoformat()))
             context.last_active = datetime.fromisoformat(data.get("last_active", datetime.now().isoformat()))
             

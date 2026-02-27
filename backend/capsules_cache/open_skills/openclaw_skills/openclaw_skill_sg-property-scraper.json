@@ -1,0 +1,103 @@
+{
+  "id": "openclaw_skill_sg-property-scraper",
+  "description": "Search Singapore property rental and sale listings with flexible filters. Use when asked to search Singapore properties, find rental or sale listings, check property prices near MRT stations, or compare commute times. Supports filtering by listing type (rent/sale), property type (HDB/Condo/Landed), bedrooms, bathrooms, price range, size, TOP year, MRT station codes, distance to MRT, room type, availability, and commute time to a destination. Outputs JSON to stdout.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Singapore Property Scraper\n\nScrapes Singapore property listings via HTTP requests. Returns structured JSON."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Script Location] ```\nscripts/scrape.py\n```\n\nRelative to this SKILL directory. Run with:\n```bash\npython3 <SKILL_DIR>/scripts/scrape.py [OPTIONS]\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Dependencies] - Python 3.8+\n- `pip install curl_cffi beautifulsoup4 lxml`\n- Optional: `GOOGLE_MAPS_API_KEY` env var for commute time calculation (Google Routes API)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Search 2BR condos for rent under SGD 4000 near Circle Line\npython3 scripts/scrape.py \\\n  --listing-type rent --bedrooms 2 --max-price 4000 \\\n  --property-type-group N --mrt-range CC:20-24 \\\n  --output json\n\n# JSON input mode (easier for AI tools)\npython3 scripts/scrape.py --json '{\n  \"listingType\": \"rent\",\n  \"bedrooms\": 2,\n  \"maxPrice\": 4000,\n  \"propertyTypeGroup\": [\"N\"],\n  \"mrtStations\": [\"CC20\",\"CC21\",\"CC22\",\"CC23\",\"CC24\"]\n}'\n\n# Dry run: print URL only without scraping\npython3 scripts/scrape.py --dry-run --listing-type rent --bedrooms 3\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Filter Parameters] | Flag | URL Param | Type | Description |\n|------|-----------|------|-------------|\n| `--listing-type` | `listingType` | string | `rent` or `sale` |\n| `--property-type-group` | `propertyTypeGroup` | string (repeatable) | `N`=Condo, `L`=Landed, `H`=HDB |\n| `--entire-unit-or-room` | `entireUnitOrRoom` | string | `ent` for entire unit only; omit for all |\n| `--room-type` | `roomType` | string (repeatable) | `master`, `common`, `shared` |\n| `--bedrooms` | `bedrooms` | int | `-1`=room, `0`=studio, `1`-`5` |\n| `--bathrooms` | `bathrooms` | int | Number of bathrooms |\n| `--min-price` | `minPrice` | int | Minimum price (SGD) |\n| `--max-price` | `maxPrice` | int | Maximum price (SGD) |\n| `--min-size` | `minSize` | int | Minimum size (sqft) |\n| `--max-size` | `maxSize` | int | Maximum size (sqft) |\n| `--min-top-year` | `minTopYear` | int | Minimum TOP year |\n| `--max-top-year` | `maxTopYear` | int | Maximum TOP year |\n| `--distance-to-mrt` | `distanceToMRT` | float | Max distance to MRT in km (e.g. `0.5`, `0.75`) |\n| `--availability` | `availability` | int | Availability filter |\n| `--mrt-station` | `mrtStations` | string (repeatable) | MRT station code, e.g. `CC20` |\n| `--mrt-range` | `mrtStations` | string (repeatable) | MRT range, e.g. `CC:20-24` |\n| `--sort` | `sort` | string | `date`, `price`, `psf`, `size` |\n| `--order` | `order` | string | `asc`, `desc` |\n| `--commute-to` | `commuteTo` | string | Destination address for commute time (requires `GOOGLE_MAPS_API_KEY`) |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Bedroom/Room Logic] - `--entire-unit-or-room ent --bedrooms 4` = 4-bedroom entire unit\n- `--entire-unit-or-room ent --bedrooms 0` = studio\n- `--bedrooms -1 --room-type master --room-type common` = room rental (master or common room)\n- Omit `--entire-unit-or-room` to show both entire units and rooms"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[MRT Station Syntax] - Individual station: `--mrt-station CC20`\n- Range (same line): `--mrt-range CC:20-24` (expands to CC20, CC21, CC22, CC23, CC24)\n- Multiple lines: use multiple flags\n- In JSON: `\"mrtStations\": [\"CC20\", \"EW15\"]` or `[[\"CC\", [20, 24]]]` (tuple format)\n\nSee `references/params.md` for the complete list of ~213 valid MRT station codes."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Execution Parameters] | Flag | Description |\n|------|-------------|\n| `--pages N` | Number of pages to scrape (default: 1) |\n| `--dry-run` | Build and print URL(s), skip scraping |\n| `--no-validate` | Skip parameter validation |\n| `--timeout N` | HTTP request timeout in seconds (default: 30) |\n| `--raw-param K=V` | Extra URL query param (repeatable) |\n| `--output json\\|text\\|none` | Output format (default: json when piped) |\n| `--verbose` | Verbose logging to stderr |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[JSON Input Mode] Pass filters as a JSON string with `--json`. Keys use camelCase matching the URL parameter names:\n\n```bash\npython3 scripts/scrape.py --json '{\n  \"listingType\": \"rent\",\n  \"propertyTypeGroup\": [\"N\"],\n  \"bedrooms\": 2,\n  \"bathrooms\": 2,\n  \"maxPrice\": 4000,\n  \"mrtStations\": [\"EW16\", \"EW17\", \"EW18\"],\n  \"distanceToMRT\": 0.75,\n  \"minTopYear\": 1990\n}'\n```\n\nOr load from a file: `--config filters.json`"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Output Format] JSON array on stdout (empty `[]` if no results):\n\n```json\n[\n  {\n    \"id\": \"23744236\",\n    \"name\": \"Kingsford Waterbay\",\n    \"price\": \"S$ 3,900 /mo\",\n    \"psf\": \"S$ 4.53 psf\",\n    \"address\": \"68 Upper Serangoon View\",\n    \"bedrooms\": \"2\",\n    \"bathrooms\": \"2\",\n    \"area\": \"861 sqft\",\n    \"type\": \"Condominium\",\n    \"built\": \"Built: 2018\",\n    \"availability\": \"Ready to Move\",\n    \"mrt_distance\": \"14 min (1.15 km) from SE4 Kangkar LRT Station\",\n    \"list_date\": \"Listed on Feb 15, 2026 (2d ago)\",\n    \"agent\": \"May Chong\",\n    \"agency\": \"PROPNEX REALTY PTE. LTD.\",\n    \"headline\": \"Perfect work from home unit, river facing, unblocked high floor cozy\",\n    \"link\": \"https://www.propertyguru.com.sg/listing/for-rent-kingsford-waterbay-23744236\",\n    \"commute_driving\": \"25 mins\",\n    \"commute_transit\": \"45 mins\"\n  }\n]\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Exit Codes] - `0`: Success, results found\n- `1`: Error (bad parameters, scraping failure)\n- `2`: Success but zero listings found"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Agent Usage Notes] When calling this script from an AI agent:\n1. Use `--output json` for structured output (default when piped)\n2. Use `--json` flag for easier parameter passing than individual CLI flags\n3. Use `--dry-run` to preview the search URL before scraping\n4. Use `--pages N` if the user wants more results (each page has ~20 listings)\n5. Use `--commute-to` with a destination address to calculate commute times (driving + transit) for each listing. Requires `GOOGLE_MAPS_API_KEY` env var. If the key is not set, commute fields are omitted silently.\n6. `commute_driving` and `commute_transit` fields are empty strings `\"\"` when API key is missing or calculation fails"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sg_property_scraper"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        },
+        "primaryEnv": "GOOGLE_MAPS_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/5kbpers/sg-property-scraper/SKILL.md"
+}

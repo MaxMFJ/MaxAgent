@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_taskwarrior",
+  "description": "Workspace-local task management powered by Taskwarrior. Add, organize, and track tasks by project, tags, due dates, and priority with all data stored inside the active workspace.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Taskwarrior (Workspace-Local Tasks) — AgentSkill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Skill name] taskwarrior"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Purpose] Manage tasks using Taskwarrior as the backend with data stored inside the current workspace. This skill provides a safe, workspace-scoped wrapper for common Taskwarrior operations (add/list/modify/done/projects/tags/due/priority/annotations)."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Runtime requirements (ClawHub)] This skill **requires Taskwarrior to already be available** in the runtime environment (e.g., included in the base image).\n- Validation: run `task --version`\n- If missing: report the dependency and instruct the environment owner to install system package **taskwarrior** (some distros package it as **task**).\n\nThis skill **does not perform system-level installs** (no `apt`, `brew`, `dnf`, etc.)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workspace root resolution (portable)] The skill resolves the workspace root at runtime:\n1) If set, use the first available of:\n   - OPENCLAW_WORKSPACE\n   - WORKSPACE\n   - PROJECT_DIR\n   - REPO_ROOT\n2) Otherwise, fallback to the current working directory.\n\nAll Taskwarrior data is stored under:\n`<workspace>/.openclaw/taskwarrior/`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workspace-local Taskwarrior home] - taskrc: `<workspace>/.openclaw/taskwarrior/taskrc`\n- data dir: `<workspace>/.openclaw/taskwarrior/.task/`\n\nEvery Taskwarrior command MUST run with:\n- `TASKRC=<workspace>/.openclaw/taskwarrior/taskrc`\n- (optional) `TASKDATA=<workspace>/.openclaw/taskwarrior/.task`\n\nNever write to global `~/.task` or `~/.taskrc` unless the user explicitly asks to use global storage."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Core workflow] 1) **Check dependency**\n   - Run: `task --version`\n   - If missing: stop and return dependency instructions (see references/clawhub_notes.md).\n\n2) **Initialize workspace storage**\n   - Ensure directories exist:\n     - `<workspace>/.openclaw/taskwarrior/`\n     - `<workspace>/.openclaw/taskwarrior/.task/`\n   - Ensure `<workspace>/.openclaw/taskwarrior/taskrc` contains at least:\n     - `data.location=<workspace>/.openclaw/taskwarrior/.task`\n     - `confirmation=off`\n     - `verbose=off`\n\n3) **Execute requested operations**\n   - Prefer stable/common commands (see references/taskwarrior_cheatsheet.md).\n\n4) **Verify results**\n   - After any mutation, show a focused `task <id> info` or filtered `task <filter> list`."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Supported operations (useful subset)] - Add tasks: `task add ...`\n- List tasks: `task list`, `task <filter> list`\n- Modify tasks: `task <id> modify ...`\n- Complete tasks: `task <id> done`\n- Start/stop: `task <id> start|stop` (if desired)\n- Projects/tags: `task projects`, `task tags`, `project:<name>`, `+tag`, `-tag`\n- Due/priorities: `due:<date>`, `priority:H|M|L`\n- Notes: `task <id> annotate \"...\"`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Safety] Follow `references/safe_command_policy.md`.\nHighlights:\n- No delete/purge unless explicitly requested.\n- Avoid broad bulk changes without previewing the matching set.\n- No global config writes by default."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[References] - references/workspace_data_layout.md\n- references/taskwarrior_cheatsheet.md\n- references/safe_command_policy.md\n- references/examples.md\n- references/clawhub_notes.md"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "taskwarrior"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": "{\n  \"openclaw\": {\n    \"requires\": {\n      \"bins\": [\"task\"]\n    },\n    \"install\": [\n      {\n        \"kind\": \"apt\",\n        \"bins\": [\"task\"],\n        \"packages\": [\"taskwarrior\"]\n      },\n      {\n        \"kind\": \"brew\",\n        \"bins\": [\"task\"],\n        \"packages\": [\"task\"]\n      }\n    ]\n  }\n}"
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aghareza/taskwarrior/SKILL.md"
+}

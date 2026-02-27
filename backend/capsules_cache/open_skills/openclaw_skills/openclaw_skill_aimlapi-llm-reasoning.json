@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_aimlapi-llm-reasoning",
+  "description": "Run AIMLAPI LLM and reasoning workflows through chat completions with retries, structured outputs, and explicit User-Agent headers. Use when Codex needs scripted prompting/reasoning calls against AIMLAPI models.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AIMLAPI LLM + Reasoning"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Use `run_chat.py` to call AIMLAPI chat completions with retries, optional API key file fallback, and a `User-Agent` header on every request."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\nexport AIMLAPI_API_KEY=\"sk-aimlapi-...\"\npython3 {baseDir}/scripts/run_chat.py --model aimlapi/openai/gpt-5-nano-2025-08-07 --user \"Summarize this in 3 bullets.\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tasks] ### Run a basic chat completion\n\n```bash\npython3 {baseDir}/scripts/run_chat.py \\\n  --model aimlapi/openai/gpt-5-nano-2025-08-07 \\\n  --system \"You are a concise assistant.\" \\\n  --user \"Draft a project kickoff checklist.\" \\\n  --user-agent \"openclaw-custom/1.0\"\n```\n\n### Add reasoning parameters\n\n```bash\npython3 {baseDir}/scripts/run_chat.py \\\n  --model aimlapi/openai/gpt-5-nano-2025-08-07 \\\n  --user \"Plan a 5-step rollout for a new chatbot feature.\" \\\n  --extra-json '{\"reasoning\": {\"effort\": \"medium\"}, \"temperature\": 0.3}'\n```\n\n### Structured JSON output\n\n```bash\npython3 {baseDir}/scripts/run_chat.py \\\n  --model aimlapi/openai/gpt-5-nano-2025-08-07 \\\n  --user \"Return a JSON array of 3 project risks with mitigation.\" \\\n  --extra-json '{\"response_format\": {\"type\": \"json_object\"}}' \\\n  --output ./out/risks.json\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[References] - `references/aimlapi-llm.md`: payload and troubleshooting notes.\n- `README.md`: changelog-style summary of new instructions."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aimlapi_llm_reasoning"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aimlapihello/aiml-llm-reasoning/SKILL.md"
+}

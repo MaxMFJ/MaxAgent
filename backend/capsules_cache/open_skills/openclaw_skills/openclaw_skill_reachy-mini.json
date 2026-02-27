@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_reachy-mini",
+  "description": "Control a Reachy Mini robot (by Pollen Robotics / Hugging Face) via its REST API and SSH. Use for any request involving the Reachy Mini robot — moving the head, body, or antennas; playing emotions or dances; capturing camera snapshots; adjusting volume; managing apps; checking robot status; or any physical robot interaction. The robot has a 6-DoF head, 360° body rotation, two animated antennas, a wide-angle camera (with non-disruptive WebRTC snapshot), 4-mic array, and speaker.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Reachy Mini Robot Control"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] Use the CLI script or `curl` to control the robot. The script lives at:\n```\n~/clawd/skills/reachy-mini/scripts/reachy.sh\n```\n\nSet the robot IP via `REACHY_HOST` env var or `--host` flag. Default: `192.168.8.17`.\n\n### Common Commands\n```bash\nreachy.sh status                    # Daemon status, version, IP\nreachy.sh state                     # Full robot state\nreachy.sh wake-up                   # Wake the robot\nreachy.sh sleep                     # Put to sleep\nreachy.sh snap                      # Camera snapshot → /tmp/reachy_snap.jpg\nreachy.sh snap /path/to/photo.jpg   # Snapshot to custom path\nreachy.sh play-emotion cheerful1    # Play an emotion\nreachy.sh play-dance groovy_sway_and_roll  # Play a dance\nreachy.sh goto --head 0.2,0,0 --duration 1.5  # Nod down\nreachy.sh volume-set 70             # Set speaker volume\nreachy.sh emotions                  # List all emotions\nreachy.sh dances                    # List all dances\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment] | Variable | Default | Description |\n|----------|---------|-------------|\n| `REACHY_HOST` | `192.168.8.17` | Robot IP address |\n| `REACHY_PORT` | `8000` | REST API port |\n| `REACHY_SSH_USER` | `pollen` | SSH username (for `snap` command) |\n| `REACHY_SSH_PASS` | `root` | SSH password (for `snap` command, uses `sshpass`) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Movement Guide] ### Head Control (6 DoF)\nThe head accepts pitch, yaw, roll in **radians**:\n- **Pitch** (look up/down): -0.5 (up) to 0.5 (down)\n- **Yaw** (look left/right): -0.8 (right) to 0.8 (left)\n- **Roll** (tilt sideways): -0.5 to 0.5\n\n```bash\n# Look up\nreachy.sh goto --head -0.3,0,0 --duration 1.0\n\n# Look left\nreachy.sh goto --head 0,0.4,0 --duration 1.0\n\n# Tilt head right, look slightly up\nreachy.sh goto --head -0.1,0,-0.3 --duration 1.5\n\n# Return to neutral\nreachy.sh goto --head 0,0,0 --duration 1.0\n```\n\n### Body Rotation (360°)\nBody yaw in radians. 0 = forward, positive = left, negative = right.\n```bash\nreachy.sh goto --body 1.57 --duration 2.0   # Turn 90° left\nreachy.sh goto --body -1.57 --duration 2.0  # Turn 90° right\nreachy.sh goto --body 0 --duration 2.0      # Face forward\n```\n\n### Antennas\nTwo antennas [left, right] in radians. Range ~-0.5 to 0.5.\n```bash\nreachy.sh goto --antennas 0.4,0.4 --duration 0.5    # Both up\nreachy.sh goto --antennas -0.3,-0.3 --duration 0.5   # Both down\nreachy.sh goto --antennas 0.4,-0.4 --duration 0.5    # Asymmetric\n```\n\n### Combined Movements\n```bash\n# Look left and turn body left with antennas up\nreachy.sh goto --head 0,0.3,0 --body 0.5 --antennas 0.4,0.4 --duration 2.0\n```\n\n### Interpolation Modes\nUse `--interp` with goto:\n- `minjerk` — Smooth, natural (default)\n- `linear` — Constant speed\n- `ease` — Ease in/out\n- `cartoon` — Bouncy, exaggerated"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Emotions & Dances] ### Playing Emotions\n80+ pre-recorded expressive animations. Select contextually appropriate ones:\n```bash\nreachy.sh play-emotion curious1       # Curious look\nreachy.sh play-emotion cheerful1      # Happy expression\nreachy.sh play-emotion surprised1     # Surprise reaction\nreachy.sh play-emotion thoughtful1    # Thinking pose\nreachy.sh play-emotion welcoming1     # Greeting gesture\nreachy.sh play-emotion yes1           # Nodding yes\nreachy.sh play-emotion no1            # Shaking no\n```\n\n### Playing Dances\n19 dance moves, great for fun or celebration:\n```bash\nreachy.sh play-dance groovy_sway_and_roll\nreachy.sh play-dance chicken_peck\nreachy.sh play-dance dizzy_spin\n```\n\n### Full Lists\nRun `reachy.sh emotions` or `reachy.sh dances` to see all available moves."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Motor Modes] Before movement, motors must be `enabled`. Check with `reachy.sh motors`.\n\n```bash\nreachy.sh motors-enable     # Enable (needed for movement commands)\nreachy.sh motors-disable    # Disable (robot goes limp)\nreachy.sh motors-gravity    # Gravity compensation (manually pose the robot)\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Volume Control] ```bash\nreachy.sh volume            # Current speaker volume\nreachy.sh volume-set 50     # Set speaker to 50%\nreachy.sh volume-test       # Play test sound\nreachy.sh mic-volume        # Microphone level\nreachy.sh mic-volume-set 80 # Set microphone to 80%\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[App Management] Reachy Mini runs HuggingFace Space apps. Manage them via:\n```bash\nreachy.sh apps              # List all available apps\nreachy.sh apps-installed    # Installed apps only\nreachy.sh app-status        # What's running now\nreachy.sh app-start NAME    # Start an app\nreachy.sh app-stop          # Stop current app\n```\n\n**Important**: Only one app runs at a time. Starting a new app stops the current one. Apps may take exclusive control of the robot — stop the running app before sending manual movement commands if the robot doesn't respond."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Camera Snapshots] Capture JPEG photos from the robot's camera (IMX708 wide-angle) via WebRTC — **non-disruptive** to the running daemon.\n\n```bash\nreachy.sh snap                        # Save to /tmp/reachy_snap.jpg\nreachy.sh snap /path/to/output.jpg    # Custom output path\n```\n\n**Requirements**: SSH access to the robot (uses `sshpass` + `REACHY_SSH_PASS` env var, default: `root`).\n\n**How it works**: Connects to the daemon's WebRTC signalling server (port 8443) using GStreamer's `webrtcsrc` plugin on the robot, captures one H264-decoded frame, and saves as JPEG. No daemon restart, no motor disruption.\n\n**Note**: The robot must be **awake** (head up) for a useful image. If asleep, the camera faces into the body. Run `reachy.sh wake-up` first."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Audio Sensing] ```bash\nreachy.sh doa               # Direction of Arrival from mic array\n```\nReturns angle in radians (0=left, π/2=front, π=right) and speech detection boolean."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Contextual Reactions (Clawdbot Integration)] Use `reachy-react.sh` to trigger contextual robot behaviors from heartbeats, cron jobs, or session responses.\n\n```\n~/clawd/skills/reachy-mini/scripts/reachy-react.sh\n```\n\n### Reactions\n```bash\nreachy-react.sh ack           # Nod acknowledgment (received a request)\nreachy-react.sh success       # Cheerful emotion (task done)\nreachy-react.sh alert         # Surprised + antennas up (urgent email, alert)\nreachy-react.sh remind        # Welcoming/curious (meeting reminder, to-do)\nreachy-react.sh idle          # Subtle animation (heartbeat presence)\nreachy-react.sh morning       # Wake up + greeting (morning briefing)\nreachy-react.sh goodnight     # Sleepy emotion + sleep (night mode)\nreachy-react.sh patrol        # Camera snapshot, prints image path\nreachy-react.sh doa-track     # Turn head toward detected sound source\nreachy-react.sh celebrate     # Random dance (fun moments)\n```\n\nPass `--bg` to run in background (non-blocking).\n\n### Built-in Behaviors\n- **Quiet hours** (22:00–06:29 ET): All reactions except `morning`, `goodnight`, and `patrol` are silently skipped.\n- **Auto-wake**: Reactions ensure the robot is awake before acting (starts daemon + wakes if needed).\n- **Fault-tolerant**: If robot is unreachable, reactions exit cleanly without errors.\n\n### Integration Points\n\n| Trigger | Reaction | Notes |\n|---------|----------|-------|\n| Morning briefing cron (6:30 AM) | `morning` | Robot wakes up and greets |\n| Goodnight cron (10:00 PM) | `goodnight` | Robot plays sleepy emotion, goes to sleep |\n| Heartbeat (periodic) | `idle` | Subtle head tilt, antenna wave, or look-around |\n| Heartbeat (~1 in 4) | `doa-track` | Checks for nearby speech, turns toward it |\n| Heartbeat (~1 in 6) | `patrol` | Camera snapshot for room awareness |\n| Important unread email | `alert` | Antennas up + surprised emotion |\n| Meeting <2h away | `remind` | Welcoming/curious emotion |\n| Request from Alexander | `ack` | Quick head nod |\n| Task completed | `success` | Random cheerful/happy emotion |"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Direct API Access] For anything not covered by the CLI, use `curl` or the `raw` command:\n```bash\n# Via raw command\nreachy.sh raw GET /api/state/full\nreachy.sh raw POST /api/move/goto '{\"duration\":1.0,\"head_pose\":{\"pitch\":0.2,\"yaw\":0,\"roll\":0}}'\n\n# Via curl directly\ncurl -s http://192.168.8.17:8000/api/state/full | jq\ncurl -s -X POST -H \"Content-Type: application/json\" \\\n  -d '{\"duration\":1.5,\"head_pose\":{\"pitch\":0,\"yaw\":0.3,\"roll\":0}}' \\\n  http://192.168.8.17:8000/api/move/goto\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Reference] For the complete API endpoint list, schemas (GotoModelRequest, FullBodyTarget, XYZRPYPose), and full emotion/dance catalogs, see [references/api-reference.md](references/api-reference.md)."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **Robot doesn't move**: Check `reachy.sh motors` — must be `enabled`. Run `reachy.sh motors-enable`.\n- **No response**: Check `reachy.sh status`. State should be `running`. If not, run `reachy.sh reboot-daemon`.\n- **Movements ignored**: An app may have exclusive control. Run `reachy.sh app-stop` first.\n- **Network unreachable**: Verify the robot IP with `ping $REACHY_HOST`. Check `reachy.sh wifi-status`.\n- **Snap shows black image**: Robot is likely asleep (head down). Run `reachy.sh wake-up` first.\n- **Snap fails with SSH error**: Ensure `sshpass` is installed and `REACHY_SSH_PASS` is set correctly."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "reachy_mini"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/afalk42/reachy-mini/SKILL.md"
+}

@@ -22,6 +22,7 @@ class ConfigUpdate(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     model: Optional[str] = None
+    max_tokens: Optional[int] = None  # 输出最大 token 数，避免复杂生成被截断；默认 4096，建议 8192 或 16384
     langchain_compat: Optional[bool] = None  # 是否启用 LangChain 兼容（Chat）；未安装依赖时自动用原生
     remote_fallback_provider: Optional[str] = None  # 模型页“远程回退策略”：当使用远程时调用该提供商（newapi/deepseek/openai），空则用默认 DeepSeek
 
@@ -59,6 +60,7 @@ async def get_config():
         "provider": llm.config.provider,
         "model": llm.config.model,
         "base_url": llm.config.base_url,
+        "max_tokens": llm.config.max_tokens,
         "has_api_key": bool(llm.config.api_key),
         "langchain_compat": get_langchain_compat_enabled(),
         "langchain_installed": _langchain_installed(),
@@ -77,6 +79,7 @@ async def update_config(config: ConfigUpdate):
         api_key=config.api_key or current_config.api_key,
         base_url=config.base_url or current_config.base_url,
         model=config.model or current_config.model,
+        max_tokens=config.max_tokens if config.max_tokens is not None else current_config.max_tokens,
     )
 
     # 持久化到磁盘，uvicorn reload 后自动恢复；远程回退由用户显式选择后传入
@@ -87,6 +90,7 @@ async def update_config(config: ConfigUpdate):
             api_key=new_config.api_key,
             base_url=new_config.base_url,
             model=new_config.model,
+            max_tokens=new_config.max_tokens,
             remote_fallback_provider=config.remote_fallback_provider,
         )
     except Exception:
@@ -155,8 +159,9 @@ async def get_github_config_endpoint():
 
 @router.post("/config/github")
 async def update_github_config_endpoint(config: GitHubConfigUpdate):
-    from config.github_config import save_github_config
+    from config.github_config import save_github_config, apply_github_config
     save_github_config(github_token=config.github_token)
+    apply_github_config()  # 立即生效，供后续 open_skills sync 使用
     return {"status": "updated", "configured": bool((config.github_token or "").strip())}
 
 

@@ -1,0 +1,105 @@
+{
+  "id": "openclaw_skill_moltrade",
+  "description": "Operate the Moltrade trading bot (config, backtest, test-mode runs, Nostr signal broadcast, exchange adapters, strategy integration) in OpenClaw.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Moltrade Bot Skill\n\n**Moltrade** is a decentralized, automated trading assistant that lets you run quant strategies, share encrypted signals, and allow others to copy your trades—all securely via the Nostr network. Earn reputation and credits based on your trading performance.\n\n![Moltrade](https://raw.githubusercontent.com/hetu-project/moltrade/main/assets/moltrade-background-2.jpg)\n\n**YOUR 24/7 AI TRADER ! EARNING MONEY WHILE YOU'RE SLEEPING.**\n\n[![Twitter Follow](https://img.shields.io/twitter/follow/hetu_protocol?style=social&label=Follow)](https://x.com/hetu_protocol) [![Telegram](https://img.shields.io/badge/Telegram-Hetu_Builders-blue)](https://t.me/+uJrRgjtSsGw3MjZl) [![ClawHub](https://img.shields.io/badge/ClawHub-Read-orange)](https://clawhub.ai/ai-chen2050/moltrade) [![Website](https://img.shields.io/badge/Website-moltrade.ai-green)](https://www.moltrade.ai/)\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Advantages] **Moltrade** balances security, usability, and scalability. Key advantages include:\n\n1. **Client-side Key self-hosting,not cloud Custody,**: All sensitive keys and credentials remain on the user's machine; the cloud relay never holds funds or private keys, minimizing custodial risk.**No access to private keys or funds.**\n2. **Encrypted, Targeted Communication**: Signals are encrypted before publishing and only decryptable by intended subscribers, preserving strategy privacy and subscriber security.\n3. **Lightweight Cloud Re-encryption & Broadcast**: The cloud acts as an efficient relay/re-broadcaster without storing private keys; re-encryption or forwarding techniques improve delivery reliability and reach.\n4. **One-Click Copy Trading (User Friendly)**: Provides an out-of-the-box copy-trading experience for non-expert users—set up in a few steps and execute signals locally.\n5. **OpenClaw Strategy Advisor**: Integrates OpenClaw as an advisory tool for automated backtests and improvement suggestions; users decide whether to adopt recommended changes.\n6. **Cloud Can Be Decentralized Relayer Network**: The lightweight relay architecture allows future migration to decentralized relay networks, reducing single points of failure and improving censorship resistance.\n7. **Unified Incentive (Credit) System**: A transparent, verifiable Credit mechanism rewards all participants (signal providers, followers, relay nodes), aligning incentives across the ecosystem."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[**How It Works (Simplified Flow)**] ```bash\n1) Run Your Bot  ──→  2) Generate & Encrypt  ──→  3) Relay  ──→  4) Copy & Execute  ──→  5) Verify & Earn\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Install & Init] - If you are inside **OpenClaw**, you can install directly via ClawHub:\n\n```bash\nclawhub search moltrade\nclawhub install moltrade\n```\n\n- OR & Clone the repo and install Python deps locally (code is required for strategies, nostr, and CLI):\n  - `git clone https://github.com/hetu-project/moltrade.git`\n  - `cd moltrade/trader && pip install -r requirements.txt`\n- Initialize a fresh config with the built-in wizard (no trading):\n  - Prefer the human user to run `python main.py --init` (prompts for relayer URL, wallet, nostr, copy-trade follower defaults, and bot registration), so you can approve prompts, handle the wallet private key entry yourself, and capture the relayer’s returned `relayer_nostr_pubkey` when registering the bot.\n  - If you delegate to an agent, do so only if you trust it with the wallet key and ensure it completes the entire wizard—including the final bot registration step—so the `relayer_nostr_pubkey` gets written back to the config.\n- For CI/agents, keep using the repo checkout; there is no separate pip package/CLI yet."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Update Config Safely] - Backup or show planned diff before edits.\n- Change only requested fields (e.g., `trading.exchange`, `trading.default_strategy`, `nostr.relays`).\n- Validate JSON; keep types intact. Remind user to provide real secrets themselves."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Run Backtest (local)] - Install deps: `pip install -r trader/requirements.txt`.\n- Command: `python trader/backtest.py --config trader/config.example.json --strategy <name> --symbol <symbol> --interval 1h --limit 500`.\n- Report PnL/win rate/trade count/drawdown if available. Use redacted config (no real keys)."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Start Bot (test mode)] - Ensure `config.json` exists (run `python main.py --init` if not) and `trading.exchange` set (default hyperliquid).\n- Command: `python trader/main.py --config config.json --test --strategy <name> --symbol <symbol> --interval 300`.\n- Watch `trading_bot.log`; never switch to live without explicit user approval."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Run Bot (live)] - Only after validation on test mode; remove `--test` to hit mainnet.\n- Command: `python trader/main.py --config config.json --strategy <name> --symbol <symbol>`.\n- Double-check keys, risk limits, and symbol before starting; live mode will place real orders."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Broadcast Signals to Nostr] - Check `nostr` block: `nsec`, `relayer_nostr_pubkey`, `relays`, `sid`.\n- `SignalBroadcaster` is wired in `main.py`. In test mode, verify `send_trade_signal` / `send_execution_report` run without errors."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Add Exchange Adapter] - Implement adapter in `trader/exchanges/` matching `HyperliquidClient` interface (`get_candles`, `get_balance`, `get_positions`, `place_order`, etc.).\n- Register in `trader/exchanges/factory.py` keyed by `trading.exchange`.\n- Update config `trading.exchange` and rerun backtest/test-mode."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Integrate New Strategy] - Follow `trader/strategies/INTEGRATION.md` to subclass `BaseStrategy` and register in `get_strategy`.\n- Add config under `strategies.<name>`; backtest, then test-mode before live."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Safety / Secrets] - Never print or commit private keys, mnemonics, nsec, or shared keys.\n- Default to test mode; require explicit consent for live trading."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltrade"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🤖",
+        "requires": {
+          "bins": [
+            "python",
+            "pip"
+          ]
+        },
+        "homepage": "https://github.com/hetu-project/moltrade.git"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ai-chen2050/moltrade/SKILL.md"
+}

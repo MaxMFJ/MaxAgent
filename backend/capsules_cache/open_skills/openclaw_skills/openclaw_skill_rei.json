@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_rei",
+  "description": "Set up Rei Qwen3 Coder as a model provider. Use when configuring coder.reilabs.org, adding Rei to Clawdbot, or troubleshooting 403 errors from Rei endpoints.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Rei Qwen3 Coder\n\nRei provides Qwen3 Coder via an OpenAI-compatible endpoint at `coder.reilabs.org`."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup via Script] ```bash\n./skills/rei/scripts/setup.sh YOUR_REI_API_KEY\n```\n\nThis adds the provider, adds it to the model allowlist, and restarts the gateway."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup via Agent] Ask your agent:\n\n> \"Set up Rei with API key: YOUR_KEY\"\n\nThe agent will read this skill and run the setup script for you."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Switching Models] **Via chat:**\n```\n/model rei\n/model opus\n```\n\n**Via script:**\n```bash\n./skills/rei/scripts/switch.sh rei\n./skills/rei/scripts/switch.sh opus\n```\n\n**Via agent:**\n> \"Switch to Rei\" or \"Switch back to Opus\""
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Revert] If something breaks, restore the backup:\n\n```bash\n./skills/rei/scripts/revert.sh\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Manual Setup] Add to `~/.clawdbot/clawdbot.json`:\n\n```json\n{\n  \"models\": {\n    \"providers\": {\n      \"rei\": {\n        \"baseUrl\": \"https://coder.reilabs.org/v1\",\n        \"apiKey\": \"YOUR_API_KEY\",\n        \"api\": \"openai-completions\",\n        \"headers\": { \"User-Agent\": \"Clawdbot/1.0\" },\n        \"models\": [{\n          \"id\": \"rei-qwen3-coder\",\n          \"name\": \"Rei Qwen3 Coder\",\n          \"contextWindow\": 200000,\n          \"maxTokens\": 8192\n        }]\n      }\n    }\n  },\n  \"agents\": {\n    \"defaults\": {\n      \"models\": {\n        \"rei/rei-qwen3-coder\": { \"alias\": \"rei\" }\n      }\n    }\n  }\n}\n```\n\nThen restart: `clawdbot gateway restart`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] **403 errors:** The `User-Agent: Clawdbot/1.0` header is required. The setup script adds this automatically. If you configured manually, make sure the header is present.\n\n**\"Model not allowed\":** Rei must be in `agents.defaults.models` to switch to it. The setup script handles this. For manual setup, add the allowlist entry shown above."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "rei"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xreisearch/rei/SKILL.md"
+}

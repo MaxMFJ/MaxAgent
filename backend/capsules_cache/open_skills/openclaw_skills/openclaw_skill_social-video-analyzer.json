@@ -1,0 +1,115 @@
+{
+  "id": "openclaw_skill_social-video-analyzer",
+  "description": "Download and analyze any social media video from Instagram, YouTube, TikTok, X/Twitter, Reddit, Facebook, Vimeo, Twitch, and 1000+ platforms. Get full transcripts, visual scene descriptions, key takeaways, and content format analysis using Gemini native video understanding. Supports custom analysis prompts for competitive research, content repurposing, ad analysis, and influencer tracking. Built for AI agents — uses yt-dlp for downloading and Google Gemini for analysis. Use for video transcription, social media monitoring, content analysis, competitor research, video summarization, and multimedia intelligence.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🎬 Social Video Analyzer\n\nDownload and analyze any social media video — Instagram, YouTube, TikTok, X, Reddit, and 1000+ more platforms."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Download from 1000+ sites** via yt-dlp (YouTube, Instagram, TikTok, X, Reddit, Facebook, Vimeo, Twitch)\n- **Transcribe full audio** — complete spoken content extraction\n- **Describe visuals** — scene-by-scene breakdown of what's shown\n- **Extract key takeaways** — summarized main points\n- **Analyze content format** — platform, duration, style, production quality\n- **Custom prompts** — ask specific questions about any video\n- **Native video understanding** — Gemini processes video natively (not frame extraction)\n- **Shell and Python interfaces** — quick bash script or full Python control\n- **Auto-cleanup** — temporary files managed automatically\n- **Handles large videos** — up to 2GB per Gemini API limits"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `GOOGLE_AI_API_KEY` | ✅ | Get from [Google AI Studio](https://aistudio.google.com/apikey) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Quick analysis (shell)\n./skills/social-video-analyzer/scripts/analyze_video.sh \"https://www.youtube.com/watch?v=VIDEO_ID\"\n\n# Full control (Python)\nGOOGLE_AI_API_KEY=your_key python3 skills/social-video-analyzer/scripts/analyze_video.py \"https://youtube.com/watch?v=VIDEO_ID\"\n\n# Custom question\npython3 skills/social-video-analyzer/scripts/analyze_video.py \"https://tiktok.com/@user/video/123\" --prompt \"What product is being advertised?\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Shell Script (Quick)\n```bash\n./scripts/analyze_video.sh \"VIDEO_URL\"\n```\n\n### Python (Full Control)\n```bash\n# Default analysis\npython3 scripts/analyze_video.py \"VIDEO_URL\"\n\n# Custom prompt\npython3 scripts/analyze_video.py \"VIDEO_URL\" --prompt \"Your question\"\n\n# Competitive analysis\npython3 scripts/analyze_video.py \"VIDEO_URL\" --prompt \"What hooks and CTAs are used?\"\n\n# Content repurposing\npython3 scripts/analyze_video.py \"VIDEO_URL\" --prompt \"Extract quotes suitable for social media posts\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format] ```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Transcript] [Full spoken content]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Visual Description] [Scene-by-scene breakdown]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Key Takeaways] - Point 1\n- Point 2"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Content Format Analysis] - Platform: YouTube\n- Duration: ~3:20\n- Style: Tutorial/explainer\n- Production: Professional\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Supported Platforms] YouTube, Instagram, TikTok, X/Twitter, Reddit, Facebook, Vimeo, Twitch clips, and [1000+ more](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/analyze_video.sh` | Quick shell wrapper for video analysis |\n| `{baseDir}/scripts/analyze_video.py` | Full Python CLI with custom prompts |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Limitations] - Max video size: 2GB (Gemini API limit)\n- Private/login-required videos may fail\n- Rate limits apply per platform"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Data Policy] Videos are temporarily downloaded for analysis, uploaded to Google Gemini API for processing, and auto-cleaned after 48 hours.\n\n---\n\nBuilt by [M. Abidi](https://www.agxntsix.ai)\n\n[LinkedIn](https://www.linkedin.com/in/mohammad-ali-abidi) · [YouTube](https://youtube.com/@aiwithabidi) · [GitHub](https://github.com/aiwithabidi) · [Book a Call](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "social_video_analyzer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎬",
+        "requires": {
+          "env": [
+            "GOOGLE_AI_API_KEY"
+          ]
+        },
+        "primaryEnv": "GOOGLE_AI_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/a6-social-video-analyzer/SKILL.md"
+}

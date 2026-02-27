@@ -1,0 +1,140 @@
+{
+  "id": "openclaw_skill_internal-linking-optimizer",
+  "description": "Use when the user asks to \"fix internal links\", \"improve site architecture\", \"link structure\", \"distribute page authority\", \"internal linking strategy\", \"orphan pages\", \"site architecture is messy\", or \"pages have no links pointing to them\". Analyzes and optimizes internal link structure to improve site architecture, distribute page authority, and help search engines understand content relationships. Creates strategic internal linking plans. For a broader on-page audit, see on-page-seo-auditor. For external link analysis, see backlink-analyzer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Internal Linking Optimizer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../on-page-seo-auditor/) · [technical-seo-checker](../technical-seo-checker/) · **internal-linking-optimizer** · [content-refresher](../content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill analyzes your site's internal link structure and provides recommendations to improve SEO through strategic internal linking. It helps distribute authority, establish topical relevance, and improve crawlability."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Improving site architecture for SEO\n- Distributing authority to important pages\n- Fixing orphan pages with no internal links\n- Creating topic cluster internal link strategies\n- Optimizing anchor text for SEO\n- Recovering pages that have lost rankings\n- Planning internal links for new content"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Link Structure Analysis**: Maps current internal linking patterns\n2. **Authority Flow Mapping**: Shows how PageRank flows through site\n3. **Orphan Page Detection**: Finds pages with no internal links\n4. **Anchor Text Optimization**: Improves anchor text diversity\n5. **Topic Cluster Linking**: Creates pillar-cluster link strategies\n6. **Link Opportunity Finding**: Identifies where to add links\n7. **Navigation Optimization**: Improves site-wide link elements"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Analyze Current Structure\n\n```\nAnalyze internal linking structure for [domain/sitemap]\n```\n\n```\nFind internal linking opportunities for [URL]\n```\n\n### Create Linking Strategy\n\n```\nCreate internal linking plan for topic cluster about [topic]\n```\n\n```\nSuggest internal links for this new article: [content/URL]\n```\n\n### Fix Issues\n\n```\nFind orphan pages on [domain]\n```\n\n```\nOptimize anchor text across the site\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~web crawler + ~~analytics connected:**\nClaude can automatically perform a full site crawl via ~~web crawler to map the complete link graph, fetch page performance metrics from ~~analytics to identify high-value pages, and analyze link flow throughout the site. This enables data-driven internal linking strategies.\n\n**With manual data only:**\nAsk the user to provide:\n1. Sitemap URL or list of important pages\n2. Key page URLs that need more internal links\n3. Content categories or topic clusters\n4. Any existing link structure documentation\n\nProceed with the analysis using provided data. Note in the output which findings are from automated crawl vs. manual review."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests internal linking optimization:\n\n1. **Analyze Current Internal Link Structure**\n\n   ```markdown\n   ## Internal Link Structure Analysis\n   \n   ### Overview\n   \n   **Domain**: [domain]\n   **Total Pages Analyzed**: [X]\n   **Total Internal Links**: [X]\n   **Average Links per Page**: [X]\n   \n   ### Link Distribution\n   \n   | Links per Page | Page Count | Percentage |\n   |----------------|------------|------------|\n   | 0 (Orphan) | [X] | [X]% |\n   | 1-5 | [X] | [X]% |\n   | 6-10 | [X] | [X]% |\n   | 11-20 | [X] | [X]% |\n   | 20+ | [X] | [X]% |\n   \n   ### Top Linked Pages\n   \n   | Page | Internal Links | Authority | Notes |\n   |------|----------------|-----------|-------|\n   | [URL 1] | [X] | High | [notes] |\n   | [URL 2] | [X] | High | [notes] |\n   | [URL 3] | [X] | Medium | [notes] |\n   \n   ### Under-Linked Important Pages\n   \n   | Page | Current Links | Traffic | Recommended Links |\n   |------|---------------|---------|-------------------|\n   | [URL 1] | [X] | [X]/mo | [X]+ |\n   | [URL 2] | [X] | [X]/mo | [X]+ |\n   \n   **Structure Score**: [X]/10\n   ```\n\n2. **Identify Orphan Pages**\n\n   ```markdown\n   ## Orphan Page Analysis\n   \n   ### Definition\n   Orphan pages have no internal links pointing to them, making them \n   hard for users and search engines to discover.\n   \n   ### Orphan Pages Found: [X]\n   \n   | Page | Traffic | Priority | Recommended Action |\n   |------|---------|----------|-------------------|\n   | [URL 1] | [X]/mo | High | Link from [pages] |\n   | [URL 2] | [X]/mo | Medium | Add to navigation |\n   | [URL 3] | 0 | Low | Consider deleting/redirecting |\n   \n   ### Fix Strategy\n   \n   **High Priority Orphans** (have traffic/rankings):\n   1. [URL] - Add links from: [relevant pages]\n   2. [URL] - Add links from: [relevant pages]\n   \n   **Medium Priority Orphans** (potentially valuable):\n   1. [URL] - Add to category/tag page\n   2. [URL] - Link from related content\n   \n   **Low Priority Orphans** (consider removing):\n   1. [URL] - Redirect to "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Site structure or sitemap provided (URL or file)\n- [ ] Target pages or topic clusters clearly defined\n- [ ] If optimizing specific page, page URL or content provided\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] All link suggestions include source page, target page, and recommended anchor text\n- [ ] Orphan page lists include URLs and recommended actions\n- [ ] Source of each data point clearly stated (~~web crawler data, ~~analytics, user-provided, or manual analysis)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Find internal linking opportunities for my blog post about 'email marketing best practices'\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Internal Linking Opportunities] **Page**: /blog/email-marketing-best-practices/\n**Current Internal Links**: 2\n\n### Recommended Links to Add\n\n| Section | Text to Link | Target Page | Anchor |\n|---------|--------------|-------------|--------|\n| Para 2 | \"building your email list\" | /blog/grow-email-list/ | \"building your email list\" |\n| Para 5 | \"subject lines\" | /blog/email-subject-lines/ | \"write compelling subject lines\" |\n| Section on segmentation | \"audience segments\" | /blog/email-segmentation-guide/ | \"segment your audience\" |\n| CTA section | \"marketing automation\" | /services/email-automation/ | \"email automation services\" |\n| Conclusion | \"email marketing tools\" | /blog/best-email-tools/ | \"top email marketing tools\" |\n\n### Pages That Should Link TO This Article\n\n| Source Page | Location | Anchor Text |\n|-------------|----------|-------------|\n| /blog/digital-marketing-guide/ | Email section | \"email marketing best practices\" |\n| /services/marketing-services/ | Related content | \"email marketing strategies\" |\n| /blog/lead-generation-tips/ | Email mention | \"email marketing techniques\" |\n\n### Priority Actions\n\n1. Add 5 outbound internal links (listed above)\n2. Request 3 inbound links from related pages\n3. Add to \"Marketing\" category page\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Quality over quantity** - Add relevant links, not random ones\n2. **User-first thinking** - Links should help users navigate\n3. **Vary anchor text** - Avoid over-optimization\n4. **Link to important pages** - Distribute authority strategically\n5. **Regular audits** - Internal links need maintenance as content grows"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Link Architecture Patterns] ### Common Architecture Models\n\n| Model | Description | Best For | Limitations |\n|-------|------------|---------|------------|\n| **Hub-and-Spoke** | Central pillar links to/from cluster pages | Topic authority, content hubs | Can isolate topic clusters |\n| **Silo Structure** | Strict category hierarchies, vertical linking | Large e-commerce, strict taxonomy | Limits cross-topic discovery |\n| **Flat Architecture** | All pages 2-3 clicks from homepage | Small sites (<100 pages) | Doesn't scale to large sites |\n| **Pyramid** | Homepage → Categories → Subcategories → Pages | News sites, large blogs | Deep pages get less authority |\n| **Mesh/Matrix** | Cross-links between related content freely | Knowledge bases, wikis | Can become chaotic without rules |\n\n### Hub-and-Spoke Implementation\n\n```\nHomepage\n  └── Topic Hub A (pillar page)\n  │     ├── Cluster Article A1 ←→ A2\n  │     ├── Cluster Article A2 ←→ A3\n  │     └── Cluster Article A3 ←→ A1\n  └── Topic Hub B (pillar page)\n        ├── Cluster Article B1 ←→ B2\n        └── Cluster Article B2 ←→ B1\n\nCross-links: A2 → B1 (related subtopics)\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Anchor Text Diversity Framework] ### Anchor Text Types\n\n| Type | Example | Target Distribution | Risk Level |\n|------|---------|-------------------|------------|\n| Exact match | \"keyword research tools\" | 10-15% | Over-optimization risk if higher |\n| Partial match | \"best tools for keyword research\" | 20-30% | Safe, natural variation |\n| Branded | \"Ahrefs keyword explorer\" | 15-25% | Always safe |\n| Generic | \"click here\", \"learn more\", \"read this\" | 5-10% | Low SEO value |\n| Descriptive/natural | \"this comprehensive guide covers...\" | 20-30% | Most natural, recommended |\n| Naked URL | \"example.com/page\" | 5-10% | Natural for citations |\n\n### Anchor Text Best Practices\n- Vary anchor text for the same target page\n- Use descriptive text that tells users AND search engines what to expect\n- Never use identical anchor text for different target pages\n- Monitor for accidental over-optimization of commercial keywords"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Link Equity Flow Model] ### Link Equity Distribution\n\n| Page Position | Equity Received | Action to Increase |\n|--------------|----------------|-------------------|\n| Homepage | Highest (all external links flow here) | Distribute to key pages via prominent links |\n| Category pages | High (linked from homepage + child pages) | Link to from blog posts, not just nav |\n| Top content | Medium-High (if well-linked internally) | Increase internal links from other strong pages |\n| Deep pages | Low (few internal links) | Add contextual links from related pages |\n| Orphan pages | Zero (no internal links!) | Critical: add at least 3 internal links |\n\n### Link Equity Optimization Rules\n1. **Link from strong pages to weak pages** — pages with high authority should link to priority pages\n2. **Reduce click depth** — important pages should be within 3 clicks of homepage\n3. **Fix orphan pages** — every page needs at least one internal link\n4. **Use contextual links** — links within body content pass more value than navigation/footer links\n5. **Limit links per page** — diminishing returns above 100 internal links per page"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Internal Link Audit Checklist] | Check | Tool/Method | Pass Criteria |\n|-------|------------|--------------|\n| Orphan pages | Crawl report | Zero orphan pages |\n| Click depth | Crawl report | All priority pages ≤3 clicks from home |\n| Broken internal links | Crawl report | Zero 404 internal links |\n| Redirect chains | Crawl report | No chain >2 redirects |\n| Anchor text diversity | Manual audit | No anchor text >30% exact match |\n| Bidirectional links | Manual audit | Related pages link to each other |\n| Navigation consistency | Manual audit | Key pages in main nav |\n| Contextual links per page | Manual audit | 3-5 contextual links per 1000 words |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Link Architecture Patterns](./references/link-architecture-patterns.md) — Architecture models, implementation guides, and link equity optimization strategies"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Related Skills] - [content-gap-analysis](../../research/content-gap-analysis/) — Find content to link to\n- [seo-content-writer](../../build/seo-content-writer/) — Create linkable content\n- [on-page-seo-auditor](../on-page-seo-auditor/) — Audit overall on-page SEO\n- [technical-seo-checker](../technical-seo-checker/) — Check crawlability\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit\n- [schema-markup-generator](../../build/schema-markup-generator/) — Breadcrumb and navigation schema"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "internal_linking_optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "low",
+      "tags": [
+        "seo",
+        "internal linking",
+        "site architecture",
+        "link structure",
+        "page authority",
+        "link equity",
+        "content silos",
+        "navigation optimization"
+      ],
+      "triggers": [
+        "fix internal links",
+        "improve site architecture",
+        "link structure",
+        "distribute page authority",
+        "internal linking strategy",
+        "site navigation",
+        "link equity",
+        "orphan pages",
+        "site architecture is messy",
+        "pages have no links pointing to them"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/internal-linking-optimizer/SKILL.md"
+}

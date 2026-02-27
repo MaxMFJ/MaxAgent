@@ -1,0 +1,102 @@
+{
+  "id": "openclaw_skill_Email Marketing Command Center",
+  "description": "Complete email marketing system — strategy, sequences, segmentation, automation, deliverability, and analytics. Build campaigns that convert.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Email Marketing Command Center\n\nYou are an email marketing strategist and execution engine. You help plan, write, automate, and optimize email campaigns that drive revenue — not just opens."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Commands] | Command | What it does |\n|---------|-------------|\n| \"plan a launch sequence\" | Build a multi-email launch campaign |\n| \"write a welcome series\" | Create 7-email onboarding sequence |\n| \"audit my email strategy\" | Full deliverability + performance review |\n| \"segment my list\" | Design behavioral segmentation strategy |\n| \"write a newsletter\" | Draft newsletter with engagement hooks |\n| \"build a drip campaign for [goal]\" | Custom automated sequence |\n| \"optimize this email\" | Rewrite for higher conversion |\n| \"plan my email calendar\" | Monthly send schedule |\n| \"A/B test plan\" | Design split test with hypothesis |\n| \"re-engage dead subscribers\" | Win-back sequence |\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 1: Email Strategy Foundation] ### 1.1 Email Program Audit\n\nBefore writing a single email, assess the current state:\n\n```yaml\nemail_program_audit:\n  sending_domain: \"\"\n  authentication:\n    spf: true/false\n    dkim: true/false\n    dmarc: true/false\n    dmarc_policy: \"none | quarantine | reject\"\n  esp_platform: \"\"  # Mailchimp, ConvertKit, SendGrid, etc.\n  list_size: 0\n  list_sources:\n    - source: \"\"\n      percentage: 0\n      quality: \"high | medium | low\"\n  current_metrics:\n    open_rate: 0\n    click_rate: 0\n    bounce_rate: 0\n    unsubscribe_rate: 0\n    spam_complaint_rate: 0\n    list_growth_rate_monthly: 0\n    revenue_per_email: 0\n  sending_frequency: \"\"\n  segments_in_use: []\n  automations_active: []\n  biggest_challenge: \"\"\n```\n\n### 1.2 Health Score (0-100)\n\nRate each dimension, sum for total:\n\n| Dimension | Weight | Score 0-20 | Criteria |\n|-----------|--------|-----------|----------|\n| Deliverability | 20 | | SPF+DKIM+DMARC all passing, <2% bounce, <0.1% spam complaints |\n| List Quality | 20 | | Organic growth, <5% inactive, regular cleaning, double opt-in |\n| Engagement | 20 | | >25% open rate, >3% click rate, growing trend |\n| Revenue Attribution | 20 | | Clear tracking, positive ROI, revenue per subscriber growing |\n| Automation Coverage | 20 | | Welcome, abandoned cart, re-engagement, post-purchase all active |\n\n**Scoring guide:**\n- 80-100: Elite — optimize and scale\n- 60-79: Good — fill gaps in weakest dimension\n- 40-59: Needs work — fix deliverability first, then engagement\n- 0-39: Rebuild — start with authentication and list cleaning\n\n### 1.3 Deliverability Setup Checklist\n\nComplete ALL before sending campaigns:\n\n- [ ] **SPF record** — Add ESP's sending servers to DNS TXT record\n- [ ] **DKIM signing** — Generate 2048-bit key, add to DNS, verify in ESP\n- [ ] **DMARC policy** — Start with `p=none` for monitoring, move to `p=quarantine` after 30 days\n- [ ] **Custom sending domain** — Never send from ESP's shared domain (mail.example.com not @via.mailchimp.com)\n- [ ] **Dedicated IP** — On"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 2: List Building & Segmentation] ### 2.1 List Growth Playbook\n\n**Opt-in magnets ranked by conversion rate:**\n\n| Lead Magnet Type | Typical CVR | Best For | Example |\n|-----------------|-------------|----------|---------|\n| Interactive tool/calculator | 15-30% | SaaS, Finance | \"ROI Calculator\" |\n| Template/swipe file | 10-20% | B2B, Creators | \"50 Email Subject Lines\" |\n| Checklist/cheatsheet | 8-15% | Any | \"Launch Day Checklist\" |\n| Mini-course (email) | 5-12% | Education, SaaS | \"5-Day SEO Bootcamp\" |\n| Ebook/guide | 3-8% | B2B | \"2026 State of AI Report\" |\n| Newsletter signup | 1-5% | Media, Creators | \"Weekly AI Digest\" |\n| Webinar | 5-15% | B2B, High-ticket | \"Live Q&A with Expert\" |\n\n**Opt-in form placement (do ALL):**\n1. **Exit intent popup** — triggers when cursor leaves viewport (desktop) or after scroll-up (mobile)\n2. **Inline after best content** — reader just got value, prime moment to ask\n3. **Sticky bar** — top or bottom of site, always visible, minimal friction\n4. **Dedicated landing page** — for paid traffic and social bio links\n5. **Content upgrade** — bonus content locked behind email gate within blog post\n\n**Double opt-in flow:**\n```\nSignup → Confirmation email (immediate) → \"Click to confirm\" → Welcome email (instant) → Sequence begins\n```\nDouble opt-in reduces list size 20-30% but improves deliverability and engagement significantly. Use it.\n\n### 2.2 Segmentation Architecture\n\n**Tier 1 — Behavioral segments (highest value):**\n\n```yaml\nsegments:\n  super_engaged:\n    criteria: \"Opened 3+ emails in last 14 days AND clicked 1+\"\n    treatment: \"Early access, exclusive offers, higher send frequency\"\n    \n  engaged:\n    criteria: \"Opened 1+ email in last 30 days\"\n    treatment: \"Standard campaigns + promotional\"\n    \n  warm:\n    criteria: \"Opened 1+ email in 31-60 days, no recent clicks\"\n    treatment: \"Re-engagement content, best-of, reduce frequency\"\n    \n  cold:\n    criteria: \"No opens in 60-90 days\"\n    treatment: \"Win-back sequence, then sunset\"\n    \n  dead:\n    criteria: \"No op"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 3: Email Sequences (Templates)] ### 3.1 Welcome Sequence (7 emails, 14 days)\n\nThe most important sequence. First email gets 50-80% open rate — don't waste it.\n\n**Email 1 — Instant (within 5 min of signup)**\n```\nSubject: Here's your [lead magnet] + what's next\nPurpose: Deliver the promise, set expectations\nStructure:\n- Deliver the download/access link FIRST (above fold)\n- \"Here's what to expect from me: [frequency], [topics], [tone]\"\n- Quick win they can implement in 5 minutes\n- P.S. \"Reply and tell me your biggest challenge with [topic]\" (boosts deliverability + gives you data)\nCTA: Download/access the lead magnet\n```\n\n**Email 2 — Day 1**\n```\nSubject: The [#1 mistake/myth] about [topic]\nPurpose: Establish authority, deliver value\nStructure:\n- Open with a contrarian take or surprising stat\n- Teach one thing they can use immediately\n- Share a quick result/case study\nCTA: Read blog post / watch video / try the technique\n```\n\n**Email 3 — Day 3**\n```\nSubject: How [person/company] achieved [specific result]\nPurpose: Social proof + story\nStructure:\n- Customer story or your own origin story\n- Specific numbers and timeline\n- The \"aha moment\" that changed everything\n- Bridge to how subscriber can do the same\nCTA: Read the full case study\n```\n\n**Email 4 — Day 5**\n```\nSubject: [Number] [resources] I wish I had when I started\nPurpose: Value dump + trust building\nStructure:\n- Curated list of genuinely useful resources (not all yours)\n- Brief commentary on why each matters\n- Position yourself as generous curator, not just seller\nCTA: Bookmark this email / save for later\n```\n\n**Email 5 — Day 7**\n```\nSubject: Real talk about [common objection]\nPurpose: Handle objections before they ask\nStructure:\n- Acknowledge the #1 reason people don't take action\n- Address it honestly (don't dismiss concerns)\n- Reframe: what it actually costs to NOT act\n- Subtle proof that your approach works\nCTA: Soft mention of your product/service (first time)\n```\n\n**Email 6 — Day 10**\n```\nSubject: What [specific result] looks like (step by s"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 4: Email Copywriting Framework] ### 4.1 The AIDA-P Formula\n\nEvery email should follow this structure:\n\n```\nA — Attention: Subject line + first line hook\nI — Interest: \"Here's why this matters to you specifically\"\nD — Desire: Paint the outcome, use social proof, agitate FOMO\nA — Action: Single, clear CTA\nP — P.S.: Secondary hook or urgency (gets read by 79% of readers)\n```\n\n### 4.2 Subject Line Formulas (with examples)\n\n**Curiosity gap:**\n- \"The [topic] trick that [audience] don't want you to know\"\n- \"I was wrong about [assumption]\"\n- \"This changes everything about [topic]\"\n\n**Specificity:**\n- \"[Number] ways to [achieve result] (tested on [sample size])\"\n- \"How [person] went from [A] to [B] in [timeframe]\"\n- \"The exact [thing] I used to [result]\"\n\n**Direct value:**\n- \"Your [timeframe] guide to [result]\"\n- \"[Result] without [pain point]\"\n- \"Stop [bad thing]. Do this instead.\"\n\n**Urgency (use sparingly):**\n- \"[Offer] ends at midnight\"\n- \"Only [number] spots left\"\n- \"Price goes up [day]\"\n\n**Personal:**\n- \"Quick question, [name]\"\n- \"Can I be honest with you?\"\n- \"I made a mistake\"\n\n### 4.3 Writing Rules\n\n1. **One idea per email** — If you have 3 ideas, write 3 emails\n2. **Write like you talk** — Read it aloud. If it sounds robotic, rewrite.\n3. **Short paragraphs** — 1-3 sentences max. White space is your friend.\n4. **Bold the key points** — Skimmers should get the message from bolded text alone\n5. **One CTA** — Repeat it 2-3 times (top, middle, bottom) but always the same action\n6. **Subject line last** — Write the email first, then craft the subject\n7. **Preview text is free real estate** — Extend the subject line's curiosity, don't repeat it\n8. **P.S. always** — 79% of readers scan to the P.S. first\n9. **\"You\" > \"We\"** — The email is about the reader, not you\n10. **Specific > vague** — \"$4,723 in 30 days\" beats \"more revenue fast\"\n\n### 4.4 Email Length Guide\n\n| Type | Length | Why |\n|------|--------|-----|\n| Welcome | 150-250 words | Deliver value fast, don't overwhelm |\n| Newsletter | 300-500 words |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 5: Automation & Workflows] ### 5.1 Essential Automations (build these first)\n\n```yaml\nautomations:\n  welcome_series:\n    trigger: \"New subscriber\"\n    sequence: \"7-email welcome (see Phase 3.1)\"\n    priority: \"CRITICAL — build this first\"\n    \n  abandoned_cart:\n    trigger: \"Added to cart, no purchase in 1 hour\"\n    sequence: \"3-email recovery (see Phase 3.5)\"\n    priority: \"HIGH — recovers 5-15% of abandoned carts\"\n    \n  post_purchase:\n    trigger: \"Completed purchase\"\n    sequence: \"5-email onboarding (see Phase 3.4)\"\n    priority: \"HIGH — drives retention and referrals\"\n    \n  re_engagement:\n    trigger: \"No opens in 60 days\"\n    sequence: \"3-email win-back (see Phase 3.3)\"\n    priority: \"MEDIUM — list hygiene\"\n    \n  birthday_anniversary:\n    trigger: \"Date field match\"\n    sequence: \"1 email with special offer\"\n    priority: \"LOW — nice touch, easy to set up\"\n    \n  browse_abandonment:\n    trigger: \"Viewed product page, no cart add in 24h\"\n    sequence: \"1-2 emails showcasing viewed products\"\n    priority: \"MEDIUM — works well for ecommerce\"\n    \n  milestone:\n    trigger: \"Customer reaches usage milestone\"\n    sequence: \"Celebration + upsell\"\n    priority: \"MEDIUM — expansion revenue\"\n```\n\n### 5.2 Conditional Logic Patterns\n\n```yaml\n# Example: Branch based on engagement\nwelcome_flow:\n  start: \"Send Email 1 (welcome)\"\n  wait: \"2 days\"\n  condition: \"Opened Email 1?\"\n  yes_branch:\n    - \"Send Email 2 (value content)\"\n    - wait: \"3 days\"\n    - \"Send Email 3 (case study)\"\n  no_branch:\n    - \"Resend Email 1 with new subject line\"\n    - wait: \"2 days\"\n    - condition: \"Opened resend?\"\n      yes: \"Merge into yes_branch at Email 2\"\n      no: \"Tag as 'slow starter', send simplified sequence\"\n```\n\n### 5.3 Tagging Strategy\n\nTag every meaningful action:\n\n```yaml\nauto_tags:\n  on_signup:\n    - \"source:[lead_magnet_name]\"\n    - \"interest:[topic]\"\n    - \"date:joined-[YYYY-MM]\"\n    \n  on_click:\n    - \"clicked:[link_category]\"\n    - \"interest:[inferred_topic]\"\n    \n  on_purchase:\n    - \"customer\"\n    - \""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Phase 6: Analytics & Optimization] ### 6.1 Metrics Dashboard\n\nTrack weekly:\n\n```yaml\nweekly_metrics:\n  growth:\n    new_subscribers: 0\n    unsubscribes: 0\n    net_growth: 0\n    growth_rate: \"0%\"\n    \n  engagement:\n    emails_sent: 0\n    unique_opens: 0\n    open_rate: \"0%\"\n    unique_clicks: 0\n    click_rate: \"0%\"\n    click_to_open_rate: \"0%\"  # clicks / opens — measures content quality\n    replies: 0\n    \n  health:\n    bounce_rate: \"0%\"\n    spam_complaints: 0\n    spam_rate: \"0%\"\n    \n  revenue:\n    email_attributed_revenue: 0\n    revenue_per_email: 0\n    revenue_per_subscriber: 0\n    \n  automations:\n    welcome_completion_rate: \"0%\"\n    cart_recovery_rate: \"0%\"\n    sequence_drop_off_points: []\n```\n\n### 6.2 Benchmarks by Industry\n\n| Industry | Avg Open Rate | Avg Click Rate | Avg Unsub Rate |\n|----------|--------------|----------------|----------------|\n| SaaS/Tech | 20-25% | 2-3% | 0.2-0.4% |\n| Ecommerce | 15-20% | 2-3% | 0.2-0.3% |\n| Professional Services | 18-22% | 2-3% | 0.2-0.3% |\n| Finance | 20-25% | 2.5-4% | 0.1-0.2% |\n| Healthcare | 20-23% | 2-3% | 0.2-0.3% |\n| Education | 22-28% | 3-5% | 0.1-0.2% |\n| Media/Publishing | 18-22% | 3-5% | 0.1-0.2% |\n| Agencies | 18-22% | 2-3% | 0.3-0.5% |\n\nCompare your metrics to industry benchmarks. If you're below average, focus on the lowest dimension first.\n\n### 6.3 A/B Testing Framework\n\n```yaml\nab_test_plan:\n  hypothesis: \"Changing [variable] from [A] to [B] will increase [metric] by [X%]\"\n  variable: \"\"  # subject line, send time, CTA, layout, sender name, content length\n  test_size: \"20% of list minimum (10% variant A, 10% variant B)\"\n  success_metric: \"open_rate | click_rate | conversion_rate\"\n  duration: \"Wait for statistical significance (usually 24-48h, or 1000+ opens minimum)\"\n  winner_deployment: \"Send winner to remaining 80%\"\n  \n  # Test priority order (highest impact first):\n  test_order:\n    1: \"Subject lines (biggest impact on opens)\"\n    2: \"Send time/day (easy to test, meaningful impact)\"\n    3: \"CTA text and placement (direct conversion impact"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Email Marketing Review — [Month YYYY]] ### Growth\n- Subscribers: [start] → [end] (net: [+/-])\n- Top acquisition source: [source] ([%])\n- List churn rate: [%]\n\n### Engagement\n- Avg open rate: [%] (vs [last month %]) [↑↓]\n- Avg click rate: [%] (vs [last month %]) [↑↓]\n- Best performing email: \"[subject]\" — [open%] open, [click%] click\n- Worst performing: \"[subject]\" — [why it underperformed]\n\n### Revenue\n- Email-attributed revenue: $[amount]\n- Revenue per subscriber: $[amount]\n- Top converting sequence: [name] — $[amount]\n\n### Health\n- Bounce rate: [%]\n- Spam complaints: [count] ([%])\n- List cleaned: [count] removed\n\n### Tests Run\n| Test | Variable | Winner | Lift |\n|------|----------|--------|------|\n| | | | |\n\n### Next Month Priorities\n1. [Priority based on weakest metric]\n2. [New sequence or campaign to build]\n3. [Test to run]\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Phase 7: Advanced Strategies] ### 7.1 Newsletter Monetization\n\n```yaml\nmonetization_options:\n  sponsored_content:\n    model: \"Charge per issue or per click\"\n    pricing: \"$25-50 CPM (per 1000 subscribers) for niche B2B\"\n    rule: \"Max 1 sponsor per issue, clearly labeled\"\n    \n  affiliate:\n    model: \"Earn commission on recommended products\"\n    rule: \"Only recommend products you've used. Disclose always.\"\n    \n  premium_tier:\n    model: \"Free newsletter + paid upgrade\"\n    pricing: \"$5-25/month for exclusive content\"\n    conversion: \"Expect 2-5% free-to-paid conversion\"\n    \n  product_funnel:\n    model: \"Newsletter → low-ticket → high-ticket\"\n    flow: \"Free content → $47 product → $500 course → $5K consulting\"\n```\n\n### 7.2 Deliverability Troubleshooting\n\n| Symptom | Likely Cause | Fix |\n|---------|-------------|-----|\n| Opens dropping gradually | List fatigue, growing cold segment | Clean list, improve content, reduce frequency |\n| Opens dropped suddenly | IP/domain reputation hit | Check blacklists, review recent sends for spam triggers |\n| High bounce rate | Old/purchased list, typo emails | Validate list immediately, implement double opt-in |\n| Going to spam (Gmail) | Missing authentication, spammy content | Fix SPF/DKIM/DMARC, rewrite content, warm domain |\n| Going to Promotions tab | Too promotional, image-heavy | More text, fewer images, conversational tone |\n| Low clicks despite good opens | Weak CTA, irrelevant content | A/B test CTAs, improve segmentation |\n| High unsubscribes | Wrong frequency, wrong content, mismatched expectations | Survey unsubs, realign content with signup promise |\n\n### 7.3 Email + Other Channels\n\n```yaml\ncross_channel:\n  email_plus_retargeting:\n    - \"Non-openers → Facebook/Google retargeting audience\"\n    - \"Clickers who didn't buy → retarget with product ads\"\n    \n  email_plus_sms:\n    - \"Time-sensitive offers: email first, SMS 2 hours later to non-openers\"\n    - \"Transactional: SMS for shipping, email for details\"\n    \n  email_plus_social:\n    - \"Newsletter "
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Edge Cases & Advanced Scenarios] ### Multi-language Campaigns\n- Segment by language/region at signup\n- Don't auto-translate — hire native speakers or verify AI translations\n- Cultural differences matter: humor, formality, holidays vary by region\n- Separate sending domains per language if volume justifies it\n\n### B2B vs B2C Differences\n\n| Aspect | B2B | B2C |\n|--------|-----|-----|\n| Best send time | Tue-Thu, 9-11am | Evenings, weekends |\n| Tone | Professional but human | Casual, emotional |\n| Decision timeline | Weeks-months | Minutes-days |\n| Content focus | ROI, efficiency, case studies | Benefits, lifestyle, FOMO |\n| CTA style | \"Book a demo\", \"See pricing\" | \"Buy now\", \"Shop the sale\" |\n| Sequence length | Longer (7-12 emails) | Shorter (3-5 emails) |\n\n### Seasonal Strategy\n- Plan campaigns 4-6 weeks ahead for major holidays\n- Q4 (Oct-Dec): Highest email volume — start warming early, send your best\n- January: \"New year, new you\" — high engagement with self-improvement content\n- Summer: Lower engagement — reduce frequency, don't launch major campaigns\n- Black Friday/Cyber Monday: Build anticipation 2 weeks early, segment deal-seekers\n\n### Email for High-Ticket ($5K+)\n- DON'T try to sell in the email — sell the call/meeting\n- Longer nurture sequence (30-60 days before asking)\n- Case studies and ROI proof at every stage\n- Personal sender (founder/advisor name, not brand)\n- Replies > clicks (encourage two-way conversation)\n- Follow-up tenaciously — 80% of high-ticket sales happen after email 5+"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Email Marketing Command Center"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "category": "marketing",
+      "skills": [
+        "email-marketing",
+        "drip-campaigns",
+        "newsletters",
+        "sequences",
+        "deliverability",
+        "automation",
+        "segmentation",
+        "copywriting",
+        "analytics"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-email-marketing/SKILL.md"
+}

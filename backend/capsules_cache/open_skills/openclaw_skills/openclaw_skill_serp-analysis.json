@@ -1,0 +1,136 @@
+{
+  "id": "openclaw_skill_serp-analysis",
+  "description": "Use when the user asks to \"analyze search results\", \"SERP analysis\", \"what ranks for\", \"SERP features\", \"why does this page rank\", \"what is on page one for this query\", \"who ranks for this keyword\", or \"what does Google show for\". Analyzes search engine results pages (SERPs) to understand ranking factors, SERP features, user intent patterns, and AI overview triggers. Essential for understanding what it takes to rank. For tracking rankings over time, see rank-tracker. For keyword discovery, see keyword-research.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SERP Analysis\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../keyword-research/) · [competitor-analysis](../competitor-analysis/) · **serp-analysis** · [content-gap-analysis](../content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill analyzes Search Engine Results Pages to reveal what's working for ranking content, which SERP features appear, and what triggers AI-generated answers. Understand the battlefield before creating content."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Before creating content for a target keyword\n- Understanding why certain pages rank #1\n- Identifying SERP feature opportunities (featured snippets, PAA)\n- Analyzing AI Overview/SGE patterns\n- Evaluating keyword difficulty more accurately\n- Planning content format based on what ranks\n- Identifying ranking factors for specific queries"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **SERP Composition Analysis**: Maps what appears on the results page\n2. **Ranking Factor Identification**: Reveals why top results rank\n3. **SERP Feature Mapping**: Identifies featured snippets, PAA, knowledge panels\n4. **AI Overview Analysis**: Examines when and how AI answers appear\n5. **Intent Signal Detection**: Confirms user intent from SERP composition\n6. **Content Format Recommendations**: Suggests optimal format based on SERP\n7. **Difficulty Assessment**: Evaluates realistic ranking potential"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Basic SERP Analysis\n\n```\nAnalyze the SERP for [keyword]\n```\n\n```\nWhat does it take to rank for [keyword]?\n```\n\n### Feature-Specific Analysis\n\n```\nAnalyze featured snippet opportunities for [keyword list]\n```\n\n```\nWhich of these keywords trigger AI Overviews? [keyword list]\n```\n\n### Competitive SERP Analysis\n\n```\nWhy does [URL] rank #1 for [keyword]?\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~search console + ~~AI monitor connected:**\nAutomatically fetch SERP snapshots for target keywords, extract ranking page metrics (domain authority, backlinks, content length), pull SERP feature data, and check AI Overview presence using ~~AI monitor. Historical SERP change data and mobile vs. desktop variations can be retrieved automatically.\n\n**With manual data only:**\nAsk the user to provide:\n1. Target keyword(s) to analyze\n2. SERP screenshots or detailed descriptions of search results\n3. URLs of top 10 ranking pages\n4. Search location and device type (mobile/desktop)\n5. Any observations about SERP features (featured snippets, PAA, AI Overviews)\n\nProceed with the full analysis using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests SERP analysis:\n\n1. **Understand the Query**\n\n   Clarify if needed:\n   - Target keyword(s) to analyze\n   - Search location/language\n   - Device type (mobile/desktop)\n   - Specific questions about the SERP\n\n2. **Map SERP Composition**\n\n   Document all elements appearing:\n\n   ```markdown\n   ## SERP Analysis: \"[keyword]\"\n   \n   **Search Details**\n   - Keyword: [keyword]\n   - Location: [location]\n   - Device: [mobile/desktop]\n   - Date: [date]\n   \n   ### SERP Layout Overview\n   \n   ```\n   ┌─────────────────────────────────────────┐\n   │ [AI Overview / SGE] (if present)        │\n   ├─────────────────────────────────────────┤\n   │ [Ads] - [X] ads above fold              │\n   ├─────────────────────────────────────────┤\n   │ [Featured Snippet] (if present)         │\n   ├─────────────────────────────────────────┤\n   │ [Organic Result #1]                     │\n   │ [Organic Result #2]                     │\n   │ [People Also Ask] (if present)          │\n   │ [Organic Result #3]                     │\n   │ ...                                     │\n   ├─────────────────────────────────────────┤\n   │ [Related Searches]                      │\n   └─────────────────────────────────────────┘\n   ```\n   \n   ### SERP Features Present\n   \n   | Feature | Present | Position | Opportunity |\n   |---------|---------|----------|-------------|\n   | AI Overview | Yes/No | Top | [analysis] |\n   | Featured Snippet | Yes/No | [pos] | [analysis] |\n   | People Also Ask | Yes/No | [pos] | [analysis] |\n   | Knowledge Panel | Yes/No | Right | [analysis] |\n   | Image Pack | Yes/No | [pos] | [analysis] |\n   | Video Results | Yes/No | [pos] | [analysis] |\n   | Local Pack | Yes/No | [pos] | [analysis] |\n   | Shopping Results | Yes/No | [pos] | [analysis] |\n   | News Results | Yes/No | [pos] | [analysis] |\n   | Sitelinks | Yes/No | [pos] | [analysis] |\n   ```\n\n3. **Analyze Top Ranking Pages**\n\n   For top 10 results:\n\n   ```markdown\n   ### Top 10 Organic Results Analysis\n   \n   #### Positio"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Target keyword(s) clearly specified\n- [ ] Search location and device type confirmed\n- [ ] SERP data is current (date confirmed)\n- [ ] Top 10 ranking URLs identified or provided\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] SERP composition mapped with all features documented\n- [ ] Ranking factors identified from actual top 10 analysis (not assumptions)\n- [ ] Content requirements based on observed patterns in current SERP\n- [ ] Source of each data point clearly stated (~~SEO tool data, ~~AI monitor data, user-provided, or manual observation)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Analyze the SERP for 'how to start a podcast'\"\n\n**Output**:\n\n```markdown\n# SERP Analysis: \"how to start a podcast\""
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[SERP Overview] **Intent**: Informational (100%)\n**Difficulty**: 72/100 (High)\n**AI Overview**: Yes - comprehensive guide format\n\n### SERP Features Present\n\n| Feature | Present | Analysis |\n|---------|---------|----------|\n| AI Overview | ✅ | Lists steps, cites 3 sources |\n| Featured Snippet | ✅ | Step-by-step list from Buzzsprout |\n| People Also Ask | ✅ | 4 questions visible, expandable |\n| Video Results | ✅ | 3 YouTube videos mid-page |\n| Image Pack | ❌ | |\n\n### Top 5 Results Analysis\n\n| Pos | Domain | DA | Word Count | Format | Backlinks |\n|-----|--------|-----|------------|--------|-----------|\n| 1 | Buzzsprout | 71 | 8,500 | Ultimate Guide | 2,400 |\n| 2 | Spotify | 93 | 3,200 | How-to Guide | 890 |\n| 3 | Podcastinsights | 58 | 12,000 | Mega Guide | 1,800 |\n| 4 | Transistor | 62 | 5,500 | Tutorial | 720 |\n| 5 | HubSpot | 91 | 6,200 | Complete Guide | 1,100 |\n\n### Why #1 Ranks First\n\nBuzzsprout's guide succeeds because:\n1. **Comprehensive** - Covers every step in detail\n2. **Updated** - Current year in title, recent updates\n3. **Structured** - Clear numbered steps (owns featured snippet)\n4. **Authoritative** - Podcast hosting company (topical authority)\n5. **Supporting content** - Links to detailed sub-guides\n\n### Featured Snippet Opportunity\n\n**Current format**: Ordered list (steps)\n**Current holder**: Buzzsprout\n\n**To win snippet**:\n- Create cleaner, more scannable list format\n- Keep steps to 8-10 items max\n- Start each step with action verb\n- Include \"how to start a podcast\" in H2\n\n### AI Overview Analysis\n\n**Sources cited**:\n1. Buzzsprout - \"Choose your podcast topic\"\n2. Spotify for Podcasters - \"Record and edit\"\n3. Wikipedia - Definition of podcasting\n\n**Pattern**: AI pulls step-by-step instructions from guides with clear structure\n\n### Content Requirements\n\nTo rank on page 1:\n- **Word count**: 5,000+ words minimum\n- **Format**: Step-by-step ultimate guide\n- **Backlinks**: 500+ from relevant domains\n- **Updates**: Must show current year\n- **Unique angle**: Equipment compari"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Advanced Analysis] ### Multi-Keyword SERP Comparison\n\n```\nCompare SERPs for [keyword 1], [keyword 2], [keyword 3]\n```\n\n### Historical SERP Changes\n\n```\nHow has the SERP for [keyword] changed over time?\n```\n\n### Local SERP Variations\n\n```\nCompare SERP for [keyword] in [location 1] vs [location 2]\n```\n\n### Mobile vs Desktop SERP\n\n```\nAnalyze mobile vs desktop SERP differences for [keyword]\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Always check SERP before writing** - Don't assume, verify\n2. **Match content format to SERP** - If lists rank, write lists\n3. **Identify SERP feature opportunities** - Lower competition than #1\n4. **Note SERP volatility** - Stable SERPs are harder to break into\n5. **Study the outliers** - Why does a weaker site rank? Opportunity!\n6. **Consider AI Overview optimization** - Growing importance"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[SERP Feature Taxonomy] ### Feature Types and Trigger Conditions\n\n| SERP Feature | Trigger Conditions | Content Requirements | Optimization Approach |\n|-------------|-------------------|---------------------|---------------------|\n| Featured Snippet (paragraph) | Question/definition queries | 40-60 word direct answer under H2 | Answer immediately, then elaborate |\n| Featured Snippet (list) | \"How to\", \"best\", \"top\" queries | Numbered/bulleted list with clear items | Use numbered steps or ranked lists |\n| Featured Snippet (table) | Comparison/data queries | Well-structured HTML table | Create comparison tables |\n| People Also Ask | Most informational queries | Concise answer paragraphs | Target PAA questions as H2/H3s |\n| Knowledge Panel | Entity queries | Schema markup, Wikipedia presence | Structured data + authoritative citations |\n| Image Pack | Visual/product queries | Optimized images with alt text | Descriptive filenames, proper alt text |\n| Video Carousel | How-to/tutorial queries | Video content with transcripts | YouTube optimization, video schema |\n| Local Pack | Location-based queries | Google Business Profile | Local SEO optimization |\n| Shopping Results | Product/purchase queries | Product schema, Google Merchant | Product feed optimization |\n| Sitelinks | Navigational/brand queries | Clear site structure | Logical hierarchy, breadcrumbs |\n\n### AI Overview Analysis Framework\n\n| Analysis Dimension | What to Look For | Why It Matters |\n|-------------------|-----------------|----------------|\n| **Trigger Rate** | Does this query generate an AI Overview? | Not all queries have AI responses |\n| **Source Selection** | Which domains are cited? How many? | Reveals authority signals AI uses |\n| **Citation Format** | Direct quotes vs. synthesized content | Shows what content format AI prefers |\n| **Answer Structure** | Bullet points, paragraphs, tables | Indicates optimal content formatting |\n| **Fact Patterns** | Statistics, definitions, lists cited | Shows what content elements get ci"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[SERP Volatility Assessment] ### Volatility Indicators\n\n| Indicator | Stability Signal | Volatility Signal |\n|-----------|-----------------|-------------------|\n| Top 3 age | Same pages for 6+ months | New pages in top 3 within 3 months |\n| Domain diversity | 2-3 domains dominate top 10 | 8+ different domains in top 10 |\n| SERP feature changes | Same features consistently | Features appearing/disappearing |\n| Algorithm sensitivity | Positions stable through updates | Major position shifts during updates |\n\n### Opportunity Assessment Based on SERP\n\n| SERP Signal | Opportunity Level | Recommended Action |\n|------------|------------------|-------------------|\n| Low-authority sites in top 5 | High | Create superior content to outrank |\n| Outdated content ranking | High | Publish fresh, updated content |\n| Thin content ranking | High | Create comprehensive coverage |\n| Forums/UGC ranking | High | Create authoritative alternative |\n| All DR 90+ sites | Low | Target related long-tail instead |\n| AI Overview with few sources | Medium | Optimize for AI citation |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Reference Materials] - [SERP Feature Taxonomy](./references/serp-feature-taxonomy.md) — Complete taxonomy of SERP features with trigger conditions and optimization approaches"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Related Skills] - [keyword-research](../keyword-research/) — Find keywords to analyze\n- [competitor-analysis](../competitor-analysis/) — Deep dive on ranking competitors\n- [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) — Optimize based on findings\n- [geo-content-optimizer](../../build/geo-content-optimizer/) — Optimize for AI citations\n- [meta-tags-optimizer](../../build/meta-tags-optimizer/) — Optimize SERP appearance with meta tags\n- [rank-tracker](../../monitor/rank-tracker/) — Track keyword position changes in SERPs\n- [performance-reporter](../../monitor/performance-reporter/) — Track SERP visibility metrics over time"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "serp_analysis"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "high",
+      "tags": [
+        "seo",
+        "geo",
+        "serp",
+        "search results",
+        "ranking factors",
+        "serp features",
+        "ai overviews",
+        "featured snippets",
+        "search intent"
+      ],
+      "triggers": [
+        "analyze search results",
+        "SERP analysis",
+        "what ranks for",
+        "SERP features",
+        "why does this page rank",
+        "featured snippets",
+        "AI overviews",
+        "what's on page one for this query",
+        "who ranks for this keyword",
+        "what does Google show for"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/serp-analysis/SKILL.md"
+}

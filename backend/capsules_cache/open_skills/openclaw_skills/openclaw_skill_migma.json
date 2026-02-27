@@ -1,0 +1,107 @@
+{
+  "id": "openclaw_skill_migma",
+  "description": "Generate, send, validate, and export AI-powered emails from the terminal; manage contacts, segments, tags, domains, and webhooks with Migma CLI.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Migma\n\nCreate and send professional, on-brand emails with AI. Your agent can design emails from a prompt, send them instantly through a managed domain, and manage an entire audience — all from the terminal.\n\nAlways pass `--json` for structured output."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[First-time setup] If the user hasn't set up yet, run these steps once:\n\n```bash\n# 1. Create an instant sending domain (no DNS needed)\nmigma domains managed create <companyname> --json\n# → Sends from: hello@<companyname>.migma.email\n\n# 2. Set a default project (brand)\nmigma projects list --json\nmigma projects use <projectId>\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Create an email] When the user asks to create, design, or generate an email:\n\n```bash\nmigma generate \"Welcome email for new subscribers\" --wait --json\n```\n\nThe `--wait` flag blocks until the AI finishes. The JSON response includes `conversationId`, `subject`, and `html`.\n\nTo save the HTML locally, add `--save ./email.html`. To include a reference image (screenshot, design mockup), add `--image <url>`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Send an email] When the user asks to send an email to someone:\n\n```bash\n# Send a generated email directly\nmigma send --to sarah@example.com --subject \"Welcome!\" \\\n  --from-conversation <conversationId> \\\n  --from hello@company.migma.email --from-name \"Company\" --json\n\n# Or send from a local HTML file\nmigma send --to sarah@example.com --subject \"Hello\" \\\n  --html ./email.html \\\n  --from hello@company.migma.email --from-name \"Company\" --json\n\n# Send to an entire segment or tag\nmigma send --segment <id> --subject \"Big News\" --html ./email.html \\\n  --from hello@company.migma.email --from-name \"Company\" --json\n\n# Personalize with template variables\nmigma send --to user@example.com --subject \"Hi {{name}}\" --html ./email.html \\\n  --from hello@company.migma.email --from-name \"Company\" \\\n  --var name=Sarah --var discount=20 --json\n```\n\n`--from-conversation` auto-exports the HTML from a generated email — no separate export step."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Validate an email] When the user wants to check an email before sending:\n\n```bash\nmigma validate all --html ./email.html --json\nmigma validate all --conversation <conversationId> --json\n```\n\nReturns an overall score plus individual checks: compatibility (30+ email clients), broken links, spelling/grammar, and deliverability/spam score. Individual checks: `migma validate compatibility`, `links`, `spelling`, `deliverability`."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Export to platforms] When the user wants to export to an ESP or download a file:\n\n```bash\nmigma export html <conversationId> --output ./email.html\nmigma export klaviyo <conversationId> --json\nmigma export mailchimp <conversationId> --json\nmigma export hubspot <conversationId> --json\nmigma export pdf <conversationId> --json\nmigma export mjml <conversationId> --json\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Manage contacts] ```bash\nmigma contacts add --email user@example.com --firstName John --json\nmigma contacts list --json\nmigma contacts import ./contacts.csv --json\nmigma contacts remove <id> --json\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Manage tags and segments] ```bash\nmigma tags create --name \"VIP\" --json\nmigma tags list --json\nmigma segments create --name \"Active Users\" --description \"...\" --json\nmigma segments list --json\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Import a brand] When the user wants to set up a new brand from their website:\n\n```bash\nmigma projects import https://yourbrand.com --wait --json\nmigma projects use <projectId>\n```\n\nThis fetches logos, colors, fonts, and brand voice automatically."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Error handling] On error, `--json` returns:\n\n```json\n{\"error\": {\"message\": \"Not found\", \"code\": \"not_found\", \"statusCode\": 404}}\n```"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "migma"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "MIGMA_API_KEY"
+          ],
+          "bins": [
+            "migma"
+          ]
+        },
+        "primaryEnv": "MIGMA_API_KEY",
+        "emoji": "✉",
+        "homepage": "https://migma.ai",
+        "install": [
+          {
+            "kind": "node",
+            "package": "@migma/cli",
+            "bins": [
+              "migma"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamsey/migma/SKILL.md"
+}

@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_openclaw-workspace-governance-installer",
+  "description": "Install OpenClaw WORKSPACE_GOVERNANCE in minutes. Get guided setup, upgrade checks, migration, and audit for long-running workspaces.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Workspace Governance Installer\n\nShip safer OpenClaw operations from day one.\nThis installer gives you a repeatable governance path instead of ad-hoc prompt edits."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Why this is popular] 1. Prevents \"edit first, verify later\" mistakes.\n2. Gives one predictable setup/upgrade/audit flow.\n3. Makes changes traceable for review and handover.\n4. Works for both beginners and production workspaces."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[60-second quick start] First-time install:\n```bash\n# 1) Install plugin (first time only)\nopenclaw plugins install @adamchanadam/openclaw-workspace-governance@latest\n\n# 2) Enable plugin\nopenclaw plugins enable openclaw-workspace-governance\n\n# 3) Verify skills\nopenclaw skills list --eligible\n```\n\nIn OpenClaw chat:\n```text\n/gov_help\n/gov_setup quick\n# if quick output says allowlist is not ready (for example plugins.allow needs alignment):\n/gov_openclaw_json\n/gov_setup quick\n# manual fallback (step-by-step):\n/gov_setup install\nprompts/governance/OpenClaw_INIT_BOOTSTRAP_WORKSPACE_GOVERNANCE.md\n# if this workspace was already active before first governance adoption:\n/gov_migrate\n/gov_audit\n```\n\nAlready installed users (upgrade path):\n```bash\n# Do NOT run install again if plugin already exists\nopenclaw plugins update openclaw-workspace-governance\nopenclaw gateway restart\n```\n\nThen in OpenClaw chat:\n```text\n/gov_setup quick\n# if quick output says allowlist is not ready (for example plugins.allow needs alignment):\n/gov_openclaw_json\n/gov_setup quick\n/gov_setup upgrade\n/gov_migrate\n/gov_audit\n# manual fallback:\n/gov_setup upgrade\n/gov_migrate\n/gov_audit\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[What you get] 1. `gov_help` — see all commands and recommended entry points at a glance.\n2. `gov_setup quick|check|install|upgrade` — deploy, upgrade, or verify governance in one step.\n3. `gov_migrate` — align workspace behavior to the latest governance rules after install or upgrade.\n4. `gov_audit` — verify 12 integrity checks and catch drift before declaring completion.\n5. `gov_uninstall quick|check|uninstall` — clean removal with backup and restore evidence.\n6. `gov_openclaw_json` — safely edit platform config (`openclaw.json`) with backup, validation, and rollback. Includes pre-modification config reference verification: scans local workspace docs before changes, falls back to official web docs, and degrades gracefully when neither is available.\n7. `gov_brain_audit` — review and harden Brain Docs quality with preview-first approval and rollback.\n8. `gov_boot_audit` — scan for recurring issues and generate upgrade proposals (read-only diagnostic).\n9. `gov_apply <NN>` — apply a single BOOT upgrade proposal with explicit human approval (**Experimental**, controlled UAT only)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Feature maturity (important)] 1. GA flow for production rollout: `gov_setup -> gov_migrate -> gov_audit`, plus `gov_uninstall`, `gov_openclaw_json`, `gov_brain_audit`, `gov_boot_audit`.\n2. Experimental flow: `gov_apply <NN>` (BOOT controlled apply) is included in deterministic runtime regression baseline, but remains controlled-UAT scope.\n3. If you use `gov_apply <NN>`, keep it in controlled UAT and always close with `/gov_migrate` then `/gov_audit`.\n4. All `/gov_*` command outputs use branded format: `🐾` header, emoji status indicators (✅/⚠️/❌), structured bullets, and `👉` next-step guidance."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[When to use which command (quick map)] 1. Need command list fast: `gov_help`\n2. Daily default path: `gov_setup quick` (one-click chain)\n3. Readiness decision first (manual path): `gov_setup check`\n4. First deployment path (manual): `gov_setup install`\n5. Existing deployment update (manual): `gov_setup upgrade`\n6. Policy alignment after deploy/update: `gov_migrate`\n7. Final verification before claiming done: `gov_audit`\n8. Cleanup workspace governance artifacts safely: `gov_uninstall quick`\n9. Edit OpenClaw platform config safely: `gov_openclaw_json`\n10. Review/harden Brain Docs safely: `gov_brain_audit -> gov_brain_audit APPROVE: ... -> gov_brain_audit ROLLBACK (if needed)`\n11. Scan for recurring issues and get upgrade proposals: `gov_boot_audit`\n12. Apply approved BOOT menu item only (Experimental): `gov_apply <NN>`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[First-run status map] After `/gov_setup quick`:\n1. if output says allowlist is not ready -> run `/gov_openclaw_json`, then rerun `/gov_setup quick`\n2. if output is `PASS` -> lifecycle is aligned\n3. if output is `FAIL/BLOCKED` -> follow returned next-step commands\n4. manual fallback remains available: `check -> install/upgrade -> migrate -> audit`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Important update rule] If `openclaw plugins install ...` returns `plugin already exists`, use:\n1. `openclaw plugins update openclaw-workspace-governance`\n2. `openclaw gateway restart`\n3. `/gov_setup check` (if needed, align allowlist via `/gov_openclaw_json`)\n4. `/gov_setup quick` (or manual `/gov_setup upgrade` -> `/gov_migrate` -> `/gov_audit`)\n5. If `/gov_setup check` says `READY`, that does not cancel an explicitly requested `/gov_setup upgrade` during update flow.\n\nVersion check (operator-side):\n1. Installed: `openclaw plugins info openclaw-workspace-governance`\n2. Latest: `npm view @adamchanadam/openclaw-workspace-governance version`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Runtime gate behavior (important)] 1. Read-only diagnostics/testing commands are allowed and should not be blocked.\n2. **Normal writes** (skills/, projects/, code): always advisory — write proceeds with a logged warning, never hard-blocked.\n3. **High-risk writes** (Brain Docs, `openclaw.json`, `_control/*`, governance prompts): advisory on 1st-2nd attempt, hard block on 3rd+ without evidence.\n4. If blocked by runtime gate, this usually means governance guard worked (not a system crash). Include your plan and list of files read, then retry.\n5. If blocked 3+ times: use `/gov_brain_audit force-accept` to clear all gates (with audit trail).\n6. All `gov_*` responses use branded output: `🐾` header, emoji status prefix (✅ PASS/READY, ⚠️ WARNING, ❌ BLOCKED/FAIL), structured `•` bullets, `👉` next-step, and `─────` dividers.\n7. Tool-exposure root-fix is enabled by default: governance plugin tools require explicit `/gov_*` intent (or `/skill gov_*`) in the current turn window."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[If slash routing is unstable] Use fallback commands:\n```text\n/skill gov_setup check\n/skill gov_setup install\n/skill gov_setup upgrade\n/skill gov_migrate\n/skill gov_audit\n/skill gov_uninstall quick\n/skill gov_openclaw_json\n/skill gov_brain_audit\n/skill gov_brain_audit APPROVE: APPLY_ALL_SAFE\n/skill gov_brain_audit ROLLBACK\n/skill gov_boot_audit\n# Experimental only:\n/skill gov_apply 01\n```\n\nOr natural language:\n```text\nPlease use gov_setup in check mode (read-only) and return workspace root, status, and next action.\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Who this is for] 1. New OpenClaw users who want a guided install path.\n2. Teams operating long-running workspaces.\n3. Users who need auditable, low-drift maintenance."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Learn more (GitHub docs)] 1. Main docs: https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE\n2. English README: https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/README.md\n3. 繁體中文版: https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/README.zh-HK.md\n4. Governance handbook (EN): https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/WORKSPACE_GOVERNANCE_README.en.md\n5. Governance handbook (繁中): https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/WORKSPACE_GOVERNANCE_README.md\n6. Positioning (EN): https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/VALUE_POSITIONING_AND_FACTORY_GAP.en.md\n7. Positioning (繁中): https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE/blob/main/VALUE_POSITIONING_AND_FACTORY_GAP.md"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_workspace_governance_installer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🚀",
+        "homepage": "https://github.com/Adamchanadam/OpenClaw-WORKSPACE-GOVERNANCE",
+        "requires": {
+          "bins": [
+            "openclaw"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamchanadam/openclaw-workspace-governance-installer/SKILL.md"
+}

@@ -41,7 +41,7 @@ class FileTool(BaseTool):
             },
             "content": {
                 "type": "string",
-                "description": "写入文件的内容（仅用于 write 操作）"
+                "description": "写入文件的内容（用于 write 操作；create 时若提供则写入该内容，否则创建空文件）"
             },
             "destination": {
                 "type": "string",
@@ -85,7 +85,8 @@ class FileTool(BaseTool):
                 return await self._write(path, content)
             elif action == "create":
                 is_dir = kwargs.get("is_directory", False)
-                return await self._create(path, is_dir)
+                content = kwargs.get("content", "")
+                return await self._create(path, is_dir, content=content)
             elif action == "delete":
                 recursive = kwargs.get("recursive", False)
                 return await self._delete(path, recursive)
@@ -136,8 +137,8 @@ class FileTool(BaseTool):
         
         return ToolResult(success=True, data={"path": path, "bytes_written": len(content.encode("utf-8"))})
     
-    async def _create(self, path: str, is_directory: bool) -> ToolResult:
-        """Create file or directory"""
+    async def _create(self, path: str, is_directory: bool, content: str = "") -> ToolResult:
+        """Create file or directory. If content is provided and path is a file, write content instead of empty file."""
         if os.path.exists(path):
             return ToolResult(
                 success=False,
@@ -156,6 +157,11 @@ class FileTool(BaseTool):
             parent = os.path.dirname(path)
             if parent and not os.path.exists(parent):
                 os.makedirs(parent, exist_ok=True)
+            if content:
+                # 创建并写入内容（与 write 一致），避免“创建空文件”导致报告为空
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                return ToolResult(success=True, data={"path": path, "type": "file", "bytes_written": len(content.encode("utf-8"))})
             Path(path).touch()
             return ToolResult(success=True, data={"path": path, "type": "file"})
     

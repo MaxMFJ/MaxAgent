@@ -1,0 +1,141 @@
+{
+  "id": "openclaw_skill_alert-manager",
+  "description": "Use when the user asks to \"set up SEO alerts\", \"monitor rankings\", \"notify me when rankings drop\", \"traffic alerts\", \"watch competitor changes\", \"alert me if rankings drop\", \"notify me of traffic changes\", or \"watch my keywords for changes\". Sets up and manages alerts for critical SEO and GEO metrics including ranking drops, traffic changes, technical issues, and competitor movements. Enables proactive monitoring and quick response to issues. For detailed rank analysis, see rank-tracker. For comprehensive reporting, see performance-reporter.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Alert Manager\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../rank-tracker/) · [backlink-analyzer](../backlink-analyzer/) · [performance-reporter](../performance-reporter/) · **alert-manager**\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill helps you set up proactive monitoring alerts for critical SEO and GEO metrics. Get notified when rankings drop, traffic changes significantly, technical issues occur, or competitors make moves."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Setting up SEO monitoring systems\n- Creating ranking drop alerts\n- Monitoring technical SEO health\n- Tracking competitor movements\n- Alerting on content performance changes\n- Monitoring GEO/AI visibility changes\n- Setting up brand mention alerts"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Alert Configuration**: Sets up custom alert thresholds\n2. **Multi-Metric Monitoring**: Tracks rankings, traffic, technical issues\n3. **Threshold Management**: Defines when alerts trigger\n4. **Priority Classification**: Categorizes alerts by severity\n5. **Notification Setup**: Configures how alerts are delivered\n6. **Alert Response Plans**: Creates action plans for each alert type\n7. **Alert History**: Tracks alert patterns over time"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Set Up Alerts\n\n```\nSet up SEO monitoring alerts for [domain]\n```\n\n```\nCreate ranking drop alerts for my top 20 keywords\n```\n\n### Configure Specific Alerts\n\n```\nAlert me when [specific condition]\n```\n\n```\nSet up competitor monitoring for [competitor domains]\n```\n\n### Review Alert System\n\n```\nReview and optimize my current SEO alerts\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~search console + ~~web crawler connected:**\nAutomatically monitor real-time metric feeds for ranking changes via ~~SEO tool API, indexing and coverage alerts from ~~search console, and technical health alerts from ~~web crawler. Set up automated threshold-based alerts with notification delivery.\n\n**With manual data only:**\nAsk the user to provide:\n1. Current baseline metrics for alert thresholds (rankings, traffic, backlinks)\n2. Critical keywords or pages to monitor\n3. Alert priority levels and notification preferences\n4. Historical data to understand normal fluctuation ranges\n5. Manual reporting on metric changes when they check their tools\n\nProceed with the alert configuration using provided parameters. User will need to manually check metrics and report changes for alert triggers."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests alert setup:\n\n1. **Define Alert Categories**\n\n   ```markdown\n   ## SEO Alert System Configuration\n   \n   **Domain**: [domain]\n   **Configured Date**: [date]\n   \n   ### Alert Categories\n   \n   | Category | Description | Typical Urgency |\n   |----------|-------------|-----------------|\n   | Ranking Alerts | Keyword position changes | Medium-High |\n   | Traffic Alerts | Organic traffic fluctuations | High |\n   | Technical Alerts | Site health issues | Critical |\n   | Backlink Alerts | Link profile changes | Medium |\n   | Competitor Alerts | Competitor movements | Low-Medium |\n   | GEO Alerts | AI visibility changes | Medium |\n   | Brand Alerts | Brand mentions and reputation | Medium |\n   ```\n\n2. **Configure Ranking Alerts**\n\n   ```markdown\n   ## Ranking Alerts\n   \n   ### Position Drop Alerts\n   \n   | Alert Name | Condition | Threshold | Priority | Action |\n   |------------|-----------|-----------|----------|--------|\n   | Critical Drop | Any top 3 keyword drops 5+ positions | Position change ≥5 | 🔴 Critical | Immediate investigation |\n   | Major Drop | Top 10 keyword drops out of top 10 | Position >10 | 🔴 High | Same-day review |\n   | Moderate Drop | Any keyword drops 10+ positions | Position change ≥10 | 🟡 Medium | Weekly review |\n   | Competitor Overtake | Competitor passes you for key term | Comp position < yours | 🟡 Medium | Analysis needed |\n   \n   ### Position Improvement Alerts\n   \n   | Alert Name | Condition | Threshold | Priority |\n   |------------|-----------|-----------|----------|\n   | New Top 3 | Keyword enters top 3 | Position ≤3 | 🟢 Positive |\n   | Page 1 Entry | Keyword enters top 10 | Position ≤10 | 🟢 Positive |\n   | Significant Climb | Keyword improves 10+ positions | Change ≥+10 | 🟢 Positive |\n   \n   ### SERP Feature Alerts\n   \n   | Alert Name | Condition | Priority |\n   |------------|-----------|----------|\n   | Snippet Lost | Lost featured snippet ownership | 🔴 High |\n   | Snippet Won | Won new featured snippet | 🟢 Positive |\n"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Alert thresholds are based on realistic baseline data\n- [ ] Critical keywords and pages clearly identified\n- [ ] Response plans defined for each alert priority level\n- [ ] Notification channels configured with appropriate recipients\n\n### Output Validation\n- [ ] Every metric cites its data source and collection date\n- [ ] Alert thresholds account for normal metric fluctuations\n- [ ] Response plans are specific and time-bound\n- [ ] Source of each alert trigger clearly stated (~~SEO tool API alert, ~~search console notification, ~~web crawler alert, or manual user check)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Set up ranking drop alerts for my top keywords\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Ranking Alert Configuration] ### Critical Keywords (Immediate Alert)\n\n| Keyword | Current | Alert If | Priority |\n|---------|---------|----------|----------|\n| best project management software | 2 | Drops to 5+ | 🔴 Critical |\n| project management tools | 4 | Drops to 8+ | 🔴 Critical |\n| team collaboration software | 1 | Any drop | 🔴 Critical |\n\n### Important Keywords (Same-Day Alert)\n\n| Keyword | Current | Alert If | Priority |\n|---------|---------|----------|----------|\n| agile project management | 7 | Drops out of top 10 | 🔴 High |\n| kanban software | 9 | Drops out of top 10 | 🔴 High |\n\n### Alert Response Plan\n\n**If Critical Keyword Drops**:\n1. Check if page is still indexed (site:url)\n2. Look for algorithm update announcements\n3. Analyze what changed in SERP\n4. Review competitor ranking changes\n5. Check for technical issues on page\n6. Create recovery action plan within 24 hours\n\n**Notification**: Email + Slack to SEO team immediately\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Start simple** - Don't create too many alerts initially\n2. **Tune thresholds** - Adjust based on normal fluctuations\n3. **Avoid alert fatigue** - Too many alerts = ignored alerts\n4. **Document response plans** - Know what to do when alerts fire\n5. **Review regularly** - Alerts need maintenance as your SEO matures\n6. **Include positive alerts** - Track wins, not just problems"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Alert Threshold Recommendations] ### Recommended Alert Thresholds by Metric\n\n| Metric | Warning Threshold | Critical Threshold | Check Frequency |\n|--------|------------------|-------------------|-----------------|\n| Organic traffic | -15% WoW | -30% WoW | Daily |\n| Average position (tracked KWs) | >3 position drop | >5 position drop | Daily |\n| Pages indexed | -5% change | -20% change | Weekly |\n| Crawl errors | >10 new errors | >50 new errors | Daily |\n| Core Web Vitals | Any metric moves to \"Needs Improvement\" | Any metric moves to \"Poor\" | Weekly |\n| Backlinks lost | >5% of total in 1 week | >15% in 1 week | Weekly |\n| AI citation loss | Any key query loses citation | >20% queries lose citation | Weekly |\n| Server errors (5xx) | >1% of pages | >5% of pages | Daily |\n| Security issues | Any detected | Any detected | Daily |\n| Manual penalty | N/A | Any notification | Daily |"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Alert Fatigue Prevention] ### Alert Management Best Practices\n\n| Practice | Why | How |\n|----------|-----|-----|\n| **Tiered severity** | Not all alerts need immediate action | Critical: Immediate; Warning: Review daily; Info: Weekly digest |\n| **Threshold tuning** | Reduce false positives | Start conservative, tighten after 1 month of baseline data |\n| **Grouping** | Prevent alert storms | Group related alerts (e.g., multiple rank drops = \"ranking alert\") |\n| **Cooldown periods** | Avoid repeated alerts for same issue | Do not re-alert on same metric for 24-48 hours |\n| **Scheduled digests** | Reduce notification volume | Batch non-urgent alerts into daily or weekly email |\n| **Auto-resolution** | Close alerts when metric recovers | Track recovery and auto-close if threshold restored |\n\n### Alert Priority Classification\n\n| Priority | Response Time | Notification Channel | Example |\n|----------|-------------|---------------------|---------|\n| P0 — Emergency | Within 1 hour | SMS + Slack + Email | Site down, manual penalty, security breach |\n| P1 — Urgent | Same day | Slack + Email | Major traffic drop, crawl blocked, indexing issues |\n| P2 — Important | Within 48 hours | Email + Weekly digest | Rank drops, CWV degradation, backlink loss |\n| P3 — Monitor | Next weekly review | Weekly digest only | Minor fluctuations, new competitor content |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Escalation Path Templates] ### Standard Escalation Flow\n\n```\nAlert Triggers -> Automated Classification -> Route by Priority\n\nP0: Notify SEO Lead + Dev Team immediately\n    -> If not acknowledged in 30 min -> Notify Engineering Manager\n        -> If not resolved in 2 hours -> Notify VP/Director\n\nP1: Notify SEO Lead\n    -> If not acknowledged in 4 hours -> Notify Marketing Manager\n        -> Add to next standup agenda\n\nP2: Add to daily digest\n    -> If persists >1 week -> Escalate to P1\n\nP3: Add to weekly digest\n    -> If persists >1 month -> Escalate to P2\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Alert Response Playbooks] ### Traffic Drop Alert\n\n| Step | Action | If True | If False |\n|------|--------|---------|----------|\n| 1 | Check if site-wide or page-specific | Go to Step 2a | Go to Step 2b |\n| 2a | Check Google Search Status Dashboard for algorithm update | Document and wait | Go to Step 3 |\n| 2b | Check specific page for technical issues (404, noindex, slow) | Fix technical issue | Go to Step 3 |\n| 3 | Check Search Console for crawl errors or index drops | Fix crawl/index issues | Go to Step 4 |\n| 4 | Check if competitors published new content | Analyze and plan content response | Go to Step 5 |\n| 5 | Check backlink profile for lost links | Outreach for link recovery | Escalate for deeper analysis |\n\n### Ranking Drop Alert\n\n| Step | Action | If True | If False |\n|------|--------|---------|----------|\n| 1 | Verify the drop is real (check multiple tools, wait 24-48h) | Confirmed drop, go to Step 2 | False alarm, close alert |\n| 2 | Check if algorithm update occurred | Document, monitor, improve content quality | Go to Step 3 |\n| 3 | Check if your page changed recently | Revert or fix the change | Go to Step 4 |\n| 4 | Analyze the SERP — did a new competitor appear? | Study competitor, plan response | Go to Step 5 |\n| 5 | Check for lost backlinks to the ranking page | Recover links or build new ones | Escalate for full audit |\n\n### Technical Alert (Site Down / 5xx Errors)\n\n| Step | Action | If True | If False |\n|------|--------|---------|----------|\n| 1 | Confirm site is actually down (check from multiple locations) | Go to Step 2 | Close alert as false positive |\n| 2 | Check server/hosting status page | Provider issue — contact support, wait | Go to Step 3 |\n| 3 | Check recent deployments or configuration changes | Rollback the change | Go to Step 4 |\n| 4 | Check server resource usage (CPU, memory, disk) | Scale resources or optimize | Escalate to engineering |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Alert Threshold Guide](./references/alert-threshold-guide.md) — Recommended thresholds by metric, fatigue prevention strategies, and escalation path templates"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Related Skills] - [rank-tracker](../rank-tracker/) — Ranking data for alerts\n- [backlink-analyzer](../backlink-analyzer/) — Backlink monitoring\n- [technical-seo-checker](../../optimize/technical-seo-checker/) — Technical monitoring\n- [performance-reporter](../performance-reporter/) — Alert summaries in reports\n- [memory-management](../../cross-cutting/memory-management/) — Store alert history and thresholds in project memory\n- [content-refresher](../../optimize/content-refresher/) — Content decay alerts trigger refresh workflows"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "alert_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "low",
+      "tags": [
+        "seo",
+        "geo",
+        "alerts",
+        "monitoring",
+        "ranking alerts",
+        "traffic monitoring",
+        "competitor alerts",
+        "seo notifications",
+        "proactive monitoring"
+      ],
+      "triggers": [
+        "set up SEO alerts",
+        "monitor rankings",
+        "notify me when rankings drop",
+        "traffic alerts",
+        "watch competitor changes",
+        "alert me",
+        "ranking notifications",
+        "alert me if rankings drop",
+        "notify me of traffic changes",
+        "watch my keywords for changes"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/alert-manager/SKILL.md"
+}

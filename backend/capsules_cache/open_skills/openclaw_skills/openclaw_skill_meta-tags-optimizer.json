@@ -1,0 +1,146 @@
+{
+  "id": "openclaw_skill_meta-tags-optimizer",
+  "description": "Use when the user asks to \"optimize title tag\", \"write meta description\", \"improve CTR\", \"Open Graph tags\", \"social media preview\", \"my title tag needs work\", \"low click-through rate\", \"fix my meta tags\", or \"OG tags not showing\". Creates and optimizes meta tags including title tags, meta descriptions, Open Graph tags, and Twitter cards for maximum click-through rates and social sharing engagement. For a broader on-page audit, see on-page-seo-auditor. For structured data markup, see schema-markup-generator.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Meta Tags Optimizer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../seo-content-writer/) · [geo-content-optimizer](../geo-content-optimizer/) · **meta-tags-optimizer** · [schema-markup-generator](../schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill creates compelling, optimized meta tags that improve click-through rates from search results and enhance social media sharing. It covers title tags, meta descriptions, and social meta tags."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Creating meta tags for new pages\n- Optimizing existing meta tags for better CTR\n- Preparing pages for social media sharing\n- Fixing duplicate or missing meta tags\n- A/B testing title and description variations\n- Optimizing for specific SERP features\n- Creating meta tags for different page types"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Title Tag Creation**: Writes compelling, keyword-optimized titles\n2. **Meta Description Writing**: Creates click-worthy descriptions\n3. **Open Graph Optimization**: Prepares pages for social sharing\n4. **Twitter Card Setup**: Optimizes Twitter-specific meta tags\n5. **CTR Analysis**: Suggests improvements for better click rates\n6. **Character Counting**: Ensures proper length for SERP display\n7. **A/B Test Suggestions**: Provides variations for testing"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Create Meta Tags\n\n```\nCreate meta tags for a page about [topic] targeting [keyword]\n```\n\n```\nWrite title and meta description for this content: [content/URL]\n```\n\n### Optimize Existing Tags\n\n```\nImprove these meta tags for better CTR: [current tags]\n```\n\n### Social Media Tags\n\n```\nCreate Open Graph and Twitter card tags for [page/URL]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~search console + ~~SEO tool connected:**\nAutomatically pull current meta tags, CTR data by query, competitor title/description patterns, SERP preview data, and impression/click metrics to identify optimization opportunities.\n\n**With manual data only:**\nAsk the user to provide:\n1. Current title and meta description (if optimizing existing)\n2. Target primary keyword and 2-3 secondary keywords\n3. Page URL and main content/value proposition\n4. Competitor URLs or examples of well-performing titles in the SERP\n\nProceed with the full workflow using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests meta tag optimization:\n\n1. **Gather Page Information**\n\n   ```markdown\n   ### Page Analysis\n   \n   **Page URL**: [URL]\n   **Page Type**: [blog/product/landing/service/homepage]\n   **Primary Keyword**: [keyword]\n   **Secondary Keywords**: [keywords]\n   **Target Audience**: [audience]\n   **Primary CTA**: [action you want users to take]\n   **Unique Value Prop**: [what makes this page special]\n   ```\n\n2. **Create Optimized Title Tag**\n\n   ```markdown\n   ### Title Tag Optimization\n   \n   **Requirements**:\n   - Length: 50-60 characters (displays fully in SERP)\n   - Include primary keyword (preferably near front)\n   - Make it compelling and click-worthy\n   - Match search intent\n   - Include brand name if appropriate\n   \n   **Title Tag Formula Options**:\n   \n   1. **Keyword | Benefit | Brand**\n      \"[Primary Keyword]: [Benefit] | [Brand Name]\"\n      \n   2. **Number + Keyword + Promise**\n      \"[Number] [Keyword] That [Promise/Result]\"\n      \n   3. **How-to Format**\n      \"How to [Keyword]: [Benefit/Result]\"\n      \n   4. **Question Format**\n      \"What is [Keyword]? [Brief Answer/Hook]\"\n      \n   5. **Year + Keyword**\n      \"[Keyword] in [Year]: [Hook/Update]\"\n   \n   **Generated Title Options**:\n   \n   | Option | Title | Length | Power Words | Keyword Position |\n   |--------|-------|--------|-------------|------------------|\n   | 1 | [Title] | [X] chars | [words] | [Front/Middle] |\n   | 2 | [Title] | [X] chars | [words] | [Front/Middle] |\n   | 3 | [Title] | [X] chars | [words] | [Front/Middle] |\n   \n   **Recommended**: Option [X]\n   **Reasoning**: [Why this option is best]\n   \n   **Title Tag Code**:\n   ```html\n   <title>[Selected Title]</title>\n   ```\n   ```\n\n3. **Write Meta Description**\n\n   ```markdown\n   ### Meta Description Optimization\n   \n   **Requirements**:\n   - Length: 150-160 characters (displays fully in SERP)\n   - Include primary keyword naturally\n   - Include clear call-to-action\n   - Match page content accurately\n   - Create urgency or cur"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Primary keyword confirmed and matches page content\n- [ ] Page type identified (blog/product/landing/service/homepage)\n- [ ] Target audience and search intent clearly defined\n- [ ] Unique value proposition articulated\n\n### Output Validation\n- [ ] Title length 50-60 characters (displays fully in SERP)\n- [ ] Meta description length 150-160 characters\n- [ ] Primary keyword appears in both title and description\n- [ ] Open Graph image specified (1200x630px recommended)\n- [ ] All HTML syntax valid (no unclosed quotes or tags)\n- [ ] Source of each data point clearly stated (~~search console CTR data, ~~SEO tool competitor data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Create meta tags for a blog post about 'how to start a podcast in [current year]'\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Meta Tags: How to Start a Podcast ([current year])] ### Title Tag\n```html\n<title>How to Start a Podcast in [current year]: Complete Beginner's Guide</title>\n```\n**Length**: ~55 characters ✅\n**Keyword**: \"how to start a podcast\" at front ✅\n**Power Words**: \"Complete\", \"Beginner's\" ✅\n\n### Meta Description\n```html\n<meta name=\"description\" content=\"Learn how to start a podcast in [current year] with our step-by-step guide. Covers equipment, hosting, recording, and launching your first episode. Start podcasting today!\">\n```\n**Length**: ~163 characters ✅\n**Keyword**: Included naturally ✅\n**CTA**: \"Start podcasting today!\" ✅\n\n### Complete Meta Tag Block\n\n```html\n<!-- Primary Meta Tags -->\n<title>How to Start a Podcast in [current year]: Complete Beginner's Guide</title>\n<meta name=\"description\" content=\"Learn how to start a podcast in [current year] with our step-by-step guide. Covers equipment, hosting, recording, and launching your first episode. Start podcasting today!\">\n<link rel=\"canonical\" href=\"https://yoursite.com/how-to-start-a-podcast/\">\n\n<!-- Open Graph / Facebook -->\n<meta property=\"og:type\" content=\"article\">\n<meta property=\"og:url\" content=\"https://yoursite.com/how-to-start-a-podcast/\">\n<meta property=\"og:title\" content=\"How to Start a Podcast in [current year] (Complete Guide)\">\n<meta property=\"og:description\" content=\"Everything you need to launch your podcast: equipment recommendations, hosting platforms, recording tips, and step-by-step launch checklist. No experience required.\">\n<meta property=\"og:image\" content=\"https://yoursite.com/images/podcast-guide.jpg\">\n<meta property=\"og:site_name\" content=\"Your Site Name\">\n\n<!-- Twitter -->\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"How to Start a Podcast in [current year]\">\n<meta name=\"twitter:description\" content=\"Complete beginner's guide to launching your podcast. Equipment, hosting, recording, and more.\">\n<meta name=\"twitter:image\" content=\"https://yoursite.com/images/podcast-guide.jpg\">\n<meta name=\"twitter:s"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Page-Type Templates] ### Homepage\n\n```html\n<title>[Brand Name] - [Primary Value Proposition]</title>\n<meta name=\"description\" content=\"[Brand] helps [audience] [achieve goal]. [Key feature/benefit]. [CTA]\">\n```\n\n### Product Page\n\n```html\n<title>[Product Name] - [Key Benefit] | [Brand]</title>\n<meta name=\"description\" content=\"[Product] [key features]. [Price/offer if applicable]. [Social proof]. [CTA]\">\n```\n\n### Blog Post\n\n```html\n<title>[How to/What is/Number] [Keyword] [Benefit/Year]</title>\n<meta name=\"description\" content=\"[What they'll learn]. [Key points covered]. [CTA]\">\n```\n\n### Service Page\n\n```html\n<title>[Service] in [Location] - [Brand] | [Differentiator]</title>\n<meta name=\"description\" content=\"[Service description]. [Experience/credentials]. [Key benefit]. [CTA]\">\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Front-load keywords** - Put important terms at the beginning\n2. **Match intent** - Description should preview what page delivers\n3. **Be specific** - Vague descriptions get ignored\n4. **Test variations** - Small changes can significantly impact CTR\n5. **Update regularly** - Add current year, refresh messaging\n6. **Check competitors** - See what's working in your SERP"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Title Tag Formula Patterns] ### Proven Title Formulas\n\n| Formula | Template | Example | Best For |\n|---------|----------|---------|---------|\n| How-To | How to [Achieve Result] ([Year]) | How to Improve SEO Rankings (2026) | Informational guides |\n| Number List | [Number] [Adjective] [Topic] for [Audience] | 15 Proven SEO Strategies for E-commerce | Listicles |\n| Question | [Question]? Here's [Answer Preview] | What Is Technical SEO? Complete Guide | Definition content |\n| Comparison | [Option A] vs [Option B]: [Differentiator] | Ahrefs vs SEMrush: Which SEO Tool Wins? | Comparison pages |\n| Year-Based | Best [Topic] in [Year] ([Tested/Ranked]) | Best SEO Tools in 2026 (Expert Tested) | Evergreen + fresh |\n| Benefit-Driven | [Benefit]: [How to Achieve It] | Rank #1 on Google: 10-Step SEO Checklist | High-CTR pages |\n| Parenthetical | [Topic] ([Modifier]) | Link Building Guide (With Templates) | Adding value signal |\n| Negative | [Number] [Topic] Mistakes [Consequence] | 7 SEO Mistakes That Kill Your Rankings | Problem-awareness content |\n\n### Title Tag Power Words\n\n| Category | Power Words | Use Sparingly |\n|----------|-----------|---------------|\n| Urgency | Now, Today, Quick, Fast, Instant, 2026 | Don't overuse; pair with substance |\n| Value | Free, Proven, Complete, Essential, Ultimate | Avoid hyperbole without backing |\n| Specificity | [Exact number], Step-by-Step, Checklist, Template | More specific = more clicks |\n| Curiosity | Secret, Little-Known, Surprising, Actually | Must deliver on the promise |\n| Authority | Expert, Research-Backed, Data-Driven, Tested | Only use when genuinely expert content |\n| Emotional | Best, Worst, Mistakes, Warning, Powerful | Balance emotion with credibility |\n\n### Title Tag Length Optimization\n\n| Length Range | SERP Behavior | Recommendation |\n|-------------|--------------|----------------|\n| <30 characters | May appear thin | Expand with modifier or brand |\n| 30-50 characters | Fully displayed on all devices | Ideal for mobile-first |\n| 50-60 characters "
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Meta Description Copywriting Frameworks] ### AIDA Framework\n\n| Element | What It Does | Example |\n|---------|-------------|---------|\n| **A**ttention | Hook with a bold claim or question | \"Want to double your organic traffic?\" |\n| **I**nterest | Build relevance | \"This guide covers 15 proven strategies...\" |\n| **D**esire | Show benefit | \"...used by top-ranking sites to increase traffic by 200%.\" |\n| **A**ction | CTA | \"Read the full guide now.\" |\n\n**Full Example**: \"Want to double your organic traffic? This guide covers 15 proven SEO strategies used by top-ranking sites to increase traffic by 200%. Read the full guide now.\" (158 chars)\n\n### PAS Framework\n\n| Element | What It Does | Example |\n|---------|-------------|---------|\n| **P**roblem | Identify pain point | \"Struggling to rank on Google?\" |\n| **A**gitate | Amplify the problem | \"Most SEO guides are outdated and miss key ranking factors.\" |\n| **S**olution | Offer the solution | \"Our 2026 guide covers what actually works. Read now.\" |\n\n### Benefit-Proof-CTA Framework\n\n| Element | Example |\n|---------|---------|\n| Benefit | \"Learn the exact SEO process that grew our traffic 5x\" |\n| Proof | \"— with real data from 200+ audits.\" |\n| CTA | \"Get the free checklist.\" |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[CTR Optimization Data] ### Factors That Increase Organic CTR\n\n| Factor | CTR Impact | Implementation |\n|--------|-----------|----------------|\n| Number in title | +20-30% | \"7 Ways\", \"15 Tips\", \"2026\" |\n| Question in title | +14% | Start with How, What, Why |\n| Emotional words | +7% | \"Proven\", \"Essential\", \"Mistake\" |\n| Brackets/parentheses | +38% | \"[Guide]\", \"(With Examples)\" |\n| Current year | +10-15% | \"Best SEO Tools 2026\" |\n| Power words | +12% | See Power Words table above |\n| Match search intent | +15-25% | Align title with SERP expectations |\n| Rich results (schema) | +30% | FAQ, HowTo, Review stars |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Open Graph Best Practices by Platform] ### Platform-Specific OG Optimization\n\n| Platform | Image Size | Title Length | Description Length | Special Tags |\n|----------|-----------|-------------|-------------------|-------------|\n| Facebook | 1200x630px | 40-60 chars | 125-155 chars | og:type, og:locale |\n| Twitter/X | 1200x600px | 70 chars max | 200 chars | twitter:card, twitter:site |\n| LinkedIn | 1200x627px | 70 chars | 150 chars | Standard OG tags |\n| Pinterest | 1000x1500px (2:3) | 100 chars | 500 chars | og:type=article preferred |\n| Slack | 500x500px min | Full title | First ~300 chars | Standard OG tags |\n\n### OG Tag Checklist\n\n| Tag | Required? | Notes |\n|-----|----------|-------|\n| og:title | Yes | Can differ from HTML title; optimize for social sharing |\n| og:description | Yes | Social-optimized; can differ from meta description |\n| og:image | Yes | Must be absolute URL; minimum 200x200px, ideal 1200x630px |\n| og:url | Yes | Canonical URL |\n| og:type | Yes | \"website\" for homepage, \"article\" for blog posts |\n| og:site_name | Recommended | Your brand name |\n| og:locale | Recommended | e.g., \"en_US\" |\n| twitter:card | Recommended | \"summary_large_image\" for articles |\n| twitter:site | Recommended | @yourbrand |"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Meta Tag Formulas](./references/meta-tag-formulas.md) — Proven title and description formulas with templates, power words, and CTR data"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Related Skills] - [seo-content-writer](../seo-content-writer/) — Create content for meta tags\n- [schema-markup-generator](../schema-markup-generator/) — Add structured data\n- [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) — Audit all meta tags\n- [serp-analysis](../../research/serp-analysis/) — Analyze competitor meta tags\n- [geo-content-optimizer](../geo-content-optimizer/) — GEO optimization complements meta tag improvements\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full CORE-EEAT audit includes C01/C02 items that meta tags address"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "meta_tags_optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "low",
+      "tags": [
+        "seo",
+        "meta tags",
+        "title tag",
+        "meta description",
+        "open graph",
+        "twitter cards",
+        "ctr optimization",
+        "social sharing"
+      ],
+      "triggers": [
+        "optimize title tag",
+        "write meta description",
+        "improve CTR",
+        "Open Graph tags",
+        "social media preview",
+        "title optimization",
+        "meta tags",
+        "my title tag needs work",
+        "low click-through rate",
+        "fix my meta tags",
+        "OG tags not showing"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/meta-tags-optimizer/SKILL.md"
+}

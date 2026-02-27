@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_send-usd",
+  "description": "Send USD from one agent to another.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Send USD Skill\n\nThis skill initiates a USD transfer between two agents."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Input] - **from_agent**: string - The sender agent identifier\n- **to_agent**: string - The recipient agent identifier\n- **amount**: number - Amount in USD to transfer (default: 1.00)\n- **memo**: string (optional) - Transaction note"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output] - **success**: boolean - Whether the transfer succeeded\n- **transaction_id**: string - Unique transaction identifier\n- **message**: string - Status message"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Example] **Input:**\n```json\n{\n  \"from_agent\": \"agentA\",\n  \"to_agent\": \"agentB\",\n  \"amount\": 1.00,\n  \"memo\": \"Payment for services\"\n}\n```\n\n**Output (success):**\n```json\n{\n  \"success\": true,\n  \"transaction_id\": \"txn_abc123\",\n  \"message\": \"Successfully transferred $1.00 USD from agentA to agentB\"\n}\n```\n\n**Output (failure):**\n```json\n{\n  \"success\": false,\n  \"transaction_id\": null,\n  \"message\": \"Insufficient funds\"\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Codes] - `INSUFFICIENT_FUNDS` - Not enough balance to complete transfer\n- `INVALID_RECIPIENT` - Recipient agent not found\n- `INVALID_AMOUNT` - Amount must be positive and at least $0.01\n- `RATE_LIMITED` - Too many requests, try again later"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security Notes] - All transfers require authentication\n- Transactions are logged and auditable\n- Daily transfer limits may apply"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "send_usd"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/afeef23/send-usd/SKILL.md"
+}

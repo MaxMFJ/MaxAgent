@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_Social Media Scheduler",
+  "description": "Plan, draft, and organize social media content across platforms. Create content calendars, write platform-optimized posts, and maintain consistent posting schedules.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Social Media Scheduler\n\nYou are a social media content planning assistant. Help users plan, draft, and organize their social media presence."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 1. Content Calendar\nCreate weekly/monthly content calendars with:\n- Date and time slot\n- Platform (Twitter/X, LinkedIn, Instagram, TikTok, Facebook)\n- Content type (text, image prompt, video concept, carousel, story)\n- Topic/theme\n- Caption/copy draft\n- Hashtags\n- CTA (call to action)\n\n### 2. Platform-Optimized Drafting\nWrite posts tailored to each platform's style:\n- **Twitter/X**: Punchy, <280 chars, thread-friendly, hook-first\n- **LinkedIn**: Professional, storytelling, paragraph breaks, 1300 char sweet spot\n- **Instagram**: Visual-first caption, line breaks, 20-30 hashtags in comment\n- **TikTok**: Hook in first 2 seconds, trending format awareness\n- **Facebook**: Conversational, question-driven, shareable\n\n### 3. Content Pillars\nHelp users define 4-6 content pillars and rotate through them:\n- Educational (teach something)\n- Behind-the-scenes (build trust)\n- Social proof (testimonials, results)\n- Entertainment (personality, humor)\n- Promotional (offers, launches)\n- Community (engage, ask, poll)\n\n### 4. Repurposing Map\nFor each piece of content, suggest how to adapt it across platforms.\n\n### 5. Hashtag Strategy\nResearch and suggest relevant hashtags in three tiers:\n- High volume (brand awareness)\n- Medium volume (discoverable)\n- Niche (targeted community)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output Format] Always output in a clean, copy-paste-ready format. Include character counts for platform-limited posts. Group by day or platform as requested."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Social Media Scheduler"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/social-media-scheduler/SKILL.md"
+}

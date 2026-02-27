@@ -1,0 +1,115 @@
+{
+  "id": "openclaw_skill_maxxit-lazy-trading",
+  "description": "Execute perpetual trades on Ostium and Aster via Maxxit's Lazy Trading API. Includes programmatic endpoints for opening/closing positions, managing risk, fetching market data, copy-trading other OpenClaw agents, and a trustless Alpha Marketplace for buying/selling ZK-verified trading signals (Arbitrum Sepolia).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Maxxit Lazy Trading\n\nExecute perpetual futures trades on Ostium and Aster DEX through Maxxit's Lazy Trading API. This skill enables automated trading through programmatic endpoints for opening/closing positions and managing risk."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - User wants to execute trades on Ostium\n- User wants to execute trades on Aster DEX\n- User asks about their lazy trading account details\n- User wants to check their USDC/ETH balance\n- User wants to view their open positions or portfolio\n- User wants to see their closed position history or PnL\n- User wants to discover available trading symbols\n- User wants to get market data or LunarCrush metrics for analysis\n- User wants a whole market snapshot for the trading purpose\n- User wants to compare altcoin rankings (AltRank) across different tokens\n- User wants to identify high-sentiment trading opportunities\n- User wants to know social volume trends for crypto assets\n- User wants to open a new trading position (long/short)\n- User wants to close an existing position\n- User wants to set or modify take profit levels\n- User wants to set or modify stop loss levels\n- User wants to fetch current token/market prices\n- User mentions \"lazy trade\", \"perps\", \"perpetuals\", or \"futures trading\"\n- User wants to automate their trading workflow\n- User wants to copy-trade or mirror another trader's positions\n- User wants to discover other OpenClaw agents to learn from\n- User wants to see what trades top-performing traders are making\n- User wants to find high-impact-factor traders to replicate\n- User wants to sell their trading signals as alpha\n- User wants to browse or buy trustless alpha from ZK-verified traders\n- User wants to generate a ZK proof of their trading performance or flag a position as alpha\n- User mentions \"alpha marketplace\", \"sell alpha\", \"buy alpha\", or \"ZK proof\"\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[⚠️ DEX Routing Rules (Mandatory)] 1. **Always ask venue first if unclear**: \"Do you want to trade on Ostium or Aster?\"\n2. **Always state the active venue explicitly** in your response (e.g., \"Using Ostium...\" or \"Using Aster...\").\n3. **Do not mix venue suggestions**:\n   - If user is trading on **Ostium**, only suggest Ostium endpoints/actions.\n   - If user is trading on **Aster**, only suggest Aster endpoints/actions.\n4. **Do not ask network clarification**:\n   - **Ostium is mainnet-only** in this setup.\n   - **Aster is testnet-only** in this setup.\n   - Therefore do **not** ask \"mainnet or testnet?\" for either venue.\n5. If user switches venue mid-conversation, confirm the switch and then continue with only that venue's flow.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[⚠️ CRITICAL: API Parameter Rules (Read Before Calling ANY Endpoint)] > **NEVER assume, guess, or hallucinate values for API request parameters.** Every required parameter must come from either a prior API response or explicit user input. If you don't have a required value, you MUST fetch it from the appropriate dependency endpoint first.\n\n### Parameter Dependency Graph\n\nThe following shows where each required parameter comes from. **Always resolve dependencies before calling an endpoint.**\n\n| Parameter | Source | Endpoint to Fetch From |\n|-----------|--------|------------------------|\n| `userAddress` / `address` | `/club-details` response → `user_wallet` | `GET /club-details` |\n| `agentAddress` | `/club-details` response → `ostium_agent_address` | `GET /club-details` |\n| `tradeIndex` | `/open-position` response → `actualTradeIndex` **OR** `/positions` response → `tradeIndex` | `POST /open-position` or `POST /positions` |\n| `pairIndex` | `/positions` response → `pairIndex` **OR** `/symbols` response → symbol `id` | `POST /positions` or `GET /symbols` |\n| `entryPrice` | `/open-position` response → `entryPrice` **OR** `/positions` response → `entryPrice` | `POST /open-position` or `POST /positions` |\n| `market` / `symbol` | User specifies token **OR** `/symbols` response → `symbol` (e.g. `ETH/USD`) | User input or `GET /symbols` |\n| `side` | User specifies `\"long\"` or `\"short\"` | User input (required) |\n| `collateral` | User specifies the USDC amount | User input (required) |\n| `leverage` | User specifies the multiplier | User input (required) |\n| `takeProfitPercent` | User specifies (e.g., 0.30 = 30%) | User input (required) |\n| `stopLossPercent` | User specifies (e.g., 0.10 = 10%) | User input (required) |\n| `address` (for copy-trader-trades) | `/copy-traders` response → `creatorWallet` or `walletAddress` | `GET /copy-traders` |\n| `commitment` (Alpha) | `/alpha/agents` response → `commitment` | `GET /alpha/agents` |\n| `listingId` (Alpha) | `/alpha/listings` response → `listingId` | `GET /alpha/listings` |\n| `alpha`, `contentHash` (Alp"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Authentication] All requests require an API key with prefix `lt_`. Pass it via:\n- Header: `X-API-KEY: lt_your_api_key`\n- Or: `Authorization: Bearer lt_your_api_key`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Ostium Programmatic Endpoints (`/api/lazy-trading/programmatic/*`)] > All endpoints under `/api/lazy-trading/programmatic/*` are for **Ostium** unless explicitly prefixed with `/aster/`.\n\n### Get Account Details\n\nRetrieve lazy trading account information including agent status, Telegram connection, and trading preferences.\n\n```bash\ncurl -L -X GET \"${MAXXIT_API_URL}/api/lazy-trading/programmatic/club-details\" \\\n  -H \"X-API-KEY: ${MAXXIT_API_KEY}\"\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"user_wallet\": \"0x...\",\n  \"agent\": {\n    \"id\": \"agent-uuid\",\n    \"name\": \"Lazy Trader - Username\",\n    \"venue\": \"ostium\",\n    \"status\": \"active\"\n  },\n  \"telegram_user\": {\n    \"id\": 123,\n    \"telegram_user_id\": \"123456789\",\n    \"telegram_username\": \"trader\"\n  },\n  \"deployment\": {\n    \"id\": \"deployment-uuid\",\n    \"status\": \"active\",\n    \"enabled_venues\": [\"ostium\"]\n  },\n  \"trading_preferences\": {\n    \"risk_tolerance\": \"medium\",\n    \"trade_frequency\": \"moderate\"\n  },\n  \"ostium_agent_address\": \"0x...\",\n  \"aster_configured\": \"true\",\n}\n```\n\n### Get Available Symbols\n\nRetrieve all available trading symbols from the Ostium exchange. Use this to discover which symbols you can trade and get LunarCrush data for.\n\n```bash\ncurl -L -X GET \"${MAXXIT_API_URL}/api/lazy-trading/programmatic/symbols\" \\\n  -H \"X-API-KEY: ${MAXXIT_API_KEY}\"\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"symbols\": [\n    {\n      \"id\": 0,\n      \"symbol\": \"BTC/USD\",\n      \"group\": \"crypto\",\n      \"maxLeverage\": 150\n    },\n    {\n      \"id\": 1,\n      \"symbol\": \"ETH/USD\",\n      \"group\": \"crypto\",\n      \"maxLeverage\": 100\n    }\n  ],\n  \"groupedSymbols\": {\n    \"crypto\": [\n      { \"id\": 0, \"symbol\": \"BTC/USD\", \"group\": \"crypto\", \"maxLeverage\": 150 },\n      { \"id\": 1, \"symbol\": \"ETH/USD\", \"group\": \"crypto\", \"maxLeverage\": 100 }\n    ],\n    \"forex\": [...]\n  },\n  \"count\": 45\n}\n```\n\n### Get LunarCrush Market Data\n\nRetrieve cached LunarCrush market metrics for a specific symbol. This data includes social sentiment, price changes, volatility, and market rankings.\n\n> **⚠️ Dependency**: You must "
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Signal Format Examples] The lazy trading system processes natural language trading signals. Here are examples:\n\n### Opening Positions\n- `\"Long ETH with 5x leverage, entry at 3200\"`\n- `\"Short BTC 10x, TP 60000, SL 68000\"`\n- `\"Buy 100 USDC worth of ETH perpetual\"`\n\n### With Risk Management\n- `\"Long SOL 3x leverage, entry 150, take profit 180, stop loss 140\"`\n- `\"Short AVAX 5x, risk 2% of portfolio\"`\n\n### Closing Positions\n- `\"Close ETH long position\"`\n- `\"Take profit on BTC short\"`\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Complete Workflow Examples] These are the mandatory step-by-step workflows for common trading operations. **Follow these exactly.**\n\n### Workflow 1: Opening a New Position (Full Flow)\n\n```\nStep 1: GET /club-details\n   → Extract: user_wallet (→ userAddress), ostium_agent_address (→ agentAddress)\n   → Cache these for the session\n\nStep 2: GET /symbols\n   → Verify the user's requested token is available on Ostium\n   → Extract exact symbol string and maxLeverage\n   → Convert pair format to market token for /open-position:\n     \"ETH/USD\" -> \"ETH\"\n\nStep 3: GET /lunarcrush?symbol=TOKEN/USD  (or GET /market-data for all)\n   → Get market data: price, sentiment, volatility, galaxy_score\n   → Present this data to the user:\n     \"BTC is currently at $95,000 with sentiment 68.3 (bullish) and volatility 0.032 (normal).\n      Galaxy Score: 72.5/100. Do you want to proceed?\"\n\nStep 4: ASK the user for trade parameters\n   → \"Please confirm: collateral (USDC), leverage, long or short?\"\n   → \"Would you like to set TP and SL? If so, what percentages?\"\n   → Wait for explicit user confirmation before proceeding\n\nStep 5: POST /open-position\n   → Use agentAddress and userAddress from Step 1\n   → Use market, side, collateral, leverage from Step 4\n   → IMPORTANT: Pass market as base token only (e.g. ETH), not pair format (ETH/USD)\n   → SAVE the response: actualTradeIndex and entryPrice\n\nStep 6 (if user wants TP/SL): POST /set-take-profit and/or POST /set-stop-loss\n   → Use tradeIndex = actualTradeIndex from Step 5\n   → Use entryPrice from Step 5\n   → For pairIndex, use the symbol id from Step 2 or call /positions\n   → Use takeProfitPercent/stopLossPercent from Step 4\n```\n\n### Workflow 2: Closing an Existing Position\n\n```\nStep 1: GET /club-details\n   → Extract: user_wallet, ostium_agent_address\n\nStep 2: POST /positions (address = user_wallet from Step 1)\n   → List all open positions\n   → Present them to the user if multiple: \"You have 3 open positions: BTC long, ETH short, SOL long. Which one do you want to close?\"\n   → E"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Aster DEX (BNB Chain) Endpoints] > Aster DEX is a perpetual futures exchange on BNB Chain. Use Aster endpoints when the user wants to trade on BNB Chain. The Aster API uses **API Key + Secret** authentication (stored server-side) — you do NOT need `agentAddress`. You only need `userAddress` from `/club-details`.\n\n### Venue Selection\n\n| Venue | Chain | Symbol Format | Auth Required | When to Use |\n|-------|-------|--------------|---------------|-------------|\n| **Ostium** | Arbitrum (mainnet only) | `BTC`, `ETH` | `agentAddress` + `userAddress` | Default for most trades |\n| **Aster** | BNB Chain (testnet only) | `BTCUSDT`, `ETHUSDT` | `userAddress` only | When user specifies BNB Chain or Aster |\n\n> **Network behavior rule:** Do not ask users to choose mainnet/testnet for these venues. Ostium is fixed to mainnet and Aster is fixed to testnet in this environment.\n\n**How to check if Aster is configured:** In the `/club-details` response, `aster_configured: true` means the user has set up Aster API keys. If `false`, direct them to set up Aster at maxxit.ai/openclaw.\n\n### Aster Symbols\n\nAster uses Binance-style symbol format: `BTCUSDT`, `ETHUSDT`, etc. The API auto-appends `USDT` if you pass just `BTC`.\n\n```bash\ncurl -L -X GET \"${MAXXIT_API_URL}/api/lazy-trading/programmatic/aster/symbols\" \\\n  -H \"X-API-KEY: ${MAXXIT_API_KEY}\"\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"symbols\": [\n    {\n      \"symbol\": \"BTCUSDT\",\n      \"baseAsset\": \"BTC\",\n      \"quoteAsset\": \"USDT\",\n      \"pricePrecision\": 2,\n      \"quantityPrecision\": 3,\n      \"contractType\": \"PERPETUAL\",\n      \"status\": \"TRADING\"\n    }\n  ],\n  \"count\": 50\n}\n```\n\n### Aster Price\n\n```bash\ncurl -L -X GET \"${MAXXIT_API_URL}/api/lazy-trading/programmatic/aster/price?token=BTC\" \\\n  -H \"X-API-KEY: ${MAXXIT_API_KEY}\"\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"token\": \"BTC\",\n  \"symbol\": \"BTCUSDT\",\n  \"price\": 95000.50\n}\n```\n\n### Aster Market Data\n\n```bash\ncurl -L -X GET \"${MAXXIT_API_URL}/api/lazy-trading/programmatic/aster/market-data?symbol=BTC\""
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Alpha Marketplace (Arbitrum Sepolia)] Trustless ZK-verified trading signals. **Producers** generate proofs and flag positions as alpha; **consumers** discover agents by commitment, purchase alpha via x402, verify content, and execute.\n\n**Base path:** `${MAXXIT_API_URL}/api/lazy-trading/programmatic/alpha/*`  \n**Auth:** `X-API-KEY` header (same as other endpoints).  \n**Payment:** On-chain USDC on Arbitrum Sepolia (testnet) or Arbitrum One (mainnet).\n\n**Prerequisites for consuming alpha:**\n- User must have completed Lazy Trading setup (agent deployed) — `/club-details` must return `ostium_agent_address`. The `/pay` endpoint uses this agent to send USDC; without it, `/pay` returns 400.\n- Agent wallet must hold enough USDC for the listing price. If insufficient, `/pay` returns 402 with `required` and `available` amounts — inform the user to fund the agent address.\n\n### Alpha Endpoints Summary\n\n| Endpoint | Method | Purpose |\n|----------|--------|---------|\n| `/alpha/agents` | GET | Discover agents with verified metrics (commitment, winRate, totalPnl). Query: `minWinRate`, `minTrades`, `limit`. |\n| `/alpha/listings` | GET | Browse active alpha listings (metadata + price, no trade content). Query: `commitment`, `maxPrice`, `limit`. |\n| `/alpha/purchase/:listingId` | GET | **Phase 1** (no `X-Payment` header): returns 402 + payment details. **Phase 2** (with `X-Payment: txHash`): verifies on-chain, returns alpha. |\n| `/alpha/pay/:listingId` | POST | **Payment helper**: sends USDC from your agent on-chain. Returns `txHash`. Call between Phase 1 and Phase 2. |\n| `/alpha/verify` | POST | Body: `{ listingId, content }`. Verify purchased content hash matches commitment. |\n| `/alpha/execute` | POST | Body: `{ alphaContent, agentAddress, userAddress, collateral, leverageOverride? }`. Execute alpha trade on Ostium. |\n| `/alpha/generate-proof` | POST | (Producer) Queue ZK proof generation. Body: `{ autoProcess?: boolean }`. Use `autoProcess: false` in production worker flow. |\n| `/alpha/proof-status` | GET | (Producer) "
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Description | Example |\n|----------|-------------|---------|\n| `MAXXIT_API_KEY` | Your lazy trading API key (starts with `lt_`) | `lt_abc123...` |\n| `MAXXIT_API_URL` | Maxxit API base URL | `https://maxxit.ai` |\n| `BREVIS_PROVER_URL` | Brevis prover service endpoint (empty = simulation mode, uses subgraph data) | `localhost:33247` |\n| `BREVIS_GATEWAY_URL` | Brevis gateway URL | `appsdkv3.brevis.network:443` |\n| `BREVIS_APP_CONTRACT` | BrevisApp contract address on Arbitrum Sepolia (optional) | `0x...` |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Error Handling] | Status Code | Meaning |\n|-------------|---------|\n| 401 | Invalid or missing API key |\n| 404 | Lazy trader agent not found (complete setup first) |\n| 400 | Missing or invalid message / parameters |\n| 405 | Wrong HTTP method |\n| 500 | Server error |\n\n**Alpha-specific errors:**\n| 400 | `/pay`: No agent address found (user must complete Lazy Trading setup). `/purchase`: Invalid X-Payment header or payment verification failed. |\n| 402 | Payment required (`/purchase` Phase 1) or insufficient USDC balance (`/pay` — check `required` and `available` in response). |\n| 409 | Transaction hash already used (replay protection — each tx can only purchase one listing). |\n| 410 | Alpha listing no longer active. |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Getting Started] 1. **Set up Lazy Trading**: Visit https://maxxit.ai/lazy-trading to connect your wallet and configure your agent\n2. **Generate API Key**: Go to your dashboard and create an API key\n3. **Configure Environment**: Set `MAXXIT_API_KEY` and `MAXXIT_API_URL`\n4. **Start Trading**: Use this skill to send signals!"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Security Notes] - Never share your API key\n- API keys can be revoked and regenerated from the dashboard\n- All trades execute on-chain with your delegated wallet permissions"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "maxxit_lazy_trading"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requiredEnv": [
+          "MAXXIT_API_KEY",
+          "MAXXIT_API_URL"
+        ],
+        "bins": [
+          "curl"
+        ],
+        "primaryCredential": "MAXXIT_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhi152003/maxxit-lazy-trading/SKILL.md"
+}

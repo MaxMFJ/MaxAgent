@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_here-now",
+  "description": "Publish files and folders to the web instantly. Use when asked to \"publish this\", \"host this\", \"deploy this\", \"share this on the web\", \"make a website\", or \"put this online\". Outputs a live URL at <slug>.here.now.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # here.now\n\n**Skill version: 1.6.3**\n\nPublish any file or folder to the web and get a live URL back. Static hosting only.\n\nTo install or update (recommended): `npx skills add heredotnow/skill --skill here-now -g`\n\nFor repo-pinned/project-local installs, run the same command without `-g`.\n\nIf npm is unavailable, see fallback install docs: https://here.now/docs#install-skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] - Required binaries: `curl`, `file`, `jq`\n- Optional environment variable: `$HERENOW_API_KEY`\n- Optional credentials file: `~/.herenow/credentials`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Publish] ```bash\n./scripts/publish.sh <file-or-dir>\n```\n\nOutputs the live URL (e.g. `https://bright-canvas-a7k2.here.now/`).\n\nWithout an API key this creates an **anonymous publish** that expires in 24 hours.\nWith a saved API key, the publish is permanent.\n\n**File structure:** For HTML sites, place `index.html` at the root of the directory you publish, not inside a subdirectory. The directory's contents become the site root. For example, publish `my-site/` where `my-site/index.html` exists — don't publish a parent folder that contains `my-site/`.\n\nYou can also publish raw files without any HTML. Single files get a rich auto-viewer (images, PDF, video, audio). Multiple files get an auto-generated directory listing with folder navigation and an image gallery."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Update an existing publish] ```bash\n./scripts/publish.sh <file-or-dir> --slug <slug>\n```\n\nThe script auto-loads the `claimToken` from `.herenow/state.json` when updating anonymous publishes. Pass `--claim-token <token>` to override.\n\nAuthenticated updates require a saved API key."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[API key storage] The publish script reads the API key from these sources (first match wins):\n\n1. `--api-key <key>` flag (CI/scripting only — avoid in interactive use)\n2. `$HERENOW_API_KEY` environment variable\n3. `~/.herenow/credentials` file (recommended for agents)\n\nTo store a key, write it to the credentials file:\n\n```bash\nmkdir -p ~/.herenow && echo \"<API_KEY>\" > ~/.herenow/credentials && chmod 600 ~/.herenow/credentials\n```\n\n**IMPORTANT**: Never pass the API key directly in shell commands. Always write it to `~/.herenow/credentials` using the command above. This keeps the key out of terminal history and logs.\n\nNever commit credentials or local state files (`~/.herenow/credentials`, `.herenow/state.json`) to source control."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[State file] After every publish, the script writes to `.herenow/state.json` in the working directory:\n\n```json\n{\n  \"publishes\": {\n    \"bright-canvas-a7k2\": {\n      \"siteUrl\": \"https://bright-canvas-a7k2.here.now/\",\n      \"claimToken\": \"abc123\",\n      \"claimUrl\": \"https://here.now/claim?slug=bright-canvas-a7k2&token=abc123\",\n      \"expiresAt\": \"2026-02-18T01:00:00.000Z\"\n    }\n  }\n}\n```\n\nBefore publishing, you may check this file to find prior slugs for updates.\nTreat `.herenow/state.json` as internal cache only.\nNever present this local file path as a URL, and never use it as source of truth for auth mode, expiry, or claim URL."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[What to tell the user] - Always share the `siteUrl` from the current script run.\n- Read and follow `publish_result.*` lines from script stderr.\n- Only state \"expires in 24 hours\" when `publish_result.auth_mode=anonymous`.\n- Only share a claim URL when `publish_result.claim_url` is non-empty and starts with `https://`.\n- Never tell the user to inspect `.herenow/state.json` for claim URLs or auth status.\n- Warn: claim tokens are only returned once and cannot be recovered."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Limits] |                | Anonymous          | Authenticated                |\n| -------------- | ------------------ | ---------------------------- |\n| Max file size  | 250 MB             | 5 GB                         |\n| Expiry         | 24 hours           | Permanent (or custom TTL)    |\n| Rate limit     | 5 / hour / IP      | 60 / hour / account          |\n| Account needed | No                 | Yes (get key at here.now)    |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Getting an API key] To upgrade from anonymous (24h) to permanent publishing:\n\n1. Ask the user for their email address.\n2. Call the sign-up endpoint to send them a magic link:\n\n```bash\ncurl -sS https://here.now/api/auth/login \\\n  -H \"content-type: application/json\" \\\n  -d '{\"email\": \"user@example.com\"}'\n```\n\n3. Tell the user: \"Check your inbox for a sign-in link from here.now. Click it, then copy your API key from the dashboard.\"\n4. Once the user provides the key, save it:\n\n```bash\nmkdir -p ~/.herenow && echo \"<API_KEY>\" > ~/.herenow/credentials && chmod 600 ~/.herenow/credentials\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Script options] | Flag                   | Description                                  |\n| ---------------------- | -------------------------------------------- |\n| `--slug <slug>`        | Update existing publish instead of creating   |\n| `--claim-token <token>`| Override claim token for anonymous updates    |\n| `--title <text>`       | Viewer title (non-site publishes)             |\n| `--description <text>` | Viewer description                            |\n| `--ttl <seconds>`      | Set expiry (authenticated only)               |\n| `--base-url <url>`     | API base URL (default: `https://here.now`)    |\n| `--allow-nonherenow-base-url` | Allow sending auth to non-default `--base-url` |\n| `--api-key <key>`      | API key override (prefer credentials file)    |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Beyond the script] For delete, metadata patch, claim, list, and other operations, see [references/REFERENCE.md](references/REFERENCE.md).\n\nFull docs: https://here.now/docs"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "here_now"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamludwin/here-now/SKILL.md"
+}

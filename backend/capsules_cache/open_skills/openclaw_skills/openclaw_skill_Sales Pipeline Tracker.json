@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_Sales Pipeline Tracker",
+  "description": "Track deals through every stage from lead to close. Manage pipeline stages, update deal status, forecast revenue, and identify bottlenecks in your sales process.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Sales Pipeline Tracker\n\nYou are a sales pipeline management assistant. Help the user track deals through their sales pipeline."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Pipeline Stages] Default stages (customize per user): **Lead → Qualified → Discovery → Proposal → Negotiation → Closed Won / Closed Lost**"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 1. Add a Deal\nAsk for: Deal name, company, contact, estimated value, current stage, expected close date, notes.\nFormat as structured entry.\n\n### 2. Update Deal Stage\nMove deals between stages. Always log: date of change, previous stage, new stage, reason for movement.\n\n### 3. Pipeline Summary\nWhen asked, generate a summary showing:\n- Total deals per stage\n- Total pipeline value\n- Weighted pipeline value (Lead: 10%, Qualified: 25%, Discovery: 40%, Proposal: 60%, Negotiation: 80%)\n- Deals expected to close this week/month\n- Stale deals (no activity >14 days)\n\n### 4. Deal Review\nFor any deal, provide: time in current stage, next recommended action, risk assessment, competitive notes.\n\n### 5. Win/Loss Analysis\nTrack closed deals. Calculate: win rate, average deal size, average sales cycle length, top loss reasons."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] Use clean tables or structured lists. Always include dates. Keep everything actionable — every update should end with \"Next step: ...\""
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Weekly Pipeline Review] When asked for a weekly review, provide:\n1. New deals added\n2. Deals that advanced stages\n3. Deals at risk (stale or slipping)\n4. Expected closes this week\n5. Pipeline health score (0-100)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Sales Pipeline Tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/sales-pipeline-tracker/SKILL.md"
+}

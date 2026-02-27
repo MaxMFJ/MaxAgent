@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_send-usdc",
+  "description": "Send USDC to an Ethereum address or ENS name. Use when you or the user want to send money, pay someone, transfer USDC, tip, donate, or send funds to a wallet address or .eth name. Covers phrases like \"send $5 to\", \"pay 0x...\", or \"transfer to vitalik.eth\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Sending USDC\n\nUse the `npx awal@latest send` command to transfer USDC from the wallet to any Ethereum address or ENS name on Base."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Confirm wallet is initialized and authed] ```bash\nnpx awal@latest status\n```\n\nIf the wallet is not authenticated, refer to the `authenticate-wallet` skill."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Command Syntax] ```bash\nnpx awal@latest send <amount> <recipient> [--chain <chain>] [--json]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Arguments] | Argument    | Description                                                                                                                                                                                                                          |\n| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |\n| `amount`    | Amount to send: '$1.00', '1.00', or atomic units (1000000 = $1). Always single-quote amounts that use `$` to prevent bash variable expansion. If the number looks like atomic units (no decimal or > 100), treat as atomic units. Assume that people won't be sending more than 100 USDC the majority of the time |\n| `recipient` | Ethereum address (0x...) or ENS name (vitalik.eth)                                                                                                                                                                                   |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Options] | Option           | Description                        |\n| ---------------- | ---------------------------------- |\n| `--chain <name>` | Blockchain network (default: base) |\n| `--json`         | Output result as JSON              |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Send $1.00 USDC to an address\nnpx awal@latest send 1 0x1234...abcd\n\n# Send $0.50 USDC to an ENS name\nnpx awal@latest send 0.50 vitalik.eth\n\n# Send with dollar sign prefix (note the single quotes)\nnpx awal@latest send '$5.00' 0x1234...abcd\n\n# Get JSON output\nnpx awal@latest send 1 vitalik.eth --json\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[ENS Resolution] ENS names are automatically resolved to addresses via Ethereum mainnet. The command will:\n\n1. Detect ENS names (any string containing a dot that isn't a hex address)\n2. Resolve the name to an address\n3. Display both the ENS name and resolved address in the output"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Prerequisites] - Must be authenticated (`npx awal@latest awal status` to check, `npx awal@latest awal auth login` to sign in, see skill `authenticate-wallet` for more information)\n- Wallet must have sufficient USDC balance (`npx awal balance` to check)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] Common errors:\n\n- \"Not authenticated\" - Run `awal auth login <email>` first\n- \"Insufficient balance\" - Check balance with `awal balance`\n- \"Could not resolve ENS name\" - Verify the ENS name exists\n- \"Invalid recipient\" - Must be valid 0x address or ENS name"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "send_usdc"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/send-usdc/SKILL.md"
+}

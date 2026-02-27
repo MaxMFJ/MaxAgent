@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_kimai-time-tracking",
+  "description": "Complete Kimai time-tracking API integration. Manage timesheets, customers, projects, activities, teams, invoices and exports via REST API. Supports time tracking workflows, reporting, and administrative operations. Keywords - kimai, zeiterfassung, timesheet, tracking, project, customer, activity, invoice, export, timer, stunden",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Kimai Time Tracking Skill\n\nComplete API integration for [Kimai](https://www.kimai.org/) time-tracking software. Enables full control over timesheets, projects, customers, activities, teams, invoices, and system configuration."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to use] **Activate this skill when the user requests:**\n- Start/stop/restart time tracking (timers)\n- List, filter, or export timesheets\n- Manage customers, projects, or activities\n- Create invoices or export data\n- Administrative tasks (users, teams, rates)\n- Query system status (version, plugins, config)\n\n**Activation triggers:**\n- Keywords: \"kimai\", \"zeiterfassung\", \"timesheet\", \"timer\", \"stunden\", \"erfasse Zeit\", \"starte Tracking\", \"Projekt anlegen\", \"Rechnung erstellen\"\n- \"Start tracking for project X\"\n- \"Show my timesheets from last week\"\n- \"Create new customer in Kimai\"\n- \"Export timesheets to CSV\"\n- \"List all active timers\"\n- \"Stop current time tracking\"\n\n**Do NOT activate for:**\n- General time questions (\"What time is it?\")\n- Other time-tracking tools (Toggl, Clockify, etc.)\n- Calendar/scheduling without Kimai context"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Setup] **Required Environment Variables:**\n- `KIMAI_BASE_URL` - Full URL to Kimai instance (e.g., `https://kimai.example.com`)\n- `KIMAI_API_TOKEN` - Bearer token for authentication\n\n**Optional:**\n- `KIMAI_WORKSPACE` - Path for exports/temp files (defaults to `~/.openclaw/workspace/kimai`)\n\n**API Permissions required depend on operation:**\n- `view_own_timesheet`, `create_own_timesheet`, `edit_own_timesheet`, `delete_own_timesheet`\n- `view_other_timesheet` (for viewing other users' entries)\n- `view_customer`, `edit_customer`, `delete_customer`\n- `view_project`, `edit_project`, `delete_project`\n- `view_activity`, `edit_activity`, `delete_activity`\n- `view_team`, `edit_team`, `create_team`, `delete_team`\n- `view_invoice` (for invoice operations)\n- `view_user` (for user management)\n\n**Compatibility:** Requires Kimai 2.x with REST API enabled. Internet access required. Linux/macOS supported."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### 1. Quick Time Tracking\n\n```bash\n# List recent activities (to find project/activity IDs)\n./scripts/kimai_cli.py timesheets recent\n\n# Start tracking\n./scripts/kimai_cli.py timesheets start --project 1 --activity 5 --description \"Implementing API\"\n\n# Check active timers\n./scripts/kimai_cli.py timesheets active\n\n# Stop tracking\n./scripts/kimai_cli.py timesheets stop --id 123\n```\n\n### 2. Data Management Workflow\n\n```bash\n# Create customer → Project → Activity hierarchy\n./scripts/kimai_cli.py customers create --name \"Acme Corp\" --country DE --currency EUR --timezone Europe/Berlin\n./scripts/kimai_cli.py projects create --name \"Website Redesign\" --customer 1\n./scripts/kimai_cli.py activities create --name \"Development\" --project 1\n\n# List with filters\n./scripts/kimai_cli.py timesheets list --customer 1 --begin \"2024-01-01T00:00:00\" --exported 0\n```\n\n### 3. Export/Invoice Workflow\n\n```bash\n# Mark timesheets as exported (locks them)\n./scripts/kimai_cli.py timesheets export --id 123\n\n# List invoices\n./scripts/kimai_cli.py invoices list --status pending --begin 2024-01-01T00:00:00\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[CLI Tool Reference] Use `scripts/kimai_cli.py` for all operations. Structure follows API endpoints:\n\n### Timesheets (`timesheets`)\n- `list` - List entries (supports pagination, filters: user, customer, project, activity, tags, date range, exported status)\n- `get <id>` - Fetch single entry\n- `create` - Create manual entry or start timer (omit --end for active tracking)\n- `update <id>` - Patch existing entry\n- `delete <id>` - **Requires confirmation** (destructive)\n- `stop <id>` - Stop active timer\n- `restart <id>` - Restart finished entry (creates new)\n- `duplicate <id>` - Copy entry (resets export status)\n- `active` - List currently running timers\n- `recent` - Recent unique working sets (last activity per project/activity combination)\n- `export <id>` - Toggle export/lock status\n\n### Customers (`customers`)\n- `list` - List customers (filter: visible, term)\n- `get <id>` - Fetch customer details\n- `create` - Create new customer\n- `update <id>` - Update customer\n- `delete <id>` - **Requires confirmation** (cascades to projects/activities/timesheets)\n- `meta <id>` - Update custom fields\n- `rates <id>` - Manage customer-specific rates\n\n### Projects (`projects`)\n- `list` - List projects (filter: customer, visible, date range)\n- `get <id>` - Fetch project\n- `create` - Create project (requires customer ID)\n- `update <id>` - Update project\n- `delete <id>` - **Requires confirmation** (cascades to activities/timesheets)\n- `rates <id>` - Manage project rates\n\n### Activities (`activities`)\n- `list` - List activities (filter: project, visible, global only)\n- `get <id>` - Fetch activity\n- `create` - Create activity (can be global or project-specific)\n- `update <id>` - Update activity\n- `delete <id>` - **Requires confirmation** (cascades to timesheets)\n- `rates <id>` - Manage activity rates\n\n### Teams (`teams`)\n- `list`, `get`, `create`, `update`, `delete`\n- `member-add <team-id> <user-id>` - Add team member\n- `member-remove <team-id> <user-id>` - Remove member\n- `grant-customer <team-id> <customer-id>"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Safety & Boundaries] **⚠️ DESTRUCTIVE OPERATIONS**\n- `delete` operations on customers, projects, activities, timesheets, teams, or tags **require explicit user confirmation**.\n- Deleting customers cascades to all linked projects, activities, and timesheets [1].\n- Deleting projects cascades to activities and timesheets [1].\n- The CLI will show a preview of affected data and require \"yes\" confirmation.\n\n**API Security:**\n- API token is passed via `Authorization: Bearer` header [1].\n- Token is never logged or stored in CLI output.\n- Use `--dry-run` flag for testing (simulates API calls without executing).\n\n**Rate Limiting & Pagination:**\n- API returns paginated results (default 50 items) [1].\n- CLI auto-handles pagination for `list` commands (fetches all pages or respects `--limit`).\n- Use `--page` and `--size` for manual pagination control.\n\n**Data Privacy:**\n- Timesheet data may contain sensitive information.\n- Export files are saved to workspace with restricted permissions (600).\n- Redact personal data (emails, names) when sharing debug output.\n\n**Workspace Safety:**\n- All file exports (CSV, JSON) default to `KIMAI_WORKSPACE` or `~/.openclaw/workspace/kimai`.\n- Never write to system directories outside workspace without explicit confirmation."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Input/Output Specifications] **Inputs:**\n- Entity IDs (integers)\n- ISO 8601 datetime strings (YYYY-MM-DDTHH:mm:ss)\n- JSON data for create/update operations (via --json file or CLI args)\n- Filter parameters (customer, project, activity IDs, date ranges, visibility)\n\n**Outputs:**\n- JSON (default, pipe-friendly)\n- Table format (`--format table` for human readability)\n- CSV (`--format csv` for exports)\n- Exit codes: 0 (success), 1 (API error), 2 (validation error), 3 (cancelled by user)\n\n**Success Criteria:**\n- HTTP 200/201 for successful operations\n- Valid JSON response structure matching API schemas [1]\n- For exports: File created in workspace with expected record count"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Examples] ### Start tracking with description\n\n```bash\n./scripts/kimai_cli.py timesheets create \\\n  --project 5 \\\n  --activity 12 \\\n  --description \"Client meeting - requirements analysis\" \\\n  --tags \"meeting,urgent\"\n```\n\n### List and export non-exported hours\n\n```bash\n# Find billable hours not yet exported\n./scripts/kimai_cli.py timesheets list \\\n  --exported 0 \\\n  --billable 1 \\\n  --begin \"2024-01-01T00:00:00\" \\\n  --end \"2024-01-31T23:59:59\" \\\n  --format csv > january_hours.csv\n```\n\n### Update custom fields (meta)\n\n```bash\n./scripts/kimai_cli.py customers meta 42 \\\n  --name \"order_number\" \\\n  --value \"PO-2024-001\"\n```\n\n### Create team and assign resources\n\n```bash\n./scripts/kimai_cli.py teams create --name \"Development Team\" --members '[{\"user\": 1, \"teamlead\": true}]'\n./scripts/kimai_cli.py teams grant-project 1 5\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] **Common HTTP codes:**\n- `200` - Success\n- `201` - Created\n- `204` - No content (successful delete)\n- `400` - Bad request (validation error, missing fields)\n- `401` - Unauthorized (invalid/expired token)\n- `403` - Forbidden (insufficient permissions)\n- `404` - Not found (invalid ID)\n- `409` - Conflict (overlapping timesheet if not allowed by config)\n\n**CLI behavior:**\n- Validates required fields before API call (e.g., project+activity for timesheets [1])\n- Pretty-prints validation errors from API\n- Suggests fixes (e.g., \"Did you mean to use 'PATCH' instead of DELETE? Try setting visible=false to hide instead of delete\")"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Validation] Validate this skill using the Openclaw skills validator:\n\n```bash\nskills-ref validate ./kimai-time-tracking\n```\n\nTest API connectivity:\n\n```bash\nexport KIMAI_BASE_URL=\"https://your-kimai.example.com\"\nexport KIMAI_API_TOKEN=\"your-api-token\"\n./kimai-time-tracking/scripts/kimai_cli.py system ping\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[References] - Kimai REST API Docs: https://www.kimai.org/documentation/rest-api.html\n- Pagination Guide: https://www.kimai.org/documentation/api-pagination.html\n- API Spec: `references/api-reference.json` (complete OpenAPI schema)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "kimai_time_tracking"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x7466/kimai-time-tracking/SKILL.md"
+}

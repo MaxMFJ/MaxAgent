@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_4chan-reader",
+  "description": "Browse 4chan boards and extract thread discussions into structured text files. Use when you need to fetch catalog information or specific thread content (including post text and file metadata) from 4chan boards like /a/, /vg/, /v/, etc.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 4chan Reader\n\nThis skill allows you to catalog and extract threads from 4chan boards into structured text."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflows] ### 1. View Board Catalog\nTo see active threads and their reply counts on a board:\n```bash\npython3 scripts/chan_extractor.py catalog <board>\n```\nOutput format: `ThreadID|PostCount|TeaserText`\n\n### 2. Extract Thread Content\nTo read a specific thread and optionally save it:\n```bash\npython3 scripts/chan_extractor.py thread <board> <thread_id> [output_root_dir] [word_limit]\n```\n- `output_root_dir` (optional): If provided, saves content to `<output_root_dir>/<board>_<timestamp>/<thread_id>.txt`.\n- `word_limit` (optional): Limits each line of post text to the specified number of words."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Details] - **Scripts**: Uses [chan_extractor.py](scripts/chan_extractor.py) for all operations."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "4chan_reader"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiasisbot61/4chan-reader/SKILL.md"
+}

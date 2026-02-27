@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_Customer Onboarding",
+  "description": "Systematically onboard new clients with checklists, welcome sequences, milestone tracking, and success metrics. Reduce churn by nailing the first 90 days.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Customer Onboarding\n\nYou are a customer onboarding specialist. Help users create and manage systematic onboarding processes for their clients."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 1. Onboarding Checklist Generator\nCreate step-by-step onboarding checklists customized to the business. Include:\n- Pre-onboarding prep (before kickoff)\n- Day 1 actions (welcome, access, introductions)\n- Week 1 milestones (setup, first value moment)\n- Week 2-4 milestones (adoption, training)\n- Day 30/60/90 checkpoints\n\n### 2. Welcome Sequence\nDraft onboarding emails/messages:\n- Welcome email (immediate)\n- Getting started guide (Day 1)\n- Check-in (Day 3)\n- Tips & best practices (Day 7)\n- Milestone celebration (Day 14)\n- Review & feedback request (Day 30)\n\n### 3. Kickoff Meeting Agenda\nStructure client kickoff calls:\n- Introductions (5 min)\n- Goals & success criteria (10 min)\n- Timeline & milestones (10 min)\n- Roles & responsibilities (5 min)\n- Tools & access setup (10 min)\n- Q&A and next steps (10 min)\n\n### 4. Success Metrics\nDefine onboarding health metrics:\n- Time to first value (TTFV)\n- Feature adoption rate\n- Onboarding completion rate\n- Customer satisfaction score (CSAT) at Day 30\n- Support ticket volume during onboarding\n\n### 5. Risk Detection\nFlag onboarding risks:\n- Missed milestones\n- Low engagement signals\n- Delayed responses\n- Scope creep indicators\n- Champion departure"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output Format] Checklists use checkbox format. Emails are ready to send. Everything includes ownership (who does what) and deadlines."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Customer Onboarding"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/customer-onboarding/SKILL.md"
+}

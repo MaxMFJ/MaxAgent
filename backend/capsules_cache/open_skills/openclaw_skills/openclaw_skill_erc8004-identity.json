@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_erc8004-identity",
+  "description": "Maintain your agent on-chain identity (ERC-8004) on BNB Chain. Register, check status, and manage your agent metadata securely using the BNBAgent SDK.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ERC-8004 Agent Identity\n\nThis skill enables your agent to register and manage its own on-chain identity on BNB Chain using the ERC-8004 standard."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Self-Registration:** Register yourself as an agent (ERC-8004).\n- **Gasless:** Uses MegaFuel Paymaster (BSC Testnet only) for zero-cost registration.\n- **Identity Management:** Update your metadata (URI), endpoints, and description.\n- **Verification:** Users can verify your agent status on [8004scan.io](https://testnet.8004scan.io)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation] This skill requires the `bnbagent` Python SDK.\n\n```bash\n# Install bnbagent SDK (from test.pypi.org as per release)\npip install --index-url https://test.pypi.org/simple/ \\\n  --extra-index-url https://pypi.org/simple \\\n  bnbagent==0.1.6\n\n# Or using uv (recommended for speed)\nuv pip install --index-url https://test.pypi.org/simple/ \\\n  --extra-index-url https://pypi.org/simple \\\n  bnbagent==0.1.6\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Security Note] This skill manages a wallet specifically for your agent's identity.\n- **Password:** The wallet is encrypted. Set `WALLET_PASSWORD` env var or provide it when prompted.\n- **Private Key:** Stored locally in `.bnbagent_state` (encrypted). Do not share this file."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage] Create a script (or ask me to create one) to manage your identity.\n\n### 1. Register (First Time)\n\nIf you haven't registered on-chain yet:\n\n```python\nimport os\nfrom bnbagent import ERC8004Agent, EVMWalletProvider, AgentEndpoint\n\n# 1. Setup Wallet & SDK\npassword = os.getenv(\"WALLET_PASSWORD\", \"default-secure-password\")\nwallet = EVMWalletProvider(password=password)\nsdk = ERC8004Agent(wallet_provider=wallet, network=\"bsc-testnet\")\n\n# 2. Define Your Identity\nagent_uri = sdk.generate_agent_uri(\n    name=\"My Agent Name\",\n    description=\"I am an autonomous agent running on OpenClaw.\",\n    endpoints=[\n        AgentEndpoint(\n            name=\"activity\",\n            endpoint=\"https://moltbook.com/u/MyAgentName\", # Example: Link to your social profile\n            version=\"1.0.0\"\n        )\n    ]\n)\n\n# 3. Register on BNB Chain (Gasless via Paymaster)\nprint(\"Registering...\")\nresult = sdk.register_agent(agent_uri=agent_uri)\nprint(f\"Success! Agent ID: {result['agentId']}\")\nprint(f\"View registered agents: https://testnet.8004scan.io/agents?chain=97\")\n```\n\n### 2. Check Status\n\n```python\n# Check if you are already registered locally\ninfo = sdk.get_local_agent_info(\"My Agent Name\")\nif info:\n    print(f\"I am registered! Agent ID: {info['agent_id']}\")\n    # Get on-chain details\n    chain_info = sdk.get_agent_info(info['agent_id'])\n    print(f\"On-chain Address: {chain_info['agentAddress']}\")\n```\n\n### 3. Update Identity\n\nIf your endpoints or description change:\n\n```python\nlocal_info = sdk.get_local_agent_info(\"My Agent Name\")\nif local_info:\n    agent_id = local_info['agent_id']\n    \n    # Generate new URI\n    new_uri = sdk.generate_agent_uri(\n        name=\"My Agent Name\",\n        description=\"Updated description.\",\n        endpoints=[...],\n        agent_id=agent_id\n    )\n    \n    # Update on-chain\n    sdk.set_agent_uri(agent_id=agent_id, agent_uri=new_uri)\n    print(\"Identity updated successfully.\")\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Explorers] - **BSC Testnet:** https://testnet.8004scan.io/agents?chain=97\n- **BSC Mainnet:** https://www.8004scan.io/agents?chain=56 (Coming Soon)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "erc8004_identity"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xlucasliao/bnbchain-erc8004-agent/SKILL.md"
+}

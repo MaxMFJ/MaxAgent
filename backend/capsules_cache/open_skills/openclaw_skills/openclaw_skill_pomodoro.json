@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_pomodoro",
+  "description": "Use this skill when a user wants to run timed focus sessions (Pomodoro technique) from the terminal.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pomodoro Timer"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to use] - User asks to start a focus session, work timer, or pomodoro."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How it works] Run a 25-minute focus block followed by a 5-minute break. After 4 blocks, take a 15-minute break."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Start a session] ```bash\necho \"🍅 Focus started at $(date +%H:%M)\" && sleep 1500 && osascript -e 'display notification \"Time for a break!\" with title \"Pomodoro\"' && echo \"Break time at $(date +%H:%M)\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Custom duration (minutes)] ```bash\nMINS=15 && echo \"Focus: ${MINS}m started at $(date +%H:%M)\" && sleep $((MINS * 60)) && echo \"Done at $(date +%H:%M)\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Log completed sessions] ```bash\necho \"$(date +%Y-%m-%d) $(date +%H:%M) - 25min focus\" >> ~/pomodoro.log\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Review today's log] ```bash\ngrep \"$(date +%Y-%m-%d)\" ~/pomodoro.log 2>/dev/null || echo \"No sessions today.\"\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pomodoro"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abeljseba/makeovern/SKILL.md"
+}

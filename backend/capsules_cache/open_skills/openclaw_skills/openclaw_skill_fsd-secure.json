@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_fsd-secure",
+  "description": "Full Self-Driving agent with highest safety standards (Camera-Only, Redundant Checks).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # FSD Secure Skill\n\nThis skill implements a **Camera-Only Full Self-Driving** agent designed for maximum safety.\nIt runs in a simulated environment and uses **Dual-Pass Analysis** to verify clear paths."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Safety Features] - **Dual-Pass Verification**: Two independent algorithms must agree the path is clear.\n- **Temporal Consistency**: Requires 3 consecutive safe frames before acceleration.\n- **Fail-Safe**: Any uncertainty triggers an immediate Emergency Stop."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] - `drive`: Start the autonomous driving simulation."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fsd_secure"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/fsd-secure-skill/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_stitch-ui-designer",
+  "description": "Design, preview, and generate UI code using Google Stitch (via MCP). Helps developers choose the best UI by generating previews first, allowing iteration, and then exporting code.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Stitch UI Designer\n\nThis skill allows you to design high-quality user interfaces using Google Stitch."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflow] Follow this process to help the user design a UI:\n\n1.  **Setup (First Time Only)**\n    -   Check if the `stitch` server is configured in `mcporter`.\n    -   If not, configure it: `mcporter config add stitch --command \"npx\" --args \"-y stitch-mcp-auto\"`\n    -   Ensure the user is authenticated with Google Cloud (the tool may prompt for `gcloud auth`).\n\n2.  **Generate & Preview**\n    -   Ask for a description of the interface (e.g., \"Login screen for a crypto app\").\n    -   Use `stitch.generate_screen_from_text` with the prompt.\n    -   **Important**: This returns a `screenId`.\n    -   Immediately fetch the preview image using `stitch.fetch_screen_image(screenId)`.\n    -   Show the image to the user. Do **not** fetch the code yet.\n\n3.  **Iterate & Customize**\n    -   Ask the user for feedback on the preview.\n    -   If changes are needed, use `stitch.generate_screen_from_text` again (potentially using `stitch.extract_design_context` from the previous screen to maintain style) or just refine the prompt.\n    -   Show the new preview.\n\n4.  **Export Code**\n    -   Once the user approves the design (\"This looks great\"), fetch the code.\n    -   Use `stitch.fetch_screen_code(screenId)`.\n    -   Present the HTML/CSS code or save it to a file as requested."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Tools (via mcporter)] Call these using `mcporter call stitch.<tool_name> <args>`:\n\n-   **generate_screen_from_text**\n    -   Args: `prompt` (string), `projectId` (optional, usually auto-detected by `stitch-mcp-auto`)\n    -   Returns: `screenId`, `name`, `url`\n    -   *Use this to start a design.*\n\n-   **fetch_screen_image**\n    -   Args: `screenId` (string)\n    -   Returns: Image data (display this to the user).\n    -   *Use this to show the preview.*\n\n-   **fetch_screen_code**\n    -   Args: `screenId` (string)\n    -   Returns: `html` (string), `css` (string), etc.\n    -   *Use this ONLY after user approval.*\n\n-   **create_project**\n    -   Args: `name` (string)\n    -   *Use if no project exists.*"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tips] -   **Project Context**: `stitch-mcp-auto` tries to manage the project ID automatically. If you get errors about missing project IDs, ask the user to create or select a Google Cloud project first using `create_project` or by setting the `GOOGLE_CLOUD_PROJECT` env var.\n-   **Preview First**: Always prioritize the visual preview. Generating code for a bad design wastes tokens and time.\n-   **Stitch MCP Auto**: We use `stitch-mcp-auto` because it handles the complex Google auth setup more gracefully than the standard package."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "stitch_ui_designer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎨",
+        "requires": {
+          "bins": [
+            "npx",
+            "mcporter"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a2mus/stitch-ui-designer/SKILL.md"
+}

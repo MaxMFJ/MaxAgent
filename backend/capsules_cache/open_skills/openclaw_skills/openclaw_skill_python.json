@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_python",
+  "description": "Python coding guidelines and best practices. Use when writing, reviewing, or refactoring Python code. Enforces PEP 8 style, syntax validation via py_compile, unit test execution, modern Python versions only (no EOL), uv for dependency management when available, and idiomatic Pythonic patterns.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Python Coding Guidelines"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Code Style (PEP 8)] - 4 spaces for indentation (never tabs)\n- Max line length: 88 chars (Black default) or 79 (strict PEP 8)\n- Two blank lines before top-level definitions, one within classes\n- Imports: stdlib → third-party → local, alphabetized within groups\n- Snake_case for functions/variables, PascalCase for classes, UPPER_CASE for constants"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Before Committing] ```bash\n# Syntax check (always)\npython -m py_compile *.py\n\n# Run tests if present\npython -m pytest tests/ -v 2>/dev/null || python -m unittest discover -v 2>/dev/null || echo \"No tests found\"\n\n# Format check (if available)\nruff check . --fix 2>/dev/null || python -m black --check . 2>/dev/null\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Python Version] - **Minimum:** Python 3.10+ (3.9 EOL Oct 2025)\n- **Target:** Python 3.11-3.13 for new projects\n- Never use Python 2 syntax or patterns\n- Use modern features: match statements, walrus operator, type hints"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dependency Management] Check for uv first, fall back to pip:\n```bash\n# Prefer uv if available\nif command -v uv &>/dev/null; then\n    uv pip install <package>\n    uv pip compile requirements.in -o requirements.txt\nelse\n    pip install <package>\nfi\n```\n\nFor new projects with uv: `uv init` or `uv venv && source .venv/bin/activate`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Pythonic Patterns] ```python\n# ✅ List/dict comprehensions over loops\nsquares = [x**2 for x in range(10)]\nlookup = {item.id: item for item in items}\n\n# ✅ Context managers for resources\nwith open(\"file.txt\") as f:\n    data = f.read()\n\n# ✅ Unpacking\nfirst, *rest = items\na, b = b, a  # swap\n\n# ✅ EAFP over LBYL\ntry:\n    value = d[key]\nexcept KeyError:\n    value = default\n\n# ✅ f-strings for formatting\nmsg = f\"Hello {name}, you have {count} items\"\n\n# ✅ Type hints\ndef process(items: list[str]) -> dict[str, int]:\n    ...\n\n# ✅ dataclasses/attrs for data containers\nfrom dataclasses import dataclass\n\n@dataclass\nclass User:\n    name: str\n    email: str\n    active: bool = True\n\n# ✅ pathlib over os.path\nfrom pathlib import Path\nconfig = Path.home() / \".config\" / \"app.json\"\n\n# ✅ enumerate, zip, itertools\nfor i, item in enumerate(items):\n    ...\nfor a, b in zip(list1, list2, strict=True):\n    ...\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Anti-patterns to Avoid] ```python\n# ❌ Mutable default arguments\ndef bad(items=[]):  # Bug: shared across calls\n    ...\ndef good(items=None):\n    items = items or []\n\n# ❌ Bare except\ntry:\n    ...\nexcept:  # Catches SystemExit, KeyboardInterrupt\n    ...\nexcept Exception:  # Better\n    ...\n\n# ❌ Global state\n# ❌ from module import * \n# ❌ String concatenation in loops (use join)\n# ❌ == None (use `is None`)\n# ❌ len(x) == 0 (use `not x`)\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Testing] - Use pytest (preferred) or unittest\n- Name test files `test_*.py`, test functions `test_*`\n- Aim for focused unit tests, mock external dependencies\n- Run before every commit: `python -m pytest -v`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Docstrings] ```python\ndef fetch_user(user_id: int, include_deleted: bool = False) -> User | None:\n    \"\"\"Fetch a user by ID from the database.\n    \n    Args:\n        user_id: The unique user identifier.\n        include_deleted: If True, include soft-deleted users.\n    \n    Returns:\n        User object if found, None otherwise.\n    \n    Raises:\n        DatabaseError: If connection fails.\n    \"\"\"\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Quick Checklist] - [ ] Syntax valid (`py_compile`)\n- [ ] Tests pass (`pytest`)\n- [ ] Type hints on public functions\n- [ ] No hardcoded secrets\n- [ ] f-strings, not `.format()` or `%`\n- [ ] `pathlib` for file paths\n- [ ] Context managers for I/O\n- [ ] No mutable default args"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "python"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adarshdigievo/python/SKILL.md"
+}

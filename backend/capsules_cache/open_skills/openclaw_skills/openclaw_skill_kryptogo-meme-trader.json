@@ -1,0 +1,150 @@
+{
+  "id": "openclaw_skill_kryptogo-meme-trader",
+  "description": "Analyze and trade meme coins using KryptoGO's on-chain cluster analysis platform. Covers wallet clustering, address labels, accumulation/distribution detection, and automated swap execution via the Agent Trading API.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # KryptoGO Meme Trader Agent Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill enables an AI agent to **autonomously analyze and trade** meme coins through the KryptoGO platform. It combines deep on-chain cluster analysis with automated trade execution.\n\n**Analysis** (multi-chain: Solana, BSC, Base, Monad):\n- Wallet clustering — identify entities controlling multiple addresses\n- Accumulation/distribution detection — who's buying vs. selling\n- Address behavior labels — smart money, whales, snipers, developers\n- Network-wide accumulation signals (Pro/Alpha tier)\n\n**Trading** (Solana only):\n- Portfolio monitoring with per-token PnL tracking\n- Automated swap execution via DEX aggregator\n- Local transaction signing (private key never leaves the machine)\n\n**Important:** Analysis supports Solana, BSC, Base, and Monad. Trading (swap/submit) is Solana-only.\n\n**Workflow:** discover signal → analyze token → assess risk → execute trade → monitor position.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - User asks to analyze a meme coin or token on Solana/BSC/Base/Monad\n- User asks to trade, buy, or sell tokens\n- User asks to scan for trending tokens or market opportunities\n- User asks to monitor portfolio positions or check PnL\n- Heartbeat/cron-triggered periodic portfolio monitoring and signal scanning\n- Pro/Alpha subscribers leveraging signal dashboard for curated accumulation signals"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[When NOT to Use] - BTC, ETH, or major L1 token macro analysis (not meme-specific)\n- NFT-related questions\n- Cross-chain bridging or non-DEX transactions\n- General crypto news or price predictions without on-chain analysis\n- Non-Solana trading execution\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup Flow] ### 1. Get API Key\n\n1. Go to [kryptogo.xyz/account](https://www.kryptogo.xyz/account) and create an API key\n2. Add it to `~/.openclaw/workspace/.env` (the workspace root `.env`):\n   ```bash\n   echo 'KRYPTOGO_API_KEY=sk_live_YOUR_KEY' >> ~/.openclaw/workspace/.env && chmod 600 ~/.openclaw/workspace/.env\n   ```\n3. Tell the agent \"I've set my API key in .env\" — the agent will verify it works by calling `/agent/account`\n\n> **Do NOT paste your API key directly in chat.** Chat histories may be stored and could expose your key. Always set secrets via `.env` file or environment variables.\n>\n> All credentials are stored in `~/.openclaw/workspace/.env` — the OpenClaw workspace root. This ensures heartbeat/cron sessions can find them automatically.\n>\n> The API key is tied to your KryptoGO account (for billing/tier), NOT to a specific wallet.\n> Your login wallet on kryptogo.xyz may differ from the agent's trading wallet.\n\n### 2. Generate Agent Wallet\n\nRun the setup script to create a dedicated Solana keypair:\n\n```bash\npython3 scripts/setup.py\n```\n\nThis will:\n1. Check Python 3.10+ and install `solders` + `requests` if missing\n2. Generate a new Solana keypair\n3. Save the private key (base58) and public address to `~/.openclaw/workspace/.env`\n4. Set `.env` permissions to 600 (owner read/write only)\n5. Print the public address for the user to fund with SOL\n\n### 3. Fund the Wallet\n\nSend SOL to the agent's public address (minimum 0.1 SOL for gas + trading capital).\n\n### Security Rules\n\n- **NEVER** print, log, or include the private key in any message or CLI argument\n- **NEVER** accept secrets (API keys, private keys) pasted directly in chat — instruct users to set them in `.env`\n- **NEVER** commit `.env` to version control\n- **NEVER** use the Read tool on `~/.openclaw/workspace/.env` — load credentials via `source` command only, which doesn't expose values in tool output\n- The private key stays in memory only during local signing — it is never sent to any server\n- `.env` must always "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Authentication] All endpoints require Bearer token authentication:\n\n```\nAuthorization: Bearer sk_live_<48 hex chars>\n```\n\nSome features (signal dashboard, KOL finder) additionally require Pro or Alpha tier subscription.\n\n| Tier  | Daily API Calls | Trading Fee | Signal Dashboard | KOL Finder |\n|-------|-----------------|-------------|------------------|------------|\n| Free  | 50 calls/day    | 1%          | No               | No         |\n| Pro   | 500 calls/day   | 0.5%        | Yes              | Yes        |\n| Alpha | 5,000 calls/day | 0%          | Yes              | Yes        |\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Agent Behavior] ### Session Initialization\n\nOn every session start (including heartbeat/cron), the agent MUST load credentials before making any API calls:\n\n```bash\nsource ~/.openclaw/workspace/.env\n```\n\nThis makes `KRYPTOGO_API_KEY`, `SOLANA_PRIVATE_KEY`, and `SOLANA_WALLET_ADDRESS` available as environment variables. Do NOT use the Read tool on `.env` — the `source` command loads values without exposing them in tool output.\n\n### Autonomous Mode (Default)\n\n**Automatic actions (no user confirmation needed):**\n- Scanning trending tokens (default: top 10 per scan)\n- Running full analysis pipeline on candidate tokens\n- Checking portfolio status and PnL\n- Executing trades that pass ALL criteria in the Bullish Checklist\n- Stop-loss sells when unrealized loss exceeds threshold\n- Take-profit sells when gain exceeds target\n\n**Requires user confirmation:**\n- Risk level is \"medium\" (ambiguous signals)\n- Position size exceeds user-defined max\n- Selling at a loss outside stop-loss rules\n- Any action outside the defined entry/exit strategies\n\n**Reporting:**\n- After each trade: summarize analysis result + trade details to the user (concise text, not raw JSON)\n- After each scan: brief summary of tokens scanned, why they passed/failed\n- On errors: report the issue and suggest next steps\n\n### User Preferences\n\nThe user can customize behavior by telling the agent their preferences. Store in `memory/trading-preferences.json`:\n\n```json\n{\n  \"max_position_size\": 0.1,\n  \"max_open_positions\": 5,\n  \"max_daily_trades\": 20,\n  \"stop_loss_pct\": 30,\n  \"take_profit_pct\": 100,\n  \"min_market_cap\": 500000,\n  \"scan_count\": 10,\n  \"risk_tolerance\": \"moderate\",\n  \"chains\": [\"solana\"]\n}\n```\n\n| Preference | Default | Description |\n|------------|---------|-------------|\n| `max_position_size` | 0.1 SOL | Max SOL per trade |\n| `max_open_positions` | 5 | Max concurrent open positions |\n| `max_daily_trades` | 20 | Max trades per day (buys + sells) |\n| `stop_loss_pct` | 30% | Auto-sell when loss exceeds this |\n| `take_profit_p"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Safety Guardrails] This skill handles real funds. These guardrails limit blast radius if credentials are mishandled or the agent malfunctions.\n\n### Credential Isolation\n\n- **API key and private key are stored ONLY in `~/.openclaw/workspace/.env`** with chmod 600 (owner read/write)\n- The agent reads credentials via environment variables (`source ~/.openclaw/workspace/.env`) — they are **never** printed, logged, passed as CLI arguments, or included in chat messages\n- The agent must **never** use the Read tool on `.env` — the `source` command keeps values out of tool output\n- If a user pastes a secret in chat, the agent should warn them and suggest rotating it\n\n### Trading Limits (Hard Caps)\n\nThese limits apply even if user preferences set higher values:\n\n| Limit | Default | Can User Override? |\n|-------|---------|--------------------|\n| Max single trade | 0.1 SOL | Yes, via `max_position_size` in preferences |\n| Max concurrent positions | 5 | Yes, via `max_open_positions` (default: 5) |\n| Max daily trade count | 20 | Yes, via `max_daily_trades` (default: 20) |\n| Price impact abort | >10% | No — always abort |\n| Price impact warn | >5% | No — always warn user |\n\nIf any limit is hit, the agent **must stop and notify the user** — never silently skip.\n\n### Autonomous Trading Scope\n\n- The agent **only** executes trades that pass ALL criteria in the Bullish Checklist (Step 6)\n- Ambiguous signals (risk = \"medium\") **always** require user confirmation\n- The agent **cannot** modify its own trading parameters — only propose changes for user approval\n- All trade executions are **immediately reported** to the user via the configured channel (Telegram, Discord, etc.)\n\n### Kill Switch\n\nTo immediately stop all autonomous trading:\n1. **Remove the Trading Agent section from HEARTBEAT.md** — stops heartbeat-triggered trading\n2. **Run `openclaw cron remove <name>`** — stops cron-triggered trading\n3. **Remove or rename `.env`** — prevents any API calls or signing\n\nThe agent has no persistence mechanism bey"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Heartbeat & Cron Integration] ### First-Time Auto-Setup\n\n**Agent instruction:** The first time this skill is loaded in a conversation, check if HEARTBEAT.md already contains a \"Trading Agent\" section. If not, **proactively offer to add it** — ask the user: \"I can set up periodic trading monitoring. Should I add it to your HEARTBEAT.md?\" If confirmed, append the heartbeat block below.\n\n> Note: OpenClaw does not auto-modify HEARTBEAT.md on skill install. The agent must do this on first use.\n\n### Heartbeat — Periodic Monitoring (~30 min intervals)\n\nAdd the following to your `HEARTBEAT.md`:\n\n```markdown"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Trading Agent] - Check portfolio: call /agent/portfolio, execute stop-loss/take-profit if triggered\n- Scan for opportunities: use signal dashboard (Pro/Alpha) or trending tokens API\n- Execute qualifying trades in autonomous mode\n- Log closed trades to journal, run post-trade reflection, trigger strategy review if due\n- ALWAYS report any trade executed to the user — never silent HEARTBEAT_OK after trading\n```\n\n**Heartbeat is best for:** 30-minute-level monitoring where slight timing drift is acceptable. Multiple checks (portfolio + scan) batch into a single heartbeat turn, saving API calls.\n\n### Cron — Precise Scheduling (5-15 min intervals)\n\nFor more frequent or precisely timed scans, use OpenClaw cron instead of heartbeat:\n\n```bash\n# Example: scan every 15 minutes during market hours (UTC)\nopenclaw cron add --every 15m --name \"trading-scan\" --prompt \"Run the kryptogo-meme-trader scan workflow: check portfolio for stop-loss/take-profit, then scan top 10 trending tokens. Execute qualifying trades. Report any actions taken.\"\n\n# Example: daily portfolio summary at 9 AM Taipei time (1 AM UTC)\nopenclaw cron add --cron \"0 1 * * *\" --name \"daily-portfolio\" --prompt \"Call /agent/portfolio and send me a daily summary of all open positions with PnL.\"\n\n# List active crons\nopenclaw cron list\n\n# Remove a cron\nopenclaw cron remove trading-scan\n```\n\n**Cron is best for:** exact timing, high-frequency scans (every 5-15 min), standalone tasks that don't need conversational context, or when you want a different model/thinking level.\n\n**Recommendation:** Use heartbeat for casual monitoring (check every ~30 min). Switch to cron if you want aggressive 5-15 min scan intervals or precise daily reports.\n\n### Heartbeat Workflow\n\n1. **Portfolio check** → Call `/agent/portfolio` with agent's wallet address\n   - Execute stop-loss if unrealized loss > `stop_loss_pct`\n   - Execute take-profit if unrealized gain > `take_profit_pct`\n   - Flag stale positions (held > 7 days with no significant movement)\n2. **Signa"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[On-Chain Analysis Framework (7-Step Pipeline)] ### Step 1: Token Overview\n\nCall `/token-overview?address=<mint>&chain_id=<id>` — get name, price, market cap, holders, risk_level, liquidity.\n\n**Filter:** Skip if market cap < user's `min_market_cap`.\n\n### Step 2: Cluster Analysis\n\nCall `/analyze/<mint>?chain_id=<id>` — get wallet clusters, top holders, address metadata.\n\n**Key metric — Cluster Holding Ratio:**\n- ≥30-35% = \"controlled\" — a major entity holds significant supply\n- ≥50% = highly concentrated — high manipulation risk\n- <10% = dispersed — no clear major holder\n\n**Scam rule:** If a SINGLE cluster holds >50% of supply → skip (rug pull risk).\n\n### Step 3: Cluster Trend\n\nCall `/analyze-cluster-change/<mint>` — get ratio changes across 15m/1h/4h/1d/7d.\n\n**Core insight:** Price and cluster holdings DIVERGING is the most important signal.\n- Rising price + falling cluster % = distribution (bearish)\n- Falling price + rising cluster % = accumulation (bullish)\n\n### Step 4: Address Labels\n\nCall `/token-wallet-labels` for token-specific labels (developer, sniper, bundle, new_wallet).\nCall `/wallet-labels` for behavior labels (smart_money, whale, blue_chip_profit, high_frequency).\n\n**Check sell pressure:** Developer/sniper/bundle still holding = high dump risk.\n\n### Step 5: Deep Dive (Optional)\n\n- `/balance-history` — time-series balance for specific wallets\n- `/balance-increase/<mint>` — who bought most in a time range\n- `/top-holders-snapshot/<mint>` — point-in-time holder snapshot\n- `/analyze-dca-limit-orders/<mint>` — DCA/limit order detection (Solana only)\n- `/cluster-wallet-connections` — fund flow between wallets\n\n### Step 6: Decision\n\nApply the Bullish Checklist from the Decision Framework:\n- Market cap ≥ $500K\n- Cluster ratio ≥ 30% and rising\n- Smart money/whale clusters increasing\n- Developer/sniper/bundle positions cleared\n- No high proportion of new wallets or high-frequency traders\n\n> Full decision framework: see `references/decision-framework.md`\n\n### Step 7: Execute Trade\n\nIf all checks pass:\n1. `POST "
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[API Quick Reference] | Endpoint | Method | Auth | Purpose |\n|----------|--------|------|---------|\n| `/agent/account` | GET | Yes | Check tier & quota |\n| `/agent/trending-tokens` | GET | Yes | Scan trending tokens with filters |\n| `/agent/portfolio` | GET | Yes | Wallet portfolio + PnL |\n| `/agent/swap` | POST | Yes | Build unsigned swap tx (Solana only) |\n| `/agent/submit` | POST | Yes | Submit signed tx (Solana only) |\n| `/token-overview` | GET | Yes | Token metadata & market data |\n| `/analyze/:token_mint` | GET | Yes | Full cluster analysis |\n| `/analyze-cluster-change/:token_mint` | GET | Yes | Cluster ratio trends |\n| `/balance-history` | POST | Yes | Time-series balance data |\n| `/wallet-labels` | POST | Yes | Behavior labels (smart money, whale...) |\n| `/token-wallet-labels` | POST | Yes | Token-specific labels (dev, sniper...) |\n| `/signal-dashboard` | GET | Pro+ | **Curated accumulation signals — prefer this over trending tokens when available** |\n| `/balance-increase/:token_mint` | GET | Yes | Range accumulation filter |\n| `/top-holders-snapshot/:token_mint` | GET | Yes | Point-in-time holder snapshot |\n| `/historical-top-holders/:token_mint` | GET | Yes | All-time top holders |\n| `/fresh-addresses/:token_mint` | GET | Yes | New wallet holders (Solana only) |\n| `/analyze-dca-limit-orders/:token_mint` | GET | Yes | DCA & limit order detection (Solana only) |\n| `/price-chart` | GET | No | OHLCV candlestick data |\n| `/batch-token-prices` | POST | No | Batch price lookup |\n| `/cluster-wallet-connections` | POST | Yes | Fund flow between wallets |\n| `/wallet-assets` | GET | Yes | Wallet token holdings |\n| `/signal-history/:address` | GET | Yes | Historical signals for token |\n\n> Full request/response details: see `references/api-reference.md`\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Multi-Chain Support] | Chain | chain_id | Address Format | Analysis | Trading |\n|-------|----------|----------------|----------|---------|\n| Solana | `501` (default) | Base58 | Yes | Yes |\n| BSC | `56` | Hex (0x-prefixed) | Yes | No |\n| Base | `8453` | Hex (0x-prefixed) | Yes | No |\n| Monad | `143` | Hex (0x-prefixed) | Yes | No |\n\nPass `chain_id` as a query parameter on analysis endpoints. Trading endpoints only work with Solana.\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Error Handling] | Code | Meaning | Action |\n|------|---------|--------|\n| 400 | Bad Request | Check parameters |\n| 401 | Unauthorized | Check API key |\n| 402 | Quota Exceeded | Wait for daily reset or upgrade tier |\n| 403 | Forbidden | Endpoint requires higher tier |\n| 502 | Bad Gateway | Retry once after 10s |\n| 504 | Timeout | Cluster analysis taking too long, retry later |\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Learning & Adaptation] The agent improves over time by recording every trade, analyzing outcomes, and adjusting its strategy based on accumulated experience.\n\n### Trade Journal\n\nEvery trade (buy or sell) MUST be logged to `memory/trading-journal.json` immediately after execution:\n\n```json\n{\n  \"trades\": [\n    {\n      \"id\": \"2026-02-25T14:30:00Z_BONK\",\n      \"token_mint\": \"DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263\",\n      \"symbol\": \"BONK\",\n      \"chain_id\": \"501\",\n      \"action\": \"BUY\",\n      \"amount_sol\": 0.1,\n      \"token_amount\": 150000000,\n      \"price_at_entry\": 0.0000234,\n      \"market_cap_at_entry\": 1500000,\n      \"timestamp\": \"2026-02-25T14:30:00Z\",\n      \"entry_reasoning\": {\n        \"cluster_ratio\": 0.35,\n        \"cluster_change_1d\": 0.05,\n        \"smart_money_count\": 3,\n        \"dev_exited\": true,\n        \"sniper_cleared\": true,\n        \"signal_source\": \"signal_dashboard\",\n        \"risk_level\": \"low\"\n      },\n      \"outcome\": null\n    }\n  ]\n}\n```\n\nWhen a position is closed (sell), update the corresponding BUY entry's `outcome`:\n\n```json\n{\n  \"outcome\": {\n    \"exit_price\": 0.0000468,\n    \"exit_timestamp\": \"2026-02-26T09:15:00Z\",\n    \"exit_reason\": \"take_profit\",\n    \"pnl_sol\": 0.1,\n    \"pnl_pct\": 100.0,\n    \"holding_duration_hours\": 18.75,\n    \"cluster_ratio_at_exit\": 0.28,\n    \"lesson\": \"Cluster started distributing 2h before exit — could have sold earlier at higher price\"\n  }\n}\n```\n\n### Mandatory Post-Trade Reflection\n\n**After every SELL (win or loss), the agent MUST:**\n\n1. Compare the entry reasoning with the actual outcome\n2. Identify what the analysis got right and what it missed\n3. Write a one-sentence `lesson` in the outcome record\n4. If the loss was >20%, do a **Loss Post-Mortem** (see below)\n\n### Loss Post-Mortem\n\nWhen a trade results in a loss >20%, the agent MUST perform a detailed post-mortem:\n\n1. **Re-run analysis** on the token at current state — what changed since entry?\n2. **Identify the miss**: Was it a signal that was there but ignored? An unexpected event? A pa"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Always check `/agent/account` first** to confirm tier and remaining quota\n2. **Always check `/agent/portfolio` on startup** to detect existing positions\n3. **Never expose private keys** in logs, messages, or CLI arguments\n4. **Validate price impact** before submitting — abort if >10%, warn if >5%\n5. **Sign and submit promptly** — blockhash expires after ~60 seconds\n6. **Use stop losses** — meme coins can drop 50%+ in minutes\n7. **Persist state** — save trading state to `memory/trading-state.json` after every action\n8. **Respect rate limits** — check quota before batch operations\n9. **Log every trade to journal** — no exceptions, even failed trades are learning data\n10. **Reflect after every exit** — write a lesson, even for wins (what made it work?)\n11. **Review and propose, never auto-adjust** — parameter changes require user approval\n12. **Read trading-lessons.md before scanning** — avoid repeating known bad patterns\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Core Concepts Quick Reference] | Concept | Key Insight |\n|---------|-------------|\n| **Cluster** | Group of wallets controlled by same entity, linked by fund flow/timing/transactions |\n| **Cluster Ratio** | % of supply held by all clusters. ≥30% = controlled, ≥50% = high risk, <10% = dispersed |\n| **Developer** | Deployed the token. Lowest cost basis = highest dump risk |\n| **Sniper** | Bought within 1 second of creation. If not cleared = sell pressure |\n| **Smart Money** | Realized profit >$100K. Their accumulation often precedes price moves |\n| **Accumulation** | Cluster % rising + price consolidating = bullish |\n| **Distribution** | Price rising + cluster % falling = bearish |\n\n> Full concepts guide: see `references/concepts.md`\n\n---"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[File Structure] ```\nkryptogo-meme-trader/\n├── SKILL.md                       ← You are here (compact overview)\n├── .env.example                   ← Environment variable template\n├── references/\n│   ├── api-reference.md           ← Full API docs with request/response examples\n│   ├── concepts.md                ← Core concepts (clustering, labels, accumulation)\n│   └── decision-framework.md      ← Entry/exit strategies, bullish/bearish checklists\n├── scripts/\n│   ├── setup.py                   ← First-time setup (keypair generation, dependency install)\n│   └── cron-examples.sh           ← Example cron configurations for different monitoring strategies\n└── examples/\n    └── trading-workflow.py        ← Complete Python reference implementation\n\nAgent creates these memory files at runtime:\n  memory/\n  ├── trading-journal.json         ← Every trade with entry reasoning + outcome\n  ├── trading-lessons.md           ← Patterns learned from losses\n  ├── trading-preferences.json     ← User-approved strategy parameters\n  ├── trading-state.json           ← Runtime state (open positions, last scan)\n  └── strategy-reviews/\n      └── YYYY-MM-DD.md            ← Periodic aggregate performance reviews\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "kryptogo_meme_trader"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "KRYPTOGO_API_KEY",
+            "SOLANA_PRIVATE_KEY",
+            "SOLANA_WALLET_ADDRESS"
+          ],
+          "bins": [
+            "python3",
+            "pip",
+            "openclaw"
+          ],
+          "network": [
+            "wallet-data.kryptogo.app"
+          ],
+          "permissions": [
+            "filesystem:write:~/.openclaw/workspace/.env",
+            "filesystem:write:~/.openclaw/workspace/memory/"
+          ],
+          "runtime_installs": [
+            "pip: solders, requests (installed by scripts/setup.py on first run)"
+          ],
+          "primaryEnv": "KRYPTOGO_API_KEY"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a00012025/kryptogo-meme-trader/SKILL.md"
+}

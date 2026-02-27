@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_memory-on-demand",
+  "description": "按需记忆检索。当用户询问历史相关问题时，自动搜索 memory 和 QMD 获取相关信息。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Memory On Demand - 按需记忆检索"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[触发条件] 当用户问题包含以下关键词时自动触发：\n- \"之前\"、\"以前\"、\"上次\"\n- \"历史\"、\"记录\"\n- \"那次\"、\"那次\"\n- \"还记得吗\"\n- \"我之前\"\n- \"之前我们\"\n- \"那时候\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[执行流程] ### 1. 判断是否需要检索\n检查用户问题是否与历史记录相关。\n\n### 2. 选择检索方式\n\n**首选：QMD 搜索**（更快、更准确）\n```bash\nqmd search \"关键词\" --limit 5\n```\n\n**备选：Memory 搜索**\n```bash\n# 搜索 memory 文件\ngrep -r \"关键词\" ~/.openclaw/workspace/memory/\n\n# 或使用 memory_search\n```\n\n### 3. 返回结果\n将搜索结果整理后返回给用户。"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[使用示例] 用户问：\"之前那次健身训练的记录是什么？\"\n\n自动执行：\n1. 检测到\"之前\"关键词\n2. 执行 `qmd search \"健身 训练\"`\n3. 返回相关记录"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[优势] - **按需加载**：只在需要时搜索，不浪费 context\n- **自动触发**：无需手动指定\n- **多源检索**：QMD + Memory 双保险"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[配置] - QMD 索引：已配置 workspace + butler + researcher + sessions\n- Memory 文件：自动读取 memory/*.md\n\n---\n*自动记忆检索 skill*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "memory_on_demand"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aeoleader/memory-on-demand/SKILL.md"
+}

@@ -1,0 +1,67 @@
+{
+  "id": "openclaw_skill_aisa-tavily",
+  "description": "AI-optimized web search via AIsa's Tavily API proxy. Returns concise, relevant results for AI agents through AIsa's unified API gateway.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AIsa Tavily Search\n\nAI-optimized web search using Tavily API through AIsa's unified gateway. Designed for AI agents - returns clean, relevant content."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Search] ```bash\nnode {baseDir}/scripts/search.mjs \"query\"\nnode {baseDir}/scripts/search.mjs \"query\" -n 10\nnode {baseDir}/scripts/search.mjs \"query\" --deep\nnode {baseDir}/scripts/search.mjs \"query\" --topic news\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Options] - `-n <count>`: Number of results (default: 5, max: 20)\n- `--deep`: Use advanced search for deeper research (slower, more comprehensive)\n- `--topic <topic>`: Search topic - `general` (default) or `news`\n- `--days <n>`: For news topic, limit to last n days"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Extract content from URL] ```bash\nnode {baseDir}/scripts/extract.mjs \"https://example.com/article\"\n```\n\nNotes:\n- Needs `AISA_API_KEY` from https://marketplace.aisa.one\n- Powered by AIsa's unified API gateway (https://aisa.one)\n- Use `--deep` for complex research questions\n- Use `--topic news` for current events"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aisa_tavily"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔍",
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "env": [
+            "AISA_API_KEY"
+          ]
+        },
+        "primaryEnv": "AISA_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aisadocs/openclaw-aisa-web-search-tavily/SKILL.md"
+}

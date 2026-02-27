@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_okx-dex-quote",
+  "description": "Fetch optimal swap quotes from OKX DEX Aggregator API (v6). Use this skill when a user wants to: 1. Get the best price for swapping tokens on any supported EVM/Solana chain 2. Compare DEX routing paths and price impact for token swaps 3. Build applications or scripts that query real-time DEX aggregator pricing Core value: Generates correct, authenticated API calls with proper token decimals, amount formatting, HMAC-SHA256 signing, and comprehensive error handling.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OKX DEX Aggregator Quote Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill generates production-ready code for fetching optimal swap quotes from the **OKX DEX Aggregator API v6**. The API finds the best price across multiple DEX protocols (Uniswap, SushiSwap, Curve, etc.) and returns detailed routing information including price impact, gas estimates, and token safety flags.\n\n**Key capabilities:**\n- Authenticated API requests with HMAC-SHA256 signing\n- Correct handling of token decimals and amount formatting\n- Support for `exactIn` (fixed input) and `exactOut` (fixed output) swap modes\n- Multi-chain support (Ethereum, BSC, Arbitrum, Base, Solana, and 20+ chains)\n- Price impact protection and honeypot detection\n- Fee/commission splitting configuration"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] ### Required Credentials\nUsers must have an OKX Web3 API key set. The skill needs three values:\n- `OKX_ACCESS_KEY` — API key\n- `OKX_SECRET_KEY` — Secret key for HMAC signing\n- `OKX_PASSPHRASE` — Account passphrase\n\n### Environment\n- **Python**: `requests`, `hmac`, `hashlib`, `base64`, `datetime` (all stdlib except `requests`)\n- **Node.js**: `axios` or `node-fetch`, built-in `crypto`\n- No additional blockchain dependencies required (this is a read-only quote endpoint)\n\n### API Endpoint\n```\nGET https://web3.okx.com/api/v6/dex/aggregator/quote\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: Validate User Input\n\nBefore constructing the API call, validate:\n\n1. **Chain ID (`chainIndex`)** — Must be a supported chain. Common values:\n   - `1` = Ethereum\n   - `56` = BSC\n   - `137` = Polygon\n   - `42161` = Arbitrum\n   - `8453` = Base\n   - `130` = Unichain\n   - `501` = Solana\n\n2. **Token addresses** — Must be valid contract addresses or the native token placeholder:\n   - Native tokens (ETH, BNB, etc.): `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee`\n   - Contract tokens: Full 42-character hex address (EVM) or base58 (Solana)\n\n3. **Amount** — MUST include token decimals. This is the #1 source of errors:\n   - 1 ETH (18 decimals) → `\"1000000000000000000\"`\n   - 1 USDT (6 decimals) → `\"1000000\"`\n   - 1 WBTC (8 decimals) → `\"100000000\"`\n   - Formula: `amount_raw = human_amount * (10 ** token_decimals)`\n\n4. **Swap mode** — `exactIn` (default) or `exactOut`\n   - `exactOut` only supported on: Ethereum, Base, BSC, Arbitrum\n   - `exactOut` only works with Uniswap V2/V3 pools\n\n### Step 2: Construct Authentication Headers\n\nOKX API requires HMAC-SHA256 signed requests with 4 headers:\n\n```\nOK-ACCESS-KEY: <api_key>\nOK-ACCESS-SIGN: <hmac_signature>\nOK-ACCESS-PASSPHRASE: <passphrase>\nOK-ACCESS-TIMESTAMP: <iso8601_timestamp>\n```\n\n**Signing algorithm:**\n```\ntimestamp = ISO 8601 UTC time (e.g., \"2025-01-15T12:00:00.000Z\")\nprehash = timestamp + \"GET\" + request_path_with_query\nsignature = Base64(HMAC-SHA256(secret_key, prehash))\n```\n\n**CRITICAL**: The `request_path_with_query` must include the full path starting from `/api/...` plus the query string. Example:\n```\n/api/v6/dex/aggregator/quote?chainIndex=1&amount=1000000000000000000&fromTokenAddress=0xeee...&toTokenAddress=0xa0b...\n```\n\n### Step 3: Send Request and Parse Response\n\n**Success response structure:**\n```json\n{\n  \"code\": \"0\",\n  \"data\": [{\n    \"chainIndex\": \"1\",\n    \"fromToken\": { \"tokenSymbol\": \"ETH\", \"decimal\": \"18\", ... },\n    \"toToken\": { \"tokenSymbol\": \"USDC\", \"decimal\": \"6\", ... },\n    \"fromTokenAmount\": \"1000"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Best Practices] ### Security\n- **NEVER hardcode API credentials** in generated code. Always use environment variables or config files.\n- **NEVER log the secret key or signature** in debug output.\n- Validate all token addresses against expected format before sending.\n- Check `isHoneyPot` flag on both tokens and warn the user prominently.\n\n### Amount Handling\n- **Always use string type** for amounts to avoid floating-point precision loss.\n- Python: Use `int()` for amount calculations, never `float()`.\n- JavaScript: Use `BigInt` or string math for amounts > 2^53.\n- When user provides a human-readable amount like \"1.5 ETH\", convert: `str(int(1.5 * 10**18))`.\n\n### Error Handling\n- Check `response[\"code\"] == \"0\"` before accessing data.\n- Common error codes:\n  - Non-zero code with `msg` = API error (e.g., insufficient liquidity, invalid params)\n  - HTTP 401 = Authentication failure (check signature algorithm)\n  - HTTP 429 = Rate limited\n- If `priceImpactPercent` is `null`, warn that price impact couldn't be calculated.\n\n### Rate Limits\n- Respect OKX rate limits. For production use, implement exponential backoff.\n- Cache quotes if polling repeatedly (quotes are valid for ~15-30 seconds).\n\n### Optional Parameters Usage\n- `dexIds` — Use when you want to restrict to specific DEXes (e.g., only Uniswap).\n- `directRoute=true` — Only for Solana; forces single-pool routing.\n- `priceImpactProtectionPercent` — Set to a sensible default like `10` for safety. Set to `100` to disable.\n- `feePercent` — For integrators taking commission. Max 3% (EVM) or 10% (Solana). Up to 9 decimal places."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ### Example 1: Python — Get ETH to USDC Quote on Ethereum\n\n```python\nimport os, hmac, hashlib, base64, requests\nfrom datetime import datetime, timezone\nfrom urllib.parse import urlencode\n\nAPI_KEY = os.environ[\"OKX_ACCESS_KEY\"]\nSECRET_KEY = os.environ[\"OKX_SECRET_KEY\"]\nPASSPHRASE = os.environ[\"OKX_PASSPHRASE\"]\n\ndef get_okx_quote(chain_index, from_token, to_token, amount, swap_mode=\"exactIn\"):\n    base_url = \"https://web3.okx.com\"\n    path = \"/api/v6/dex/aggregator/quote\"\n\n    params = {\n        \"chainIndex\": chain_index,\n        \"fromTokenAddress\": from_token,\n        \"toTokenAddress\": to_token,\n        \"amount\": amount,\n        \"swapMode\": swap_mode,\n    }\n\n    query_string = urlencode(params)\n    request_path = f\"{path}?{query_string}\"\n\n    # Generate timestamp and signature\n    timestamp = datetime.now(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%S.%f\")[:-3] + \"Z\"\n    prehash = timestamp + \"GET\" + request_path\n    signature = base64.b64encode(\n        hmac.new(SECRET_KEY.encode(), prehash.encode(), hashlib.sha256).digest()\n    ).decode()\n\n    headers = {\n        \"OK-ACCESS-KEY\": API_KEY,\n        \"OK-ACCESS-SIGN\": signature,\n        \"OK-ACCESS-PASSPHRASE\": PASSPHRASE,\n        \"OK-ACCESS-TIMESTAMP\": timestamp,\n    }\n\n    resp = requests.get(base_url + request_path, headers=headers)\n    resp.raise_for_status()\n    data = resp.json()\n\n    if data[\"code\"] != \"0\":\n        raise Exception(f\"OKX API error: {data['msg']}\")\n\n    return data[\"data\"][0]\n\n\n# Swap 1 ETH -> USDC on Ethereum\nETH = \"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"\nUSDC = \"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\"\namount = str(1 * 10**18)  # 1 ETH in wei\n\nquote = get_okx_quote(\"1\", ETH, USDC, amount)\n\nto_decimals = int(quote[\"toToken\"][\"decimal\"])\nreceived = int(quote[\"toTokenAmount\"]) / (10 ** to_decimals)\n\nprint(f\"You will receive: {received:,.2f} {quote['toToken']['tokenSymbol']}\")\nprint(f\"Price impact: {quote['priceImpactPercent']}%\")\nprint(f\"Gas fee (USD): ${quote['tradeFee']}\")\nprint(f\"Honeypot check"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Problem | Cause | Solution |\n|---------|-------|----------|\n| `401 Unauthorized` | Signature mismatch | Verify prehash string is exactly `timestamp + \"GET\" + full_path_with_query`. Check secret key encoding. |\n| Amount too small | Missing decimal conversion | Multiply human amount by `10 ** token_decimals`. 1 USDT = `1000000`, not `1`. |\n| Invalid token address | Wrong chain/address combo | Verify the token exists on the specified chain. Use native token placeholder for ETH/BNB/etc. |\n| `priceImpactPercent` very negative (< -10%) | Low liquidity or large trade | Reduce trade size or split across multiple transactions. |\n| `isHoneyPot: true` | Scam token detected | **Do NOT proceed with the swap.** Warn the user immediately. |\n| `exactOut` not working | Unsupported chain/protocol | Only works on Ethereum, Base, BSC, Arbitrum with Uniswap V2/V3. |\n| `taxRate > 0` | Token has built-in tax | Factor tax into expected output. E.g., 5% tax means receiving 5% less. |\n| Empty `dexRouterList` | No liquidity path found | Try a different token pair, smaller amount, or different chain. |\n| `code` is non-zero | General API error | Read `msg` field for details. Common: rate limit, maintenance, invalid params. |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Reference: Common Chain IDs] | Chain | chainIndex |\n|-------|-----------|\n| Ethereum | 1 |\n| BSC | 56 |\n| Polygon | 137 |\n| Arbitrum | 42161 |\n| Optimism | 10 |\n| Avalanche | 43114 |\n| Base | 8453 |\n| Solana | 501 |\n| Unichain | 130 |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reference: Common Token Addresses (Ethereum)] | Token | Address | Decimals |\n|-------|---------|----------|\n| ETH (native) | `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee` | 18 |\n| USDT | `0xdac17f958d2ee523a2206206994597c13d831ec7` | 6 |\n| USDC | `0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48` | 6 |\n| WETH | `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2` | 18 |\n| WBTC | `0x2260fac5e5542a773aa44fbcfedf7c193bc2c599` | 8 |\n| DAI | `0x6b175474e89094c44da98b954eedeac495271d0f` | 18 |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Reference: Request Parameters Summary] | Parameter | Required | Description |\n|-----------|----------|-------------|\n| `chainIndex` | Yes | Chain ID (e.g., `1` for Ethereum) |\n| `amount` | Yes | Amount in raw units (with decimals) |\n| `swapMode` | Yes | `exactIn` or `exactOut` |\n| `fromTokenAddress` | Yes | Sell token contract address |\n| `toTokenAddress` | Yes | Buy token contract address |\n| `dexIds` | No | Comma-separated DEX IDs to restrict routing |\n| `directRoute` | No | `true` for single-pool only (Solana only) |\n| `priceImpactProtectionPercent` | No | Max allowed price impact 0-100 (default 90) |\n| `feePercent` | No | Commission fee percentage for integrators |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "okx_dex_quote"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronllee/dex-quote/SKILL.md"
+}

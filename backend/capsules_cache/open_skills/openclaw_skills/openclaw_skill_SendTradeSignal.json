@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_SendTradeSignal",
+  "description": "A specialized tool for sending quantitative trading signals to the FMZ platform via HTTP API.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SendTradeSignal (FMZ Connector)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill serves as a bridge between the OpenClaw AI agent and the FMZ Quantum Trading Platform. It enables the AI to execute trade decisions (Buy/Sell/Wait) programmatically by sending structured JSON signals to a specific robot instance running on FMZ."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Features] - **Real-time Signal Transmission:** Sends trading commands instantly upon AI decision.\r\n- **Secure Communication:** Uses a user-defined UUID to verify the source of the signal, preventing unauthorized access.\r\n- **Structured Data:** Transmits comprehensive trade details including action type, target symbol (e.g., BTC_USDT), reference price, and reasoning.\r\n- **HTTP/HTTPS Support:** Compatible with standard web protocols for broad compatibility."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] The AI should invoke this tool when a market analysis concludes with a definitive trading action.\r\n\r\n### Parameters\r\n| Parameter | Type | Description |\r\n| :--- | :--- | :--- |\r\n| `action` | string | The specific trading action to take. Accepted values: `buy`, `sell`, `wait`, `close`. |\r\n| `symbol` | string | The trading pair symbol, formatted as `BASE_QUOTE` (e.g., `BTC_USDT`, `ETH_USDT`). |\r\n| `price` | float | The current market price or limit price for the order. |\r\n| `reason` | string | A brief explanation of why this trade decision was made (e.g., \"RSI overbought\", \"Breaking support\"). |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Example] When the AI detects a buying opportunity for Bitcoin at 65000 USDT due to a positive trend:\r\n\r\n```python\r\nhandler(\r\n    action=\"buy\",\r\n    symbol=\"BTC_USDT\",\r\n    price=65000.0,\r\n    reason=\"MACD golden cross detected on 4H chart.\"\r\n)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "SendTradeSignal"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/13290186019/send-signal/SKILL.md"
+}

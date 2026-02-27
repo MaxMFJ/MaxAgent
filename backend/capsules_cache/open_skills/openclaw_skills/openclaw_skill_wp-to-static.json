@@ -1,0 +1,149 @@
+{
+  "id": "openclaw_skill_wp-to-static",
+  "description": "Convert a WordPress website to a static site and deploy to Cloudflare Pages. Mirrors the rendered HTML via SSH, extracts only referenced assets (shrinks 1.5GB+ to ~25MB), fixes URLs, self-hosts fonts, strips WordPress cruft, and deploys. Use when migrating a WordPress site to static hosting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # WordPress to Static Site (Cloudflare Pages)\n\nConvert a WordPress website to a pixel-perfect static site and deploy it to Cloudflare Pages. Zero attack surface, zero hosting cost, instant load times."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Before running this skill, the user MUST have:\n\n1. **GitHub CLI authenticated:** Run `gh auth status` to verify. If not logged in, run `gh auth login` first.\n2. **Cloudflare Wrangler authenticated:** Run `wrangler whoami` to verify. If not logged in, run `wrangler login` first.\n3. **SSH key added to ssh-agent:** The recommended way to handle SSH keys. Run:\n   ```bash\n   eval \"$(ssh-agent -s)\"\n   ssh-add ~/.ssh/your_wp_key\n   ```\n4. **Server host key verified:** The user should have connected to the server at least once and accepted the host key, so it exists in `~/.ssh/known_hosts`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Variables] **Required** (stop and ask if any are missing):\n- `WP_SSH_HOST` — SSH hostname (e.g., `ssh.example.com`)\n- `WP_SSH_USER` — SSH username\n- `WP_SSH_PORT` — SSH port (e.g., `18765`)\n- `WP_SSH_KEY` — Path to SSH private key file (e.g., `~/.ssh/wp_key`). Key must have `chmod 600` permissions.\n- `WP_SITE_URL` — WordPress site URL (e.g., `https://example.com`)\n- `WP_SITE_NAME` — Short project name (e.g., `mysite`)\n\n**Optional:**\n- `CF_ACCOUNT_ID` — Cloudflare account ID for Pages deployment\n- `GH_REPO_VISIBILITY` — `private` (default) or `public`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Security Model] - SSH authentication uses `ssh-agent` — keys are loaded into the agent before running, so no passphrase is passed via environment variables or command arguments\n- SSH host key verification is ENABLED (no `StrictHostKeyChecking=no`) — the server must already be in `~/.ssh/known_hosts`\n- Credentials are NEVER logged, echoed, or displayed\n- Credentials are NEVER committed to git\n- GitHub repos are created as private by default"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 0: Validate] 1. Check all required env vars are set. If any are missing, stop and tell the user.\n2. Verify required binaries exist: `ssh`, `ssh-agent`, `rsync`, `curl`, `git`, `gh`, `wrangler`.\n3. Verify `gh auth status` succeeds. If not, tell user to run `gh auth login`.\n4. Verify `wrangler whoami` succeeds (if `CF_ACCOUNT_ID` is set). If not, tell user to run `wrangler login`.\n5. Verify SSH key file exists and has correct permissions (`chmod 600`).\n6. Stop if anything is missing."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 1: Test SSH Connection] Test the connection using the key from ssh-agent:\n\n```bash\nssh -i $WP_SSH_KEY -p $WP_SSH_PORT $WP_SSH_USER@$WP_SSH_HOST \"echo connected\"\n```\n\nIf the key requires a passphrase and ssh-agent is not loaded, tell the user:\n```\nPlease add your SSH key to ssh-agent first:\n  eval \"$(ssh-agent -s)\"\n  ssh-add /path/to/your/key\nThen re-run /wp-to-static\n```\n\nIf the host key is not recognized, tell the user to connect manually once first to verify and accept the host key:\n```\nPlease connect to the server once manually to verify the host key:\n  ssh -i $WP_SSH_KEY -p $WP_SSH_PORT $WP_SSH_USER@$WP_SSH_HOST\nAccept the host key, then re-run /wp-to-static\n```\n\nDo NOT use `StrictHostKeyChecking=no`. Do NOT bypass host key verification."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 2: Locate WordPress Installation] SSH in and find the WordPress `public_html` directory. Common locations:\n- `~/www/DOMAIN/public_html/`\n- `~/public_html/`\n- `~/htdocs/`\n- `/var/www/html/`\n\nConfirm by finding `wp-config.php`. Store path as `WP_ROOT`."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Step 3: Mirror with wget (ON THE SERVER)] Run `wget --mirror` **on the server** (not locally):\n\n```bash\ncd /tmp && rm -rf static_mirror && mkdir -p static_mirror && cd static_mirror && \\\nwget --mirror --convert-links --adjust-extension --page-requisites --no-parent \\\n  --restrict-file-names=windows -e robots=off --timeout=30 --tries=3 --wait=0.5 \\\n  --user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)\" \\\n  $WP_SITE_URL/ 2>&1 | tail -30\n```\n\nIf `wget` is not available on the server, fall back to `curl` locally for rendered HTML."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Step 4: Rsync to Local] Create `./build/site` (NEVER use the project root as temp dir).\n\n**Exclude server-side code and sensitive files.** Only static assets (images, CSS, JS, fonts) are needed. PHP files, config files, and other server-side code must NEVER be downloaded.\n\n```bash\nRSYNC_EXCLUDE=\"--exclude='*.php' --exclude='wp-config*' --exclude='.htaccess' --exclude='*.sql' --exclude='*.log' --exclude='debug.log' --exclude='error_log' --exclude='.env' --exclude='*.bak' --exclude='*.backup'\"\n\nrsync -avz $RSYNC_EXCLUDE server:/tmp/static_mirror/DOMAIN/ ./build/site/\nrsync -avz $RSYNC_EXCLUDE server:$WP_ROOT/wp-content/uploads/ ./build/site/wp-content/uploads/\nrsync -avz $RSYNC_EXCLUDE server:$WP_ROOT/wp-content/themes/ ./build/site/wp-content/themes/\nrsync -avz $RSYNC_EXCLUDE server:$WP_ROOT/wp-content/plugins/ ./build/site/wp-content/plugins/\nrsync -avz $RSYNC_EXCLUDE server:$WP_ROOT/wp-includes/ ./build/site/wp-includes/\n```\n\nAfter rsync, verify no PHP or config files were downloaded:\n```bash\nfind ./build/site -name '*.php' -o -name 'wp-config*' -o -name '.htaccess' -o -name '.env' | head -20\n```\nIf any are found, delete them before proceeding."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Step 5: Extract Only Referenced Assets] **This is the key step.** Parse all HTML and CSS files to find every referenced local file:\n\n**From HTML:** `src=`, `href=`, `data-src=`, `data-srcset=`, `srcset=`, inline `background-image: url()`\n\n**From CSS:** All `url()` references — resolve relative paths from CSS file location to site root.\n\nWrite the list to `./build/referenced-files.txt`, then copy only those files to `./public/` preserving directory structure. This typically shrinks 1.5GB+ down to ~25MB."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Step 6: Fix Absolute URLs] In `index.html` and ALL CSS files:\n\n1. Replace `$WP_SITE_URL/` → empty string (relative paths)\n2. Replace any staging/dev domain URLs → local paths\n3. Self-host Google Fonts:\n   - Download each `.ttf` to `./public/fonts/`\n   - Update `@font-face src:` to `fonts/filename.ttf`\n4. Remove `<link rel=\"preconnect\">` for Google Fonts domains\n\n**CSS path resolution is critical.** If CSS is at `wp-content/uploads/cache/file.css`:\n- `wp-content/uploads/` → `../../`\n- `wp-content/themes/` → `../../themes/`\n- `wp-includes/` → `../../../wp-includes/`"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Step 7: Strip WordPress Cruft] **Remove:**\n- `<meta name=\"generator\" ...>` (WordPress, WPBakery, Slider Revolution)\n- `<link rel=\"EditURI\"...>`, `<link rel=\"alternate\"...>` (RSS, oEmbed)\n- `<link rel=\"https://api.w.org/\"...>`, `<link rel=\"shortlink\"...>`\n- `<link rel=\"profile\" href=\"gmpg.org/xfn/11\">`\n- `<link rel=\"dns-prefetch\"...>` for fonts.googleapis.com\n- W3 Total Cache HTML comments\n- `wp-json` root references in inline JSON\n\n**Keep:** Email addresses, `<link rel=\"canonical\">` (update to `/`)"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Step 8: Cloudflare Pages Config] Create `./public/_headers` with aggressive caching for `/fonts/*`, `/wp-content/*`, `/wp-includes/*`.\n\nCreate `./public/_redirects` redirecting `/wp-admin/*`, `/wp-login.php`, `/xmlrpc.php`, `/feed/*` → `/` (302)."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Step 9: Verify Locally] 1. Start `python3 -m http.server` from `./public/`\n2. Test key assets return HTTP 200 (CSS, JS, logo, fonts, images)\n3. Tell user to open the URL and visually verify\n4. **Wait for user confirmation before deploying**"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Step 10: Scrub Temporary Files and Deploy] **Before any git operations**, remove the `./build/` directory to ensure no server-side code, PHP files, or sensitive data can accidentally be committed:\n\n```bash\nrm -rf ./build\n```\n\nVerify only `./public/` remains and contains no PHP or config files:\n```bash\nfind ./public -name '*.php' -o -name 'wp-config*' -o -name '.htaccess' -o -name '.env'\n```\nThis must return empty. If not, delete those files before proceeding.\n\nThen deploy:\n1. `git init`, commit ONLY `./public/` and `.gitignore`\n2. `git config http.postBuffer 524288000` (for binary assets)\n3. `gh repo create $WP_SITE_NAME --private --source=. --push`\n4. `CLOUDFLARE_ACCOUNT_ID=$CF_ACCOUNT_ID wrangler pages project create $WP_SITE_NAME --production-branch main`\n5. `CLOUDFLARE_ACCOUNT_ID=$CF_ACCOUNT_ID wrangler pages deploy ./public --project-name $WP_SITE_NAME`\n6. Verify deployment, report live URL, remind about custom domain setup"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Safety Rules] - NEVER display or log credentials (SSH keys, passphrases, tokens)\n- NEVER commit credentials to git (.gitignore must exclude .env, *.key, *.pem)\n- NEVER use `StrictHostKeyChecking=no` or bypass SSH host verification\n- NEVER pass passphrases as command-line arguments or environment variables at runtime\n- NEVER delete the current working directory (breaks the shell CWD)\n- NEVER force-push or use destructive git commands\n- NEVER rsync PHP files, wp-config, .htaccess, .env, or SQL dumps from the server\n- Use `./build/` for temp files, `./public/` for output — only `./public/` is committed\n- ALWAYS delete `./build/` BEFORE any git operations to prevent accidental commits of server-side files\n- Verify `./public/` contains no PHP or config files before committing\n- Stop and report on any failure — do NOT retry blindly"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Bash,",
+    "Read,",
+    "Write,",
+    "Edit,",
+    "Grep,",
+    "Glob,",
+    "Task,",
+    "WebFetch",
+    "agent-skill"
+  ],
+  "capability": [
+    "wp_to_static"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "ssh",
+            "ssh-agent",
+            "rsync",
+            "curl",
+            "git",
+            "gh",
+            "wrangler"
+          ],
+          "env": [
+            "WP_SSH_HOST",
+            "WP_SSH_USER",
+            "WP_SSH_PORT",
+            "WP_SSH_KEY",
+            "WP_SITE_URL",
+            "WP_SITE_NAME"
+          ]
+        },
+        "emoji": "🔄",
+        "os": [
+          "darwin",
+          "linux"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhibavishi/wp-to-static/SKILL.md"
+}

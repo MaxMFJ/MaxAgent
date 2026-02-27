@@ -1,0 +1,191 @@
+{
+  "id": "openclaw_skill_polymarket-fast-loop",
+  "description": "Trade Polymarket BTC 5-minute and 15-minute fast markets using CEX price momentum signals via Simmer API. Default signal is Binance BTC/USDT klines. Use when user wants to trade sprint/fast markets, automate short-term crypto trading, or use CEX momentum as a Polymarket signal.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket FastLoop Trader\n\nTrade Polymarket's 5-minute crypto fast markets using real-time price signals. Default: BTC momentum from Binance. Works with ETH and SOL too.\n\n> **Polymarket only.** All trades execute on Polymarket with real USDC. Use `--live` for real trades, dry-run is the default.\n\n> **This is a template.** The default signal (Binance momentum) gets you started — remix it with your own signals, data sources, or strategy. The skill handles all the plumbing (market discovery, import, trade execution). Your agent provides the alpha.\n\n> ⚠️ Fast markets carry Polymarket's 10% fee (`is_paid: true`). Factor this into your edge calculations."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[How It Finds Markets] - Queries **Polymarket directly** (Gamma API) for live fast markets — doesn't depend on Simmer's market inventory\n- Discovers new markets as they appear, every cycle\n- Works with BTC, ETH, or SOL — just change the asset (`--set asset=ETH`) or ask your bot to look for whatever market you want\n- Runs every 5 minutes to catch each trading window (or every 1 minute for mid-window opportunities)\n\n**You don't need to wait for markets to show up in Simmer.** FastLoop finds them in real-time on Polymarket, then imports and trades them through Simmer."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- Trade crypto sprint/fast markets (5-minute or 15-minute) on any supported asset\n- Automate short-term crypto prediction trading\n- Use CEX price momentum (or any custom signal) as a Polymarket signal\n- Monitor sprint market positions"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup Flow] When user asks to install or configure this skill:\n\n1. **Ask for Simmer API key**\n   - Get from simmer.markets/dashboard → SDK tab\n   - Store in environment as `SIMMER_API_KEY`\n\n2. **Ask for wallet private key** (required for live trading)\n   - This is the private key for their Polymarket wallet (the wallet that holds USDC)\n   - Store in environment as `WALLET_PRIVATE_KEY`\n   - The SDK uses this to sign orders client-side automatically — no manual signing needed\n\n3. **Ask about settings** (or confirm defaults)\n   - Asset: BTC, ETH, or SOL (default BTC)\n   - Entry threshold: Min divergence to trade (default 5¢)\n   - Max position: Amount per trade (default $5.00)\n   - Window: 5m or 15m (default 5m)\n\n4. **Set up cron or loop** (user drives scheduling — see \"How to Run on a Loop\")"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Set your API key\nexport SIMMER_API_KEY=\"your-key-here\"\n\n# Dry run — see what would happen\npython fastloop_trader.py\n\n# Go live\npython fastloop_trader.py --live\n\n# Live + quiet (for cron/heartbeat loops)\npython fastloop_trader.py --live --quiet\n\n# Live + smart sizing (5% of balance per trade)\npython fastloop_trader.py --live --smart-sizing --quiet\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[How to Run on a Loop] The script runs **one cycle** — your bot drives the loop. Set up a cron job or heartbeat:\n\n**Linux crontab** (local/VPS installs):\n```\n# Every 5 minutes (one per fast market window)\n*/5 * * * * cd /path/to/skill && python fastloop_trader.py --live --quiet\n\n# Every 1 minute (more aggressive, catches mid-window opportunities)\n* * * * * cd /path/to/skill && python fastloop_trader.py --live --quiet\n```\n\n**OpenClaw native cron** (containerized or OpenClaw-managed setups):\n```bash\nopenclaw cron add \\\n  --name \"Fast Loop Trader\" \\\n  --cron \"*/5 * * * *\" \\\n  --tz \"UTC\" \\\n  --session isolated \\\n  --message \"Run fast loop trader: cd /path/to/skill && python fastloop_trader.py --live --quiet. Show the output summary.\" \\\n  --announce\n```\n\n**Via OpenClaw heartbeat:** Add to your HEARTBEAT.md:\n```\nRun: cd /path/to/fast market && python fastloop_trader.py --live --quiet\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Configuration] Configure via `config.json`, environment variables, or `--set`:\n\n```bash\n# Change entry threshold\npython fastloop_trader.py --set entry_threshold=0.08\n\n# Trade ETH instead of BTC\npython fastloop_trader.py --set asset=ETH\n\n# Multiple settings\npython fastloop_trader.py --set min_momentum_pct=0.3 --set max_position=10\n```\n\n### Settings\n\n| Setting | Default | Env Var | Description |\n|---------|---------|---------|-------------|\n| `entry_threshold` | 0.05 | `SIMMER_SPRINT_ENTRY` | Min price divergence from 50¢ to trigger |\n| `min_momentum_pct` | 0.5 | `SIMMER_SPRINT_MOMENTUM` | Min BTC % move to trigger |\n| `max_position` | 5.0 | `SIMMER_SPRINT_MAX_POSITION` | Max $ per trade |\n| `signal_source` | binance | `SIMMER_SPRINT_SIGNAL` | Price feed (binance, coingecko) |\n| `lookback_minutes` | 5 | `SIMMER_SPRINT_LOOKBACK` | Minutes of price history |\n| `min_time_remaining` | 60 | `SIMMER_SPRINT_MIN_TIME` | Skip fast markets with less time left (seconds) |\n| `asset` | BTC | `SIMMER_SPRINT_ASSET` | Asset to trade (BTC, ETH, SOL) |\n| `window` | 5m | `SIMMER_SPRINT_WINDOW` | Market window duration (5m or 15m) |\n| `volume_confidence` | true | `SIMMER_SPRINT_VOL_CONF` | Weight signal by Binance volume |\n\n### Example config.json\n\n```json\n{\n  \"entry_threshold\": 0.08,\n  \"min_momentum_pct\": 0.3,\n  \"max_position\": 10.0,\n  \"asset\": \"BTC\",\n  \"window\": \"5m\",\n  \"signal_source\": \"binance\"\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[CLI Options] ```bash\npython fastloop_trader.py                    # Dry run\npython fastloop_trader.py --live             # Real trades\npython fastloop_trader.py --live --quiet     # Silent except trades/errors\npython fastloop_trader.py --smart-sizing     # Portfolio-based sizing\npython fastloop_trader.py --positions        # Show open fast market positions\npython fastloop_trader.py --config           # Show current config\npython fastloop_trader.py --set KEY=VALUE    # Update config\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Signal Logic] Default signal (Binance momentum):\n\n1. Fetch last 5 one-minute candles from Binance (`BTCUSDT`)\n2. Calculate momentum: `(price_now - price_5min_ago) / price_5min_ago`\n3. Compare momentum direction to current Polymarket odds\n4. Trade when:\n   - Momentum ≥ `min_momentum_pct` (default 0.5%)\n   - Price diverges from 50¢ by ≥ `entry_threshold` (default 5¢)\n   - Volume ratio > 0.5x average (filters out thin moves)\n\n**Example:** BTC up 0.8% in last 5 min, but fast market YES price is only $0.52. The 3¢ divergence from the expected ~$0.55 → buy YES.\n\n### Remix It: Plug In Your Own Signal\n\n**This skill is a template.** The default Binance momentum signal is just a starting point. The skill handles all the boring parts (market discovery, import, order execution, budget tracking). You bring the signal.\n\nIdeas for custom signals:\n- **Multi-exchange spreads:** Compare prices across Binance, Kraken, Bitfinex — divergence between exchanges can predict CLOB direction\n- **Sentiment:** Layer in Twitter/social signals — a viral tweet can move fast markets before the CLOB adjusts\n- **Technical indicators:** RSI, VWAP, order flow analysis from your favorite data source\n- **News:** Breaking news correlation — use your agent's reasoning to interpret headlines\n- **On-chain data:** Whale movements, funding rates, liquidation levels\n\nTo customize, edit `get_momentum()` in `fastloop_trader.py` or add your own signal function. The rest of the skill (discovery, import, sizing, fee-aware EV check) stays the same."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Example Output] ```\n⚡ Simmer FastLoop Trading Skill\n==================================================\n\n  [DRY RUN] No trades will be executed. Use --live to enable trading.\n\n⚙️  Configuration:\n  Asset:            BTC\n  Entry threshold:  0.05 (min divergence from 50¢)\n  Min momentum:     0.5% (min price move)\n  Max position:     $5.00\n  Signal source:    binance\n  Lookback:         5 minutes\n  Min time left:    60s\n  Volume weighting: ✓\n\n🔍 Discovering BTC fast markets...\n  Found 3 active fast markets\n\n🎯 Selected: Bitcoin Up or Down - February 15, 5:30AM-5:35AM ET\n  Expires in: 185s\n  Current YES price: $0.480\n\n📈 Fetching BTC price signal (binance)...\n  Price: $97,234.50 (was $96,812.30)\n  Momentum: +0.436%\n  Direction: up\n  Volume ratio: 1.45x avg\n\n🧠 Analyzing...\n  ⏸️  Momentum 0.436% < minimum 0.500% — skip\n\n📊 Summary: No trade (momentum too weak: 0.436%)\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Source Tagging] All trades are tagged with `source: \"sdk:fastloop\"`. This means:\n- Portfolio shows breakdown by strategy\n- Other skills won't interfere with your fast market positions\n- You can track fast market P&L separately"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"No active fast markets found\"**\n- Fast markets may not be running (off-hours, weekends)\n- Check Polymarket directly for active BTC fast markets\n\n**\"No fast markets with >60s remaining\"**\n- Current window is about to expire, next one isn't live yet\n- Reduce `min_time_remaining` if you want to trade closer to expiry\n\n**\"Import failed: Rate limit exceeded\"**\n- Free tier: 10 imports/day. Pro: 50/day\n- Fast market trading needs Pro for reasonable frequency\n\n**\"Failed to fetch price data\"**\n- Binance API may be down or rate limited\n- Try `--set signal_source=coingecko` as fallback\n\n**\"Trade failed: no liquidity\"**\n- Fast market has thin book, try smaller position size\n\n**\"External wallet requires a pre-signed order\"**\n- `WALLET_PRIVATE_KEY` is not set in the environment\n- The SDK signs orders automatically when this env var is present — no manual signing code needed\n- Fix: `export WALLET_PRIVATE_KEY=0x<your-polymarket-wallet-private-key>`\n- Do NOT attempt to sign orders manually or modify the skill code — the SDK handles it\n\n**\"Balance shows $0 but I have USDC on Polygon\"**\n- Polymarket uses **USDC.e** (bridged USDC, contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`) — not native USDC\n- If you bridged USDC to Polygon recently, you likely received native USDC\n- Swap native USDC to USDC.e, then retry"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_fast_loop"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "⚡",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "fastloop_trader.py"
+        },
+        "tunables": [
+          {
+            "env": "SIMMER_FASTLOOP_ENTRY_THRESHOLD",
+            "type": "number",
+            "default": 0.05,
+            "range": [
+              0.01,
+              0.3
+            ],
+            "step": 0.01,
+            "label": "Entry edge threshold"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_MOMENTUM_THRESHOLD",
+            "type": "number",
+            "default": 0.03,
+            "range": [
+              0.01,
+              0.2
+            ],
+            "step": 0.01,
+            "label": "Momentum threshold"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_MAX_POSITION_USD",
+            "type": "number",
+            "default": 50,
+            "range": [
+              1,
+              200
+            ],
+            "step": 5,
+            "label": "Max position size"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_LOOKBACK_MINUTES",
+            "type": "number",
+            "default": 30,
+            "range": [
+              5,
+              120
+            ],
+            "step": 5,
+            "label": "Lookback window (minutes)"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_MIN_TIME_BETWEEN_TRADES_SEC",
+            "type": "number",
+            "default": 60,
+            "range": [
+              10,
+              600
+            ],
+            "step": 10,
+            "label": "Min time between trades (seconds)"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_DAILY_BUDGET_USD",
+            "type": "number",
+            "default": 100,
+            "range": [
+              10,
+              500
+            ],
+            "step": 10,
+            "label": "Daily budget"
+          },
+          {
+            "env": "SIMMER_FASTLOOP_VOL_CONFIDENCE_MIN",
+            "type": "number",
+            "default": 0.5,
+            "range": [
+              0.1,
+              1.0
+            ],
+            "step": 0.05,
+            "label": "Minimum volatility confidence"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-fast-loop/SKILL.md"
+}

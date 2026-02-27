@@ -1,0 +1,127 @@
+{
+  "id": "openclaw_skill_afrexai-api-architect",
+  "description": "Design, build, test, document, and secure production-grade APIs. Covers the full lifecycle from schema design through deployment, monitoring, and versioning. Use when designing new APIs, reviewing existing ones, generating OpenAPI specs, building test suites, or debugging production issues.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # API Architect — Full Lifecycle API Development\n\nDesign, build, test, document, secure, and monitor production-grade APIs. Not just curl commands — a complete engineering methodology."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Designing a new API (REST, GraphQL, or gRPC)\n- Reviewing an existing API for quality, consistency, or security\n- Generating or validating OpenAPI/Swagger specs\n- Building comprehensive test suites (unit, integration, contract, load)\n- Debugging production API issues\n- Planning API versioning and deprecation\n- Setting up monitoring, rate limiting, and error handling\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 1: API Design] ### Design-First Approach\n\nAlways design before coding. The spec IS the contract.\n\n#### Resource Modeling\n\nMap your domain to resources using this template:\n\n```yaml\n# api-design.yaml\nservice: order-management\nbase_path: /api/v1\nresources:\n  - name: orders\n    path: /orders\n    description: Customer purchase orders\n    identifier: order_id (UUID)\n    parent: null\n    operations: [list, create, get, update, cancel]\n    sub_resources:\n      - name: line_items\n        path: /orders/{order_id}/items\n        operations: [list, add, update, remove]\n      - name: payments\n        path: /orders/{order_id}/payments\n        operations: [list, create, get, refund]\n    states: [draft, confirmed, processing, shipped, delivered, cancelled]\n    transitions:\n      - from: draft → to: confirmed (action: confirm)\n      - from: confirmed → to: processing (action: process)\n      - from: processing → to: shipped (action: ship)\n      - from: shipped → to: delivered (action: deliver)\n      - from: [draft, confirmed] → to: cancelled (action: cancel)\n```\n\n#### Naming Conventions Checklist\n\n| Rule | Good | Bad |\n|------|------|-----|\n| Plural nouns for collections | `/users` | `/user`, `/getUsers` |\n| Kebab-case for multi-word | `/line-items` | `/lineItems`, `/line_items` |\n| No verbs in URLs | `POST /orders` | `/createOrder` |\n| Nest for ownership | `/users/123/orders` | `/orders?user=123` (for primary relationship) |\n| Max 3 levels deep | `/users/123/orders` | `/users/123/orders/456/items/789/options` |\n| Filter via query params | `/orders?status=active` | `/active-orders` |\n| Actions as sub-resource | `POST /orders/123/cancel` | `PATCH /orders/123 {cancelled:true}` |\n\n#### HTTP Methods — Decision Matrix\n\n```\nNeed to...                          → Method   Idempotent?  Safe?\nGet a resource or collection        → GET      Yes          Yes\nCreate a new resource               → POST     No           No\nFull replace of a resource          → PUT      Yes          No\nPartial update of a resource "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 2: OpenAPI Specification] ### Generate OpenAPI 3.1 Spec\n\nFor each resource in your design, generate a complete spec:\n\n```yaml\nopenapi: 3.1.0\ninfo:\n  title: Order Management API\n  version: 1.0.0\n  description: |\n    Order lifecycle management.\n    \n    ## Authentication\n    All endpoints require Bearer token authentication.\n    \n    ## Rate Limits\n    - Standard: 100 req/min\n    - Bulk operations: 10 req/min\n  contact:\n    name: API Support\n    email: api@example.com\n  license:\n    name: MIT\nservers:\n  - url: https://api.example.com/v1\n    description: Production\n  - url: https://staging-api.example.com/v1\n    description: Staging\n\npaths:\n  /orders:\n    get:\n      operationId: listOrders\n      summary: List orders\n      tags: [Orders]\n      parameters:\n        - $ref: '#/components/parameters/PageParam'\n        - $ref: '#/components/parameters/PerPageParam'\n        - name: status\n          in: query\n          schema:\n            $ref: '#/components/schemas/OrderStatus'\n        - name: created_after\n          in: query\n          schema:\n            type: string\n            format: date-time\n      responses:\n        '200':\n          description: Order list\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/OrderListResponse'\n        '401':\n          $ref: '#/components/responses/Unauthorized'\n\n    post:\n      operationId: createOrder\n      summary: Create an order\n      tags: [Orders]\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              $ref: '#/components/schemas/CreateOrderRequest'\n            examples:\n              basic:\n                summary: Basic order\n                value:\n                  customer_id: \"cust_abc\"\n                  items:\n                    - product_id: \"prod_xyz\"\n                      quantity: 2\n      responses:\n        '201':\n          description: Order created\n          headers:\n            Location:\n              schema:\n       "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 3: Implementation Patterns] ### Request Validation Layer\n\nEvery endpoint MUST validate before processing:\n\n```\nValidation Order:\n1. Content-Type header (reject non-JSON early)\n2. Authentication (401 before wasting cycles)\n3. Authorization (403 - does this user have access?)\n4. Path parameters (404 - does the resource exist?)\n5. Query parameters (400 - valid types/ranges?)\n6. Request body schema (422 - valid structure?)\n7. Business rules (422 - valid state transition?)\n```\n\n### Error Handling — Standard Error Codes\n\nDefine a consistent error code enum for your API:\n\n```\n# Authentication & Authorization\nAUTH_REQUIRED          — No credentials provided\nAUTH_INVALID           — Invalid/expired credentials\nAUTH_INSUFFICIENT      — Valid credentials, wrong permissions\nAUTH_RATE_LIMITED       — Too many auth attempts\n\n# Validation\nVALIDATION_FAILED      — Generic validation error (see details array)\nINVALID_FORMAT         — Field format wrong (email, UUID, etc.)\nREQUIRED_FIELD         — Required field missing\nOUT_OF_RANGE           — Value outside allowed range\nINVALID_ENUM           — Value not in allowed set\n\n# Resource\nNOT_FOUND              — Resource doesn't exist\nALREADY_EXISTS         — Duplicate (unique constraint)\nCONFLICT               — State conflict (e.g., already cancelled)\nGONE                   — Resource permanently deleted\n\n# Business Logic\nINSUFFICIENT_FUNDS     — Payment-related\nQUOTA_EXCEEDED         — Usage limit reached\nFEATURE_DISABLED       — Feature flag off\nDEPENDENCY_FAILED      — Upstream service error\n\n# System\nINTERNAL_ERROR         — Unexpected server error\nSERVICE_UNAVAILABLE    — Temporarily down\nTIMEOUT                — Request took too long\n```\n\n### Idempotency\n\nFor non-idempotent operations (POST), require an idempotency key:\n\n```\nRequest:\nPOST /orders\nIdempotency-Key: ord_req_abc123\n\nServer behavior:\n1. Check if Idempotency-Key was seen before\n2. If yes → return cached response (same status, same body)\n3. If no → process request, cache response for 24h\n4. Key for"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 4: Testing Strategy] ### Test Pyramid for APIs\n\n```\n        /  E2E  \\          — 5-10 critical user flows\n       / Contract \\        — Schema validation, backward compat\n      / Integration \\      — Database, external services, auth\n     /    Unit Tests  \\    — Business logic, validation, transforms\n    ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\n```\n\n### Test Checklist Per Endpoint\n\nFor EVERY endpoint, test these scenarios:\n\n```yaml\nendpoint: POST /orders\ntests:\n  happy_path:\n    - Creates order with valid data → 201\n    - Returns created resource with ID\n    - Location header points to new resource\n    - Timestamps are set (created_at, updated_at)\n  \n  validation:\n    - Missing required fields → 422 with field-level errors\n    - Invalid field types (string where int expected) → 422\n    - Empty body → 400\n    - Invalid Content-Type → 415\n    - Extra unknown fields → ignored or 422 (pick one, be consistent)\n    - Boundary values (min/max length, 0, negative, empty string vs null)\n  \n  authentication:\n    - No token → 401\n    - Expired token → 401\n    - Invalid token → 401\n    - Valid token, wrong scope → 403\n  \n  authorization:\n    - User accessing own resource → 200\n    - User accessing other's resource → 403 or 404 (security choice)\n    - Admin accessing any resource → 200\n  \n  edge_cases:\n    - Duplicate creation (same idempotency key) → same 201 response\n    - Concurrent creation race condition → one wins, one gets 409\n    - Resource at max relationships → 422\n    - Unicode in text fields → handled correctly\n    - Very long strings → 422 with max length error\n    - SQL injection in params → no effect (parameterized queries)\n    - XSS in text fields → stored safely, escaped on output\n  \n  performance:\n    - Response time < 200ms (p95)\n    - List endpoint with 10K records → paginated, < 500ms\n    - Bulk operation timeout handling\n```\n\n### curl Testing Recipes\n\n```bash\n# === Setup ===\nBASE=\"https://api.example.com/v1\"\nTOKEN=\"your_bearer_token\"\nalias api='curl -s -H \"Authorization: Bearer $TOKEN\" -H \"Content-Ty"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 5: Security] ### Security Checklist (audit every API)\n\n```yaml\nauthentication:\n  - [ ] All endpoints require auth (except /health, /docs, public webhooks)\n  - [ ] Tokens expire (short-lived access + long-lived refresh)\n  - [ ] Token rotation supported\n  - [ ] Failed auth returns 401 with no info leakage\n  - [ ] API keys are hashed in storage (never plain text)\n\nauthorization:\n  - [ ] Resource-level checks (user can only access their data)\n  - [ ] Endpoint-level checks (role-based access)\n  - [ ] No IDOR vulnerabilities (can't guess other users' resource IDs)\n  - [ ] Admin endpoints separately protected\n  - [ ] Webhook endpoints verify signatures\n\ninput_validation:\n  - [ ] All inputs validated server-side (never trust client)\n  - [ ] SQL injection prevented (parameterized queries only)\n  - [ ] NoSQL injection prevented\n  - [ ] Path traversal prevented\n  - [ ] Request size limited (body, headers, URL length)\n  - [ ] File upload types restricted and scanned\n\noutput_security:\n  - [ ] No sensitive data in responses (passwords, tokens, internal IDs)\n  - [ ] No stack traces in production errors\n  - [ ] Consistent error format (no info leakage in different error types)\n  - [ ] PII redacted in logs\n\ntransport:\n  - [ ] HTTPS only (HTTP redirects to HTTPS)\n  - [ ] HSTS header set\n  - [ ] TLS 1.2+ required\n  - [ ] CORS configured restrictively (specific origins, not *)\n  \nheaders:\n  - [ ] X-Content-Type-Options: nosniff\n  - [ ] X-Frame-Options: DENY\n  - [ ] Content-Security-Policy set\n  - [ ] No Server version header\n  - [ ] Cache-Control: no-store for sensitive endpoints\n```\n\n### CORS Configuration\n\n```yaml\n# Restrictive (recommended)\ncors:\n  origins:\n    - https://app.example.com\n    - https://admin.example.com\n  methods: [GET, POST, PUT, PATCH, DELETE]\n  headers: [Authorization, Content-Type, X-Request-ID]\n  credentials: true\n  max_age: 3600\n\n# Common mistakes to avoid:\n# ❌ Access-Control-Allow-Origin: *  (with credentials)\n# ❌ Reflecting Origin header without validation\n# ❌ Allowing all"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Phase 6: Versioning & Deprecation] ### Versioning Strategy Decision\n\n| Strategy | Example | Pros | Cons | Use When |\n|----------|---------|------|------|----------|\n| **URL path** | `/v1/orders` | Explicit, easy routing | URL pollution | Public APIs, multiple major versions |\n| **Header** | `API-Version: 2024-01` | Clean URLs | Hidden, harder to test | Internal APIs |\n| **Query param** | `?version=2` | Easy to test | Pollutes params | Quick prototypes |\n| **Date-based** | `2024-01-15` | Clear timeline | Many versions | Stripe-style APIs |\n\n**Recommended**: URL path for major versions, header for minor variations.\n\n### Deprecation Playbook\n\n```\nTimeline:\n1. T+0: Announce deprecation (docs, changelog, email)\n2. T+0: Add Deprecation + Sunset headers to old endpoints\n3. T+30d: Log warnings for old endpoint usage\n4. T+60d: Email heavy users of old endpoint directly\n5. T+90d: Return 299 warning header\n6. T+180d: Shut down old endpoint (410 Gone)\n\nHeaders:\nDeprecation: true\nSunset: Sat, 01 Jun 2025 00:00:00 GMT\nLink: <https://api.example.com/v2/orders>; rel=\"successor-version\"\n```\n\n### Migration Guide Template\n\n```markdown\n# Migrating from v1 to v2"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Breaking Changes] 1. `user.name` split into `user.first_name` + `user.last_name`\n2. Pagination changed from offset to cursor-based\n3. Error format updated (see new schema)"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Step-by-Step Migration] 1. Update your client SDK to v2 (`npm install @example/sdk@2`)\n2. Update response parsing for split name fields\n3. Replace `?page=N` with `?after=cursor` pagination\n4. Update error handling for new error format"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Compatibility Mode] Set `X-Compat-Mode: v1` header to get v1-style responses from v2 endpoints.\nAvailable until 2025-06-01.\n```\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Phase 7: Monitoring & Observability] ### Key Metrics Dashboard\n\n```yaml\navailability:\n  - Uptime percentage (target: 99.9% = 8.7h downtime/year)\n  - Health check status (/health endpoint)\n  - Error rate (5xx / total requests)\n\nperformance:\n  - p50 latency (target: < 100ms)\n  - p95 latency (target: < 500ms)\n  - p99 latency (target: < 1000ms)\n  - Throughput (requests/second)\n  - Time to first byte (TTFB)\n\nbusiness:\n  - Requests per endpoint (usage patterns)\n  - Unique API consumers/day\n  - Error rate by endpoint\n  - Rate limit hits/day\n  - Authentication failures/day\n\ninfrastructure:\n  - Database query time (p95)\n  - Connection pool utilization\n  - Memory/CPU per instance\n  - Queue depth (async operations)\n```\n\n### Structured Logging\n\nEvery request should log:\n\n```json\n{\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\",\n  \"level\": \"info\",\n  \"request_id\": \"req_abc123\",\n  \"method\": \"POST\",\n  \"path\": \"/api/v1/orders\",\n  \"status\": 201,\n  \"duration_ms\": 45,\n  \"user_id\": \"usr_xyz\",\n  \"ip\": \"203.0.113.1\",\n  \"user_agent\": \"MyApp/2.0\",\n  \"request_size\": 256,\n  \"response_size\": 1024\n}\n```\n\n### Health Check Endpoint\n\n```json\n// GET /health — for load balancers (simple)\n{ \"status\": \"ok\" }\n\n// GET /health/detailed — for monitoring (authenticated)\n{\n  \"status\": \"degraded\",\n  \"version\": \"1.5.2\",\n  \"uptime_seconds\": 86400,\n  \"checks\": {\n    \"database\": { \"status\": \"ok\", \"latency_ms\": 5 },\n    \"redis\": { \"status\": \"ok\", \"latency_ms\": 2 },\n    \"external_payment_api\": { \"status\": \"degraded\", \"latency_ms\": 2500, \"error\": \"timeout\" },\n    \"disk\": { \"status\": \"ok\", \"free_gb\": 45.2 }\n  }\n}\n```\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Phase 8: API Review Scoring] When reviewing an existing API, score across these dimensions:\n\n### API Quality Rubric (0-100)\n\n| Dimension | Weight | Criteria | Score |\n|-----------|--------|----------|-------|\n| **Design Consistency** | 20% | Naming conventions, HTTP methods, status codes, URL structure | /20 |\n| **Documentation** | 15% | OpenAPI spec, examples, error docs, changelog | /15 |\n| **Error Handling** | 15% | Consistent format, helpful messages, proper codes, no leakage | /15 |\n| **Security** | 20% | Auth, input validation, CORS, headers, no IDOR | /20 |\n| **Performance** | 15% | Latency targets met, pagination, caching headers, N+1 prevented | /15 |\n| **Developer Experience** | 15% | SDK quality, sandbox available, onboarding time, rate limit clarity | /15 |\n\n**Score: ___/100**\n\n| Rating | Score | Action |\n|--------|-------|--------|\n| 🟢 Excellent | 85-100 | Minor improvements only |\n| 🟡 Good | 70-84 | Address gaps before next major release |\n| 🟠 Needs Work | 50-69 | Prioritize improvements, create tech debt tickets |\n| 🔴 Critical | <50 | Stop feature work, fix fundamentals first |\n\n### Review Output Template\n\n```markdown"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[API Review: [Service Name]] **Date:** YYYY-MM-DD\n**Reviewer:** [Agent]\n**Score:** XX/100 (Rating)\n\n### Summary\n[2-3 sentence overview of API quality]\n\n### Scores by Dimension\n- Design Consistency: X/20 — [key finding]\n- Documentation: X/15 — [key finding]\n- Error Handling: X/15 — [key finding]\n- Security: X/20 — [key finding]\n- Performance: X/15 — [key finding]\n- Developer Experience: X/15 — [key finding]\n\n### Critical Issues (fix immediately)\n1. [Issue + recommendation]\n\n### High Priority (fix this sprint)\n1. [Issue + recommendation]\n\n### Nice to Have (backlog)\n1. [Issue + recommendation]\n\n### Positive Highlights\n- [What's working well]\n```\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[GraphQL-Specific Guidance] ### Schema Design Principles\n\n```graphql\n# Good: clear types, nullable where appropriate, connections for lists\ntype Order {\n  id: ID!\n  status: OrderStatus!\n  customer: Customer!\n  items(first: Int, after: String): ItemConnection!\n  total: Money!\n  createdAt: DateTime!\n  updatedAt: DateTime!\n}\n\ntype Money {\n  amount: Int!       # cents, not dollars (avoid float)\n  currency: Currency!\n}\n\nenum OrderStatus {\n  DRAFT\n  CONFIRMED\n  PROCESSING\n  SHIPPED\n  DELIVERED\n  CANCELLED\n}\n\n# Mutations return the modified resource + errors\ntype CreateOrderPayload {\n  order: Order\n  errors: [UserError!]!\n}\n\ntype UserError {\n  field: [String!]\n  message: String!\n  code: ErrorCode!\n}\n```\n\n### GraphQL Anti-Patterns\n\n| Anti-Pattern | Problem | Fix |\n|-------------|---------|-----|\n| No depth limit | Query bombs | Limit depth to 5-7 levels |\n| No complexity limit | Expensive queries | Assign cost per field, cap at 1000 |\n| N+1 queries | Performance death | Use DataLoader pattern |\n| No persisted queries | Security risk | Whitelist queries in production |\n| Exposing internal IDs | Leaks implementation | Use opaque global IDs |\n| No pagination | Memory explosion | Use Relay Connection spec |\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Edge Cases & Gotchas] ### Timezone Handling\n- Always store and return UTC (ISO 8601: `2024-01-15T10:30:00Z`)\n- Accept timezone in input, convert to UTC immediately\n- Never use local server time\n\n### Large Payloads\n- Set `Content-Length` limits (e.g., 1MB default, 10MB for uploads)\n- Use streaming for file uploads (multipart/form-data)\n- Compress responses (Accept-Encoding: gzip)\n- For very large exports → return 202 + poll status endpoint\n\n### Eventual Consistency\n- If using async processing, always return 202 + status URL\n- Include estimated completion time when possible\n- Client should poll with exponential backoff\n\n### Concurrent Updates\n- Use ETags for optimistic concurrency:\n  - GET returns `ETag: \"v1\"` header\n  - PUT/PATCH sends `If-Match: \"v1\"` header\n  - Server returns 412 if resource changed since\n\n### Webhook Design\n- Include event type, timestamp, and full resource in payload\n- Sign payloads (HMAC-SHA256)\n- Expect retries (make handlers idempotent)\n- Return 200 quickly, process async\n- Include webhook ID for deduplication\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Quick Commands] | Request | Action |\n|---------|--------|\n| \"Design an API for [domain]\" | Run Phase 1 resource modeling + naming |\n| \"Generate OpenAPI spec\" | Run Phase 2 with full components |\n| \"Review this API\" | Run Phase 8 scoring rubric |\n| \"Write tests for [endpoint]\" | Run Phase 4 endpoint checklist |\n| \"Security audit this API\" | Run Phase 5 security checklist |\n| \"How should I version this?\" | Run Phase 6 decision matrix |\n| \"Debug this API issue\" | Check Phase 7 logging + health patterns |\n| \"Design GraphQL schema for [domain]\" | Run GraphQL section |"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_api_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-api-architect/SKILL.md"
+}

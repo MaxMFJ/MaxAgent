@@ -1,0 +1,158 @@
+{
+  "id": "openclaw_skill_opencode-acp",
+  "description": "Collaborate with OpenCode via ACP protocol for code modifications, refactoring, and feature implementation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenCode ACP Collaboration\n\nUse OpenCode via ACP (Agent Client Protocol) for code modifications, refactoring, and feature implementation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Automated Workflow (Recommended)\n\nUse the provided Python script for automated OpenCode collaboration:\n\n> On first run, the skill auto-creates a local `.venv` (Python 3.9+) in this skill directory and re-runs inside that environment.\n> If the current interpreter is below 3.9, it auto-discovers a local Python 3.9+ executable (`python3.12`/`python3.11`/`python3.10`/`python3.9`/`python3`/`python`; on Windows also `py -3.x`).\n\n```bash\n# Run from this repository root\n# Simple task\npython opencode_acp_client.py \\\n  --project /path/to/project \\\n  --task \"Add --version flag to CLI\"\n\n# With verbose logging\npython opencode_acp_client.py \\\n  --project /path/to/project \\\n  --task \"Refactor authentication module\" \\\n  --verbose\n\n# With custom timeout (default: 600 seconds)\npython opencode_acp_client.py \\\n  --project /path/to/project \\\n  --task \"Build REST API for todos\" \\\n  --timeout 1200\n```\n\n**What it does:**\n1. Starts OpenCode ACP server\n2. Initializes ACP connection\n3. Creates session\n4. Sends task\n5. Monitors progress and displays output\n6. Stops OpenCode when done\n\n**Output:**\n- Real-time progress updates\n- Tool calls and status\n- Agent messages\n- Completion status\n\n### Manual Workflow (Advanced)\n\nFor fine-grained control, use manual JSON-RPC messages:\n\n```bash\n# Start OpenCode ACP server in background\nexec pty:true workdir:/path/to/project background:true command:\"opencode acp\"\n# Returns sessionId (e.g., \"neat-zephyr\")\n\n# Initialize connection\nprocess action:write sessionId:neat-zephyr data:'{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"Claw\",\"title\":\"Claw AI Assistant\",\"version\":\"1.0.0\"}}}\\n'\n\n# Wait for response\nprocess action:log sessionId:neat-zephyr\n\n# Create session\nprocess action:write sessionId:neat-zephyr data:'{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"session/new\",\"params\":{\"cwd\":\"/path/to/project\",\"mcpServers\":[]}}\\n'\n\n# Wait for"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[The Pattern: Plan → Execute → Verify] ### Step 1: Analyze Requirements\n\n**Your job (as planner):**\n- Understand user needs\n- Identify technical constraints\n- Assess impact and risks\n\n**Output:**\n- Clear, specific requirements\n- Technical constraints\n- Risk assessment\n\n### Step 2: Create Plan\n\n**Your job (as planner):**\n- Break down into executable steps\n- Define acceptance criteria\n- Provide implementation guidance\n\n**Format:**\n```markdown\n# Task: [Task Name]"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Objective] [Goal description]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Requirements] 1. [Requirement 1]\n2. [Requirement 2]\n..."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Acceptance Criteria] - ✅ [Criterion 1]\n- ✅ [Criterion 2]\n..."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Implementation Guidance] 1. [Step 1]\n2. [Step 2]\n..."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Verification] [How to verify]\n```\n\n### Step 3: Execute with OpenCode\n\n**Start OpenCode ACP server:**\n```bash\nexec pty:true workdir:/path/to/project background:true command:\"opencode acp\"\n```\n\n**Initialize connection:**\n```json\n{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"Claw\",\"title\":\"Claw AI Assistant\",\"version\":\"1.0.0\"}}}\n```\n\n**Create session:**\n```json\n{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"session/new\",\"params\":{\"cwd\":\"/path/to/project\",\"mcpServers\":[]}}\n```\n\n**Send task:**\n```json\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"ses_xxx\",\"prompt\":[{\"type\":\"text\",\"text\":\"[Your plan from Step 2]\"}]}}\n```\n\n### Step 4: Monitor Progress\n\n**Poll for updates:**\n```bash\nprocess action:log sessionId:neat-zephyr\n```\n\n**Key update types:**\n- `agent_thought_chunk` - OpenCode's thinking process\n- `tool_call` - Tool invocations (search, analyze, edit)\n- `plan` - Task plan updates\n- `stopReason` - Task completion signal\n\n**Stop conditions:**\n- `stopReason: \"end_turn\"` - Normal completion\n- `stopReason: \"cancelled\"` - Task cancelled\n- Timeout (suggest: 5-10 minutes)\n\n### Step 5: Verify Results\n\n**Verification checklist:**\n- ✅ Code changes match requirements\n- ✅ Acceptance criteria met\n- ✅ Code style consistent\n- ✅ Tests pass\n- ✅ No regressions\n\n**Verification methods:**\n1. Review OpenCode's change summary\n2. Run relevant tests\n3. Manual verification of key features\n4. Code quality check\n\n### Step 6: Cleanup\n\n**Stop OpenCode:**\n```bash\nprocess action:kill sessionId:neat-zephyr\n```\n\n**Record results:**\n- Update memory/YYYY-MM-DD.md\n- Record success/failure reasons\n- Document lessons learned"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[⚠️ First-Time Project Setup] If this is OpenCode's first time working on a project, initialize the knowledge base first:\n\n1. **Start OpenCode TUI** (not acp mode):\n   ```bash\n   cd /path/to/project\n   opencode\n   ```\n\n2. **Run initialization**:\n   ```\n   /init-deep\n   ```\n\n3. **Wait for completion**:\n   - OpenCode creates hierarchical AGENTS.md knowledge base\n   - Analyzes project structure and code\n   - Builds project context\n\n4. **Exit and restart in acp mode**:\n   - After initialization, exit TUI\n   - Restart with `opencode acp` for collaboration\n\n**Why init-deep?**\n- Helps OpenCode understand project structure\n- Builds code knowledge graph\n- Improves execution efficiency and accuracy\n- Reduces unnecessary exploration and trial-and-error"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[OpenCode Configuration] **Location:** `/root/.opencode/opencode.json`\n\n**Recommended mode:** `sisyphus` (AI orchestrator)"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[ACP Protocol Details] **Protocol version:** 1\n\n**Transport format:** JSON-RPC 2.0\n\n**Message delimiter:** Newline (\\n)\n\n**Communication:** stdin/stdout"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Available OpenCode Modes] - **sisyphus** (recommended): Powerful AI orchestrator, excels at planning and delegation\n- **hephaestus**: Autonomous deep worker, end-to-end task completion\n- **prometheus**: Planning agent\n- **atlas**: Task orchestrator"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Best Practices] ### 1. Clear Requirements\n\n**Good:**\n```markdown\n# Task: Add Version Command"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Objective] Add --version flag to display project version from package.json"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Requirements] 1. Support both --version and -v\n2. Display format: \"QMD Memory v1.0.0\\nOpenClaw memory plugin\"\n3. Exit after displaying version"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Acceptance Criteria] - ✅ `bun src/qmd.ts --version` works\n- ✅ Version matches package.json\n- ✅ No impact on existing commands\n```\n\n**Bad:**\n```markdown\nAdd version command\n```\n\n### 2. Acceptance Criteria\n\n**Good criteria:**\n- Specific, measurable, verifiable\n- Include positive and negative tests\n- Consider edge cases\n\n**Example:**\n- ✅ Run `command --version` displays correct version\n- ✅ Run `command -v` displays same result\n- ✅ Version matches package.json\n- ✅ Exit code is 0\n- ✅ No impact on other commands\n\n### 3. Progress Monitoring\n\n**Key metrics:**\n- Task breakdown count (typically 3-7 subtasks)\n- Background agents count (typically 2-4)\n- Tool call count (search, analyze, edit)\n- Execution time (typically 2-10 minutes)\n\n**Warning signs:**\n- Long silence (> 2 minutes)\n- Repeated error messages\n- Tool call failures\n- Timeout\n\n### 4. Error Handling\n\n**Common errors:**\n1. **GLIBC version issues**: Some tools (like ast_grep) may be incompatible\n   - Solution: OpenCode auto-switches to other tools\n2. **Agent not found**: e.g., \"librarian\" agent unavailable\n   - Solution: OpenCode uses other agents\n3. **Timeout**: Task execution too long\n   - Solution: Break into smaller tasks or increase timeout"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Collaboration Principles] ### Planner's Responsibilities\n\n1. **Clear requirements**:\n   - Specific, measurable, verifiable\n   - Include context and constraints\n   - Provide examples and references\n\n2. **Reasonable plan**:\n   - Break into small steps\n   - Consider technical feasibility\n   - Estimate workload\n\n3. **Effective verification**:\n   - Clear acceptance criteria\n   - Executable verification methods\n   - Timely feedback\n\n### Executor's Characteristics (OpenCode)\n\n1. **Automatic planning**:\n   - Break requirements into subtasks\n   - Auto-select tools and methods\n   - Parallel execution of multiple tasks\n\n2. **Intelligent execution**:\n   - Use sisyphus mode (AI orchestrator)\n   - Launch background explore agents\n   - Auto-search and analyze code\n\n3. **Continuous feedback**:\n   - Real-time progress reports\n   - Show thinking process\n   - Provide execution summary"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Real-World Example] ### Case: Add Version Command to QMD\n\n**Requirement:** Add `--version` command-line option\n\n**Planner's work:**\n1. Analyze requirement: Need to read package.json version, display project info\n2. Create plan:\n   - Locate CLI argument parsing logic\n   - Add version flag handling\n   - Implement version info output\n   - Add tests\n3. Set acceptance criteria:\n   - `bun src/qmd.ts --version` displays correct version\n   - `-v` alias works\n   - Version matches package.json\n   - No impact on existing features\n\n**OpenCode's work:**\n1. Auto-break into 5 subtasks\n2. Launch 3 explore agents in parallel\n3. Search code structure (parseCLI, version info, tests)\n4. Implement code changes\n5. Run tests for verification\n\n**Result:**\n- ✅ Collaboration mode verified successfully\n- ✅ OpenCode auto-plans and executes\n- ✅ Parallel processing improves efficiency\n- ✅ Real-time progress feedback"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Common Questions] ### Q1: What to do for first-time project?\n\n**A:**\nFirst-time project must initialize knowledge base:\n\n1. Start OpenCode TUI:\n   ```bash\n   cd /path/to/project\n   opencode\n   ```\n\n2. Run initialization:\n   ```\n   /init-deep\n   ```\n\n3. Exit after completion, then use acp mode for collaboration\n\n**Purpose:**\n- Create hierarchical AGENTS.md knowledge base\n- Analyze project structure and dependencies\n- Build code context, improve execution efficiency\n\n### Q2: How to choose OpenCode mode?\n\n**A:**\n- **sisyphus** (default): Suitable for most tasks, auto-planning and parallel execution\n- **hephaestus**: Suitable for complex tasks requiring deep analysis\n- **prometheus**: Suitable for planning-only scenarios, no execution needed\n\n### Q3: How to handle OpenCode execution failure?\n\n**A:**\n1. Check error messages and logs\n2. Analyze failure reason (unclear requirements? technical limitations?)\n3. Adjust plan or requirements\n4. Restart OpenCode\n5. If multiple failures, consider manual implementation\n\n### Q4: How to optimize collaboration efficiency?\n\n**A:**\n1. **Clear requirements**: Reduce OpenCode's guessing and trial-and-error\n2. **Reasonable breakdown**: Break large tasks into small tasks\n3. **Parallel execution**: OpenCode auto-parallelizes\n4. **Timely feedback**: Monitor progress, adjust promptly\n\n### Q5: How can other Agents use this workflow?\n\n**A:**\n- **Butler Agent**: When making long-term plans, can delegate code modification tasks to OpenCode\n- **Challenger Agent**: When finding optimization opportunities, can use OpenCode for quick implementation\n- **Main Agent**: When receiving user requirements, can coordinate OpenCode execution\n\nAll Agents follow the same workflow: analyze requirements → create plan → start OpenCode → monitor progress → verify results."
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Rules] 1. **Always use pty:true** - OpenCode needs a terminal\n2. **Initialize first-time projects** - Run `/init-deep` before first use\n3. **Clear requirements** - Specific, measurable, verifiable\n4. **Monitor progress** - Check logs regularly, don't just wait\n5. **Verify results** - Always check acceptance criteria\n6. **Record lessons** - Update memory with successes and failures\n7. **Be patient** - Don't kill sessions prematurely\n8. **Use process:log** - Check progress without interfering"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Progress Updates] When spawning OpenCode in background, keep user informed:\n\n- Send 1 short message when starting (what's running + where)\n- Update only when something changes:\n  - Milestone completes (build finished, tests passed)\n  - OpenCode asks a question / needs input\n  - Error occurs or user action needed\n  - OpenCode finishes (include what changed + where)\n- If killing session, immediately say why\n\nThis prevents \"Agent failed before reply\" confusion."
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Auto-Notify on Completion] For long-running tasks, append wake trigger to prompt:\n\n```\n... your task here.\n\nWhen completely finished, run this command to notify me:\nopenclaw system event --text \"Done: [brief summary]\" --mode now\n```\n\n**Example:**\n\n```bash\nexec pty:true workdir:~/project background:true command:\"opencode acp\"\n# ... initialize, create session ...\n# Send prompt with wake trigger:\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"ses_xxx\",\"prompt\":[{\"type\":\"text\",\"text\":\"Build a REST API for todos.\\n\\nWhen completely finished, run: openclaw system event --text \\\"Done: Built todos REST API with CRUD endpoints\\\" --mode now\"}]}}\n```\n\nThis triggers immediate wake event — you get notified in seconds, not minutes."
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Version History] - **v1.0** (2026-02-16): Initial version\n  - OpenCode 1.2.1\n  - ACP protocol version 1\n  - sisyphus mode\n  - Test project: openclaw-qmd\n\n---\n\n**Last updated:** 2026-02-16  \n**Maintainer:** Claw 🐾  \n**Status:** ✅ Verified"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "opencode_acp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔧",
+        "requires": {
+          "anyBins": [
+            "opencode"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ailois/opencode-acp/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_CRM Manager",
+  "description": "Manages a local CSV-based CRM with pipeline tracking",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # CRM Manager\n\nYou manage a lightweight CRM stored as a local CSV file. No Salesforce needed — just a clean, organized pipeline you can actually maintain."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[CRM File Location] Default: `crm.csv` in the workspace. Create from `crm-template.csv` if it doesn't exist."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[CSV Structure] ```csv\nid,name,company,email,phone,stage,deal_value,source,last_contact,next_action,next_action_date,notes,created,updated\n```\n\n### Fields\n\n| Field | Description | Required |\n|-------|-------------|----------|\n| id | Auto-increment integer | Yes |\n| name | Contact's full name | Yes |\n| company | Company name | Yes |\n| email | Email address | No |\n| phone | Phone number | No |\n| stage | Pipeline stage (see below) | Yes |\n| deal_value | Estimated deal value in USD | No |\n| source | How they found you / you found them | No |\n| last_contact | Date of last interaction (YYYY-MM-DD) | Yes |\n| next_action | What to do next | Yes |\n| next_action_date | When to do it (YYYY-MM-DD) | Yes |\n| notes | Freeform notes, pipe-separated for multiple | No |\n| created | Date added (YYYY-MM-DD) | Yes |\n| updated | Date last modified (YYYY-MM-DD) | Yes |\n\n### Pipeline Stages\n\n1. **lead** — New contact, not yet qualified\n2. **qualified** — Confirmed they have budget, need, and authority\n3. **meeting** — Meeting scheduled or completed\n4. **proposal** — Proposal/quote sent\n5. **negotiation** — Working out terms\n6. **closed-won** — Deal done\n7. **closed-lost** — Didn't work out\n8. **nurture** — Not ready now, stay in touch"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] When the user asks you to manage CRM data, handle these actions:\n\n### Add a Contact\n\"Add [name] from [company] to the CRM\"\n→ Create a new row, set stage to \"lead\", set created/updated to today.\n\n### Update a Contact\n\"Update [name] — had a call today, moving to proposal stage\"\n→ Update stage, last_contact, next_action, notes, updated date.\n\n### Show Pipeline\n\"Show me my pipeline\" / \"What's in my CRM?\"\n→ Display contacts grouped by stage with deal values.\n\n### Follow-up Reminders\n\"What follow-ups are due?\" / \"Who should I contact?\"\n→ Show contacts where next_action_date ≤ today, sorted by date.\n\n### Pipeline Summary\n\"Pipeline summary\"\n→ Show: total contacts per stage, total deal value per stage, overdue follow-ups count.\n\n### Search\n\"Find [name/company]\"\n→ Search across name and company fields.\n\n### Move Stage\n\"Move [name] to [stage]\"\n→ Update stage and updated date."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Rules] - Always read the CSV before making changes (don't assume state)\n- Always update the `updated` field when modifying a row\n- Never delete rows — move to closed-lost or nurture instead\n- Keep notes append-only (add new notes with pipe separator, don't overwrite)\n- When showing pipeline, format as a clean table\n- Warn if a contact has no next_action_date or it's overdue\n- Back up the CSV before bulk operations (copy to crm-backup-YYYY-MM-DD.csv)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Pipeline Health Checks] Periodically flag:\n- Contacts with no activity in 14+ days\n- Deals stuck in the same stage for 30+ days\n- Missing next actions\n- Leads with no follow-up scheduled"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "CRM Manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/crm-manager/SKILL.md"
+}

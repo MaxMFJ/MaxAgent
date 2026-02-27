@@ -1,0 +1,134 @@
+{
+  "id": "openclaw_skill_task-decomposer",
+  "description": "Decomposes complex user requests into executable subtasks, identifies required capabilities, searches for existing skills at skills.sh, and creates new skills when no solution exists. This skill should be used when the user submits a complex multi-step request, wants to automate workflows, or needs help breaking down large tasks into manageable pieces.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Task Decomposer & Skill Generator\n\nThis skill helps decompose complex user requests into executable subtasks, identify required capabilities for each task, search for existing skills from the open skills ecosystem, and automatically create new skills when no existing solution is available."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Workflow] ```\nUser Request → Task Decomposition → Capability Identification → Skill Search → Gap Analysis → Skill Creation → Execution Plan\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 1: Task Analysis & Decomposition] When receiving a user request, follow these steps:\n\n### Step 1: Understand User Intent\n\nAnalyze the request to identify:\n- **Core objective**: What is the end goal?\n- **Domains involved**: What areas of expertise are needed?\n- **Trigger mechanism**: One-time, scheduled, or event-driven?\n\nExample analysis:\n```\nUser Input: \"Help me get email summaries every morning and send them to Slack\"\n\nAnalysis:\n- Core objective: Automated email digest delivery to Slack\n- Domains: Email access, content summarization, messaging\n- Trigger: Scheduled (daily morning)\n```\n\n### Step 2: Decompose into Atomic Tasks\n\nBreak down the complex task into minimal executable units:\n\n```yaml\nTask Decomposition:\n  - task_id: 1\n    name: \"Access and retrieve email list\"\n    type: \"data_retrieval\"\n    input: \"Email credentials/session\"\n    output: \"List of emails with metadata\"\n    dependencies: []\n    \n  - task_id: 2\n    name: \"Extract key information from emails\"\n    type: \"data_extraction\"\n    input: \"Email list\"\n    output: \"Structured email data\"\n    dependencies: [1]\n    \n  - task_id: 3\n    name: \"Generate email summary\"\n    type: \"content_generation\"\n    input: \"Structured email data\"\n    output: \"Formatted summary text\"\n    dependencies: [2]\n    \n  - task_id: 4\n    name: \"Send message to Slack\"\n    type: \"message_delivery\"\n    input: \"Summary text, Slack webhook/token\"\n    output: \"Delivery confirmation\"\n    dependencies: [3]\n    \n  - task_id: 5\n    name: \"Configure scheduled execution\"\n    type: \"scheduling\"\n    input: \"Workflow script, schedule config\"\n    output: \"Active scheduled job\"\n    dependencies: [4]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 2: Capability Identification] Map each subtask to a capability type from the universal capability taxonomy.\n\n### Universal Capability Types\n\n| Capability | Description | Search Keywords |\n|------------|-------------|-----------------|\n| `browser_automation` | Web navigation, interaction, scraping | browser, selenium, puppeteer, playwright, scrape |\n| `web_search` | Internet search and information retrieval | search, google, bing, duckduckgo |\n| `api_integration` | Third-party API communication | api, rest, graphql, webhook, {service-name} |\n| `data_extraction` | Parse and extract structured data | parse, extract, scrape, ocr, pdf |\n| `data_transformation` | Convert, clean, transform data | transform, convert, format, clean, etl |\n| `content_generation` | Create text, images, or other content | generate, write, create, summarize, translate |\n| `file_operations` | Read, write, manipulate files | file, read, write, csv, excel, json, pdf |\n| `message_delivery` | Send notifications or messages | notify, send, email, slack, discord, telegram |\n| `scheduling` | Time-based task execution | schedule, cron, timer, daily, weekly |\n| `authentication` | Identity and access management | auth, oauth, login, token, credentials |\n| `database_operations` | Database CRUD operations | database, sql, mongodb, query, store |\n| `code_execution` | Run scripts or programs | execute, run, script, shell, python |\n| `version_control` | Git and code repository operations | git, github, gitlab, commit, pr, review |\n| `testing` | Automated testing and QA | test, jest, pytest, e2e, unit |\n| `deployment` | Application deployment and CI/CD | deploy, docker, kubernetes, ci-cd, release |\n| `monitoring` | System and application monitoring | monitor, alert, log, metrics, health |\n\n### Capability Identification Process\n\nFor each subtask:\n1. Analyze the task description and requirements\n2. Match to one or more capability types\n3. Generate search keywords for skill discovery\n\nExample:\n```yaml\nTask: \"Send message to Slack\"\nCapability: m"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 3: Skill Search] Use the Skills CLI to search for existing skills at https://skills.sh/\n\n### Search Process\n\nFor each capability need, search using relevant keywords:\n\n```bash\n# Search for skills matching the capability\nnpx skills find <keyword>\n\n# Examples:\nnpx skills find slack notification\nnpx skills find browser automation\nnpx skills find pdf extract\nnpx skills find github api\n```\n\n### Evaluate Search Results\n\nWhen results are returned:\n```\nInstall with npx skills add <owner/repo@skill>\n\nowner/repo@skill-name\n└ https://skills.sh/owner/repo/skill-name\n```\n\nEvaluate each result for:\n- **Relevance**: Does it match the required capability?\n- **Completeness**: Does it cover all needed functionality?\n- **Quality**: Is it well-documented and maintained?\n\n### Generate Capability Mapping\n\n```yaml\nCapability Mapping:\n  - task_id: 1\n    capability: browser_automation\n    search_query: \"browser email automation\"\n    found_skills:\n      - name: \"anthropic/claude-skills@browser-use\"\n        url: \"https://skills.sh/anthropic/claude-skills/browser-use\"\n        match_score: high\n    recommendation: \"Install browser-use skill\"\n    \n  - task_id: 4\n    capability: message_delivery\n    search_query: \"slack notification\"\n    found_skills: []\n    recommendation: \"Create new skill: slack-notification\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 4: Gap Analysis] Identify tasks without matching skills:\n\n### Built-in Capabilities (No Skill Needed)\n\nThese capabilities are typically handled by the agent's native abilities:\n- `content_generation` - LLM's native text generation\n- `data_transformation` - Basic data manipulation via code\n- `code_execution` - Direct script execution\n- `scheduling` - System-level cron/scheduler configuration\n\n### Skills Required\n\nFor capabilities without built-in support, determine:\n1. **Skill exists**: Install from skills.sh\n2. **Skill not found**: Create new skill"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 5: Skill Creation] When no existing skill matches a required capability, create a new skill.\n\n### Skill Creation Process\n\n1. **Define scope**: Determine what the skill should do\n2. **Design interface**: Define inputs, outputs, and usage patterns\n3. **Create SKILL.md**: Write the skill definition file\n4. **Add resources**: Include scripts, references, or assets as needed\n\n### Skill Template\n\n```markdown\n---\nname: {skill-name}\ndescription: {Clear description of what the skill does and when to use it. Written in third person.}\n---\n\n# {Skill Title}\n\n{Brief introduction explaining the skill's purpose.}"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[When to Use] {Describe scenarios when this skill should be triggered.}"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Prerequisites] {List any required installations, configurations, or credentials.}"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Usage] {Detailed usage instructions with examples.}\n\n### Basic Usage\n\n```bash\n{Basic command or code example}\n```\n\n### Advanced Usage\n\n{More complex examples and options.}"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Configuration] {Any configuration options or environment variables.}"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Examples] ### Example 1: {Use Case}\n\n{Step-by-step example with code.}"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Troubleshooting] {Common issues and solutions.}\n```\n\n### Initialize New Skill\n\n```bash\n# Create skill using the skills CLI\nnpx skills init <skill-name>\n\n# Or manually create the structure:\n# skill-name/\n# ├── SKILL.md (required)\n# ├── scripts/ (optional)\n# ├── references/ (optional)\n# └── assets/ (optional)\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Phase 6: Generate Execution Plan] Compile all information into a structured execution plan:\n\n```yaml\nExecution Plan:\n  title: \"{Task Description}\"\n  \n  prerequisites:\n    - \"{Prerequisite 1}\"\n    - \"{Prerequisite 2}\"\n  \n  skills_to_install:\n    - skill: \"owner/repo@skill-name\"\n      command: \"npx skills add owner/repo@skill-name -g -y\"\n      url: \"https://skills.sh/owner/repo/skill-name\"\n  \n  skills_to_create:\n    - name: \"{new-skill-name}\"\n      capability: \"{capability_type}\"\n      description: \"{What it does}\"\n  \n  execution_steps:\n    - step: 1\n      task: \"{Task name}\"\n      skill: \"{skill-name | built-in}\"\n      action: \"{Specific action to take}\"\n      \n    - step: 2\n      task: \"{Task name}\"\n      skill: \"{skill-name | built-in}\"\n      action: \"{Specific action to take}\"\n  \n  verification:\n    - \"{How to verify step 1 succeeded}\"\n    - \"{How to verify step 2 succeeded}\"\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Task Decomposition Principles] ### Principle 1: Atomicity\nEach subtask should be the minimal executable unit with clear input and output.\n\n### Principle 2: Independence\nMinimize dependencies between tasks to allow parallel execution where possible.\n\n### Principle 3: Verifiability\nEach task should have a clear way to verify successful completion.\n\n### Principle 4: Reusability\nIdentify reusable patterns and prefer creating general-purpose skills.\n\n### Principle 5: Single Responsibility\nEach task should do one thing well."
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Output Format] Present the decomposition results in a structured format:\n\n```\n════════════════════════════════════════════════════════════════\n📋 TASK DECOMPOSITION REPORT\n════════════════════════════════════════════════════════════════\n\n🎯 Original Request:\n{User's original request}\n\n────────────────────────────────────────────────────────────────\n📊 SUBTASKS\n────────────────────────────────────────────────────────────────\n┌─────┬────────────────────────┬───────────────────┬───────────┐\n│ ID  │ Task                   │ Capability        │ Status    │\n├─────┼────────────────────────┼───────────────────┼───────────┤\n│ 1   │ {task name}            │ {capability}      │ Found     │\n│ 2   │ {task name}            │ {capability}      │ Built-in  │\n│ 3   │ {task name}            │ {capability}      │ Create    │\n└─────┴────────────────────────┴───────────────────┴───────────┘\n\n────────────────────────────────────────────────────────────────\n🔍 SKILL SEARCH RESULTS\n────────────────────────────────────────────────────────────────\nTask 1: {task name}\n  Search: npx skills find {keywords}\n  Found: owner/repo@skill-name\n  URL: https://skills.sh/owner/repo/skill-name\n  \nTask 3: {task name}\n  Search: npx skills find {keywords}\n  Found: No matching skills\n  Action: Create new skill\n\n────────────────────────────────────────────────────────────────\n🛠️ SKILLS TO CREATE\n────────────────────────────────────────────────────────────────\n1. {skill-name}\n   Capability: {capability_type}\n   Description: {what it does}\n\n────────────────────────────────────────────────────────────────\n📝 EXECUTION PLAN\n────────────────────────────────────────────────────────────────\nPrerequisites:\n  • {prerequisite 1}\n  • {prerequisite 2}\n\nSteps:\n  1. {action} using {skill}\n  2. {action} using {skill}\n  3. {action} using {skill}\n\n════════════════════════════════════════════════════════════════\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Examples] ### Example 1: Workflow Automation\n\n**User Request:**\n```\nCreate a workflow that monitors GitHub issues, summarizes new issues, and posts notifications to Discord\n```\n\n**Decomposition:**\n```yaml\nSubtasks:\n  1. Monitor GitHub repository for new issues\n     Capability: api_integration\n     Search: \"npx skills find github issues\"\n     \n  2. Extract issue content and metadata\n     Capability: data_extraction\n     Status: Built-in (code)\n     \n  3. Generate issue summary\n     Capability: content_generation\n     Status: Built-in (LLM)\n     \n  4. Send notification to Discord\n     Capability: message_delivery\n     Search: \"npx skills find discord notification\"\n     \n  5. Configure webhook or polling trigger\n     Capability: scheduling\n     Status: Built-in (system)\n```\n\n### Example 2: Data Pipeline\n\n**User Request:**\n```\nSearch for AI research papers, download PDFs, extract key findings, and save to Notion\n```\n\n**Decomposition:**\n```yaml\nSubtasks:\n  1. Search for AI research papers\n     Capability: web_search\n     Search: \"npx skills find academic search\"\n     \n  2. Download PDF files\n     Capability: browser_automation\n     Search: \"npx skills find browser download\"\n     \n  3. Extract text from PDFs\n     Capability: data_extraction\n     Search: \"npx skills find pdf extract\"\n     \n  4. Generate summaries of key findings\n     Capability: content_generation\n     Status: Built-in (LLM)\n     \n  5. Save to Notion database\n     Capability: api_integration\n     Search: \"npx skills find notion\"\n```"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Start with skill search**: Always check https://skills.sh/ before creating new skills\n2. **Use specific search terms**: Combine capability keywords with domain terms\n3. **Leverage built-in capabilities**: Don't create skills for things the agent can do natively\n4. **Create reusable skills**: Design new skills to be general-purpose when possible\n5. **Document thoroughly**: New skills should have clear usage instructions\n6. **Verify before proceeding**: Confirm skill installation before executing tasks\n7. **Handle errors gracefully**: Include fallback strategies in execution plans"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Integration with find-skills] This skill works in conjunction with the `find-skills` skill for discovering existing solutions:\n\n```bash\n# Search the skills ecosystem\nnpx skills find <query>\n\n# Install a discovered skill\nnpx skills add <owner/repo@skill> -g -y\n\n# Browse all available skills\n# Visit: https://skills.sh/\n```"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Notes] - Always search for existing skills before creating new ones\n- Built-in capabilities (LLM, basic code) don't require skills\n- Skill creation requires user confirmation before proceeding\n- Complex workflows may need multiple skills working together"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "task_decomposer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/10e9928a/task-decomposer/SKILL.md"
+}

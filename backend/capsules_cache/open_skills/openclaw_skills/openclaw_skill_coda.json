@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_coda",
+  "description": "General-purpose Coda document manager via REST API v1. Supports listing/creating/updating/deleting docs, managing tables/rows/pages, triggering automations, and exploring doc structure. Requires CODA_API_TOKEN environment variable. Delete operations require explicit confirmation; publishing and permission changes require explicit user intent.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Coda API Skill\n\nInteract with the Coda REST API v1 to manage docs, tables, rows, pages, and automations."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] Use this skill when the user wants to:\n- List, search, create, or delete Coda docs\n- Read from or write to tables (insert, upsert, update, delete rows)\n- Explore doc structure (pages, tables, columns, formulas, controls)\n- Trigger automations (push buttons)\n- Export doc content or analytics"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When NOT to Use] - **Do NOT use** for general document editing advice unrelated to the API\n- **Do NOT use** for Pack development (this skill covers Doc management, not Pack creation)\n- **Do NOT use** for operations requiring Doc Maker permissions unless confirmed the user has them"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **API Token**: Set environment variable `CODA_API_TOKEN` with your Coda API token\n   - Get token at: https://coda.io/account -> API Settings\n2. **Python 3.7+** with `requests` library installed\n3. **Permissions**: Some operations (create doc, update doc title, create page) require Doc Maker role in the workspace"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[CLI Tool Usage] The skill includes a Python CLI tool at `scripts/coda_cli.py`:\n\n```bash\n# Setup\nexport CODA_API_TOKEN=\"your_token_here\"\n\n# List docs\npython scripts/coda_cli.py docs list --query \"Project\"\n\n# Get doc info\npython scripts/coda_cli.py docs get <doc-id>\n\n# Create doc\npython scripts/coda_cli.py docs create --title \"My New Doc\"\n\n# List tables in doc\npython scripts/coda_cli.py tables list <doc-id>\n\n# List rows in table\npython scripts/coda_cli.py rows list <doc-id> <table-id>\n\n# Insert row\npython scripts/coda_cli.py rows insert <doc-id> <table-id> --data '{\"Name\": \"Task 1\", \"Status\": \"Done\"}'\n\n# Update row\npython scripts/coda_cli.py rows update <doc-id> <table-id> <row-id> --data '{\"Status\": \"In Progress\"}'\n\n# Delete row (requires confirmation)\npython scripts/coda_cli.py rows delete <doc-id> <table-id> <row-id>\n\n# List pages\npython scripts/coda_cli.py pages list <doc-id>\n\n# Trigger automation (push button)\npython scripts/coda_cli.py automations trigger <doc-id> <button-id>\n\n# Force delete without confirmation (use with caution)\npython scripts/coda_cli.py docs delete <doc-id> --force\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workflow Guidelines] ### 1. Doc ID Extraction\nCoda doc IDs can be extracted from browser URLs:\n- URL: `https://coda.io/d/_dAbCDeFGH/Project-Tracker`\n- Doc ID: `AbCDeFGH` (remove `_d` prefix)\n\nThe CLI tool accepts both full URLs and raw IDs.\n\n### 2. Rate Limit Handling\nThe API has strict rate limits:\n- **Read**: 100 requests per 6 seconds\n- **Write (POST/PUT/PATCH)**: 10 requests per 6 seconds\n- **Write doc content**: 5 requests per 10 seconds\n- **List docs**: 4 requests per 6 seconds\n\nThe CLI tool automatically implements exponential backoff for 429 responses.\n\n### 3. Asynchronous Operations\nWrite operations return HTTP 202 with a `requestId`. The CLI tool optionally polls for completion using `--wait` flag.\n\n### 4. Safety Guardrails\n\n**Delete Operations** (rows, docs, pages, folders):\n- Always requires explicit user confirmation in interactive mode\n- Use `--force` flag only in automation/scripts\n- Shows preview of what will be deleted\n\n**Publishing** (`docs publish`):\n- Requires explicit `--confirm-publish` flag\n- Cannot be combined with `--force`\n\n**Permissions** (`acl` commands):\n- Requires explicit `--confirm-permissions` flag for any changes\n- Read operations (list permissions) are always allowed\n\n**Automation Triggers**:\n- Allowed without special flags but logged\n- User should be aware that automations may trigger notifications or external actions\n\n### 5. Pagination\nList commands support:\n- `--limit`: Maximum results (default 25, max varies by endpoint)\n- `--page-token`: For fetching subsequent pages\n- CLI auto-follows pages with `--all` flag"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Common Patterns] ### Batch Row Operations\n```bash\n# Insert multiple rows from JSON file\npython scripts/coda_cli.py rows insert-batch <doc-id> <table-id> --file rows.json\n\n# Upsert rows (update if exists, insert if not) using key columns\npython scripts/coda_cli.py rows upsert <doc-id> <table-id> --file rows.json --keys \"Email\"\n```\n\n### Sync Between Docs\n```bash\n# Export from source\npython scripts/coda_cli.py rows list <source-doc> <table-id> --format json > export.json\n\n# Import to destination\npython scripts/coda_cli.py rows insert-batch <dest-doc> <table-id> --file export.json\n```\n\n### Explore Structure\n```bash\n# Get full doc structure\npython scripts/coda_cli.py docs structure <doc-id>\n\n# List all formulas\npython scripts/coda_cli.py formulas list <doc-id>\n\n# List all controls\npython scripts/coda_cli.py controls list <doc-id>\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] Common HTTP status codes:\n- `400`: Bad request (invalid parameters)\n- `401`: Invalid/expired API token\n- `403`: Insufficient permissions (need Doc Maker role)\n- `404`: Resource not found\n- `429`: Rate limited (implement backoff)\n- `202`: Accepted but not yet processed (async operation)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Security Considerations] 1. **Token Storage**: Never commit `CODA_API_TOKEN` to version control\n2. **Token Scope**: The token has full access to all docs the user can access\n3. **Workspace Restrictions**: Creating docs requires Doc Maker role in target workspace\n4. **Data Exposure**: Row data may contain sensitive information; handle exports carefully"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Examples] ### List and Filter Docs\n```bash\npython scripts/coda_cli.py docs list --is-owner --query \"Project\"\n```\n\n### Create Doc from Template\n```bash\npython scripts/coda_cli.py docs create --title \"Q4 Planning\" --source-doc \"template-doc-id\"\n```\n\n### Update Row Status\n```bash\npython scripts/coda_cli.py rows update AbCDeFGH grid-xyz row-123 \\\n  --data '{\"Status\": \"Complete\", \"Completed Date\": \"2024-01-15\"}'\n```\n\n### Delete Multiple Rows (with confirmation)\n```bash\npython scripts/coda_cli.py rows delete-batch AbCDeFGH grid-xyz \\\n  --filter '{\"Status\": \"Archived\"}' \\\n  --confirm \"Delete all archived rows?\"\n```\n\n### Export Table to CSV\n```bash\npython scripts/coda_cli.py rows list AbCDeFGH grid-xyz --format csv > export.csv\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Reference] - API Documentation: https://coda.io/developers/apis/v1\n- OpenAPI Spec: https://coda.io/apis/v1/openapi.yaml\n- Rate Limits: https://coda.io/developers/apis/v1#section/Rate-Limiting"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "coda"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x7466/coda/SKILL.md"
+}

@@ -1,0 +1,132 @@
+{
+  "id": "openclaw_skill_schema-markup-generator",
+  "description": "Use when the user asks to \"add schema markup\", \"generate structured data\", \"JSON-LD\", \"rich snippets\", \"FAQ schema\", \"add FAQ rich results\", \"I want star ratings in Google\", \"product markup\", or \"recipe schema\". Generates structured data markup (Schema.org JSON-LD) to enable rich results in search engines including FAQ snippets, How-To cards, Product listings, Reviews, and more. For meta tag optimization, see meta-tags-optimizer. For broader technical SEO, see technical-seo-checker.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Schema Markup Generator\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../seo-content-writer/) · [geo-content-optimizer](../geo-content-optimizer/) · [meta-tags-optimizer](../meta-tags-optimizer/) · **schema-markup-generator**\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill creates Schema.org structured data markup in JSON-LD format to help search engines understand your content and enable rich results in SERPs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Adding FAQ schema for expanded SERP presence\n- Creating How-To schema for step-by-step content\n- Adding Product schema for e-commerce pages\n- Implementing Article schema for blog posts\n- Adding Local Business schema for location pages\n- Creating Review/Rating schema\n- Implementing Organization schema for brand presence\n- Any page where rich results would improve visibility"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Schema Type Selection**: Recommends appropriate schema types\n2. **JSON-LD Generation**: Creates valid structured data markup\n3. **Property Mapping**: Maps your content to schema properties\n4. **Validation Guidance**: Ensures schema meets requirements\n5. **Nested Schema**: Handles complex, multi-type schemas\n6. **Rich Result Eligibility**: Identifies which rich results you can target"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Generate Schema for Content\n\n```\nGenerate schema markup for this [content type]: [content/URL]\n```\n\n```\nCreate FAQ schema for these questions and answers: [Q&A list]\n```\n\n### Specific Schema Types\n\n```\nCreate Product schema for [product name] with [details]\n```\n\n```\nGenerate LocalBusiness schema for [business name and details]\n```\n\n### Audit Existing Schema\n\n```\nReview and improve this schema markup: [existing schema]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~web crawler connected:**\nAutomatically crawl and extract page content (visible text, headings, lists, tables), existing schema markup, page metadata, and structured content elements that map to schema properties.\n\n**With manual data only:**\nAsk the user to provide:\n1. Page URL or full HTML content\n2. Page type (article, product, FAQ, how-to, local business, etc.)\n3. Specific data needed for schema (prices, dates, author info, Q&A pairs, etc.)\n4. Current schema markup (if optimizing existing)\n\nProceed with the full workflow using provided data. Note in the output which data is from automated extraction vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests schema markup:\n\n1. **Identify Content Type and Rich Result Opportunity**\n\n   Reference the [CORE-EEAT Benchmark](../../references/core-eeat-benchmark.md) item **O05 (Schema Markup)** for content-type to schema mapping:\n\n   ```markdown\n   ### CORE-EEAT Schema Mapping (O05)\n\n   | Content Type | Required Schema | Conditional Schema |\n   |-------------|----------------|--------------------|\n   | Blog (guides) | Article, Breadcrumb | FAQ, HowTo |\n   | Blog (tools) | Article, Breadcrumb | FAQ, Review |\n   | Blog (insights) | Article, Breadcrumb | FAQ |\n   | Alternative | Comparison*, Breadcrumb, FAQ | AggregateRating |\n   | Best-of | ItemList, Breadcrumb, FAQ | AggregateRating per tool |\n   | Use-case | WebPage, Breadcrumb, FAQ | — |\n   | FAQ | FAQPage, Breadcrumb | — |\n   | Landing | SoftwareApplication, Breadcrumb, FAQ | WebPage |\n   | Testimonial | Review, Breadcrumb | FAQ, Person |\n\n   *Use the mapping above to ensure schema type matches content type (CORE-EEAT O05: Pass criteria).*\n   ```\n\n   ```markdown\n   ### Schema Analysis\n\n   **Content Type**: [blog/product/FAQ/how-to/local business/etc.]\n   **Page URL**: [URL]\n\n   **Eligible Rich Results**:\n   \n   | Rich Result Type | Eligibility | Impact |\n   |------------------|-------------|--------|\n   | FAQ | ✅/❌ | High - Expands SERP presence |\n   | How-To | ✅/❌ | Medium - Shows steps in SERP |\n   | Product | ✅/❌ | High - Shows price, availability |\n   | Review | ✅/❌ | High - Shows star ratings |\n   | Article | ✅/❌ | Medium - Shows publish date, author |\n   | Breadcrumb | ✅/❌ | Medium - Shows navigation path |\n   | Video | ✅/❌ | High - Shows video thumbnail |\n   \n   **Recommended Schema Types**:\n   1. [Primary schema type] - [reason]\n   2. [Secondary schema type] - [reason]\n   ```\n\n2. **Generate FAQ Schema**\n\n   ```markdown\n   ### FAQ Schema (FAQPage)\n   \n   **Requirements**:\n   - Minimum 2 Q&A pairs\n   - Questions must be complete questions\n   - Answers should be comprehensive\n   - Must match visible"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Page URL or content provided\n- [ ] Schema type appropriate for content (Article for blog, Product for e-commerce, etc.)\n- [ ] All required data available (author, dates, prices, etc. depending on schema type)\n- [ ] Content eligibility for rich results confirmed\n\n### Output Validation\n- [ ] JSON syntax validates (no trailing commas, proper quotes)\n- [ ] All required properties present for chosen schema type\n- [ ] URLs are absolute, not relative\n- [ ] Dates in ISO 8601 format (YYYY-MM-DDTHH:MM:SS+00:00)\n- [ ] Schema content matches visible page content exactly\n- [ ] Passes ~~schema validator with no errors\n- [ ] Source of each data point clearly stated (~~web crawler extraction, user-provided, or manual entry)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Generate FAQ schema for a page about SEO with 3 questions\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[FAQ Schema for SEO Page] ### Schema Markup\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"FAQPage\",\n  \"mainEntity\": [\n    {\n      \"@type\": \"Question\",\n      \"name\": \"What is SEO?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"SEO (Search Engine Optimization) is the practice of optimizing websites and content to rank higher in search engine results pages (SERPs). It involves technical optimizations, content creation, and link building to increase organic visibility and drive qualified traffic to your website.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"How long does SEO take to work?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"SEO typically takes 3-6 months to show significant results, though this varies based on competition, domain authority, and effort invested. New websites may take 6-12 months, while established sites with existing authority can see improvements in 1-3 months for less competitive keywords.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Is SEO better than paid advertising?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"SEO and paid advertising serve different purposes. SEO provides sustainable, long-term traffic without per-click costs but takes time to build. Paid advertising delivers immediate results but stops when you stop paying. Most successful businesses use both: paid ads for immediate leads and SEO for long-term growth.\"\n      }\n    }\n  ]\n}\n```\n\n### Implementation\n\n```html\n<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"FAQPage\",\n  \"mainEntity\": [\n    {\n      \"@type\": \"Question\",\n      \"name\": \"What is SEO?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"SEO (Search Engine Optimization) is the practice of optimizing websites and content to rank higher in search engine results pages (SERPs). It involves technical optimizations, content creation, and link building to increase org"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Schema Type Quick Reference] | Content Type | Schema Type | Key Properties |\n|--------------|-------------|----------------|\n| Blog Post | BlogPosting/Article | headline, datePublished, author |\n| Product | Product | name, price, availability |\n| FAQ | FAQPage | Question, Answer |\n| How-To | HowTo | step, totalTime |\n| Local Business | LocalBusiness | address, geo, openingHours |\n| Recipe | Recipe | ingredients, cookTime |\n| Event | Event | startDate, location |\n| Video | VideoObject | uploadDate, duration |\n| Course | Course | provider, name |\n| Review | Review | itemReviewed, ratingValue |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Match visible content** - Schema must reflect what users see\n2. **Don't spam** - Only add schema for relevant content\n3. **Keep updated** - Update dates and prices when they change\n4. **Test thoroughly** - Validate before deploying\n5. **Monitor Search Console** - Watch for errors and warnings"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Schema Type Decision Tree] ### When to Use Which Schema\n\n| Your Content | Primary Schema | Add If Applicable | Rich Result Eligibility |\n|-------------|---------------|-------------------|----------------------|\n| Blog post / article | Article | FAQ, HowTo, Speakable | Article carousel, FAQ rich result |\n| Product page | Product | Review, Offer, AggregateRating | Product snippet with price/rating |\n| Service page | Service | FAQ, LocalBusiness | Service snippet |\n| How-to guide | HowTo | Article, FAQ | How-to rich result with steps |\n| FAQ page | FAQPage | Article | FAQ accordion in SERP |\n| Recipe | Recipe | Video, AggregateRating | Recipe carousel |\n| Event | Event | Offer, Organization | Event snippet with date/location |\n| Video | VideoObject | Article | Video carousel, key moments |\n| Local business | LocalBusiness | Review, OpeningHoursSpecification | Local pack, knowledge panel |\n| Person/author | Person | Organization | Knowledge panel |\n| Organization | Organization | ContactPoint, Logo | Knowledge panel |\n| Course | Course | Organization | Course rich result |\n| Job posting | JobPosting | Organization | Google for Jobs listing |\n| Breadcrumb | BreadcrumbList | (Always add alongside other schema) | Breadcrumb trail in SERP |\n| Software/App | SoftwareApplication | Review, Offer | App snippet |\n\n### Industry-Specific Schema Recommendations\n\n| Industry | Essential Schema | High-Value Additions |\n|----------|-----------------|---------------------|\n| E-commerce | Product, BreadcrumbList, Organization | AggregateRating, FAQ, Review |\n| SaaS | SoftwareApplication, FAQPage, Organization | HowTo, VideoObject, Review |\n| Local Services | LocalBusiness, Service | FAQ, Review, Event |\n| Publishing/Media | Article, Person, Organization | FAQ, Speakable, VideoObject |\n| Education | Course, Organization | FAQ, HowTo, Event |\n| Healthcare | MedicalWebPage, Organization | FAQ, Physician, MedicalClinic |\n| Real Estate | RealEstateListing, Organization | LocalBusiness, FAQ |\n| Restaurants | Restaurant"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Schema Templates](./references/schema-templates.md) - Copy-ready JSON-LD templates for all schema types\n- [Validation Guide](./references/validation-guide.md) - Common errors, required properties, testing workflow"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Related Skills] - [seo-content-writer](../seo-content-writer/) — Create content worth marking up\n- [geo-content-optimizer](../geo-content-optimizer/) — Optimize FAQ content\n- [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) — Audit existing schema\n- [technical-seo-checker](../../optimize/technical-seo-checker/) — Technical validation\n- [entity-optimizer](../../cross-cutting/entity-optimizer/) — Entity audit informs Organization, Person, Product schema\n- [meta-tags-optimizer](../meta-tags-optimizer/) — Optimize meta tags alongside structured data"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "schema_markup_generator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "schema markup",
+        "structured data",
+        "json-ld",
+        "rich results",
+        "rich snippets",
+        "faq schema",
+        "how-to schema",
+        "product schema"
+      ],
+      "triggers": [
+        "add schema markup",
+        "generate structured data",
+        "JSON-LD",
+        "rich snippets",
+        "FAQ schema",
+        "schema.org",
+        "structured data markup",
+        "add FAQ rich results",
+        "I want star ratings in Google",
+        "product markup",
+        "recipe schema"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/schema-markup-generator/SKILL.md"
+}

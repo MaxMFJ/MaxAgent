@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_blog-to-kindle",
+  "description": "Scrape blogs/essay sites and compile into Kindle-friendly EPUB with AI-generated cover. Use for requests to download blogs for Kindle, compile essays into ebook, or send blog archives to Kindle. Supports Paul Graham, Kevin Kelly, Derek Sivers, Wait But Why, Astral Codex Ten, and custom sites.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Blog to Kindle\n\nScrape blog/essay sites, compile into EPUB with cover art, and deliver to Kindle."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# 1. Fetch essays from a supported site\nuv run scripts/fetch_blog.py --site paulgraham --output ./pg-essays\n\n# 2. Generate cover (uses Nano Banana Pro)\n# See nano-banana-pro skill for cover generation\n\n# 3. Compile to EPUB with cover\nuv run scripts/compile_epub.py --input ./pg-essays --cover ./cover.png --output essays.epub\n\n# 4. Send to Kindle\nuv run scripts/send_to_kindle.py --file essays.epub --kindle-email user@kindle.com\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow (MUST follow this order)] 1. **Fetch** - Download all essays/posts from the blog\n2. **Generate Cover** - Create cover art via Nano Banana Pro skill (DO NOT SKIP)\n3. **Compile** - Combine into EPUB with cover embedded\n4. **Send** - Email to Kindle address\n\n⚠️ **Always generate and include cover before sending.** Never send without cover."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Supported Sites] | Site | Key | URL Pattern |\n|------|-----|-------------|\n| Paul Graham | `paulgraham` | paulgraham.com/articles.html |\n| Kevin Kelly | `kevinkelly` | kk.org/thetechnium |\n| Derek Sivers | `sivers` | sive.rs/blog |\n| Wait But Why | `waitbutwhy` | waitbutwhy.com/archive |\n| Astral Codex Ten | `acx` | astralcodexten.com |\n\nFor unlisted sites, use `--site custom --url <archive-url>`."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Cover Generation] Use the `nano-banana-pro` skill to generate covers. Prompt template:\n\n```\nBook cover for '[Author Name]: [Subtitle]'. \nMinimalist design with elegant typography. \n[Brand color] accent. Clean white/cream background. \nSimple geometric or abstract motif related to [topic].\nProfessional literary feel. No photos, no faces.\nPortrait orientation book cover dimensions.\n```\n\nGenerate at 2K resolution for good quality without huge file size."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Kindle Delivery] Default Kindle address (Simon): `simonpilkington74_8oVjpj@kindle.com`\n\nUses Mail.app via AppleScript to send. Ensure:\n- Sender email is on Kindle approved list\n- File under 50MB (EPUB compresses well)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[State Tracking] State files stored in `~/.clawdbot/state/blog-kindle/`:\n- `{site}-last-fetch.json` - Last fetch timestamp, article count\n- `{site}-sent.json` - List of sent article IDs\n\nUse for incremental updates (only fetch new posts)."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Manual Workflow (no scripts)] If scripts unavailable, follow this pattern:\n\n1. **Fetch**: curl archive page → parse article links → fetch each → convert to markdown\n2. **Combine**: Concatenate markdown with YAML frontmatter (title, author)\n3. **Cover**: Generate via Nano Banana Pro\n4. **Convert**: `pandoc combined.md -o output.epub --epub-cover-image=cover.png --toc`\n5. **Send**: AppleScript Mail.app with attachment\n\nSee `references/manual-workflow.md` for detailed steps."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "blog_to_kindle"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ainekomacx/blog-to-kindle/SKILL.md"
+}

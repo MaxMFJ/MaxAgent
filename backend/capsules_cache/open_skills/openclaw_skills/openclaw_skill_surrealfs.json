@@ -1,0 +1,78 @@
+{
+  "id": "openclaw_skill_surrealfs",
+  "description": "SurrealFS virtual filesystem for AI agents. Rust core + Python agent (Pydantic AI). Persistent file operations backed by SurrealDB. Part of the surreal-skills collection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SurrealFS -- Virtual Filesystem for AI Agents\n\nSurrealFS provides a persistent, queryable virtual filesystem backed by SurrealDB.\nDesigned for AI agents that need durable file operations, hierarchical storage,\nand content search across sessions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Components] | Component | Crate/Package | Language | Purpose |\n|-----------|---------------|----------|---------|\n| Core Library | `surrealfs` | Rust | Filesystem operations, CLI REPL, SurrealDB storage layer |\n| AI Agent | `surrealfs-ai` | Python (Pydantic AI) | Agent interface with tool integration, HTTP hosting |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Rust Core -- Commands] The `surrealfs` crate provides a REPL with POSIX-like commands:\n\n| Command | Description |\n|---------|-------------|\n| `ls` | List directory contents |\n| `cat` | Display file contents |\n| `tail` | Show last lines of a file |\n| `nl` | Number lines of a file |\n| `grep` | Search file contents |\n| `touch` | Create empty file |\n| `mkdir` | Create directory |\n| `write_file` | Write content to file |\n| `edit` | Edit file contents |\n| `cp` | Copy file |\n| `cd` | Change directory |\n| `pwd` | Print working directory |\n\nSupports piping from external commands: `curl https://example.com > /pages/example.html`\n\nStorage backends:\n- Embedded RocksDB (local)\n- Remote SurrealDB via WebSocket"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Python AI Agent] Built on Pydantic AI with tools that mirror the filesystem commands.\n\n```python\nfrom surrealfs_ai import build_chat_agent\n\n# Create the agent (default LLM: Claude Haiku)\nagent = build_chat_agent()\n\n# Expose over HTTP\nimport uvicorn\napp = agent.to_web()\nuvicorn.run(app, host=\"127.0.0.1\", port=7932)\n```\n\nFeatures:\n- Default LLM: Claude Haiku\n- Telemetry via Pydantic Logfire (OpenTelemetry)\n- All filesystem operations available as agent tools\n- HTTP hosting (default port 7932)\n- Path normalization (cannot escape `/`)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Install the Rust core\ncargo install surrealfs\n\n# Start the REPL with embedded storage\nsurrealfs\n\n# Or connect to a remote SurrealDB instance\nsurrealfs --endpoint ws://localhost:8000 --user root --pass root --ns agent --db workspace\n\n# Install the Python agent\npip install surrealfs-ai\n\n# Run the agent HTTP server\npython -m surrealfs_ai --host 127.0.0.1 --port 7932\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Use Cases] - Persistent workspace for AI agent sessions\n- Hierarchical document storage with metadata queries\n- Multi-agent shared file access with SurrealDB permissions\n- Content strategy and knowledge management\n- Project scaffolding and template management"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Full Documentation] See the main skill's rule file for complete guidance:\n- **[rules/surrealfs.md](../../rules/surrealfs.md)** -- architecture, Rust core API, Python agent setup, SurrealDB schema, multi-agent patterns, and deployment\n- **[surrealdb/surrealfs](https://github.com/surrealdb/surrealfs)** -- upstream repository"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "surrealfs"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "version": "1.0.2",
+      "author": "24601",
+      "parent_skill": "surrealdb",
+      "snapshot_date": "2026-02-19",
+      "upstream": {
+        "repo": "surrealdb/surrealfs",
+        "sha": "0008a3a94dbe"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/24601/surrealfs/SKILL.md"
+}

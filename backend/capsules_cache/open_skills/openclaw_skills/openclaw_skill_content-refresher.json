@@ -1,0 +1,150 @@
+{
+  "id": "openclaw_skill_content-refresher",
+  "description": "Use when the user asks to \"update old content\", \"refresh content\", \"content is outdated\", \"improve declining rankings\", \"revive old blog posts\", \"this post is outdated\", \"traffic is declining on this page\", or \"rankings dropped for this article\". Identifies and updates outdated content to restore and improve search rankings. Analyzes content freshness, adds new information, updates statistics, and optimizes for current SEO and GEO best practices. For writing new content from scratch, see seo-content-writer. For auditing without rewriting, see on-page-seo-auditor.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Content Refresher\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../on-page-seo-auditor/) · [technical-seo-checker](../technical-seo-checker/) · [internal-linking-optimizer](../internal-linking-optimizer/) · **content-refresher**\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill helps identify and revitalize outdated content to reclaim lost rankings and traffic. It analyzes content freshness, identifies update opportunities, and guides the refresh process for maximum SEO and GEO impact."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Content has lost rankings or traffic over time\n- Statistics and information are outdated\n- Competitors have published better content\n- Content needs updating for a new year\n- Industry changes require content updates\n- Adding new sections to existing content\n- Converting old content for GEO optimization"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Freshness Analysis**: Identifies outdated content needing updates\n2. **Performance Tracking**: Finds content with declining traffic\n3. **Gap Identification**: Spots missing information competitors have\n4. **Update Prioritization**: Ranks content by refresh potential\n5. **Refresh Recommendations**: Provides specific update guidance\n6. **GEO Enhancement**: Updates content for AI citation potential\n7. **Republishing Strategy**: Advises on date and promotion tactics"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Identify Content to Refresh\n\n```\nFind content on [domain] that needs refreshing\n```\n\n```\nWhich of my blog posts have lost the most traffic?\n```\n\n### Refresh Specific Content\n\n```\nRefresh this article for [current year]: [URL/content]\n```\n\n```\nUpdate this content to outrank [competitor URL]: [your URL]\n```\n\n### Content Refresh Strategy\n\n```\nCreate a content refresh strategy for [domain/topic]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~analytics + ~~search console + ~~SEO tool connected:**\nClaude can automatically pull historical traffic trends from ~~analytics, fetch impression and ranking data from ~~search console, retrieve keyword position history from ~~SEO tool, and identify content with declining performance. This enables data-driven refresh prioritization.\n\n**With manual data only:**\nAsk the user to provide:\n1. Traffic data or screenshots showing performance trends\n2. Ranking screenshots or history for key pages\n3. Content publish dates and last update dates\n4. List of pages the user suspects need refreshing\n\nProceed with the analysis using provided data. Note in the output which findings are from automated data vs. manual review."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests content refresh help:\n\n1. **CORE-EEAT Quick Score — Identify Weak Dimensions**\n\n   Before refreshing, run a quick CORE-EEAT assessment to focus effort on the weakest areas. Reference: [CORE-EEAT Benchmark](../../references/core-eeat-benchmark.md)\n\n   ```markdown\n   ### CORE-EEAT Quick Assessment\n\n   **Content**: [title or URL]\n   **Content Type**: [type]\n\n   Rapidly score each dimension (estimate 0-100):\n\n   | Dimension | Quick Score | Key Weakness | Refresh Priority |\n   |-----------|-----------|--------------|-----------------|\n   | C — Contextual Clarity | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | O — Organization | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | R — Referenceability | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | E — Exclusivity | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | Exp — Experience | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | Ept — Expertise | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | A — Authority | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n   | T — Trust | [X]/100 | [main issue] | 🔴/🟡/🟢 |\n\n   **Weakest Dimensions** (focus refresh here):\n   1. [Dimension] — [what needs fixing]\n   2. [Dimension] — [what needs fixing]\n\n   **Refresh Strategy**: Focus on 🔴 dimensions first, then 🟡.\n\n   _For full 80-item audit, use [content-quality-auditor](../../cross-cutting/content-quality-auditor/)_\n   ```\n\n2. **Identify Content Refresh Candidates**\n\n   ```markdown\n   ## Content Refresh Analysis\n   \n   ### Refresh Candidate Identification\n   \n   **Criteria for Content Refresh**:\n   - Published more than 6 months ago\n   - Contains dated information (years, statistics)\n   - Declining traffic trend\n   - Lost keyword rankings\n   - Outdated references or broken links\n   - Missing topics competitors now cover\n   - No GEO optimization\n   \n   ### Content Audit Results\n   \n   | Content | Published | Last Updated | Traffic Trend | Priority |\n   |---------|-----------|--------------|---------------|----------|\n   | [Title 1] | [date] | [date] | ↓ -45% | 🔴 High |\n   | [Title 2] | [date] | "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Target content URL or title clearly identified\n- [ ] Historical performance data available (traffic trends, rankings)\n- [ ] Content publish/update dates known\n- [ ] If comparing to competitors, competitor URLs provided\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] Outdated elements identified with specific examples and replacement data\n- [ ] All suggested additions include word counts and section locations\n- [ ] Source of each data point clearly stated (~~analytics data, ~~search console, ~~SEO tool, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Refresh my blog post about 'best cloud hosting providers'\"\n\n**Output**:\n\n```markdown\n### CORE-EEAT Quick Assessment\n\n**Content**: \"Best Cloud Hosting Providers 2023\"\n**Content Type**: Commercial comparison / listicle\n\n| Dimension | Quick Score | Key Weakness | Refresh Priority |\n|-----------|-----------|--------------|-----------------|\n| C — Contextual Clarity | 60/100 | Title says 2023 — stale intent signal | 🔴 |\n| O — Organization | 75/100 | Good comparison tables but no summary box | 🟡 |\n| R — Referenceability | 35/100 | Pricing from Q1 2023, 3 broken links | 🔴 |\n| E — Exclusivity | 50/100 | No original benchmarks or test data | 🟡 |\n| Exp — Experience | 30/100 | No first-person testing narrative | 🔴 |\n| Ept — Expertise | 65/100 | Author bio present but lacks credentials | 🟡 |\n| A — Authority | 55/100 | 12 backlinks, was ranking page 1 | 🟢 |\n| T — Trust | 60/100 | Affiliate links present but not disclosed | 🔴 |\n\n**Weakest Dimensions** (focus refresh here):\n1. **Experience** — Add hands-on testing results (\"We migrated a test site to each provider\")\n2. **Referenceability** — Replace all 2023 pricing/uptime data with current figures"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Content Refresh Analysis: Best Cloud Hosting Providers 2023] **URL**: cloudhosting.com/best-cloud-hosting\n**Published**: 2023-02-14\n**Last Updated**: Never\n**Word Count**: 2,100\n\n### Performance Metrics\n\n| Metric | 6 Mo Ago | Current | Change |\n|--------|----------|---------|--------|\n| Organic Traffic | 3,200/mo | 1,400/mo | -56% |\n| Avg Position | 4.2 | 14.8 | ↓ 10.6 |\n| Impressions | 18,000 | 9,500 | -47% |\n| CTR | 6.1% | 2.3% | -3.8% |\n\n### Content Decay Signals Identified\n\n1. **Outdated year in title and H1** — \"2023\" signals stale content to users and search engines\n2. **Pricing data 18+ months old** — AWS Lightsail listed at $3.50/mo (now $5/mo), DigitalOcean at $4/mo (now $6/mo)\n3. **Missing new entrants** — No mention of Hetzner Cloud or Vultr, which 4/5 top competitors now cover\n4. **3 broken outbound links** — Provider comparison pages that have moved or been retired\n\n### Refresh vs. Rewrite Decision\n\n| Factor | Assessment |\n|--------|-----------|\n| Content quality | Good structure, solid comparison tables — foundation is sound |\n| URL equity | 12 referring domains, 18 months old |\n| Scope of changes | ~40% of content needs updating |\n| Search intent | Unchanged — still commercial comparison |\n\n**Decision**: **REFRESH** — The URL has earned backlinks, the structure is solid, and less than 50% needs rewriting. Keep the URL, update in place."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Content Refresh Plan] **Current Title**: \"Best Cloud Hosting Providers 2023\"\n**Refreshed Title**: \"Best Cloud Hosting Providers 2024: 7 Platforms Tested & Compared\"\n\n### Specific Refresh Actions\n\n1. **Update all pricing and specs** (~30 min)\n   - Replace 2023 pricing for all 5 listed providers with current data\n   - Add uptime stats from the last 12 months (source: UptimeRobot public status pages)\n   - Update feature comparison table with current plan tiers\n\n2. **Add 2 missing providers + testing narrative** (~600 words)\n   - Add Hetzner Cloud and Vultr sections with same comparison format\n   - Write intro paragraph: \"We deployed a WordPress benchmark site to each provider and measured TTFB, uptime, and support response times over 30 days\"\n\n3. **Add affiliate disclosure and FAQ section** (~200 words)\n   - Add disclosure statement below introduction: \"This post contains affiliate links. See our editorial policy.\"\n   - Add FAQ with 4 questions targeting People Also Ask (e.g., \"What is the cheapest cloud hosting?\", \"Is cloud hosting faster than shared hosting?\")\n   - Implement FAQ schema markup for rich result eligibility\n\n4. **Fix broken links and update internal links** (~15 min)\n   - Replace 3 broken outbound links with current provider URLs\n   - Add internal links to cloudhosting.com/vps-vs-cloud and cloudhosting.com/hosting-speed-test\n\n### Republishing Strategy\n\n**Recommendation**: Update Published Date — this is a major overhaul (40%+ new content, new providers, fresh test data). Update `dateModified` in Article schema, resubmit URL in Search Console, and share on social as \"Updated for 2024.\"\n\n### Expected Outcomes\n\n| Metric | Current | 30-Day Target | 90-Day Target |\n|--------|---------|---------------|---------------|\n| Avg Position | 14.8 | 8-10 | 3-6 |\n| Organic Traffic | 1,400/mo | 2,200/mo | 3,500/mo |\n| Featured Snippets | 0 | 1 (FAQ) | 2+ |\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Content Refresh Checklist] ```markdown\n### Pre-Refresh\n- [ ] Analyze current performance metrics\n- [ ] Identify outdated information\n- [ ] Research competitor updates\n- [ ] Note missing topics\n\n### Content Updates\n- [ ] Update year references\n- [ ] Refresh statistics with sources\n- [ ] Add new examples and case studies\n- [ ] Expand thin sections\n- [ ] Add new relevant sections\n- [ ] Create FAQ section\n\n### SEO Updates\n- [ ] Update title tag\n- [ ] Refresh meta description\n- [ ] Optimize headers\n- [ ] Update internal links\n- [ ] Add new images with alt text\n\n### GEO Updates\n- [ ] Add clear definition\n- [ ] Include quotable statements\n- [ ] Add Q&A formatted content\n- [ ] Update source citations\n\n### Technical\n- [ ] Update schema dateModified\n- [ ] Clear page cache\n- [ ] Update sitemap\n- [ ] Test page speed\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Prioritize by ROI** - Refresh high-potential content first\n2. **Don't just add dates** - Make substantial improvements\n3. **Beat competitors** - Add what they have and more\n4. **Track results** - Monitor ranking changes post-refresh\n5. **Schedule regular audits** - Check content health quarterly\n6. **Optimize for GEO** - Every refresh is a GEO opportunity"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Content Decay Signal Taxonomy] ### Decay Indicators\n\n| Signal | Source | Severity | Detection Method |\n|--------|--------|----------|-----------------|\n| Traffic decline >20% MoM | Analytics | High | Monthly traffic comparison |\n| Position drop >5 positions | Rank tracker | High | Weekly rank monitoring |\n| Outdated statistics/dates | Manual review | Medium | Annual content audit |\n| Broken external links | Crawler | Medium | Monthly crawl reports |\n| Decreased CTR | Search Console | Medium | Quarterly CTR analysis |\n| Competitor new content | SERP monitoring | Medium | Monthly SERP checks |\n| User engagement drop | Analytics | Low | Quarterly engagement review |\n| Index coverage issues | Search Console | High | Weekly coverage monitoring |\n\n### Content Decay Stages\n\n| Stage | Symptoms | Urgency | Recommended Action |\n|-------|---------|---------|-------------------|\n| **Early decay** | Slight traffic/position dip | Low | Monitor for 2-4 weeks |\n| **Active decay** | Consistent decline across 2+ months | Medium | Schedule refresh within 2 weeks |\n| **Significant decay** | 50%+ traffic loss, page 2+ | High | Immediate refresh or rewrite |\n| **Terminal decay** | No organic traffic, deindexed | Critical | Rewrite, redirect, or retire |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Refresh vs. Rewrite Decision Framework] | Factor | Refresh (Update) | Rewrite (New version) |\n|--------|-----------------|---------------------|\n| Content quality | Good foundation, needs updating | Fundamentally flawed or outdated approach |\n| Position | Was ranking well, now dropping | Never ranked well despite optimization |\n| URL age | 1+ years, has earned backlinks | Young URL with no backlink equity |\n| Backlinks | Has external links pointing to it | No backlinks worth preserving |\n| Scope of changes needed | <50% of content changing | >50% needs rewriting |\n| Search intent | Intent hasn't changed | Search intent has evolved |\n\n**Decision rule:** If the URL has backlinks and was ranking, REFRESH. If not, consider REWRITE at a new URL (with 301 redirect if old URL has any equity)."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Content Lifecycle Model] ```\nCREATE → PROMOTE → MAINTAIN → REFRESH → [REFRESH again] or RETIRE\n  │         │          │          │                          │\n  │      Month 1    Month 2-6   Month 6-12              When terminal\n  │    Social,      Monitor     Update facts,            301 redirect\n  │    outreach,    rankings,   add new sections,         to related\n  │    email        fix issues  improve depth              content\n```\n\n### Lifecycle Actions by Phase\n\n| Phase | Duration | Key Actions | Metrics to Track |\n|-------|----------|------------|-----------------|\n| Create | Week 1 | Publish, submit to Search Console | Indexation |\n| Promote | Month 1 | Social shares, email, outreach | Referral traffic, backlinks |\n| Maintain | Months 2-6 | Monitor, fix broken links, respond to comments | Rankings, traffic trend |\n| Refresh | Months 6-12+ | Update data, add sections, improve structure | Traffic recovery, new keywords |\n| Retire | When terminal | 301 redirect to best alternative | Redirect traffic recovery |"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Update Strategy by Content Type] | Content Type | Refresh Frequency | Key Updates | Shelf Life |\n|-------------|-------------------|------------|-----------|\n| Statistics roundups | Every 6 months | Replace old stats, add new sources | 6-12 months |\n| Tool comparisons | Every 3-6 months | Update pricing, features, screenshots | 3-6 months |\n| How-to guides | Annually | Update steps, screenshots, links | 12-18 months |\n| Evergreen guides | Every 12-18 months | Add new sections, update examples | 18-24 months |\n| News/trend content | Don't refresh | Archive or redirect | 1-3 months |\n| Case studies | Rarely | Update results if available | 2-3 years |\n| Glossary/definitions | As needed | Update when definitions evolve | 2-5 years |"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Content Decay Signals](./references/content-decay-signals.md) — Decay indicators, lifecycle stages, and refresh triggers by content type"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Related Skills] - [content-gap-analysis](../../research/content-gap-analysis/) — Find what to add\n- [seo-content-writer](../../build/seo-content-writer/) — Write new sections\n- [geo-content-optimizer](../../build/geo-content-optimizer/) — Enhance for AI\n- [on-page-seo-auditor](../on-page-seo-auditor/) — Audit refreshed content\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "content_refresher"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "geo",
+        "content refresh",
+        "content update",
+        "outdated content",
+        "content decay",
+        "ranking recovery",
+        "content optimization"
+      ],
+      "triggers": [
+        "update old content",
+        "refresh content",
+        "content is outdated",
+        "improve declining rankings",
+        "revive old blog posts",
+        "content decay",
+        "ranking dropped",
+        "this post is outdated",
+        "traffic is declining on this page",
+        "rankings dropped for this article"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/content-refresher/SKILL.md"
+}

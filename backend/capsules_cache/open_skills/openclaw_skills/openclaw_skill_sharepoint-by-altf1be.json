@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_sharepoint-by-altf1be",
+  "description": "Secure SharePoint file operations and Office document intelligence via Microsoft Graph API — certificate auth, Sites.Selected, read/write Word (mammoth), Excel (exceljs), PowerPoint (jszip), PDF (pdf-parse).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SharePoint by @altf1be\n\nInteract with SharePoint document libraries via Microsoft Graph API using certificate-based authentication."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Create an Entra app with `Sites.Selected` permission and certificate auth\n2. Grant site-level write access via Microsoft Graph PowerShell\n3. Set environment variables (or create `.env` in `{baseDir}`):\n\n```\nSP_TENANT_ID=your-azure-tenant-id\nSP_CLIENT_ID=your-app-client-id\nSP_CERT_PATH=/path/to/certificate.pem\nSP_SITE_ID=your-sharepoint-site-id\nSP_DRIVE_ID=optional-specific-drive-id\n```\n\n4. Install dependencies: `cd {baseDir} && npm install`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### File operations\n\n```bash\n# Show site and drive info\nnode {baseDir}/scripts/sharepoint.mjs info\n\n# List files in library root\nnode {baseDir}/scripts/sharepoint.mjs list\n\n# List files in a subfolder\nnode {baseDir}/scripts/sharepoint.mjs list --path \"Meeting Notes/2026\"\n\n# Read file content (extracts text from Office formats)\nnode {baseDir}/scripts/sharepoint.mjs read --path \"Report.docx\"\n\n# Upload a file\nnode {baseDir}/scripts/sharepoint.mjs upload --local ./report.docx --remote \"Reports/Q1-2026.docx\"\n\n# Search for files\nnode {baseDir}/scripts/sharepoint.mjs search --query \"quarterly review\"\n\n# Create folder\nnode {baseDir}/scripts/sharepoint.mjs mkdir --path \"Meeting Notes/2026\"\n\n# Delete (requires --confirm flag)\nnode {baseDir}/scripts/sharepoint.mjs delete --path \"Drafts/old-file.txt\" --confirm\n```\n\n### Coauthoring (checkout/checkin)\n\n```bash\n# Safe edit: checkout → upload modified file → checkin (recommended)\nnode {baseDir}/scripts/sharepoint.mjs edit --path \"Report.docx\" --local ./modified.docx --comment \"Updated summary\"\n\n# Check out a file (lock for exclusive editing)\nnode {baseDir}/scripts/sharepoint.mjs checkout --path \"Report.docx\"\n\n# Check in a file (unlock + publish)\nnode {baseDir}/scripts/sharepoint.mjs checkin --path \"Report.docx\" --comment \"Reviewed and approved\"\n\n# Get an edit link to open in Office Online\nnode {baseDir}/scripts/sharepoint.mjs edit-link --path \"Report.docx\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Supported Office formats] The `read` command extracts text content from:\n- `.docx` → full text extraction via mammoth\n- `.xlsx` → sheet names + cell data via exceljs\n- `.pptx` → slide text extraction via jszip\n- `.pdf` → text extraction via pdf-parse\n- `.txt` / `.md` → raw content\n\nOutput is plain text suitable for AI processing (summarization, reformatting, action item extraction)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dependencies] - `@azure/identity` — certificate-based Azure AD authentication\n- `@microsoft/microsoft-graph-client` — Microsoft Graph API client\n- `mammoth` — Word document text extraction\n- `exceljs` — Excel spreadsheet parsing\n- `jszip` — PowerPoint XML extraction\n- `pdf-parse` — PDF text extraction\n- `commander` — CLI framework\n- `dotenv` — environment variable loading"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security] - Certificate auth only (no client secrets, no passwords)\n- `Sites.Selected` permission (access limited to one SharePoint site)\n- Path traversal prevention: `../` is rejected\n- Delete requires explicit `--confirm` flag\n- No tokens or secrets printed to stdout\n- File size limit: configurable max (default 50MB)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Full setup guide] For complete setup from scratch (Entra app, certificate, Sites.Selected, Key Vault):\nSee the [GitHub repository](https://github.com/ALT-F1-OpenClaw/openclaw-skill-sharepoint) README."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Author] Abdelkrim BOUJRAF — [ALT-F1 SRL](https://www.alt-f1.be), Brussels 🇧🇪\nX: [@altf1be](https://x.com/altf1be)"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sharepoint_by_altf1be"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📁",
+        "requires": {
+          "env": [
+            "SP_TENANT_ID",
+            "SP_CLIENT_ID",
+            "SP_CERT_PATH",
+            "SP_SITE_ID"
+          ]
+        },
+        "primaryEnv": "SP_TENANT_ID"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdelkrim/sharepoint-by-altf1be/SKILL.md"
+}

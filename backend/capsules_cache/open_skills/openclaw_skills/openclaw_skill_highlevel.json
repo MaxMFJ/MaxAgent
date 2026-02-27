@@ -1,0 +1,97 @@
+{
+  "id": "openclaw_skill_highlevel",
+  "description": "Connect your AI assistant to GoHighLevel CRM via the official API v2. Manage contacts, conversations, calendars, pipelines, invoices, payments, workflows, and 30+ endpoint groups through natural language. Includes interactive setup wizard and 100+ pre-built, safe API commands. Python 3.6+ stdlib only — zero external dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # GoHighLevel API Skill\n\n> **Turn your AI assistant into a GoHighLevel command center.** Search contacts, send messages, book appointments, manage pipelines, create invoices, schedule social posts — across all 39 GHL API v2 endpoint groups, using plain English.\n\n**Don't have GoHighLevel yet?** Start with the free 5-Day AI Employee Challenge and build a fully automated system:\n👉 [**Start the 5-Day AI Employee Challenge**](https://gohighlevel.com/5-day-challenge?fp_ref=369ai)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Requirement | Details |\n|-------------|---------|\n| **Runtime** | Python 3.6+ (uses only standard library: `urllib`, `json`, `os`, `re`, `sys`, `time`) |\n| **External packages** | **None** — zero `pip install` required |\n| **Environment variables** | `HIGHLEVEL_TOKEN` (Primary — your Private Integration bearer token) |\n| | `HIGHLEVEL_LOCATION_ID` (your sub-account Location ID) |\n| **Network access** | HTTPS to `services.leadconnectorhq.com` only |\n\n**Base URL**: `https://services.leadconnectorhq.com`\n**Required Headers**: `Authorization: Bearer $HIGHLEVEL_TOKEN` + `Version: 2021-07-28`\n**Rate Limits**: 100 requests/10 seconds burst, 200K/day per location"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Security Design] All API functions use pre-defined endpoint paths — there is no arbitrary HTTP request capability. Every user-supplied ID is validated against a strict alphanumeric regex (`^[a-zA-Z0-9_-]{1,128}$`) before being included in any URL path, preventing path traversal and injection. The scripts use only Python's built-in `urllib.request` for all network calls. No shell commands, no external binaries, no file writes outside of stdout."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup — `/highlevel-setup`] If the user says \"set up highlevel\", \"connect my GHL\", or `/highlevel-setup`, run the setup wizard:\n\n```bash\npython3 scripts/setup-wizard.py\n```\n\nThe wizard automatically: checks environment variables → guides Private Integration creation → tests the connection → pulls first 5 contacts as a quick win.\n\n### Manual Setup (if wizard can't run)\n\n#### Step 1: Create a Private Integration (NOT the old API Keys method)\n1. Log into **app.gohighlevel.com**\n2. Switch to your **Sub-Account** (recommended for single-location use)\n3. Click **Settings** (bottom-left gear icon)\n4. Select **Private Integrations** in the left sidebar\n   - If not visible, enable it first: Settings → Labs → toggle Private Integrations ON\n5. Click **\"Create new Integration\"**\n6. Enter a name (e.g., \"Claude AI Assistant\") and description\n7. **Grant only the scopes you need** (least-privilege recommended):\n\n   | Use case | Recommended scopes |\n   |----------|--------------------|\n   | Contact management only | `contacts.readonly`, `contacts.write` |\n   | Contacts + messaging | Above + `conversations.readonly`, `conversations.write`, `conversations/message.write` |\n   | Full CRM (contacts, calendar, pipeline) | Above + `calendars.readonly`, `calendars.write`, `opportunities.readonly`, `opportunities.write` |\n   | Adding workflows & invoices | Above + `workflows.readonly`, `invoices.readonly`, `invoices.write` |\n   | Read-only reporting | `contacts.readonly`, `opportunities.readonly`, `calendars.readonly`, `invoices.readonly`, `locations.readonly` |\n\n   You can always add more scopes later in Settings → Private Integrations → Edit without regenerating the token.\n\n8. Click Create → **Copy the token IMMEDIATELY** — it is shown only once and cannot be retrieved later\n\n#### Agency vs Sub-Account Integrations\n\n| Feature | Agency Integration | Sub-Account Integration |\n|---------|-------------------|------------------------|\n| Created at | Agency Settings → Private Integrations | Sub-Account Settings → Private I"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Helper Script] `scripts/ghl-api.py` — Executable Python script (stdlib only) with built-in retry logic, pagination, input validation, and error handling.\n\n**Core Commands:**\n| Command | Description |\n|---------|-------------|\n| `test_connection` | Verify token + location ID work |\n| `search_contacts [query]` | Search by name, email, or phone |\n| `get_contact [id]` | Get full contact details |\n| `create_contact [json]` | Create new contact |\n| `update_contact [id] [json]` | Update contact fields |\n| `list_opportunities` | List pipeline opportunities |\n| `list_conversations` | List recent conversations |\n| `send_message [contactId] [message]` | Send SMS/email |\n| `list_calendars` | List all calendars |\n| `get_free_slots [calendarId] [startDate] [endDate]` | Available booking slots |\n| `list_workflows` | List all workflows |\n| `add_to_workflow [contactId] [workflowId]` | Enroll contact in workflow |\n| `list_invoices` | List invoices |\n| `list_products` | List products |\n| `list_forms` | List forms |\n| `list_campaigns` | List campaigns |\n| `get_location_details` | Get location info |\n| `list_location_tags` | List location tags |\n| `list_courses` | List courses/memberships |\n\nAll functions are safe, pre-defined endpoints. No arbitrary request capability."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Complete API v2 Coverage (39 Endpoint Groups)] The skill provides safe, specific functions for all major GHL operations. Each function maps to a specific, allowed API endpoint with validated parameters.\n\n| # | Group | Base Path | Key Operations | Scope Prefix |\n|---|-------|-----------|----------------|-------------|\n| 1 | **Contacts** | `/contacts/` | CRUD, search, upsert, tags, notes, tasks, bulk ops | `contacts` |\n| 2 | **Conversations** | `/conversations/` | Search, messages (SMS/email/WhatsApp/FB/IG/chat), recordings | `conversations` |\n| 3 | **Calendars** | `/calendars/` | CRUD, free slots, groups, resources, appointments | `calendars` |\n| 4 | **Opportunities** | `/opportunities/` | CRUD, search, pipelines, stages, status, followers | `opportunities` |\n| 5 | **Workflows** | `/workflows/` | List workflows, enroll/remove contacts | `workflows` |\n| 6 | **Campaigns** | `/campaigns/` | List campaigns (read-only) | `campaigns` |\n| 7 | **Invoices** | `/invoices/` | CRUD, send, void, record payment, Text2Pay, schedules, estimates | `invoices` |\n| 8 | **Payments** | `/payments/` | Orders, transactions, subscriptions, coupons, providers | `payments` |\n| 9 | **Products** | `/products/` | CRUD, prices, collections, reviews, store stats | `products` |\n| 10 | **Locations** | `/locations/` | Get/update location, custom fields, custom values, tags, templates | `locations` |\n|    | | | **Custom Fields CRUD:** | |\n|    | | | `GET /locations/{id}/customFields` — List | |\n|    | | | `POST /locations/{id}/customFields` — Create | |\n|    | | | `PUT /locations/{id}/customFields/{fid}` — Update | |\n|    | | | `DELETE /locations/{id}/customFields/{fid}` — Delete | |\n|    | | | **Custom Values CRUD:** | |\n|    | | | `GET /locations/{id}/customValues` — List | |\n|    | | | `POST /locations/{id}/customValues` — Create | |\n|    | | | `PUT /locations/{id}/customValues/{vid}` — Update | |\n|    | | | `DELETE /locations/{id}/customValues/{vid}` — Delete | |\n|    | | | **Tags CRUD:** | |\n|    | | | `GET /locations/{id}/tags` — List | |\n|  "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Reference Docs (load on demand)] For detailed endpoint paths, parameters, and examples for each group:\n\n- `references/contacts.md` — Contact CRUD, search, tags, notes, tasks, bulk operations\n- `references/conversations.md` — Messaging across all channels, recordings, transcriptions\n- `references/calendars.md` — Calendar CRUD, free slots, appointments, groups, resources\n- `references/opportunities.md` — Pipeline management, stages, status updates\n- `references/invoices-payments.md` — Invoices, payments, orders, subscriptions, products\n- `references/locations-users.md` — Location settings, custom fields/values, users, tags\n- `references/social-media.md` — Social planner posts, accounts, OAuth connections\n- `references/forms-surveys-funnels.md` — Forms, surveys, funnels, trigger links\n- `references/advanced.md` — Custom objects, associations, snapshots, SaaS, Voice AI, blogs, courses\n- `references/troubleshooting.md` — Common errors, rate limits, token rotation, debugging"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Important Notes] - **Private Integrations are required** — the old Settings → API Keys method is deprecated/EOL\n- **Token rotation**: Tokens don't auto-expire but GHL recommends 90-day rotation. Unused tokens auto-expire after 90 days inactivity\n  - **\"Rotate and expire later\"** — new token generated, old token stays active for 7-day grace period\n  - **\"Rotate and expire now\"** — old token invalidated immediately (use for compromised credentials)\n  - You can edit scopes without regenerating the token\n- **OAuth tokens** (marketplace apps only): Access tokens expire in 24 hours (86,399s); refresh tokens last up to 1 year\n- Agency tokens can access sub-account data by passing `locationId` parameter\n- **Rate limits are per-resource** — each sub-account independently gets 100/10s burst + 200K/day. SaaS endpoints: 10 req/sec global\n- All list endpoints default to 20 records, max 100 per page via `limit` param\n- Use cursor pagination with `startAfter` / `startAfterId` for large datasets\n- Monitor rate limits via response headers: `X-RateLimit-Limit-Daily`, `X-RateLimit-Daily-Remaining`, `X-RateLimit-Max`, `X-RateLimit-Remaining`, `X-RateLimit-Interval-Milliseconds`\n- **$497 Agency Pro plan** required for: SaaS Configurator, Snapshots, full agency management APIs"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Webhook Events] 50+ webhook event types for real-time notifications. Key events: `ContactCreate`, `ContactDelete`, `ContactTagUpdate`, `InboundMessage`, `OutboundMessage`, `OpportunityCreate`, `OpportunityStageUpdate`, `OpportunityStatusUpdate`, appointment events, payment events, form submission events. Webhooks continue firing even if access token expires. Config is per marketplace app.\nDocs: https://marketplace.gohighlevel.com/docs/webhook/WebhookIntegrationGuide"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Official SDKs & Developer Resources] - **Node.js**: `@gohighlevel/api-client` (npm) — supports `privateIntegrationToken` config, auto 401 retry\n- **Python**: `gohighlevel-api-client` (PyPI) — session storage, auto token refresh, webhook middleware\n- **PHP SDK** also available\n- All SDKs use `apiVersion: '2021-07-28'`\n- **OpenAPI Specs**: https://github.com/GoHighLevel/highlevel-api-docs\n- **API Docs**: https://marketplace.gohighlevel.com/docs/\n- **Developer Slack**: https://developers.gohighlevel.com/join-dev-community\n\n---\n\n### Built by Ty Shane\n\n[🌐 LaunchMyOpenClaw.com](https://launchmyopenclaw.com) • [🌐 MyFBLeads.com](https://myfbleads.com)\n[▶️ YouTube @10xcoldleads](https://youtube.com/@10xcoldleads) • [📘 Facebook](https://facebook.com/ty.shane.howell.2025) • [💼 LinkedIn](https://linkedin.com/in/ty-shane/)\n📧 ty@10xcoldleads.com\n\n**No GoHighLevel account yet?** → [Start the free 5-Day AI Employee Challenge](https://gohighlevel.com/5-day-challenge?fp_ref=369ai)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "highlevel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires Python 3.6+ (stdlib only, no pip installs). Requires two environment variables: HIGHLEVEL_TOKEN and HIGHLEVEL_LOCATION_ID.",
+    "extra": {
+      "author": "Ty Shane",
+      "version": "1.2.0",
+      "clawdbot": {
+        "emoji": "🦞",
+        "homepage": "https://launchmyopenclaw.com",
+        "requires": {
+          "env": [
+            "HIGHLEVEL_TOKEN",
+            "HIGHLEVEL_LOCATION_ID"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/10xcoldleads/highlevel/SKILL.md"
+}

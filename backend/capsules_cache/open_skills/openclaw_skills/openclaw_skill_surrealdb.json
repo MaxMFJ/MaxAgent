@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_surrealdb",
+  "description": "Expert SurrealDB 3 architect and developer skill. SurrealQL mastery, multi-model data modeling (document, graph, vector, time-series, geospatial), schema design, security, deployment, performance tuning, SDK integration (JS, Python, Go, Rust), Surrealism WASM extensions, and full ecosystem (Surrealist, Surreal-Sync, SurrealFS). Universal skill for 30+ AI agents.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SurrealDB 3 Skill\n\nExpert-level SurrealDB 3 architecture, development, and operations. Covers SurrealQL, multi-model data modeling, graph traversal, vector search, security, deployment, performance tuning, SDK integration, and the full SurrealDB ecosystem."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[For AI Agents] Get a full capabilities manifest, decision trees, and output contracts:\n\n```bash\nuv run {baseDir}/scripts/onboard.py --agent\n```\n\nSee [AGENTS.md]({baseDir}/AGENTS.md) for the complete structured briefing.\n\n| Command | What It Does |\n|---------|-------------|\n| `uv run {baseDir}/scripts/doctor.py` | Health check: verify surreal CLI, connectivity, versions |\n| `uv run {baseDir}/scripts/doctor.py --check` | Quick pass/fail check (exit code only) |\n| `uv run {baseDir}/scripts/schema.py introspect` | Dump full schema of a running SurrealDB instance |\n| `uv run {baseDir}/scripts/schema.py tables` | List all tables with field counts and indexes |\n| `uv run {baseDir}/scripts/onboard.py --agent` | JSON capabilities manifest for agent integration |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] - **surreal CLI** -- `brew install surrealdb/tap/surreal` (macOS) or see [install docs](https://surrealdb.com/docs/surrealdb/installation)\n- **Python 3.10+** -- Required for skill scripts\n- **uv** -- `brew install uv` (macOS) or `pip install uv` or see [uv docs](https://docs.astral.sh/uv/getting-started/installation/)\n\nOptional:\n\n- **Docker** -- For containerized SurrealDB instances (`docker run surrealdb/surrealdb:v3`)\n- **SDK of choice** -- JavaScript, Python, Go, Rust, Java, .NET, C, PHP, or Dart\n\n> **Security note**: This skill's documentation references package manager installs\n> (brew, pip, cargo, npm, Docker) as the recommended install method. If you\n> encounter `curl | sh` examples in the rules files, prefer your OS package\n> manager or download-and-review workflow instead."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] > **Credential warning**: Examples below use `root/root` for **local development\n> only**. Never use default credentials against production or shared instances.\n> Create scoped, least-privilege users for non-local environments.\n\n```bash\n# Start SurrealDB in-memory for LOCAL DEVELOPMENT ONLY\nsurreal start memory --user root --pass root --bind 127.0.0.1:8000\n\n# Start with persistent RocksDB storage (local dev)\nsurreal start rocksdb://data/mydb.db --user root --pass root\n\n# Start with SurrealKV (time-travel queries supported, local dev)\nsurreal start surrealkv://data/mydb --user root --pass root\n\n# Connect via CLI REPL (local dev)\nsurreal sql --endpoint http://localhost:8000 --user root --pass root --ns test --db test\n\n# Import a SurrealQL file\nsurreal import --endpoint http://localhost:8000 --user root --pass root --ns test --db test schema.surql\n\n# Export the database\nsurreal export --endpoint http://localhost:8000 --user root --pass root --ns test --db test backup.surql\n\n# Check version\nsurreal version\n\n# Run the skill health check\nuv run {baseDir}/scripts/doctor.py\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Description | Default |\n|----------|-------------|---------|\n| `SURREAL_ENDPOINT` | SurrealDB server URL | `http://localhost:8000` |\n| `SURREAL_USER` | Root or namespace username | `root` |\n| `SURREAL_PASS` | Root or namespace password | `root` |\n| `SURREAL_NS` | Default namespace | `test` |\n| `SURREAL_DB` | Default database | `test` |\n\nThese map directly to the `surreal sql` CLI flags (`--endpoint`, `--user`, `--pass`, `--ns`, `--db`) and are recognized by official SurrealDB SDKs."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### SurrealQL Mastery\n\nFull coverage of the SurrealQL query language: `CREATE`, `SELECT`, `UPDATE`, `UPSERT`, `DELETE`, `RELATE`, `INSERT`, `LIVE SELECT`, `DEFINE`, `REMOVE`, `INFO`, subqueries, transactions, futures, and all built-in functions (array, crypto, duration, geo, math, meta, object, parse, rand, string, time, type, vector).\n\nSee: `rules/surrealql.md`\n\n### Multi-Model Data Modeling\n\nDesign schemas that leverage SurrealDB's multi-model capabilities -- document collections, graph edges, relational references, vector embeddings, time-series data, and geospatial coordinates -- all in a single database with a single query language.\n\nSee: `rules/data-modeling.md`\n\n### Graph Queries\n\nFirst-class graph traversal without JOINs. `RELATE` creates typed edges between records. Traverse with `->` (outgoing), `<-` (incoming), and `<->` (bidirectional) operators. Filter, aggregate, and recurse at any depth.\n\nSee: `rules/graph-queries.md`\n\n### Vector Search\n\nBuilt-in vector similarity search using HNSW and brute-force indexes. Define vector fields, create indexes with configurable distance metrics (cosine, euclidean, manhattan, minkowski), and query with `vector::similarity::*` functions. Build RAG pipelines and semantic search directly in SurrealQL.\n\nSee: `rules/vector-search.md`\n\n### Security and Permissions\n\nRow-level security via `DEFINE TABLE ... PERMISSIONS`, namespace/database/record-level access control, `DEFINE ACCESS` for JWT/token-based auth, `DEFINE USER` for system users, and `$auth`/`$session` runtime variables for permission predicates.\n\nSee: `rules/security.md`\n\n### Deployment and Operations\n\nSingle-binary deployment, Docker, Kubernetes (Helm charts), storage engine selection (memory, RocksDB, SurrealKV, TiKV for distributed), backup/restore, monitoring, and production hardening.\n\nSee: `rules/deployment.md`\n\n### Performance Tuning\n\nIndex strategies (unique, search, vector HNSW, MTree), query optimization with `EXPLAIN`, connection pooling, storage engine t"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Doctor / Health Check] ```bash\n# Full diagnostic (Rich output on stderr, JSON on stdout)\nuv run {baseDir}/scripts/doctor.py\n\n# Quick check (exit code 0 = healthy, 1 = issues found)\nuv run {baseDir}/scripts/doctor.py --check\n\n# Check a specific endpoint\nuv run {baseDir}/scripts/doctor.py --endpoint http://my-server:8000\n```\n\nThe doctor script verifies: surreal CLI installed and on PATH, server reachable, authentication succeeds, namespace and database exist, version compatibility, and storage engine status."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Schema Introspection] ```bash\n# Full schema dump (all tables, fields, indexes, events, accesses)\nuv run {baseDir}/scripts/schema.py introspect\n\n# List tables with summary\nuv run {baseDir}/scripts/schema.py tables\n\n# Inspect a specific table\nuv run {baseDir}/scripts/schema.py table <table_name>\n\n# Export schema as SurrealQL (reproducible DEFINE statements)\nuv run {baseDir}/scripts/schema.py export --format surql\n\n# Export schema as JSON\nuv run {baseDir}/scripts/schema.py export --format json\n```\n\nIntrospection uses `INFO FOR DB`, `INFO FOR TABLE`, and `INFO FOR NS` to reconstruct the full schema."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Rules Reference] | Rule File | Coverage |\n|-----------|----------|\n| `rules/surrealql.md` | SurrealQL syntax, statements, functions, operators, idioms |\n| `rules/data-modeling.md` | Schema design, record IDs, field types, relations, normalization |\n| `rules/graph-queries.md` | RELATE, graph traversal operators, path expressions, recursive queries |\n| `rules/vector-search.md` | Vector fields, HNSW/brute-force indexes, similarity functions, RAG patterns |\n| `rules/security.md` | Permissions, access control, authentication, JWT, row-level security |\n| `rules/deployment.md` | Installation, storage engines, Docker, Kubernetes, production config |\n| `rules/performance.md` | Indexes, EXPLAIN, query optimization, batch ops, resource tuning |\n| `rules/sdks.md` | JavaScript, Python, Go, Rust SDK usage, connection patterns, live queries |\n| `rules/surrealism.md` | WASM extensions, custom functions, Surrealism module authoring |\n| `rules/surrealist.md` | Surrealist IDE/GUI usage, schema designer, query editor |\n| `rules/surreal-sync.md` | CDC migration tool, source/target connectors, migration workflows |\n| `rules/surrealfs.md` | AI agent filesystem, file storage, metadata, retrieval patterns |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Workflow Examples] > **All workflow examples use `root/root` for local development only.**\n> For production, use `DEFINE USER` with scoped, least-privilege credentials.\n\n### New Project Setup\n\n```bash\n# 1. Verify environment\nuv run {baseDir}/scripts/doctor.py\n\n# 2. Start SurrealDB\nsurreal start rocksdb://data/myproject.db --user root --pass root\n\n# 3. Design schema (use rules/data-modeling.md for guidance)\n# 4. Import initial schema\nsurreal import --endpoint http://localhost:8000 --user root --pass root \\\n  --ns myapp --db production schema.surql\n\n# 5. Introspect to verify\nuv run {baseDir}/scripts/schema.py introspect\n```\n\n### Migration from SurrealDB v2\n\n```bash\n# 1. Export v2 data\nsurreal export --endpoint http://old-server:8000 --user root --pass root \\\n  --ns myapp --db production v2-backup.surql\n\n# 2. Review breaking changes (see rules/surrealql.md v2->v3 migration section)\n# Key changes: range syntax 1..4 is now exclusive of end, new WASM extension system\n\n# 3. Import into v3\nsurreal import --endpoint http://localhost:8000 --user root --pass root \\\n  --ns myapp --db production v2-backup.surql\n\n# 4. Verify schema\nuv run {baseDir}/scripts/schema.py introspect\n```\n\n### Data Modeling for a New Domain\n\n```bash\n# 1. Read rules/data-modeling.md for schema design patterns\n# 2. Read rules/graph-queries.md if your domain has relationships\n# 3. Read rules/vector-search.md if you need semantic search\n# 4. Draft schema.surql with DEFINE TABLE, DEFINE FIELD, DEFINE INDEX\n# 5. Import and test\nsurreal import --endpoint http://localhost:8000 --user root --pass root \\\n  --ns dev --db test schema.surql\nuv run {baseDir}/scripts/schema.py introspect\n```\n\n### Deploying to Production\n\n```bash\n# 1. Read rules/deployment.md for storage engine selection and hardening\n# 2. Read rules/security.md for access control setup\n# 3. Read rules/performance.md for index strategy\n# 4. Run doctor against production endpoint\nuv run {baseDir}/scripts/doctor.py --endpoint https://prod-surreal:8000\n# 5. Verify schema mat"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Upstream Source Check] ```bash\n# Check if upstream SurrealDB repos have changed since this skill was built\nuv run {baseDir}/scripts/check_upstream.py\n\n# JSON-only output for agents\nuv run {baseDir}/scripts/check_upstream.py --json\n\n# Only show repos that have new commits\nuv run {baseDir}/scripts/check_upstream.py --stale\n```\n\nCompares current HEAD SHAs and release tags of all tracked repos against the\nbaselines in `SOURCES.json`. Use this to plan incremental skill updates."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Source Provenance] This skill was built on **2026-02-19** from these upstream sources:\n\n| Repository | Release | Snapshot Date |\n|------------|---------|---------------|\n| [surrealdb/surrealdb](https://github.com/surrealdb/surrealdb) | v3.0.0 | 2026-02-19 |\n| [surrealdb/surrealist](https://github.com/surrealdb/surrealist) | v3.7.2 | 2026-02-21 |\n| [surrealdb/surrealdb.js](https://github.com/surrealdb/surrealdb.js) | v1.3.2 | 2026-02-20 |\n| [surrealdb/surrealdb.js](https://github.com/surrealdb/surrealdb.js) (v2 beta) | v2.0.0-beta.1 | 2026-02-20 |\n| [surrealdb/surrealdb.py](https://github.com/surrealdb/surrealdb.py) | v1.0.8 | 2026-02-03 |\n| [surrealdb/surrealdb.go](https://github.com/surrealdb/surrealdb.go) | v1.3.0 | 2026-02-12 |\n| [surrealdb/surreal-sync](https://github.com/surrealdb/surreal-sync) | v0.3.4 | 2026-02-12 |\n| [surrealdb/surrealfs](https://github.com/surrealdb/surrealfs) | -- | 2026-01-29 |\n\nDocumentation: [surrealdb.com/docs](https://surrealdb.com/docs) snapshot 2026-02-22.\n\nMachine-readable provenance: `SOURCES.json`."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Output Convention] All Python scripts in this skill follow a dual-output pattern:\n\n- **stderr**: Rich-formatted human-readable output (tables, panels, status indicators)\n- **stdout**: Machine-readable JSON for programmatic consumption by AI agents\n\nThis means `2>/dev/null` hides the human output, and piping stdout gives clean JSON for downstream processing."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "surrealdb"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "version": "1.1.0",
+      "author": "24601",
+      "snapshot_date": "2026-02-24",
+      "repository": "https://github.com/24601/surreal-skills"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/24601/surrealdb/SKILL.md"
+}

@@ -90,7 +90,15 @@ def _llm_config_from_persisted():
     api_key = (cfg.get("api_key") or "").strip() or get_persisted_api_key()
     base_url = (cfg.get("base_url") or "").strip() or os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
     model = (cfg.get("model") or "").strip() or os.getenv("LLM_MODEL", "deepseek-chat")
-    return LLMConfig(provider=provider, api_key=api_key, base_url=base_url, model=model)
+    max_tokens = cfg.get("max_tokens")
+    if max_tokens is not None and isinstance(max_tokens, (int, float)) and max_tokens > 0:
+        max_tokens = int(max_tokens)
+    else:
+        max_tokens = None  # 使用 LLMConfig 默认值 4096
+    kwargs = {"provider": provider, "api_key": api_key, "base_url": base_url, "model": model}
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    return LLMConfig(**kwargs)
 
 
 def _cloud_llm_config_for_startup():
@@ -138,6 +146,53 @@ async def lifespan(app: FastAPI):
     _adapter = get_runtime_adapter()
     core = AgentCore(llm, runtime_adapter=_adapter)
     set_agent_core(core)
+
+    # 终端会话增强：记录 cwd/输出供后续命令和 prompt 注入
+    try:
+        from tools.middleware import register_post_hook
+        from agent.terminal_session import get_terminal_session_store, get_current_session_id
+
+        async def _terminal_session_post_hook(name, args, result):
+            if name != "terminal":
+                return None
+            sid = get_current_session_id()
+            if not sid:
+                return None
+            data = result.data if isinstance(result.data, dict) else {}
+            get_terminal_session_store().update(
+                session_id=sid,
+                cwd=data.get("working_directory", ""),
+                command=data.get("command", ""),
+                stdout=data.get("stdout", ""),
+                stderr=data.get("stderr", ""),
+                exit_code=data.get("exit_code", 0),
+            )
+            return None
+
+        register_post_hook(_terminal_session_post_hook)
+
+        from tools.middleware import register_pre_hook
+
+        def _terminal_session_pre_hook(name, args):
+            """终端未指定 working_directory 时，复用上条命令的 cwd"""
+            if name != "terminal":
+                return None
+            if args.get("working_directory"):
+                return None
+            sid = get_current_session_id()
+            if not sid:
+                return None
+            last_cwd = get_terminal_session_store().get_default_cwd(sid)
+            if last_cwd:
+                args = dict(args)
+                args["working_directory"] = last_cwd
+                return args
+            return None
+
+        register_pre_hook(_terminal_session_pre_hook)
+        logger.info("Terminal session hooks registered")
+    except Exception as e:
+        logger.warning(f"Terminal session hook setup skipped: {e}")
 
     local_llm = LLMClient(LLMConfig(
         provider="ollama",

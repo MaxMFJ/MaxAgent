@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_clawrouter",
+  "description": "Smart LLM router — save 67% on inference costs. Routes every request to the cheapest capable model across 41 models from OpenAI, Anthropic, Google, DeepSeek, and xAI.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawRouter\n\nSmart LLM router that saves 67% on inference costs by routing each request to the cheapest model that can handle it. 41 models across 5 providers, all through one wallet."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Install] ```bash\nopenclaw plugins install @blockrun/clawrouter\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] ```bash\n# Enable smart routing (auto-picks cheapest model per request)\nopenclaw models set blockrun/auto\n\n# Or pin a specific model\nopenclaw models set openai/gpt-4o\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How Routing Works] ClawRouter classifies each request into one of four tiers:\n\n- **SIMPLE** (40% of traffic) — factual lookups, greetings, translations → Gemini Flash ($0.60/M, 99% savings)\n- **MEDIUM** (30%) — summaries, explanations, data extraction → DeepSeek Chat ($0.42/M, 99% savings)\n- **COMPLEX** (20%) — code generation, multi-step analysis → Claude Opus ($75/M, best quality)\n- **REASONING** (10%) — proofs, formal logic, multi-step math → o3 ($8/M, 89% savings)\n\nRules handle ~80% of requests in <1ms. Only ambiguous queries hit the LLM classifier (~$0.00003 per classification)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Available Models] 41 models including: gpt-5.2, gpt-4o, gpt-4o-mini, o3, o1, claude-opus-4.6, claude-sonnet-4.6, claude-haiku-4.5, gemini-3.1-pro, gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite, deepseek-chat, deepseek-reasoner, grok-3, grok-3-mini."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Example Output] ```\n[ClawRouter] google/gemini-2.5-flash (SIMPLE, rules, confidence=0.92)\n             Cost: $0.0025 | Baseline: $0.308 | Saved: 99.2%\n```"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawrouter"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🦀",
+        "requires": {
+          "config": [
+            "models.providers.blockrun"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1bcmax/clawrouter/SKILL.md"
+}

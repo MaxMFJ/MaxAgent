@@ -1,0 +1,163 @@
+{
+  "id": "openclaw_skill_Engineering Manager OS",
+  "description": "Complete engineering management system — team building, 1:1s, performance, hiring, architecture decisions, incident management, and scaling. From IC-to-manager transition through director-level operations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Engineering Manager Operating System\n\nYour complete playbook for engineering leadership. Not generic management advice — this is the specific system that high-performing engineering managers run daily.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Phase 1: Team Architecture] ### Team Topology Assessment\n\nBefore managing people, understand the system they work in.\n\n```yaml\nteam_topology:\n  name: \"[Team Name]\"\n  type: stream-aligned | platform | enabling | complicated-subsystem\n  mission: \"[One sentence — what does this team exist to do?]\"\n  boundaries:\n    owns: [\"service-x\", \"domain-y\", \"pipeline-z\"]\n    consumes: [\"auth-service\", \"data-platform\"]\n    provides: [\"checkout-api\", \"payment-events\"]\n  cognitive_load: low | medium | high | overloaded\n  interaction_modes:\n    - team: \"[Other Team]\"\n      mode: collaboration | x-as-a-service | facilitating\n      friction: low | medium | high\n      notes: \"[What's working/not working]\"\n  current_headcount: N\n  ideal_headcount: N\n  skill_gaps: [\"observability\", \"mobile\", \"ML\"]\n```\n\n### Team Health Radar (Monthly)\n\nScore 1-5 for each dimension. Track trends over time.\n\n| Dimension | Score | Signal |\n|-----------|-------|--------|\n| **Delivery pace** | _ /5 | Are we shipping what we committed? |\n| **Quality** | _ /5 | Bug rate, incident frequency, tech debt trajectory |\n| **Collaboration** | _ /5 | Cross-functional work, PR review speed, knowledge sharing |\n| **Morale** | _ /5 | Energy in meetings, voluntary contributions, retention signals |\n| **Learning** | _ /5 | New skills adopted, conference talks, internal tech talks |\n| **Autonomy** | _ /5 | Can the team make decisions without waiting for me? |\n| **Psychological safety** | _ /5 | Do people raise concerns, admit mistakes, challenge ideas? |\n| **On-call health** | _ /5 | Page frequency, off-hours burden, burnout signals |\n\n**Action rules:**\n- Any dimension ≤2 → Address THIS WEEK (it's a fire)\n- Any dimension at 3 → Create improvement plan within 2 weeks\n- Overall average <3.5 → Team is struggling, block new commitments until fixed\n- Track quarter-over-quarter — sustained decline in any dimension = systemic issue\n\n### Team Composition Model\n\nThe ideal team has these roles covered (not necessarily 1:1 with people):\n\n| Role | Description | Gap I"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 2: 1:1 System] ### 1:1 Cadence\n\n| Report Level | Frequency | Duration | Focus |\n|-------------|-----------|----------|-------|\n| Direct reports | Weekly | 30 min | Career + blockers + feedback |\n| Skip-levels | Monthly | 30 min | Team health + career + honesty check |\n| Your manager | Weekly | 30 min | Priorities + asks + air cover |\n| Cross-functional peers | Bi-weekly | 25 min | Dependencies + alignment |\n\n### 1:1 Template (Direct Reports)\n\n```yaml\none_on_one:\n  date: \"YYYY-MM-DD\"\n  person: \"[Name]\"\n  role: \"[Title]\"\n  tenure: \"[X months on team]\"\n  \n  # Their agenda first — ALWAYS\n  their_topics: []\n  \n  # Check-in (2 min)\n  energy_level: 1-10  # \"How are you feeling about work this week?\"\n  energy_trend: up | stable | down\n  \n  # Delivery (5 min)\n  current_work: \"[What they're working on]\"\n  blockers: []\n  help_needed: \"[What can I unblock?]\"\n  \n  # Growth (10 min — skip if urgent topics dominate, but never 3 weeks in a row)\n  career_conversation: \"[Topic discussed]\"\n  feedback_given: \"[Specific behavior → impact → request]\"\n  feedback_received: \"[What they told me]\"\n  stretch_opportunity: \"[Current or upcoming]\"\n  \n  # Action items\n  my_actions: []  # What I committed to do\n  their_actions: []  # What they committed to do\n  \n  # Signals (private — don't share these)\n  flight_risk: low | medium | high\n  performance_trajectory: improving | stable | declining\n  notes: \"[Anything notable]\"\n```\n\n### 1:1 Question Bank\n\n**Opening (rotate these — never use the same opener 3 weeks in a row):**\n- \"What's on your mind?\"\n- \"What was the best/worst part of your week?\"\n- \"If you could change one thing about how we work, what would it be?\"\n- \"What's something you're proud of from this week that I might not know about?\"\n- \"On a scale of 1-10, how's your energy? What would move it up one point?\"\n\n**Career development (monthly deep-dive):**\n- \"Where do you want to be in 2 years? What's the gap between here and there?\"\n- \"What skills are you not using that you'd like to use more?\"\n- \"Who in the"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 3: Performance Management] ### Performance Calibration Framework\n\nRate on two axes (both matter):\n\n**Delivery Impact (What)**\n| Level | Description |\n|-------|-------------|\n| 1 - Below | Missing commitments, quality issues, needs close oversight |\n| 2 - Meeting | Delivering assigned work reliably |\n| 3 - Exceeding | Delivering beyond scope, finding better solutions |\n| 4 - Outstanding | Multiplying team output, solving problems no one asked them to |\n\n**Behaviors (How)**\n| Level | Description |\n|-------|-------------|\n| 1 - Below | Creating friction, not collaborating, ignoring feedback |\n| 2 - Meeting | Professional, collaborative, receptive to feedback |\n| 3 - Exceeding | Mentoring others, proactively improving processes |\n| 4 - Outstanding | Shaping culture, attracting talent, raising the entire bar |\n\n**Calibration matrix:**\n\n| | Behavior 1 | Behavior 2 | Behavior 3 | Behavior 4 |\n|---|---|---|---|---|\n| **Delivery 4** | Coach behaviors | Strong | Top performer | Superstar |\n| **Delivery 3** | Coach behaviors | Solid | Strong | Top performer |\n| **Delivery 2** | PIP candidate | Meets expectations | Developing | Growing |\n| **Delivery 1** | Exit | PIP | Coach delivery | Coach delivery |\n\n### Feedback Framework: SBI-I (Situation-Behavior-Impact-Intent)\n\n**Template:**\n\"In [situation], when you [specific behavior], the impact was [concrete effect]. I'd like to see [specific change] because [intent/why it matters].\"\n\n**Examples:**\n\n✅ Good: \"In yesterday's design review, when you challenged the API schema with the versioning concern, it caught a breaking change we would have shipped. That's exactly the kind of technical leadership I want to see more of.\"\n\n❌ Bad: \"You're doing great work. Keep it up.\" (Too vague — they learn nothing)\n\n✅ Good: \"In the last two sprints, PRs have been sitting in review for 3+ days. The impact is features are merging late and we're missing sprint commitments. I'd like us to commit to <24h first review because velocity depends on review speed.\"\n\n❌ Bad: \"You need to "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Phase 4: Hiring Machine] ### Hiring Pipeline\n\n```\nRole opened → Job description → Sourcing (5-7 days)\n→ Resume screen → Recruiter screen (30 min)\n→ Technical phone screen (60 min) → Take-home OR live coding (2-4 hrs)\n→ Onsite/virtual loop (3-4 hrs) → Debrief → Offer → Close\n\nTarget: <21 days from first screen to offer\n```\n\n### Job Description Template\n\n```markdown\n# [Role Title] — [Team Name]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[What you'll do] [3-5 bullet points of ACTUAL work, not generic responsibilities]\n- Ship [specific feature/system] that [specific impact]\n- Own [specific domain] end-to-end\n- [Concrete example of a recent problem this person would solve]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[What you'll need] [Must-haves only — each one must be a genuine filter]\n- X years building [specific technology/domain]\n- Experience with [specific technical requirement]\n- [Skill that actually differentiates candidates]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Nice to have (genuinely nice, not secretly required)] - [Thing that would accelerate ramp-up]\n- [Adjacent skill that adds value]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[What we offer] [Be specific — \"competitive salary\" means nothing]\n- Salary range: $X-$Y (based on [location/level])\n- [Specific benefits that matter to engineers]\n- [Team/culture thing that's actually true and differentiating]"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[How we hire] [Timeline and what to expect — respect their time]\n1. [Step]: [Duration] — [What we're assessing]\n2. [Step]: [Duration] — [What we're assessing]\nTotal time investment: ~X hours\n```\n\n### Interview Scorecard (Per Interviewer)\n\n```yaml\nscorecard:\n  candidate: \"[Name]\"\n  interviewer: \"[Name]\"\n  interview_type: \"technical | system design | behavioral | culture\"\n  date: \"YYYY-MM-DD\"\n  \n  # Score each dimension 1-4 (no 3s allowed — forces a decision)\n  dimensions:\n    - name: \"Technical depth\"\n      score: _  # 1=no hire, 2=lean no, 4=lean yes, 5=strong yes (skip 3)\n      evidence: \"[Specific examples from the interview]\"\n    - name: \"Problem solving approach\"\n      score: _\n      evidence: \"[How they broke down the problem, handled hints]\"\n    - name: \"Communication clarity\"\n      score: _\n      evidence: \"[Could they explain their thinking? Did they ask good questions?]\"\n    - name: \"Collaboration signals\"\n      score: _\n      evidence: \"[How did they respond to pushback? Did they build on ideas?]\"\n  \n  # Overall\n  hire_recommendation: strong_no | no | yes | strong_yes\n  level_recommendation: \"[What level would you place them?]\"\n  concerns: \"[Anything that gave you pause]\"\n  highlights: \"[What impressed you most]\"\n```\n\n### Debrief Protocol\n\n1. **No pre-discussion** — Submit scorecards BEFORE the debrief meeting\n2. **Hire bar holder speaks last** — Prevent anchoring\n3. **Discuss each dimension, not overall vibes** — \"Tell me about their system design approach\" not \"What did you think?\"\n4. **Any strong_no is a veto** — Unless the interviewer can be convinced their signal was a misread\n5. **Decide in the room** — Don't \"sleep on it\" unless genuinely torn (then it's probably a no)\n6. **Leveling before offer** — Agree on level first, then comp follows from band\n\n### Closing Candidates\n\n**The 3 things that close engineers:**\n1. **The problem** — \"Here's the specific hard problem you'd work on\"\n2. **The people** — Connect them with future teammates before offer\n3. **The growth*"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Phase 5: Technical Leadership] ### Architecture Decision Record (ADR)\n\n```yaml\nadr:\n  id: \"ADR-NNN\"\n  title: \"[Decision title]\"\n  date: \"YYYY-MM-DD\"\n  status: proposed | accepted | deprecated | superseded\n  superseded_by: \"ADR-NNN\"  # if applicable\n  \n  context: |\n    [What situation are we in? What forces are at play?\n     Include constraints: timeline, team skill, budget, scale requirements.]\n  \n  options:\n    - name: \"[Option A]\"\n      pros: [\"pro 1\", \"pro 2\"]\n      cons: [\"con 1\", \"con 2\"]\n      effort: \"[T-shirt size]\"\n      risk: low | medium | high\n    - name: \"[Option B]\"\n      pros: [\"pro 1\"]\n      cons: [\"con 1\", \"con 2\", \"con 3\"]\n      effort: \"[T-shirt size]\"\n      risk: low | medium | high\n  \n  decision: |\n    [What we decided and WHY. The \"why\" is the most important part.\n     Future readers need to understand the reasoning, not just the choice.]\n  \n  consequences: |\n    [What follows from this decision? What becomes easier/harder?\n     What do we need to monitor?]\n  \n  review_date: \"YYYY-MM-DD\"  # When to revisit this decision\n```\n\n### Tech Debt Prioritization\n\nScore each debt item on two axes:\n\n**Impact of fixing (1-5):**\n- 5: Unblocks multiple teams or critical features\n- 4: Significant velocity improvement for our team\n- 3: Moderate improvement, prevents future problems\n- 2: Nice to have, minor improvement\n- 1: Cosmetic or theoretical benefit\n\n**Cost of NOT fixing (1-5):**\n- 5: Will cause incidents or data loss\n- 4: Blocking hiring/onboarding (can't explain the code)\n- 3: Slowing every feature by >20%\n- 2: Occasional friction, workarounds exist\n- 1: Annoying but harmless\n\n**Priority = Impact × Cost-of-not-fixing**\n\n| Score | Action |\n|-------|--------|\n| 20-25 | Fix THIS sprint — it's an emergency |\n| 12-19 | Schedule within 2 sprints |\n| 6-11 | Add to quarterly tech debt budget (allocate 15-20% of sprint capacity) |\n| 1-5 | Backlog — revisit quarterly |\n\n### Code Review Culture Guidelines\n\n```yaml\ncode_review_standards:\n  sla:\n    first_review: \"< 4 hours during work hours\"\n   "
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Phase 6: Sprint & Delivery] ### Sprint Ceremony Cheat Sheet\n\n| Ceremony | Duration | Who | Purpose | Your Role |\n|----------|----------|-----|---------|-----------|\n| **Sprint planning** | 1-2 hrs | Team + PO | Commit to sprint goal | Facilitate, challenge estimates, protect capacity |\n| **Daily standup** | 15 min | Team | Surface blockers | Listen for problems, DON'T manage tasks |\n| **Backlog refinement** | 1 hr | Team + PO | Prepare future work | Ensure technical feasibility, flag risks |\n| **Sprint review** | 30 min | Team + stakeholders | Demo working software | Let the team present, handle stakeholder Qs |\n| **Retrospective** | 1 hr | Team only | Improve process | Facilitate, ensure psychological safety, track actions |\n\n### Sprint Health Metrics\n\nTrack these weekly — trend matters more than absolute numbers:\n\n| Metric | Healthy Range | Red Flag |\n|--------|---------------|----------|\n| **Sprint completion rate** | 80-100% of committed points | <70% for 2+ sprints |\n| **Carry-over stories** | 0-1 per sprint | Same story carried 3+ sprints |\n| **PR cycle time** | <48 hours open to merge | >72 hours consistently |\n| **Bug escape rate** | <10% of stories create bugs | Rising trend |\n| **Deployment frequency** | Daily to weekly | Monthly or less |\n| **Sprint goal achievement** | Yes/No binary | No for 3+ consecutive sprints |\n\n### Estimation Heuristic\n\nWhen the team struggles with estimation:\n\n| Certainty Level | Approach |\n|----------------|----------|\n| \"We've done this exact thing before\" | Size by comparison to past work |\n| \"We understand the problem but not the solution\" | Spike first (timeboxed), then estimate |\n| \"We don't fully understand the problem\" | Discovery task (1-2 days), then re-scope |\n| \"We have no idea\" | Break it down until you reach pieces you can estimate |\n\n**Rule:** If an estimate is >8 points (or >5 days), it's not estimated — it's a guess. Break it down further.\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Phase 7: Incident Management] ### Incident Response Framework\n\n```yaml\nincident:\n  id: \"INC-YYYY-NNN\"\n  severity: SEV1 | SEV2 | SEV3 | SEV4\n  detected: \"YYYY-MM-DD HH:MM UTC\"\n  resolved: \"YYYY-MM-DD HH:MM UTC\"\n  duration: \"Xh Ym\"\n  commander: \"[Name]\"\n  \n  # Severity guide\n  # SEV1: Revenue impact, data loss, full outage — ALL HANDS, exec notification\n  # SEV2: Degraded service, partial outage — On-call + team lead\n  # SEV3: Minor degradation, workaround exists — On-call handles\n  # SEV4: Cosmetic, no user impact — Normal ticket\n  \n  timeline:\n    - time: \"HH:MM\"\n      action: \"[What happened / what was done]\"\n      who: \"[Name]\"\n  \n  root_cause: |\n    [Technical root cause — be specific. \n     \"Human error\" is never the root cause. What system allowed the error?]\n  \n  contributing_factors:\n    - \"[Factor 1 — e.g., missing monitoring on X]\"\n    - \"[Factor 2 — e.g., deployment during peak without feature flag]\"\n  \n  action_items:\n    - description: \"[Specific fix]\"\n      owner: \"[Name]\"\n      due_date: \"YYYY-MM-DD\"\n      priority: P0 | P1 | P2\n      status: open | in_progress | done\n```\n\n### Blameless Post-Mortem Template\n\n**Facilitation rules:**\n1. Focus on systems, not individuals\n2. \"What\" and \"how,\" never \"who\"\n3. Everyone involved attends (including on-call who was paged)\n4. Schedule within 48 hours of resolution (memories fade)\n5. Write it up and share publicly within the engineering org\n\n**Structure (60-90 min):**\n1. **Timeline review** (20 min) — Walk through chronologically. Fill gaps.\n2. **Root cause analysis** (15 min) — \"5 Whys\" until you hit a systemic issue\n3. **What went well** (10 min) — Reinforce good incident response behaviors\n4. **What went wrong** (15 min) — Process failures, detection gaps, communication issues\n5. **Action items** (15 min) — Each must have an owner and due date. Max 5 items — focus beats volume.\n\n### On-Call Health Guidelines\n\n| Metric | Healthy | Unhealthy |\n|--------|---------|-----------|\n| Pages per week | <5 | >10 |\n| Off-hours pages | <2/week | >5/week"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Phase 8: Scaling & Org Design] ### When to Split a Team\n\n| Signal | Action |\n|--------|--------|\n| Team >8 people | Split before communication overhead kills velocity |\n| Two distinct domains in one team | Split along domain boundaries |\n| Standup takes >15 min | Too many threads — people are tuning out |\n| PR review queue >48 hours consistently | Not enough context overlap — specialize |\n| On-call covers too many services | Reduce blast radius per team |\n\n### Splitting Protocol\n\n1. **Define boundaries clearly** — What does each new team OWN? Write it down.\n2. **Split the backlog** — Every ticket gets a home. Shared backlogs = shared ownership = no ownership.\n3. **Split on-call** — Each team owns their services' reliability.\n4. **Name the teams** — Sounds trivial, matters for identity.\n5. **Designate tech leads** — Don't leave both teams looking to you for technical decisions.\n6. **Give it 3 months** — Resist re-orging again too quickly. Turbulence is normal.\n\n### Manager-to-IC Ratio\n\n| Team Size | Structure |\n|-----------|-----------|\n| 3-5 ICs | Player-coach (you're still coding ~30-40%) |\n| 5-8 ICs | Full-time manager (stop coding in critical path) |\n| 8-12 ICs | Split the team OR add a tech lead as force multiplier |\n| 12+ ICs | Must split — you cannot manage this effectively |\n\n### The IC-to-Manager Transition\n\nIf you're newly managing (or coaching someone through it):\n\n**Stop doing:**\n- Writing code in the critical path (you're now the bottleneck)\n- Solving every technical problem yourself\n- Being the best engineer on the team (your job changed)\n\n**Start doing:**\n- Asking \"who should own this?\" instead of doing it yourself\n- Measuring success by team output, not your output\n- Having uncomfortable conversations early (feedback, performance, conflict)\n- Blocking time for thinking, not just meetings\n\n**Keep doing:**\n- Staying technical enough to evaluate decisions (read code, review designs)\n- Coding on side projects, tools, or prototypes (stay sharp)\n- Having strong technical opinions (but ho"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Phase 9: Communication & Stakeholder Management] ### Weekly Status Update Template\n\nSend this to your manager and stakeholders every Friday:\n\n```markdown\n# [Team Name] — Week of [Date]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[✅ Shipped This Week] - [Feature/fix] — [Impact in user/business terms]\n- [Feature/fix] — [Impact]"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[🔨 In Progress] - [Work item] — [Status, ETA, any blockers]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[🚨 Risks & Blockers] - [Risk] — [What you're doing about it, what you need]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[📊 Key Metrics] - Deploy frequency: X\n- Incident count: X (SEV breakdown)\n- Sprint completion: X%"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[🔮 Next Week] - [Priority 1]\n- [Priority 2]\n```\n\n### Managing Up Checklist\n\n| Do | Don't |\n|----|-------|\n| Bring solutions with problems | Dump problems without proposals |\n| Flag risks early with mitigation plans | Surprise with bad news at the last minute |\n| Quantify impact (hours, $$, users) | Use vague language (\"it's kinda slow\") |\n| Say \"I need X from you by Y\" | Hope they'll figure out you need help |\n| Send written updates proactively | Wait to be asked for status |\n| Disagree in private | Disagree in public meetings |\n| Ask for feedback regularly | Assume no news is good news |\n\n### Cross-Functional Relationship Map\n\n```yaml\nstakeholders:\n  - name: \"[Product Manager]\"\n    relationship: partner\n    cadence: \"Daily async + weekly 1:1\"\n    currency: \"Scope clarity, user data, priority decisions\"\n    \n  - name: \"[Design Lead]\"\n    relationship: partner\n    cadence: \"Bi-weekly sync + ad-hoc\"\n    currency: \"Early technical feasibility input\"\n    \n  - name: \"[Platform/Infra Team]\"\n    relationship: dependency\n    cadence: \"Monthly sync + Slack\"\n    currency: \"Clear requirements, advance notice of needs\"\n    \n  - name: \"[Your Manager]\"\n    relationship: air_cover\n    cadence: \"Weekly 1:1\"\n    currency: \"No surprises, clear asks, good judgment\"\n```\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Phase 10: Engineering Manager Rituals] ### Daily (15 min total)\n\n- [ ] Scan Slack/email for blockers — unblock before standup\n- [ ] Attend standup — listen for patterns, not task updates\n- [ ] Check PR queue — nudge any >24h reviews\n- [ ] One piece of feedback (positive or constructive) to someone\n\n### Weekly\n\n- [ ] All 1:1s completed (never cancel — reschedule if needed)\n- [ ] Sprint metrics reviewed\n- [ ] Status update sent to stakeholders\n- [ ] Calendar audit — am I in meetings I shouldn't be in?\n- [ ] One skip-level or cross-functional conversation\n\n### Monthly\n\n- [ ] Team health radar updated\n- [ ] Career development conversation with each report\n- [ ] Tech debt review and prioritization\n- [ ] On-call health review\n- [ ] Update team topology doc\n\n### Quarterly\n\n- [ ] Performance calibration (formal or informal)\n- [ ] Team goals review and reset\n- [ ] Architecture review — any ADRs need revisiting?\n- [ ] Headcount planning — what do we need in 6 months?\n- [ ] Retrospective on YOUR performance — ask your team for feedback\n\n---"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Phase 11: Difficult Situations Playbook] ### Scenario: Two Senior Engineers Disagree on Architecture\n\n1. Let them present both approaches in a design doc (each writes their own section)\n2. Define decision criteria BEFORE evaluating: reversibility, maintenance cost, team familiarity, timeline\n3. Facilitate a time-boxed discussion (60 min max)\n4. If no consensus: the tech lead or DRI decides. Not you (unless you must).\n5. Document the decision as an ADR — the \"why\" matters more than the \"what\"\n6. The person who \"lost\" must commit fully. Monitor for passive resistance.\n\n### Scenario: High Performer Wants to Be a Manager\n\n1. Explore motivation: \"Tell me what you think a manager does day-to-day\"\n2. Test with real work: lead a project, mentor a junior, run a retrospective\n3. Be honest about tradeoffs: less coding, more meetings, slower feedback loops, ambiguous success metrics\n4. Offer the Staff/Principal IC path as a genuine alternative, not a consolation prize\n5. If they proceed: set explicit check-in at 3 months — \"Is this what you wanted?\"\n\n### Scenario: You Inherit a Low-Performing Team\n\n1. **Week 1-2:** Listen. 1:1 with every person. Don't change anything yet.\n2. **Week 3-4:** Identify the 1-2 systemic issues (usually: unclear priorities, no accountability, or trust deficit)\n3. **Month 2:** Make ONE process change. Get a quick win. Build credibility.\n4. **Month 3:** Address performance issues you've now observed firsthand\n5. **Never:** Blame the previous manager publicly. Never say \"things are going to change around here.\"\n\n### Scenario: Layoffs / Reorg Affecting Your Team\n\n1. **Before announcement:** Prepare a plan for remaining team — who covers what?\n2. **During:** Be honest about what you know and what you don't. \"I don't know\" > corporate-speak.\n3. **After:** 1:1 with every remaining person within 48 hours. Expect anger, fear, guilt.\n4. **Ongoing:** Workload audit — don't expect same output from fewer people. Push back on scope.\n5. **Self-care:** This is one of the hardest parts of the job. Talk to yo"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Scoring Rubric: Engineering Manager Effectiveness (0-100)] | Dimension | Weight | Indicators |\n|-----------|--------|------------|\n| **Team health** | 20% | Retention, engagement scores, psychological safety signals |\n| **Delivery** | 20% | Sprint completion, quality metrics, stakeholder satisfaction |\n| **People development** | 20% | Promotions, skill growth, 1:1 quality, mentorship |\n| **Technical stewardship** | 15% | Tech debt trajectory, architecture quality, incident trends |\n| **Hiring** | 10% | Pipeline health, offer acceptance rate, new hire ramp time |\n| **Communication** | 10% | Stakeholder relationships, information flow, no surprises |\n| **Self-improvement** | 5% | Seeking feedback, adapting, growing as a leader |\n\n**Scoring:**\n- 90-100: Exceptional — team thriving, people growing, shipping reliably\n- 75-89: Strong — most things working, some areas to develop\n- 60-74: Developing — foundational skills present, needs coaching\n- 40-59: Struggling — significant gaps, at risk of losing team trust\n- <40: Intervention needed — coaching, role change, or transition\n\n---"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Natural Language Commands] - \"Prepare 1:1 with [name]\" → Generate agenda from recent context\n- \"Write performance review for [name]\" → Calibrate and draft using framework\n- \"Create job description for [role]\" → Generate using template\n- \"Run team health check\" → Walk through radar dimensions\n- \"Draft ADR for [decision]\" → Structure architecture decision\n- \"Incident post-mortem for [incident]\" → Generate post-mortem template\n- \"Sprint health report\" → Analyze metrics and flag issues\n- \"Promotion case for [name]\" → Build evidence-based promotion doc\n- \"Evaluate tech debt [item]\" → Score using prioritization matrix\n- \"Flight risk assessment\" → Review signals for each team member\n- \"Stakeholder update\" → Generate weekly status from context\n- \"Interview scorecard for [candidate]\" → Create structured evaluation"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Engineering Manager OS"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "⚙️",
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-engineering-manager/SKILL.md"
+}

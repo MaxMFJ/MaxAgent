@@ -1,0 +1,101 @@
+{
+  "id": "openclaw_skill_gotchi-finder",
+  "description": "Fetch Aavegotchi by ID from Base mainnet and display image with full traits. Shows on-chain SVG, converts to PNG, and displays complete gotchi stats.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gotchi Finder Skill\n\nFind and display any Aavegotchi by ID with complete traits and image."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - ✅ **Instant ID lookup** - Fetch any gotchi by ID number\n- ✅ Fetch any gotchi by ID from Base mainnet\n- ✅ Display full traits (BRS, Kinship, Level, XP, Haunt, Name, Owner)\n- ✅ **TOTAL BRS** - Shows base + wearables modifiers (true power level)\n- ✅ Generate PNG images (standard 512x512 or hi-res 1024x1024)\n- ✅ Export as SVG (scalable vector graphics)\n- ✅ Flexible format options (PNG, hi-res, SVG, or all)\n- ✅ Support for all gotchi states (Portal, Gotchi, etc.)\n- ✅ Automatic image conversion and delivery"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Default Behavior (ALWAYS)\n\n**When you run gotchi-finder, it ALWAYS outputs:**\n\n1. **🖼️ Gotchi PNG image** (512×512) - sent as photo/media\n2. **📊 Stats as caption** - displayed below the image\n\nThis creates a single message with the gotchi artwork on top and complete metadata below.\n\n**Example:**\n```bash\nbash scripts/find-gotchi.sh 9638\n```\n\n**Output:** One Telegram message with:\n- Image at top (PNG)\n- Caption below with all stats, traits, and info\n\n### Additional Format Options (Optional)\n\nAfter seeing the default output, users can request additional formats:\n\n```bash\n# Hi-res PNG (1024×1024)\nbash scripts/find-gotchi.sh 9638 --format hires\n\n# SVG vector\nbash scripts/find-gotchi.sh 9638 --format svg\n\n# All formats\nbash scripts/find-gotchi.sh 9638 --format all\n```\n\n### Format Options\n\n- `preview` - Show traits + standard PNG (default)\n- `png` - Standard PNG (512x512)\n- `hires` - Hi-res PNG (1024x1024)\n- `svg` - SVG only (no PNG conversion)\n- `all` - All formats at once\n\n### Examples\n\n**Preview first (conversational flow):**\n```bash\n# Show gotchi info + preview image\nbash scripts/find-gotchi.sh 9638\n\n# Then user picks format\nbash scripts/find-gotchi.sh 9638 --format hires\n```\n\n**Direct download (skip preview):**\n```bash\n# Get hi-res immediately\nbash scripts/find-gotchi.sh 9638 --format hires\n\n# Get all formats at once\nbash scripts/find-gotchi.sh 9638 --format all\n```\n\n**Output Files:**\n- `gotchi-{ID}.json` - Complete metadata (always)\n- `gotchi-{ID}.svg` - Vector image (always)\n- `gotchi-{ID}.png` - Standard PNG (preview/png/all)\n- `gotchi-{ID}-hires.png` - Hi-res PNG (hires/all)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Display Format (OFFICIAL)] ### Live Gotchis (Status 3)\n\n**ALWAYS send as single message with media + caption:**\n\n**Format:**\n```\nmedia: gotchi-{ID}.png (512×512 PNG image)\ncaption: (text below)\n```\n\n**Caption Template:**\n```\n👻 **Gotchi #{ID} - {Name}**\n\n**📊 Stats:**\n⭐ BRS: **{brs}** ({TIER} tier)\n💜 Kinship: **{kinship}**\n🎮 Level: **{level}** (XP: {xp})\n👻 Haunt: **{haunt}**\n💎 Collateral: **{collateral}**\n\n**🎭 Traits:**\n⚡ Energy: **{value}**\n👊 Aggression: **{value}**\n👻 Spookiness: **{value}**\n🧠 Brain Size: **{value}**\n\n**👔 Wearables:** {None/equipped count}\n\nLFGOTCHi! 🦞🚀\n```\n\n**Rarity Tiers:**\n- BRS ≥ 580: GODLIKE\n- BRS ≥ 525: MYTHICAL  \n- BRS ≥ 475: UNCOMMON\n- BRS < 475: COMMON\n\n### Portals (Status 0-1)\n**Single message:** Portal PNG image with status info as caption"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Technical Details] **Blockchain:**\n- Chain: Base mainnet (8453)\n- RPC: https://mainnet.base.org\n- Diamond: 0xA99c4B08201F2913Db8D28e71d020c4298F29dBF\n\n**Dependencies:**\n- Node.js with ethers v6\n- Sharp library for image conversion\n\n**Status Codes:**\n- 0: Unopened Portal\n- 1: Opened Portal\n- 2: Gotchi (rare on Base)\n- 3: Gotchi (standard on Base)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Files] - `scripts/show-gotchi.sh` - **Display gotchi (RECOMMENDED)** - Shows PNG + stats in single message\n- `scripts/find-gotchi.sh` - Fetch and convert (advanced usage)\n- `scripts/fetch-gotchi.js` - Fetch from blockchain\n- `scripts/svg-to-png.js` - Convert SVG to PNG\n- `package.json` - Node dependencies"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[For OpenClaw Agents] **Use `show-gotchi.sh` - it outputs the exact format needed for the message tool:**\n\n```bash\ncd ~/.openclaw/workspace/skills/gotchi-finder\nbash scripts/show-gotchi.sh 8746\n```\n\n**Output:**\n```\nPNG_PATH=./gotchi-8746.png\nCAPTION=<<EOF\n👻 **Gotchi #8746 - LE PETIT MARX**\n...complete stats...\nEOF\n```\n\n**Then use:**\n```javascript\nmessage(action: \"send\", media: PNG_PATH, caption: CAPTION)\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Installation] ```bash\ncd /home/ubuntu/.openclaw/workspace/skills/gotchi-finder\nnpm install\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Examples] **Find your gotchi:**\n```bash\nbash scripts/find-gotchi.sh 9638\n```\n\n**Find any gotchi:**\n```bash\nbash scripts/find-gotchi.sh 5000\n```\n\n**Find multiple gotchis:**\n```bash\nfor id in 9638 21785 10052; do\n  bash scripts/find-gotchi.sh $id\ndone\n```\n\n---\n\nBuilt with 💜 by AAI\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[🔒 Security] **This skill is 100% SAFE - Read-only!** ✅\n\n### Security Features\n- ✅ **Read-only** - No wallet interaction at all\n- ✅ **No transactions** - Cannot modify blockchain state\n- ✅ **No credentials needed** - Public data only\n- ✅ **No private keys** - Zero wallet access\n- ✅ **Safe for anyone** - Cannot cause harm\n\n### What This Skill Does\n- ✅ Fetches gotchi data from public subgraph\n- ✅ Generates images from public SVG data\n- ✅ Displays gotchi traits (read-only)\n\n### What This Skill CANNOT Do\n- ❌ Access wallets\n- ❌ Sign transactions\n- ❌ Modify gotchis\n- ❌ Transfer anything\n- ❌ Spend money\n\n### Data Sources\n- Public subgraph: `api.goldsky.com` (read-only)\n- Public SVG data: Aavegotchi Diamond contract (read-only)\n- No authentication required\n\n### Privacy\n- ✅ Fetches only PUBLIC gotchi data\n- ✅ No wallet addresses exposed\n- ✅ No sensitive information\n\n### Compliance\n- ✅ ClawHub security standards\n- ✅ Read-only best practices\n- ✅ Zero-risk skill classification\n\n---\n\n**Security Score:** 10/10 ✅ (Read-only = Maximum Safety)  \n**ClawHub Status:** Approved  \n**Risk Level:** NONE (Read-only)  \n**Last Audit:** 2026-02-19"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[BRS Calculation (OFFICIAL)] **gotchi-finder ALWAYS uses TOTAL BRS** = Base BRS + Wearables Modifiers\n\nThis shows the gotchi's **true power level** with all equipped gear!\n\n### JSON Output Fields\n\n- `brs` - **TOTAL BRS** (base + wearables) - main field ⭐\n- `baseBrs` - Base BRS only (no wearables)\n- `baseRarityScore` - Same as baseBrs (from contract)\n- `modifiedRarityScore` - Same as brs (from contract)\n\n### Example Output\n\n```json\n{\n  \"name\": \"SHAAMAAN\",\n  \"brs\": \"670\",           // ← TOTAL BRS (used everywhere)\n  \"baseBrs\": \"562\",       // Base only (reference)\n  \"traits\": { ... },      // Base traits (no wearables)\n  \"modifiedTraits\": { ... } // Modified traits (with wearables)\n}\n```\n\n**Console Display:**\n```\n⭐ Total BRS: 670 (Base: 562 + Wearables: +108)\n```\n\n### Why Total BRS?\n\n- ✅ Shows gotchi's **actual strength** in battles\n- ✅ Reflects equipped gear value\n- ✅ Determines rarity tier with wearables\n- ✅ Consistent with Baazaar listings\n\n**A MYTHICAL gotchi can become GODLIKE with the right gear!** 🔥\n\n---"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gotchi_finder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "node",
+            "npm"
+          ],
+          "env": [
+            "BASE_MAINNET_RPC"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaigotchi/gotchi-finder/SKILL.md"
+}

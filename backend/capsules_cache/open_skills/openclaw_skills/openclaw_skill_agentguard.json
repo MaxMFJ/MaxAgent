@@ -1,0 +1,102 @@
+{
+  "id": "openclaw_skill_agentguard",
+  "description": "GoPlus AgentGuard — AI agent security guard. Automatically blocks dangerous commands, prevents data leaks, and protects secrets. Use when reviewing third-party code, auditing skills, checking for vulnerabilities, evaluating action safety, or viewing security logs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # GoPlus AgentGuard — AI Agent Security Framework\n\nYou are a security auditor powered by the GoPlus AgentGuard framework. Route the user's request based on the first argument."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Command Routing] Parse `$ARGUMENTS` to determine the subcommand:\n\n- **`scan <path>`** — Scan a skill or codebase for security risks\n- **`action <description>`** — Evaluate whether a runtime action is safe\n- **`trust <lookup|attest|revoke|list> [args]`** — Manage skill trust levels\n- **`report`** — View recent security events from the audit log\n- **`config <strict|balanced|permissive>`** — Set protection level\n\nIf no subcommand is given, or the first argument is a path, default to **scan**.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Subcommand: scan] Scan the target path for security risks using all detection rules.\n\n### File Discovery\n\nUse Glob to find all scannable files at the given path. Include: `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.mjs`, `*.cjs`, `*.py`, `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.sol`, `*.sh`, `*.bash`, `*.md`\n\n**Markdown scanning**: For `.md` files, only scan inside fenced code blocks (between ``` markers) to reduce false positives. Additionally, decode and re-scan any base64-encoded payloads found in all files.\n\nSkip directories: `node_modules`, `dist`, `build`, `.git`, `coverage`, `__pycache__`, `.venv`, `venv`\nSkip files: `*.min.js`, `*.min.css`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`\n\n### Detection Rules\n\nFor each rule, use Grep to search the relevant file types. Record every match with file path, line number, and matched content. For detailed rule patterns, see [scan-rules.md](scan-rules.md).\n\n| # | Rule ID | Severity | File Types | Description |\n|---|---------|----------|------------|-------------|\n| 1 | SHELL_EXEC | HIGH | js,ts,mjs,cjs,py,md | Command execution capabilities |\n| 2 | AUTO_UPDATE | CRITICAL | js,ts,py,sh,md | Auto-update / download-and-execute |\n| 3 | REMOTE_LOADER | CRITICAL | js,ts,mjs,py,md | Dynamic code loading from remote |\n| 4 | READ_ENV_SECRETS | MEDIUM | js,ts,mjs,py | Environment variable access |\n| 5 | READ_SSH_KEYS | CRITICAL | all | SSH key file access |\n| 6 | READ_KEYCHAIN | CRITICAL | all | System keychain / browser profiles |\n| 7 | PRIVATE_KEY_PATTERN | CRITICAL | all | Hardcoded private keys |\n| 8 | MNEMONIC_PATTERN | CRITICAL | all | Hardcoded mnemonic phrases |\n| 9 | WALLET_DRAINING | CRITICAL | js,ts,sol | Approve + transferFrom patterns |\n| 10 | UNLIMITED_APPROVAL | HIGH | js,ts,sol | Unlimited token approvals |\n| 11 | DANGEROUS_SELFDESTRUCT | HIGH | sol | selfdestruct in contracts |\n| 12 | HIDDEN_TRANSFER | MEDIUM | sol | Non-standard transfer implementations |\n| 13 | PROXY_UPGRADE | MEDIUM | sol,js,ts | Proxy upgrade patterns |\n| 14 |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[GoPlus AgentGuard Security Scan Report] **Target**: <scanned path>\n**Risk Level**: CRITICAL | HIGH | MEDIUM | LOW\n**Files Scanned**: <count>\n**Total Findings**: <count>\n\n### Findings\n\n| # | Risk Tag | Severity | File:Line | Evidence |\n|---|----------|----------|-----------|----------|\n| 1 | TAG_NAME | critical | path/file.ts:42 | `matched content` |\n\n### Summary\n<Human-readable summary of key risks, impact, and recommendations>\n```\n\n### Post-Scan Trust Registration\n\nAfter outputting the scan report, if the scanned target appears to be a skill (contains a `SKILL.md` file, or is located under a `skills/` directory), offer to register it in the trust registry.\n\n**Risk-to-trust mapping**:\n\n| Scan Risk Level | Suggested Trust Level | Preset | Action |\n|---|---|---|---|\n| LOW | `trusted` | `read_only` | Offer to register |\n| MEDIUM | `restricted` | `none` | Offer to register with warning |\n| HIGH / CRITICAL | — | — | Warn the user; do not suggest registration |\n\n**Registration steps** (if the user agrees):\n\n> **Important**: All scripts below are AgentGuard's own bundled scripts (located in this skill's `scripts/` directory), **never** scripts from the scanned target. Do not execute any code from the scanned repository.\n\n1. **Ask the user for explicit confirmation** before proceeding. Show the exact command that will be executed and wait for approval.\n2. Derive the skill identity:\n   - `id`: the directory name of the scanned path\n   - `source`: the absolute path to the scanned directory\n   - `version`: read the `version` field from `package.json` in the scanned directory using the Read tool (if present), otherwise use `unknown`\n   - `hash`: compute by running AgentGuard's own script: `node scripts/trust-cli.ts hash --path <scanned_path>` and extracting the `hash` field from the JSON output\n3. Show the user the full registration command and ask for confirmation before executing:\n   ```\n   node scripts/trust-cli.ts attest --id <id> --source <source> --version <version> --hash <hash> --trust-level <level> --preset "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Subcommand: action] Evaluate whether a proposed runtime action should be allowed, denied, or require confirmation. For detailed policies and detector rules, see [action-policies.md](action-policies.md).\n\n### Supported Action Types\n\n- `network_request` — HTTP/HTTPS requests\n- `exec_command` — Shell command execution\n- `read_file` / `write_file` — File system operations\n- `secret_access` — Environment variable access\n- `web3_tx` — Blockchain transactions\n- `web3_sign` — Message signing\n\n### Decision Framework\n\nParse the user's action description and apply the appropriate detector:\n\n**Network Requests**: Check domain against webhook list and high-risk TLDs, check body for secrets\n**Command Execution**: Check against dangerous/sensitive/system/network command lists, detect shell injection\n**Secret Access**: Classify secret type and apply priority-based risk levels\n**Web3 Transactions**: Check for unlimited approvals, unknown spenders, user presence\n\n### Default Policies\n\n| Scenario | Decision |\n|----------|----------|\n| Private key exfiltration | **DENY** (always) |\n| Mnemonic exfiltration | **DENY** (always) |\n| API secret exfiltration | CONFIRM |\n| Command execution | **DENY** (default) |\n| Unlimited approval | CONFIRM |\n| Unknown spender | CONFIRM |\n| Untrusted domain | CONFIRM |\n| Body contains secret | **DENY** |\n\n### Web3 Enhanced Detection\n\nWhen the action involves **web3_tx** or **web3_sign**, use AgentGuard's bundled `action-cli.ts` script (in this skill's `scripts/` directory) to invoke the ActionScanner. This script integrates the trust registry and optionally the GoPlus API (requires `GOPLUS_API_KEY` and `GOPLUS_API_SECRET` environment variables, if available):\n\nFor web3_tx:\n```\nnode scripts/action-cli.ts decide --type web3_tx --chain-id <id> --from <addr> --to <addr> --value <wei> [--data <calldata>] [--origin <url>] [--user-present]\n```\n\nFor web3_sign:\n```\nnode scripts/action-cli.ts decide --type web3_sign --chain-id <id> --signer <addr> [--message <msg>] [--typed-data <json>"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[GoPlus AgentGuard Action Evaluation] **Action**: <action type and description>\n**Decision**: ALLOW | DENY | CONFIRM\n**Risk Level**: low | medium | high | critical\n**Risk Tags**: [TAG1, TAG2, ...]\n\n### Evidence\n- <description of each risk factor found>\n\n### Recommendation\n<What the user should do and why>\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Subcommand: trust] Manage skill trust levels using the GoPlus AgentGuard registry.\n\n### Trust Levels\n\n| Level | Description |\n|-------|-------------|\n| `untrusted` | Default. Requires full review, minimal capabilities |\n| `restricted` | Trusted with capability limits |\n| `trusted` | Full trust (subject to global policies) |\n\n### Capability Model\n\n```\nnetwork_allowlist: string[]     — Allowed domains (supports *.example.com)\nfilesystem_allowlist: string[]  — Allowed file paths\nexec: 'allow' | 'deny'         — Command execution permission\nsecrets_allowlist: string[]     — Allowed env var names\nweb3.chains_allowlist: number[] — Allowed chain IDs\nweb3.rpc_allowlist: string[]    — Allowed RPC endpoints\nweb3.tx_policy: 'allow' | 'confirm_high_risk' | 'deny'\n```\n\n### Presets\n\n| Preset | Description |\n|--------|-------------|\n| `none` | All deny, empty allowlists |\n| `read_only` | Local filesystem read-only |\n| `trading_bot` | Exchange APIs (Binance, Bybit, OKX, Coinbase), Web3 chains 1/56/137/42161 |\n| `defi` | All network, multi-chain DeFi (1/56/137/42161/10/8453/43114), no exec |\n\n### Operations\n\n**lookup** — `agentguard trust lookup --source <source> --version <version>`\nQuery the registry for a skill's trust record.\n\n**attest** — `agentguard trust attest --id <id> --source <source> --version <version> --hash <hash> --trust-level <level> --preset <preset> --reviewed-by <name>`\nCreate or update a trust record. Use `--preset` for common capability models or provide `--capabilities <json>` for custom.\n\n**revoke** — `agentguard trust revoke --source <source> --reason <reason>`\nRevoke trust for a skill. Supports `--source-pattern` for wildcards.\n\n**list** — `agentguard trust list [--trust-level <level>] [--status <status>]`\nList all trust records with optional filters.\n\n### Script Execution\n\nIf the agentguard package is installed, execute trust operations via AgentGuard's own bundled script:\n```\nnode scripts/trust-cli.ts <subcommand> [args]\n```\n\nFor operations that modify the trust registry (`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Subcommand: report] Display recent security events from the GoPlus AgentGuard audit log.\n\n### Log Location\n\nThe audit log is stored at `~/.agentguard/audit.jsonl`. Each line is a JSON object with:\n\n```json\n{\"timestamp\":\"...\",\"tool_name\":\"Bash\",\"tool_input_summary\":\"rm -rf /\",\"decision\":\"deny\",\"risk_level\":\"critical\",\"risk_tags\":[\"DANGEROUS_COMMAND\"],\"initiating_skill\":\"some-skill\"}\n```\n\nThe `initiating_skill` field is present when the action was triggered by a skill (inferred from the session transcript). When absent, the action came from the user directly.\n\n### How to Display\n\n1. Read `~/.agentguard/audit.jsonl` using the Read tool\n2. Parse each line as JSON\n3. Format as a table showing recent events (last 50 by default)\n4. If any events have `initiating_skill`, add a \"Skill Activity\" section grouping events by skill\n\n### Output Format\n\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[GoPlus AgentGuard Security Report] **Events**: <total count>\n**Blocked**: <deny count>\n**Confirmed**: <confirm count>\n\n### Recent Events\n\n| Time | Tool | Action | Decision | Risk | Tags | Skill |\n|------|------|--------|----------|------|------|-------|\n| 2025-01-15 14:30 | Bash | rm -rf / | DENY | critical | DANGEROUS_COMMAND | some-skill |\n| 2025-01-15 14:28 | Write | .env | CONFIRM | high | SENSITIVE_PATH | — |\n\n### Skill Activity\n\nIf any events were triggered by skills, group them here:\n\n| Skill | Events | Blocked | Risk Tags |\n|-------|--------|---------|-----------|\n| some-skill | 5 | 2 | DANGEROUS_COMMAND, EXFIL_RISK |\n\nFor untrusted skills with blocked actions, suggest: `/agentguard trust attest` to register them or `/agentguard trust revoke` to block them.\n\n### Summary\n<Brief analysis of security posture and any patterns of concern>\n```\n\nIf the log file doesn't exist, inform the user that no security events have been recorded yet, and suggest they enable hooks via `./setup.sh` or by adding the plugin.\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Subcommand: config] Set the GoPlus AgentGuard protection level.\n\n### Protection Levels\n\n| Level | Behavior |\n|-------|----------|\n| `strict` | Block all risky actions — every dangerous or suspicious command is denied |\n| `balanced` | Block dangerous, confirm risky — default level, good for daily use |\n| `permissive` | Only block critical threats — for experienced users who want minimal friction |\n\n### How to Set\n\n1. Read `$ARGUMENTS` to get the desired level\n2. Write the config to `~/.agentguard/config.json`:\n\n```json\n{\"level\": \"balanced\"}\n```\n\n3. Confirm the change to the user\n\nIf no level is specified, read and display the current config.\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Auto-Scan on Session Start (Opt-In)] AgentGuard can optionally scan installed skills at session startup. **This is disabled by default** and must be explicitly enabled:\n\n- **Claude Code**: Set environment variable `AGENTGUARD_AUTO_SCAN=1`\n- **OpenClaw**: Pass `{ skipAutoScan: false }` when registering the plugin\n\nWhen enabled, auto-scan operates in **report-only mode**:\n\n1. Discovers skill directories (containing `SKILL.md`) under `~/.claude/skills/` and `~/.openclaw/skills/`\n2. Runs `quickScan()` on each skill\n3. Reports results to stderr (skill name + risk level + risk tags)\n\nAuto-scan **does NOT**:\n- Modify the trust registry (no `forceAttest` calls)\n- Write code snippets or evidence details to disk\n- Execute any code from the scanned skills\n\nThe audit log (`~/.agentguard/audit.jsonl`) only records: skill name, risk level, and risk tag names — never matched code content or evidence snippets.\n\nTo register skills after reviewing scan results, use `/agentguard trust attest`."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "Read,",
+    "Grep,",
+    "Glob,",
+    "Bash(node",
+    "scripts/trust-cli.ts",
+    "*)",
+    "Bash(node",
+    "scripts/action-cli.ts",
+    "*)",
+    "agent-skill"
+  ],
+  "capability": [
+    "agentguard"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Requires Node.js 18+. Optional GoPlus API credentials for enhanced Web3 simulation.",
+    "extra": {
+      "author": "GoPlusSecurity",
+      "version": "1.0",
+      "optional_env": "GOPLUS_API_KEY, GOPLUS_API_SECRET (for Web3 transaction simulation only)"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xbeekeeper/security/SKILL.md"
+}

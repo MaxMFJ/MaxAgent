@@ -1,0 +1,102 @@
+{
+  "id": "openclaw_skill_arbiter",
+  "description": "Push decisions to Arbiter Zebu for async human review. Use when you need human input on plans, architectural choices, or approval before proceeding.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Arbiter Skill\n\nPush decisions to Arbiter Zebu for async human review. Use when you need human input on plans, architectural choices, or approval before proceeding."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] **Quick install via ClawHub:**\n```bash\nclawhub install arbiter\n```\n\n**Or via bun (makes CLI commands available globally):**\n```bash\nbun add -g arbiter-skill\n```\n\n**Or manual:**\n```bash\ngit clone https://github.com/5hanth/arbiter-skill.git\ncd arbiter-skill && npm install && npm run build\nln -s $(pwd) ~/.clawdbot/skills/arbiter\n```\n\n### Prerequisites\n\n- [Arbiter Zebu](https://github.com/5hanth/arbiter-zebu) bot running (or just `bunx arbiter-zebu`)\n- `~/.arbiter/queue/` directory (created automatically by the bot)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Variables] Set these in your agent's environment for automatic agent/session detection:\n\n| Variable | Description | Example |\n|----------|-------------|---------|\n| `CLAWDBOT_AGENT` | Agent ID | `ceo`, `swe1` |\n| `CLAWDBOT_SESSION` | Session key | `agent:ceo:main` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[When to Use] - Plan review before implementation\n- Architectural decisions with tradeoffs\n- Anything blocking that needs human judgment\n- Multiple related decisions as a batch\n\n**Do NOT use for:**\n- Simple yes/no that doesn't need explanation\n- Urgent real-time decisions (use direct message instead)\n- Technical questions you can research yourself"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tools] ### arbiter_push\n\nCreate a decision plan for human review.\n\n**CLI:** `arbiter-push '<json>'` — takes a single JSON argument containing all fields.\n\n```bash\narbiter-push '{\n  \"title\": \"API Design Decisions\",\n  \"tag\": \"nft-marketplace\",\n  \"context\": \"SWE2 needs these decided before API work\",\n  \"priority\": \"normal\",\n  \"notify\": \"agent:swe2:main\",\n  \"decisions\": [\n    {\n      \"id\": \"auth-strategy\",\n      \"title\": \"Auth Strategy\", \n      \"context\": \"How to authenticate admin users\",\n      \"options\": [\n        {\"key\": \"jwt\", \"label\": \"JWT tokens\", \"note\": \"Stateless\"},\n        {\"key\": \"session\", \"label\": \"Sessions\", \"note\": \"More control\"},\n        {\"key\": \"oauth\", \"label\": \"OAuth\", \"note\": \"External provider\"}\n      ]\n    },\n    {\n      \"id\": \"database\",\n      \"title\": \"Database Choice\",\n      \"context\": \"Primary datastore\",\n      \"options\": [\n        {\"key\": \"postgresql\", \"label\": \"PostgreSQL + JSONB\"},\n        {\"key\": \"mongodb\", \"label\": \"MongoDB\"}\n      ],\n      \"allowCustom\": true\n    }\n  ]\n}'\n```\n\n**JSON Fields:**\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `title` | Yes | Plan title |\n| `tag` | No | Tag for filtering (e.g., project name) |\n| `context` | No | Background for reviewer |\n| `priority` | No | `low`, `normal`, `high`, `urgent` (default: normal) |\n| `notify` | No | Session to notify when complete |\n| `agent` | No | Agent ID (auto-detected from `CLAWDBOT_AGENT` env) |\n| `session` | No | Session key (auto-detected from `CLAWDBOT_SESSION` env) |\n| `decisions` | Yes | Array of decisions |\n\n**Decision object:**\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `id` | Yes | Unique ID within plan |\n| `title` | Yes | Decision title |\n| `context` | No | Explanation for reviewer |\n| `options` | Yes | Array of `{key, label, note?}` |\n| `allowCustom` | No | Allow free-text answer (default: false) |\n| `default` | No | Suggested option key |\n\n**Returns:**\n\n```json\n{\n  \"planId\": \"abc123\",\n  \"file\": \"~/.arbiter/queue/pe"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage Examples] ### Example 1: Plan Review\n\n```bash\n# Push plan decisions (single JSON argument)\nRESULT=$(arbiter-push '{\"title\":\"Clean IT i18n Plan\",\"tag\":\"clean-it\",\"priority\":\"high\",\"notify\":\"agent:swe3:main\",\"decisions\":[{\"id\":\"library\",\"title\":\"i18n Library\",\"options\":[{\"key\":\"i18next\",\"label\":\"i18next\"},{\"key\":\"formatjs\",\"label\":\"FormatJS\"}]},{\"id\":\"keys\",\"title\":\"Key Structure\",\"options\":[{\"key\":\"flat\",\"label\":\"Flat (login.button)\"},{\"key\":\"nested\",\"label\":\"Nested ({login:{button}})\"}]}]}')\n\nPLAN_ID=$(echo $RESULT | jq -r '.planId')\necho \"Pushed plan $PLAN_ID — waiting for human review\"\n```\n\n### Example 2: Check and Proceed\n\n```bash\n# Check if decisions are ready\nSTATUS=$(arbiter-status --tag nft-marketplace)\n\nif [ \"$(echo $STATUS | jq -r '.status')\" == \"completed\" ]; then\n  ANSWERS=$(arbiter-get --tag nft-marketplace)\n  AUTH=$(echo $ANSWERS | jq -r '.answers[\"auth-strategy\"]')\n  echo \"Using auth strategy: $AUTH\"\n  # Proceed with implementation\nelse\n  echo \"Still waiting for $(echo $STATUS | jq -r '.remaining') decisions\"\nfi\n```\n\n### Example 3: Blocking Wait\n\n```bash\n# Wait up to 1 hour for decisions\nANSWERS=$(arbiter-await abc12345 --timeout 3600)\n\nif [ $? -eq 0 ]; then\n  # Got answers, proceed\n  echo \"Decisions ready: $ANSWERS\"\nelse\n  echo \"Timeout waiting for decisions\"\nfi\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Batch related decisions** — Don't push one at a time\n2. **Provide context** — Human needs to understand tradeoffs\n3. **Use tags** — Makes filtering easy (`--tag project-name`)\n4. **Set notify** — So blocked agents get woken up\n5. **Use priority sparingly** — Reserve `urgent` for true blockers"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[File Locations] | Path | Purpose |\n|------|---------|\n| `~/.arbiter/queue/pending/` | Plans awaiting review |\n| `~/.arbiter/queue/completed/` | Answered plans (archive) |\n| `~/.arbiter/queue/notify/` | Agent notifications |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Checking Notifications (Agent Heartbeat)] In your HEARTBEAT.md, add:\n\n```markdown"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Check Arbiter Notifications] 1. Check if `~/.arbiter/queue/notify/` has files for my session\n2. If yes, read answers and proceed with blocked work\n3. Delete notification file after processing\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Issue | Solution |\n|-------|----------|\n| Plan not showing in Arbiter | Check file is valid YAML frontmatter |\n| Answers not appearing | Check `arbiter_status`, may be incomplete |\n| Notification not received | Ensure `--notify` was set correctly |"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[See Also] - [Arbiter Zebu Architecture](https://github.com/5hanth/arbiter-zebu/blob/main/ARCHITECTURE.md)\n- [Arbiter Zebu Bot](https://github.com/5hanth/arbiter-zebu)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "arbiter"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "arbiter-push"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/5hanth/arbiter/SKILL.md"
+}

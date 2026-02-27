@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_markdown-browser",
+  "description": "Wrapper skill for OpenClaw web_fetch results. Use when you need MECE post-processing on fetched pages: policy decision from Content-Signal, privacy redaction, optional markdown normalization fallback, and stable output schema without re-implementing network fetch.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Markdown Browser Skills\n\nThis skill is an orchestration layer, not a replacement fetcher. It always keeps official `web_fetch` as the fetch source of truth."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[MECE Architecture] 1. Fetch layer (official, exclusive)\n- Use OpenClaw `web_fetch` to retrieve the page.\n- Do not call direct HTTP fetch inside this skill for normal operation.\n\n2. Policy layer (these skills)\n- Parse `Content-Signal` and compute `policy_action`.\n- Current action focuses on `ai-input` semantics: `allow_input`, `block_input`, `needs_review`.\n\n3. Privacy layer (these skills)\n- Redact path/fragment/query values in output URL fields.\n- Keep URL shape useful for debugging without leaking sensitive values.\n\n4. Normalization layer (these skills)\n- If `contentType=text/markdown`, keep content as-is.\n- If `contentType=text/html`, convert with `turndown` as fallback enhancement.\n- For other content types, pass through text."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Execution Order] 1. Call official `web_fetch`.\n2. Pass the result JSON into this wrapper.\n3. Optionally pass `Content-Signal` and `x-markdown-tokens` header values if available.\n4. Use the returned normalized object for downstream agent logic."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Wrapper Tool] `process_web_fetch_result({ web_fetch_result, content_signal_header, markdown_tokens_header })`\n\nInput:\n- `web_fetch_result` (required): JSON payload returned by OpenClaw `web_fetch`.\n- `content_signal_header` (optional): raw `Content-Signal` header string.\n- `markdown_tokens_header` (optional): raw `x-markdown-tokens` header value.\n\nOutput:\n- `content`\n- `format` (`markdown` | `html-fallback` | `text`)\n- `token_estimate` (`number | null`)\n- `content_signal`\n- `policy_action`\n- `source_url` (redacted)\n- `status_code`\n- `fallback_used`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[CLI Usage] ```bash\n# Install runtime dependency once inside the skill directory\nnpm install --omit=dev\n\n# 1) Obtain a web_fetch payload first (from OpenClaw runtime)\n# 2) Save it as /tmp/web_fetch.json\n# 3) Run wrapper post-processing\nnode browser.js \\\n  --input /tmp/web_fetch.json \\\n  --content-signal \"ai-input=yes, search=yes, ai-train=no\" \\\n  --markdown-tokens \"1820\"\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "markdown_browser"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/markdown-browser/SKILL.md"
+}

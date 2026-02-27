@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_email-triager",
+  "description": "Triage, categorize, and draft responses to emails. Sorts by urgency, flags action items, and generates context-aware reply drafts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Email Triager\n\nWhen asked to triage, sort, or process emails, follow this system."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Triage Categories] Assign every email exactly one category:\n\n| Category | Icon | Criteria |\n|----------|------|----------|\n| **Urgent Action** | 🔴 | Requires response/action within 24h. Deadlines, escalations, time-sensitive requests. |\n| **Action Required** | 🟡 | Needs a response or task but not time-critical. Requests, approvals, questions. |\n| **FYI / Read** | 🔵 | Informational. No action needed but worth reading. Updates, reports, announcements. |\n| **Delegate** | 🟣 | Someone else should handle this. Forward with context. |\n| **Archive** | ⚪ | Newsletters, automated notifications, receipts, spam-adjacent. No action needed. |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Triage Output Format] For each email, produce:\n\n```\n[ICON] CATEGORY | From: sender | Subject: subject\nSummary: One sentence — what this is and what's needed.\nAction: Specific next step (or \"None — archive\")\nDraft: [Yes/No] — whether a reply draft is included below\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Draft Response Rules] Generate a reply draft when:\n- Category is Urgent Action or Action Required\n- The email contains a direct question or request\n- User explicitly asks for drafts\n\nDraft style:\n- **Be direct.** Open with the answer or decision, not \"Thank you for your email.\"\n- **Mirror their tone.** Formal email gets formal reply. Casual gets casual.\n- **Keep it short.** Most replies should be 2-5 sentences.\n- **End with clarity.** What happens next? Who does what by when?\n- **Use the sender's name** — never \"Dear Sir/Madam\" unless the original was that formal."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Batch Processing] When given multiple emails:\n1. Triage all of them first — output the full sorted list grouped by category\n2. Then provide drafts for Urgent Action and Action Required items\n3. Highlight any patterns (\"3 emails from the same client — might want a call instead\")"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Smart Signals] Flag these automatically:\n- **Repeated follow-ups** from the same sender (they're waiting on you)\n- **CC escalation** — when someone adds a manager or exec to the thread\n- **Deadline mentions** — extract and highlight specific dates/times\n- **Sentiment shifts** — if tone has gotten noticeably more terse or frustrated\n- **Meeting requests** buried in email body (not calendar invites)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Action Item Extraction] Pull out discrete action items from emails:\n- **What** needs to be done\n- **Who** is expected to do it\n- **When** it's due (if mentioned)\n- Format as a checklist the user can copy into their task manager"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[When Not Triaging] If the user asks about a specific email (not batch triage), switch to focused mode:\n- Summarize the email thread\n- Identify the core ask\n- Draft a response if requested\n- Flag anything the user should know before replying\n\nPair with an industry context pack for domain-specific email handling (legal, healthcare, finance, etc.) at https://afrexai-cto.github.io/context-packs"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "email_triager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-email-triager/SKILL.md"
+}

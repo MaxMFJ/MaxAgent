@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_gumroad-pro",
+  "description": "Comprehensive Gumroad merchant management for Products, Sales, Licenses, Discounts, Payouts, and Webhooks. Use when Claude needs to: (1) Manage digital or physical inventory, (2) Oversee transactions and process refunds/shipping, (3) Verify or rotate license keys, (4) Manage offer codes, or (5) Monitor payout history and store webhooks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gumroad Pro"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🛑 AI PROTOCOL] 1. **PRIORITIZE HANDLER**: Always attempt to use the interactive button-based GUI (handled by `handler.js`) for the best merchant experience.\n2. **CLI AS FALLBACK**: Only use `scripts/gumroad-pro.js` via the CLI for complex data retrieval or specific actions not available in the GUI.\n3. **USE --json**: When using the CLI, **ALWAYS** use the `--json` flag and check for `\"success\": true`.\n4. **REDUCE SPAM**: Use `action: 'edit'` in `renderResponse` for all menu transitions and state updates. Only use `action: 'send'` for the initial menu or when the context fundamentally changes.\n5. **HANDLE ERRORS**: Read the `\"error\"` field in JSON responses to inform the user of failures."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[❓ Navigation & Data] - **Primary Interaction**: Use the adaptive logic in `handler.js`. See [handler-guide.md]({baseDir}/references/handler-guide.md) for interaction patterns, [ui-rendering.md]({baseDir}/references/ui-rendering.md) for rendering protocols, and [changelog.md]({baseDir}/references/changelog.md) for version history. Respond with button callback data (e.g., `gp:products`) or digits (1, 2, 3) where applicable.\n- **Secondary Interaction**: Use `scripts/gumroad-pro.js` for direct actions. See [api-reference.md]({baseDir}/references/api-reference.md) for command specs."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🔑 Authentication] The skill requires a **Gumroad API Key**. It looks for the following environment variables (in order of preference):\n1. `GUMROAD_ACCESS_TOKEN`\n2. `API_KEY`\n\n### Configuration\nYou can set this in your `~/.openclaw/openclaw.json` using the `apiKey` convenience field:\n```json\n{\n  \"skills\": {\n    \"entries\": {\n      \"gumroad-pro\": {\n        \"enabled\": true,\n        \"apiKey\": \"YOUR_GUMROAD_TOKEN\"\n      }\n    }\n  }\n}\n```\nThe platform will automatically inject your `apiKey` into the preferred `GUMROAD_ACCESS_TOKEN` variable."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[🛠️ Workflows] ### Product Inventory\n- List all digital assets to monitor sales and availability.\n- Toggle publication status or delete obsolete items.\n- View [detailed product commands]({baseDir}/references/api-reference.md#1-products).\n\n### Sales & Fulfillment\n- Search transactions by email.\n- Process refunds or mark physical goods as shipped.\n- View [detailed sales commands]({baseDir}/references/api-reference.md#2-sales).\n\n### Licensing\n- Verify keys for software distribution.\n- Manage usage counts or rotate keys for security.\n- View [detailed license commands]({baseDir}/references/api-reference.md#3-licenses).\n\n### Offer Management\n- Create, list, or remove discount codes for marketing campaigns.\n- View [detailed discount commands]({baseDir}/references/api-reference.md#4-discounts-offer-codes).\n\n---\nDeveloped for the OpenClaw community by [Abdul Karim Mia](https://github.com/abdul-karim-mia)."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gumroad_pro"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "env": [
+            "GUMROAD_ACCESS_TOKEN",
+            "API_KEY"
+          ],
+          "config": []
+        },
+        "primaryEnv": "GUMROAD_ACCESS_TOKEN"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdul-karim-mia/gumroad-pro/SKILL.md"
+}

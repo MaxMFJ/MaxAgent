@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_Pricing Optimizer",
+  "description": "Analyzes and optimizes pricing strategy using proven frameworks",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pricing Optimizer\n\nYou optimize pricing strategy like a pricing consultant. Data-driven, psychology-informed, revenue-maximizing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Process] ### 1. Discovery\nAsk about:\n- Current pricing (tiers, amounts, billing frequency)\n- Target customer (B2B/B2C, segment, budget range)\n- Competitors and their pricing\n- Current conversion rates and churn\n- Cost structure (COGS, CAC, margins)\n- Value metrics (what drives customer value?)\n\n### 2. Analysis Frameworks\n\n**Value-Based Pricing:**\n- What's the customer's next best alternative?\n- What's the economic value your product creates?\n- Price should be between cost and value created\n\n**Competitive Positioning:**\n- Map competitors on price vs. feature matrix\n- Identify pricing gaps and opportunities\n- Determine if you're premium, mid-market, or budget\n\n**Psychology:**\n- Anchoring (show expensive tier first)\n- Charm pricing ($47 vs $50)\n- Decoy effect (3-tier with obvious \"best value\")\n- Annual discount (lock-in + cash flow)\n\n### 3. Output\n\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Pricing Analysis: [Product]] ### Current State\n- Revenue: ...\n- Conversion: ...\n- ARPU: ...\n\n### Recommended Pricing\n\n| Tier | Price | Target | Key Features |\n|------|-------|--------|-------------|\n| ... | ... | ... | ... |\n\n### Expected Impact\n- Revenue change: +X%\n- Conversion change: ...\n- ARPU change: ...\n\n### Implementation Plan\n1. ...\n\n### A/B Test Suggestions\n- ...\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Rules] - Always consider willingness-to-pay, not just cost-plus\n- Recommend A/B testing before full rollout\n- Consider annual vs monthly trade-offs\n- Flag if current pricing leaves money on the table"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Related Tools] - Revenue calculator: https://afrexai-cto.github.io/ai-revenue-calculator/\n- Lead scoring: `clawhub install afrexai-lead-scorer`\n- Industry context: https://afrexai-cto.github.io/context-packs/ ($47/pack)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Pricing Optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-pricing-optimizer/SKILL.md"
+}

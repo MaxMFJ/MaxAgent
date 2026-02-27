@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_openclaw-watchdog",
+  "description": "Self-healing monitoring system for OpenClaw gateway. Auto-detects failures, fixes crashes, and sends Telegram alerts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # openclaw-watchdog\n\n**Description:** Self-healing monitoring system for OpenClaw gateway. Monitors health, auto-restarts on failure, and sends Telegram alerts. Diagnostics and log analysis run locally on-device. Alert notifications are sent to the user's Telegram bot. Use when user wants to set up gateway monitoring, watchdog, or auto-recovery."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - **Telegram Bot Token** — Create via [@BotFather](https://t.me/BotFather)\n- **Telegram Chat ID** — Your personal chat ID for receiving alerts\n- **Python 3** — Required for the watchdog service\n- **OpenClaw** — Installed and running"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Trigger Keywords] - watchdog, monitoring, auto-fix, gateway health, self-healing, auto-recovery, watch dog"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] Send the user ONE message with everything they need:\n\n---\n\n🐕 **Watch Dog — Self-Healing Gateway Monitor**\n\nWatch Dog is a background service that pings your OpenClaw gateway every 15 seconds. If the gateway goes down, it automatically attempts to restart it and sends you Telegram alerts so you're always in the loop. All diagnostics run locally on your device.\n\nTo set it up, I need:\n\n1. **Telegram Bot Token** — Create a bot via [@BotFather](https://t.me/BotFather) on Telegram, then send me the token (looks like `123456:ABC-DEF...`)\n\n2. **Your Telegram Chat ID** — Send `/start` to your bot, then visit `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` to find your chat ID\n\nSend me the token and chat ID and I'll handle the rest (including a test run to make sure everything works)!\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[After Receiving Credentials] Run these steps in order:\n\n### 1. Validate credentials\n```bash\npython3 ~/.openclaw/workspace/openclaw-watchdog/scripts/validate.py \"$TELEGRAM_TOKEN\"\n```\n\n### 2. Run setup script\n```bash\nchmod +x ~/.openclaw/workspace/openclaw-watchdog/scripts/setup.sh\n~/.openclaw/workspace/openclaw-watchdog/scripts/setup.sh \\\n  --telegram-token \"$TELEGRAM_TOKEN\" \\\n  --telegram-chat-id \"$TELEGRAM_CHAT_ID\"\n```\n\n### 3. Connect via Telegram (Pairing)\n```bash\npython3 ~/.openclaw/workspace/openclaw-watchdog/scripts/test-message.py \"$TELEGRAM_TOKEN\" \"$TELEGRAM_CHAT_ID\"\n```\nWait for user to confirm they received the Telegram message before proceeding.\n\n### 4. Verify it's running\n```bash\n# Check service status\nif [[ \"$(uname)\" == \"Darwin\" ]]; then\n  launchctl list | grep openclaw.watchdog\nelse\n  systemctl --user status openclaw-watchdog\nfi\n\n# Check logs\ntail -20 ~/.openclaw/watchdog/watchdog.log\n```\n\n### 5. Confirm to user\nTell them Watch Dog is active, what it monitors, and that they'll get Telegram alerts if anything goes wrong."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[How It Works] - Pings `localhost:3117/health` every 15 seconds\n- After 3 consecutive failures, attempts `openclaw gateway restart`\n- Up to 2 restart attempts, then asks user for reinstall permission via Telegram\n- User approves by running: `touch ~/.openclaw/watchdog/approve-reinstall`\n- Without approval, only sends notifications — no destructive actions\n- Local pattern-matching diagnostics (no logs sent externally)\n- Runs as macOS LaunchAgent or Linux systemd user service\n- Credentials encrypted with AES-256 using machine-specific key"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Uninstall] ```bash\nif [[ \"$(uname)\" == \"Darwin\" ]]; then\n  launchctl unload ~/Library/LaunchAgents/com.openclaw.watchdog.plist 2>/dev/null\n  rm -f ~/Library/LaunchAgents/com.openclaw.watchdog.plist\nelse\n  systemctl --user stop openclaw-watchdog 2>/dev/null\n  systemctl --user disable openclaw-watchdog 2>/dev/null\n  rm -f ~/.config/systemd/user/openclaw-watchdog.service\nfi\nrm -rf ~/.openclaw/watchdog\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_watchdog"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🐕",
+        "disableModelInvocation": true,
+        "requires": {
+          "bins": [
+            "python3",
+            "openssl"
+          ],
+          "env": [
+            "TELEGRAM_TOKEN",
+            "TELEGRAM_CHAT_ID"
+          ]
+        },
+        "install": [
+          {
+            "id": "setup",
+            "kind": "script",
+            "script": "scripts/setup.sh",
+            "label": "Install watchdog service (LaunchAgent/systemd user)",
+            "persistence": "user-level",
+            "service": true
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdullah4ai/openclaw-watchdog/openclaw-watchdog/SKILL.md"
+}

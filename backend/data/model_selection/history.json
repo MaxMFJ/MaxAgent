@@ -350,5 +350,38 @@
     "token_usage": 0,
     "quality_score": 0.0,
     "timestamp": "2026-02-27T09:44:26.493864"
+  },
+  {
+    "task_hash": "218e143677d2",
+    "task_description": "帮我研究 2026 年新加坡最值得投资的 5 只科技股。包括：\n查最新财报和新闻\n分析营收增长、市盈率、竞争格局\n对比同行业\n给出买入/持有建议和目标价\n最后生成一份 Markdown 报告并保存到桌",
+    "model_type": "remote",
+    "task_type": "complex_reasoning",
+    "success": true,
+    "execution_time_ms": 31665,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-27T10:35:52.701274"
+  },
+  {
+    "task_hash": "b71dba6e6a5b",
+    "task_description": "帮我研究 2026 年中国最值得投资的 5 只科技股。包括：\n查最新财报和新闻\n分析营收增长、市盈率、竞争格局\n对比同行业\n给出买入/持有建议和目标价\n最后生成一份 Markdown 报告并保存到桌面",
+    "model_type": "remote",
+    "task_type": "complex_reasoning",
+    "success": true,
+    "execution_time_ms": 385199,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-27T11:34:28.845154"
+  },
+  {
+    "task_hash": "b71dba6e6a5b",
+    "task_description": "帮我研究 2026 年中国最值得投资的 5 只科技股。包括：\n查最新财报和新闻\n分析营收增长、市盈率、竞争格局\n对比同行业\n给出买入/持有建议和目标价\n最后生成一份 Markdown 报告并保存到桌面",
+    "model_type": "remote",
+    "task_type": "complex_reasoning",
+    "success": true,
+    "execution_time_ms": 162017,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-27T12:34:16.659127"
   }
 ]

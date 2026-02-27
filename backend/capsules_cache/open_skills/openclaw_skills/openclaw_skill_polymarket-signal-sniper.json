@@ -1,0 +1,152 @@
+{
+  "id": "openclaw_skill_polymarket-signal-sniper",
+  "description": "Snipe Polymarket opportunities from your own signal sources. Monitors RSS feeds with Trading Agent-grade safeguards.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket Signal Sniper\n\nYour signals, Simmer's trading intelligence.\n\n> **This is a template.** The default signal source is RSS feeds — remix it with any data source (APIs, webhooks, social media, custom scrapers). The skill handles all the plumbing (market matching, safeguards, trade execution). Your agent provides the alpha."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- Monitor RSS feeds for trading opportunities\n- Trade on breaking news before markets react\n- Configure their own signal sources and keywords\n- Get Trading Agent-grade safeguards on their trades"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Check account balance and positions\npython scripts/status.py\n\n# Detailed position list\npython scripts/status.py --positions\n```\n\n**API Reference:**\n- Base URL: `https://api.simmer.markets`\n- Auth: `Authorization: Bearer $SIMMER_API_KEY`\n- Portfolio: `GET /api/sdk/portfolio`\n- Positions: `GET /api/sdk/positions`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start (Ad-Hoc Usage)] **User provides RSS feed and market directly:**\n```\nUser: \"Watch this RSS feed for greenland news: https://news.google.com/rss/search?q=greenland\"\nUser: \"Snipe any news about trump from this feed\"\n```\n\n→ Run with `--feed` and `--market` flags:\n```bash\npython signal_sniper.py --feed \"https://news.google.com/rss/search?q=greenland\" --market \"greenland-acquisition\" --dry-run\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Persistent Setup (Optional)] For automated recurring scans, configure via environment:\n\n| Setting | Environment Variable | Default | Description |\n|---------|---------------------|---------|-------------|\n| RSS Feeds | `SIMMER_SNIPER_FEEDS` | (none) | Comma-separated RSS URLs |\n| Markets | `SIMMER_SNIPER_MARKETS` | (auto) | Comma-separated market IDs (auto-discovers from keywords if empty) |\n| Keywords | `SIMMER_SNIPER_KEYWORDS` | (none) | Comma-separated keywords to match |\n| Confidence | `SIMMER_SNIPER_CONFIDENCE` | 0.7 | Min confidence to trade (0.0-1.0) |\n| Max USD | `SIMMER_SNIPER_MAX_USD` | 25 | Max per trade |\n| Max trades/run | `SIMMER_SNIPER_MAX_TRADES` | 5 | Maximum trades per scan cycle |\n\n**Polymarket Constraints:**\n- Minimum 5 shares per order\n- Trades below this threshold are rejected with an error message"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[How It Works] Each cycle the script:\n1. Polls configured RSS feeds\n2. Filters articles by keywords (if configured)\n3. Matches articles to target markets (auto-discovers from keywords if no markets configured)\n4. For each match, calls SDK context endpoint for safeguards:\n   - Position awareness (already holding?)\n   - Flip-flop detection (recently changed direction?)\n   - Slippage estimates (is market liquid?)\n   - Time decay (resolving soon?)\n   - Resolution criteria (what actually resolves this market?)\n5. If safeguards pass, infers trade direction from article sentiment\n6. Executes trade via SDK (with max trades per run cap)\n7. Tracks processed articles to avoid duplicates"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Running the Skill] **Run a scan (dry run by default — no trades):**\n```bash\npython signal_sniper.py\n```\n\n**Execute real trades:**\n```bash\npython signal_sniper.py --live\n```\n\n**Check for signals without trading:**\n```bash\npython signal_sniper.py --scan-only\n```\n\n**View current config:**\n```bash\npython signal_sniper.py --config\n```\n\n**Override for one run:**\n```bash\npython signal_sniper.py --feed \"https://...\" --keywords \"trump,greenland\" --market \"abc123\"\n```\n\n**Show processed articles:**\n```bash\npython signal_sniper.py --history\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Interpreting Context Warnings] Before trading, ALWAYS check the context warnings. The skill will show you:\n\n| Warning | Action |\n|---------|--------|\n| `MARKET RESOLVED` | Do NOT trade |\n| `HIGH URGENCY: Resolves in Xh` | Consider if signal is timely enough |\n| `flip_flop_warning: SEVERE` | Skip - you've been reversing too much |\n| `flip_flop_warning: CAUTION` | Proceed carefully, need strong signal |\n| `Wide spread (X%)` | Reduce position size or skip |\n| `Simmer AI signal: X% more bullish/bearish` | Consider Simmer's oracle opinion |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Analyzing Signals] When you find a matching article, analyze it carefully:\n\n1. **Read the headline and summary** - What is the actual news?\n\n2. **Check resolution_criteria** - What ACTUALLY resolves this market?\n   - Example: \"greenland\" in headline doesn't mean \"acquisition complete\"\n   - The resolution might be \"US formally acquires Greenland by 2027\"\n   - Does this signal move the needle on THAT specific criteria?\n\n3. **Assess confidence** (0.0-1.0):\n   - How directly does this signal relate to resolution criteria?\n   - Is the source credible?\n   - Is this news likely already priced in?\n\n4. **Only trade if**:\n   - Confidence > threshold (default 0.7)\n   - No severe warnings\n   - Signal validates against resolution criteria"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Example Conversations] **User: \"Set up news sniping for the Greenland market\"**\n→ Ask for RSS feeds they want to monitor\n→ Configure with market ID and keywords\n→ Enable cron for recurring scans\n\n**User: \"Check this feed for trading signals\"**\n→ Run: `python signal_sniper.py --feed \"URL\" --scan-only`\n→ Show found articles and potential matches\n\n**User: \"Snipe any bitcoin news from CoinDesk\"**\n→ Run with CoinDesk RSS and bitcoin-related markets\n→ Show matches and ask if they want to trade\n\n**User: \"What signals have we processed?\"**\n→ Run: `python signal_sniper.py --history`\n→ Show recent articles and actions taken"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Example Trade Flow] ```\n1. RSS poll finds: \"Trump and Denmark reach preliminary Greenland agreement\"\n2. Keywords match: \"greenland\", \"trump\"\n3. Call context endpoint for market \"greenland-acquisition-2027\"\n4. Check warnings: none severe ✓\n5. Resolution criteria: \"Resolves YES if US formally acquires Greenland by 2027\"\n6. You analyze: \"preliminary agreement\" ≠ \"formally acquires\" but bullish signal\n7. Confidence: 0.75 (positive indicator, not definitive)\n8. Check slippage: 2.5% on $25 ✓\n9. Execute: BUY YES $25\n10. Report: \"🎯 Sniped: Trump/Greenland agreement → BUY YES $25\"\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"No feeds configured\"**\n- Provide feeds in message: \"watch this RSS: https://...\"\n- Or set `SIMMER_SNIPER_FEEDS` environment variable\n\n**\"No matching articles found\"**\n- Check keywords are correct\n- RSS feed might not have recent articles\n- Try `--scan-only` to see what's in the feed\n\n**\"Skipped due to flip-flop warning\"**\n- You've been changing direction too much on this market\n- Wait before trading again, or find new information\n\n**\"Slippage too high\"**\n- Market is illiquid\n- Reduce trade size or skip\n\n**\"Already processed\"**\n- This article was already seen\n- Working as intended (dedup)\n\n**\"External wallet requires a pre-signed order\"**\n- `WALLET_PRIVATE_KEY` is not set in the environment\n- The SDK signs orders automatically when this env var is present — no manual signing code needed\n- Fix: `export WALLET_PRIVATE_KEY=0x<your-polymarket-wallet-private-key>`\n- Do NOT attempt to sign orders manually or modify the skill code — the SDK handles it\n\n**\"Balance shows $0 but I have USDC on Polygon\"**\n- Polymarket uses **USDC.e** (bridged USDC, contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`) — not native USDC\n- If you bridged USDC to Polygon recently, you likely received native USDC\n- Swap native USDC to USDC.e, then retry"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Finding Good RSS Feeds] Tips for choosing signal sources:\n- **Google News RSS**: `https://news.google.com/rss/search?q=YOUR_TOPIC`\n- **Niche sources**: Better than mainstream (less priced in)\n- **Official sources**: Government, company announcements\n- **Twitter lists → RSS**: Use services like Nitter or RSS.app\n\nThe skill works best when:\n- Feeds are relevant to your target markets\n- You have specific keywords to filter noise\n- Sources publish before mainstream coverage"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_signal_sniper"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎯",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "signal_sniper.py"
+        },
+        "tunables": [
+          {
+            "env": "SIMMER_SNIPER_CONFIDENCE_THRESHOLD",
+            "type": "number",
+            "default": 0.7,
+            "range": [
+              0.5,
+              0.99
+            ],
+            "step": 0.01,
+            "label": "Confidence threshold"
+          },
+          {
+            "env": "SIMMER_SNIPER_MAX_USD",
+            "type": "number",
+            "default": 50,
+            "range": [
+              1,
+              200
+            ],
+            "step": 5,
+            "label": "Max bet per trade"
+          },
+          {
+            "env": "SIMMER_SNIPER_MAX_TRADES_PER_RUN",
+            "type": "number",
+            "default": 5,
+            "range": [
+              1,
+              20
+            ],
+            "step": 1,
+            "label": "Max trades per run"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-signal-sniper/SKILL.md"
+}

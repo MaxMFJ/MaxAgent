@@ -1,0 +1,155 @@
+{
+  "id": "openclaw_skill_on-page-seo-auditor",
+  "description": "Use when the user asks to \"audit page SEO\", \"on-page SEO check\", \"SEO score\", \"page optimization\", \"what SEO issues does this page have\", \"what is wrong with this page SEO\", \"score my page\", or \"why is this page not ranking\". Performs comprehensive on-page SEO audits to identify optimization opportunities including title tags, meta descriptions, headers, content quality, internal linking, and image optimization. For server, speed, and crawl issues, see technical-seo-checker. For full EEAT content quality scoring, see content-quality-auditor.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # On-Page SEO Auditor\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · **on-page-seo-auditor** · [technical-seo-checker](../technical-seo-checker/) · [internal-linking-optimizer](../internal-linking-optimizer/) · [content-refresher](../content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill performs detailed on-page SEO audits to identify issues and optimization opportunities. It analyzes all on-page elements that affect search rankings and provides actionable recommendations."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Auditing pages before or after publishing\n- Identifying why a page isn't ranking well\n- Optimizing existing content for better performance\n- Creating pre-publish SEO checklists\n- Comparing your on-page SEO to competitors\n- Systematic site-wide SEO improvements\n- Training team members on SEO best practices"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Title Tag Analysis**: Evaluates title optimization and CTR potential\n2. **Meta Description Review**: Checks description quality and length\n3. **Header Structure Audit**: Analyzes H1-H6 hierarchy\n4. **Content Quality Assessment**: Reviews content depth and optimization\n5. **Keyword Usage Analysis**: Checks keyword placement and density\n6. **Internal Link Review**: Evaluates internal linking structure\n7. **Image Optimization Check**: Audits alt text and file optimization\n8. **Technical On-Page Review**: Checks URL, canonical, and mobile factors"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Audit a Single Page\n\n```\nAudit the on-page SEO of [URL]\n```\n\n```\nCheck SEO issues on this page targeting [keyword]: [URL/content]\n```\n\n### Compare Against Competitors\n\n```\nCompare on-page SEO of [your URL] vs [competitor URL] for [keyword]\n```\n\n### Audit Content Before Publishing\n\n```\nPre-publish SEO audit for this content targeting [keyword]: [content]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~web crawler connected:**\nClaude can automatically pull page HTML via ~~web crawler, fetch keyword search volume and difficulty from ~~SEO tool, retrieve click-through rate data from ~~search console, and download competitor pages for comparison. This enables fully automated audits with live data.\n\n**With manual data only:**\nAsk the user to provide:\n1. Page URL or complete HTML content\n2. Target primary and secondary keywords\n3. Competitor page URLs for comparison (optional)\n\nProceed with the full audit using provided data. Note in the output which findings are from automated crawl vs. manual review."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests an on-page SEO audit:\n\n1. **Gather Page Information**\n\n   ```markdown\n   ### Audit Setup\n   \n   **Page URL**: [URL]\n   **Target Keyword**: [primary keyword]\n   **Secondary Keywords**: [additional keywords]\n   **Page Type**: [blog/product/landing/service]\n   **Business Goal**: [traffic/conversions/authority]\n   ```\n\n2. **Audit Title Tag**\n\n   ```markdown\n   ## Title Tag Analysis\n   \n   **Current Title**: [title]\n   **Character Count**: [X] characters\n   \n   | Criterion | Status | Notes |\n   |-----------|--------|-------|\n   | Length (50-60 chars) | ✅/⚠️/❌ | [notes] |\n   | Keyword included | ✅/⚠️/❌ | Position: [front/middle/end] |\n   | Keyword at front | ✅/⚠️/❌ | [notes] |\n   | Unique across site | ✅/⚠️/❌ | [notes] |\n   | Compelling/clickable | ✅/⚠️/❌ | [notes] |\n   | Matches intent | ✅/⚠️/❌ | [notes] |\n   \n   **Title Score**: [X]/10\n   \n   **Issues Found**:\n   - [Issue 1]\n   - [Issue 2]\n   \n   **Recommended Title**:\n   \"[Optimized title suggestion]\"\n   \n   **Why**: [Explanation of improvements]\n   ```\n\n3. **Audit Meta Description**\n\n   ```markdown\n   ## Meta Description Analysis\n   \n   **Current Description**: [description]\n   **Character Count**: [X] characters\n   \n   | Criterion | Status | Notes |\n   |-----------|--------|-------|\n   | Length (150-160 chars) | ✅/⚠️/❌ | [notes] |\n   | Keyword included | ✅/⚠️/❌ | [notes] |\n   | Call-to-action present | ✅/⚠️/❌ | [notes] |\n   | Unique across site | ✅/⚠️/❌ | [notes] |\n   | Accurately describes page | ✅/⚠️/❌ | [notes] |\n   | Compelling copy | ✅/⚠️/❌ | [notes] |\n   \n   **Description Score**: [X]/10\n   \n   **Issues Found**:\n   - [Issue 1]\n   \n   **Recommended Description**:\n   \"[Optimized description suggestion]\" ([X] chars)\n   ```\n\n4. **Audit Header Structure**\n\n   ```markdown\n   ## Header Structure Analysis\n   \n   ### Current Header Hierarchy\n   \n   ```\n   H1: [H1 text]\n     H2: [H2 text]\n       H3: [H3 text]\n       H3: [H3 text]\n     H2: [H2 text]\n       H3: [H3 text]\n     H2: [H2 text]\n   ```\n   \n "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Target keyword(s) clearly specified by user\n- [ ] Page content accessible (either via URL or provided HTML)\n- [ ] If competitor comparison requested, competitor URL provided\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] Scores based on measurable criteria, not subjective opinion\n- [ ] All suggested changes include specific locations (title tag, H2 #3, paragraph 5, etc.)\n- [ ] Source of each data point clearly stated (~~SEO tool data, user-provided, ~~web crawler, or manual review)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Audit the on-page SEO of https://example.com/best-noise-cancelling-headphones targeting 'best noise cancelling headphones'\"\n\n**Output**:\n\n```markdown\n# On-Page SEO Audit Report\n\n**Page**: https://example.com/best-noise-cancelling-headphones\n**Target Keyword**: best noise cancelling headphones\n**Secondary Keywords**: wireless noise cancelling headphones, ANC headphones, noise cancelling headphones review\n**Page Type**: commercial (reviews/roundup)\n**Audit Date**: 2025-01-15"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Summary] | Audit Area | Score | Key Finding |\n|------------|-------|-------------|\n| Title Tag | 8/10 | Good keyword placement; slightly long at 63 chars |\n| Meta Description | 6/10 | Missing CTA; keyword present but generic copy |\n| Header Structure | 9/10 | Clean hierarchy; H2s cover all major products |\n| Content Quality | 7/10 | 2,400 words is solid; lacks original test data |\n| Keyword Optimization | 8/10 | Strong placement; density at 1.2% is healthy |\n| Internal Links | 5/10 | Only 2 internal links; missing links to brand pages |\n| Images | 6/10 | 3/8 images missing alt text; no WebP format |\n| Technical Elements | 7/10 | Missing Product schema; good URL and mobile |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Overall Score: 71/100] Calculation: (8x0.15 + 6x0.05 + 9x0.10 + 7x0.25 + 8x0.15 + 5x0.10 + 6x0.10 + 7x0.10) x 10 = 71\n\nScore Breakdown:\n████████░░ Title Tag:        8/10  (15%)\n██████░░░░ Meta Description: 6/10  ( 5%)\n█████████░ Headers:          9/10  (10%)\n███████░░░ Content:          7/10  (25%)\n████████░░ Keywords:         8/10  (15%)\n█████░░░░░ Internal Links:   5/10  (10%)\n██████░░░░ Images:           6/10  (10%)\n███████░░░ Technical:        7/10  (10%)"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Priority Issues] ### Critical\n1. **Internal linking severely underdeveloped** — Only 2 internal links found. Add links to individual headphone review pages (/sony-wh1000xm5-review, /bose-qc-ultra-review) and the headphones category page. Target 5-8 contextual internal links.\n2. **3 product images missing alt text** — Images for Sony WH-1000XM5, Bose QC Ultra, and Apple AirPods Max have empty alt attributes. Each missing alt tag is a lost ranking signal in Google Images.\n\n### Important\n1. **Meta description lacks call-to-action** — Current description states facts but does not compel clicks. Add \"Compare prices and features\" or \"See our top picks\" to drive CTR."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Quick Wins] 1. **Add alt text to 3 images** (5 min) — Use descriptive text like \"Sony WH-1000XM5 noise cancelling headphones on desk\" instead of empty attributes.\n2. **Rewrite meta description with CTA** (5 min) — Change to: \"Compare the 10 best noise cancelling headphones for 2025. Expert-tested picks from Sony, Bose, and Apple with pros, cons, and pricing. See our top picks.\"\n3. **Add 4+ internal links** (10 min) — Link product names to their individual review pages and add a \"See all headphones\" link to the category hub.\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Audit Checklists by Page Type] ### Blog Post Checklist\n\n```markdown\n- [ ] Title includes keyword and is compelling\n- [ ] Meta description has keyword and CTA\n- [ ] Single H1 with keyword\n- [ ] H2s cover main topics\n- [ ] Keyword in first 100 words\n- [ ] 1,500+ words for competitive topics\n- [ ] 3+ internal links with varied anchors\n- [ ] Images with descriptive alt text\n- [ ] FAQ section with schema\n- [ ] Author bio with credentials\n```\n\n### Product Page Checklist\n\n```markdown\n- [ ] Product name in title\n- [ ] Price and availability in description\n- [ ] H1 is product name\n- [ ] Product features in H2s\n- [ ] Multiple product images with alt text\n- [ ] Customer reviews visible\n- [ ] Product schema implemented\n- [ ] Related products linked\n- [ ] Clear CTA button\n```\n\n### Landing Page Checklist\n\n```markdown\n- [ ] Keyword-optimized title\n- [ ] Benefit-focused meta description\n- [ ] Clear H1 value proposition\n- [ ] Supporting H2 sections\n- [ ] Trust signals (testimonials, logos)\n- [ ] Single clear CTA\n- [ ] Fast page load speed\n- [ ] Mobile-optimized layout\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Prioritize issues by impact** - Fix critical issues first\n2. **Compare to competitors** - See what's working for top rankings\n3. **Balance optimization and readability** - Don't over-optimize\n4. **Audit regularly** - Content degrades over time\n5. **Test changes** - Track ranking changes after updates"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Scoring Rubric] ### Section Weight Distribution\n\n| Audit Section | Weight | Max Score | Rationale |\n|--------------|--------|-----------|-----------|\n| Title Tag | 15% | 15 | Strongest single ranking signal |\n| Meta Description | 5% | 5 | CTR impact, not direct ranking factor |\n| Header Structure | 10% | 10 | Content organization, semantic signals |\n| Content Quality | 25% | 25 | Strongest holistic ranking factor |\n| Keyword Optimization | 15% | 15 | Relevance signals |\n| Internal/External Links | 10% | 10 | Authority flow, context signals |\n| Image Optimization | 10% | 10 | Accessibility + image search opportunity |\n| Page-Level Technical | 10% | 10 | Core Web Vitals, mobile, security |\n\n### Scoring Scale per Factor\n\n| Score | Meaning | Action Required |\n|-------|---------|-----------------|\n| 10/10 | Excellent — follows all best practices | None |\n| 7-9/10 | Good — minor improvements possible | Optional optimization |\n| 4-6/10 | Needs work — notable issues | Fix within this week |\n| 1-3/10 | Poor — significant problems | Fix immediately (Critical) |\n| 0/10 | Missing or broken | Fix immediately (Blocking) |\n\n### Scoring Conversion Formula\n\nEach section is scored out of 10, then converted to the 100-point overall score using section weights:\n\n```\nOverall Score = Sum of (section_score x section_weight) x 10\n```\n\nWhere section weights are: Title 0.15, Meta 0.05, Headers 0.10, Content 0.25, Keywords 0.15, Links 0.10, Images 0.10, Technical 0.10.\n\n**Worked example:**\n\n| Section | Score /10 | Weight | Weighted |\n|---------|-----------|--------|----------|\n| Title Tag | 8 | 0.15 | 1.20 |\n| Meta Description | 6 | 0.05 | 0.30 |\n| Header Structure | 9 | 0.10 | 0.90 |\n| Content Quality | 7 | 0.25 | 1.75 |\n| Keyword Optimization | 8 | 0.15 | 1.20 |\n| Internal/External Links | 5 | 0.10 | 0.50 |\n| Image Optimization | 6 | 0.10 | 0.60 |\n| Page-Level Technical | 7 | 0.10 | 0.70 |\n| **Total** | | **1.00** | **7.15** |\n\n**Overall Score** = 7.15 x 10 = **71 / 100**"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Common Issue Resolution Playbook] ### Title Tag Issues\n\n| Issue | Impact | Quick Fix Template |\n|-------|--------|-------------------|\n| Missing title | Critical | Add: \"[Primary Keyword]: [Benefit] | [Brand]\" |\n| Too long (>60 chars) | Medium | Shorten: move brand to end, remove filler words |\n| Too short (<30 chars) | Medium | Expand: add modifier, benefit, or year |\n| Missing keyword | High | Rewrite to include primary keyword in first half |\n| Duplicate title | High | Make each page title unique; add page-specific modifier |\n\n### Meta Description Issues\n\n| Issue | Impact | Quick Fix Template |\n|-------|--------|-------------------|\n| Missing description | Medium | Write: \"[What this page covers]. [Key benefit]. [CTA].\" (150-160 chars) |\n| Too long (>160 chars) | Low | Trim from end; ensure core message fits in 150 chars |\n| Missing keyword | Low | Naturally incorporate primary keyword |\n| No CTA | Low | Add: \"Learn more\", \"Discover\", \"Find out\", \"Get started\" |\n| Duplicated across pages | Medium | Write unique description for each page |\n\n### Header Issues\n\n| Issue | Impact | Quick Fix |\n|-------|--------|-----------|\n| Missing H1 | Critical | Add one H1 per page containing primary keyword |\n| Multiple H1s | High | Keep one H1, convert others to H2 |\n| Skipped heading levels | Medium | Use sequential hierarchy: H1→H2→H3 |\n| Headers not descriptive | Medium | Rewrite to include keyword variations |\n| No H2s (single long block) | Medium | Break content into sections with descriptive H2s every 200-300 words |\n\n### Content Issues\n\n| Issue | Impact | Quick Fix |\n|-------|--------|-----------|\n| Thin content (<300 words) | Critical | Expand with subtopics, FAQ, examples |\n| Keyword stuffing (>3%) | High | Reduce usage, use synonyms and related terms |\n| No structured data | Medium | Add relevant schema (FAQ, HowTo, Article) |\n| Missing internal links | Medium | Add 3-5 contextual internal links |\n| No images | Low | Add 2-3 relevant images with alt text |"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Industry Benchmark Data] ### Content Length Benchmarks by Query Type\n\n| Query Type | Top 10 Average Word Count | Recommended Minimum |\n|-----------|--------------------------|-------------------|\n| Informational (guides) | 2,200 words | 1,500 words |\n| Commercial (reviews) | 1,800 words | 1,200 words |\n| Transactional (product) | 800 words | 500 words |\n| Local (service pages) | 600 words | 400 words |\n| Definition queries | 1,200 words | 800 words |\n\n### Page Speed Benchmarks\n\n| Metric | Good | Needs Improvement | Poor |\n|--------|------|-------------------|------|\n| LCP | ≤2.5s | 2.5-4.0s | >4.0s |\n| FID/INP | ≤100ms/200ms | 100-300ms | >300ms |\n| CLS | ≤0.1 | 0.1-0.25 | >0.25 |\n| TTFB | ≤800ms | 800-1800ms | >1800ms |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Scoring Rubric](./references/scoring-rubric.md) — Detailed scoring criteria, weight distribution, and grade boundaries for on-page audits"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Related Skills] - [seo-content-writer](../../build/seo-content-writer/) — Create optimized content\n- [technical-seo-checker](../technical-seo-checker/) — Technical SEO audit\n- [meta-tags-optimizer](../../build/meta-tags-optimizer/) — Optimize meta tags\n- [serp-analysis](../../research/serp-analysis/) — SERP context for audit findings\n- [content-refresher](../content-refresher/) — Update existing content\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit\n- [internal-linking-optimizer](../internal-linking-optimizer/) — Optimize internal link structure\n- [schema-markup-generator](../../build/schema-markup-generator/) — Validate and generate schema markup"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "on_page_seo_auditor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "on-page audit",
+        "page optimization",
+        "seo audit",
+        "content optimization",
+        "header tags",
+        "image optimization",
+        "seo score"
+      ],
+      "triggers": [
+        "audit page SEO",
+        "on-page SEO check",
+        "SEO score",
+        "page optimization",
+        "what SEO issues",
+        "check my page",
+        "on-page audit",
+        "what's wrong with this page's SEO",
+        "score my page",
+        "why isn't this page ranking"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/on-page-seo-auditor/SKILL.md"
+}

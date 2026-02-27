@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_fund",
+  "description": "Add money to the wallet. Use when you or the user want to fund, deposit, top up, load, buy USDC, add funds, onramp, or get USDC. Also use when the wallet has insufficient balance for a send or trade operation, or when someone asks \"how do I get USDC?\"",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Funding the Wallet\n\nUse the wallet companion app to fund the wallet with USDC via Coinbase Onramp. This supports multiple payment methods including Apple Pay, debit cards, bank transfers, and funding from a Coinbase account."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Confirm wallet is initialized and authed] ```bash\nnpx awal@latest status\n```\n\nIf the wallet is not authenticated, refer to the `authenticate-wallet` skill."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Opening the Funding Interface] ```bash\nnpx awal@latest show\n```\n\nThis opens the wallet companion window where users can:\n\n1. Select a preset amount ($10, $20, $50) or enter a custom amount\n2. Choose their preferred payment method\n3. Complete the purchase through Coinbase Pay"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Payment Methods] | Method    | Description                                    |\n| --------- | ---------------------------------------------- |\n| Apple Pay | Fast checkout with Apple Pay (where available) |\n| Coinbase  | Transfer from existing Coinbase account        |\n| Card      | Debit card payment                             |\n| Bank      | ACH bank transfer                              |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Alternative] You can also ask your human to send usdc on Base to your wallet address. You can find your wallet address buy running the following:\n\n```bash\nnpx awal@latest address\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Prerequisites] - Must be authenticated (`npx awal@latest status` to check)\n- Coinbase Onramp is available in supported regions (US, etc.)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Flow] 1. Run `npx awal@latest show` to open the wallet UI\n2. Instruct the user to click the Fund button\n3. User selects amount and payment method in the UI\n4. User completes payment through Coinbase Pay (opens in browser)\n5. USDC is deposited to the wallet once payment confirms"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Checking Balance After Funding] ```bash\n# Check updated balance\nnpx awal@latest balance\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Notes] - Funding goes through Coinbase's regulated onramp\n- Processing time varies by payment method (instant for card/Apple Pay, 1-3 days for bank)\n- Funds are deposited as USDC on Base network\n- If funding is not available, users can also send USDC on Base directly to the wallet address"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fund"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/fund/SKILL.md"
+}

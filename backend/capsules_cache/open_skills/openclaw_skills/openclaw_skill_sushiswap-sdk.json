@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_sushiswap-sdk",
+  "description": "TypeScript SDK for interacting with the SushiSwap Aggregator and related primitives. This SDK is a typed wrapper over the SushiSwap API, providing ergonomic helpers for token amounts, prices, quotes, and swap transaction generation.\nUSE THIS SKILL WHEN: - Building TypeScript or JavaScript applications - You want strongly typed token, amount, and fraction primitives - You need to request swap quotes or executable swap transactions via code - You want safer arithmetic, formatting, and comparisons without floating point errors - You prefer SDK-based integration over raw HTTP requests",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SushiSwap SDK Integration\n\nThe SushiSwap SDK is a **TypeScript wrapper** around the SushiSwap API.\nIt provides **strongly typed primitives** and utilities for working with\ntokens, prices, swap quotes, and transaction generation.\n\nThis SDK does **not** replace the API — it builds on top of it with safer,\nmore expressive abstractions.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] Install the required packages using your package manager of choice:\n\n```bash\npnpm add sushi viem\n```\n\n```bash\nnpm add sushi viem\n```\n\n```bash\nyarn add sushi viem\n```\n\n```bash\nbun add sushi viem\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How To Use] 1. Import the appropriate SushiSwap SDK helpers from `sushi/evm`\n2. Select the correct SDK method based on user intent:\n    - Swap quote → `getQuote()`\n    - Swap execution → `getSwap()`\n3. Provide all required parameters exactly as defined by the SDK types\n4. **Always include a valid `referrer` value**\n5. Validate inputs (chainId, token addresses, amount, slippage) before execution\n6. Use returned transaction data exactly as provided for simulation or execution\n\nThe SDK is a thin wrapper over the SushiSwap REST API — all routing, pricing, and calldata generation is still performed by the API.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Supported Networks] The SushiSwap SDK exposes the list of supported swap networks via:\n\n```ts\nimport { SWAP_API_SUPPORTED_CHAIN_IDS } from 'sushi/evm'\n```\n\n- Agents and integrators should always check this list before attempting to:\n    - Fetch a quote\n    - Generate swap transaction data\n- If a requested chainId is not included:\n    - The agent must fail early or prompt the user to select a supported network\n    - Agents must not attempt to guess or hardcode supported chains\n\nThis list reflects the networks currently supported by the SushiSwap Aggregator API. The supported networks may change over time and should not be cached indefinitely.\n\n--"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Mandatory `referrer` Parameter] - The `referrer` parameter **must be specified** when calling `getQuote()` or `getSwap()`\n- The agent or integrator **must identify themselves** using this field\n- Swap-related SDK calls must not be executed without a `referrer` value\n- The SDK must not auto-generate or omit this value on behalf of the integrator\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Fee Customization] The SushiSwap SDK supports customized swap fees when using `getQuote()` or `getSwap()`.\n\n### Default fee model\n\n- Swap-related requests follow an **80/20 fee split by default**\n    - **80%** to the integrator (referrer)\n    - **20%** to SushiSwap\n- This split applies unless explicitly overridden by SushiSwap\n\n### Custom fee splits\n\n- Alternative fee splits require a **partnership** with SushiSwap\n- Agents and integrators should not assume custom splits are available. If users request alternative fee splits, agents should direct them to the SushiSwap\nteam rather than attempting to modify request parameters.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Additional Reference] For detailed SDK examples & execution flow, see:\n\n[references/REFERENCE.md](references/REFERENCE.md)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sushiswap_sdk"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xmasayoshi/sushiswap-sdk/SKILL.md"
+}

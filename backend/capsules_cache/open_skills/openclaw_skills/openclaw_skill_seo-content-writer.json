@@ -1,0 +1,150 @@
+{
+  "id": "openclaw_skill_seo-content-writer",
+  "description": "Use when the user asks to \"write SEO content\", \"create a blog post\", \"write an article\", \"content writing\", \"draft optimized content\", \"write me an article\", \"create a blog post about\", \"help me write SEO content\", or \"draft content for\". Creates high-quality, SEO-optimized content that ranks in search engines. Applies on-page SEO best practices, keyword optimization, and content structure for maximum visibility and engagement. For AI citation optimization, see geo-content-optimizer. For updating existing content, see content-refresher.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SEO Content Writer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · **seo-content-writer** · [geo-content-optimizer](../geo-content-optimizer/) · [meta-tags-optimizer](../meta-tags-optimizer/) · [schema-markup-generator](../schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill creates search-engine-optimized content that ranks well while providing genuine value to readers. It applies proven SEO copywriting techniques, proper keyword integration, and optimal content structure."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Writing blog posts targeting specific keywords\n- Creating landing pages optimized for search\n- Developing pillar content for topic clusters\n- Writing product descriptions for e-commerce\n- Creating service pages for local SEO\n- Producing how-to guides and tutorials\n- Writing comparison and review articles"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Keyword Integration**: Naturally incorporates target and related keywords\n2. **Structure Optimization**: Creates scannable, well-organized content\n3. **Title & Meta Creation**: Writes compelling, click-worthy titles\n4. **Header Optimization**: Uses strategic H1-H6 hierarchy\n5. **Internal Linking**: Suggests relevant internal link opportunities\n6. **Readability Enhancement**: Ensures content is accessible and engaging\n7. **Featured Snippet Optimization**: Formats for SERP feature opportunities"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Basic Content Creation\n\n```\nWrite an SEO-optimized article about [topic] targeting the keyword [keyword]\n```\n\n```\nCreate a blog post for [topic] with these keywords: [keyword list]\n```\n\n### With Specific Requirements\n\n```\nWrite a 2,000-word guide about [topic] targeting [keyword],\ninclude FAQ section for featured snippets\n```\n\n### Content Briefs\n\n```\nHere's my content brief: [brief]. Write SEO-optimized content following this outline.\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~search console connected:**\nAutomatically pull keyword metrics (search volume, difficulty, CPC), competitor content analysis (top-ranking pages, content length, common topics), SERP features (featured snippets, PAA questions), and keyword opportunities (related keywords, question-based queries).\n\n**With manual data only:**\nAsk the user to provide:\n1. Target primary keyword and 3-5 secondary keywords\n2. Target audience and search intent (informational/commercial/transactional)\n3. Target word count and desired tone\n4. Any competitor URLs or content examples to reference\n\nProceed with the full workflow using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests SEO content:\n\n1. **Gather Requirements**\n\n   Confirm or ask for:\n   \n   ```markdown\n   ### Content Requirements\n   \n   **Primary Keyword**: [main keyword]\n   **Secondary Keywords**: [2-5 related keywords]\n   **Target Word Count**: [length]\n   **Content Type**: [blog/guide/landing page/etc.]\n   **Target Audience**: [who is this for]\n   **Search Intent**: [informational/commercial/transactional]\n   **Tone**: [professional/casual/technical/friendly]\n   **CTA Goal**: [what action should readers take]\n   **Competitor URLs**: [top ranking content to beat]\n   ```\n\n2. **Load CORE-EEAT Quality Constraints**\n\n   Before writing, load content quality standards from the [CORE-EEAT Benchmark](../../references/core-eeat-benchmark.md):\n\n   ```markdown\n   ### CORE-EEAT Pre-Write Checklist\n\n   **Content Type**: [identified from requirements above]\n   **Loaded Constraints** (high-weight items for this content type):\n\n   Apply these standards while writing:\n\n   | ID | Standard | How to Apply |\n   |----|----------|-------------|\n   | C01 | Intent Alignment | Title promise must match content delivery |\n   | C02 | Direct Answer | Core answer in first 150 words |\n   | C06 | Audience Targeting | State \"this article is for...\" |\n   | C10 | Semantic Closure | Conclusion answers opening question + next steps |\n   | O01 | Heading Hierarchy | H1→H2→H3, no level skipping |\n   | O02 | Summary Box | Include TL;DR or Key Takeaways |\n   | O06 | Section Chunking | Each section single topic; paragraphs 3–5 sentences |\n   | O09 | Information Density | No filler; consistent terminology |\n   | R01 | Data Precision | ≥5 precise numbers with units |\n   | R02 | Citation Density | ≥1 external citation per 500 words |\n   | R04 | Evidence-Claim Mapping | Every claim backed by evidence |\n   | R07 | Entity Precision | Full names for people/orgs/products |\n   | C03 | Query Coverage | Cover ≥3 query variants (synonyms, long-tail) |\n   | O08 | Anchor Navigation | Table of contents with jump link"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Primary keyword confirmed and matches search intent\n- [ ] Target word count specified (minimum 800 words for substantive content)\n- [ ] Content type and audience clearly defined\n- [ ] Competitor URLs reviewed or target SERP features identified\n\n### Output Validation\n- [ ] Keyword density within 1-2% for primary keyword (Note: Keyword density is a guideline, not a hard rule. Modern search engines prioritize semantic relevance and natural language over exact density targets. Focus on covering the topic comprehensively with semantic variants rather than hitting a specific percentage.)\n- [ ] All sections from outline covered completely\n- [ ] Internal links included (2-5 relevant links)\n- [ ] FAQ section present with at least 3 questions\n- [ ] Readability score appropriate for target audience\n- [ ] Source of each data point clearly stated (~~SEO tool data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Write an SEO-optimized article about 'email marketing best practices' targeting small businesses\"\n\n**Output**:\n\n```markdown\n# Email Marketing Best Practices: A Complete Guide for Small Businesses\n\n**Meta Description**: Discover proven email marketing best practices that help small businesses increase open rates, boost engagement, and drive sales. Start improving your campaigns today. (158 chars)\n\n---\n\nWant to know the secret behind small businesses that consistently turn subscribers into loyal customers? It's not luck—it's strategic email marketing.\n\nEmail marketing remains one of the most effective channels for small businesses, delivering an average ROI of $42 for every $1 spent. But with inboxes more crowded than ever, following email marketing best practices isn't optional—it's essential for survival.\n\nIn this guide, you'll learn:\n- How to build a quality email list that converts\n- Proven strategies to increase open and click rates\n- Advanced personalization techniques that drive results\n- Common mistakes that kill email performance\n\nLet's dive into the strategies that will transform your email marketing."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Why Email Marketing Matters for Small Businesses] Before we explore the best practices, let's understand why email deserves your attention.\n\nUnlike social media where algorithms control who sees your content, email gives you direct access to your audience. You own your email list—no platform can take it away.\n\n**Key email marketing statistics for small businesses**:\n- 81% of SMBs rely on email as their primary customer acquisition channel\n- Email subscribers are 3x more likely to share content on social media\n- Personalized emails generate 6x higher transaction rates"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Building a High-Quality Email List] ### Use Strategic Opt-in Incentives\n\nThe foundation of effective email marketing is a quality list. Here's how to grow yours:\n\n**Lead magnets that convert**:\n- Industry-specific templates\n- Exclusive discounts or early access\n- Free tools or calculators\n- Educational email courses\n\n> **Pro Tip**: The best lead magnets solve a specific, immediate problem for your target audience.\n\n### Implement Double Opt-in\n\nDouble opt-in confirms subscriber intent and improves deliverability. Yes, you'll have fewer subscribers, but they'll be more engaged.\n\n| Single Opt-in | Double Opt-in |\n|---------------|---------------|\n| More subscribers | Fewer subscribers |\n| Higher bounce rates | Lower bounce rates |\n| Lower engagement | Higher engagement |\n| Spam risk | Better deliverability |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Crafting Emails That Get Opened] ### Write Compelling Subject Lines\n\nYour subject line determines whether emails get opened or ignored.\n\n**Subject line best practices**:\n1. Keep it under 50 characters\n2. Create urgency without being spammy\n3. Use numbers and specifics\n4. Personalize when possible\n5. A/B test consistently\n\n### Optimize Preview Text\n\nThe preview text (preheader) is your second chance to convince someone to open. Use it to expand on your subject line, not repeat it."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Personalization Strategies That Work] Generic emails perform poorly. Here's how to personalize effectively:\n\n### Segment Your Email List\n\nDivide your list based on:\n- Purchase history\n- Engagement level\n- Demographics\n- Interests or preferences\n- Customer lifecycle stage\n\n### Use Dynamic Content\n\nSend the same email but show different content blocks based on subscriber data."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Frequently Asked Questions] ### How often should small businesses send marketing emails?\n\nFor most small businesses, sending 1-2 emails per week strikes the right balance. This keeps you top-of-mind without overwhelming subscribers. Monitor your unsubscribe rates—if they spike after increasing frequency, scale back.\n\n### What is a good email open rate for small businesses?\n\nA good email open rate for small businesses is 20-25%. However, this varies by industry. E-commerce averages 15-20%, while B2B services often see 25-30%. Focus on improving your own benchmarks rather than industry averages.\n\n### Should I buy email lists to grow faster?\n\nNever buy email lists. Purchased lists violate GDPR and CAN-SPAM regulations, damage your sender reputation, and result in poor engagement. Organic list growth, while slower, produces much better results."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Conclusion] Implementing these email marketing best practices will help your small business build stronger customer relationships and drive consistent revenue. Remember: quality always beats quantity in email marketing.\n\nStart with one improvement today. Whether it's segmenting your list, testing subject lines, or cleaning inactive subscribers, small changes compound into significant results.\n\n**Ready to level up your email marketing?** Download our free Email Marketing Checklist to ensure every campaign you send follows these best practices.\n\n---\n\n*Further reading: [Internal link: \"How to Write Email Copy That Converts\"]*\n\n*Sources: [Litmus Email Marketing Statistics](https://litmus.com), [Campaign Monitor Email Benchmarks](https://campaignmonitor.com)*\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Content Type Templates] ### How-To Guide\n\n```\nWrite a how-to guide for [task] targeting [keyword]\n```\n\n### Comparison Article\n\n```\nWrite a comparison article: [Option A] vs [Option B] for [keyword]\n```\n\n### Listicle\n\n```\nWrite a list post: \"X Best [Items] for [Audience/Purpose]\" targeting [keyword]\n```\n\n### Ultimate Guide\n\n```\nWrite an ultimate guide about [topic] (3,000+ words) targeting [keyword]\n```"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Match search intent** - Informational queries need guides, not sales pages\n2. **Front-load value** - Put key information early for readers and snippets\n3. **Use data and examples** - Specific beats generic every time\n4. **Write for humans first** - SEO optimization should feel natural\n5. **Include visual elements** - Break up text with images, tables, lists\n6. **Update regularly** - Fresh content signals to search engines"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Title Formulas](./references/title-formulas.md) - Proven headline formulas, power words, CTR patterns\n- [Content Structure Templates](./references/content-structure-templates.md) - Templates for blog posts, comparisons, listicles, how-tos, pillar pages"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Related Skills] - [keyword-research](../../research/keyword-research/) — Find keywords to target\n- [geo-content-optimizer](../geo-content-optimizer/) — Optimize for AI citations\n- [meta-tags-optimizer](../meta-tags-optimizer/) — Create compelling meta tags\n- [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) — Audit SEO elements\n- [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) — Place internal links during content writing\n- [content-refresher](../../optimize/content-refresher/) — Refresh and update existing content\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit\n- [memory-management](../../cross-cutting/memory-management/) — Track content performance over time\n- [content-gap-analysis](../../research/content-gap-analysis/) — Identify content opportunities to write about\n- [schema-markup-generator](../schema-markup-generator/) — Add structured data to published content"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "seo_content_writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "content writing",
+        "blog post",
+        "article",
+        "copywriting",
+        "content creation",
+        "on-page seo"
+      ],
+      "triggers": [
+        "write SEO content",
+        "create blog post",
+        "write an article",
+        "content writing",
+        "draft optimized content",
+        "write for SEO",
+        "blog writing",
+        "write me an article",
+        "create a blog post about",
+        "help me write SEO content",
+        "draft content for"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/seo-content-writer/SKILL.md"
+}

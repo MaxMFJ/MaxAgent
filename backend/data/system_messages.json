@@ -1,42 +1,22 @@
 [
   {
-    "id": "558ea83f-d3e8-467c-b650-00dcf1d73cb0",
+    "id": "49bd4479-27ea-487f-98d2-bbe86905b59d",
     "level": "info",
     "title": "任务完成",
-    "content": "任务: 你好啊\n总结: 你好！我是你的 macOS Agent Chow Duck，可以帮你完成各种系统任务，比如打开应用、执行命令、截图、发送邮件等。请告诉我你需要什么帮助！\n动作数: 1",
+    "content": "任务: 帮我研究 2026 年中国最值得投资的 5 只科技股。包括：\n查最新财报和新闻\n分析营收增长、市盈率、竞争格局\n对比同行业\n给出买入/持有建议和目标价\n最后生成一份 Markdown 报告并保存到桌面\n总结: ✅ 任务完成！已为您生成《2026年中国最值得投资的5只科技股报告》\n\n📊 报告内容包括：\n• 执行摘要：5只推荐股票一览\n• 详细分析：阿里巴巴、腾讯、百度、小米、拼多多\n  - 最新财报数据（营收、利润、增长率）\n  - 估值指标（市盈率、市销率对标同行）\n  - 竞争格局分析（AI、电商、短视频等赛道）\n  - 机构投资评级和目标价\n• 投资建议与评级汇总\n• 风险提示\n\n💾 保存位置：/Users/lzz/Desktop/2026年中国最值得投资的5只科技股报告.md\n📝 报告规模：3832字符，结构完整\n\n📈 核心推荐：基于2026年增长前景、盈利能力、技术创新，综合机构评级给出买入/持有建议。\n动作数: 11",
     "source": "autonomous_task",
     "category": "task",
-    "timestamp": "2026-02-26T17:58:40.619552",
+    "timestamp": "2026-02-27T12:34:16.665041",
     "read": true
   },
   {
-    "id": "55f9babd-0a4e-423f-8906-feb31d5b220e",
-    "level": "error",
-    "title": "自主任务被停止",
-    "content": "任务: 打开微信\n原因: 达到最大迭代次数 (5)\n建议: 考虑分解任务或提高复杂度估计",
-    "source": "autonomous_task",
+    "id": "a527720c-3f5b-44b1-bd4e-49c44963c81f",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-02-26T18:32:09.315659",
+    "timestamp": "2026-02-27T14:29:35.895639",
     "read": true
-  },
-  {
-    "id": "3c612a08-5e75-417a-969e-6fd913f67eac",
-    "level": "error",
-    "title": "对话执行错误",
-    "content": "无法连接到 API 服务（https://cc.580ai.net/v1）。请检查：\n1. 网络是否可用；\n2. 设置中「API 地址」是否正确（如 New API 使用 https://cc1.newapi.ai/v1）；\n3. 若为自建服务，是否已启动。\n原始错误: Connection error.",
-    "source": "chat_stream",
-    "category": "system_error",
-    "timestamp": "2026-02-26T18:44:50.286136",
-    "read": true
-  },
-  {
-    "id": "455f2331-d485-45fb-9749-0c896928f96d",
-    "level": "info",
-    "title": "任务完成",
-    "content": "任务: 帮我打开微信\n总结: 微信已成功打开\n动作数: 2",
-    "source": "autonomous_task",
-    "category": "task",
-    "timestamp": "2026-02-27T09:44:26.501251",
-    "read": false
   }
 ]

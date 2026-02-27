@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_okx-dex-swap",
+  "description": "Execute token swaps on-chain via OKX DEX Aggregator API (v6). Use this skill when a user wants to: 1. Build a complete swap flow: get swap calldata -> sign transaction -> broadcast to chain 2. Execute token-to-token swaps with slippage protection, MEV protection, and Jito tips (Solana) 3. Integrate OKX DEX swap + broadcast into applications, bots, or scripts This skill covers the FULL lifecycle: /swap endpoint (get tx data) + /broadcast-transaction endpoint (submit signed tx). For quote-only (no execution), use the okx-dex-quote skill instead.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OKX DEX Swap & Broadcast Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill generates production-ready code for the **complete on-chain swap flow** using the OKX DEX Aggregator:\n\n```\n┌─────────┐     ┌──────────┐     ┌──────────┐     ┌───────────┐\n│  Quote   │ ──▶ │   Swap   │ ──▶ │   Sign   │ ──▶ │ Broadcast │\n│ (optional│     │ API Call │     │   Tx     │     │  to Chain │\n│  preview)│     │          │     │          │     │           │\n└─────────┘     └──────────┘     └──────────┘     └───────────┘\n```\n\n**Two API endpoints involved:**\n\n| Step | Endpoint | Method | Purpose |\n|------|----------|--------|---------|\n| Swap | `/api/v6/dex/aggregator/swap` | GET | Get transaction calldata for the swap |\n| Broadcast | `/api/v6/dex/pre-transaction/broadcast-transaction` | POST | Submit signed transaction to the chain |\n\n**Key features:**\n- Full swap lifecycle with transaction signing\n- Auto-slippage calculation based on market conditions\n- MEV (sandwich attack) protection on ETH, BSC, SOL, BASE\n- Jito tips for Solana priority transactions\n- Token approval handling (ERC-20 approve)\n- Commission/referral fee splitting\n- Price impact protection with configurable thresholds"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] ### Required Credentials\n- `OKX_ACCESS_KEY` — API key\n- `OKX_SECRET_KEY` — Secret key for HMAC signing\n- `OKX_PASSPHRASE` — Account passphrase\n\n### Wallet Requirements\n- **EVM chains**: Private key or a signer (e.g., web3.py Account, ethers.js Wallet)\n- **Solana**: Keypair for transaction signing\n- The wallet must have sufficient balance of the `fromToken` and native token for gas\n\n### Environment\n- **Python**: `requests`, `web3` (for EVM signing), `solders` / `solana-py` (for Solana)\n- **Node.js**: `axios`, `ethers` (for EVM signing), `@solana/web3.js` (for Solana)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: Call the Swap API\n\n**Endpoint:**\n```\nGET https://web3.okx.com/api/v6/dex/aggregator/swap\n```\n\n**Required parameters:**\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `chainIndex` | String | Yes | Chain ID (e.g., `1` = Ethereum, `501` = Solana) |\n| `amount` | String | Yes | Amount in raw units with decimals (e.g., `1000000` for 1 USDT) |\n| `swapMode` | String | Yes | `exactIn` (default) or `exactOut` |\n| `fromTokenAddress` | String | Yes | Sell token contract address |\n| `toTokenAddress` | String | Yes | Buy token contract address |\n| `slippagePercent` | String | Yes | Slippage tolerance (e.g., `0.5` = 0.5%). EVM: 0-100, Solana: 0 to <100 |\n| `userWalletAddress` | String | Yes | User's wallet address that will sign and send the tx |\n\n**Important optional parameters:**\n\n| Parameter | Type | Description |\n|-----------|------|-------------|\n| `approveTransaction` | Boolean | Set `true` to get ERC-20 approval calldata in response |\n| `approveAmount` | String | Custom approval amount (raw units). If omitted, approves exact swap amount |\n| `swapReceiverAddress` | String | Recipient address if different from sender |\n| `feePercent` | String | Commission fee %. Max 3% (EVM) / 10% (Solana) |\n| `fromTokenReferrerWalletAddress` | String | Wallet to receive fromToken commission |\n| `toTokenReferrerWalletAddress` | String | Wallet to receive toToken commission |\n| `autoSlippage` | Boolean | Auto-calculate optimal slippage (overrides `slippagePercent`) |\n| `maxAutoslippagePercent` | String | Cap for auto-slippage |\n| `priceImpactProtectionPercent` | String | Max price impact allowed (0-100, default 90) |\n| `gasLevel` | String | `slow`, `average` (default), or `fast` |\n| `gaslimit` | String | Custom gas limit in wei (EVM only) |\n| `dexIds` | String | Restrict to specific DEX IDs (comma-separated) |\n| `excludeDexIds` | String | Exclude specific DEX IDs (comma-separated) |\n| `directRoute` | Boolean | Single-pool routing only"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Best Practices] ### Security\n- **NEVER hardcode private keys** in code. Use environment variables, keystore files, or hardware wallets.\n- **NEVER log private keys, signed transactions, or secret keys** in production.\n- Always validate token addresses and amounts before sending.\n- Check `isHoneyPot` on both tokens before proceeding.\n- Use `priceImpactProtectionPercent` (recommend setting to `10` or lower for safety).\n\n### Slippage Configuration\n- **Stable pairs** (USDC/USDT): `0.1%` - `0.5%`\n- **Major pairs** (ETH/USDC): `0.5%` - `1%`\n- **Volatile/low-liquidity tokens**: `1%` - `5%`\n- **Meme coins**: `5%` - `15%` (or higher, but be cautious)\n- Use `autoSlippage=true` with `maxAutoslippagePercent` for optimal auto-calculation.\n\n### MEV Protection\n- Enable `enableMevProtection: true` for large trades on ETH, BSC, SOL, BASE.\n- On Solana, combine with Jito tips for priority + MEV protection.\n- When using Jito tips, set `computeUnitPrice=0` to avoid wasting fees.\n\n### Token Approval Strategy\n- For one-time swaps: approve exact amount (`approveAmount = swap amount`).\n- For repeated swaps: consider a larger approval (e.g., max uint256) to save gas on future swaps, but understand the security trade-off.\n- Always check existing allowance before sending a new approval.\n\n### Uni V3 Liquidity Edge Case\nWhen swapping through Uniswap V3 pools, if the liquidity for the pair is drained mid-swap, the router will only consume part of your input tokens. The OKX DEX Router smart contract will automatically refund the remainder. Ensure your integration contract supports receiving token refunds.\n\n### Amount Handling\n- **Always use strings** for amounts to avoid floating-point precision loss.\n- Python: `int()` for calculations, never `float()`.\n- JavaScript: `BigInt` or `ethers.parseUnits()` for amounts.\n- Formula: `raw_amount = human_amount * 10^decimals`\n\n### Error Handling\n- Check `response[\"code\"] == \"0\"` before processing.\n- If broadcast fails, do NOT automatically retry without checking nonce — you "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ### Example 1: Python — Complete EVM Swap Flow\n\n```python\nimport os, hmac, hashlib, base64, json, requests\nfrom datetime import datetime, timezone\nfrom urllib.parse import urlencode\nfrom web3 import Web3\n\n# === Configuration ===\nAPI_KEY = os.environ[\"OKX_ACCESS_KEY\"]\nSECRET_KEY = os.environ[\"OKX_SECRET_KEY\"]\nPASSPHRASE = os.environ[\"OKX_PASSPHRASE\"]\nPRIVATE_KEY = os.environ[\"WALLET_PRIVATE_KEY\"]\n\nBASE_URL = \"https://web3.okx.com\"\nCHAIN_INDEX = \"1\"  # Ethereum\nCHAIN_ID = 1\nRPC_URL = \"https://eth.llamarpc.com\"\n\nw3 = Web3(Web3.HTTPProvider(RPC_URL))\naccount = w3.eth.account.from_key(PRIVATE_KEY)\nWALLET = account.address\n\n\ndef _sign_request(timestamp, method, request_path, body=\"\"):\n    prehash = timestamp + method + request_path + body\n    mac = hmac.new(SECRET_KEY.encode(), prehash.encode(), hashlib.sha256)\n    return base64.b64encode(mac.digest()).decode()\n\n\ndef _headers(method, request_path, body=\"\"):\n    timestamp = datetime.now(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%S.%f\")[:-3] + \"Z\"\n    sig = _sign_request(timestamp, method, request_path, body)\n    return {\n        \"OK-ACCESS-KEY\": API_KEY,\n        \"OK-ACCESS-SIGN\": sig,\n        \"OK-ACCESS-PASSPHRASE\": PASSPHRASE,\n        \"OK-ACCESS-TIMESTAMP\": timestamp,\n        \"Content-Type\": \"application/json\",\n    }\n\n\n# --- Step 1: Get swap calldata ---\ndef get_swap_data(from_token, to_token, amount, slippage=\"0.5\"):\n    params = {\n        \"chainIndex\": CHAIN_INDEX,\n        \"fromTokenAddress\": from_token,\n        \"toTokenAddress\": to_token,\n        \"amount\": amount,\n        \"swapMode\": \"exactIn\",\n        \"slippagePercent\": slippage,\n        \"userWalletAddress\": WALLET,\n        \"approveTransaction\": \"true\",\n    }\n    query = urlencode(params)\n    path = f\"/api/v6/dex/aggregator/swap?{query}\"\n    headers = _headers(\"GET\", path)\n\n    resp = requests.get(BASE_URL + path, headers=headers, timeout=30)\n    resp.raise_for_status()\n    data = resp.json()\n\n    if data[\"code\"] != \"0\":\n        raise Exception(f\"Swap API error: {data['m"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Problem | Cause | Solution |\n|---------|-------|----------|\n| `401 Unauthorized` on broadcast | POST signing error | Ensure prehash = `timestamp + \"POST\" + path + jsonBody`. The body must be the exact JSON string. |\n| `401 Unauthorized` on swap | GET signing error | Ensure prehash = `timestamp + \"GET\" + path_with_query_string`. |\n| Approval tx fails | Insufficient ETH for gas | Ensure wallet has native token for gas fees. |\n| Swap tx reverts | Slippage exceeded | Increase `slippagePercent` or use `autoSlippage=true`. |\n| `minReceiveAmount` is 0 | Extreme slippage or bad params | Check token addresses and amounts. Reduce trade size. |\n| Broadcast returns no txHash | MEV protection routing delay | Wait and check `orderId` status. MEV-protected txs may take longer. |\n| \"Nonce too low\" on broadcast | Tx already sent or nonce reused | Fetch fresh nonce before signing. Never reuse nonces. |\n| Solana broadcast fails | Missing `jitoSignedTx` | When `tips > 0`, you must provide both `signedTx` and `jitoSignedTx`. |\n| Token refund not received | Uni V3 liquidity drained | Ensure your contract supports receiving token refunds from the router. |\n| Commission not working on BSC | Four.meme restriction | Commission is not supported for swaps through Four.meme on BSC. |\n| `priceImpactPercent` very negative | Low liquidity | Reduce amount or split into multiple smaller swaps. |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Reference: POST vs GET Signing] The OKX API uses different signing for GET and POST:\n\n| Method | Prehash Format |\n|--------|---------------|\n| GET | `timestamp + \"GET\" + path_with_query` |\n| POST | `timestamp + \"POST\" + path + json_body` |\n\nThe Swap endpoint is **GET**, the Broadcast endpoint is **POST**. Getting this wrong is the #1 cause of `401` errors."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reference: MEV Protection Support] | Chain | `enableMevProtection` | Jito Tips |\n|-------|----------------------|-----------|\n| Ethereum | Yes | No |\n| BSC | Yes | No |\n| Solana | Yes | Yes |\n| Base | Yes | No |\n| Others | Not yet | Not yet |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Reference: Common Chain IDs] | Chain | chainIndex | Chain ID (for tx signing) |\n|-------|-----------|--------------------------|\n| Ethereum | 1 | 1 |\n| BSC | 56 | 56 |\n| Polygon | 137 | 137 |\n| Arbitrum | 42161 | 42161 |\n| Optimism | 10 | 10 |\n| Base | 8453 | 8453 |\n| Avalanche | 43114 | 43114 |\n| Solana | 501 | N/A |\n| Unichain | 130 | 130 |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "okx_dex_swap"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronllee/easy-swap/SKILL.md"
+}

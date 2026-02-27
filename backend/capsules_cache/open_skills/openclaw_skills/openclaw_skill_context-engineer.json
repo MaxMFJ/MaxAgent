@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_context-engineer",
+  "description": "Master context engineering and prompt engineering for AI agents and LLMs. Optimize system prompts, craft few-shot examples, implement chain-of-thought reasoning, manage context windows, design structured outputs, and build self-improving prompt patterns. Covers Anthropic, OpenAI, and Google best practices. Includes prompt optimizer that audits drafts against best practices, and context builder that generates optimal context windows for any task. Built for AI agents — Python stdlib only, no dependencies. Use for prompt optimization, system prompt design, agent instruction writing, LLM output debugging, context window management, and few-shot example crafting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🧠 Context Engineer\n\nMaster skill for context engineering and prompt engineering — the art of crafting optimal inputs to LLMs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Optimize prompts** against Anthropic, OpenAI, and Google best practices\n- **Build context windows** with system prompt, user prompt, and examples\n- **Design system prompts** for sub-agents, crons, and skills\n- **Craft few-shot examples** that dramatically improve accuracy\n- **Implement chain-of-thought** reasoning for complex tasks\n- **Manage context windows** — prioritize critical info placement\n- **Structure outputs** with JSON schema, markdown, or XML tags\n- **Debug poor LLM outputs** with systematic prompt analysis\n- **Write agent instructions** (AGENTS.md, SOUL.md patterns)\n- **Apply role-based prompting** for domain-specific performance\n- **Chain complex tasks** into accurate subtask pipelines\n- **Reference 20+ templates** for common prompting patterns"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| None | — | No API keys needed — pure prompt engineering knowledge |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nPY=~/.openclaw/workspace/.venv/bin/python3\n\n# Analyze and improve a draft prompt\n$PY skills/context-engineer/scripts/prompt_optimizer.py \"Your draft prompt here\"\n\n# Build optimal context window for a task\n$PY skills/context-engineer/scripts/context_builder.py \"Analyze quarterly financials\"\n\n# Optimize from file\n$PY skills/context-engineer/scripts/prompt_optimizer.py --file path/to/prompt.txt\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Prompt Optimizer\n```bash\n# Analyze a prompt string\n$PY skills/context-engineer/scripts/prompt_optimizer.py \"Your prompt\"\n\n# Analyze from file\n$PY skills/context-engineer/scripts/prompt_optimizer.py --file prompt.txt\n```\n\n### Context Builder\n```bash\n# Build context for a task\n$PY skills/context-engineer/scripts/context_builder.py \"Task description\"\n\n# With role and output format\n$PY skills/context-engineer/scripts/context_builder.py --task \"Code review\" --role \"Senior engineer\" --output json\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[The 10 Commandments of Prompting] 1. **Be clear, direct, and detailed** — Treat the model as a brilliant new employee with no context\n2. **Use examples** — 3-5 diverse examples dramatically improve accuracy and consistency\n3. **Let it think** — Chain-of-thought for complex reasoning; extended thinking for hard problems\n4. **Structure with tags** — XML tags prevent mixing of instructions, context, and examples\n5. **Assign a role** — System prompts with specific personas boost domain performance\n6. **Chain complex tasks** — Break multi-step work into subtask prompts for accuracy\n7. **Manage context** — Put critical info at top and bottom; reference docs by tag name\n8. **Specify output format** — JSON schema, markdown structure, or explicit format instructions\n9. **Iterate empirically** — Test against eval criteria, not vibes\n10. **Context > Prompt** — What you include matters more than how you ask"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[References] | File | Description |\n|------|-------------|\n| `references/anthropic-best-practices.md` | Anthropic's official prompt engineering docs |\n| `references/openai-best-practices.md` | OpenAI's prompt engineering guide |\n| `references/google-best-practices.md` | Google's Gemini prompting strategies |\n| `references/context-engineering-principles.md` | Context engineering theory (Karpathy et al.) |\n| `references/prompt-templates.md` | 20+ reusable templates for common tasks |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/prompt_optimizer.py` | Analyzes prompts against best practices |\n| `{baseDir}/scripts/context_builder.py` | Builds optimal context windows for tasks |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Output Format] All commands output structured text by default with clear sections for analysis results, suggestions, and improved prompts."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Data Policy] This skill processes prompts locally. No data is sent to external services unless explicitly using an LLM API."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Sources] - Anthropic Prompt Engineering: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview\n- OpenAI Prompt Engineering: https://platform.openai.com/docs/guides/prompt-engineering\n- Google Gemini Prompting: https://ai.google.dev/gemini-api/docs/prompting-strategies\n- Andrej Karpathy on Context Engineering (2025)\n\n---\n\nBuilt by [M. Abidi](https://www.agxntsix.ai)\n\n[LinkedIn](https://www.linkedin.com/in/mohammad-ali-abidi) · [YouTube](https://youtube.com/@aiwithabidi) · [GitHub](https://github.com/aiwithabidi) · [Book a Call](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "context_engineer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🧠",
+        "requires": {
+          "env": []
+        },
+        "primaryEnv": "",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/a6-context-engineer/SKILL.md"
+}

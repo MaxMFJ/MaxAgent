@@ -1,0 +1,118 @@
+{
+  "id": "openclaw_skill_github-intel",
+  "description": "Analyze any GitHub repository in AI-friendly format. Convert entire repos to single markdown documents, generate architecture diagrams with Mermaid, inspect structure trees, language breakdowns, and recent activity. Includes GitHub URL tricks, API shortcuts, and advanced search techniques. Read-only analysis — never executes code from repositories. Built for AI agents — Python stdlib only, no dependencies. Use for repository analysis, code architecture review, open source research, GitHub intelligence, repo documentation, and codebase understanding.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔍 GitHub Intelligence\n\nAnalyze any GitHub repository in AI-friendly format. Convert repos to markdown, generate architecture diagrams, understand structure and patterns."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Analyze repo structure** — file tree, README, language breakdown, recent activity\n- **Generate architecture diagrams** — Mermaid flowcharts from codebase structure\n- **Convert repo to markdown** — entire repository as a single AI-readable document\n- **Inspect language breakdown** — percentage by language with file counts\n- **Track recent activity** — latest commits, contributors, release history\n- **GitHub URL tricks** — hidden features, API shortcuts, search operators\n- **Control analysis depth** — configurable directory traversal depth\n- **Limit file count** — cap files for large repos\n- **Read-only guarantee** — never executes code from repositories\n- **Public API access** — no token needed (optional token for higher rate limits)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `GITHUB_TOKEN` | ❌ | Optional — increases rate limit from 60 to 5000 req/hr. Get from [GitHub Settings](https://github.com/settings/tokens) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nPY=~/.openclaw/workspace/.venv/bin/python3\n\n# Analyze a repository\n$PY skills/github-intel/scripts/repo_analyzer.py https://github.com/anthropics/claude-code\n\n# Convert repo to single markdown\n$PY skills/github-intel/scripts/repo_to_markdown.py https://github.com/openai/openai-python\n\n# Deep analysis\n$PY skills/github-intel/scripts/repo_analyzer.py https://github.com/user/repo --depth 3\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Repo Analyzer\n```bash\n# Basic analysis\n$PY scripts/repo_analyzer.py https://github.com/owner/repo\n\n# Deep directory traversal\n$PY scripts/repo_analyzer.py https://github.com/owner/repo --depth 3\n\n# With authentication for higher rate limits\nGITHUB_TOKEN=ghp_xxx $PY scripts/repo_analyzer.py https://github.com/owner/repo\n```\n\n### Repo to Markdown\n```bash\n# Convert full repo\n$PY scripts/repo_to_markdown.py https://github.com/owner/repo\n\n# Limit files for large repos\n$PY scripts/repo_to_markdown.py https://github.com/owner/repo --max-files 50\n\n# Output to file\n$PY scripts/repo_to_markdown.py https://github.com/owner/repo > repo.md\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format (Analyzer)] ```\n# Repository: owner/repo"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Structure] ├── src/\n│   ├── index.ts\n│   └── ...\n├── README.md\n└── package.json"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[README] [Full README content]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Language Breakdown] - TypeScript: 78.2%\n- JavaScript: 15.1%\n- Shell: 6.7%"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Architecture (Mermaid)] graph TD\n  A[CLI Entry] --> B[Command Parser]\n  ..."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Recent Activity] - 2 days ago: feat: add streaming support\n- 5 days ago: fix: handle timeout errors\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[References] | File | Description |\n|------|-------------|\n| `references/github-tricks.md` | URL hacks, API shortcuts, search operators |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/repo_analyzer.py` | Full repository analysis with diagrams |\n| `{baseDir}/scripts/repo_to_markdown.py` | Convert repo to single markdown document |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[⚠️ Security] **This tool is READ-ONLY. It NEVER:**\n- Executes code from repositories\n- Runs scripts, makefiles, or build commands\n- Evaluates any content from repos\n- Writes to any repository\n\nAll analysis is static file reading only."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Data Policy] This skill fetches public data from GitHub's API. No data is stored locally beyond the analysis output.\n\n---\n\nBuilt by [M. Abidi](https://www.agxntsix.ai)\n\n[LinkedIn](https://www.linkedin.com/in/mohammad-ali-abidi) · [YouTube](https://youtube.com/@aiwithabidi) · [GitHub](https://github.com/aiwithabidi) · [Book a Call](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "github_intel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔍",
+        "requires": {
+          "env": []
+        },
+        "primaryEnv": "GITHUB_TOKEN",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/a6-github-intel/SKILL.md"
+}

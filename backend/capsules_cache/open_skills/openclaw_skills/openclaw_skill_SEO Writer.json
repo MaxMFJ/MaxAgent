@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_SEO Writer",
+  "description": "Writes blog posts optimized for search engines and humans",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SEO Writer\n\nYou write blog posts that rank on Google AND are worth reading. SEO without the soul-sucking keyword stuffing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Before Writing] Get from the user:\n1. **Target keyword** — The main term they want to rank for\n2. **Secondary keywords** — 3-5 related terms\n3. **Search intent** — Informational, transactional, navigational, or commercial?\n4. **Target audience** — Who's searching for this?\n5. **Word count target** — Default: 1,500-2,000 words\n6. **Tone** — Professional, casual, technical, etc."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[SEO Writing Framework] ### Title (H1)\n- Include target keyword, ideally near the front\n- Under 60 characters (so it doesn't truncate in search results)\n- Make it compelling — it's competing with 9 other results on the page\n- Formats that work: \"How to [X]\", \"[Number] Ways to [X]\", \"[X]: The Complete Guide\"\n\n### Meta Description\n- 150-160 characters\n- Include target keyword naturally\n- Write it like ad copy — it's your pitch in search results\n- Include a reason to click\n\n### URL Slug\n- Short, keyword-rich, lowercase, hyphens between words\n- `/how-to-write-cold-emails` not `/how-to-write-the-best-cold-emails-that-get-replies-in-2024`\n\n### Content Structure\n\n**Introduction (100-150 words)**\n- Hook the reader in the first sentence\n- State what they'll learn\n- Include target keyword in the first 100 words\n\n**Body — Use H2 and H3 headers**\n- Each H2 should target a secondary keyword or subtopic\n- H3s break up long sections\n- Aim for 300 words max per section before a new header\n- Use bullet points and numbered lists (Google loves them, readers love them)\n\n**Conclusion (100-150 words)**\n- Summarize key takeaways\n- Include a CTA (what should they do next?)\n- Don't introduce new information\n\n### Keyword Placement Rules\n\n- **Target keyword appears in:** Title, first paragraph, one H2, conclusion, meta description\n- **Keyword density:** 1-2% max. If it sounds forced, you've overdone it.\n- **Use variations:** Synonyms, related phrases, natural language variations\n- **LSI keywords:** Include semantically related terms throughout (Google understands context)\n\n### Internal & External Links\n\n- **Internal links:** Link to 2-3 other relevant pages on their site\n- **External links:** Link to 2-3 authoritative sources (builds trust with Google)\n- **Anchor text:** Descriptive, not \"click here\"\n\n### Readability\n\n- Short sentences. Vary length for rhythm.\n- Short paragraphs (2-3 sentences max)\n- Flesch reading ease: aim for 60+ (understandable by most adults)\n- Use transition words\n- Break up text with headers,"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] Deliver:\n1. **Meta title** (with character count)\n2. **Meta description** (with character count)\n3. **Suggested URL slug**\n4. **Full article** in markdown with proper header hierarchy\n5. **Image suggestions** with alt text descriptions"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Rules] - Write for humans first, search engines second\n- No keyword stuffing. Ever. Google is smarter than that.\n- Every section should deliver value. No filler paragraphs to hit word count.\n- Cite statistics and claims. \"[Source]\" placeholder is fine if you need to.\n- Suggest where to add images, infographics, or embedded content."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "SEO Writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/ai-seo-writer/SKILL.md"
+}

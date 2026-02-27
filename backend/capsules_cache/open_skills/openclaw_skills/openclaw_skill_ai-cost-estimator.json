@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_ai-cost-estimator",
+  "description": "Estimate infrastructure and API costs for running AI agents in production. Covers compute, API tokens, storage, and monitoring costs. Use when planning AI agent deployments or evaluating build-vs-buy decisions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AI Cost Estimator Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Purpose] Help teams estimate the true cost of running AI agents in production — not just API fees, but compute, storage, monitoring, maintenance, and engineering time."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - Planning an AI agent deployment\n- Comparing build-in-house vs managed service\n- Budgeting for AI infrastructure\n- Evaluating vendor proposals"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Cost Categories] ### 1. Compute (Server/VPS)\n\n| Provider | Spec | Monthly Cost |\n|----------|------|-------------|\n| Hetzner CX31 | 2 vCPU, 8GB RAM, 80GB | $8/mo |\n| Hetzner CX41 | 4 vCPU, 16GB RAM, 160GB | $15/mo |\n| AWS t3.medium | 2 vCPU, 4GB RAM | ~$30/mo |\n| AWS t3.large | 2 vCPU, 8GB RAM | ~$60/mo |\n| DigitalOcean | 2 vCPU, 4GB RAM | $24/mo |\n| Railway | Usage-based | $5-50/mo |\n\n**Recommendation:** Hetzner for cost efficiency. AWS/GCP if client requires specific cloud.\n\n### 2. LLM API Costs\n\n| Model | Input (per 1M tokens) | Output (per 1M tokens) |\n|-------|----------------------|----------------------|\n| GPT-4o | $2.50 | $10.00 |\n| GPT-4o-mini | $0.15 | $0.60 |\n| Claude Sonnet 4 | $3.00 | $15.00 |\n| Claude Haiku | $0.25 | $1.25 |\n| Llama 3.1 70B (self-hosted) | ~$0 (compute only) | ~$0 |\n\n**Typical agent usage:** 500K-2M tokens/day depending on complexity.\n\n**Monthly API cost estimate:**\n- Light agent (email triage, scheduling): $15-50/mo\n- Medium agent (research, content, CRM): $50-200/mo\n- Heavy agent (coding, analysis, multi-step): $200-800/mo\n\n### 3. Storage & Database\n\n| Service | Free Tier | Paid |\n|---------|-----------|------|\n| Supabase | 500MB, 2 projects | $25/mo (8GB) |\n| PlanetScale | 5GB | $39/mo |\n| SQLite (on VPS) | $0 | $0 |\n| S3/R2 (file storage) | 10GB free | $0.015/GB |\n\n### 4. Monitoring & Ops\n\n| Service | Free Tier | Paid |\n|---------|-----------|------|\n| UptimeRobot | 50 monitors | $7/mo (1-min intervals) |\n| Better Stack | 10 monitors | $24/mo |\n| Sentry (errors) | 5K events | $26/mo |\n| Datadog | Limited | $15/host/mo |\n\n### 5. Hidden Costs (Often Forgotten)\n\n| Item | Estimated Cost |\n|------|---------------|\n| Engineer setup time (40-80 hrs) | $4,000-16,000 one-time |\n| Ongoing maintenance (5-10 hrs/mo) | $500-2,000/mo |\n| Security patches & updates | 2-4 hrs/mo |\n| Prompt engineering & tuning | 5-20 hrs initial |\n| Testing & QA | 10-20 hrs initial |\n| Documentation | 5-10 hrs |\n| On-call / incident response | $500-2,000/mo |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Total Cost Calculator] ### DIY Single Agent\n```\nCompute (Hetzner):     $8/mo\nAPI costs (medium):    $100/mo\nDatabase (SQLite):     $0/mo\nMonitoring:            $0/mo (free tier)\nEngineering (10h/mo):  $1,000/mo\n─────────────────────────────\nTOTAL:                 ~$1,108/mo\n+ Setup:               ~$8,000 one-time\n```\n\n### DIY Multi-Agent Swarm (5 agents)\n```\nCompute:               $30/mo\nAPI costs:             $400/mo\nDatabase (Supabase):   $25/mo\nMonitoring:            $25/mo\nEngineering (20h/mo):  $2,000/mo\n─────────────────────────────\nTOTAL:                 ~$2,480/mo\n+ Setup:               ~$20,000 one-time\n```\n\n### Managed Service (AfrexAI)\n```\nSingle agent:          $1,500/mo (all-inclusive)\nFull swarm:            $5,000/mo (all-inclusive)\nSetup:                 $0 (included)\nMaintenance:           $0 (included)\nMonitoring:            $0 (included)\nEngineering:           $0 (included)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Build vs Buy Decision Matrix] | Factor | Build In-House | Managed (AfrexAI) |\n|--------|---------------|-------------------|\n| Time to deploy | 2-8 weeks | 1 week |\n| Monthly cost (single) | $1,100+ | $1,500 |\n| Monthly cost (swarm) | $2,500+ | $5,000 |\n| Engineering dependency | High | None |\n| Customization | Full | High |\n| Support/SLA | Self-managed | Included |\n| Scaling | You handle it | We handle it |\n| Risk | On you | Shared |\n\n**Key insight:** Build-in-house looks cheaper on paper, but engineering time is the real cost. At $100-200/hr for AI engineers, 10 hours/month of maintenance alone costs $1,000-2,000."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[ROI Framework] ```\nMonthly savings from automation:\n- Hours saved × hourly cost of employee\n- Error reduction × cost per error\n- Speed improvement × revenue per hour\n\nExample (legal firm):\n- Paralegal: 20 hrs/week saved × $35/hr = $2,800/mo\n- Error reduction: 5 fewer mistakes × $500/mistake = $2,500/mo\n- Speed: 30% faster case processing = $3,000/mo additional capacity\n- TOTAL VALUE: $8,300/mo\n- COST: $1,500/mo (managed agent)\n- ROI: 453%\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Get Started] Want accurate cost estimates for your specific use case?\n→ Free consultation: https://calendly.com/cbeckford-afrexai/30min\n→ AI-as-a-Service from $1,500/mo: https://afrexai-cto.github.io/aaas/landing.html\n→ ROI Calculator: https://afrexai-cto.github.io/ai-revenue-calculator/"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ai_cost_estimator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/ai-cost-estimator/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_ai-humanizer",
+  "description": "Rewrites AI-generated content to sound natural, human, and undetectable. Removes robotic patterns, adds voice variety, and preserves meaning.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AI Content Humanizer\n\nWhen asked to humanize, rewrite, or \"de-robot\" any text, apply these rules systematically."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What to Remove] Strip these dead giveaways of AI writing:\n\n- **Filler openers**: \"I'd be happy to...\", \"Great question!\", \"Certainly!\", \"Absolutely!\", \"Of course!\"\n- **Cliché intros**: \"In today's fast-paced...\", \"In the ever-evolving landscape...\", \"In an era of...\"\n- **Corporate jargon**: \"leverage\", \"utilize\", \"facilitate\", \"streamline\", \"synergize\", \"optimize\", \"actionable insights\"\n- **Hedging fluff**: \"It's worth noting that...\", \"It's important to remember...\", \"It should be noted...\"\n- **Forced transitions**: \"Furthermore\", \"Moreover\", \"Additionally\" at the start of every paragraph\n- **Perfect symmetry**: Lists where every item is the same length, paragraphs of identical size, parallel structure everywhere"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What to Add] Replace robotic patterns with human writing traits:\n\n- **Vary sentence length.** Short ones hit hard. Longer ones let you breathe and think through a point before moving on to the next thing.\n- **Use contractions** — don't, won't, can't, it's, we're, they've. Nobody writes \"do not\" in casual prose.\n- **Start sentences with \"And\" or \"But\"** occasionally. Grammar teachers hate it. Real writers do it constantly.\n- **Use specific numbers and examples** instead of vague claims. \"Reduced load time by 40%\" beats \"significantly improved performance.\"\n- **Include one slightly unexpected word choice per piece.** Not forced — just something a template wouldn't generate.\n- **Write like you're explaining to a smart friend**, not presenting to a board of directors.\n- **Let some sentences be incomplete thoughts.** Like this one.\n- **Use dashes — like this — for asides** instead of always using parentheses or commas."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Voice Calibration] Match the voice to the context:\n\n- **Blog post / LinkedIn**: Conversational but informed. First person OK. Opinions encouraged.\n- **Email**: Direct and warm. Get to the point fast. End with a clear ask or next step.\n- **Sales copy**: Punchy. Benefits over features. Address the reader as \"you.\"\n- **Technical docs**: Clear and precise, but still human. Analogies help.\n- **Social media**: Casual. Fragments OK. Personality over polish."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[The Acid Test] After rewriting, check:\n\n1. **Read it out loud.** If it sounds like a robot wrote it, rewrite it.\n2. **Check sentence starts.** If every sentence begins with \"This\" or \"The\", rewrite it.\n3. **Swap the company name.** If you could drop in any company and it'd still work, it's too generic — rewrite it.\n4. **The friend test.** Would you actually say this to someone? If not, simplify."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Process] 1. Read the input text carefully — understand the core message and intent\n2. Identify AI patterns (use the removal list above)\n3. Rewrite preserving all factual content and meaning\n4. Apply human writing traits from the \"What to Add\" list\n5. Calibrate voice to match the stated or inferred context\n6. Run the acid test\n7. Output the humanized version\n\nIf the user provides context about audience or platform, weight that heavily when calibrating voice.\n\nFor industry-specific context packs that fine-tune voice calibration for sectors like SaaS, fintech, healthcare, and more, visit https://afrexai-cto.github.io/context-packs\n\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[🔗 More AfrexAI Skills (Free on ClawHub)] | Skill | Install |\n|-------|---------|\n| AI Humanizer | `clawhub install afrexai-humanizer` |\n| SEO Writer | `clawhub install afrexai-seo-writer` |\n| Email Crafter | `clawhub install afrexai-email-crafter` |\n| Proposal Generator | `clawhub install afrexai-proposal-gen` |\n| Invoice Generator | `clawhub install afrexai-invoice-gen` |\n| Lead Scorer | `clawhub install afrexai-lead-scorer` |\n| Client Onboarding | `clawhub install afrexai-onboarding` |\n| Meeting Prep | `clawhub install afrexai-meeting-prep` |\n| Social Repurposer | `clawhub install afrexai-social-repurposer` |\n| FAQ Builder | `clawhub install afrexai-faq-builder` |\n| Review Responder | `clawhub install afrexai-review-responder` |\n| Report Builder | `clawhub install afrexai-report-builder` |\n| CRM Updater | `clawhub install afrexai-crm-updater` |\n| Pitch Deck Reviewer | `clawhub install afrexai-pitch-deck-reviewer` |\n| Contract Analyzer | `clawhub install afrexai-contract-analyzer` |\n| Pricing Optimizer | `clawhub install afrexai-pricing-optimizer` |\n| Testimonial Collector | `clawhub install afrexai-testimonial-collector` |\n| Competitor Monitor | `clawhub install afrexai-competitor-monitor` |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[🚀 Go Pro: Industry Context Packs ($47/pack)] Make your AI agent a true industry expert with deep domain knowledge.\n\n→ **[Browse Context Packs](https://afrexai-cto.github.io/context-packs/)**\n\n**Free tools:** [AI Revenue Calculator](https://afrexai-cto.github.io/ai-revenue-calculator/) | [Agent Setup Wizard](https://afrexai-cto.github.io/agent-setup/)\n\n*Built by [AfrexAI](https://afrexai-cto.github.io/context-packs/) 🖤💛*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ai_humanizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-humanizer/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_self-xyz",
+  "description": "Integrate Self (self.xyz) — a privacy-first identity protocol using zero-knowledge proofs to verify passports and ID cards. Use when the user mentions Self protocol, Self identity, self.xyz, passport verification, zero-knowledge identity verification, SelfAppBuilder, SelfBackendVerifier, SelfVerificationRoot, or wants to add privacy-preserving KYC, age verification, nationality checks, OFAC screening, or Sybil resistance using real-world identity documents. Covers frontend QR code integration, backend proof verification, and on-chain smart contract verification on Celo.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Self Protocol Integration\n\nSelf lets users prove identity attributes (age, nationality, humanity) from passports/ID cards using zero-knowledge proofs — no personal data exposed. Users scan their document's NFC chip in the Self mobile app and share a zk proof with your app."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start (Next.js Off-Chain)] ### 1. Install\n\n```bash\nnpm install @selfxyz/qrcode @selfxyz/core\n```\n\n### 2. Frontend — QR Code Component\n\n```tsx\n\"use client\";\nimport { SelfQRcodeWrapper, SelfAppBuilder } from \"@selfxyz/qrcode\";\n\nexport default function VerifyIdentity({ userId }: { userId: string }) {\n  const selfApp = new SelfAppBuilder({\n    appName: \"My App\",\n    scope: \"my-app-scope\",\n    endpoint: \"https://yourapp.com/api/verify\",\n    endpointType: \"https\",\n    userId,\n    userIdType: \"hex\",\n    disclosures: {\n      minimumAge: 18,\n    },\n  }).build();\n\n  return (\n    <SelfQRcodeWrapper\n      selfApp={selfApp}\n      onSuccess={() => console.log(\"Verified\")}\n      type=\"websocket\"\n      darkMode={false}\n    />\n  );\n}\n```\n\n### 3. Backend — Verification Endpoint\n\n```ts\n// app/api/verify/route.ts\nimport { SelfBackendVerifier, DefaultConfigStore } from \"@selfxyz/core\";\n\nexport async function POST(req: Request) {\n  const { proof, publicSignals } = await req.json();\n\n  const verifier = new SelfBackendVerifier(\n    \"my-app-scope\",                    // must match frontend scope\n    \"https://yourapp.com/api/verify\",  // must match frontend endpoint\n    true,                              // true = accept mock passports (dev only)\n    null,                              // allowedIds (null = all)\n    new DefaultConfigStore({           // must match frontend disclosures\n      minimumAge: 18,\n    })\n  );\n\n  const result = await verifier.verify(proof, publicSignals);\n\n  return Response.json({\n    verified: result.isValid,\n    nationality: result.credentialSubject?.nationality,\n  });\n}\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Integration Patterns] | Pattern | When to Use | `endpoint` | `endpointType` |\n|---------|------------|------------|----------------|\n| **Off-chain** (backend) | Web apps, APIs, most cases | Your API URL | `\"https\"` or `\"https-staging\"` |\n| **On-chain** (contract) | DeFi, token gating, airdrops | Contract address (lowercase) | `\"celo\"` or `\"celo-staging\"` |\n| **Deep linking** | Mobile-first flows | Your API URL | `\"https\"` |\n\n- **Off-chain**: Fastest to implement. Proof sent to your backend, verified server-side.\n- **On-chain**: Proof verified by Celo smart contract. Inherit `SelfVerificationRoot`. Use for trustless/permissionless scenarios.\n- **Deep linking**: For mobile users — opens Self app directly instead of QR scan. See `references/frontend.md`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Critical Gotchas] 1. **Config matching is mandatory** — Frontend `disclosures` must EXACTLY match backend/contract verification config. Mismatched age thresholds, country lists, or OFAC settings cause silent failures.\n\n2. **Contract addresses must be lowercase** — Non-checksum format in frontend `endpoint`. Use `.toLowerCase()`.\n\n3. **Country codes are ISO 3-letter** — e.g., `\"USA\"`, `\"IRN\"`, `\"PRK\"`. Max 40 countries in exclusion lists.\n\n4. **Mock passports = testnet only** — Set `mockPassport: true` in backend / use `\"celo-staging\"` endpoint type. Real passports require mainnet. To create a mock passport: open Self app, tap the Passport button **5 times**. Mock testing requires OFAC disabled.\n\n5. **Version requirement** — `@selfxyz/core` >= 1.1.0-beta.1.\n\n6. **Attestation IDs** — `1` = Passport, `2` = Biometric ID Card. Must explicitly allow via `allowedIds` map.\n\n7. **Scope uniqueness** — On-chain, scope is Poseidon-hashed with contract address, preventing cross-contract proof replay.\n\n8. **Endpoint must be publicly accessible** — Self app sends proof directly to your endpoint. Use ngrok for local development.\n\n9. **Common errors**: `ScopeMismatch` = scope/address mismatch or non-lowercase address. `Invalid 'to' Address` = wrong `endpointType` (celo vs https). `InvalidIdentityCommitmentRoot` = real passport on testnet (use mainnet). `Invalid Config ID` = mock passport on mainnet (use testnet)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Deployed Contracts (Celo)] | Network | Address |\n|---------|---------|\n| **Mainnet** Hub V2 | `0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF` |\n| **Sepolia** Hub V2 | `0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74` |\n| **Sepolia Staging** Hub V2 | `0x68c931C9a534D37aa78094877F46fE46a49F1A51` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[References] Load these for deeper integration details:\n\n- **`references/frontend.md`** — `SelfAppBuilder` full config, `SelfQRcodeWrapper` props, deep linking with `getUniversalLink`, disclosure options\n- **`references/backend.md`** — `SelfBackendVerifier` constructor details, `DefaultConfigStore` vs `InMemoryConfigStore`, verification result schema, dynamic configs\n- **`references/contracts.md`** — `SelfVerificationRoot` inheritance pattern, Hub V2 interaction, `setVerificationConfigV2`, `customVerificationHook`, `getConfigId`, `userDefinedData` patterns"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "self_xyz"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xturboblitz/self-xyz/SKILL.md"
+}

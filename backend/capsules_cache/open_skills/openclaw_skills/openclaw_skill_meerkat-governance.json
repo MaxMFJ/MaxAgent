@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_meerkat-governance",
+  "description": "AI governance API with two endpoints. Shield scans untrusted content for prompt injection and threats. Verify checks AI output for hallucinations, numerical errors, and manipulation against source data. Returns structured results with trust scores and remediation guidance. Full audit trail.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Meerkat Governance\n\nScope: This skill provides two API endpoints your agent can call. It does not auto-activate, does not run in the background, and does not access content unless explicitly called by the agent. The developer controls what content is sent to Meerkat.\n\nPrivacy and data handling: https://meerkatplatform.com/privacy\nMeerkat processes content in memory and discards it after the response. Only trust scores and metadata are stored. No raw content is retained. No data is shared with third parties. All processing stays in Canada.\n\nSecurity: Your API key authenticates requests to Meerkat's API. Rotate keys via the dashboard if compromised. All communication is TLS 1.2+ encrypted. Meerkat endpoints are hosted on Azure Container Apps with managed SSL certificates. Verify the endpoint hostname (api.meerkatplatform.com) matches the TLS certificate before sending data."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Ingress Shield] The `/v1/shield` endpoint scans content for prompt injection, jailbreaks, data exfiltration, and social engineering. The agent can call this before processing content the developer designates as untrusted. Common examples include external emails, web-scraped content, and user-uploaded documents. Developers can optionally configure their agent to shield skill descriptions before installation.\n\n```bash\ncurl -s -X POST https://api.meerkatplatform.com/v1/shield \\\n  -H \"Authorization: Bearer $MEERKAT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d \"{\\\"input\\\": \\\"<THE_CONTENT>\\\"}\"\n```\n\n**Response fields:**\n- `safe` (boolean): Whether the content passed scanning\n- `threat_level`: `NONE`, `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`\n- `attack_type`: Category of detected threat (if any)\n- `detail`: Human-readable description\n- `sanitized_input`: Content with threats removed (when available)\n- `audit_id`: Unique identifier for the audit record\n\nThe agent can use the response to decide how to proceed. For example, content flagged `HIGH` or `CRITICAL` could be blocked, while `MEDIUM` could prompt user confirmation. If `sanitized_input` is returned, the agent can use the cleaned version."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Egress Verify] The `/v1/verify` endpoint checks AI-generated output against source data using up to five ML checks: entailment (DeBERTa NLI), numerical verification, semantic entropy, implicit preference detection, and claim extraction.\n\n```bash\ncurl -s -X POST https://api.meerkatplatform.com/v1/verify \\\n  -H \"Authorization: Bearer $MEERKAT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d \"{\\\"input\\\": \\\"<USER_REQUEST>\\\", \\\"output\\\": \\\"<AI_OUTPUT>\\\", \\\"context\\\": \\\"<SOURCE_DATA>\\\", \\\"domain\\\": \\\"<DOMAIN>\\\"}\"\n```\n\nThe `domain` field applies domain-specific rules. Supported values: `healthcare`, `financial`, `legal`, `general`.\n\n**Response fields:**\n- `trust_score` (0-100): Weighted composite score across all checks\n- `status`: `PASS` or `FLAG` (severity communicated via `trust_score` and `remediation.severity`)\n- `checks`: Per-check scores, flags, and details\n- `remediation`: Corrections and agent instructions (when status is not `PASS`)\n- `audit_id`: Unique identifier for the audit record\n- `session_id`: Session identifier for linking retry attempts\n\nThe agent can use the status and trust score to decide whether to proceed. When `remediation` is present, the `agent_instruction` field contains guidance for self-correction, and `corrections` lists specific errors (e.g., found value vs expected value). The agent can regenerate output with corrections applied and resubmit using the same `session_id` to link attempts."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Observation Mode] When no `context` field is provided, Meerkat runs in observation mode: it checks semantic entropy and implicit preference but skips source-grounded checks. The `context_mode` field in the response will be `observation`. This is useful for checking open-ended generation where no source document exists."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Audit Trail] Every shield and verify call is logged with an audit ID. The `/v1/audit/<audit_id>` endpoint retrieves the full record. Add `?include_session=true` to see all linked attempts in a retry session.\n\n```bash\ncurl -s https://api.meerkatplatform.com/v1/audit/<audit_id> \\\n  -H \"Authorization: Bearer $MEERKAT_API_KEY\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Setup] 1. Get a free API key at https://meerkatplatform.com (10,000 verifications/month, no credit card)\n2. Set the environment variable: `MEERKAT_API_KEY=mk_live_your_key_here`\n3. The developer controls which content is sent to Meerkat through their agent configuration. The agent calls the shield endpoint before processing untrusted external content, and the verify endpoint before executing high-impact actions."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Detection Capabilities] See https://meerkatplatform.com/docs for example payloads and response formats.\n\n**Ingress** detects: prompt injection, indirect injection, data exfiltration attempts, jailbreak and role-hijacking patterns, credential harvesting, and social engineering.\n\n**Egress** detects: hallucinated facts, numerical distortions (medication doses, financial figures, legal terms), fabricated entities and citations, confident confabulation, bias and implicit preference, and ungrounded numbers."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Usage Headers] Every API response includes usage headers:\n- `X-Meerkat-Usage`: Current verification count\n- `X-Meerkat-Limit`: Monthly limit (or \"unlimited\")\n- `X-Meerkat-Remaining`: Verifications remaining\n- `X-Meerkat-Warning`: Warning when approaching limit (80%+)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Privacy] Meerkat processes content for security scanning only. Content is not stored beyond the audit trail retention period. Your API key is scoped to your organization. See https://meerkatplatform.com/privacy for details."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "meerkat_governance"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔒",
+        "requires": {
+          "env": [
+            "MEERKAT_API_KEY"
+          ]
+        },
+        "tags": [
+          "security",
+          "governance",
+          "safety"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/7789996399/meerkat-governance/SKILL.md"
+}

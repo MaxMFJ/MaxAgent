@@ -1,0 +1,100 @@
+{
+  "id": "openclaw_skill_isnad-scan",
+  "description": "Scan AI agent skills for security vulnerabilities — detects code injection, prompt injection, credential exfiltration, supply chain attacks, and 69+ threat patterns. Use when installing new skills, auditing existing ones, reviewing untrusted code, or validating packages before publishing.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # isnad-scan — Security Scanner for AI Agent Skills\n\nScan any skill, package, or directory for security threats before installing or running it."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Scan] ```bash\nisnad-scan <path>\n```\n\nScans a directory and reports findings by severity (CRITICAL, HIGH, MEDIUM, LOW)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Options] ```bash\nisnad-scan <path> --cve          # Also check dependencies for known CVEs (via OSV.dev)\nisnad-scan <path> -v             # Verbose output (show matched lines)\nisnad-scan <path> --json         # Machine-readable JSON output\nisnad-scan <path> --cve -v       # Full audit: CVEs + verbose findings\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[What It Detects (69+ patterns)] **Code Injection** — shell execution, eval, exec, subprocess, os.system, dynamic imports\n**Prompt Injection** — role override attempts, instruction hijacking, jailbreak patterns\n**Credential Exfiltration** — env var harvesting, keychain access, token theft, file reads of sensitive paths\n**Network Threats** — reverse shells, DNS exfiltration, unauthorized outbound connections, webhook data leaks\n**Filesystem Attacks** — path traversal, symlink attacks, /etc/passwd reads, SSH key access\n**Supply Chain** — typosquatting detection, minified JS analysis, binary file scanning, hidden files\n**Crypto Risks** — weak algorithms, hardcoded keys, wallet seed extraction"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[When to Use] 1. **Before installing a new skill** — scan the skill directory first\n2. **Auditing existing skills** — periodic security review\n3. **Reviewing PRs/contributions** — catch malicious code in submissions\n4. **Pre-publish validation** — ensure your own skills are clean before sharing\n5. **CI/CD integration** — `isnad-scan . --json` for automated checks"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Interpreting Results] ```\n🔴 CRITICAL  — Immediate threat. Do not install/run.\n🟠 HIGH      — Likely malicious or dangerous. Review carefully.\n🟡 MEDIUM    — Suspicious pattern. May be legitimate, verify intent.\n🔵 LOW       — Informational. Common in legitimate code but worth noting.\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Examples] Scan a ClawHub skill before installing:\n```bash\nisnad-scan ./skills/some-new-skill/\n```\n\nFull audit with CVE checking:\n```bash\nisnad-scan ./skills/some-new-skill/ --cve -v\n```\n\nJSON output for automation:\n```bash\nisnad-scan . --json | python3 -c \"import sys,json; d=json.load(sys.stdin); print(f'{d[\\\"summary\\\"][\\\"critical\\\"]} critical, {d[\\\"summary\\\"][\\\"high\\\"]} high')\"\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Python API] ```python\nfrom isnad_scan import scan_directory\n\nresults = scan_directory(\"/path/to/skill\")\nfor finding in results.findings:\n    print(f\"[{finding.severity}] {finding.category}: {finding.description}\")\n    print(f\"  File: {finding.file}:{finding.line}\")\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[About ISNAD] ISNAD (إسناد) means \"chain of transmission\" — a method for verifying the authenticity of transmitted knowledge. isnad-scan is the security layer of the [ISNAD Protocol](https://isnad.md), bringing trust verification to the AI agent skill ecosystem.\n\n**PyPI:** `pip install isnad-scan`\n**GitHub:** [counterspec/isnad](https://github.com/counterspec/isnad)\n**Protocol:** [isnad.md](https://isnad.md)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "isnad_scan"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🛡️",
+        "requires": {
+          "bins": [
+            "isnad-scan"
+          ]
+        },
+        "primaryEnv": null,
+        "install": [
+          {
+            "id": "isnad-scan-pip",
+            "kind": "pipx",
+            "package": "isnad-scan",
+            "bins": [
+              "isnad-scan"
+            ],
+            "label": "Install isnad-scan (pipx)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrapi/isnad-scan/SKILL.md"
+}

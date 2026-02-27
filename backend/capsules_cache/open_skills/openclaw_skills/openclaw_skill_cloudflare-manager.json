@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_cloudflare-manager",
+  "description": "Manage Cloudflare DNS records, Tunnels (cloudflared), and Zero Trust policies. Use for pointing domains, exposing local services via tunnels, and updating ingress rules.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Cloudflare Manager\n\nStandardized system for managing Cloudflare infrastructure and local tunnel ingress."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - **Binary**: `python3` and `cloudflared` must be installed.\n- **Credentials**: `CLOUDFLARE_API_TOKEN` (minimal Zone permissions) and `CLOUDFLARE_ZONE_ID`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] 1. Define credentials in the environment or a local `.env` file.\n2. Initialize the local environment: `bash scripts/install.sh`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Workflows] ### 1. DNS Management\nAdd, list, or delete DNS records via Cloudflare API.\n- **List**: `python3 $WORKSPACE/skills/cloudflare-manager/scripts/cf_manager.py list-dns`\n- **Add**: `python3 $WORKSPACE/skills/cloudflare-manager/scripts/cf_manager.py add-dns --type A --name <subdomain> --content <ip>`\n\n### 2. Tunnel Ingress (Local)\nUpdate `/etc/cloudflared/config.yml` and restart the tunnel service.\n- **Update**: `python3 $WORKSPACE/skills/cloudflare-manager/scripts/cf_manager.py update-ingress --hostname <host> --service <url>`\n- **Safety**: Use `--dry-run` to preview configuration changes before application."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security & Permissions] - **Sudo Usage**: The `update-ingress` command requires `sudo` to write to system directories and restart the `cloudflared` service.\n- **Least Privilege**: Configure restricted sudo access using the pattern in `references/sudoers.example`.\n- **Token Isolation**: Ensure API tokens are scoped narrowly to specific zones and permissions."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Reference] - **Sudoers Pattern**: See [references/sudoers.example](references/sudoers.example).\n- **Tunnel Logic**: See [references/tunnel-guide.md](references/tunnel-guide.md)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cloudflare_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3",
+            "cloudflared"
+          ],
+          "env": [
+            "CLOUDFLARE_API_TOKEN",
+            "CLOUDFLARE_ZONE_ID"
+          ]
+        },
+        "install": [
+          {
+            "id": "cf-setup",
+            "kind": "exec",
+            "command": "bash scripts/install.sh"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/cloudflare-manager/SKILL.md"
+}

@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_bnbchain-mcp",
+  "description": "Interact with the BNB Chain Model Context Protocol (MCP) server. Use to query DeFi data, get token prices, search documentation, fetch git diffs, and retrieve smart contract source code on BNB Chain.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # BNB Chain MCP Skill\n\nThis skill allows you to interact with the BNB Chain MCP server to retrieve data about BNB Chain."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[How to Use] The BNB Chain MCP server runs locally. You interact with it using the `mcp-client` script bundled with this skill.\n\n### Commands\n\nRun the client script to execute tools:\n\n```bash\npython3 skills/bnbchain-mcp/scripts/mcp-client.py <tool_name> [arguments]\n```\n\nTo list available tools:\n\n```bash\npython3 skills/bnbchain-mcp/scripts/mcp-client.py list_tools\n```\n\n### Available Tools\n\nCurrently supported tools in `bnbchain-mcp`:\n\n- **get_token_price**: Get token price in USD. `args: {\"symbol\": \"BNB\"}`\n- **get_defi_rates**: Get lending/borrowing rates for protocol. `args: {\"protocol\": \"venus\"}`\n- **search_documentation**: Search official docs. `args: {\"query\": \"validators\"}`\n- **get_recent_git_diffs**: Get recent git diffs for a repo. `args: {\"repo_name\": \"bnb-chain/bsc\"}`\n- **get_smart_contract_source**: Get source code for a contract. `args: {\"contract_address\": \"0x...\"}`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] The MCP server must be running for this skill to work.\n\nIf the server is not running, start it (this is usually handled by the MCP/OpenClaw infrastructure, but good to know):\n`uv run bnbchain-mcp` (requires `uv` and `bnbchain-mcp` package installed)."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Examples] **Get the price of BNB:**\n```bash\npython3 skills/bnbchain-mcp/scripts/mcp-client.py get_token_price --args '{\"symbol\": \"BNB\"}'\n```\n\n**Search documentation:**\n```bash\npython3 skills/bnbchain-mcp/scripts/mcp-client.py search_documentation --args '{\"query\": \"staking\"}'\n```"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "bnbchain_mcp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xlucasliao/bnbchain-mcp/SKILL.md"
+}

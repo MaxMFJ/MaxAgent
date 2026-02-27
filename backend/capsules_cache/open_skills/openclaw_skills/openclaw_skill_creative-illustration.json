@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_creative-illustration",
+  "description": "Generate diverse creative illustrations via OpenAI Images API. Create book illustrations, editorial art, children's book art, concept illustrations, and artistic scenes. Use when user needs creative visual content for stories, articles, presentations, or artistic projects (e.g., \"illustrate a fairy tale scene\", \"create editorial art about technology\", \"design children's book illustrations\", \"generate concept art for a story\").",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Creative Illustration Factory\n\nGenerate professional illustrations for books, editorial content, children's stories, and creative projects."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] - Needs env: `OPENAI_API_KEY`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] Generate a simple illustration:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"a cozy cottage in an enchanted forest\"\n```\n\nGenerate with specific style:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"a robot learning to paint\" \\\n  --style \"watercolor\" \\\n  --mood \"whimsical\"\n```\n\nGenerate a story sequence:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"Alice discovers a tiny door\" \\\n  --subject \"Alice shrinks down\" \\\n  --subject \"Alice enters Wonderland\" \\\n  --style \"whimsical illustration\" \\\n  --mood \"magical\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Illustration Types] ### Book Illustrations\n- `chapter-opener` - Full-page chapter opening scene\n- `character-intro` - Character introduction portrait\n- `landscape-scene` - Wide landscape establishing shot\n- `action-moment` - Dynamic action or pivotal moment\n- `emotional-scene` - Emotional or dramatic scene\n- `cover-art` - Book cover illustration style\n\n### Editorial / Magazine Art\n- `conceptual-art` - Abstract conceptual illustration\n- `info-graphic` - Informational illustration style\n- `portrait-editorial` - Editorial portrait\n- `spot-illustration` - Small spot illustration\n- `full-page-spread` - Magazine full-page spread\n\n### Children's Book Art\n- `picture-book` - Classic picture book illustration\n- `whimsical` - Playful and imaginative style\n- `educational` - Educational book illustration\n- `bedtime-story` - Soft, calming bedtime story art\n- `adventure-map` - Adventure map or treasure map\n\n### Concept Art\n- `environment-concept` - Environmental concept art\n- `character-concept` - Character design concept\n- `prop-concept` - Object or prop design\n- `storyboard` - Storyboard panel style\n- `mood-board` - Mood board aesthetic"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Styles] ### Traditional Media\n- `watercolor` - Watercolor painting with soft edges\n- `oil-painting` - Rich oil painting texture\n- `charcoal-sketch` - Charcoal drawing style\n- `ink-wash` - Ink wash / sumi-e style\n- `pastel` - Soft pastel drawing\n- `colored-pencil` - Colored pencil illustration\n- `gouache` - Gouache opaque watercolor\n- `acrylic` - Acrylic painting style\n- `lino-cut` - Linocut printmaking style\n- `woodcut` - Woodcut print aesthetic\n\n### Digital Styles\n- `digital-painting` - Digital painting\n- `vector-illustration` - Clean vector art\n- `flat-design` - Flat design aesthetic\n- `isometric` - Isometric perspective\n- `pixel-art` - Retro pixel art\n- `concept-art` - Game/film concept art style\n- `cel-shaded` - Cel shaded animation style\n- `low-poly` - Low poly 3D aesthetic\n\n### Book & Print Styles\n- `picture-book` - Classic picture book\n- `storybook-illustration` - Vintage storybook art\n- `editorial-illustration` - Magazine editorial\n- `newspaper-engraving` - Newspaper engraving style\n- `poster-art` - Vintage poster design\n- `woodblock-print` - Japanese woodblock print\n- `screen-print` - Screen print aesthetic"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Mood] - `whimsical` - Playful and imaginative\n- `magical` - Magical and enchanting\n- `mysterious` - Mysterious and intriguing\n- `peaceful` - Calm and serene\n- `dramatic` - Dramatic and intense\n- `nostalgic` - Warm and nostalgic\n- `gloomy` - Dark and atmospheric\n- `vibrant` - Bright and energetic\n- `romantic` - Soft and romantic\n- `quirky` - Quirky and eccentric"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Parameters] - `--subject` - Illustration subject/description (repeatable for batch)\n- `--type` - Illustration type (default: illustration)\n- `--style` - Artistic style (default: watercolor)\n- `--mood` - Mood/atmosphere (default: peaceful)\n- `--palette` - Color palette suggestion\n- `--composition` - Composition guidance (e.g., \"wide shot\", \"close-up\")\n- `--count` - Number of variants per subject (default: 1)\n- `--out-dir` - Output directory (default: ~/Projects/tmp/creative-illustration-*)\n- `--size` - Image size: 1024x1024, 1792x1024, 1024x1792 (default: 1024x1024)\n- `--quality` - high/standard (default: high)\n- `--model` - OpenAI image model (default: gpt-image-1.5)\n- `--api-key` - OpenAI API key (or use OPENAI_API_KEY env)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Advanced Examples] Children's book page:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"a curious rabbit with a pocket watch\" \\\n  --type \"picture-book\" \\\n  --style \"watercolor\" \\\n  --mood \"whimsical\" \\\n  --palette \"pastel\"\n```\n\nEditorial concept art:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"AI and humanity working together\" \\\n  --type \"conceptual-art\" \\\n  --style \"vector-illustration\" \\\n  --mood \"optimistic\" \\\n  --composition \"symbolic\"\n```\n\nStory sequence:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"Hero finds an ancient map\" \\\n  --subject \"Hero deciphers mysterious symbols\" \\\n  --subject \"Hero discovers a hidden passage\" \\\n  --subject \"Hero enters the forgotten temple\" \\\n  --style \"storybook-illustration\" \\\n  --mood \"mysterious\" \\\n  --palette \"earth tones\"\n```\n\nFull custom prompt:\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --prompt \"A magical treehouse library nestled among ancient redwoods, spiral staircase winding up the trunk, lanterns hanging from branches, books floating in mid-air, warm golden light streaming through leaves, detailed watercolor illustration style, whimsical and enchanting\"\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Color Palettes] - `pastel` - Soft pastel colors\n- `earth tones` - Natural browns, greens, golds\n- `vibrant` - Bright saturated colors\n- `muted` - Desaturated, subtle colors\n- `monochrome` - Single color variations\n- `jewel tones` - Rich ruby, emerald, sapphire\n- `autumn` - Orange, red, yellow, brown\n- `winter` - Blue, white, silver, purple\n- `tropical` - Bright greens, teals, pinks\n- `vintage` - Warm sepia, faded tones"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Composition] - `wide shot` - Wide establishing scene\n- `close-up` - Intimate close-up\n- `panoramic` - Panoramic landscape\n- `rule-of-thirds` - Balanced rule of thirds\n- `centered` - Centered subject\n- `diagonal` - Dynamic diagonal composition\n- `triangular` - Triangular composition\n- `circular` - Circular / spiral composition\n- `symmetrical` - Perfectly symmetrical\n- `asymmetrical` - Asymmetrical balance"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Output] - `*.png` - Illustration images\n- `prompts.json` - All prompts used\n- `index.html` - Illustration gallery"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Project Templates] ### Children's Book (4-6 images)\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"Girl finds a magical seed\" \\\n  --subject \"Seed grows into a glowing plant\" \\\n  --subject \"Plant reveals a tiny fairy\" \\\n  --subject \"Fairy shows girl a secret garden\" \\\n  --subject \"Girl shares garden with friends\" \\\n  --type \"picture-book\" \\\n  --style \"watercolor\" \\\n  --mood \"whimsical\"\n```\n\n### Magazine Editorial (1-2 images)\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"The future of sustainable cities\" \\\n  --type \"conceptual-art\" \\\n  --style \"vector-illustration\" \\\n  --mood \"optimistic\" \\\n  --count 2\n```\n\n### Fantasy Story Chapter Opener (1 image)\n\n```bash\npython3 ~/Projects/agent-scripts/skills/creative-illustration/scripts/illustrate.py \\\n  --subject \"The dragon's treasure hoard under ancient runes\" \\\n  --type \"chapter-opener\" \\\n  --style \"oil-painting\" \\\n  --mood \"dramatic\" \\\n  --palette \"jewel tones\"\n```"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "creative_illustration"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adebayoabdushaheed-a11y/afame/SKILL.md"
+}

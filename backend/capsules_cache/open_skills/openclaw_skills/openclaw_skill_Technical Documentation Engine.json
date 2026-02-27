@@ -1,0 +1,349 @@
+{
+  "id": "openclaw_skill_Technical Documentation Engine",
+  "description": "Complete technical documentation system — from planning through maintenance. Covers READMEs, API docs, guides, architecture docs, runbooks, and developer portals. Includes templates, quality scoring, and automation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Technical Documentation Engine\n\nYou are a technical documentation expert. You create, review, and maintain documentation that developers actually read and trust. Every document has a purpose, an audience, and a shelf life."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Phase 1 — Documentation Audit] Before writing anything, assess what exists.\n\n### Audit Checklist\n\nRun through the codebase or project and score each area (0-3):\n- 0 = Missing entirely\n- 1 = Exists but outdated/wrong\n- 2 = Exists, mostly correct, gaps\n- 3 = Complete, current, useful\n\n```yaml\naudit:\n  project: \"[name]\"\n  date: \"YYYY-MM-DD\"\n  scores:\n    readme: 0  # Root README with install + quickstart\n    getting_started: 0  # Tutorial for first-time users\n    api_reference: 0  # Every endpoint/function documented\n    architecture: 0  # System design, data flow, decisions\n    guides: 0  # Task-oriented how-tos\n    runbooks: 0  # Operational procedures\n    contributing: 0  # Dev setup, PR process, style guide\n    changelog: 0  # Version history with migration notes\n    troubleshooting: 0  # Common errors and solutions\n    deployment: 0  # How to deploy, environments, config\n  total: 0  # out of 30\n  grade: \"F\"  # A(27-30) B(22-26) C(17-21) D(12-16) F(<12)\n  priority_gaps:\n    - \"[highest impact missing doc]\"\n    - \"[second priority]\"\n    - \"[third priority]\"\n  estimated_effort: \"[hours to reach grade B]\"\n```\n\n### Priority Rules\n\n1. README always first — it's the front door\n2. Getting Started second — converts visitors to users\n3. API Reference third — retains users\n4. Everything else based on team pain points"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 2 — Document Types & Templates] ### 2.1 README Template\n\n```markdown\n# [Project Name]\n\n[One sentence: what it does and who it's for.]\n\n[Optional: badge row — max 4 badges: build, coverage, version, license]"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] \\`\\`\\`bash\n# Install\n[single copy-paste command]\n\n# Run\n[minimal command to see it work]\n\\`\\`\\`\n\nExpected output:\n\\`\\`\\`\n[what they should see]\n\\`\\`\\`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[What It Does] [3-5 bullet points of key capabilities. Not features — outcomes.]\n\n- [Outcome 1 — what problem it solves]\n- [Outcome 2]\n- [Outcome 3]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Installation] ### Prerequisites\n- [Runtime] v[X]+ \n- [Dependency] (optional, for [feature])\n\n### Install\n\\`\\`\\`bash\n[package manager install command with pinned version]\n\\`\\`\\`\n\n### Configuration\n\\`\\`\\`bash\n# Required\nexport API_KEY=\"your-key\"  # Get one at [URL]\n\n# Optional\nexport LOG_LEVEL=\"info\"    # debug | info | warn | error\n\\`\\`\\`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Usage] ### [Primary Use Case]\n\\`\\`\\`[language]\n[Complete, runnable example — imports through output]\n\\`\\`\\`\n\n### [Secondary Use Case]\n\\`\\`\\`[language]\n[Another complete example]\n\\`\\`\\`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Documentation] - [Getting Started Guide](docs/getting-started.md)\n- [API Reference](docs/api.md)\n- [Configuration](docs/config.md)\n- [Troubleshooting](docs/troubleshooting.md)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Contributing] See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and PR guidelines."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[License] [License type] — see [LICENSE](LICENSE)\n```\n\n### 2.2 Getting Started Guide Template\n\n```markdown\n# Getting Started with [Project]\n\nThis guide walks you through [what they'll accomplish] in about [X] minutes."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Prerequisites] Before starting, you need:\n- [ ] [Requirement 1] — [how to check: `command --version`]\n- [ ] [Requirement 2] — [where to get it]\n- [ ] [Account/API key] — [signup URL]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Step 1: [First Action]] [Why this step matters — one sentence.]\n\n\\`\\`\\`bash\n[exact command]\n\\`\\`\\`\n\nYou should see:\n\\`\\`\\`\n[expected output]\n\\`\\`\\`\n\n> **Troubleshooting:** If you see `[common error]`, [fix]."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Step 2: [Second Action]] [Context sentence.]\n\n\\`\\`\\`bash\n[command]\n\\`\\`\\`\n\n[Explain what happened and what to notice.]"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Step 3: [Third Action]] [Continue pattern...]"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[What You Built] You now have [concrete outcome]. Here's what's running:\n\n\\`\\`\\`\n[diagram or description of what they set up]\n\\`\\`\\`"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Next Steps] - [Immediate next thing to try](link)\n- [Deeper topic to explore](link)\n- [Reference docs for everything](link)"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Common Issues] | Symptom | Cause | Fix |\n|---------|-------|-----|\n| `[error message]` | [why it happens] | [what to do] |\n| [behavior] | [cause] | [fix] |\n```\n\n### 2.3 API Reference Template\n\nFor each endpoint or function:\n\n```markdown"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[`[METHOD] /[path]` — [Short Description]] [One sentence explaining what this does and when to use it.]\n\n**Authentication:** [type] required  \n**Rate Limit:** [X] requests per [period]  \n**Idempotent:** Yes/No\n\n### Parameters\n\n| Name | Location | Type | Required | Default | Description |\n|------|----------|------|----------|---------|-------------|\n| `id` | path | string | ✅ | — | [what it identifies] |\n| `limit` | query | integer | — | 20 | [what it controls, valid range] |\n| `filter` | query | string | — | — | [format, allowed values] |\n\n### Request Body\n\n\\`\\`\\`json\n{\n  \"name\": \"Example\",       // Required. [constraints]\n  \"email\": \"a@b.com\",      // Required. Must be valid email.\n  \"settings\": {            // Optional. Defaults shown.\n    \"notify\": true,\n    \"timezone\": \"UTC\"      // IANA timezone string\n  }\n}\n\\`\\`\\`\n\n### Response — `200 OK`\n\n\\`\\`\\`json\n{\n  \"id\": \"usr_abc123\",\n  \"name\": \"Example\",\n  \"email\": \"a@b.com\",\n  \"created_at\": \"2025-01-15T10:30:00Z\",\n  \"settings\": {\n    \"notify\": true,\n    \"timezone\": \"UTC\"\n  }\n}\n\\`\\`\\`\n\n### Error Responses\n\n| Status | Code | Description | Fix |\n|--------|------|-------------|-----|\n| 400 | `invalid_email` | Email format invalid | Check email format |\n| 404 | `not_found` | Resource doesn't exist | Verify ID |\n| 409 | `duplicate` | Email already registered | Use different email or update existing |\n| 429 | `rate_limited` | Too many requests | Wait [X] seconds, implement backoff |\n\n### Example\n\n\\`\\`\\`bash\ncurl -X POST https://api.example.com/v1/users \\\n  -H \"Authorization: Bearer $TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\"\n  }'\n\\`\\`\\`\n\n### Notes\n\n- [Edge case or important behavior]\n- [Pagination details if applicable]\n- [Side effects: \"Also sends welcome email\"]\n```\n\n### 2.4 Architecture Document Template\n\n```markdown\n# [System/Feature] Architecture\n\n**Status:** [Draft | Proposed | Accepted | Superseded by [link]]  \n**Author:** [name]  \n**Date:** YYYY-MM-DD  \n**Reviewers:** [names]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Context] [Why does this document exist? What problem or decision prompted it?]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Requirements] ### Must Have\n- [Requirement with measurable criteria]\n- [e.g., \"Handle 10K requests/second with p99 < 200ms\"]\n\n### Nice to Have\n- [Non-critical requirements]\n\n### Non-Goals\n- [Explicitly out of scope — prevents scope creep]"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Architecture Overview] \\`\\`\\`\n[ASCII diagram of components and data flow]\n\n┌──────────┐     ┌──────────┐     ┌──────────┐\n│  Client  │────▶│   API    │────▶│    DB    │\n└──────────┘     │ Gateway  │     └──────────┘\n                 └────┬─────┘\n                      │\n                 ┌────▼─────┐\n                 │  Queue   │\n                 └──────────┘\n\\`\\`\\`"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Components] ### [Component 1]\n- **Purpose:** [what it does]\n- **Technology:** [stack choices]\n- **Scaling:** [how it handles load]\n- **Data:** [what it stores/processes]\n\n### [Component 2]\n[Same structure...]"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Data Flow] 1. [Step 1: what happens first]\n2. [Step 2: where data goes next]\n3. [Step 3: processing/storage]\n4. [Step 4: response path]"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Key Decisions] ### Decision 1: [Choice Made]\n- **Options considered:** [A, B, C]\n- **Chosen:** [B]\n- **Rationale:** [why — performance? simplicity? team expertise?]\n- **Trade-offs:** [what we gave up]\n- **Revisit when:** [conditions that would change this decision]\n\n### Decision 2: [Choice Made]\n[Same structure...]"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Failure Modes] | Failure | Impact | Detection | Recovery |\n|---------|--------|-----------|----------|\n| [DB down] | [partial outage] | [health check] | [failover to replica] |\n| [Queue full] | [delayed processing] | [queue depth alert] | [auto-scale consumers] |"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Security Considerations] - [Authentication approach]\n- [Data encryption (at rest, in transit)]\n- [Access control model]\n- [Sensitive data handling]"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[Operational Concerns] - **Monitoring:** [key metrics to watch]\n- **Alerts:** [what triggers pages]\n- **Deployment:** [rollout strategy]\n- **Rollback:** [how to revert]"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[Future Considerations] - [Known limitations that will need addressing]\n- [Scaling bottleneck predictions]\n- [Migration paths if assumptions change]\n```\n\n### 2.5 Runbook Template\n\n```markdown\n# Runbook: [Procedure Name]\n\n**Severity:** P[0-3]  \n**Estimated Time:** [X] minutes  \n**Last Tested:** YYYY-MM-DD  \n**Owner:** [team/person]"
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[When to Use] [Trigger condition — what alert/symptom/request initiates this.]"
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Prerequisites] - [ ] Access to [system/dashboard]\n- [ ] [Tool] installed: `which [tool]`\n- [ ] Permissions: [what role/access needed]"
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[Steps] ### 1. Assess\n\n\\`\\`\\`bash\n# Check current state\n[diagnostic command]\n\\`\\`\\`\n\n**Expected:** [what healthy looks like]  \n**If unhealthy:** [what you'll see instead]\n\n### 2. Mitigate\n\n\\`\\`\\`bash\n# Immediate action to reduce impact\n[mitigation command]\n\\`\\`\\`\n\n**Verify mitigation:**\n\\`\\`\\`bash\n[verification command]\n\\`\\`\\`\n\n### 3. Fix\n\n\\`\\`\\`bash\n# Root cause fix\n[fix command]\n\\`\\`\\`\n\n### 4. Verify\n\n\\`\\`\\`bash\n# Confirm resolution\n[check command]\n\\`\\`\\`\n\n**Success criteria:**\n- [ ] [Metric] returned to normal\n- [ ] [Service] responding\n- [ ] [Alert] cleared\n\n### 5. Post-Incident\n\n- [ ] Update incident channel with resolution\n- [ ] Schedule post-mortem if P0/P1\n- [ ] File ticket for permanent fix if this was a workaround\n- [ ] Update this runbook if steps changed"
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[Escalation] | Condition | Escalate To | How |\n|-----------|-------------|-----|\n| [Step 2 doesn't work after X min] | [team] | [channel/page] |\n| [Data loss suspected] | [team + management] | [channel] |"
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[Rollback] If the fix makes things worse:\n\n\\`\\`\\`bash\n[rollback command]\n\\`\\`\\`"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[History] | Date | Who | What | Outcome |\n|------|-----|------|---------|\n| YYYY-MM-DD | [name] | [what happened] | [resolved/escalated] |\n```\n\n### 2.6 CONTRIBUTING.md Template\n\n```markdown\n# Contributing to [Project]"
+    },
+    {
+      "id": "step_34",
+      "type": "subtask",
+      "description": "[Development Setup] \\`\\`\\`bash\n# Clone and install\ngit clone [repo-url]\ncd [project]\n[install dependencies command]\n\n# Verify setup\n[test command]\n\\`\\`\\`\n\n**Expected:** [X] tests pass, [Y] seconds."
+    },
+    {
+      "id": "step_35",
+      "type": "subtask",
+      "description": "[Making Changes] 1. Create a branch: `git checkout -b [type]/[description]`\n   - Types: `feat`, `fix`, `docs`, `refactor`, `test`\n2. Make your changes\n3. Run tests: `[test command]`\n4. Run linter: `[lint command]`\n5. Commit using conventional commits:\n   \\`\\`\\`\n   feat(scope): add user search endpoint\n   fix(auth): handle expired refresh tokens\n   docs: update API rate limit section\n   \\`\\`\\`"
+    },
+    {
+      "id": "step_36",
+      "type": "subtask",
+      "description": "[Pull Request Process] 1. Fill out the PR template completely\n2. Ensure CI passes (tests + lint + build)\n3. Request review from [team/person]\n4. Address feedback — don't force-push during review\n5. Squash merge when approved"
+    },
+    {
+      "id": "step_37",
+      "type": "subtask",
+      "description": "[Code Style] - [Link to style guide or key rules]\n- [Formatting tool]: runs automatically on commit\n- [Naming conventions]\n- [File organization rules]"
+    },
+    {
+      "id": "step_38",
+      "type": "subtask",
+      "description": "[Testing] - Unit tests for all new functions\n- Integration tests for API endpoints\n- Test file naming: `[file].test.[ext]`\n- Minimum coverage: [X]%"
+    },
+    {
+      "id": "step_39",
+      "type": "subtask",
+      "description": "[Architecture Decisions] Significant design changes need an ADR (Architecture Decision Record).\nTemplate: `docs/adr/template.md`"
+    },
+    {
+      "id": "step_40",
+      "type": "subtask",
+      "description": "[Getting Help] - Questions: [channel/forum]\n- Bugs: [issue tracker]\n- Security: [email — NOT public issues]\n```\n\n### 2.7 Changelog Template\n\n```markdown\n# Changelog\n\nAll notable changes follow [Semantic Versioning](https://semver.org/)."
+    },
+    {
+      "id": "step_41",
+      "type": "subtask",
+      "description": "[[Unreleased]] ### Added\n- [New feature with brief description]\n\n### Changed\n- [Modified behavior — explain what changed and why]\n\n### Deprecated\n- [Feature being removed in future — suggest alternative]\n\n### Fixed\n- [Bug fix — reference issue number]\n\n### Security\n- [Security fix — CVE if applicable]\n\n### Migration\n- [Breaking change — step-by-step migration instructions]\n  \\`\\`\\`bash\n  # Before (v1.x)\n  [old way]\n  \n  # After (v2.x)  \n  [new way]\n  \\`\\`\\`\n```"
+    },
+    {
+      "id": "step_42",
+      "type": "subtask",
+      "description": "[Phase 3 — Writing Standards] ### The 4C Test\n\nEvery document must pass all four:\n\n1. **Correct** — Technically accurate, tested, current\n2. **Complete** — Covers the topic fully for its audience (not exhaustive — just sufficient)\n3. **Clear** — One reading to understand, no ambiguity\n4. **Concise** — No filler, no repetition, shortest path to understanding\n\n### Voice & Style Rules\n\n```yaml\nstyle:\n  voice: \"Active, imperative\"\n  person: \"Second person (you)\"\n  tense: \"Present tense\"\n  sentence_length: \"Max 25 words average\"\n  paragraph_length: \"Max 4 sentences\"\n  \n  do:\n    - \"Run the command\" (imperative)\n    - \"This returns a list\" (active, present)\n    - \"You need Node.js 18+\" (direct)\n    - \"The function throws if input is null\" (specific)\n    \n  dont:\n    - \"The command can be run by...\" (passive)\n    - \"This will return...\" (future tense)\n    - \"The user should...\" (third person)\n    - \"It's important to note that...\" (filler)\n    - \"Basically...\" / \"Simply...\" / \"Just...\" (minimizing)\n    - \"Please...\" (unnecessary politeness in docs)\n\n  formatting:\n    - \"Use code blocks for ALL commands, paths, config values\"\n    - \"Use tables for structured comparisons\"\n    - \"Use admonitions (>, ⚠️, 💡) sparingly — max 2 per page\"\n    - \"Use numbered lists for sequential steps\"\n    - \"Use bullet lists for unordered items\"\n    - \"One topic per heading — if you need two headings, split the page\"\n```\n\n### Audience Calibration\n\nBefore writing, classify your reader:\n\n| Audience | Assumes | Explains | Example Depth |\n|----------|---------|----------|---------------|\n| **Beginner** | Nothing | Everything including concepts | Full walkthrough with output |\n| **Intermediate** | Basic concepts, has used similar tools | Integration, patterns, trade-offs | Focused examples, less hand-holding |\n| **Expert** | Deep understanding, wants reference | Edge cases, performance, internals | Terse, complete, linked |\n| **Operator** | System access, follows procedures | Steps, verification, rollback | Copy-paste commands, ex"
+    },
+    {
+      "id": "step_43",
+      "type": "subtask",
+      "description": "[Phase 4 — Documentation Quality Scoring] ### 100-Point Rubric\n\nScore each document across 8 dimensions:\n\n```yaml\nscoring:\n  accuracy: # 20 points\n    20: \"All technical claims verified, code tested, outputs confirmed\"\n    15: \"Mostly accurate, 1-2 minor inaccuracies\"\n    10: \"Several errors or untested code examples\"\n    5: \"Significant inaccuracies that would mislead users\"\n    0: \"Factually wrong or dangerously incorrect\"\n\n  completeness: # 15 points\n    15: \"Covers all aspects for the stated audience and purpose\"\n    11: \"Minor gaps — edge cases or error scenarios missing\"\n    7: \"Notable omissions — user will need to look elsewhere\"\n    3: \"Covers basics only — many scenarios unaddressed\"\n    0: \"Incomplete to the point of being unhelpful\"\n\n  clarity: # 15 points\n    15: \"Crystal clear on first read, no ambiguity\"\n    11: \"Clear overall, occasional re-reading needed\"\n    7: \"Understandable but dense or jargon-heavy\"\n    3: \"Confusing structure or language\"\n    0: \"Incomprehensible or contradictory\"\n\n  structure: # 15 points\n    15: \"Logical flow, proper hierarchy, easy to navigate and scan\"\n    11: \"Good structure, minor navigation issues\"\n    7: \"Structure exists but doesn't match reading patterns\"\n    3: \"Poorly organized, information scattered\"\n    0: \"No structure — wall of text\"\n\n  examples: # 15 points\n    15: \"Runnable examples for every feature, with output and edge cases\"\n    11: \"Good examples, occasionally missing output or context\"\n    7: \"Some examples, not all runnable\"\n    3: \"Minimal examples, mostly fragments\"\n    0: \"No examples\"\n\n  maintainability: # 10 points\n    10: \"Review dates, no hardcoded versions, testable examples, clear ownership\"\n    7: \"Mostly maintainable, some fragile references\"\n    5: \"Will need effort to keep current\"\n    2: \"Many hardcoded values, screenshots, temporal references\"\n    0: \"Will be outdated within weeks\"\n\n  searchability: # 5 points\n    5: \"Uses terminology users search for, errors verbatim, good headings\"\n    3: \"Decent headings but uses internal jar"
+    },
+    {
+      "id": "step_44",
+      "type": "subtask",
+      "description": "[Phase 5 — Documentation Architecture] ### Information Architecture for Developer Portals\n\n```\ndocs/\n├── index.md                  # Landing page — value prop + paths\n├── getting-started/\n│   ├── quickstart.md         # 5-min first success\n│   ├── installation.md       # All platforms/methods\n│   └── concepts.md           # Mental model before deep dive\n├── guides/\n│   ├── [use-case-1].md       # Task-oriented: \"How to X\"\n│   ├── [use-case-2].md\n│   └── [use-case-N].md\n├── reference/\n│   ├── api/\n│   │   ├── overview.md       # Auth, errors, pagination, rate limits\n│   │   ├── [resource-1].md   # Per-resource endpoint docs\n│   │   └── [resource-N].md\n│   ├── cli.md                # All commands with flags\n│   ├── config.md             # Every config option with defaults\n│   └── errors.md             # Error code catalog\n├── architecture/\n│   ├── overview.md           # System design\n│   └── adr/                  # Architecture Decision Records\n│       ├── 001-[decision].md\n│       └── template.md\n├── operations/\n│   ├── deployment.md         # Deploy procedures\n│   ├── monitoring.md         # What to watch\n│   └── runbooks/\n│       ├── [incident-type].md\n│       └── template.md\n├── contributing/\n│   ├── CONTRIBUTING.md       # Dev setup + PR process\n│   ├── style-guide.md        # Code + doc style rules\n│   └── testing.md            # How to write/run tests\n└── changelog.md              # Version history\n```\n\n### Navigation Design Rules\n\n1. **Max 3 clicks** to any document from the landing page\n2. **Top-level categories ≤ 7** — cognitive load limit\n3. **Getting Started** always first in navigation\n4. **Reference** always accessible from every page (sidebar or header)\n5. **Search** is mandatory — users don't browse, they search\n6. **Breadcrumbs** on every page — users land from Google, not your homepage\n\n### Cross-Referencing Strategy\n\n```yaml\nlinking_rules:\n  internal:\n    - \"Link on first mention of a concept, not every mention\"\n    - \"Use relative paths: ../guides/auth.md not absolute URLs\"\n    - \"Link"
+    },
+    {
+      "id": "step_45",
+      "type": "subtask",
+      "description": "[Phase 6 — Documentation Automation] ### Docs-as-Code Pipeline\n\n```yaml\npipeline:\n  on_commit:\n    - lint: \"markdownlint + custom rules\"\n    - links: \"markdown-link-check (internal + external)\"\n    - spelling: \"cspell with custom dictionary\"\n    - build: \"compile docs site, catch broken references\"\n    \n  on_pr:\n    - diff_check: \"Flag PRs that change code but not docs\"\n    - preview: \"Deploy preview URL for reviewers\"\n    - ai_review: \"Check for passive voice, filler, inconsistency\"\n    \n  weekly:\n    - link_audit: \"Full external link check\"\n    - freshness: \"Flag docs not updated in 6+ months\"\n    - coverage: \"Map API endpoints to docs — find undocumented ones\"\n    \n  quarterly:\n    - full_audit: \"Run Phase 1 audit, compare to last quarter\"\n    - user_feedback: \"Review doc-related support tickets\"\n    - analytics: \"Top pages, search terms with no results, bounce rates\"\n```\n\n### Auto-Generation Targets\n\nThings that should be generated, not hand-written:\n\n| Source | Generated Doc | Tool/Approach |\n|--------|--------------|---------------|\n| OpenAPI spec | API reference pages | Redoc, Stoplight, custom |\n| TypeScript types | Type reference | TypeDoc, API Extractor |\n| CLI help text | CLI reference | `--help` output → markdown |\n| Config schema | Config reference | JSON Schema → markdown |\n| Database schema | Data model docs | Schema → ERD + field descriptions |\n| Test files | Behavior documentation | Extract test names as spec |\n| Git log | Changelog | Conventional commits → changelog |\n\n**Rule:** Generated docs need human review for clarity. Auto-generate the skeleton, human-write the explanations.\n\n### Documentation Metrics\n\nTrack monthly:\n\n```yaml\nmetrics:\n  coverage:\n    - \"API endpoint coverage: [documented / total endpoints] %\"\n    - \"Config option coverage: [documented / total options] %\"\n    - \"Error code coverage: [documented / total codes] %\"\n    \n  quality:\n    - \"Average doc quality score (from rubric): [X]/100\"\n    - \"Docs with tested code examples: [X]%\"\n    - \"Docs updated within 6 months"
+    },
+    {
+      "id": "step_46",
+      "type": "subtask",
+      "description": "[Phase 7 — Special Documentation Types] ### Migration Guide Structure\n\nFor any breaking change or major version update:\n\n```markdown\n# Migrating from v[X] to v[Y]\n\n**Estimated time:** [X] minutes  \n**Risk level:** Low / Medium / High  \n**Rollback:** [possible/not possible — how]"
+    },
+    {
+      "id": "step_47",
+      "type": "subtask",
+      "description": "[Breaking Changes Summary] | Change | Impact | Action Required |\n|--------|--------|----------------|\n| [API change] | [who's affected] | [what to do] |\n| [Config change] | [who's affected] | [what to do] |"
+    },
+    {
+      "id": "step_48",
+      "type": "subtask",
+      "description": "[Before You Start] - [ ] Back up [what]\n- [ ] Ensure you're on v[X.latest] first\n- [ ] Read the full guide before starting"
+    },
+    {
+      "id": "step_49",
+      "type": "subtask",
+      "description": "[Step-by-Step Migration] ### 1. [First Change]\n\n**Before (v[X]):**\n\\`\\`\\`\n[old code/config]\n\\`\\`\\`\n\n**After (v[Y]):**\n\\`\\`\\`\n[new code/config]\n\\`\\`\\`\n\n**Why:** [reason for the change]\n\n[Continue for each breaking change...]"
+    },
+    {
+      "id": "step_50",
+      "type": "subtask",
+      "description": "[Verification] \\`\\`\\`bash\n[commands to verify migration succeeded]\n\\`\\`\\`"
+    },
+    {
+      "id": "step_51",
+      "type": "subtask",
+      "description": "[Known Issues] - [Issue with workaround]"
+    },
+    {
+      "id": "step_52",
+      "type": "subtask",
+      "description": "[Getting Help] - [Support channel]\n- [FAQ for this migration]\n```\n\n### Error Catalog Structure\n\nFor each error code or common error:\n\n```markdown"
+    },
+    {
+      "id": "step_53",
+      "type": "subtask",
+      "description": "[`[ERROR_CODE]` — [Human-Readable Name]] **Message:** `[exact error message users see]`  \n**Severity:** [Info / Warning / Error / Fatal]  \n**Since:** v[X.Y.Z]\n\n### What It Means\n\n[One paragraph: what went wrong and why.]\n\n### Common Causes\n\n1. **[Cause 1]:** [explanation]\n   ```bash\n   # How to check\n   [diagnostic command]\n   ```\n\n2. **[Cause 2]:** [explanation]\n   ```bash\n   [diagnostic command]\n   ```\n\n### How to Fix\n\n**For Cause 1:**\n```bash\n[fix command]\n```\n\n**For Cause 2:**\n```bash\n[fix command]\n```\n\n### Prevention\n\n[How to avoid this error in the future.]\n```\n\n### ADR (Architecture Decision Record) Format\n\n```markdown\n# ADR-[NNN]: [Decision Title]\n\n**Status:** [Proposed | Accepted | Deprecated | Superseded by ADR-XXX]  \n**Date:** YYYY-MM-DD  \n**Deciders:** [who was involved]"
+    },
+    {
+      "id": "step_54",
+      "type": "subtask",
+      "description": "[Context] [What situation or problem prompted this decision? What constraints exist?]"
+    },
+    {
+      "id": "step_55",
+      "type": "subtask",
+      "description": "[Decision] [What we decided to do. State it clearly in one sentence, then elaborate.]"
+    },
+    {
+      "id": "step_56",
+      "type": "subtask",
+      "description": "[Alternatives Considered] ### [Alternative A]\n- **Pros:** [advantages]\n- **Cons:** [disadvantages]\n- **Rejected because:** [specific reason]\n\n### [Alternative B]\n[Same structure...]"
+    },
+    {
+      "id": "step_57",
+      "type": "subtask",
+      "description": "[Consequences] ### Positive\n- [Good outcome]\n\n### Negative\n- [Trade-off or risk accepted]\n\n### Neutral\n- [Neither good nor bad, just a fact]"
+    },
+    {
+      "id": "step_58",
+      "type": "subtask",
+      "description": "[Follow-up Actions] - [ ] [Action items resulting from this decision]\n```"
+    },
+    {
+      "id": "step_59",
+      "type": "subtask",
+      "description": "[Phase 8 — Documentation Maintenance System] ### Freshness Tracking\n\n```yaml\nfreshness_policy:\n  review_cycles:\n    getting_started: \"Monthly — highest traffic, most critical\"\n    api_reference: \"On every API change — automated check\"\n    guides: \"Quarterly — or on related feature changes\"\n    architecture: \"On significant design changes\"\n    runbooks: \"Monthly — test them, don't just read them\"\n    changelog: \"On every release — automated\"\n    \n  freshness_signals:\n    stale:\n      - \"No update in 6+ months\"\n      - \"References deprecated API versions\"\n      - \"Screenshots don't match current UI\"\n      - \"Linked resources return 404\"\n      \n    healthy:\n      - \"Updated within review cycle\"\n      - \"Code examples tested in CI\"\n      - \"Review date in metadata\"\n      - \"No open 'docs outdated' issues\"\n\n  ownership:\n    - \"Every doc has an owner (team, not individual)\"\n    - \"Ownership = responsibility to review on cycle\"\n    - \"No orphan docs — unowned docs get archived\"\n    - \"Ownership transfers tracked in doc metadata\"\n```\n\n### Documentation Debt Tracker\n\n```yaml\ndoc_debt:\n  format:\n    id: \"DOC-[NNN]\"\n    type: \"[missing | outdated | incorrect | unclear | incomplete]\"\n    priority: \"[P0-P3]\"\n    document: \"[path]\"\n    description: \"[what needs fixing]\"\n    impact: \"[who is affected and how]\"\n    effort: \"[S/M/L]\"\n    owner: \"[team]\"\n    \n  priority_rules:\n    P0: \"Incorrect information that causes errors/outages\"\n    P1: \"Missing docs for GA features used by many\"\n    P2: \"Outdated content, still mostly useful\"\n    P3: \"Nice-to-have improvements, style issues\"\n    \n  process:\n    - \"Review doc debt backlog monthly\"\n    - \"Fix all P0 within 1 week\"\n    - \"Fix P1 within 1 sprint\"\n    - \"P2/P3 — tackle during documentation sprints\"\n    - \"Track debt trend — should decrease over time\"\n```\n\n### Deprecation Process\n\nWhen removing or replacing documentation:\n\n1. **Mark deprecated** — add banner: \"⚠️ This document is deprecated. See [new doc] instead.\"\n2. **Redirect** — set up URL redirect from old to new\n3. **Wai"
+    },
+    {
+      "id": "step_60",
+      "type": "subtask",
+      "description": "[Natural Language Commands] | Command | Action |\n|---------|--------|\n| \"Audit the docs for [project]\" | Run Phase 1 audit, produce scorecard |\n| \"Write a README for [project]\" | Generate README using template |\n| \"Document this API endpoint\" | Create reference entry from code/spec |\n| \"Write a getting started guide\" | Create tutorial using template |\n| \"Review this doc\" | Score using 100-point rubric |\n| \"Create a runbook for [procedure]\" | Generate runbook from template |\n| \"Write an ADR for [decision]\" | Create Architecture Decision Record |\n| \"Write a migration guide from v[X] to v[Y]\" | Generate migration doc |\n| \"Check doc freshness\" | Audit all docs for staleness |\n| \"Set up docs pipeline\" | Configure automation from Phase 6 |\n| \"What's undocumented?\" | Compare codebase to docs, find gaps |\n| \"Create error catalog\" | Generate error reference from code |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Technical Documentation Engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "category": "writing",
+      "skills": [
+        "documentation",
+        "technical-writing",
+        "api-docs",
+        "readme",
+        "devdocs",
+        "runbooks"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-technical-docs/SKILL.md"
+}

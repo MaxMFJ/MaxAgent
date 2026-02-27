@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_openclaw-whatsapp",
+  "description": "WhatsApp bridge for OpenClaw — send/receive messages, auto-reply agents, QR pairing, message search, contact sync",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # openclaw-whatsapp\n\nWhatsApp bridge that connects OpenClaw agents to WhatsApp. Send messages, auto-reply to DMs with AI, search message history, and sync contacts — all from a single Go binary."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Reference] ```bash\n# Check status\nopenclaw-whatsapp status\n\n# Send a message\nopenclaw-whatsapp send \"NUMBER@s.whatsapp.net\" \"Your message\"\n\n# View logs (if running as service)\njournalctl --user -u openclaw-whatsapp.service -f\n\n# View worker logs\ntail -f /tmp/openclaw-wa-agent/worker.log\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Full Setup (Self-Service)] Follow these steps to set up WhatsApp auto-reply from scratch.\n\n### Step 1: Install the binary\n\n```bash\ncurl -fsSL https://raw.githubusercontent.com/0xs4m1337/openclaw-whatsapp/main/install.sh | bash\n```\n\nVerify installation:\n```bash\nopenclaw-whatsapp version\n```\n\n### Step 2: Find your openclaw binary path\n\n```bash\nwhich openclaw\n# Example output: /home/USER/.nvm/versions/node/v22.22.0/bin/openclaw\n```\n\nSave this path — you'll need it in Step 4.\n\n### Step 3: Install relay scripts\n\nCopy scripts from this skill directory:\n\n```bash\nSKILL_DIR=\"$(dirname \"$(realpath \"$0\")\")\"  # or use absolute path to skill\n\n# Copy scripts\nsudo cp \"$SKILL_DIR/scripts/wa-notify.sh\" /usr/local/bin/wa-notify.sh\nsudo cp \"$SKILL_DIR/scripts/wa-notify-worker.sh\" /usr/local/bin/wa-notify-worker.sh\nsudo chmod +x /usr/local/bin/wa-notify.sh /usr/local/bin/wa-notify-worker.sh\n```\n\nOr if running as agent, use the skill directory path directly:\n```bash\ncp ~/clawd/skills/openclaw-whatsapp/scripts/wa-notify.sh /usr/local/bin/\ncp ~/clawd/skills/openclaw-whatsapp/scripts/wa-notify-worker.sh /usr/local/bin/\nchmod +x /usr/local/bin/wa-notify.sh /usr/local/bin/wa-notify-worker.sh\n```\n\n### Step 4: Configure the worker script\n\nEdit `/usr/local/bin/wa-notify-worker.sh` and update the PATH line with your openclaw binary path from Step 2:\n\n```bash\n# Find this line near the top:\nexport PATH=\"/home/oussama/.nvm/versions/node/v22.22.0/bin:$PATH\"\n\n# Change it to your actual path:\nexport PATH=\"/home/YOUR_USER/.nvm/versions/node/vXX.XX.X/bin:$PATH\"\n```\n\nAlso update the worker script path in `/usr/local/bin/wa-notify.sh`:\n```bash\n# Find this line near the bottom:\nnohup /home/oussama/dev/openclaw-whatsapp/scripts/wa-notify-worker.sh\n\n# Change to:\nnohup /usr/local/bin/wa-notify-worker.sh\n```\n\n### Step 5: Create config file\n\n```bash\nmkdir -p ~/.openclaw-whatsapp\ncat > ~/.openclaw-whatsapp/config.yaml << 'EOF'\nport: 8555\ndata_dir: ~/.openclaw-whatsapp\nauto_reconnect: true\nreconnect_interval: 30s\nlog_level: info\n\nagent:\n  "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Architecture] ```\nWhatsApp DM → Bridge → wa-notify.sh (enqueue)\n  → wa-notify-worker.sh (background, file-locked)\n  → Fetches last 10 messages for context\n  → openclaw agent (processes message)\n  → openclaw-whatsapp send <JID> <reply>\n  → WhatsApp reply sent\n```\n\nKey features:\n- **Fast enqueue** — bridge doesn't wait for agent processing\n- **Deduplication** — message IDs tracked to prevent double-replies\n- **Single worker** — file-locked, sequential processing, no race conditions\n- **Crash resilience** — queue persists across restarts"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Customizing System Prompt] Edit `~/.openclaw-whatsapp/config.yaml` and update the `system_prompt` field:\n\n```yaml\nagent:\n  system_prompt: |\n    You are a sales assistant for Acme Corp.\n    Be friendly and professional.\n    When someone wants to book a demo:\n    - Book via: mcporter call composio.GOOGLECALENDAR_CREATE_EVENT ...\n    - Notify team via: message action=send channel=telegram target=CHAT_ID ...\n```\n\nRestart after changes:\n```bash\nsystemctl --user restart openclaw-whatsapp.service\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Allowlist / Blocklist] Restrict which numbers the agent responds to:\n\n```yaml\nagent:\n  allowlist: [\"971586971337\"]  # only these (empty = all)\n  blocklist: [\"spammer123\"]     # never these\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[CLI Reference] ```bash\nopenclaw-whatsapp start [-c config.yaml]  # Start the bridge\nopenclaw-whatsapp status [--addr URL]      # Check connection status\nopenclaw-whatsapp send NUMBER MESSAGE      # Send a message\nopenclaw-whatsapp stop                     # Stop the bridge\nopenclaw-whatsapp version                  # Print version\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Problem | Solution |\n|---------|----------|\n| QR expired | Refresh http://localhost:8555/qr — auto-refreshes every 3s |\n| Bridge disconnected | `openclaw-whatsapp status`; auto-reconnects by default |\n| Agent not replying | Check `/tmp/openclaw-wa-agent/worker.log` for errors |\n| \"stream replaced\" errors | Multiple bridge instances — ensure only one runs (`systemctl --user status openclaw-whatsapp` + `pgrep openclaw-whatsapp`) |\n| \"openclaw: not found\" | Edit wa-notify-worker.sh PATH to include openclaw binary |\n| \"not logged in\" | Scan QR again — session expired |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Files] | Path | Description |\n|------|-------------|\n| `~/.openclaw-whatsapp/config.yaml` | Bridge configuration |\n| `~/.openclaw-whatsapp/messages.db` | SQLite message store |\n| `~/.openclaw-whatsapp/sessions/` | WhatsApp session data |\n| `/tmp/openclaw-wa-agent/queue.jsonl` | Message queue |\n| `/tmp/openclaw-wa-agent/worker.log` | Worker logs |\n| `/tmp/openclaw-wa-agent/seen_message_ids.txt` | Deduplication list |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[API Endpoints] | Method | Path | Description |\n|--------|------|-------------|\n| `GET` | `/status` | Connection status |\n| `GET` | `/qr` | QR code page |\n| `POST` | `/send/text` | Send message `{\"to\": \"...\", \"message\": \"...\"}` |\n| `GET` | `/chats` | List all chats |\n| `GET` | `/chats/{jid}/messages?limit=10` | Messages for a chat |\n| `GET` | `/messages/search?q=keyword` | Full-text search |\n\nSee [references/api-reference.md](references/api-reference.md) for full API docs."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_whatsapp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xs4m1337/openclaw-whatsapp/SKILL.md"
+}

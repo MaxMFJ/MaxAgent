@@ -1,0 +1,67 @@
+{
+  "id": "openclaw_skill_maps",
+  "description": "Distance, routing, and geocoding using free APIs (OSRM + Nominatim/OSM). Use when the user asks about distance between places, travel time, directions, how far something is, or needs to convert a place name to coordinates. No API key required. Requires python3 (3.6+).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Maps\n\nFree distance/routing (OSRM) and geocoding (Nominatim/OSM). No API keys needed."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Geocoding (place name → coordinates)] ```bash\nbash scripts/geocode.sh \"Times Square, New York\"\n```\n\nReturns lat,lon and display name. Use this first when you have place names instead of coordinates."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Distance & Route] ```bash\nbash scripts/distance.sh <origin_lat>,<origin_lon> <dest_lat>,<dest_lon> [mode]\n```\n\nModes: `driving` (default), `foot`, `bicycle`\n\nExamples:\n```bash\n# Manhattan to JFK Airport\nbash scripts/distance.sh 40.7580,-73.9855 40.6413,-73.7781 driving\n\n# Golden Gate Park to Fisherman's Wharf (walking)\nbash scripts/distance.sh 37.7694,-122.4862 37.8080,-122.4177 foot\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] 1. If user gives place names → geocode both with `geocode.sh`\n2. Use returned lat,lon pairs with `distance.sh`\n3. Report distance in km and duration in minutes"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Limits] - OSRM: free public demo server, no hard rate limit but be reasonable\n- Nominatim: max 1 request/second (OSM policy), include User-Agent\n- No live traffic data — durations are estimates based on road type/speed\n- Routing is road-network only (no public transit)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "maps"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adhishthite/maps-osrm/SKILL.md"
+}

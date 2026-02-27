@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_omarchy",
+  "description": "Omarchy operating guardrails for day-to-day system work: assume the host is Omarchy by default, choose Omarchy-native workflows first, map user intent to the correct omarchy-* wrapper/script family, and avoid generic Linux commands that conflict with Omarchy behavior. Use whenever handling local system tasks on this host unless the user explicitly says it is not Omarchy; prioritize safe Omarchy commands, prevent non-Omarchy shortcuts (e.g., ad-hoc process killing/relaunch patterns), troubleshoot desktop behavior, and validate the right script before execution.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Omarchy Skill\n\nTreat this skill as an Omarchy operating mode, not just a command catalog. When working on an Omarchy system, prefer Omarchy-native wrappers and workflows over generic Linux one-liners that may bypass expected state handling. Use local script docs and names to choose the correct path. Each script has documentation at the top describing its purpose. DO NOT RUN A SCRIPT UNTIL YOU ARE SURE OF ITS PURPOSE."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Operating rules] 1. Start with command name matching and in-file comments under `/home/achals/.local/share/omarchy/bin`.\n2. Prefer read-only/status commands first (`*list*`, `*status*`, `*current*`, `*available*`, `*version*`).\n3. Ask before broad or high-impact actions (`*install*`, `*remove*`, `*reinstall*`, `*update*`, `*pkg*`, `*setup*`, `*set*`).\n4. Avoid bulk discovery execution. Do static inspection first.\n5. Never assume `omarchy-*` scripts support standard CLI flags or parameters (including `--help`). Treat each script as custom; inspect its file/header comments first."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Worked examples (good vs bad)] Use these patterns whenever you operate on Omarchy. The goal is not \"run an omarchy command at all costs\"; the goal is to avoid bypassing Omarchy’s intended state-management flows.\n\n### 1) Restarting Waybar\n\nUser intent: \"Waybar is broken, restart it.\"\n\n- Bad (generic shortcut):\n  - `pkill waybar && waybar`\n- Good (Omarchy-native):\n  - `omarchy-restart-waybar`\n- Why: Omarchy wrappers usually handle environment/session assumptions better than raw kill-and-relaunch one-liners.\n\n### 2) Applying config/UI refresh after edits\n\nUser intent: \"I changed config, apply it.\"\n\n- Bad:\n  - restarting random processes manually until things look fixed\n- Good:\n  - use targeted refresh script first, e.g. `omarchy-refresh-waybar`, `omarchy-refresh-hyprland`, `omarchy-refresh-config` (pick by component)\n- Why: refresh scripts are explicit and reversible; manual shotgun restarts are noisy and risky.\n\n### 3) Package management task\n\nUser intent: \"Install/remove package X.\"\n\n- Bad:\n  - using raw `pacman`/`yay` first without checking Omarchy wrappers\n- Good:\n  - inspect and prefer `omarchy-pkg-*` flow (`...-present`, `...-missing`, then `...-install`/`...-remove`)\n- Why: wrapper flow keeps behavior consistent with Omarchy expectations.\n\n### 4) Theme change request\n\nUser intent: \"Switch theme / sync theme to apps.\"\n\n- Bad:\n  - editing dotfiles manually first and restarting random apps\n- Good:\n  - `omarchy-theme-list` -> `omarchy-theme-set` -> app-specific follow-ups if needed (`omarchy-theme-set-vscode`, `...-browser`, `...-obsidian`)\n- Why: Omarchy theme pipeline may include extra integration steps beyond plain config edits.\n\n### 5) Audio/Bluetooth/Wi‑Fi issue\n\nUser intent: \"Audio/Bluetooth/Wi‑Fi stopped behaving.\"\n\n- Bad:\n  - broad process killing (`killall pipewire`, random daemon restarts)\n- Good:\n  - use targeted wrapper restarts such as `omarchy-restart-pipewire`, `omarchy-restart-bluetooth`, `omarchy-restart-wifi`\n- Why: targeted wrappers reduce collateral damage and match Omarchy’s "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Decision template (apply every time)] For any Omarchy task, follow this mini-checklist:\n\n1. Identify component (UI, package, theme, network, update, device, etc.)\n2. Find matching `omarchy-*` family by name and script header comments\n3. Prefer read-only/status command first\n4. Use targeted `omarchy-refresh-*`/`omarchy-restart-*` over raw kill/relaunch\n5. Ask before high-impact actions (`install/remove/reinstall/update/setup/set`)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Omarchy command catalog (static, local)] Total commands: **161**\n\n### battery (2)\n- `omarchy-battery-monitor`\n- `omarchy-battery-remaining`\n\n### branch (1)\n- `omarchy-branch-set`\n\n### channel (1)\n- `omarchy-channel-set`\n\n### cmd (12)\n- `omarchy-cmd-apple-display-brightness`\n- `omarchy-cmd-audio-switch`\n- `omarchy-cmd-first-run`\n- `omarchy-cmd-missing`\n- `omarchy-cmd-present`\n- `omarchy-cmd-reboot`\n- `omarchy-cmd-screenrecord`\n- `omarchy-cmd-screensaver`\n- `omarchy-cmd-screenshot`\n- `omarchy-cmd-share`\n- `omarchy-cmd-shutdown`\n- `omarchy-cmd-terminal-cwd`\n\n### debug (1)\n- `omarchy-debug`\n\n### dev (1)\n- `omarchy-dev-add-migration`\n\n### drive (3)\n- `omarchy-drive-info`\n- `omarchy-drive-select`\n- `omarchy-drive-set-password`\n\n### font (3)\n- `omarchy-font-current`\n- `omarchy-font-list`\n- `omarchy-font-set`\n\n### hibernation (3)\n- `omarchy-hibernation-available`\n- `omarchy-hibernation-remove`\n- `omarchy-hibernation-setup`\n\n### hook (1)\n- `omarchy-hook`\n\n### hyprland (3)\n- `omarchy-hyprland-window-close-all`\n- `omarchy-hyprland-window-pop`\n- `omarchy-hyprland-workspace-toggle-gaps`\n\n### install (9)\n- `omarchy-install-chromium-google-account`\n- `omarchy-install-dev-env`\n- `omarchy-install-docker-dbs`\n- `omarchy-install-dropbox`\n- `omarchy-install-steam`\n- `omarchy-install-tailscale`\n- `omarchy-install-terminal`\n- `omarchy-install-vscode`\n- `omarchy-install-xbox-controllers`\n\n### launch (14)\n- `omarchy-launch-about`\n- `omarchy-launch-audio`\n- `omarchy-launch-bluetooth`\n- `omarchy-launch-browser`\n- `omarchy-launch-editor`\n- `omarchy-launch-floating-terminal-with-presentation`\n- `omarchy-launch-or-focus`\n- `omarchy-launch-or-focus-tui`\n- `omarchy-launch-or-focus-webapp`\n- `omarchy-launch-screensaver`\n- `omarchy-launch-tui`\n- `omarchy-launch-walker`\n- `omarchy-launch-webapp`\n- `omarchy-launch-wifi`\n\n### lock (1)\n- `omarchy-lock-screen`\n\n### menu (2)\n- `omarchy-menu`\n- `omarchy-menu-keybindings`\n\n### migrate (1)\n- `omarchy-migrate`\n\n### notification (1)\n- `omarchy-notification-dismiss`\n\n### pkg (9)\n- `omarchy-pkg-add`\n-"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "omarchy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/achals-iglu/omarchy/SKILL.md"
+}

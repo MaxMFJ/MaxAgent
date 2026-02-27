@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_prediction-trade-journal",
+  "description": "Auto-log trades with context, track outcomes, generate calibration reports to improve trading.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Prediction Trade Journal\n\nTrack every trade, learn from outcomes, improve your edge."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- See their trade history\n- Track win rate and P&L\n- Generate trading reports\n- Analyze which strategies work best"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Sync trades from API\npython tradejournal.py --sync\n\n# Show recent trades\npython tradejournal.py --history 10\n\n# Generate weekly report\npython tradejournal.py --report weekly\n\n# Export to CSV\npython tradejournal.py --export trades.csv\n```\n\n**API Reference:**\n- Base URL: `https://api.simmer.markets`\n- Auth: `Authorization: Bearer $SIMMER_API_KEY`\n- Trades: `GET /api/sdk/trades`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Sync** - Polls `/api/sdk/trades` to fetch trade history\n2. **Store** - Saves trades locally with outcome tracking\n3. **Track** - Updates outcomes when markets resolve\n4. **Report** - Generates win rate, P&L, and calibration analysis"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[CLI Reference] | Command | Description |\n|---------|-------------|\n| `--sync` | Fetch new trades from API |\n| `--history N` | Show last N trades (default: 10) |\n| `--sync-outcomes` | Update resolved markets |\n| `--report daily/weekly/monthly` | Generate summary report |\n| `--config` | Show configuration |\n| `--export FILE.csv` | Export to CSV |\n| `--dry-run` | Preview without making changes |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration] | Setting | Environment Variable | Default |\n|---------|---------------------|---------|\n| API Key | `SIMMER_API_KEY` | (required) |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Storage] Trades are stored locally in `data/trades.json`:\n\n```json\n{\n  \"trades\": [{\n    \"id\": \"uuid\",\n    \"market_question\": \"Will X happen?\",\n    \"side\": \"yes\",\n    \"shares\": 10.5,\n    \"cost\": 6.83,\n    \"outcome\": {\n      \"resolved\": false,\n      \"winning_side\": null,\n      \"pnl_usd\": null\n    }\n  }],\n  \"metadata\": {\n    \"last_sync\": \"2025-01-29T...\",\n    \"total_trades\": 50\n  }\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Skill Integration] Other skills can enrich trades with context:\n\n```python\nfrom tradejournal import log_trade\n\n# After executing a trade\nlog_trade(\n    trade_id=result['trade_id'],\n    source=\"copytrading\",\n    thesis=\"Mirroring whale 0x123...\",\n    confidence=0.70\n)\n```\n\nThis adds thesis, confidence, and source to the trade record for better analysis."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Example Report] ```\n📓 Weekly Report\n========================================\nPeriod: Last 7 days\nTrades: 15\nTotal cost: $125.50\nResolved: 8 / 15\nWin rate: 62.5%\nP&L: +$18.30\n\nBy side: 10 YES, 5 NO\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"SIMMER_API_KEY environment variable not set\"**\n- Set your API key: `export SIMMER_API_KEY=sk_live_...`\n\n**\"No trades recorded yet\"**\n- Run `python tradejournal.py --sync` to fetch trades from API\n\n**Trades not showing outcomes**\n- Run `python tradejournal.py --sync-outcomes` to update resolved markets"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "prediction_trade_journal"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "📓",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/prediction-trade-journal/SKILL.md"
+}

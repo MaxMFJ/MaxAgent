@@ -1,11 +1,31 @@
 import SwiftUI
 
 /// 优先使用「单 NSTextView」富文本：整条消息可跨段/跨代码块选择复制，链接可点击。
+/// 支持 <thinking>...</thinking> 块：流式时展开，输出完成后默认折叠（类似 Cursor）。
 struct MarkdownText: View {
     let content: String
+    /// 是否正在流式输出；用于控制 thinking 块默认折叠状态
+    var isStreaming: Bool = false
     
     var body: some View {
-        UnifiedMarkdownView(content: content)
+        let parts = ContentSplitter.split(content)
+        if parts.count == 1, case .text(let only) = parts.first! {
+            UnifiedMarkdownView(content: only)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                    switch part {
+                    case .text(let s):
+                        if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            UnifiedMarkdownView(content: s)
+                        }
+                    case .thinking(let s):
+                        ThinkingBlockView(thinkingContent: s, isStreaming: isStreaming)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 
@@ -21,16 +41,16 @@ private enum UnifiedSegment {
 }
 
 /// 统一富文本 + 图片：文本段用 NSTextView（可选、可复制、链接可点），代码块用可折叠 CodeBlockView，图片单独渲染。
+/// 文本段通过 intrinsicContentSize 自适应高度，无需 Binding 或固定 frame。
 struct UnifiedMarkdownView: View {
     let content: String
     @State private var contentWidth: CGFloat = 400
-    @State private var segmentHeights: [Int: CGFloat] = [:]
-    
+
     /// 直接由 content 推导
     private var elements: [MarkdownElement] {
         MarkdownParser.parse(content)
     }
-    
+
     /// 将元素切成「文本段」与「代码块」交替的列表，不含图片
     private var segments: [UnifiedSegment] {
         let nonImage = elements.filter {
@@ -52,42 +72,37 @@ struct UnifiedMarkdownView: View {
         if !textAccum.isEmpty { out.append(.text(textAccum)) }
         return out
     }
-    
+
     private var imageElements: [MarkdownElement] {
         elements.filter {
             switch $0 { case .image, .base64Image, .localImage: return true; default: return false }
         }
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
-                segmentView(index: index, segment: segment)
+            ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                segmentView(segment: segment)
             }
             ForEach(Array(imageElements.enumerated()), id: \.offset) { _, element in
                 renderImageElement(element)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .background(GeometryReader { g in Color.clear.preference(key: WidthPreferenceKey.self, value: g.size.width) })
         .onPreferenceChange(WidthPreferenceKey.self) { contentWidth = $0 }
     }
-    
+
     @ViewBuilder
-    private func segmentView(index: Int, segment: UnifiedSegment) -> some View {
+    private func segmentView(segment: UnifiedSegment) -> some View {
         switch segment {
         case .text(let els):
-            let binding = Binding<CGFloat>(
-                get: { segmentHeights[index] ?? 40 },
-                set: { segmentHeights[index] = $0 }
-            )
             RichMessageTextView(
                 attributedContent: RichMessageTextView.buildAttributedString(from: els),
-                width: max(200, contentWidth),
-                reportedHeight: binding
+                width: max(200, contentWidth)
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: max(40, binding.wrappedValue))
         case .code(let code, let lang):
             CodeBlockView(code: code, language: lang)
         }

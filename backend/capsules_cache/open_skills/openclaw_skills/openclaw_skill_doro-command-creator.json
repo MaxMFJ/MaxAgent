@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_doro-command-creator",
+  "description": "WHAT: Create Claude Code slash commands - reusable markdown workflows invoked with /command-name.\n\nWHEN: User wants to create, make, or add a slash command. User wants to automate a repetitive workflow or document a consistent process for reuse.\n\nKEYWORDS: \"create a command\", \"make a slash command\", \"add a command\", \"new command\", \"/command\", \"automate this workflow\", \"make this repeatable\"",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Command Creator\n\nSlash commands are markdown files in `.claude/commands/` (project) or `~/.claude/commands/` (global) that expand into prompts when invoked."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Command Structure] ```markdown\n---\ndescription: Brief description for /help (required)\nargument-hint: <required> or [optional] (if takes arguments)\n---\n\n# Command Title\n\n[Instructions for agent to execute autonomously]\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Creation Workflow] ### Step 1: Determine Location\n\n1. Check if in git repo: `git rev-parse --is-inside-work-tree`\n2. Default: Git repo → `.claude/commands/`, No git → `~/.claude/commands/`\n3. Override if user explicitly says \"global\" or \"project\"\n\nReport chosen location before proceeding.\n\n### Step 2: Identify Pattern\n\nLoad [references/patterns.md](references/patterns.md) and present options:\n\n| Pattern | Structure | Use When |\n|---------|-----------|----------|\n| Workflow Automation | Analyze → Act → Report | Multi-step with clear sequence |\n| Iterative Fixing | Run → Parse → Fix → Repeat | Fix issues until passing |\n| Agent Delegation | Context → Delegate → Iterate | Complex tasks, user review |\n| Simple Execution | Parse → Execute → Return | Wrapper for existing tools |\n\nAsk: \"Which pattern is closest to what you want?\"\n\n### Step 3: Gather Information\n\n**A. Name and Purpose**\n- \"What should the command be called?\" (kebab-case: `my-command`)\n- \"What does it do?\" (for description field)\n\n**B. Arguments**\n- \"Does it take arguments? Required or optional?\"\n- Required: `<placeholder>`, Optional: `[placeholder]`\n\n**C. Workflow Steps**\n- \"What specific steps should it follow?\"\n- \"What tools or commands should it use?\"\n\n**D. Constraints**\n- \"Any specific tools to use or avoid?\"\n- \"Any files to read for context?\"\n\n### Step 4: Generate Command\n\nLoad [references/best-practices.md](references/best-practices.md) for:\n- Template structure\n- Writing style (imperative form)\n- Quality checklist\n\nKey principles:\n- Use imperative form: \"Run X\", not \"You should run X\"\n- Be explicit: \"Run `make lint`\", not \"Check for errors\"\n- Include expected outcomes\n- Define error handling\n- State success criteria\n\n### Step 5: Create File\n\n```bash\nmkdir -p [directory-path]\n```\n\nWrite the command file. Report:\n- File location\n- What the command does\n- How to use: `/command-name [args]`\n\n### Step 6: Test (Optional)\n\nSuggest: \"Test with `/command-name [args]`\"\n\nIterate based on feedback.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Writing Guidelines] **Imperative form (verb-first)**:\n- ✅ \"Run git status\"\n- ❌ \"You should run git status\"\n\n**Specific, not vague**:\n- ✅ \"Run `make lint` to check for errors\"\n- ❌ \"Check for errors\"\n\n**Include outcomes**:\n- ✅ \"Run `git status` - should show modified files\"\n- ❌ \"Run git status\"\n\n**Realistic examples**:\n- ✅ `git commit -m \"Add OAuth2 authentication\"`\n- ❌ `git commit -m \"foo bar\"`\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Command Patterns Quick Reference] ### Workflow Automation\n```markdown\n1. Check for .PLAN.md\n2. Analyze git status/diff\n3. Perform actions\n4. Report results\n```\n\n### Iterative Fixing\n```markdown\n1. Run make all-ci (max 10 iterations)\n2. Parse errors by category\n3. Apply targeted fixes\n4. Repeat until success or stuck\n```\n\n### Agent Delegation\n```markdown\n1. Present context\n2. Invoke subagent with Task tool\n3. Iterate with user feedback\n4. Save output after approval\n```\n\nSee [references/examples.md](references/examples.md) for full command examples.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quality Checklist] Before finalizing:\n\n- [ ] Name is kebab-case (`my-command`, not `my_command`)\n- [ ] Description is action-oriented\n- [ ] Steps are numbered and specific\n- [ ] Tool usage explicitly specified\n- [ ] Error handling defined\n- [ ] Success criteria stated\n- [ ] Uses imperative form\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[NEVER] - Use underscores in command names (use hyphens)\n- Write vague instructions (\"fix errors\")\n- Skip error handling\n- Use second person (\"You should...\")\n- Create commands without testing\n- Leave success criteria undefined"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "doro_command_creator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a2mus/doro-command-creator/SKILL.md"
+}

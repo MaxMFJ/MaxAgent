@@ -1,0 +1,117 @@
+{
+  "id": "openclaw_skill_polymarket-weather-trader",
+  "description": "Trade Polymarket weather markets using NOAA forecasts via Simmer API. Inspired by gopfan2's $2M+ strategy. Use when user wants to trade temperature markets, automate weather bets, check NOAA forecasts, or run gopfan2-style trading.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket Weather Trader\n\nTrade temperature markets on Polymarket using NOAA forecast data.\n\n> **This is a template.** The default signal is NOAA temperature forecasts — remix it with other weather APIs, different forecast models, or additional market types (precipitation, wind, etc.). The skill handles all the plumbing (market discovery, NOAA parsing, trade execution, safeguards). Your agent provides the alpha."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- Trade weather markets automatically\n- Set up gopfan2-style temperature trading\n- Buy low on weather predictions\n- Check their weather trading positions\n- Configure trading thresholds or locations"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What's New in v1.2.0] - **Max Trades Per Run**: New `SIMMER_WEATHER_MAX_TRADES` config to limit trades per scan cycle (default: 5)\n\n### v1.1.1\n- **Status Script**: New `scripts/status.py` for quick balance and position checks\n- **API Reference**: Added Quick Commands section with API endpoints\n\n### v1.1.0\n- **Source Tagging**: All trades tagged with `sdk:weather` for portfolio tracking\n- **Smart Sizing**: Position sizing based on available balance (`--smart-sizing`)\n- **Context Safeguards**: Checks for flip-flop warnings, slippage, time decay\n- **Price Trend Detection**: Detects recent price drops for stronger signals"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup Flow] When user asks to install or configure this skill:\n\n1. **Ask for Simmer API key**\n   - They can get it from simmer.markets/dashboard → SDK tab\n   - Store in environment as `SIMMER_API_KEY`\n\n2. **Ask for wallet private key** (required for live trading)\n   - This is the private key for their Polymarket wallet (the wallet that holds USDC)\n   - Store in environment as `WALLET_PRIVATE_KEY`\n   - The SDK uses this to sign orders client-side automatically — no manual signing needed\n\n3. **Ask about settings** (or confirm defaults)\n   - Entry threshold: When to buy (default 15¢)\n   - Exit threshold: When to sell (default 45¢)\n   - Max position: Amount per trade (default $2.00)\n   - Locations: Which cities to trade (default NYC)\n\n4. **Save settings to environment variables**\n\n5. **Set up cron** (disabled by default — user must enable scheduling)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuration] | Setting | Environment Variable | Default | Description |\n|---------|---------------------|---------|-------------|\n| Entry threshold | `SIMMER_WEATHER_ENTRY` | 0.15 | Buy when price below this |\n| Exit threshold | `SIMMER_WEATHER_EXIT` | 0.45 | Sell when price above this |\n| Max position | `SIMMER_WEATHER_MAX_POSITION` | 2.00 | Maximum USD per trade |\n| Max trades/run | `SIMMER_WEATHER_MAX_TRADES` | 5 | Maximum trades per scan cycle |\n| Locations | `SIMMER_WEATHER_LOCATIONS` | NYC | Comma-separated cities |\n| Smart sizing % | `SIMMER_WEATHER_SIZING_PCT` | 0.05 | % of balance per trade |\n\n**Supported locations:** NYC, Chicago, Seattle, Atlanta, Dallas, Miami"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Check account balance and positions\npython scripts/status.py\n\n# Detailed position list\npython scripts/status.py --positions\n```\n\n**API Reference:**\n- Base URL: `https://api.simmer.markets`\n- Auth: `Authorization: Bearer $SIMMER_API_KEY`\n- Portfolio: `GET /api/sdk/portfolio`\n- Positions: `GET /api/sdk/positions`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Running the Skill] ```bash\n# Dry run (default — shows opportunities, no trades)\npython weather_trader.py\n\n# Execute real trades\npython weather_trader.py --live\n\n# With smart position sizing (uses portfolio balance)\npython weather_trader.py --live --smart-sizing\n\n# Check positions only\npython weather_trader.py --positions\n\n# View config\npython weather_trader.py --config\n\n# Disable safeguards (not recommended)\npython weather_trader.py --no-safeguards\n\n# Disable trend detection\npython weather_trader.py --no-trends\n\n# Quiet mode — only output on trades/errors (ideal for high-frequency runs)\npython weather_trader.py --live --quiet\n\n# Combine: frequent scanning, minimal noise\npython weather_trader.py --live --smart-sizing --quiet\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[How It Works] Each cycle the script:\n1. Fetches active weather markets from Simmer API\n2. Groups markets by event (each temperature day is one event)\n3. Parses event names to get location and date\n4. Fetches NOAA forecast for that location/date\n5. Finds the temperature bucket that matches the forecast\n6. **Safeguards**: Checks context for flip-flop warnings, slippage, time decay\n7. **Trend Detection**: Looks for recent price drops (stronger buy signal)\n8. **Entry**: If bucket price < threshold and safeguards pass → BUY\n9. **Exit**: Checks open positions, sells if price > exit threshold\n10. **Tagging**: All trades tagged with `sdk:weather` for tracking"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Smart Sizing] With `--smart-sizing`, position size is calculated as:\n- 5% of available USDC balance (configurable via `SIMMER_WEATHER_SIZING_PCT`)\n- Capped at max position setting ($2.00 default)\n- Falls back to fixed size if portfolio unavailable\n\nThis prevents over-deployment and scales with your account size."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Safeguards] Before trading, the skill checks:\n- **Flip-flop warning**: Skips if you've been reversing too much\n- **Slippage**: Skips if estimated slippage > 15%\n- **Time decay**: Skips if market resolves in < 2 hours\n- **Market status**: Skips if market already resolved\n\nDisable with `--no-safeguards` (not recommended)."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Source Tagging] All trades are tagged with `source: \"sdk:weather\"`. This means:\n- Portfolio shows breakdown by strategy\n- Copytrading skill won't sell your weather positions\n- You can track weather P&L separately"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Example Output] ```\n🌤️ Simmer Weather Trading Skill\n==================================================\n\n⚙️ Configuration:\n  Entry threshold: 15% (buy below this)\n  Exit threshold:  45% (sell above this)\n  Max position:    $2.00\n  Locations:       NYC\n  Smart sizing:    ✓ Enabled\n  Safeguards:      ✓ Enabled\n  Trend detection: ✓ Enabled\n\n💰 Portfolio:\n  Balance: $150.00\n  Exposure: $45.00\n  Positions: 8\n\n📍 NYC 2026-01-28 (high temp)\n  NOAA forecast: 34°F\n  Matching bucket: 34-35°F @ $0.12\n  💡 Smart sizing: $2.00 (capped at max position)\n  ✅ Below threshold ($0.15) - BUY opportunity! 📉 (dropped 15% in 24h)\n  Executing trade...\n  ✅ Bought 62.5 shares @ $0.12\n\n📊 Summary:\n  Events scanned: 12\n  Entry opportunities: 1\n  Trades executed: 1\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Safeguard blocked: Severe flip-flop warning\"**\n- You've been changing direction too much on this market\n- Wait before trading again\n\n**\"Slippage too high\"**\n- Market is illiquid, reduce position size or skip\n\n**\"Resolves in Xh - too soon\"**\n- Market resolving soon, risk is elevated\n\n**\"No weather markets found\"**\n- Weather markets may not be active (seasonal)\n\n**\"External wallet requires a pre-signed order\"**\n- `WALLET_PRIVATE_KEY` is not set in the environment\n- The SDK signs orders automatically when this env var is present — no manual signing code needed\n- Fix: `export WALLET_PRIVATE_KEY=0x<your-polymarket-wallet-private-key>`\n- Do NOT attempt to sign orders manually or modify the skill code — the SDK handles it\n\n**\"Balance shows $0 but I have USDC on Polygon\"**\n- Polymarket uses **USDC.e** (bridged USDC, contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`) — not native USDC\n- If you bridged USDC to Polygon recently, you likely received native USDC\n- Swap native USDC to USDC.e, then retry\n\n**\"API key invalid\"**\n- Get new key from simmer.markets/dashboard → SDK tab"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_weather_trader"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🌡️",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "weather_trader.py"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-weather-trader/SKILL.md"
+}

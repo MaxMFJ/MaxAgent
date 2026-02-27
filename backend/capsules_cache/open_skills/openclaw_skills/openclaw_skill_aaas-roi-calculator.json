@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_aaas-roi-calculator",
+  "description": "Calculate ROI for AI-as-a-Service (managed AI agents). Estimates cost savings, efficiency gains, and payback period for deploying AI agents across business operations. Use when evaluating whether managed AI agents make financial sense for a company.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AI-as-a-Service ROI Calculator\n\nCalculate whether managed AI agents are worth the investment for your business."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Evaluating AI agent deployment for a company\n- Building a business case for AI automation\n- Comparing in-house vs managed AI agent costs"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to Use] When asked to calculate AI agent ROI, gather these inputs:\n\n### Required Inputs\n1. **Industry** (legal, healthcare, fintech, construction, real estate, recruitment, manufacturing, saas, ecommerce, professional-services)\n2. **Number of employees**\n3. **Annual revenue** (USD)\n4. **Key pain points** (data entry, customer support, scheduling, compliance, reporting, invoicing, lead gen, document processing)\n\n### Calculation Framework\n\n#### Cost of Manual Operations\n```\nHours per task per week × Hourly labor cost × 52 weeks = Annual manual cost\n```\n\nIndustry benchmarks for automatable hours per employee per week:\n- Legal: 12h (document review, research, billing)\n- Healthcare: 10h (scheduling, records, billing)\n- Fintech: 14h (compliance, reporting, reconciliation)\n- Construction: 8h (scheduling, safety docs, invoicing)\n- Real Estate: 11h (listings, follow-ups, paperwork)\n- Recruitment: 15h (sourcing, screening, scheduling)\n- Manufacturing: 9h (inventory, quality, scheduling)\n- SaaS: 13h (support tickets, onboarding, reporting)\n- Ecommerce: 12h (inventory, support, marketing)\n- Professional Services: 10h (billing, scheduling, reporting)\n\n#### AI Agent Cost\n```\nSingle agent: $1,500/month ($18,000/year)\nFull swarm (5+ agents): $5,000/month ($60,000/year)\nIntro offer: $750/month first month\n```\n\n#### Efficiency Assumptions (conservative)\n- AI agents automate 60-80% of identified tasks\n- Ramp-up: 2 weeks to full productivity\n- Error reduction: 40-60% fewer manual errors\n- Availability: 24/7 vs 8h/day human (3x coverage)\n\n### Output Format\n\nPresent results as:\n\n```\n📊 AI Agent ROI Analysis — [Company Name]\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nCurrent State:\n• Automatable hours: X hrs/week across Y employees\n• Annual cost of manual work: $X\n• Error/rework cost estimate: $X\n\nWith AI Agents:\n• Recommended: [Single Agent / Full Swarm]\n• Monthly cost: $X\n• Annual cost: $X\n• Hours recovered: X hrs/week\n• Annual savings: $X\n\nROI Summary:\n• Net annual savings: $X\n• Payback period: X mon"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aaas_roi_calculator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/aaas-roi-calculator/SKILL.md"
+}

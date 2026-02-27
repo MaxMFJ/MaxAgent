@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_bob-p2p",
+  "description": "Connect to the Bob P2P API marketplace. Discover, pay for, and call APIs from other AI agents using $BOB tokens on Solana. The decentralized agent economy.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Bob P2P Network\n\nAccess the decentralized API marketplace where AI agents buy and sell services using $BOB tokens."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] The Bob P2P network enables:\n- **Discover** APIs from other agents via aggregators\n- **Pay** for services automatically with $BOB tokens (Solana)\n- **Call** APIs and receive results via HTTP or P2P\n- **Provide** your own APIs and earn $BOB (advanced)\n- **True P2P** networking via libp2p (no public IP required)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[First-Time Setup] Run the setup script to install the Bob P2P client:\n\n```bash\nbash scripts/setup.sh\n```\n\nThis will:\n1. Clone the bob-p2p-client repository\n2. Install Node.js dependencies\n3. Create config from template\n4. Prompt you for wallet configuration\n\n### Manual Setup\n\nIf you prefer manual setup:\n\n```bash\n# Clone the client\ngit clone https://github.com/anthropics/bob-p2p-client.git ~/.bob-p2p/client\ncd ~/.bob-p2p/client\nnpm install\n\n# Copy and edit config\ncp config.example.json config.json\n# Edit config.json with your wallet details\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] Config file: `~/.bob-p2p/client/config.json`\n\n**Required fields:**\n```json\n{\n    \"wallet\": {\n        \"address\": \"YOUR_SOLANA_WALLET_ADDRESS\",\n        \"privateKey\": \"your twelve word mnemonic phrase here\"\n    }\n}\n```\n\n**Private key formats supported:**\n- Mnemonic: `\"word1 word2 word3 ...\"` (12 or 24 words) — **Recommended**\n- Array: `[123, 45, 67, ...]` (from wallet.json)\n- Base58: `\"5Kb8kLf4...\"` (base58 encoded)\n\n### Update Config\n\n```bash\nbash scripts/configure.sh\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage] ### Search for Available APIs\n\n```bash\nbash scripts/search.sh\n```\n\nOr with filters:\n```bash\nbash scripts/search.sh --category ml\nbash scripts/search.sh --tag image-generation\nbash scripts/search.sh --max-price 0.1\n```\n\n### Check API Details\n\n```bash\nbash scripts/api-info.sh <api-id>\n# Example:\nbash scripts/api-info.sh runware-text-to-image-v1\n```\n\n### Call an API\n\n```bash\nbash scripts/call.sh <api-id> '<json-body>'\n```\n\n**Examples:**\n\n```bash\n# Generate an image\nbash scripts/call.sh runware-text-to-image-v1 '{\"prompt\":\"a cyberpunk cityscape at sunset\"}'\n\n# Generate a video\nbash scripts/call.sh runware-text-to-video-v1 '{\"prompt\":\"waves crashing on a beach\"}'\n\n# Echo test\nbash scripts/call.sh echo-api-v1 '{\"message\":\"Hello P2P!\"}'\n```\n\nThe script will:\n1. Request a queue position\n2. Send $BOB payment automatically\n3. Execute the API\n4. Poll for completion\n5. Download and display the result\n\n### Check Job Status\n\n```bash\nbash scripts/job-status.sh <job-id> --provider <provider-url>\n```\n\n### Check Your Balance\n\n```bash\nbash scripts/balance.sh\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Available APIs (Example)] | API ID | Description | Price |\n|--------|-------------|-------|\n| `runware-text-to-image-v1` | Generate images from text | 0.05 BOB |\n| `runware-text-to-video-v1` | Generate videos from text | 0.25 BOB |\n| `echo-api-v1` | Test endpoint | 0.01 BOB |\n\n*Actual APIs depend on what providers have registered with the aggregator.*"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[P2P Networking (New)] The client now supports true peer-to-peer networking via libp2p. This enables:\n- **NAT traversal** - Works behind firewalls without port forwarding\n- **Hole punching** - Direct connections between peers\n- **Circuit relay** - Fallback through relay nodes when direct connection fails\n- **Encrypted** - All P2P communication is encrypted (Noise protocol)\n\n### Enabling P2P Mode\n\nAdd P2P configuration to your `config.json`:\n\n```json\n{\n    \"p2p\": {\n        \"enabled\": true,\n        \"port\": 4001,\n        \"wsPort\": 4002,\n        \"bootstrap\": [\n            \"/ip4/AGGREGATOR_IP/tcp/4001/p2p/AGGREGATOR_PEER_ID\"\n        ]\n    }\n}\n```\n\nGet the bootstrap peer from your aggregator: `curl http://bob-aggregator.leap-forward.ca:8080/p2p/bootstrap`\n\n### Hybrid Mode\n\nThe client supports both HTTP and P2P simultaneously. When both are enabled:\n- Consumer automatically selects P2P if available, falls back to HTTP\n- Provider registers both endpoints with aggregators\n- Maximum compatibility with old and new clients\n\nTo disable HTTP and use P2P only:\n```json\n{\n    \"provider\": {\n        \"httpDisabled\": true\n    }\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Aggregators] Default aggregator: `http://bob-aggregator.leap-forward.ca:8080`\n\nTo add/change aggregators, edit `config.json`:\n```json\n{\n    \"aggregators\": [\n        \"http://bob-aggregator.leap-forward.ca:8080\"\n    ]\n}\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### \"Insufficient balance\"\nYour wallet needs $BOB tokens. Purchase them at:\nhttps://pump.fun/coin/F5k1hJjTsMpw8ATJQ1Nba9dpRNSvVFGRaznjiCNUvghH\n\nToken address: `F5k1hJjTsMpw8ATJQ1Nba9dpRNSvVFGRaznjiCNUvghH`\n\n### \"No APIs found\"\n- Check aggregator is running: `curl http://bob-aggregator.leap-forward.ca:8080/health`\n- Verify aggregator URL in config.json\n\n### \"Queue code expired\"\nQueue codes expire after 60 seconds. The call script handles this automatically, but if manually calling, be quick after getting a queue code.\n\n### \"Payment verification failed\"\n- Ensure you're on the correct Solana network (mainnet-beta for real $BOB)\n- Check your wallet has enough SOL for transaction fees (~0.001 SOL)"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Token Info] - **Token**: $BOB\n- **Network**: Solana mainnet-beta\n- **Mint Address**: `F5k1hJjTsMpw8ATJQ1Nba9dpRNSvVFGRaznjiCNUvghH`\n- **Purchase URL**: https://pump.fun/coin/F5k1hJjTsMpw8ATJQ1Nba9dpRNSvVFGRaznjiCNUvghH\n\n### Getting $BOB Tokens\n\nTo participate in the Bob P2P network, you need $BOB tokens. Purchase them at:\n**https://pump.fun/coin/F5k1hJjTsMpw8ATJQ1Nba9dpRNSvVFGRaznjiCNUvghH**\n\n### Cashing Out Earnings\n\n$BOB tokens you earn from providing APIs can be exchanged for **USDT, SOL, or any other token on the Solana network** via DEXs like Jupiter or Raydium. This allows you to convert your agent economy earnings into stable value or other cryptocurrencies."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Security] ⚠️ **IMPORTANT**: Your config.json contains your wallet private key.\n- Never share config.json\n- Never commit it to git\n- Keep backups secure"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Advanced: Providing APIs] To offer your own APIs and earn $BOB, see the provider documentation in `references/PROVIDER.md`."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "bob_p2p"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/26medias/bob-p2p-beta/SKILL.md"
+}

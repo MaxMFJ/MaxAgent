@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_ontology-causal-enhanced",
+  "description": "结构化知识图谱 + 因果推理系统。整合 oswalpalash/ontology 和 oswalpalash/causal-inference。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Ontology + Causal Enhanced\n\n整合版：知识图谱 + 因果推理 + Markdown 输出\n\n基于：\n- https://clawhub.ai/oswalpalash/ontology\n- https://clawhub.ai/oswalpalash/causal-inference"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[组件] 1. **ontology-md** - 知识图谱（实体+关系+约束验证）\n2. **causal-md** - 因果推理（动作记录+效果估算+历史回填）"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[触发词] | 组件 | 触发词 |\n|------|--------|\n| ontology | \"记住\", \"what do I know\", \"link X to Y\", \"show dependencies\" |\n| causal | \"记录动作\", \"做了什么\", \"why failed\", \"预测效果\" |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Ontology 功能] ### 核心类型\n- Person, Organization\n- Project, Task, Goal\n- Event, Location\n- Document, Message, Note\n- Account, Device, Credential\n\n### 使用\n```bash\n# 创建实体\npython3 skills/ontology-md/scripts/ontology.py create --type Person --props '{\"name\":\"Alice\"}'\n\n# 查询\npython3 skills/ontology-md/scripts/ontology.py query --type Task --where '{\"status\":\"open\"}'\n\n# 关联\npython3 skills/ontology-md/scripts/ontology.py relate --from proj_001 --rel has_task --to task_001\n\n# 验证\npython3 skills/ontology-md/scripts/ontology.py validate\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Causal 功能] ### 使用\n```bash\n# 记录动作\npython3 skills/causal-md/scripts/log_action.py --action send_email --outcome reply_received\n\n# 估算效果\npython3 skills/causal-md/scripts/estimate_effect.py --action send_email --context '{\"time\":\"morning\"}'\n\n# 回填历史\npython3 skills/causal-md/scripts/backfill_email.py /path/to/email.json\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[数据目录] ```\nmemory/\n├── ontology/\n│   ├── graph.jsonl    # 实体+关系\n│   ├── schema.yaml    # 约束定义\n│   └── entities.md    # 导出（兼容 memory_search）\n└── causal/\n    └── actions.jsonl  # 动作日志\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ontology_causal_enhanced"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/ontology-enhanced/SKILL.md"
+}

@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_ralph-loop",
+  "description": "Guide OpenClaw agents to execute Ralph Wiggum loops using exec and process tools. Agent orchestrates coding agents (Codex, Claude Code, OpenCode, Goose) with proper TTY support via pty:true. Plans/builds code via PROMPT.md + AGENTS.md, SPECS and IMPLEMENTATION_PLAN.md. Includes PLANNING vs BUILDING modes, backpressure, sandboxing, and completion conditions. Users request loops, agents execute using tools.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Ralph Loop"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill guides **OpenClaw agents** to execute Ralph Loop workflows using the `exec` and `process` tools. The agent orchestrates AI coding agent sessions following the Ralph playbook flow:\n\n1) **Define Requirements** → JTBD → Focus Topics → `specs/*.md`\n2) **PLANNING Loop** → Create/update `IMPLEMENTATION_PLAN.md` (do not implement)\n3) **BUILDING Loop** → Implement tasks, run tests (backpressure), update plan, commit\n\nThe loop persists context via `PROMPT.md` + `AGENTS.md` (loaded each iteration) and the plan/specs on disk."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How This Skill Works] This skill generates instructions for **OpenClaw agents** to execute Ralph Loops using the `exec` and `process` tools.\n\n- The agent calls `exec` tool with the coding agent command\n- Uses `pty: true` to provide TTY for interactive CLIs\n- Uses `background: true` for monitoring capabilities\n- Uses `process` tool to monitor progress and detect completion\n\n**Important**: Users don't run these scripts directly - the OpenClaw agent executes them using its tool capabilities.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[TTY Requirements] Some coding agents **require a real terminal (TTY)** to work properly, or they will hang:\n\n**Interactive CLIs (need TTY)**:\n- OpenCode, Codex, Claude Code, Pi, Goose\n\n**Non-interactive CLIs (file-based)**:\n- aider, custom scripts\n\n**Solution**: Use **exec + process mode** for interactive CLIs, simple loops for file-based tools.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Agent Tool Usage Patterns] ### Interactive CLIs (Recommended Pattern)\n\nFor OpenCode, Codex, Claude Code, Pi, and Goose - these require TTY support:\n\n**When I (the agent) receive a Ralph Loop request, I will:**\n\n1. **Use exec tool** to launch the coding agent:\n   ```\n   exec tool with parameters:\n   - command: \"opencode run --model <MODEL> \\\"$(cat PROMPT.md)\\\"\"\n   - workdir: <project_path>\n   - background: true\n   - pty: true\n   - yieldMs: 60000\n   - timeout: 3600\n   ```\n\n2. **Capture session ID** from exec tool response\n\n3. **Use process tool** to monitor:\n   ```\n   process tool with:\n   - action: \"poll\"\n   - sessionId: <captured_session_id>\n   \n   process tool with:\n   - action: \"log\"\n   - sessionId: <captured_session_id>\n   - offset: -30  (for recent output)\n   ```\n\n4. **Check completion** by reading `IMPLEMENTATION_PLAN.md` for sentinel text\n\n5. **Clean up** with process kill if needed:\n   ```\n   process tool with:\n   - action: \"kill\"\n   - sessionId: <session_id>\n   ```\n\n**Benefits**: TTY support, real-time logs, timeout handling, parallel sessions, workdir isolation\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Agent Workflow] ### 1) Gather Inputs\n\n**Required**:\n- Goal / JTBD\n- CLI (`opencode`, `codex`, `claude`, `goose`, `pi`, other)\n- Mode (`PLANNING`, `BUILDING`, or `BOTH`)\n- Max iterations (default: PLANNING=5, BUILDING=10)\n\n**Optional**:\n- Completion sentinel (default: `STATUS: COMPLETE` in `IMPLEMENTATION_PLAN.md`)\n- Working directory (default: `$PWD`)\n- Timeout per iteration (default: 3600s)\n- Sandbox choice\n- Auto-approval flags (`--full-auto`, `--yolo`, `--dangerously-skip-permissions`)\n\n**Auto-detect**:\n- If CLI in interactive list → use exec tool with pty: true\n- Extract model flag from CLI requirements\n\n### 2) Requirements → Specs (Optional)\n\nIf requirements are unclear:\n- Break JTBD into focus topics\n- Draft `specs/<topic>.md` for each\n- Keep specs short and testable\n\n### 3) PROMPT.md + AGENTS.md\n\n**PROMPT.md** references:\n- `specs/*.md`\n- `IMPLEMENTATION_PLAN.md`\n- Relevant project files\n\n**AGENTS.md** includes:\n- Test commands (backpressure)\n- Build/run instructions\n- Operational learnings\n\n### 4) Prompt Templates\n\n**PLANNING Prompt** (no implementation):\n```\nYou are running a Ralph PLANNING loop for this goal: <goal>.\n\nRead specs/* and the current codebase. Only update IMPLEMENTATION_PLAN.md.\n\nRules:\n- Do not implement\n- Do not commit\n- Create a prioritized task list\n- Write down questions if unclear\n\nCompletion:\nWhen plan is ready, add: STATUS: PLANNING_COMPLETE\n```\n\n**BUILDING Prompt**:\n```\nYou are running a Ralph BUILDING loop for this goal: <goal>.\n\nContext: specs/*, IMPLEMENTATION_PLAN.md, AGENTS.md\n\nTasks:\n1) Pick the most important task\n2) Investigate code\n3) Implement\n4) Run backpressure commands from AGENTS.md\n5) Update IMPLEMENTATION_PLAN.md\n6) Update AGENTS.md with learnings\n7) Commit with clear message\n\nCompletion:\nWhen all done, add: STATUS: COMPLETE\n```\n\n### 5) CLI Command Reference\n\nThe agent constructs command strings using these patterns:\n\n| CLI | Command String Pattern |\n|-----|----------------------|\n| **OpenCode** | `opencode run --model <MODEL> \"$(cat "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Detailed Agent Tool Usage Examples] ### Example 1: OpenCode Ralph Loop\n\n**Agent executes this sequence:**\n\n```\nStep 1: Launch OpenCode with exec tool\n{\n  command: \"opencode run --model github-copilot/claude-opus-4.5 \\\"$(cat PROMPT.md)\\\"\",\n  workdir: \"/path/to/project\",\n  background: true,\n  pty: true,\n  timeout: 3600,\n  yieldMs: 60000\n}\n\nStep 2: Capture session ID from response\nsessionId: \"abc123\"\n\nStep 3: Monitor with process tool every 10-30 seconds\n{\n  action: \"poll\",\n  sessionId: \"abc123\"\n}\n\nStep 4: Check recent logs\n{\n  action: \"log\",\n  sessionId: \"abc123\",\n  offset: -30\n}\n\nStep 5: Read IMPLEMENTATION_PLAN.md to check for completion\n- Look for: \"STATUS: COMPLETE\" or \"STATUS: PLANNING_COMPLETE\"\n\nStep 6: If complete or timeout, cleanup\n{\n  action: \"kill\",\n  sessionId: \"abc123\"\n}\n```\n\n### Example 2: Codex with Full Auto\n\n**Agent tool calls:**\n\n```\nexec tool:\n{\n  command: \"codex exec --full-auto --model anthropic/claude-opus-4 \\\"$(cat PROMPT.md)\\\"\",\n  workdir: \"/path/to/project\",\n  background: true,\n  pty: true,\n  timeout: 3600\n}\n\n# Then monitor with process tool as above\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Completion Detection] Use flexible regex to match variations:\n\n```bash\ngrep -Eq \"STATUS:?\\s*(PLANNING_)?COMPLETE\" IMPLEMENTATION_PLAN.md\n```\n\n**Matches**:\n- `STATUS: COMPLETE`\n- `STATUS:COMPLETE`\n- `STATUS: PLANNING_COMPLETE`\n- `## Status: PLANNING_COMPLETE`\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Safety & Safeguards] ### Auto-Approval Flags (Risky!)\n- Codex: `--full-auto` (sandboxed, auto-approve) or `--yolo` (no sandbox!)\n- Claude: `--dangerously-skip-permissions`\n- **Recommendation**: Use sandboxes (docker/e2b/fly) and limited credentials\n\n### Escape Hatches\n- Stop: `Ctrl+C`\n- Kill session: process tool with action: \"kill\"\n- Rollback: `git reset --hard HEAD~N`\n\n### Best Practices\n1. **Start small**: Test with 1-2 iterations first\n2. **Workdir isolation**: Prevent reading unrelated files\n3. **Set timeouts**: Default 1h may not fit all tasks\n4. **Monitor actively**: Check logs, don't terminate prematurely\n5. **Requirements first**: Clear specs before building\n6. **Backpressure early**: Add tests from the start\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Problem | Solution |\n|---------|----------|\n| OpenCode hangs | Ensure agent uses exec tool with pty: true |\n| Session won't start | Check CLI path, git repo, command syntax |\n| Completion not detected | Verify sentinel format in IMPLEMENTATION_PLAN.md |\n| Process timeout | Agent should increase timeout parameter or simplify tasks |\n| Parallel conflicts | Agent should use git worktrees for isolation |\n| Can't see progress | Agent should use process tool with action: \"log\" |\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[License] MIT"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Credits] This skill builds upon work by:\n- **@jordyvandomselaar** - Original Ralph Loop concept and workflow design\n- **@steipete** - Coding agent patterns and exec/process tool usage with pty support\n\nKey improvement: Uses OpenClaw's `exec` tool with `pty: true` to provide TTY for interactive CLIs, solving the hanging issue that occurs with simple background bash execution."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ralph_loop"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/addozhang/ralph-loop-agent/SKILL.md"
+}

@@ -1,0 +1,82 @@
+{
+  "id": "openclaw_skill_nerve_bridge",
+  "description": "Bi-directional control of Trae via macOS AppleScript with built-in feedback mechanism. Use when needing to execute code/commands in Trae IDE and wait for completion confirmation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Nerve Bridge (v2)\n\nDirect neural link to Trae with closed-loop feedback via macOS AppleScript."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] Send instruction and wait for confirmation:\n\n```bash\npython3 nerve_bridge.py \"<instruction>\"\n```\n\nExample:\n\n```bash\npython3 nerve_bridge.py \"Create a new Python file and add a simple 'Hello World' function. After creating, add a print statement to test it.\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Signal Injection**:\n   - Payload is copied to system clipboard via `pbcopy`\n   - AppleScript activates Trae and simulates: Space (wake) → Delete → Cmd+V → Enter\n\n2. **Feedback Loop**:\n   - Instruction must include a Python hook that writes to `~/.openclaw/workspace/trae_feedback.json` when done\n   - Script waits up to 5 minutes (300 seconds) for the signal file\n   - Returns JSON feedback when received"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Required Hook Pattern] When crafting instructions, include this pattern at the end:\n\n```python\nimport json, time\nwith open(\"~/.openclaw/workspace/trae_feedback.json\", \"w\") as f:\n    json.dump({\"status\": \"success\", \"timestamp\": time.time()}, f)\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Environment] - **Platform**: macOS only\n- **Dependencies**: System Python (`python3`), AppleScript (`osascript`)\n- **Permissions**: System Events and Terminal must have \"Accessibility\" permissions\n- **Output File**: `~/.openclaw/workspace/trae_feedback.json` (created by the script)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **No output from Trae**: Check if Trae window is active and input is focused\n- **Timeout**: Trae didn't complete within 5 minutes\n- **Permission denied**: macOS may need to grant Terminal System Events permission"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "nerve_bridge"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "⚡️",
+        "requires": {
+          "bins": [
+            "python3",
+            "osascript"
+          ]
+        },
+        "install": [
+          {
+            "id": "system",
+            "kind": "system",
+            "label": "macOS System Environment",
+            "description": "Depends on system Python and AppleScript. No extra installation required."
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/88901111hz-lang/nerve-bridge-skill/SKILL.md"
+}

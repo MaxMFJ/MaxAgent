@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_space-autonomy-quantum",
+  "description": "Autonomous space navigation agent using optical quantum kernels for terrain classification.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Space Autonomy Quantum Skill\n\nThis skill simulates an autonomous agent for space exploration that uses **Optical Quantum Kernels** to classify terrain.\nIt emphasizes **highest safety** by implementing strict confidence thresholds. If the quantum classifier is uncertain, the agent triggers a failsafe \"SAFE MODE\"."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Quantum Perception**: Uses simulated optical quantum interference to recognize terrain features.\n- **Safety Failsafe**: Automatically halts if classification confidence is below 0.8.\n- **Autonomous Decision Making**: Decides to \"Navigate\" or \"Avoid\" based on quantum kernel results."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] - `navigate`: Process a sensor reading and decide on an action."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "space_autonomy_quantum"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/space-autonomy-skill/SKILL.md"
+}

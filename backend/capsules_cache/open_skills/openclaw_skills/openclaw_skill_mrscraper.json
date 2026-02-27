@@ -1,0 +1,88 @@
+{
+  "id": "openclaw_skill_mrscraper",
+  "description": "Run AI-powered, unblockable web scraping, data extraction with natural language via the MrScraper API",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MrScraper\n\nRun AI-powered, unblockable web scraping, data extraction with natural language via the MrScraper API"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Actions] This skill supports:\n\n- Opening blocked pages through unblocker (stealth browser + IP rotation)\n- Starting AI scraper runs from natural-language instructions\n- Rerunning existing scraper configurations on one or multiple URLs\n- Running manual workflow-based reruns\n- Fetching paginated results and detailed results by ID\n\nThis skill is API-only and does not depend on bundled local scripts."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Base URLs] - Unblocker API: `https://api.mrscraper.com`\n- Platform API: `https://api.app.mrscraper.com`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Authentication] ### Unblocker API auth\n\nUse query-param auth on unblocker endpoint:\n\n- `token=<MRSCRAPER_API_TOKEN>`\n\n### Platform API auth\n\nUse header-based auth on platform endpoints:\n\n```http\nx-api-token: <MRSCRAPER_API_TOKEN>\naccept: application/json\ncontent-type: application/json\n```\n\n### How to get `MRSCRAPER_API_TOKEN`?\n\nAn API token lets your applications securely interact with MrScraper APIs and rerun scrapers created in the dashboard.\n\nFollow these steps in the dashboard:\n\n1. Click your **User Profile** at the top-right corner.\n2. Select **API Tokens**.\n3. Click **New Token**.\n4. Enter a **name** and set an **expiration date**.\n5. Click **Create**.\n6. Copy the new token and store it securely as `MRSCRAPER_API_TOKEN`.\n7. Use it in requests through the `x-api-token` header.\n\nSecurity rule:\n\n- Never expose tokens in client-side code (browser/mobile app bundles).\n- Store tokens in environment variables or server-side secret managers.\n\nNotes from the auth docs:\n\n- The API key works for all V3 Platform endpoints.\n- The same key can be used for endpoints on `sync.scraper.mrscraper.com`.\n- For access to endpoints on other hosts, contact `support@mrscraper.com`."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Install and Runtime] - No local install step is required by this skill document.\n- No bundled `scripts/` are required.\n- Calls are direct HTTPS requests to the two base URLs above."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Data and Scope] - Data is sent only to `api.app.mrscraper.com` and `api.mrscraper.com`.\n- Responses may contain extracted page content and scrape metadata.\n- This skill does not define hidden persistence or background jobs.\n- Never expose tokens in logs, commits, or output."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Endpoints] ### 1. Unblocker\n\n- Method: `GET`\n- URL: `https://api.mrscraper.com`\n- Auth: `token` query parameter\n\nOpens a target URL through stealth browsing and IP rotation, then returns HTML. Use this when direct access is blocked by captcha or anti-bot protections.\n\n#### Query parameters:\n\n| Field            | Type      | Required | Default | Description                             |\n| ---------------- | --------- | -------- | ------- | --------------------------------------- |\n| `token`          | `string`  | Yes      | —       | Unblocker token (`MRSCRAPER_API_TOKEN`) |\n| `url`            | `string`  | Yes      | —       | URL-encoded target URL                  |\n| `timeout`        | `number`  | No       | 60      | Max wait in seconds (example `120`)     |\n| `geoCode`        | `string`  | No       | None    | Geographic routing code (example `SG`)  |\n| `blockResources` | `boolean` | No       | false   | Block non-essential resources           |\n\n#### Request example:\n\n```bash\ncurl --location 'https://api.mrscraper.com?token=<MRSCRAPER_API_TOKEN>&timeout=120&geoCode=SG&url=https%3A%2F%2Fwww.lazada.sg%2Fproducts%2Fpdp-i111650098-s23209659764.html&blockResources=false'\n```\n\n#### Response example:\n\n```html\n<!doctype html>\n<html>\n  <head>...</head>\n  <body>...</body>\n</html>\n```\n\n#### Notes:\n\n- Prefer explicit `geoCode` and practical timeouts for repeatable behavior.\n- Only pass cookies when session-specific content is required.\n\n### 2. Create AI Scraper\n\n- Method: `POST`\n- Host: `https://api.app.mrscraper.com`\n- Path: `/api/v1/scrapers-ai`\n- Auth: `x-api-token`\n\nCreate a new AI scraper run from natural-language instructions.\n\n#### Payload parameters (for `agent`: `general` or `agent`: `listing`):\n\n| Field          | Type     | Required | Default  | Description                                                |\n| -------------- | -------- | -------- | -------- | ---------------------------------------------------------- |\n| `url`          | string   | Yes      | —        | Targ"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Errors] Standard platform API errors:\n\n| Status | Meaning                      |\n| ------ | ---------------------------- |\n| `400`  | Invalid request payload      |\n| `401`  | Missing or invalid API token |\n| `404`  | Scraper or result not found  |\n| `429`  | Rate limit exceeded          |\n| `500`  | Internal scraper error       |\n\nError format:\n\n```json\n{\n  \"message\": \"string\",\n  \"error\": \"string\",\n  \"statusCode\": \"number\"\n}\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Operating Rules] - Validate required fields before every call.\n- Use pagination for large result sets.\n- Retry on `429` with exponential backoff.\n- Never expose credentials in outputs."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mrscraper"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "MRSCRAPER_API_TOKEN"
+          ]
+        },
+        "primaryEnv": "MRSCRAPER_API_TOKEN"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ai-mrscraper/mrscraper/SKILL.md"
+}

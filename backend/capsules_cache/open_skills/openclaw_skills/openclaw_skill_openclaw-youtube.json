@@ -1,0 +1,118 @@
+{
+  "id": "openclaw_skill_openclaw-youtube",
+  "description": "YouTube SERP Scout for agents. Search top-ranking videos, channels, and trends for content research and competitor tracking.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw YouTube 📺\n\n**YouTube SERP Scout for autonomous agents. Powered by AIsa.**\n\nOne API key. Rank discovery. Content research. Competitor tracking."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🔥 What Can You Do?] ### Content Research\n```\n\"Find top-ranking videos about 'AI agents tutorial' to see what's working\"\n```\n\n### Competitor Tracking\n```\n\"Search for videos from competitor channels about 'machine learning'\"\n```\n\n### Trend Discovery\n```\n\"What are the top YouTube videos about 'GPT-5' right now?\"\n```\n\n### Topic Analysis\n```\n\"Find popular videos on 'autonomous driving' to understand audience interest\"\n```\n\n### Channel Discovery\n```\n\"Search for channels creating content about 'crypto trading'\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nexport AISA_API_KEY=\"your-key\"\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### Basic YouTube Search\n\n```bash\n# Search for videos\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=AI+agents+tutorial\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Search with Country Filter\n\n```bash\n# Search in specific country (US)\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=machine+learning&gl=us\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Search in Japan\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=AI&gl=jp&hl=ja\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Search with Language Filter\n\n```bash\n# Search with interface language\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=python+tutorial&hl=en\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Chinese interface\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=编程教程&hl=zh-CN&gl=cn\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Pagination with Filter Token\n\n```bash\n# Use sp parameter for pagination or advanced filters\ncurl \"https://api.aisa.one/apis/v1/youtube/search?engine=youtube&q=AI&sp=<filter_token>\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Python Client] ```bash\n# Basic search\npython3 {baseDir}/scripts/youtube_client.py search --query \"AI agents tutorial\"\n\n# Search with country\npython3 {baseDir}/scripts/youtube_client.py search --query \"machine learning\" --country us\n\n# Search with language\npython3 {baseDir}/scripts/youtube_client.py search --query \"python tutorial\" --lang en\n\n# Full options\npython3 {baseDir}/scripts/youtube_client.py search --query \"GPT-5 news\" --country us --lang en\n\n# Competitor research\npython3 {baseDir}/scripts/youtube_client.py search --query \"OpenAI tutorial\"\n\n# Trend discovery\npython3 {baseDir}/scripts/youtube_client.py search --query \"AI trends 2025\"\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Use Cases] ### 1. Content Gap Analysis\n\nFind what content is ranking well to identify gaps in your strategy:\n\n```python\n# Search for top videos in your niche\nresults = client.search(\"AI automation tutorial\")\n# Analyze titles, views, and channels to find opportunities\n```\n\n### 2. Competitor Monitoring\n\nTrack what competitors are publishing:\n\n```python\n# Search for competitor brand + topic\nresults = client.search(\"OpenAI GPT tutorial\")\n# Monitor ranking changes over time\n```\n\n### 3. Keyword Research\n\nDiscover what topics are trending:\n\n```python\n# Search broad topics to see what's popular\nresults = client.search(\"artificial intelligence 2025\")\n# Extract common keywords from top-ranking titles\n```\n\n### 4. Audience Research\n\nUnderstand what your target audience watches:\n\n```python\n# Search in specific regions\nresults = client.search(\"coding tutorial\", country=\"jp\", lang=\"ja\")\n# Analyze regional content preferences\n```\n\n### 5. SEO Analysis\n\nAnalyze how videos rank for specific keywords:\n\n```python\n# Track ranking positions for target keywords\nkeywords = [\"AI tutorial\", \"machine learning basics\", \"Python AI\"]\nfor kw in keywords:\n    results = client.search(kw)\n    # Record top 10 videos and their channels\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Endpoint Reference] | Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/youtube/search` | GET | Search YouTube SERP |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Request Parameters] | Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| engine | string | Yes | Must be `youtube` |\n| q | string | Yes | Search query |\n| gl | string | No | Country code (e.g., `us`, `jp`, `uk`, `cn`) |\n| hl | string | No | Interface language (e.g., `en`, `ja`, `zh-CN`) |\n| sp | string | No | YouTube filter token for pagination/filters |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Response Format] ```json\n{\n  \"search_metadata\": {\n    \"id\": \"search_id\",\n    \"status\": \"Success\",\n    \"created_at\": \"2025-01-15T12:00:00Z\",\n    \"request_time_taken\": 1.23,\n    \"total_time_taken\": 1.45\n  },\n  \"search_results\": [\n    {\n      \"video_id\": \"abc123xyz\",\n      \"title\": \"Complete AI Agents Tutorial 2025\",\n      \"link\": \"https://www.youtube.com/watch?v=abc123xyz\",\n      \"channel_name\": \"AI Academy\",\n      \"channel_link\": \"https://www.youtube.com/@aiacademy\",\n      \"description\": \"Learn how to build AI agents from scratch...\",\n      \"views\": \"125K views\",\n      \"published_date\": \"2 weeks ago\",\n      \"duration\": \"45:30\",\n      \"thumbnail\": \"https://i.ytimg.com/vi/abc123xyz/hqdefault.jpg\"\n    }\n  ]\n}\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Country Codes (gl)] | Code | Country |\n|------|---------|\n| us | United States |\n| uk | United Kingdom |\n| jp | Japan |\n| cn | China |\n| de | Germany |\n| fr | France |\n| kr | South Korea |\n| in | India |\n| br | Brazil |\n| au | Australia |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Language Codes (hl)] | Code | Language |\n|------|----------|\n| en | English |\n| ja | Japanese |\n| zh-CN | Chinese (Simplified) |\n| zh-TW | Chinese (Traditional) |\n| ko | Korean |\n| de | German |\n| fr | French |\n| es | Spanish |\n| pt | Portuguese |\n| ru | Russian |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Pricing] | API | Cost |\n|-----|------|\n| YouTube search | ~$0.002 |\n\nEvery response includes `usage.cost` and `usage.credits_remaining`.\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Get Started] 1. Sign up at [aisa.one](https://aisa.one)\n2. Get your API key\n3. Add credits (pay-as-you-go)\n4. Set environment variable: `export AISA_API_KEY=\"your-key\"`"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Full API Reference] See [API Reference](https://aisa.mintlify.app/api-reference/introduction) for complete endpoint documentation."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_youtube"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📺",
+        "requires": {
+          "bins": [
+            "curl",
+            "python3"
+          ],
+          "env": [
+            "AISA_API_KEY"
+          ]
+        },
+        "primaryEnv": "AISA_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aisapay/aisa-youtube-search/SKILL.md"
+}

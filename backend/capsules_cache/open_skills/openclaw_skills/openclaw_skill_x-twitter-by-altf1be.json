@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_x-twitter-by-altf1be",
+  "description": "Post tweets, threads, and media to X/Twitter via API v2 — secure OAuth 1.0a, no external npm dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # X/Twitter by @altf1be\n\nPost tweets, threads, and media to X/Twitter via the X API v2 with secure OAuth 1.0a signing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Get API keys from https://developer.x.com\n2. Set environment variables (or create `.env` in `{baseDir}`):\n\n```\nX_CONSUMER_KEY=your-api-key\nX_CONSUMER_SECRET=your-api-secret\nX_ACCESS_TOKEN=your-access-token\nX_ACCESS_TOKEN_SECRET=your-access-token-secret\n```\n\n3. Install dependencies: `cd {baseDir} && npm install`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ```bash\n# Verify connection\nnode {baseDir}/scripts/xpost.mjs verify\n\n# Post a tweet\nnode {baseDir}/scripts/xpost.mjs tweet \"Hello from OpenClaw! 🦞\"\n\n# Post with image\nnode {baseDir}/scripts/xpost.mjs tweet \"Check this out!\" --media ./screenshot.png\n\n# Reply to a tweet\nnode {baseDir}/scripts/xpost.mjs tweet \"Great point!\" --reply 1234567890\n\n# Post a thread (inline)\nnode {baseDir}/scripts/xpost.mjs thread \"First tweet\" \"Second tweet\" \"Third tweet\"\n\n# Post a thread (from file, tweets separated by ---)\nnode {baseDir}/scripts/xpost.mjs thread --file ./thread.md\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Thread file format] Create a file with tweets separated by `---`:\n\n```\n🚀 Announcing something cool!\n---\nHere's why it matters...\n---\nCheck it out: https://example.com\n#OpenSource #AI\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security] - OAuth 1.0a user context signing (no app-only auth for write operations)\n- No credentials printed to stdout\n- API calls use pure Node.js `fetch` + built-in `node:crypto` (no third-party HTTP or OAuth libraries)\n- Minimal dependencies: only `commander` (CLI framework) and `dotenv` (env loading)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Author] Abdelkrim BOUJRAF — [ALT-F1 SRL](https://www.alt-f1.be), Brussels 🇧🇪\nX: [@altf1be](https://x.com/altf1be)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "x_twitter_by_altf1be"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🐦",
+        "requires": {
+          "env": [
+            "X_CONSUMER_KEY",
+            "X_CONSUMER_SECRET",
+            "X_ACCESS_TOKEN",
+            "X_ACCESS_TOKEN_SECRET"
+          ]
+        },
+        "primaryEnv": "X_CONSUMER_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdelkrim/x-twitter-by-altf1be/SKILL.md"
+}

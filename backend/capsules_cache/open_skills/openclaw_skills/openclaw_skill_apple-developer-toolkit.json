@@ -1,0 +1,118 @@
+{
+  "id": "openclaw_skill_apple-developer-toolkit",
+  "description": "All-in-one Apple developer skill with three integrated tools shipped as a single unified binary. (1) Documentation search across Apple frameworks, symbols, and 1,267 WWDC sessions from 2014-2025. No credentials needed. (2) App Store Connect CLI with 120+ commands covering builds (find/wait/upload), TestFlight, pre-submission validate, submissions, signing, subscriptions (family-sharable), IAP, analytics, Xcode Cloud, metadata workflows, release pipeline dashboard, insights, win-back offers, promoted purchases, product pages, nominations, accessibility declarations, pre-orders, pricing filters, localizations update, diff, webhooks with local receiver, workflow automation, and more. Requires App Store Connect API key. (3) Multi-platform app builder (iOS/watchOS/tvOS/iPad/macOS/visionOS) that generates complete Swift/SwiftUI apps from natural language with auto-fix, simulator launch, interactive chat mode, and open-in-Xcode. Requires an LLM API key and Xcode. Includes 38 iOS development rules and 12 SwiftUI best practice guides for Liquid Glass, navigation, state management, and modern APIs. All three tools ship as one binary (appledev). USE WHEN: Apple API docs, App Store Connect management, WWDC lookup, or building iOS/watchOS/tvOS/macOS/visionOS apps from scratch. DON'T USE WHEN: non-Apple platforms or general coding.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Apple Developer Toolkit\n\nThree tools in one binary. Each part works independently with different credential requirements."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Architecture] Ships as a single unified binary `appledev` with multi-call support:\n\n```\nappledev build ...    # iOS app builder (SwiftShip)\nappledev store ...    # App Store Connect CLI\nappledev b ...        # Short alias\nappledev s ...        # Short alias\n```\n\nOne binary, three tools, zero duplication."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Credential Requirements by Feature] | Feature | Credentials Needed | Works Without Setup |\n|---------|-------------------|-------------------|\n| Documentation Search (Part 1) | None | Yes |\n| App Store Connect (Part 2) | App Store Connect API key (.p8) | No |\n| iOS App Builder (Part 3) | LLM API key + Xcode | No |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] ### Part 1: Documentation Search (no setup needed)\n\nWorks immediately with Node.js:\n\n```bash\nnode cli.js search \"NavigationStack\"\n```\n\n### Part 2: App Store Connect CLI\n\nInstall via Homebrew:\n\n```bash\nbrew install Abdullah4AI/tap/appledev\n```\n\nAuthenticate with your App Store Connect API key:\n\n```bash\nappledev store auth login --name \"MyApp\" --key-id \"KEY_ID\" --issuer-id \"ISSUER_ID\" --private-key /path/to/AuthKey.p8\n```\n\nOr set environment variables:\n\n```bash\nexport APPSTORE_KEY_ID=\"your-key-id\"\nexport APPSTORE_ISSUER_ID=\"your-issuer-id\"\nexport APPSTORE_PRIVATE_KEY_PATH=\"/path/to/AuthKey.p8\"\n```\n\nAPI keys are created at https://appstoreconnect.apple.com/access/integrations/api\n\n### Part 3: iOS App Builder\n\nPrerequisites: Xcode (with iOS Simulator), XcodeGen, and an LLM API key for code generation.\n\n```bash\nappledev build setup    # Checks and installs prerequisites\n```\n\n### Build from source\n\n```bash\nbash scripts/setup.sh\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Part 1: Documentation Search] ```bash\nnode cli.js search \"NavigationStack\"\nnode cli.js symbols \"UIView\"\nnode cli.js doc \"/documentation/swiftui/navigationstack\"\nnode cli.js overview \"SwiftUI\"\nnode cli.js samples \"SwiftUI\"\nnode cli.js wwdc-search \"concurrency\"\nnode cli.js wwdc-year 2025\nnode cli.js wwdc-topic \"swiftui-ui-frameworks\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Part 2: App Store Connect] Full reference: [references/app-store-connect.md](references/app-store-connect.md)\n\n| Task | Command |\n|------|---------|\n| List apps | `appledev store apps` |\n| Upload build | `appledev store builds upload --app \"APP_ID\" --ipa \"app.ipa\" --wait` |\n| Find build by number | `appledev store builds find --app \"APP_ID\" --build-number \"42\"` |\n| Wait for build processing | `appledev store builds wait --build \"BUILD_ID\"` |\n| Publish TestFlight | `appledev store publish testflight --app \"APP_ID\" --ipa \"app.ipa\" --group \"Beta\" --wait` |\n| Submit App Store | `appledev store publish appstore --app \"APP_ID\" --ipa \"app.ipa\" --submit --confirm --wait` |\n| Pre-submission validation | `appledev store validate --app \"APP_ID\" --version-id \"VERSION_ID\"` |\n| List certificates | `appledev store certificates list` |\n| Reviews | `appledev store reviews --app \"APP_ID\" --output table` |\n| Update localizations | `appledev store localizations update --app \"APP_ID\" --locale \"en-US\" --name \"My App\"` |\n| Sales report | `appledev store analytics sales --vendor \"VENDOR\" --type SALES --subtype SUMMARY --frequency DAILY --date \"2024-01-20\"` |\n| Xcode Cloud | `appledev store xcode-cloud run --app \"APP_ID\" --workflow \"CI\" --branch \"main\" --wait` |\n| Notarize | `appledev store notarization submit --file ./MyApp.zip --wait` |\n| Status dashboard | `appledev store status --app \"APP_ID\" --output table` |\n| Weekly insights | `appledev store insights weekly --app \"APP_ID\" --source analytics` |\n| Metadata pull | `appledev store metadata pull --app \"APP_ID\" --version \"1.2.3\" --dir ./metadata` |\n| Release notes | `appledev store release-notes generate --since-tag \"v1.2.2\"` |\n| Diff localizations | `appledev store diff localizations --app \"APP_ID\" --path ./metadata` |\n| Nominations | `appledev store nominations create --app \"APP_ID\" --name \"Launch\"` |\n| Price point filter | `appledev store pricing price-points --app \"APP_ID\" --price 0.99` |\n| IAP (family sharable) | `appledev store iap create --app \"APP_ID\" --fam"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Part 3: Multi-Platform App Builder] Supports iOS, watchOS, tvOS, and iPad. Generates complete Swift/SwiftUI apps from natural language with AI-powered code generation.\n\n```bash\nappledev build                     # Interactive mode\nappledev build setup               # Install prerequisites (Xcode, XcodeGen, AI backend)\nappledev build fix                 # Auto-fix build errors\nappledev build run                 # Build and launch in simulator\nappledev build open                # Open project in Xcode\nappledev build chat                # Interactive chat mode (edit/ask questions)\nappledev build info                # Show project status\nappledev build usage               # Token usage and cost\n```\n\n### Supported Platforms\n\n| Platform | Status |\n|----------|--------|\n| iOS | Full support |\n| iPad | Full support |\n| macOS | Supported |\n| watchOS | Supported |\n| tvOS | Supported |\n| visionOS | Supported |\n\n### How it works\n\n```\ndescribe > analyze > plan > build > fix > run\n```\n\n1. **Analyze** - Extracts app name, features, core flow, target platform from description\n2. **Plan** - Produces file-level build plan: data models, navigation, design\n3. **Build** - Generates Swift source files, project.yml, asset catalog\n4. **Fix** - Compiles and auto-repairs until build succeeds\n5. **Run** - Boots Simulator and launches the app\n\n### Interactive commands\n\n| Command | Description |\n|---------|-------------|\n| `/run` | Build and launch in simulator |\n| `/fix` | Auto-fix compilation errors |\n| `/open` | Open project in Xcode |\n| `/ask [question]` | Ask a question about the project |\n| `/model [name]` | Switch model (sonnet, opus, haiku) |\n| `/info` | Show project info |\n| `/usage` | Token usage and cost |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[References] | Reference | Content |\n|-----------|---------|\n| [references/app-store-connect.md](references/app-store-connect.md) | Complete App Store Connect CLI commands |\n| [references/ios-rules/](references/ios-rules/) | 38 iOS development rules |\n| [references/swiftui-guides/](references/swiftui-guides/) | 12 SwiftUI best practice guides |\n| [references/ios-app-builder-prompts.md](references/ios-app-builder-prompts.md) | System prompts for app building |\n\n### iOS Rules (38 files)\n\naccessibility, app_clips, app_review, apple_translation, biometrics, camera, charts, color_contrast, components, dark_mode, design-system, feedback_states, file-structure, forbidden-patterns, foundation_models, gestures, haptics, healthkit, live_activities, localization, maps, mvvm-architecture, navigation-patterns, notification_service, notifications, safari_extension, share_extension, siri_intents, spacing_layout, speech, storage-patterns, swift-conventions, timers, typography, view-composition, view_complexity, website_links, widgets\n\n### SwiftUI Guides (12 files)\n\nanimations, forms-and-input, layout, liquid-glass, list-patterns, media, modern-apis, navigation, performance, scroll-patterns, state-management, text-formatting"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "apple_developer_toolkit"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🍎",
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "anyBins": [
+            "appledev"
+          ]
+        },
+        "install": [
+          {
+            "id": "appledev",
+            "kind": "brew",
+            "tap": "Abdullah4AI/tap",
+            "formula": "appledev",
+            "bins": [
+              "appledev"
+            ],
+            "label": "Apple Developer Toolkit - unified binary (Homebrew)"
+          }
+        ],
+        "env": {
+          "optional": [
+            {
+              "name": "APPSTORE_KEY_ID",
+              "description": "App Store Connect API Key ID. Required only for App Store Connect features. Get from https://appstoreconnect.apple.com/access/integrations/api"
+            },
+            {
+              "name": "APPSTORE_ISSUER_ID",
+              "description": "App Store Connect API Issuer ID. Required only for App Store Connect features."
+            },
+            {
+              "name": "APPSTORE_PRIVATE_KEY_PATH",
+              "description": "Path to App Store Connect API .p8 private key file. Required only for App Store Connect features. Alternative: use APPSTORE_PRIVATE_KEY or APPSTORE_PRIVATE_KEY_B64."
+            },
+            {
+              "name": "LLM_API_KEY",
+              "description": "LLM API key for code generation. Required only for iOS App Builder. Supports multiple AI backends."
+            }
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdullah4ai/apple-developer-toolkit/SKILL.md"
+}

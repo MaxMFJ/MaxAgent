@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_ClawCache Free",
+  "description": "Smart LLM cost tracking and caching for Python",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawCache Free - LLM Cost Tracking & Caching\r\n\r\n**ClawCache** is a production-ready Python library that helps you **track every penny** spent on LLM APIs and **automatically cache responses** to slash costs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🎯 What You Get] ### 💰 Cost Tracking\r\n- **Automatic logging** of every LLM API call with precise token counting\r\n- **Daily CLI reports** showing spending, savings, and cache efficiency\r\n- **Multi-provider support**: OpenAI, Anthropic, Mistral, Ollama, and more\r\n- **2026 pricing** built-in for accurate cost calculations\r\n\r\n### ⚡ Smart Caching\r\n- **Exact-match caching** using SQLite (fast, reliable, local)\r\n- **58.3% cache hit rate** proven in real-world scenarios\r\n- **Automatic savings** - cached responses cost $0\r\n- **Composite cache keys** for better accuracy (model + temperature + params)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[📊 Real-World Performance] Based on comprehensive simulation with **48 API calls** across 4 common use cases:\r\n\r\n| Metric | Value |\r\n|--------|-------|\r\n| **Cache Hit Rate** | 58.3% |\r\n| **Total Cost** | $0.0062 |\r\n| **API Calls Saved** | 28 out of 48 |\r\n| **Scenarios Tested** | Code Review, Data Analysis, Content Generation, QA Support |\r\n\r\n### Scenario Breakdown\r\n\r\n| Scenario | Calls | Cache Hits | Hit Rate |\r\n|----------|-------|------------|----------|\r\n| Code Review | 12 | 7 | 58.3% |\r\n| Data Analysis | 12 | 8 | 66.7% |\r\n| Content Generation | 12 | 7 | 58.3% |\r\n| QA Support | 12 | 6 | 50.0% |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🚀 Quick Start] ### Installation\r\n\r\n```bash\r\npip install clawcache\r\n```\r\n\r\n### Basic Usage\r\n\r\n```python\r\nfrom clawcache.free.cost import async_monitor_cost\r\nfrom clawcache.free.cache_basic import BasicCache\r\n\r\n# Initialize cache\r\ncache = BasicCache()\r\n\r\n# Decorate your LLM function\r\n@async_monitor_cost\r\nasync def my_llm_call(prompt, model=\"gpt-4-turbo\"):\r\n    # Check cache first\r\n    cached = await cache.aget(prompt, model=model)\r\n    if cached:\r\n        return cached.content\r\n    \r\n    # Make actual API call\r\n    response = await openai.ChatCompletion.acreate(\r\n        model=model,\r\n        messages=[{\"role\": \"user\", \"content\": prompt}]\r\n    )\r\n    \r\n    # Cache the response\r\n    await cache.aset(prompt, response, model=model)\r\n    return response\r\n\r\n# Use it\r\nresult = await my_llm_call(\"Explain quantum computing\")\r\n```\r\n\r\n### View Your Cost Report\r\n\r\nClawCache automatically tracks all your LLM spending:\r\n\r\n```bash\r\n# See today's detailed cost report\r\nclawcache --report\r\n\r\n# Output shows:\r\n# - Money spent today\r\n# - Money saved via cache\r\n# - Total API calls\r\n# - Cache hit rate\r\n# - Efficiency metrics\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[✨ Features] ### Cost Tracking & Monitoring\r\n- ✅ **Automatic Cost Logging**: Every API call tracked with timestamp, model, tokens, and cost\r\n- ✅ **Daily CLI Reports**: Shows spending, savings, and efficiency metrics\r\n- ✅ **Accurate Token Counting**: Uses `tiktoken` when available\r\n- ✅ **Multi-Provider Support**: OpenAI, Anthropic, Mistral, Ollama, etc.\r\n\r\n### Smart Caching\r\n- ✅ **Exact-Match Caching**: SQLite-based (fast and reliable)\r\n- ✅ **Composite Cache Keys**: Cache by prompt + model + params\r\n- ✅ **Async Support**: Full async/await compatibility\r\n- ✅ **Automatic Savings**: Cached responses cost $0\r\n\r\n### Security & Reliability\r\n- ✅ **Secure**: Pickle opt-in (disabled by default)\r\n- ✅ **Concurrent-Safe**: SQLite WAL mode\r\n- ✅ **Cross-Platform**: Windows, macOS, Linux"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[🔒 Security] ClawCache takes security seriously:\r\n- **Pickle opt-in**: Deserialization disabled by default to prevent RCE\r\n- **SQLite WAL mode**: Safe concurrent access\r\n- **File locking**: Cross-platform file locking for log integrity"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[📖 Configuration] Customize ClawCache behavior via environment variables:\r\n\r\n```bash\r\nexport CLAWCACHE_HOME=/path/to/cache  # Default: ~/.clawcache\r\n```\r\n\r\n### Cache Key Specificity\r\n\r\nClawCache supports composite cache keys for better accuracy:\r\n\r\n```python\r\n# Cache by prompt + model + temperature\r\nawait cache.aset(\r\n    prompt, \r\n    response, \r\n    model=\"gpt-4-turbo\",\r\n    temperature=0.7\r\n)\r\n```\r\n\r\n### Supported Models (2026 Pricing)\r\n\r\n| Model | Input ($/1M tokens) | Output ($/1M tokens) |\r\n|-------|---------------------|----------------------|\r\n| GPT-4 Turbo | $10.00 | $30.00 |\r\n| GPT-3.5 Turbo | $0.50 | $1.50 |\r\n| Claude 3.5 Sonnet | $3.00 | $15.00 |\r\n| Claude 3 Haiku | $0.25 | $1.25 |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[💡 Use Cases] ### 1. Code Review Assistant\r\n```python\r\n@async_monitor_cost\r\nasync def review_code(code_snippet):\r\n    prompt = f\"Review this code for bugs: {code_snippet}\"\r\n    return await llm_call(prompt, model=\"gpt-4-turbo\")\r\n```\r\n\r\n### 2. Data Analysis\r\n```python\r\n@async_monitor_cost\r\nasync def analyze_data(dataset):\r\n    prompt = f\"Analyze this dataset: {dataset}\"\r\n    return await llm_call(prompt, model=\"claude-3-5-sonnet\")\r\n```\r\n\r\n### 3. Content Generation\r\n```python\r\n@async_monitor_cost\r\nasync def generate_content(topic):\r\n    prompt = f\"Write a blog post about: {topic}\"\r\n    return await llm_call(prompt, model=\"gpt-3.5-turbo\")\r\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[📈 Cost Savings Projection] Based on typical usage patterns:\r\n- **Without ClawCache**: $0.0062 for 48 calls\r\n- **With ClawCache**: $0.0062 for first run, ~$0.0026 for subsequent runs (58% savings)\r\n- **Annual Projection**: For 10,000 calls/month → **$3,600 saved/year**"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[⭐ Pro Version Coming Soon] Want even more savings and insights? ClawCache Pro will include:\r\n- 🔮 **Semantic Caching**: Match similar queries (higher hit rates!)\r\n- 📊 **Advanced Analytics**: Detailed cost breakdowns and trends\r\n- 📈 **Visual Reports**: Beautiful charts and graphs\r\n- 🚀 **Social Sharing**: Share savings on Twitter, LinkedIn, Molbook with auto-generated charts\r\n- ☁️ **Cloud Sync**: Sync cache across devices\r\n- 🎯 **Team Analytics**: Track costs across your team\r\n\r\n**Free**: Cost tracking with CLI reports + exact-match caching  \r\n**Pro**: Adds social sharing with charts + semantic caching + advanced analytics\r\n\r\n[Learn more](https://www.clawcache.com/pro)"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[🤝 Contributing] Contributions welcome! Please:\r\n1. Fork the repository\r\n2. Create a feature branch\r\n3. Add tests for new features\r\n4. Submit a pull request"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[📄 License] MIT License - see [LICENSE](LICENSE) for details"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[🔗 Links] - **Website**: [clawcache.com](https://clawcache.com)\r\n- **GitHub**: [github.com/AbYousef739/-clawcache-free](https://github.com/AbYousef739/-clawcache-free)\r\n- **Documentation**: [docs.clawcache.com](https://docs.clawcache.com)\r\n\r\n---\r\n\r\n**Made with ❤️ for the AI community**\r\n\r\n*Save money. Track costs. Build better.*"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ClawCache Free"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abyousef739/clawcache-free/SKILL.md"
+}

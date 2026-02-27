@@ -1,0 +1,133 @@
+{
+  "id": "openclaw_skill_youtube-music-cast",
+  "description": "Download music from YouTube/YouTube Music and stream to Chromecast via Home Assistant. Complete CLI toolset with web server integration, configuration wizard, and playback controls.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # YouTube Music Cast\n\nYouTube music → your Chromecast. Simple, free, works.\n\nDownload audio from YouTube or YouTube Music and stream it through Home Assistant to any Cast-enabled device. No subscriptions, no cloud services, just your local network."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - ✅ **Free forever** — No subscriptions, no premium accounts needed\n- ✅ **High quality** — 320K MP3, crystal clear audio\n- ✅ **Video mode** — Create MP4 videos with album art and text overlays\n- ✅ **Radio mode** — Auto-discover and play related songs\n- ✅ **Local storage** — Your music stays on your machine, no cloud\n- ✅ **Multi-room** — Cast to any Chromecast device in your home\n- ✅ **Batch download** — Download entire playlists, stream anytime\n- ✅ **Simple CLI** — Fast commands, no browser required\n- ✅ **Works offline** — Once downloaded, music is yours to keep"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Use Cases] ### Daily Music\nDownload your favorite tracks in the morning, cast them throughout the day. No waiting, no buffering.\n\n### Party Mode\nDownload a playlist before guests arrive, then queue up songs without fumbling with phones or apps.\n\n### Background Audio\nPlay ambient music or podcasts while you work without worrying about ads or interruptions.\n\n### Multi-Room Sync\nStream the same track to multiple Chromecasts simultaneously (bedroom + living room + kitchen)."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Why This Over Premium Services?] | Feature | YouTube Music Cast | Spotify Premium | YouTube Premium |\n|---------|-------------------|------------------|------------------|\n| Cost | Free forever | $10.99/month | $13.99/month |\n| Quality | 320K MP3 | Up to 320K | Up to 1080p video |\n| Offline | Yes, forever | Download limit | Download limit |\n| Ads | None | None | None |\n| Platforms | Any Chromecast | Spotify Connect devices | YouTube apps |\n| Privacy | Local only | Cloud-based | Cloud-based |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# 1. Setup (one time, takes 2 minutes)\ncast-setup\n\n# 2. Download your first song\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ\n\n# 3. Start the web server\ncast-server start\n\n# 4. Cast it to your default device\ncast-play never-gonna-give-you-up.mp3\n```\n\nThat's it. Your music is playing through your Chromecast."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[What This Does] Three simple steps, one command each:\n\n### 1. Download\n`yt-dlp` grabs audio from YouTube or YouTube Music, extracts it as MP3 (320K quality).\n\n### 2. Host\nA lightweight Python HTTP server makes your downloaded files accessible over your local network. No setup required — just Python 3.\n\n### 3. Cast\nHome Assistant's `media_player.play_media` service sends the HTTP URL to your Chromecast, which streams the audio.\n\n### Why a Web Server?\n\nHome Assistant's `play_media` service requires a URL, not a file path. The web server bridges that gap.\n\n```yaml\n# ✅ This works — HA can fetch via HTTP\nmedia_content_id: \"http://192.168.1.81:8735/song.mp3\"\n\n# ❌ This fails — HA can't read file paths\nmedia_content_id: \"/tmp/youtube-music/song.mp3\"\n```\n\n**Architecture:**\n```\nYouTube URL → yt-dlp → MP3 file → Python HTTP server → Home Assistant API → Chromecast\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Installation] ### What You Need\n\n- **Home Assistant** with Google Cast integration\n- **Chromecast** or Cast-enabled device (Nest speakers, Google Home, TV)\n- **System tools:** `yt-dlp`, Python 3, `curl`, `jq`\n\n### Step 1: Install Scripts\n\n```bash\n# Clone or download the skill\ncd youtube-music-cast\n\n# Make all scripts executable\nchmod +x scripts/*\n\n# Install globally (recommended)\n./install.sh --global\n\n# Or install locally\n./install.sh\n```\n\n### Step 2: Run Setup Wizard\n\n```bash\ncast-setup\n```\n\nThe wizard will ask for:\n- **Home Assistant URL** — e.g., `http://homeassistant.local:8123`\n- **Long-Lived Access Token** — Generate in HA → Profile → Long-Lived Access Tokens\n- **Server IP** — The machine running these scripts\n- **Default media player** — e.g., `media_player.bedroom_display`\n\n### Step 3: Test Your Setup\n\n```bash\n# Download a test song\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ\n\n# Start the server\ncast-server start\n\n# Cast it\ncast-play song.mp3\n```\n\nIf music plays, you're ready!"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description | Example |\n|---------|-------------|----------|\n| `cast-setup` | Run configuration wizard | `cast-setup` |\n| `cast-download <URL> [options]` | Download from YouTube/YouTube Music | `cast-download https://youtube.com/watch?v=... --video` |\n| `cast-radio <URL> [options]` | Start radio mode with related songs | `cast-radio https://youtube.com/watch?v=... --count 10` |\n| `cast-server [start|stop|status]` | Manage HTTP server | `cast-server start` |\n| `cast-play <file> [device]` | Cast music or video file to device | `cast-play song.mp4` |\n| `cast-stop [device]` | Stop playback | `cast-stop` |\n| `cast-status [device]` | Show player status | `cast-status` |\n| `cast-devices` | List all available media players | `cast-devices` |\n| `cast-list` | List downloaded files | `cast-list` |\n| `cast-help` | Show help | `cast-help` |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Usage Guide] ### Your First Song\n\n```bash\n# Download from YouTube\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ\n\n# Rename for cleaner URL (recommended)\nmv \"/tmp/youtube-music/Rick Astley - Never Gonna Give You Up.mp3\" \\\n   \"/tmp/youtube-music/never-gonna-give-you-up.mp3\"\n\n# Start the web server\ncast-server start\n\n# Cast to your default device\ncast-play never-gonna-give-you-up.mp3\n```\n\n### Cast to Different Rooms\n\n```bash\n# Living room TV\ncast-play song.mp3 media_player.living_room\n\n# Kitchen speaker\ncast-play song.mp3 media_player.kitchen_speaker\n\n# Bedroom Chromecast\ncast-play song.mp3 media_player.bedroom_display\n\n# Multiple rooms at once (run multiple commands)\ncast-play song.mp3 media_player.living_room & \\\ncast-play song.mp3 media_player.bedroom_display\n```\n\n### Check What's Playing\n\n```bash\n# Default device\ncast-status\n\n# Specific device\ncast-status media_player.bedroom_display\n```\n\nOutput:\n```\n📺 media_player.bedroom_display\n\nState: playing\nFriendly Name: Bedroom display\nVolume: 22%\n\nNow Playing:\n  Title: Never Gonna Give You Up\n  Artist: Rick Astley\n  Duration: 3:32\n\nApp: Default Media Receiver\n```\n\n### Stop Playback\n\n```bash\n# Stop default device\ncast-stop\n\n# Stop specific device\ncast-stop media_player.living_room\n```\n\n### See What You've Downloaded\n\n```bash\n# List all music files with sizes\ncast-list\n```\n\nOutput:\n```\n🎵 Downloaded Music\n\nboneheads-bank-holiday.mp3                                    9.3M\nnever-gonna-give-you-up.mp3                                 8.2M\nsong-for-nary.mp3                                          7.8M\n\nTotal: 3 files\n```\n\n### See Available Devices\n\n```bash\ncast-devices\n```\n\nOutput:\n```\n📺 Available Media Players\n\nmedia_player.bedroom_display\n  Name: Bedroom display\n  State: idle\n  Supported: play_media, volume_set, volume_mute, ...\n\nmedia_player.living_room\n  Name: Living room TV\n  State: off\n  Supported: play_media, volume_set, ...\n\nDefault device: media_player.bedroom_display\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[New Features: Radio Mode & Video Mode] ### 📻 Radio Mode\n\nRadio mode automatically discovers and downloads related songs based on YouTube recommendations. After downloading a seed song, it searches for similar tracks and adds them to your queue.\n\n**Start radio mode:**\n\n```bash\n# Basic radio (downloads seed + 3 related songs)\ncast-radio https://youtube.com/watch?v=dQw4w9WgXcQ\n\n# Custom number of related songs\ncast-radio https://youtube.com/watch?v=dQw4w9WgXcQ --count 10\n\n# Radio mode with video files\ncast-radio https://youtube.com/watch?v=dQw4w9WgXcQ --video --count 5\n```\n\n**Or use cast-download with --radio flag:**\n\n```bash\n# Download with radio mode\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ --radio\n\n# Download with custom count\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ --radio --radio-count 5\n\n# Radio + video mode combined\ncast-download https://youtube.com/watch?v=dQw4w9WgXcQ --radio --video\n```\n\n**How it works:**\n1. Downloads the seed song you specify\n2. Extracts artist/title from metadata\n3. Searches YouTube for similar videos\n4. Downloads related songs (prefixed with `radio_`)\n5. Related songs are ready to cast in sequence\n\n**Play your radio queue:**\n\n```bash\n# Start server\ncast-server start\n\n# Play the first song\ncast-play $(ls -t /tmp/youtube-music/*.mp3 | head -n 1 | xargs basename)\n\n# Or play related songs sequentially\ncast-play radio_some-song.mp3\ncast-play radio_another-song.mp3\n# ... etc\n```\n\n**Tips:**\n- Related songs are prefixed with `radio_` for easy identification\n- The radio mode searches based on the artist name from the seed song\n- Use `--count` to control how many related songs to download\n- Combine with `--video` flag for visual radio mode\n\n### 🎬 Video Mode with Visuals\n\nVideo mode creates MP4 videos instead of plain MP3 files. Each video includes:\n- The original audio track\n- Album art thumbnail from YouTube\n- Text overlay showing song title and artist\n- Smooth, high-quality encoding\n\n**Download a video:**\n\n```bash\n# Download as MP4 with album art and text\ncast"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Configuration] Config file: `~/.youtube-music-cast/config.sh`\n\n```bash\n# Home Assistant\nHA_URL=\"http://homeassistant.local:8123\"\nHA_TOKEN=\"your-long-lived-access-token-here\"\n\n# Web Server\nSERVER_IP=\"192.168.1.81\"\nSERVER_PORT=\"8735\"\n\n# Default Device (override per command)\nDEFAULT_DEVICE=\"media_player.bedroom_display\"\n\n# Directories\nDOWNLOAD_DIR=\"/tmp/youtube-music\"\nCAST_DIR=\"$HOME/.youtube-music-cast\"\n```\n\n**Edit the file directly** or **re-run `cast-setup`** to update."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[File Naming Best Practices] Keep URLs clean. Simple filenames save you from headaches later.\n\n### The Problem\n\n❌ Bad filenames:\n```\nhttp://192.168.1.81:8735/Bonehead's%20Bank%20Holiday%20(Remastered).mp3\n```\nThis URL is messy, hard to type, and prone to encoding errors.\n\n### The Solution\n\n✅ Good filenames:\n```\nhttp://192.168.1.81:8735/boneheads-bank-holiday.mp3\n```\nClean, easy to type, no issues.\n\n### Practical Tips\n\n```bash\n# After download, rename immediately\nmv \"Oasis - Bonehead's Bank Holiday (Remastered 1995).mp3\" \\\n   \"oasis-boneheads-bank-holiday.mp3\"\n\n# Use lowercase, hyphens only\nmv \"My Awesome Song.mp3\" \"my-awesome-song.mp3\"\n\n# No special characters\nmv \"song@remix#.mp3\" \"song-remix.mp3\"\n```\n\n**Rule of thumb:**\n- Lowercase\n- Hyphens instead of spaces\n- No special characters (@, #, ?, etc.)\n- Keep it short"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Chromecast Not in Home Assistant\n\n**Problem:** `cast-devices` shows no Chromecast devices.\n\n**Solution:** Add Google Cast integration\n1. Home Assistant → Settings → Devices & Services\n2. Click \"+ Add Integration\"\n3. Search \"Google Cast\" → Select it\n4. Follow the discovery wizard\n\n**If discovery fails:**\n- Ensure Chromecast and Home Assistant are on the same network\n- Try adding manually with Chromecast IP address\n\n### Server Won't Start\n\n**Problem:** `cast-server start` fails or says \"port in use\".\n\n**Solution:**\n```bash\n# Check if port 8735 is in use\nnetstat -tlnp | grep 8735\n# or\nss -tlnp | grep 8735\n\n# Stop any existing server\ncast-server stop\n\n# Try starting manually to see error\ncd /tmp/youtube-music\npython3 -m http.server 8735\n```\n\n**If port is in use by another process:**\nEdit `~/.youtube-music-cast/config.sh`:\n```bash\nSERVER_PORT=\"8736\"  # Change to something else\n```\n\n### \"File Not Found\" Error\n\n**Problem:** `cast-play song.mp3` says file not found.\n\n**Solution:**\n```bash\n# List what's actually there\ncast-list\n\n# Check exact spelling (case-sensitive!)\ncast-play \"Exact-Filename.mp3\"  # Not \"exact-filename.mp3\"\n\n# Verify server is running\ncast-server status\n```\n\n**Common mistakes:**\n- Wrong case: `Song.mp3` vs `song.mp3`\n- Wrong extension: `song.MP3` vs `song.mp3`\n- File in wrong directory: Check `DOWNLOAD_DIR` in config\n\n### Download Fails\n\n**Problem:** `cast-download` errors or hangs.\n\n**Solution:**\n```bash\n# Update yt-dlp (YouTube changes often)\npip install --upgrade yt-dlp\n\n# Check version\nyt-dlp --version\n\n# Try verbose output to see what's wrong\nyt-dlp --verbose \"URL\"\n\n# Try different URL format\n# YouTube: https://youtube.com/watch?v=VIDEO_ID\n# YouTube Music: https://music.youtube.com/watch?v=VIDEO_ID\n```\n\n**If it's a geo-blocked video:**\nUse a VPN or find an alternative upload of the same track.\n\n### Home Assistant Connection Error\n\n**Problem:** `curl` errors when contacting HA.\n\n**Solution:**\n```bash\n# Test your HA token manually\ncurl -H \"Authoriz"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Project Structure] ```\nyoutube-music-cast/\n├── scripts/\n│   ├── cast-setup      # Configuration wizard (interactive)\n│   ├── cast-download   # Download from YouTube (uses yt-dlp)\n│   ├── cast-server     # HTTP server manager (start/stop/status)\n│   ├── cast-play       # Cast to device (HA API)\n│   ├── cast-stop       # Stop playback\n│   ├── cast-status     # Player status query\n│   ├── cast-devices    # List all HA media players\n│   ├── cast-list       # List downloaded files\n│   └── cast-help       # Help documentation\n├── install.sh          # Installation script (--global, --help)\n├── SKILL.md           # This file (ClawdHub skill definition)\n├── README.md          # User-facing documentation\n├── CHANGELOG.md       # Version history\n├── LICENSE            # MIT license\n├── .gitignore        # Protects secrets and state\n└── .clawdhub/\n    └── origin.json    # ClawdHub metadata\n\n~/.youtube-music-cast/\n└── config.sh         # Your configuration (don't commit to Git)\n\n/tmp/youtube-music/\n└── *.mp3            # Downloaded music files\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Requirements] ### yt-dlp (YouTube downloader)\n\n```bash\npip install yt-dlp\n```\n\n**Update regularly:** `pip install --upgrade yt-dlp`\n\n### Python 3 (HTTP server)\n\n```bash\n# Check version (usually pre-installed)\npython3 --version\n```\n\n### curl (HTTP client for HA API)\n\n```bash\n# Check version (usually pre-installed)\ncurl --version\n```\n\n### jq (JSON processor)\n\n```bash\n# Debian/Ubuntu\nsudo apt install jq\n\n# macOS\nbrew install jq\n```\n\n### ffmpeg (Video mode - optional)\n\nRequired for `--video` flag to create MP4 videos with album art and text overlays.\n\n```bash\n# Debian/Ubuntu\nsudo apt install ffmpeg\n\n# macOS\nbrew install ffmpeg\n```\n\n**Check installation:**\n```bash\nffmpeg -version\n```\n\n**Note:** Video mode is optional. If you only download MP3s, you don't need ffmpeg."
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Performance Tips] ### 1. Batch Downloads\nDownload multiple tracks or entire playlists at once:\n```bash\n# Download playlist\nyt-dlp -x --audio-format mp3 --audio-quality 320K \\\n  -o \"/tmp/youtube-music/%(playlist_index)s-%(title)s.%(ext)s\" \\\n  \"https://youtube.com/playlist?list=PLAYLIST_ID\"\n\n# Then cast them without waiting\ncast-play 01-song.mp3\ncast-play 02-song.mp3\ncast-play 03-song.mp3\n```\n\n### 2. Keep Server Running\nThe HTTP server is lightweight (~5MB RAM). No need to stop/start between casts:\n```bash\n# Start once\ncast-server start\n\n# Cast as many songs as you want\ncast-play song1.mp3\ncast-play song2.mp3\n# ... etc\n```\n\n### 3. Use Default Device\nSet `DEFAULT_DEVICE` in config to avoid typing it every time:\n```bash\n# In ~/.youtube-music-cast/config.sh\nDEFAULT_DEVICE=\"media_player.bedroom_display\"\n\n# Now just cast\ncast-play song.mp3  # Automatically uses bedroom_display\n```\n\n### 4. Clean Up Occasionally\nFiles in `/tmp/` are cleared on reboot by design, but you can manually clean:\n```bash\n# List all files with sizes\ncast-list\n\n# Remove old files\nrm /tmp/youtube-music/*.mp3\n```\n\n### 5. WiFi Matters\nIf streaming glitches:\n- Move Chromecast to 5GHz WiFi\n- Reduce distance between Chromecast and server\n- Check for WiFi interference\n\n### 6. Alias Commands\nAdd shell aliases for faster access:\n```bash\n# Add to ~/.bashrc or ~/.zshrc\nalias cs='cast-server'\nalias cd='cast-download'\nalias cp='cast-play'\nalias cl='cast-list'\nalias cst='cast-status'\n\n# Now just type\ncs      # Start server\ncd URL   # Download\ncp song  # Cast\ncl       # List\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Notes] - Files are stored in `/tmp/youtube-music/` — cleared on reboot (by design)\n- Web server runs in background, persists across sessions\n- Keep filenames simple: lowercase, hyphens, no spaces/special chars\n- Server and Chromecast must be on same network\n- HA token is stored locally in `config.sh` — **don't commit to Git**\n- Quality is 320K MP3 — good balance of quality and file size\n- No cloud services, no subscriptions, no tracking"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Comparison: This vs Alternatives] | Feature | YouTube Music Cast | Spotify Free | YouTube Premium |\n|---------|-------------------|----------------|-----------------|\n| Cost | Free | Free (with ads) | $13.99/month |\n| Ads | None | Yes, every few songs | None |\n| Offline | Yes, forever | No (premium only) | Yes, with limit |\n| Quality | 320K MP3 | 160K (variable) | Up to 1080p video |\n| Privacy | Local only | Cloud-based | Cloud-based |\n| Platform | Any Chromecast | Spotify Connect | YouTube apps |\n| Queue management | Manual | Built-in | Built-in |\n| Multi-room | Manual | Premium feature | No |\n\n**Bottom line:** If you value privacy, want to own your music, and don't need cloud features, this is for you."
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[License] MIT License — use it, modify it, share it.\n\n---\n\n**Version:** 6.0.0\n**Author:** Wobo\n**License:** MIT"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "youtube_music_cast"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎵"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aidanthebandit/ytm-cast/SKILL.md"
+}

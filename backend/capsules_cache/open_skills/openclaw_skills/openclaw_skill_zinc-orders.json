@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_zinc-orders",
+  "description": "Place, list, and retrieve orders via the Zinc API (zinc.com). Use when the user wants to buy a product from an online retailer, check order status, list recent orders, or anything involving the Zinc e-commerce ordering API. Requires ZINC_API_KEY environment variable.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Zinc Orders\n\nPlace and manage orders on online retailers through the Zinc API (`https://api.zinc.com`)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - `ZINC_API_KEY` env var must be set. Get one from <https://app.zinc.com>."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Authentication] All requests use Bearer token auth:\n\n```\nAuthorization: Bearer $ZINC_API_KEY\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Endpoints] ### Create Order — `POST /orders`\n\nPlace a new order. Orders process asynchronously.\n\n**Required fields:**\n\n- `products` — array of `{ url, quantity?, variant? }` objects\n  - `url`: direct product page URL on a supported retailer\n  - `quantity`: integer (default 1)\n  - `variant`: array of `{ label, value }` for size/color/etc.\n- `shipping_address` — object with `first_name`, `last_name`, `address_line1`, `address_line2`, `city`, `state` (2-letter), `postal_code`, `phone_number`, `country` (ISO alpha-2, e.g. \"US\")\n- `max_price` — integer, maximum price **in cents**\n\n**Optional fields:**\n\n- `idempotency_key` — string (max 36 chars) to prevent duplicates\n- `retailer_credentials_id` — short ID like `zn_acct_XXXXXXXX`\n- `metadata` — arbitrary key-value object\n- `po_number` — purchase order number string\n\n**Response:** order object with `id` (UUID), `status`, `items`, `shipping_address`, `created_at`, `tracking_numbers`, etc.\n\n**Order statuses:** `pending` → `in_progress` → `order_placed` | `order_failed` | `cancelled`\n\n### List Orders — `GET /orders`\n\nReturns `{ orders: [...] }` array of order objects.\n\n### Get Order — `GET /orders/{id}`\n\nRetrieve a single order by UUID."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Example: Place an Order] ```bash\ncurl -X POST https://api.zinc.com/orders \\\n  -H \"Authorization: Bearer $ZINC_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"products\": [{ \"url\": \"https://example.com/product\", \"quantity\": 1 }],\n    \"max_price\": 5000,\n    \"shipping_address\": {\n      \"first_name\": \"Jane\",\n      \"last_name\": \"Doe\",\n      \"address_line1\": \"123 Main St\",\n      \"city\": \"San Francisco\",\n      \"state\": \"CA\",\n      \"postal_code\": \"94105\",\n      \"phone_number\": \"5551234567\",\n      \"country\": \"US\"\n    }\n  }'\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error Handling] See [references/errors.md](references/errors.md) for the full error code reference.\n\nKey points:\n\n- HTTP errors return `{ code, message, details }`\n- Order processing failures appear in webhook/order response as `error_type`\n- Common issues: `max_price_exceeded`, `product_out_of_stock`, `invalid_shipping_address`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Order Status Tracking] Orders process asynchronously and typically take **5–10 minutes**. After placing an order:\n\n1. Schedule a cron job to check the order status ~7 minutes after creation.\n2. Use `GET /orders/{id}` to poll.\n3. Report the result back to the user in the same channel.\n4. If still pending/in_progress, schedule another check in 5 minutes.\n\n**Terminal statuses:** `order_placed`, `order_failed`, `cancelled` — stop polling.\n**Non-terminal:** `pending`, `in_progress` — schedule another check in 3–5 minutes.\n\nExample cron job (isolated, announce back to the channel):\n\n```json\n{\n  \"name\": \"zinc-order-check-<short_id>\",\n  \"schedule\": { \"kind\": \"at\", \"at\": \"<ISO-8601 ~7min from now>\" },\n  \"payload\": {\n    \"kind\": \"agentTurn\",\n    \"message\": \"Check Zinc order <order_id> via GET https://api.zinc.com/orders/<order_id>\"\n  },\n  \"sessionTarget\": \"isolated\",\n  \"delivery\": {\n    \"mode\": \"announce\",\n    \"channel\": \"<channel>\",\n    \"to\": \"<channel_id>\"\n  }\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Safety] - **Always confirm with the user** before placing an order (`POST /orders`). This spends real money.\n- Reading orders (GET) is always safe.\n- Validate that `max_price` is reasonable before submitting."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "zinc_orders"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a5huynh/universal-checkout/SKILL.md"
+}

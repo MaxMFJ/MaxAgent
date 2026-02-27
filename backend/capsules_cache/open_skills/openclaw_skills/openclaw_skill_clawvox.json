@@ -1,0 +1,129 @@
+{
+  "id": "openclaw_skill_clawvox",
+  "description": "ClawVox - ElevenLabs voice studio for OpenClaw. Generate speech, transcribe audio, clone voices, create sound effects, and more.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawVox\n\nTransform your OpenClaw assistant into a professional voice production studio with ClawVox - powered by ElevenLabs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Reference] | Action | Command | Description |\n|--------|---------|-------------|\n| Speak | `{baseDir}/scripts/speak.sh 'text'` | Convert text to speech |\n| Transcribe | `{baseDir}/scripts/transcribe.sh audio.mp3` | Speech to text |\n| Clone | `{baseDir}/scripts/clone.sh --name \"Voice\" sample.mp3` | Clone a voice |\n| SFX | `{baseDir}/scripts/sfx.sh \"thunder storm\"` | Generate sound effects |\n| Voices | `{baseDir}/scripts/voices.sh list` | List available voices |\n| Dub | `{baseDir}/scripts/dub.sh --target es audio.mp3` | Translate audio |\n| Isolate | `{baseDir}/scripts/isolate.sh audio.mp3` | Remove background noise |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] 1. Get your API key from [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)\n2. Configure in `~/.openclaw/openclaw.json`:\n\n```json5\n{\n  skills: {\n    entries: {\n      \"clawvox\": {\n        apiKey: \"YOUR_ELEVENLABS_API_KEY\",\n        config: {\n          defaultVoice: \"Rachel\",\n          defaultModel: \"eleven_turbo_v2_5\",\n          outputDir: \"~/.openclaw/audio\"\n        }\n      }\n    }\n  }\n}\n```\n\nOr set the environment variable:\n```bash\nexport ELEVENLABS_API_KEY=\"your_api_key_here\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Voice Generation (TTS)] ### Basic Text-to-Speech\n```bash\n# Quick speak with default voice (Rachel)\n{baseDir}/scripts/speak.sh 'Hello, I am your personal AI assistant.'\n\n# Specify voice by name\n{baseDir}/scripts/speak.sh --voice Adam 'Hello from Adam'\n\n# Save to file\n{baseDir}/scripts/speak.sh --out ~/audio/greeting.mp3 'Welcome to the show'\n\n# Use specific model\n{baseDir}/scripts/speak.sh --model eleven_multilingual_v2 'Bonjour'\n\n# Adjust voice settings\n{baseDir}/scripts/speak.sh --stability 0.5 --similarity 0.8 'Expressive speech'\n\n# Adjust speed\n{baseDir}/scripts/speak.sh --speed 1.2 'Faster speech'\n\n# Use multilingual model for other languages\n{baseDir}/scripts/speak.sh --model eleven_multilingual_v2 --voice Rachel 'Hola, que tal'\n{baseDir}/scripts/speak.sh --model eleven_multilingual_v2 --voice Adam 'Guten Tag'\n```\n\n### Voice Models\n\n| Model | Latency | Languages | Best For |\n|-------|---------|-----------|----------|\n| `eleven_flash_v2_5` | ~75ms | 32 | Real-time, streaming |\n| `eleven_turbo_v2_5` | ~250ms | 32 | Balanced quality/speed |\n| `eleven_multilingual_v2` | ~500ms | 29 | Long-form, highest quality |\n\n### Available Voices\n\nPremade voices: Rachel, Adam, Antoni, Bella, Domi, Elli, Josh, Sam, Callum, Charlie, George, Liam, Matilda, Alice, Bill, Brian, Chris, Daniel, Eric, Jessica, Laura, Lily, River, Roger, Sarah, Will\n\n### Long-Form Content\n```bash\n# Generate audio from text file\n{baseDir}/scripts/speak.sh --input chapter.txt --voice \"George\" --out audiobook.mp3\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Speech-to-Text (Transcription)] ### Basic Transcription\n```bash\n# Transcribe audio file\n{baseDir}/scripts/transcribe.sh recording.mp3\n\n# Save to file\n{baseDir}/scripts/transcribe.sh --out transcript.txt audio.mp3\n\n# Transcribe with language hint\n{baseDir}/scripts/transcribe.sh --language es spanish_audio.mp3\n\n# Include timestamps\n{baseDir}/scripts/transcribe.sh --timestamps podcast.mp3\n```\n\n### Supported Formats\n- MP3, MP4, MPEG, MPGA, M4A, WAV, WebM\n- Maximum file size: 100MB"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Voice Cloning] ### Instant Voice Clone\n```bash\n# Clone from single sample (minimum 30 seconds recommended)\n{baseDir}/scripts/clone.sh --name MyVoice recording.mp3\n\n# Clone with description\n{baseDir}/scripts/clone.sh --name BusinessVoice \\\n  --description 'Professional male voice' \\\n  sample.mp3\n\n# Clone with labels\n{baseDir}/scripts/clone.sh --name MyVoice \\\n  --labels '{\"gender\":\"male\",\"age\":\"adult\"}' \\\n  sample.mp3\n\n# Remove background noise during cloning\n{baseDir}/scripts/clone.sh --name CleanVoice \\\n  --remove-bg-noise \\\n  sample.mp3\n\n# Test cloned voice\n{baseDir}/scripts/speak.sh --voice MyVoice 'Testing my cloned voice'\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Voice Library Management] ```bash\n# List all available voices\n{baseDir}/scripts/voices.sh list\n\n# Get voice details\n{baseDir}/scripts/voices.sh info --name Rachel\n{baseDir}/scripts/voices.sh info --id 21m00Tcm4TlvDq8ikWAM\n\n# Search voices (filter output with grep)\n{baseDir}/scripts/voices.sh list | grep -i \"female\"\n\n# Filter by category\n{baseDir}/scripts/voices.sh list --category premade\n{baseDir}/scripts/voices.sh list --category cloned\n\n# Download voice preview\n{baseDir}/scripts/voices.sh preview --name Rachel -o preview.mp3\n\n# Delete custom voice\n{baseDir}/scripts/voices.sh delete --id \"voice_id\"\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Sound Effects] ```bash\n# Generate sound effect\n{baseDir}/scripts/sfx.sh 'Heavy rain on a tin roof'\n\n# With duration\n{baseDir}/scripts/sfx.sh --duration 5 'Forest ambiance with birds'\n\n# With prompt influence (higher = more accurate)\n{baseDir}/scripts/sfx.sh --influence 0.8 'Sci-fi laser gun firing'\n\n# Save to file\n{baseDir}/scripts/sfx.sh --out effects/thunder.mp3 'Rolling thunder'\n```\n\n**Note:** Duration range is 0.5 to 22 seconds (rounded to nearest 0.5)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Voice Isolation] ```bash\n# Remove background noise and isolate voice\n{baseDir}/scripts/isolate.sh noisy_recording.mp3\n\n# Save to specific file\n{baseDir}/scripts/isolate.sh --out clean_voice.mp3 meeting_recording.mp3\n\n# Don't tag audio events\n{baseDir}/scripts/isolate.sh --no-audio-events recording.mp3\n```\n\n**Requirements:**\n- Minimum duration: 4.6 seconds\n- Supported formats: MP3, WAV, M4A, OGG, FLAC"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Dubbing (Multi-Language Translation)] ```bash\n# Dub audio to Spanish\n{baseDir}/scripts/dub.sh --target es audio.mp3\n\n# Dub with source language specified\n{baseDir}/scripts/dub.sh --source en --target ja video.mp4\n\n# Check dubbing status\n{baseDir}/scripts/dub.sh --status --id \"dubbing_id\"\n\n# Download dubbed audio\n{baseDir}/scripts/dub.sh --download --id \"dubbing_id\" --out dubbed.mp3\n```\n\n**Supported languages:** en, es, fr, de, it, pt, pl, hi, ar, zh, ja, ko, nl, ru, tr, vi, sv, da, fi, cs, el, he, id, ms, no, ro, uk, hu, th"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[API Usage Examples] For direct API access, all scripts use curl under the hood:\n\n```bash\n# Direct TTS API call\ncurl -X POST \"https://api.elevenlabs.io/v1/text-to-speech/VOICE_ID\" \\\n  -H \"xi-api-key: $ELEVENLABS_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"text\": \"Hello world\", \"model_id\": \"eleven_turbo_v2_5\"}' \\\n  --output speech.mp3\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Error Handling] All scripts provide helpful error messages:\n\n- **401**: Authentication failed - Check your API key\n- **403**: Permission denied - Your API key may not have access\n- **429**: Rate limit exceeded - Wait before trying again\n- **500/502/503**: ElevenLabs API issues - Try again later"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Testing] Run the test suite to verify everything works:\n\n```bash\n{baseDir}/test.sh YOUR_API_KEY\n```\n\nOr with environment variable:\n```bash\nexport ELEVENLABS_API_KEY=\"your_key\"\n{baseDir}/test.sh\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Common Issues\n\n1. **\"exec host not allowed (requested gateway)\"**\n   - The skill needs to run commands in a sandbox environment\n   - Configure OpenClaw to use sandbox: `tools.exec.host: \"sandbox\"`\n   - Or enable sandboxing in your OpenClaw config\n   - Alternative: Configure exec approvals for gateway host (see OpenClaw docs)\n\n2. **Parse errors with quotes or exclamation marks**\n   - Use single quotes instead of double quotes: `'Hello world'` not `\"Hello world!\"`\n   - Avoid exclamation marks (`!`) in text when using double quotes\n   - For complex text, use the `--input` option with a file\n\n3. **\"ELEVENLABS_API_KEY not set\"**\n   - Ensure `ELEVENLABS_API_KEY` is set or configured in openclaw.json\n   - Check that the API key is at least 20 characters long\n\n2. **\"jq is required but not installed\"**\n   - Install jq: `apt-get install jq` (Linux) or `brew install jq` (macOS)\n\n3. **\"Rate limited\"**\n   - Check your ElevenLabs plan quota at elevenlabs.io/app/usage\n   - Free tier: ~10,000 characters/month\n\n4. **\"Voice not found\"**\n   - Use `{baseDir}/scripts/voices.sh list` to see available voices\n   - Check if the voice ID is correct\n\n5. **\"Dubbing failed\"**\n   - Ensure source audio is clear and audible\n   - Check supported language codes\n\n6. **\"File too large\"**\n   - Transcription: 100MB max\n   - Dubbing: 500MB max\n   - Voice cloning: 50MB per file\n\n### Debug Mode\n```bash\n# Enable verbose output\nDEBUG=1 {baseDir}/scripts/speak.sh 'test'\n\n# Show API request details\nDEBUG=1 {baseDir}/scripts/transcribe.sh audio.mp3\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Pricing Notes] ElevenLabs API pricing (approximate):\n- **Flash v2.5**: ~$0.06/min\n- **Turbo v2.5**: ~$0.06/min  \n- **Multilingual v2**: ~$0.12/min\n- **Voice cloning**: Included in plan\n- **Sound effects**: ~$0.02/generation\n- **Transcription**: ~$0.02/min (Scribe v1)\n\nFree tier: ~10,000 characters/month"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Links] - [ElevenLabs Dashboard](https://elevenlabs.io/app)\n- [API Documentation](https://elevenlabs.io/docs)\n- [Voice Library](https://elevenlabs.io/voice-library)\n- [Pricing](https://elevenlabs.io/pricing)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawvox"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎙️",
+        "skillKey": "clawvox",
+        "requires": {
+          "bins": [
+            "curl",
+            "jq"
+          ],
+          "env": [
+            "ELEVENLABS_API_KEY"
+          ]
+        },
+        "primaryEnv": "ELEVENLABS_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhishek-official1/clawvox/SKILL.md"
+}

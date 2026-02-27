@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_sla-monitor",
+  "description": "Set up SLA monitoring and uptime tracking for AI agents and services. Generates monitoring configs, alert rules, and incident response playbooks. Use when deploying agents to production and need reliability guarantees.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SLA Monitor Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Purpose] Help teams set up production-grade monitoring for AI agents and automated services. Covers uptime tracking, response time SLAs, error budgets, and incident escalation."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - Deploying AI agents to production\n- Setting up monitoring for client-facing automation\n- Creating SLA documentation for service agreements\n- Building incident response procedures"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Monitoring Stack Options] ### Option 1: UptimeRobot (Free tier available)\n- 50 monitors free, 5-minute intervals\n- HTTP, keyword, ping, port monitors\n- Email + Slack + webhook alerts\n\n### Option 2: Better Stack (Formerly Uptime.com)\n- Status pages included\n- Incident management built-in\n- Free tier: 10 monitors\n\n### Option 3: Self-Hosted (Uptime Kuma)\n```bash\ndocker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[SLA Tiers] ### Tier 1: Standard ($1,500/mo)\n- 99.5% uptime guarantee (43.8h downtime/year)\n- Response within 4 hours (business hours)\n- Monthly performance report\n\n### Tier 2: Professional ($3,000/mo)\n- 99.9% uptime guarantee (8.76h downtime/year)\n- Response within 1 hour (business hours)\n- Weekly performance reports\n- Quarterly optimization reviews\n\n### Tier 3: Enterprise ($5,000+/mo)\n- 99.95% uptime (4.38h downtime/year)\n- Response within 15 minutes (24/7)\n- Real-time dashboard access\n- Dedicated support channel"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Alert Configuration Template] ```yaml\nmonitors:\n  - name: \"Agent Health Check\"\n    type: http\n    url: \"https://your-agent-endpoint/health\"\n    interval: 300  # 5 minutes\n    alerts:\n      - type: email\n        threshold: 1  # alert after 1 failure\n      - type: slack\n        webhook: \"${SLACK_WEBHOOK}\"\n        threshold: 2  # alert after 2 consecutive failures\n      - type: sms\n        threshold: 3  # escalate after 3 failures\n\n  - name: \"API Response Time\"\n    type: http\n    url: \"https://your-agent-endpoint/api\"\n    interval: 60\n    expected_response_time: 2000  # ms\n    alerts:\n      - type: slack\n        condition: \"response_time > 5000\"\n\nerror_budget:\n  monthly_target: 99.9\n  burn_rate_alert: 2.0  # Alert if burning 2x normal rate\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Incident Response Playbook] ### Severity 1 — Total Outage\n1. Acknowledge within 5 minutes\n2. Status page update within 10 minutes\n3. Root cause identification within 30 minutes\n4. Resolution or workaround within 2 hours\n5. Post-mortem within 24 hours\n\n### Severity 2 — Degraded Performance\n1. Acknowledge within 15 minutes\n2. Investigation within 30 minutes\n3. Resolution within 4 hours\n4. Summary report within 48 hours\n\n### Severity 3 — Minor Issue\n1. Acknowledge within 1 hour\n2. Resolution within 24 hours\n3. Logged for next review cycle"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Budget Calculator] ```\nMonthly minutes: 43,200 (30 days)\n99.9% SLA = 43.2 minutes downtime allowed\n99.5% SLA = 216 minutes downtime allowed\n99.0% SLA = 432 minutes downtime allowed\n\nBurn rate = (actual downtime / budget) × 100\nIf burn rate > 50% with 2+ weeks remaining → review needed\nIf burn rate > 80% → freeze deployments\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Status Page Template] Provide clients with a public status page showing:\n- Current system status (operational / degraded / outage)\n- Component-level status (Agent A, Agent B, API, Dashboard)\n- Uptime percentage (30-day rolling)\n- Incident history with resolution notes\n- Scheduled maintenance windows"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Next Steps] Need managed AI agents with built-in SLA monitoring?\n→ AfrexAI handles deployment, monitoring, and maintenance for $1,500/mo\n→ Book a call: https://calendly.com/cbeckford-afrexai/30min\n→ Learn more: https://afrexai-cto.github.io/aaas/landing.html"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sla_monitor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/sla-monitor/SKILL.md"
+}

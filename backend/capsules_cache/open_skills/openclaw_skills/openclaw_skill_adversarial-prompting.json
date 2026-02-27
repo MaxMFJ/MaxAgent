@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_adversarial-prompting",
+  "description": "Applies rigorous adversarial analysis to generate, critique, fix, and consolidate solutions for any problem (technical or non-technical). Use when facing complex problems requiring thorough analysis, multiple solution approaches, and validation of proposed fixes before implementation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Adversarial Prompting\n\nThis skill applies a structured adversarial methodology to problem-solving by generating multiple solutions, rigorously critiquing each for weaknesses, developing fixes, validating those fixes, and consolidating into ranked recommendations. The approach forces deep analysis of failure modes, edge cases, and unintended consequences before committing to a solution."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when:\n- Facing complex technical problems requiring thorough analysis (architecture decisions, debugging, performance optimization)\n- Solving strategic or business problems with multiple viable approaches\n- Needing to identify weaknesses in proposed solutions before implementation\n- Requiring validated fixes that address root causes, not symptoms\n- Working on high-stakes decisions where failure modes must be understood\n- Seeking comprehensive analysis with detailed reasoning visible throughout\n\nDo not use this skill for:\n- Simple, straightforward problems with obvious solutions\n- Time-sensitive decisions requiring immediate action without analysis\n- Problems where exploration and iteration are more valuable than upfront analysis"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to Use This Skill] ### Primary Workflow\n\nWhen invoked, apply the following 7-phase process to the user's problem:\n\n#### Phase 1: Solution Generation\nGenerate 3-7 distinct solution approaches. For each solution:\n- Explain the reasoning behind the approach\n- Describe the core strategy\n- Outline the key steps or components\n\n#### Phase 2: Adversarial Critique\nFor each solution, rigorously identify critical weaknesses. Show thinking while examining:\n- Edge cases and failure modes\n- Security vulnerabilities or risks\n- Performance bottlenecks\n- Scalability limitations\n- Hidden assumptions that could break\n- Resource constraints (time, money, people)\n- Unintended consequences\n- Catastrophic failure scenarios\n\nBe creative and thorough in identifying what could go wrong.\n\n#### Phase 3: Fix Development\nFor each identified weakness:\n- Propose a specific fix or mitigation strategy\n- Explain why this fix addresses the root cause\n- Describe how the fix integrates with the original solution\n\n#### Phase 4: Validation Check\nReview each fix to verify it actually solves the weakness:\n- Confirm the fix addresses the root cause\n- Check for new problems introduced by the fix\n- Flag any remaining concerns or trade-offs\n\n#### Phase 5: Consolidation\nSynthesize all solutions and validated fixes into comprehensive approaches:\n- Integrate complementary elements from different solutions\n- Eliminate redundancies\n- Show how solutions can be combined for stronger approaches\n- Present the final set of viable options\n\n#### Phase 6: Summary of Options\nPresent all viable options in priority order, ranked by:\n- **Feasibility**: Can this actually be implemented with available resources?\n- **Impact**: How well does this solve the problem?\n- **Risk Level**: What could still go wrong?\n- **Resource Requirements**: Cost in time, money, and effort\n\nFor each option, provide a one-paragraph summary highlighting key trade-offs.\n\n#### Phase 7: Final Recommendation\nState the top recommendation (single option or combination):\n- Clear "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Implementation Notes] - Show reasoning throughout the process for transparency\n- Be thorough in adversarial critique—surface uncomfortable truths\n- Validate fixes rigorously to avoid creating new problems\n- Consolidation should create stronger solutions, not just list options\n- Final recommendation should be actionable with clear next steps\n- Export results to markdown for future reference and sharing"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "adversarial_prompting"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abe238/adversarial-prompting/SKILL.md"
+}

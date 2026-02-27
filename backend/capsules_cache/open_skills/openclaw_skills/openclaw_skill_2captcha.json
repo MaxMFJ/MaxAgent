@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_2captcha",
+  "description": "Solve CAPTCHAs using 2Captcha service via CLI. Use for bypassing captchas during web automation, account creation, or form submission.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 2Captcha Skill\n\nSolve CAPTCHAs programmatically using the 2Captcha human-powered service."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] ```bash\n# One-line install\ncurl -fsSL https://raw.githubusercontent.com/adinvadim/2captcha-cli/main/solve-captcha \\\n  -o /usr/local/bin/solve-captcha && chmod +x /usr/local/bin/solve-captcha\n\n# Verify\nsolve-captcha --version\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Configuration] ```bash\n# Save your 2Captcha API key\nmkdir -p ~/.config/2captcha\necho \"YOUR_API_KEY\" > ~/.config/2captcha/api-key\n\n# Or use environment variable\nexport TWOCAPTCHA_API_KEY=\"your-key\"\n```\n\nGet your API key at https://2captcha.com/enterpage"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Reference] ### Check Balance First\n```bash\n./solve-captcha balance\n```\n\n### Image CAPTCHA\n```bash\n# From file\n./solve-captcha image /path/to/captcha.png\n\n# From URL  \n./solve-captcha image \"https://site.com/captcha.jpg\"\n\n# With options\n./solve-captcha image captcha.png --numeric 1 --math\n./solve-captcha image captcha.png --comment \"Enter red letters only\"\n```\n\n### reCAPTCHA v2\n```bash\n./solve-captcha recaptcha2 --sitekey \"6Le-wvk...\" --url \"https://example.com\"\n```\n\n### reCAPTCHA v3\n```bash\n./solve-captcha recaptcha3 --sitekey \"KEY\" --url \"URL\" --action \"submit\" --min-score 0.7\n```\n\n### hCaptcha\n```bash\n./solve-captcha hcaptcha --sitekey \"KEY\" --url \"URL\"\n```\n\n### Cloudflare Turnstile\n```bash\n./solve-captcha turnstile --sitekey \"0x4AAA...\" --url \"URL\"\n```\n\n### FunCaptcha (Arkose)\n```bash\n./solve-captcha funcaptcha --public-key \"KEY\" --url \"URL\"\n```\n\n### GeeTest\n```bash\n# v3\n./solve-captcha geetest --gt \"GT\" --challenge \"CHALLENGE\" --url \"URL\"\n\n# v4\n./solve-captcha geetest4 --captcha-id \"ID\" --url \"URL\"\n```\n\n### Text Question\n```bash\n./solve-captcha text \"What color is the sky?\" --lang en\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Finding CAPTCHA Parameters] ### reCAPTCHA sitekey\nLook for:\n- `data-sitekey` attribute in HTML\n- `k=` parameter in reCAPTCHA iframe URL\n- Network request to `google.com/recaptcha/api2/anchor`\n\n### hCaptcha sitekey\nLook for:\n- `data-sitekey` in hCaptcha div\n- Network requests to `hcaptcha.com`\n\n### Turnstile sitekey\nLook for:\n- `data-sitekey` in Turnstile widget\n- `cf-turnstile` class elements"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workflow for Browser Automation] 1. **Detect CAPTCHA** - Check if page has captcha element\n2. **Extract params** - Get sitekey/challenge from page source\n3. **Solve via CLI** - Call solve-captcha with params\n4. **Inject token** - Set `g-recaptcha-response` or callback\n\n### Example: Inject reCAPTCHA Token\n```javascript\n// After getting token from solve-captcha\ndocument.getElementById('g-recaptcha-response').value = token;\n// Or call callback if defined\n___grecaptcha_cfg.clients[0].callback(token);\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Cost Awareness] - Check balance before heavy automation\n- Image: ~$0.001 per solve\n- reCAPTCHA/hCaptcha/Turnstile: ~$0.003 per solve"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] Common errors:\n- `ERROR_ZERO_BALANCE` - Top up account\n- `ERROR_NO_SLOT_AVAILABLE` - Retry in few seconds\n- `ERROR_CAPTCHA_UNSOLVABLE` - Bad image or impossible captcha\n- `ERROR_WRONG_CAPTCHA_ID` - Invalid task ID"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Notes] - Solving takes 10-60 seconds depending on type\n- reCAPTCHA v3 may need multiple attempts for high scores\n- Some sites detect automation - use carefully\n- Tokens expire! Use within 2-5 minutes"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "2captcha"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adinvadim/2captcha/SKILL.md"
+}

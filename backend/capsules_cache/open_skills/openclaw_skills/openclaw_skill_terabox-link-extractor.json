@@ -1,0 +1,67 @@
+{
+  "id": "openclaw_skill_terabox-link-extractor",
+  "description": "Direct link extraction from TeraBox URLs using the XAPIverse protocol. Extracts high-speed download and stream links (All Resolutions) without browser session requirements. Use when the user provides a TeraBox link and wants to download or stream content directly.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # TeraBox Link Extractor (XAPIverse Edition)\n\nHigh-performance extraction of direct assets from TeraBox using the browser-less XAPIverse API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[📖 Navigation & Data] - **Primary Interaction**: Use the adaptive logic in `handler.js`. See [api-reference.md](references/api-reference.md) for command specs and [changelog.md](references/changelog.md) for version history.\n- **Secondary Interaction**: Use CLI via `node scripts/extract.js <url>`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🛠 AI Protocol (Security First)] ### 1. Informed Consent Protocol\n- **Trigger**: When a user provides a TeraBox link (`terabox.com`, etc.), inform them that you can extract direct links using the XAPIverse service.\n- **Permission**: You MUST ask for the user's permission before sending the URL to the extraction service.\n- **Execution**: Only trigger the `extract` command AFTER the user confirms.\n\n### 2. Mandatory Response Format\nOnce permitted, present the extraction results as a text-only report. **DO NOT use interactive buttons.**\n\n**Format per file:**\n📦 **Name**: [name]\n📁 **Type**: [type] | 📺 **Quality**: [quality]\n📏 **Size**: [size_formatted] | ⏱️ **Duration**: [duration]\n🔗 **Links**:\n - [▶️ Slow Stream](stream_url)\n - [▶️ Fast {res} Stream](link) *(List all available resolutions)*\n - [⬇️ Fast Download](fast_download_link)\n - [⬇️ Slow Download](download_link)\n\n💳 **Credits Remaining**: [free_credits_remaining]\n\n### 3. Privacy & Security\n- **Data Transmission**: Inform the user (if asked) that the full target URL and your API key (TERABOX_API_KEY) are transmitted to `https://xapiverse.com` for processing.\n- **No Residual State**: Do not log or store the API key or extracted links beyond the immediate session."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Obtain Credentials\nGet your API key from the XAPIverse portal: [https://xapiverse.com/apis/terabox-pro](https://xapiverse.com/apis/terabox-pro)\n\n### 2. Configure Agent\nAdd the `TERABOX_API_KEY` to the skill's entry in `openclaw.json`:\n```json\n\"terabox-link-extractor\": {\n  \"TERABOX_API_KEY\": \"sk_...\"\n}\n```\n\n---\nDeveloped for the OpenClaw community by [Abdul Karim Mia](https://github.com/abdul-karim-mia)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "terabox_link_extractor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "env": [
+            "TERABOX_API_KEY"
+          ],
+          "config": []
+        },
+        "primaryEnv": "TERABOX_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdul-karim-mia/terabox-link-extractor/SKILL.md"
+}

@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_nak",
+  "description": "The Nostr Army Knife (nak) CLI. Use this skill to interact with the Nostr network, publish events, query relays, manage keys, and perform advanced Nostr operations like NIP-46 signing, NIP-60 wallet management, and Blossom file uploads.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # `nak` - Nostr Army Knife\n\n`nak` is a powerful CLI for interacting with the Nostr protocol. It handles event creation, signing, publishing, querying, key management, and more."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ### 1. Events (`nak event`)\n\nGenerate, sign, and publish events.\n\n```bash\n# Publish a simple text note (Kind 1) to specific relays\nnak event -c \"Hello Nostr\" wss://relay.damus.io wss://nos.lol\n\n# Publish using a specific secret key (hex or nsec)\nnak event -c \"Authenticated message\" --sec <nsec/hex> wss://relay.damus.io\n\n# Reply to an event (Kind 1)\nnak event -c \"I agree!\" -e <event_id> --sec <nsec/hex> wss://relay.damus.io\n\n# Create a profile metadata event (Kind 0)\necho '{\"name\":\"bob\",\"about\":\"builder\"}' | nak event -k 0 --sec <nsec/hex> wss://relay.damus.io\n\n# Generate an event JSON without publishing (dry run)\nnak event -c \"Just checking\" -k 1 --sec <nsec/hex>\n```\n\n### 2. Querying (`nak req`)\n\nSubscribe to relays and filter events.\n\n```bash\n# Listen for all Kind 1 notes on a relay\nnak req -k 1 wss://relay.damus.io\n\n# Listen for a specific author\nnak req -a <pubkey_hex> wss://relay.damus.io\n\n# Listen for replies to a specific event (E-tag)\nnak req -e <event_id> wss://relay.damus.io\n\n# Fetch with a limit\nnak req -k 1 --limit 10 wss://relay.damus.io\n\n# Output is stream of [\"EVENT\", ...] JSON arrays.\n# Pipe to jq for readability:\nnak req -k 1 wss://relay.damus.io | jq\n```\n\n### 3. Fetching (`nak fetch`)\n\nFetch specific events by reference (NIP-19/NIP-05).\n\n```bash\n# Fetch an event by nevent\nnak fetch nevent1...\n\n# Fetch a profile\nnak fetch npub1...\n\n# Fetch from specific relays\nnak fetch npub1... --relay wss://relay.nostr.band\n```\n\n### 4. Keys & Encoding (`nak key`, `nak encode`, `nak decode`)\n\nManage keys and NIP-19 entities.\n\n```bash\n# Generate a new keypair\nnak key generate\n\n# Convert nsec to hex (or vice versa - automated detection)\nnak decode nsec1...\n\n# Encode a hex pubkey to npub\nnak encode npub <hex_pubkey>\n\n# Encode an event ID to nevent with relay hints\nnak encode nevent <event_id> --relay wss://relay.damus.io\n```\n\n### 5. Encryption (NIP-44)\n\nEncrypt and decrypt messages.\n\n```bash\n# Encrypt a message for a recipient\nnak encrypt --sec <sender_nsec> --target <"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Agentic/MCP Mode] `nak` has an `mcp` command that starts a Model Context Protocol server.\n```bash\nnak mcp\n```\nThis is useful if you want to integrate `nak` directly as an MCP tool source, but usually, you will invoke the CLI commands directly via `exec`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tips] *   **Piping:** `nak` is designed for piping. You can pipe JSON into `nak event` to sign it, or pipe `nak req` output into other tools.\n*   **Environment Variables:**\n    *   `NOSTR_SECRET_KEY`: Set this to avoid passing `--sec` every time."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "nak"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires `nak` CLI (v0.15.3+ recommended).",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a1denvalu3/nak/SKILL.md"
+}

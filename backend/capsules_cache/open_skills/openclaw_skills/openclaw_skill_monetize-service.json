@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_monetize-service",
+  "description": "Build and deploy a paid API that other agents can pay to use via x402. Use when you or the user want to monetize an API, make money, earn money, offer a service, sell a service to other agents, charge for endpoints, create a paid endpoint, or set up a paid service. Covers \"make money by offering an endpoint\", \"sell a service\", \"monetize your data\", \"create a paid API\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Build an x402 Payment Server\n\nCreate an Express server that charges USDC for API access using the x402 payment protocol. Callers pay per-request in USDC on Base — no accounts, API keys, or subscriptions needed."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[How It Works] x402 is an HTTP-native payment protocol. When a client hits a protected endpoint without paying, the server returns HTTP 402 with payment requirements. The client signs a USDC payment and retries with a payment header. The facilitator verifies and settles the payment, and the server returns the response."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Confirm wallet is initialized and authed] ```bash\nnpx awal@latest status\n```\n\nIf the wallet is not authenticated, refer to the `authenticate-wallet` skill."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 1: Get the Payment Address] Run this to get the wallet address that will receive payments:\n\n```bash\nnpx awal@latest address\n```\n\nUse this address as the `payTo` value."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 2: Set Up the Project] ```bash\nmkdir x402-server && cd x402-server\nnpm init -y\nnpm install express x402-express\n```\n\nCreate `index.js`:\n\n```js\nconst express = require(\"express\");\nconst { paymentMiddleware } = require(\"x402-express\");\n\nconst app = express();\napp.use(express.json());\n\nconst PAY_TO = \"<address from step 1>\";\n\n// x402 payment middleware — protects routes below\nconst payment = paymentMiddleware(PAY_TO, {\n  \"GET /api/example\": {\n    price: \"$0.01\",\n    network: \"base\",\n    config: {\n      description: \"Description of what this endpoint returns\",\n    },\n  },\n});\n\n// Protected endpoint\napp.get(\"/api/example\", payment, (req, res) => {\n  res.json({ data: \"This costs $0.01 per request\" });\n});\n\napp.listen(3000, () => console.log(\"Server running on port 3000\"));\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 3: Run It] ```bash\nnode index.js\n```\n\nTest with curl — you should get a 402 response with payment requirements:\n\n```bash\ncurl -i http://localhost:3000/api/example\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Reference] ### paymentMiddleware(payTo, routes, facilitator?)\n\nCreates Express middleware that enforces x402 payments.\n\n| Parameter     | Type     | Description                                           |\n| ------------- | -------- | ----------------------------------------------------- |\n| `payTo`       | string   | Ethereum address (0x...) to receive USDC payments     |\n| `routes`      | object   | Route config mapping route patterns to payment config |\n| `facilitator` | object?  | Optional custom facilitator (defaults to x402.org)    |\n\n### Route Config\n\nEach key in the routes object is `\"METHOD /path\"`. The value is either a price string or a config object:\n\n```js\n// Simple — just a price\n{ \"GET /api/data\": \"$0.05\" }\n\n// Full config\n{\n  \"POST /api/query\": {\n    price: \"$0.25\",\n    network: \"base\",\n    config: {\n      description: \"Human-readable description of the endpoint\",\n      inputSchema: {\n        bodyType: \"json\",\n        bodyFields: {\n          query: { type: \"string\", description: \"The query to run\" },\n        },\n      },\n      outputSchema: {\n        type: \"object\",\n        properties: {\n          result: { type: \"string\" },\n        },\n      },\n    },\n  },\n}\n```\n\n### Route Config Fields\n\n| Field                     | Type    | Description                                        |\n| ------------------------- | ------- | -------------------------------------------------- |\n| `price`                   | string  | USDC price (e.g. \"$0.01\", \"$1.00\")                 |\n| `network`                 | string  | Blockchain network: \"base\" or \"base-sepolia\"       |\n| `config.description`      | string? | What this endpoint does (shown to clients)         |\n| `config.inputSchema`      | object? | Expected request body/query schema                 |\n| `config.outputSchema`     | object? | Response body schema                               |\n| `config.maxTimeoutSeconds` | number? | Max time for payment settlement                   |\n\n### Supported Networks\n\n| Network        | De"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Patterns] ### Multiple endpoints with different prices\n\n```js\nconst payment = paymentMiddleware(PAY_TO, {\n  \"GET /api/cheap\": { price: \"$0.001\", network: \"base\" },\n  \"GET /api/expensive\": { price: \"$1.00\", network: \"base\" },\n  \"POST /api/query\": { price: \"$0.25\", network: \"base\" },\n});\n\napp.get(\"/api/cheap\", payment, (req, res) => { /* ... */ });\napp.get(\"/api/expensive\", payment, (req, res) => { /* ... */ });\napp.post(\"/api/query\", payment, (req, res) => { /* ... */ });\n```\n\n### Wildcard routes\n\n```js\nconst payment = paymentMiddleware(PAY_TO, {\n  \"GET /api/*\": { price: \"$0.05\", network: \"base\" },\n});\n\napp.use(payment);\napp.get(\"/api/users\", (req, res) => { /* ... */ });\napp.get(\"/api/posts\", (req, res) => { /* ... */ });\n```\n\n### Health check (no payment)\n\nRegister free endpoints before the payment middleware:\n\n```js\napp.get(\"/health\", (req, res) => res.json({ status: \"ok\" }));\n\n// Payment middleware only applies to routes registered after it\napp.get(\"/api/data\", payment, (req, res) => { /* ... */ });\n```\n\n### POST with body schema\n\n```js\nconst payment = paymentMiddleware(PAY_TO, {\n  \"POST /api/analyze\": {\n    price: \"$0.10\",\n    network: \"base\",\n    config: {\n      description: \"Analyze text sentiment\",\n      inputSchema: {\n        bodyType: \"json\",\n        bodyFields: {\n          text: { type: \"string\", description: \"Text to analyze\" },\n        },\n      },\n      outputSchema: {\n        type: \"object\",\n        properties: {\n          sentiment: { type: \"string\" },\n          score: { type: \"number\" },\n        },\n      },\n    },\n  },\n});\n\napp.post(\"/api/analyze\", payment, (req, res) => {\n  const { text } = req.body;\n  // ... your logic\n  res.json({ sentiment: \"positive\", score: 0.95 });\n});\n```\n\n### Using the CDP facilitator (authenticated)\n\nFor production use with the Coinbase facilitator (supports mainnet):\n\n```bash\nnpm install @coinbase/x402\n```\n\n```js\nconst { facilitator } = require(\"@coinbase/x402\");\n\nconst payment = paymentMiddleware(PAY_TO, routes, facilitator);\n```\n\nT"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Testing with the pay-for-service Skill] Once the server is running, use the `pay-for-service` skill to test payments:\n\n```bash\n# Check the endpoint's payment requirements\nnpx awal@latest x402 details http://localhost:3000/api/example\n\n# Make a paid request\nnpx awal@latest x402 pay http://localhost:3000/api/example\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Pricing Guidelines] | Use Case               | Suggested Price |\n| ---------------------- | --------------- |\n| Simple data lookup     | $0.001 - $0.01 |\n| API proxy / enrichment | $0.01 - $0.10  |\n| Compute-heavy query    | $0.10 - $0.50  |\n| AI inference           | $0.05 - $1.00  |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Checklist] - [ ] Get wallet address with `npx awal@latest address`\n- [ ] Install `express` and `x402-express`\n- [ ] Define routes with prices and descriptions\n- [ ] Register payment middleware before protected routes\n- [ ] Keep health/status endpoints before payment middleware\n- [ ] Test with `curl` (should get 402) and `npx awal@latest x402 pay` (should get 200)\n- [ ] Announce your service so other agents can find and use it"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "monetize_service"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/monetize-service/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_ERC-8004 Agent Discovery",
+  "description": "Search and discover 43k+ AI agents registered via ERC-8004. Find agents by skill, chain, or reputation. View leaderboards, ecosystem stats, and monitor metadata changes.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ERC-8004 Agent Discovery\n\nSearch, discover, and monitor AI agents registered via ERC-8004 using the Agentscan API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use This When...] - \"Find agents that can do X\"\n- \"Search for a security auditor agent\"\n- \"Who are the top-rated agents?\"\n- \"What agents exist on Base?\"\n- \"Show me agent details\"\n- \"What skills do agents have?\"\n- \"Monitor an agent for changes\"\n- \"Has this agent's metadata changed?\"\n- \"Ecosystem statistics\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### search\nFind agents by query string.\n\n```bash\npython scripts/discover.py search \"<query>\" [--chain CHAIN] [--min-rep SCORE] [--limit N]\n```\n\n**Examples:**\n- `search \"security auditor\"` - Find security auditors\n- `search \"trading\" --chain base` - Trading agents on Base\n- `search \"defi\" --min-rep 50` - DeFi agents with 50+ reputation\n\n### top\nShow top agents by reputation.\n\n```bash\npython scripts/discover.py top [--chain CHAIN] [--limit 20]\n```\n\n### info\nGet detailed info about a specific agent.\n\n```bash\npython scripts/discover.py info <address|name|tokenId> [--chain CHAIN]\n```\n\nShows: reputation, skills, domains, decoded metadata.\n\n### stats\nShow ecosystem statistics.\n\n```bash\npython scripts/discover.py stats\n```\n\nOverview of total agents, per-chain breakdown, metadata coverage.\n\n### skills\nList all skills/capabilities across agents.\n\n```bash\npython scripts/discover.py skills\n```\n\n### monitor\nMonitor an agent for changes.\n\n```bash\npython scripts/discover.py monitor <address|name|tokenId> [--chain CHAIN]\n```\n\nCompares current state to cached state, shows diff if changed. Useful for heartbeat monitoring."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Cross-Skill Workflows] ### Pre-Registration Research\n```bash\n# 1. Check what agents already exist in your space\npython scripts/discover.py search \"trading bot\"\n\n# 2. See top competitors\npython scripts/discover.py top --chain base --limit 10\n\n# 3. Register your agent (from erc8004-register skill)\npython scripts/register.py register --name \"MyTradingBot\" --description \"...\"\n\n# 4. Validate registration\npython scripts/register.py validate 42\n```\n\n### Due Diligence Before Interacting\n```bash\n# 1. Get agent details\npython scripts/discover.py info 0x1234...\n\n# 2. Check their reputation (from erc8004-reputation skill)\npython scripts/reputation.py lookup 42 --chain base\n\n# 3. Decide whether to interact\n```\n\n### Competitor Monitoring\n```bash\n# 1. Find competitors\npython scripts/discover.py search \"security audit\"\n\n# 2. Monitor a specific competitor\npython scripts/discover.py monitor \"CompetitorAgent\"\n\n# 3. Check their reputation changes\npython scripts/reputation.py lookup 123 --chain base\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Heartbeat Integration] Monitor agents for changes in automated pipelines:\n\n```bash\n# Cron: check if agent changed every 15 minutes\n*/15 * * * * python scripts/discover.py monitor 42 >> /var/log/agent-monitor.log 2>&1\n\n# In a monitoring script:\n#!/bin/bash\noutput=$(python scripts/discover.py monitor 42 2>&1)\nif echo \"$output\" | grep -q \"CHANGES DETECTED\"; then\n    echo \"Agent 42 metadata changed!\" | slack-notify\nfi\n```\n\nCache files are stored in `/tmp/erc8004-monitor-{id}.json`."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Use Cases] | Scenario | Command |\n|----------|---------|\n| Find specialists | `search \"security auditor\" --chain base --min-rep 50` |\n| Market research | `stats` and `skills` |\n| Due diligence | `info <agent>` then check reputation |\n| Competitor watch | `monitor <competitor>` |\n| Discovery | `search \"<capability>\"` |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Source] All data from [Agentscan](https://agentscan.info) - the ERC-8004 agent registry explorer."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Related Skills] - **erc8004-register**: Register and manage your own agents\n- **erc8004-reputation**: Check and give reputation scores"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ERC_8004 Agent Discovery"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aetherstacey/erc8004-discover/SKILL.md"
+}

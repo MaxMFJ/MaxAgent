@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_youtube-summarizer",
+  "description": "Automatically fetch YouTube video transcripts, generate structured summaries, and send full transcripts to messaging platforms. Detects YouTube URLs and provides metadata, key insights, and downloadable transcripts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # YouTube Summarizer Skill\n\nAutomatically fetch transcripts from YouTube videos, generate structured summaries, and deliver full transcripts to messaging platforms."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] Activate this skill when:\n- User shares a YouTube URL (youtube.com/watch, youtu.be, youtube.com/shorts)\n- User asks to summarize or transcribe a YouTube video\n- User requests information about a YouTube video's content"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Dependencies] **Required:** MCP YouTube Transcript server must be installed at:\n`/root/clawd/mcp-server-youtube-transcript`\n\nIf not present, install it:\n```bash\ncd /root/clawd\ngit clone https://github.com/kimtaeyoon83/mcp-server-youtube-transcript.git\ncd mcp-server-youtube-transcript\nnpm install && npm run build\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### 1. Detect YouTube URL\nExtract video ID from these patterns:\n- `https://www.youtube.com/watch?v=VIDEO_ID`\n- `https://youtu.be/VIDEO_ID`\n- `https://www.youtube.com/shorts/VIDEO_ID`\n- Direct video ID: `VIDEO_ID` (11 characters)\n\n### 2. Fetch Transcript\nRun this command to get the transcript:\n```bash\ncd /root/clawd/mcp-server-youtube-transcript && node --input-type=module -e \"\nimport { getSubtitles } from './dist/youtube-fetcher.js';\nconst result = await getSubtitles({ videoID: 'VIDEO_ID', lang: 'en' });\nconsole.log(JSON.stringify(result, null, 2));\n\" > /tmp/yt-transcript.json\n```\n\nReplace `VIDEO_ID` with the extracted ID. Read the output from `/tmp/yt-transcript.json`.\n\n### 3. Process the Data\n\nParse the JSON to extract:\n- `result.metadata.title` - Video title\n- `result.metadata.author` - Channel name\n- `result.metadata.viewCount` - Formatted view count\n- `result.metadata.publishDate` - Publication date\n- `result.actualLang` - Language used\n- `result.lines` - Array of transcript segments\n\nFull text: `result.lines.map(l => l.text).join(' ')`\n\n### 4. Generate Summary\n\nCreate a structured summary using this template:\n\n```markdown\n📹 **Video:** [title]\n👤 **Channel:** [author] | 👁️ **Views:** [views] | 📅 **Published:** [date]\n\n**🎯 Main Thesis:**\n[1-2 sentence core argument/message]\n\n**💡 Key Insights:**\n- [insight 1]\n- [insight 2]\n- [insight 3]\n- [insight 4]\n- [insight 5]\n\n**📝 Notable Points:**\n- [additional point 1]\n- [additional point 2]\n\n**🔑 Takeaway:**\n[Practical application or conclusion]\n```\n\nAim for:\n- Main thesis: 1-2 sentences maximum\n- Key insights: 3-5 bullets, each 1-2 sentences\n- Notable points: 2-4 supporting details\n- Takeaway: Actionable conclusion\n\n### 5. Save Full Transcript\n\nSave the complete transcript to a timestamped file:\n```\n/root/clawd/transcripts/YYYY-MM-DD_VIDEO_ID.txt\n```\n\nInclude in the file:\n- Video metadata header\n- Full transcript text\n- URL reference\n\n### 6. Platform-Specific Delivery\n\n**If channel is Telegram:**\n```bash\nmessage --action s"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] **If transcript fetch fails:**\n- Check if video has captions enabled\n- Try with `lang: 'en'` fallback if requested language unavailable\n- Inform user that transcript is not available and suggest alternatives:\n  - Manual YouTube transcript feature\n  - Video may not have captions\n  - Try a different video\n\n**If MCP server not installed:**\n- Provide installation instructions\n- Offer to install it automatically if in appropriate context\n\n**If video ID extraction fails:**\n- Ask user to provide the full YouTube URL or video ID"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] See `examples/` directory for sample outputs."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quality Guidelines] - **Be concise:** Summary should be scannable in 30 seconds\n- **Be accurate:** Don't add information not in the transcript\n- **Be structured:** Use consistent formatting for easy reading\n- **Be contextual:** Adjust detail level based on video length\n  - Short videos (<5 min): Brief summary\n  - Long videos (>30 min): More detailed breakdown"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - MCP server uses Android client emulation to bypass YouTube's cloud IP blocking\n- Works reliably from VPS/cloud environments where yt-dlp often fails\n- Supports multiple languages with automatic fallback to English\n- Transcript quality depends on YouTube's auto-generated captions or manual captions"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "youtube_summarizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abe238/youtube-summarizer/SKILL.md"
+}

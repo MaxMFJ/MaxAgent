@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_muki-fingerprint",
+  "description": "MUKI asset fingerprinting tool for red team reconnaissance. Use when performing authorized penetration testing, asset discovery, service fingerprinting, vulnerability scanning, and attack surface mapping. Supports active/passive fingerprinting with 30,000+ signatures, sensitive path detection, and sensitive information extraction. Requires explicit authorization for target systems.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MUKI Asset Fingerprinting Tool\n\nMUKI is an active asset fingerprinting tool built for red team operations. It enables security researchers to rapidly pinpoint vulnerable systems from chaotic C-class segments and massive asset lists."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - Linux amd64 system\n- Network access to target systems\n- **Explicit written authorization** for all target systems"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Scan single URL\nmuki -u https://target.com\n\n# Scan multiple URLs from file\nmuki -l targets.txt\n\n# Scan with proxy\nmuki -u https://target.com -p socks5://127.0.0.1:1080\n\n# Disable specific modules\nmuki -u https://target.com -A -N  # No active, no directory scan\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Command Options] ```\n-h, --help            Show help\n-u, --url string      Single URL to scan\n-l, --list string     File containing URLs (one per line)\n-o, --output string   Output file path\n-p, --proxy string    Proxy server (http:// or socks5://)\n-t, --thread int      Number of threads (default: 20, max: 100)\n-A, --no-active       Disable active fingerprint scanning\n-N, --no-dir          Disable directory scanning  \n-x, --no-passive      Disable passive fingerprint scanning\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core Modules] ### 1. Active Fingerprinting (-A to disable)\nSends protocol-specific probes to identify services with high confidence.\n- 300+ active fingerprint rules\n- Covers SSH, RDP, web servers, databases\n- Protocol-specific probes\n\n### 2. Passive Fingerprinting (-x to disable)\nAnalyzes response artifacts without additional traffic.\n- 30,000+ precision fingerprints\n- HTTP headers analysis\n- TLS JA3 signatures\n- HTML/CMS patterns\n- WAF detection\n\n### 3. Sensitive Path Detection (-N to disable)\nChecks for high-risk paths using curated dictionaries.\n- Admin interfaces (/admin, /manage)\n- Config files (.env, config.php)\n- Version control (/.git, /.svn)\n- Vulnerability endpoints (Actuator, ThinkPHP routes)\n- Backup files (.sql, .tar.gz)\n\n### 4. Sensitive Information Extraction\nAutomatically extracts high-risk information from responses.\n\n**Categories:**\n- **Credentials**: Passwords, API keys, JDBC strings\n- **Personal Data**: Phone numbers, emails, ID cards\n- **Financial**: Bank cards\n- **System Info**: Internal IPs, versions\n- **Vulnerability Indicators**: ID parameters, redirect URLs"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Formats] ### JSON Output\n```json\n{\n  \"target\": \"https://example.com\",\n  \"fingerprints\": [\n    {\n      \"service\": \"Apache\",\n      \"version\": \"2.4.41\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"sensitive_paths\": [\n    {\n      \"path\": \"/admin\",\n      \"status\": 200,\n      \"risk\": \"high\"\n    }\n  ],\n  \"sensitive_data\": [\n    {\n      \"type\": \"email\",\n      \"value\": \"admin@example.com\",\n      \"source\": \"response body\"\n    }\n  ]\n}\n```\n\n### Excel Output\nStructured .xlsx report with multiple sheets:\n- Asset inventory\n- Service fingerprints\n- Sensitive paths\n- Extracted data"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Workflow] ### Standard Reconnaissance\n```bash\n# 1. Prepare target list\ncat > targets.txt << 'EOF'\nhttps://target1.com\nhttps://target2.com\n192.168.1.0/24\nEOF\n\n# 2. Run full scan\nmuki -l targets.txt -o results.json\n\n# 3. Review results\ncat results.json | jq '.fingerprints[]'\n\n# 4. Generate Excel report\nmuki -l targets.txt -o report.xlsx\n```\n\n### Stealth Scan (with proxy)\n```bash\n# Use Tor proxy for anonymity\nmuki -u https://target.com -p socks5://127.0.0.1:9050\n\n# Or use HTTP proxy\nmuki -u https://target.com -p http://127.0.0.1:8080\n```\n\n### Targeted Scan\n```bash\n# Fast scan - only passive fingerprinting\nmuki -u https://target.com -A -N\n\n# Deep scan - all modules\nmuki -u https://target.com -t 50\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Fingerprint Databases] ### finger.json (30,000+ fingerprints)\nPassive fingerprint database covering:\n- Web frameworks (React, Vue, Django, Spring)\n- Middleware (Apache, Nginx, IIS, Tomcat)\n- CMS (WordPress, Drupal, Joomla)\n- WAFs (Cloudflare, ModSecurity, AWS WAF)\n- APIs (GraphQL, REST, SOAP)\n- Known vulnerabilities (CVE signatures)\n\n### active_finger.json (300+ rules)\nActive probing rules for:\n- Web servers\n- Databases (MySQL, PostgreSQL, MongoDB)\n- Remote access (SSH, RDP, Telnet)\n- Services (Redis, Elasticsearch, Docker)\n\n### Rules.yml\nSensitive information extraction rules organized by groups:\n- **疑似漏洞**: ID parameters (SQLi indicators)\n- **指纹信息**: URL redirects, sensitive paths\n- **敏感信息**: Passwords, accounts, JDBC strings\n- **基础信息**: Emails, ID cards, phones, bank cards"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Best Practices] ### 1. Authorization\n- Always obtain written authorization before scanning\n- Define scope clearly (IPs, domains, time windows)\n- Respect rate limits and business hours\n\n### 2. Stealth\n- Use proxies for external targets\n- Adjust thread count to avoid detection\n- Consider using -A -N for passive-only recon\n\n### 3. Data Handling\n- Store results securely\n- Encrypt sensitive findings\n- Limit access to authorized personnel only\n- Delete data after engagement ends\n\n### 4. False Positive Reduction\n- Cross-reference findings with manual verification\n- Use multiple detection methods\n- Check context of extracted sensitive data"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Legal and Ethical Considerations] **WARNING**: This tool is for authorized security testing only.\n\n- Unauthorized scanning may violate laws (CFAA, Computer Misuse Act, etc.)\n- Only use on systems you own or have explicit permission to test\n- Extracting sensitive data without authorization is illegal\n- Report findings responsibly through proper channels"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Integration] ### With Other Tools\n```bash\n# Chain with nuclei for vulnerability scanning\ncat muki_output.txt | nuclei -t cves/\n\n# Import to Burp Suite\ncat results.json | jq -r '.sensitive_paths[].path' > burp_scope.txt\n\n# Feed to SQLMap for SQL injection testing\ncat results.json | jq -r '.vulnerable_params[]' | sqlmap -m -\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### High Memory Usage\n- Reduce thread count: `-t 10`\n- Scan in smaller batches\n- Disable passive fingerprinting: `-x`\n\n### False Positives\n- Verify findings manually\n- Check rule specificity in Rules.yml\n- Adjust confidence thresholds\n\n### Connection Issues\n- Check proxy configuration\n- Verify network connectivity\n- Increase timeout values"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[References] - Original Repository: https://github.com/yingfff123/MUKI\n- Fingerprint Databases: See references/finger.json, active_finger.json\n- Extraction Rules: See references/Rules.yml"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[License] MIT License - See original repository for details."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "muki_fingerprint"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "fingerprint",
+        "category": "security-assessment",
+        "version": "1.0.0",
+        "author": "OpenClaw",
+        "requirements": [
+          "Linux amd64 environment",
+          "Network access to target",
+          "Explicit authorization for targets"
+        ],
+        "allowed-tools": [
+          "Bash"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/admin4giter/muki-fingerprint/SKILL.md"
+}

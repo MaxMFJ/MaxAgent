@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_math-slop",
+  "description": "Generate satirical \"math slop\" ragebait formulas that connect famous constants (φ, π, e, i) in trivially true but profound-looking equations. Outputs LaTeX. Use for math memes or when someone asks for \"math slop.\"",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Math Slop Generator\n\nGenerate single-line \"ragebait\" formulas connecting famous constants in ways that look profound but are trivially true."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Generate] ```bash\nnode scripts/generate-slop.js\n\n# Multiple formulas\nnode scripts/generate-slop.js --count 5\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Example Output] - `\\varphi^{\\ln e} = \\varphi^{i^4}` → φ¹ = φ¹\n- `e^{i\\pi} + 1 + \\gamma = 0 + \\gamma` → Euler + γ both sides\n- `\\tau - 2\\pi = e^{i\\pi} + 1` → 0 = 0\n- `\\sqrt{2}^{\\,2} = 2^{\\sin^2 x + \\cos^2 x}` → 2 = 2¹"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Rendering] The script outputs LaTeX. To render as an image, use any LaTeX renderer:\n- Online: latex.codecogs.com, quicklatex.com\n- Local: pdflatex, mathjax, katex"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Formula Types] - **Add zeros**: `(φ-φ)`, `ln(1)`, `e^{iπ}+1`, `sin(0)`\n- **Multiply by ones**: `e^0`, `i⁴`, `sin²θ+cos²θ`\n- **Both sides**: same constant added/multiplied to both sides\n- **Euler mashups**: variations on e^{iπ}+1=0\n- **Golden ratio**: φ² = φ+1 variations"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "math_slop"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xmugen/maths-rage-bate/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_runware",
+  "description": "Generate images and videos via Runware API. Access to FLUX, Stable Diffusion, Kling AI, and other top models. Supports text-to-image, image-to-image, upscaling, text-to-video, and image-to-video. Use when generating images, creating videos from prompts or images, upscaling images, or doing AI image transformation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Runware\n\nImage and video generation via Runware's unified API. Access FLUX, Stable Diffusion XL, Kling AI, and more."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] Set `RUNWARE_API_KEY` environment variable, or pass `--api-key` to scripts.\n\nGet API key: https://runware.ai"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Image Generation] ### Text-to-Image\n\n```bash\npython3 scripts/image.py gen \"a cyberpunk city at sunset, neon lights, rain\" --count 2 -o ./images\n```\n\nOptions:\n- `--model`: Model ID (default: `runware:101@1` / FLUX.1 Dev)\n- `--width/--height`: Dimensions (default: 1024x1024)\n- `--steps`: Inference steps (default: 25)\n- `--cfg`: CFG scale (default: 7.5)\n- `--count/-n`: Number of images\n- `--negative`: Negative prompt\n- `--seed`: Reproducible seed\n- `--lora`: LoRA model ID\n- `--format`: png/jpg/webp\n\n### Image-to-Image\n\nTransform an existing image:\n\n```bash\npython3 scripts/image.py img2img ./photo.jpg \"watercolor painting style\" --strength 0.7\n```\n\n- `--strength`: How much to transform (0=keep original, 1=ignore original)\n\n### Upscale\n\n```bash\npython3 scripts/image.py upscale ./small.png --factor 4 -o ./large.png\n```\n\n### List Models\n\n```bash\npython3 scripts/image.py models\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Video Generation] ### Text-to-Video\n\n```bash\npython3 scripts/video.py gen \"a cat playing with yarn, cute, high quality\" --duration 5 -o ./cat.mp4\n```\n\nOptions:\n- `--model`: Model ID (default: `klingai:5@3` / Kling AI 1.6 Pro)\n- `--duration`: Length in seconds\n- `--width/--height`: Resolution (default: 1920x1080)\n- `--negative`: Negative prompt\n- `--format`: mp4/webm/mov\n- `--max-wait`: Polling timeout (default: 600s)\n\n### Image-to-Video\n\nAnimate an image or interpolate between frames:\n\n```bash\n# Single image (becomes first frame)\npython3 scripts/video.py img2vid ./start.png --prompt \"zoom out slowly\" -o ./animated.mp4\n\n# Two images (first and last frame)\npython3 scripts/video.py img2vid ./start.png ./end.png --duration 5\n```\n\n### List Video Models\n\n```bash\npython3 scripts/video.py models\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Popular Models] ### Image\n| Model | ID |\n|-------|-----|\n| FLUX.1 Dev | `runware:101@1` |\n| FLUX.1 Schnell (fast) | `runware:100@1` |\n| FLUX.1 Kontext | `runware:106@1` |\n| Stable Diffusion XL | `civitai:101055@128080` |\n| RealVisXL | `civitai:139562@297320` |\n\n### Video\n| Model | ID |\n|-------|-----|\n| Kling AI 1.6 Pro | `klingai:5@3` |\n| Kling AI 1.5 Pro | `klingai:3@2` |\n| Runway Gen-3 | `runwayml:1@1` |\n\nBrowse all: https://runware.ai/models"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes] - Video generation is async; scripts poll until complete\n- Costs vary by model — check https://runware.ai/pricing\n- FLUX models are excellent for quality; Schnell is faster\n- For best video results, use descriptive prompts with motion words"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "runware"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/26medias/runware/SKILL.md"
+}

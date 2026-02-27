@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_context-optimizer",
+  "description": "Advanced context management with auto-compaction and dynamic context optimization for DeepSeek's 64k context window. Features intelligent compaction (merging, summarizing, extracting), query-aware relevance scoring, and hierarchical memory system with context archive. Logs optimization events to chat.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Context Pruner\n\nAdvanced context management optimized for DeepSeek's 64k context window. Provides intelligent pruning, compression, and token optimization to prevent context overflow while preserving important information."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Key Features] - **DeepSeek-optimized**: Specifically tuned for 64k context window\n- **Adaptive pruning**: Multiple strategies based on context usage\n- **Semantic deduplication**: Removes redundant information\n- **Priority-aware**: Preserves high-value messages\n- **Token-efficient**: Minimizes token overhead\n- **Real-time monitoring**: Continuous context health tracking"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Auto-compaction with dynamic context:\n```javascript\nimport { createContextPruner } from './lib/index.js';\n\nconst pruner = createContextPruner({\n  contextLimit: 64000, // DeepSeek's limit\n  autoCompact: true,    // Enable automatic compaction\n  dynamicContext: true, // Enable dynamic relevance-based context\n  strategies: ['semantic', 'temporal', 'extractive', 'adaptive'],\n  queryAwareCompaction: true, // Compact based on current query relevance\n});\n\nawait pruner.initialize();\n\n// Process messages with auto-compaction and dynamic context\nconst processed = await pruner.processMessages(messages, currentQuery);\n\n// Get context health status\nconst status = pruner.getStatus();\nconsole.log(`Context health: ${status.health}, Relevance scores: ${status.relevanceScores}`);\n\n// Manual compaction when needed\nconst compacted = await pruner.autoCompact(messages, currentQuery);\n```\n\n### Archive Retrieval (Hierarchical Memory):\n```javascript\n// When something isn't in current context, search archive\nconst archiveResult = await pruner.retrieveFromArchive('query about previous conversation', {\n  maxContextTokens: 1000,\n  minRelevance: 0.4,\n});\n\nif (archiveResult.found) {\n  // Add relevant snippets to current context\n  const archiveContext = archiveResult.snippets.join('\\n\\n');\n  // Use archiveContext in your prompt\n  console.log(`Found ${archiveResult.sources.length} relevant sources`);\n  console.log(`Retrieved ${archiveResult.totalTokens} tokens from archive`);\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Auto-Compaction Strategies] 1. **Semantic Compaction**: Merges similar messages instead of removing them\n2. **Temporal Compaction**: Summarizes older conversations by time windows  \n3. **Extractive Compaction**: Extracts key information from verbose messages\n4. **Adaptive Compaction**: Chooses best strategy based on message characteristics\n5. **Dynamic Context**: Filters messages based on relevance to current query"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dynamic Context Management] - **Query-aware Relevance**: Scores messages based on similarity to current query\n- **Relevance Decay**: Relevance scores decay over time for older conversations\n- **Adaptive Filtering**: Automatically filters low-relevance messages\n- **Priority Integration**: Combines message priority with semantic relevance"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Hierarchical Memory System] The context archive provides a RAM vs Storage approach:\n\n- **Current Context (RAM)**: Limited (64k tokens), fast access, auto-compacted\n- **Archive (Storage)**: Larger (100MB), slower but searchable\n- **Smart Retrieval**: When information isn't in current context, efficiently search archive\n- **Selective Loading**: Extract only relevant snippets, not entire documents\n- **Automatic Storage**: Compacted content automatically stored in archive"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Configuration] ```javascript\n{\n  contextLimit: 64000, // DeepSeek's context window\n  autoCompact: true, // Enable automatic compaction\n  compactThreshold: 0.75, // Start compacting at 75% usage\n  aggressiveCompactThreshold: 0.9, // Aggressive compaction at 90%\n  \n  dynamicContext: true, // Enable dynamic context management\n  relevanceDecay: 0.95, // Relevance decays 5% per time step\n  minRelevanceScore: 0.3, // Minimum relevance to keep\n  queryAwareCompaction: true, // Compact based on current query relevance\n  \n  strategies: ['semantic', 'temporal', 'extractive', 'adaptive'],\n  preserveRecent: 10, // Always keep last N messages\n  preserveSystem: true, // Always keep system messages\n  minSimilarity: 0.85, // Semantic similarity threshold\n  \n  // Archive settings\n  enableArchive: true, // Enable hierarchical memory system\n  archivePath: './context-archive',\n  archiveSearchLimit: 10,\n  archiveMaxSize: 100 * 1024 * 1024, // 100MB\n  archiveIndexing: true,\n  \n  // Chat logging\n  logToChat: true, // Log optimization events to chat\n  chatLogLevel: 'brief', // 'brief', 'detailed', or 'none'\n  chatLogFormat: '📊 {action}: {details}', // Format for chat messages\n  \n  // Performance\n  batchSize: 5, // Messages to process in batch\n  maxCompactionRatio: 0.5, // Maximum 50% compaction in one pass\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Chat Logging] The context optimizer can log events directly to chat:\n\n```javascript\n// Example chat log messages:\n// 📊 Context optimized: Compacted 15 messages → 8 (47% reduction)\n// 📊 Archive search: Found 3 relevant snippets (42% similarity)\n// 📊 Dynamic context: Filtered 12 low-relevance messages\n\n// Configure logging:\nconst pruner = createContextPruner({\n  logToChat: true,\n  chatLogLevel: 'brief', // Options: 'brief', 'detailed', 'none'\n  chatLogFormat: '📊 {action}: {details}',\n  \n  // Custom log handler (optional)\n  onLog: (level, message, data) => {\n    if (level === 'info' && data.action === 'compaction') {\n      // Send to chat\n      console.log(`🧠 Context optimized: ${message}`);\n    }\n  }\n});\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Integration with Clawdbot] Add to your Clawdbot config:\n\n```yaml\nskills:\n  context-pruner:\n    enabled: true\n    config:\n      contextLimit: 64000\n      autoPrune: true\n```\n\nThe pruner will automatically monitor context usage and apply appropriate pruning strategies to stay within DeepSeek's 64k limit."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "context_optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🧠",
+        "requires": {
+          "bins": [],
+          "npm": [
+            "tiktoken",
+            "@xenova/transformers"
+          ]
+        },
+        "install": [
+          {
+            "id": "npm",
+            "kind": "npm",
+            "label": "Install Context Pruner dependencies",
+            "command": "cd ~/.clawdbot/skills/context-pruner && npm install"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ad2546/context-optimizer/SKILL.md"
+}

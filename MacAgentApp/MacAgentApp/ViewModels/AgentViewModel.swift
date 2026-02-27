@@ -126,6 +126,9 @@ class AgentViewModel: ObservableObject {
     /// 流式输出时节流：避免每个 chunk 都触发 @Published，减少列表闪烁（100-120ms 一次 UI 更新）
     private var lastStreamingUIPushTime: Date?
     private let streamingThrottleInterval: TimeInterval = 0.12
+    /// 流式期间定期保存部分内容，断线/崩溃时保留本地数据
+    private var lastStreamingSaveTime: Date?
+    private let streamingSaveInterval: TimeInterval = 2.0
     /// 标记是否刚创建新 assistant 消息（用于触发滚动到底部）
     @Published var shouldScrollToBottom: Bool = false
     
@@ -623,6 +626,9 @@ class AgentViewModel: ObservableObject {
                     
                 case .taskStart, .modelSelected, .actionPlan, .actionExecuting, .actionResult, .reflectStart, .reflectResult, .taskComplete:
                     break
+
+                case .retry:
+                    break
                 }
             }
             
@@ -634,13 +640,13 @@ class AgentViewModel: ObservableObject {
             return
         } catch {
             if retryCount < 1 {
+                // 不断线覆盖已有部分回复，用 errorMessage 展示重连状态，保留本地数据
                 errorMessage = "连接断开，正在重连..."
-                updateAssistantMessage(content: "连接断开，正在重连...", isStreaming: true)
                 
                 await backendService.reconnect()
                 
                 if isConnected {
-                    updateAssistantMessage(content: "已重连，正在恢复对话...", isStreaming: true)
+                    errorMessage = "已重连，正在恢复对话..."
                     await resumeChatStream(sessionId: sessionId)
                 } else {
                     errorMessage = "重连失败，请检查后端服务是否运行"
@@ -673,6 +679,52 @@ class AgentViewModel: ObservableObject {
         return false
     }
     
+    /// 结束上一条助手消息的 isStreaming（如“已重连，正在恢复对话...”），避免重连后无会话时两个气泡都显示“正在思考”
+    private func endPreviousResumeMessageStreaming() {
+        guard var conversation = currentConversation else { return }
+        let assistantIndices = conversation.messages.indices.filter { conversation.messages[$0].role == .assistant }
+        guard assistantIndices.count >= 2 else { return }
+        let prevIndex = assistantIndices[assistantIndices.count - 2]
+        if conversation.messages[prevIndex].isStreaming {
+            conversation.messages[prevIndex].isStreaming = false
+            updateCurrentConversation(conversation, shouldSave: true)
+        }
+    }
+    
+    /// 处理 resume_chat 失败（服务端无记录，如后台重启）：移除临时恢复消息，保留已有部分回复，用简短提示收尾
+    private func handleResumeFailure() {
+        guard var conversation = currentConversation else { return }
+        let assistantIndices = conversation.messages.indices.filter { conversation.messages[$0].role == .assistant }
+        guard let lastIdx = assistantIndices.last else { return }
+        
+        let resumePlaceholders = ["正在恢复对话...", "已重连，正在恢复对话...", "连接断开，正在重连..."]
+        let lastContent = conversation.messages[lastIdx].content
+        let hint = "\n\n[回复已中断，可继续发送新消息]"
+        
+        if resumePlaceholders.contains(lastContent) {
+            conversation.messages.remove(at: lastIdx)
+            if assistantIndices.count >= 2 {
+                let prevIdx = assistantIndices[assistantIndices.count - 2]
+                let prevContent = conversation.messages[prevIdx].content
+                if resumePlaceholders.contains(prevContent) {
+                    conversation.messages[prevIdx].content = "[回复已中断，可继续发送新消息]"
+                } else {
+                    // 保留已有部分回复，追加简短提示
+                    conversation.messages[prevIdx].content = prevContent + hint
+                }
+                conversation.messages[prevIdx].isStreaming = false
+            } else {
+                conversation.messages.append(Message(role: .assistant, content: "[回复已中断，可继续发送新消息]", isStreaming: false))
+            }
+        } else {
+            conversation.messages[lastIdx].content = lastContent + hint
+            conversation.messages[lastIdx].isStreaming = false
+        }
+        
+        updateCurrentConversation(conversation, shouldSave: true)
+        errorMessage = "该对话在服务端无记录（可能服务已重启），无法恢复。您可以继续发送新消息。"
+    }
+    
     private func updateAssistantMessage(content: String, isStreaming: Bool, modelName: String? = nil, attachments: [MessageAttachment]? = nil, tokenUsage: TokenUsage? = nil) {
         guard var conversation = currentConversation else { return }
         guard let lastIndex = conversation.messages.lastIndex(where: { $0.role == .assistant }) else { return }
@@ -697,6 +749,7 @@ class AgentViewModel: ObservableObject {
         
         if !isStreaming {
             lastStreamingUIPushTime = nil
+            lastStreamingSaveTime = nil
             updateCurrentConversation(conversation, shouldSave: true)
             return
         }
@@ -706,7 +759,10 @@ class AgentViewModel: ObservableObject {
             return
         }
         lastStreamingUIPushTime = now
-        updateCurrentConversation(conversation, shouldSave: false)
+        // 流式期间定期保存，断线/崩溃时保留部分回复
+        let shouldSave = (lastStreamingSaveTime == nil || now.timeIntervalSince(lastStreamingSaveTime!) >= streamingSaveInterval)
+        if shouldSave { lastStreamingSaveTime = now }
+        updateCurrentConversation(conversation, shouldSave: shouldSave)
     }
     
     // MARK: - Autonomous Execution
@@ -889,6 +945,10 @@ class AgentViewModel: ObservableObject {
                     statusContent += "📝 总结: \(summary)\n"
                     // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
                     updateAssistantMessage(content: statusContent, isStreaming: false)
+                    
+                case .retry(let message):
+                    statusContent += "\n⏳ \(message)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                 case .content(let text):
                     statusContent += text
@@ -1114,6 +1174,10 @@ class AgentViewModel: ObservableObject {
                     // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
                     updateAssistantMessage(content: statusContent, isStreaming: false)
                     
+                case .retry(let message):
+                    statusContent += "\n⏳ \(message)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
                 case .content(let text):
                     statusContent += text
                     updateAssistantMessage(content: statusContent, isStreaming: true)
@@ -1227,6 +1291,10 @@ class AgentViewModel: ObservableObject {
             
             if !fullContent.isEmpty {
                 updateAssistantMessage(content: fullContent, isStreaming: false)
+            } else {
+                // 服务端无该会话记录（例如后台重启），无法恢复流式输出
+                // 不将长错误文案写入对话历史，改用简短提示 + errorMessage（toast 展示）
+                handleResumeFailure()
             }
             
         } catch {

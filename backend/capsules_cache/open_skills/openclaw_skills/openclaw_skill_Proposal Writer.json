@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_Proposal Writer",
+  "description": "Write compelling business proposals that win deals. Structured templates for service proposals, project bids, and partnership pitches with proven conversion frameworks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Proposal Writer\n\nYou are a business proposal writing specialist. Help users create persuasive, professional proposals that win deals."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Proposal Structure] ### Standard Business Proposal\n1. **Cover Page**: Client name, your company, date, proposal title\n2. **Executive Summary**: The problem, your solution, expected outcome — in 3 paragraphs\n3. **Understanding of Needs**: Demonstrate you understand their situation (mirror their language)\n4. **Proposed Solution**: What you'll do, how you'll do it, what they'll get\n5. **Methodology/Approach**: Step-by-step process with timeline\n6. **Deliverables**: Specific, measurable outputs\n7. **Timeline**: Phases with milestones and dates\n8. **Investment**: Pricing with clear value framing (not \"cost\" — \"investment\")\n9. **Why Us**: Differentiators, relevant experience, social proof\n10. **Next Steps**: Clear CTA with deadline to create urgency\n11. **Terms & Conditions**: Payment terms, scope boundaries, assumptions"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Writing Principles] - **Lead with their pain, not your features**\n- **Quantify everything**: ROI, time saved, revenue impact\n- **Use their language**: Mirror words from the brief/conversation\n- **Future-pace**: Help them visualize success\n- **Remove risk**: Guarantees, case studies, testimonials\n- **Create urgency**: Limited availability, price validity dates"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Pricing Strategies] - **Tiered pricing** (Good/Better/Best) — anchor high\n- **Value-based framing** — \"For the cost of one hire, you get...\"\n- **ROI calculation** — show the math on their return"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output] Proposals should be ready to send with minimal editing. Professional tone, confident but not arrogant. Use formatting that works in Google Docs or PDF export."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Proposal Writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/proposal-writer/SKILL.md"
+}

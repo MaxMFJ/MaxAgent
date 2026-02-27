@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_simmer-skill-builder",
+  "description": "Generate complete, installable OpenClaw trading skills from natural language strategy descriptions. Use when your human wants to create a new trading strategy, build a bot, generate a skill, automate a trade idea, turn a tweet into a strategy, or asks \"build me a skill that...\". Produces a full skill folder (SKILL.md + Python script + config) ready to install and run.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Simmer Skill Builder\n\nGenerate complete, runnable Simmer trading skills from a strategy description.\n\n> You are building an OpenClaw skill that trades prediction markets through the Simmer SDK. The skill you generate will be installed into your skill library and run by you — it must be a complete, self-contained folder that works out of the box."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: Understand the Strategy\n\nAsk your human what their strategy does. They might:\n- Describe a trading thesis in plain language\n- Paste a tweet or thread about a strategy\n- Reference an external data source (Synth, NOAA, Binance, RSS, etc.)\n- Say something like \"build me a bot that buys weather markets\" or \"create a skill for crypto momentum\"\n\nClarify until you understand:\n1. **Signal** — What data drives the decision? (external API, market price, on-chain data, timing, etc.)\n2. **Entry logic** — When to buy? (price threshold, signal divergence, timing window, etc.)\n3. **Exit logic** — When to sell? (take profit threshold, time-based, signal reversal, or rely on auto-risk monitors)\n4. **Market selection** — Which markets? (by tag, keyword, category, or discovery logic)\n5. **Position sizing** — Fixed amount or smart sizing? What default max per trade?\n\n### Step 2: Load References\n\nRead these files to understand the patterns:\n\n1. **`references/skill-template.md`** — The canonical skill skeleton. Copy the boilerplate blocks verbatim (config system, get_client, safeguards, execute_trade, CLI args).\n2. **`references/simmer-api.md`** — Simmer SDK API surface. All available methods, field names, return types.\n\nIf the Simmer MCP server is available (`simmer://docs/skill-reference` resource), prefer reading that for the most up-to-date API docs. Otherwise use `references/simmer-api.md`.\n\nFor real examples of working skills, read:\n- **`references/example-weather-trader.md`** — Pattern: external API signal + Simmer SDK trading\n- **`references/example-mert-sniper.md`** — Pattern: Simmer API only, filter-and-trade\n\n### Step 3: Get External API Docs (If Needed)\n\nIf the strategy uses an external data source:\n\n- **Polymarket CLOB data:** If the Polymarket MCP server is available, search it for relevant endpoints (orderbook, prices, spreads). If not available, the key public endpoints are:\n  - `GET https://clob.polymarket.com/book?token_id=<token_id>` — orderbook\n  - `GET ht"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Hard Rules] 1. **Always use `SimmerClient` for trades.** Never import `py_clob_client`, `polymarket`, or call the CLOB API directly for order placement. Simmer handles wallet signing, safety rails, and trade tracking.\n2. **Always default to dry-run.** The `--live` flag must be explicitly passed for real trades.\n3. **Always tag trades** with `source=TRADE_SOURCE` (e.g. `\"sdk:synth-volatility\"`).\n4. **Always include safeguards** — the `check_context_safeguards()` function, skippable with `--no-safeguards`.\n5. **Always include reasoning** in `execute_trade()` — it's displayed publicly and builds your reputation.\n6. **Use stdlib only** for HTTP (urllib). Don't add `requests`, `httpx`, or `aiohttp` as dependencies unless your human specifically needs them. The only pip dependency should be `simmer-sdk`.\n7. **Polymarket minimums:** 5 shares per order, $0.01 min tick. Always check before trading.\n8. **Include `sys.stdout.reconfigure(line_buffering=True)`** — required for cron/Docker/OpenClaw visibility.\n9. **`get_positions()` returns dataclasses** — always convert with `from dataclasses import asdict`.\n10. **Never expose API keys in generated code.** Always read from `SIMMER_API_KEY` env var via `get_client()`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Naming Convention] - Skill slug: `polymarket-<strategy>` for Polymarket-specific, `simmer-<strategy>` for platform-agnostic\n- Trade source: `sdk:<shortname>` (e.g. `sdk:synthvol`, `sdk:rssniper`, `sdk:momentum`)\n- Env vars: `SIMMER_<SHORTNAME>_<PARAM>` (e.g. `SIMMER_SYNTHVOL_ENTRY`)\n- Script name: `<descriptive_name>.py` (e.g. `synth_volatility.py`, `rss_sniper.py`)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Example: Tweet to Skill] Your human pastes:\n> \"Build a bot that uses Synth volatility forecasts to trade Polymarket crypto hourly contracts. Buy YES when Synth probability > market price by 7%+ and Kelly size based on edge.\"\n\nYou would:\n1. Understand: Signal = Synth API probability vs Polymarket price. Entry = 7% divergence. Sizing = Kelly. Markets = crypto hourly contracts.\n2. Read `references/skill-template.md` for the skeleton.\n3. Read `references/simmer-api.md` for SDK methods.\n4. Read `references/example-weather-trader.md` — closest pattern (external API signal).\n5. Ask your human for Synth API docs or web-fetch them.\n6. Generate `polymarket-synth-volatility/` with:\n   - SKILL.md (setup, config table, commands)\n   - `synth_volatility.py` (fetch Synth forecast, compare to market price, Kelly size, trade)\n   - `scripts/status.py` (copied)\n7. Validate with `scripts/validate_skill.py`."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "simmer_skill_builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🛠️",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": false,
+          "entrypoint": null
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/simmer-skill-builder/SKILL.md"
+}

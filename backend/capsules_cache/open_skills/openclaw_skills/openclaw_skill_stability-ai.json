@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_stability-ai",
+  "description": "Generate high-quality images via Stability AI API (SDXL, SD3, Stable Image Core). Use when user asks to \"generate image\", \"make a picture\", or \"draw this\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Stability AI Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Copy `.env.example` to `.env`.\n2. Set `STABILITY_API_KEY` in `.env`.\n3. Optional: Set `API_HOST` if using a custom endpoint."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] - **Role**: Digital Artist.\n- **Trigger**: \"Draw a cat\", \"Generate cyberpunk city\", \"Create an image\".\n- **Output**: Local file path to the generated image and JSON metadata."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] (The script automatically handles dependencies on first run)\n\n```bash\n# Basic generation\nscripts/generate \"A futuristic city with neon lights\"\n\n# Aspect ratio (1:1, 16:9, 9:16, 21:9, 4:3, 3:4)\nscripts/generate \"Landscape painting\" --ratio 16:9\n\n# Style preset\nscripts/generate \"Portrait of a warrior\" --style photographic\n\n# Seed for reproducibility\nscripts/generate \"Abstract art\" --seed 42\n\n# Negative prompt\nscripts/generate \"Beautiful sunset\" --negative \"blurry, low quality\"\n\n# Output format (png, jpg, webp)\nscripts/generate \"Nature scene\" --format webp\n\n# Advanced: Custom model, steps, CFG scale\nscripts/generate \"Fantasy landscape\" \\\n  --model stable-diffusion-3-medium \\\n  --steps 50 \\\n  --cfg 7.0 \\\n  --ratio 21:9\n\n# V2 API (experimental)\nscripts/generate \"Modern architecture\" --v2\n\n# Combined options\nscripts/generate \"Cyberpunk street at night\" \\\n  --ratio 16:9 \\\n  --style neon-punk \\\n  --seed 123 \\\n  --format jpg \\\n  --steps 45 \\\n  --cfg 6.5\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Features] ### Style Presets\nAvailable styles: enhance, anime, photographic, digital-art, comic-book, fantasy-art, line-art, analog-film, neon-punk, isometric, low-poly, origami, modeling-compound, cinematic, 3d-model, pixel-art, tile-texture\n\n### Aspect Ratios\nSupported: 1:1 (default), 16:9, 9:16, 21:9, 4:3, 3:4\n\n### Output Formats\n- PNG (default, lossless)\n- JPEG/JPG (lossy, smaller size)\n- WebP (modern, efficient)\n\n### Metadata\nEach generated image includes a JSON metadata file with:\n- Prompt and negative prompt\n- Model, parameters, and settings\n- Generation timestamp\n- API version used"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Models] - Default: SDXL 1.0 (`stable-diffusion-xl-1024-v1-0`)\n- See `references/models.md` for complete model list, API versions, and credit costs."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Auto-Cleanup] Automatically keeps the last 20 generated images. Older files and their metadata are removed to save disk space."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "stability_ai"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/stability-ai/SKILL.md"
+}

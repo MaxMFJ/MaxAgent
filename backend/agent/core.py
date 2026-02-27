@@ -24,8 +24,11 @@ from .task_context_manager import (
     is_single_step_task,
 )
 from .agent_state import get_current_task, set_current_task, clear_current_task
+from .terminal_session import set_current_session_id
 from .context_enhancer import get_context_enhancer
 from .prompt_loader import get_full_system_prompt, get_system_prompt_for_query
+from .query_classifier import classify, QueryTier
+from .execution_guard import check as guard_check, get_guard_fallback_message
 from .event_bus import get_event_bus
 from .event_schema import (
     Event,
@@ -41,6 +44,27 @@ from tools.schema_registry import build_from_base_tools
 from tools.router import execute_tool, set_router_registry
 
 logger = logging.getLogger(__name__)
+
+
+def _record_created_files(context, tool_call: Dict[str, Any], result: ToolResult) -> None:
+    """将工具执行产生的文件路径记录到 context，供后续追问时 LLM 能告知用户位置"""
+    if not result.success or not isinstance(result.data, dict):
+        return
+    name = tool_call.get("name", "")
+    if name == "file_operations":
+        action = (tool_call.get("arguments") or {}).get("action")
+        if action in ("write", "create"):
+            path = result.data.get("path")
+            if path:
+                context.add_created_file(path)
+        elif action in ("move", "copy"):
+            dest = result.data.get("to")
+            if dest:
+                context.add_created_file(dest)
+    elif name == "developer_tool":
+        project_path = result.data.get("project_path")
+        if project_path:
+            context.add_created_file(project_path)
 
 
 def _should_have_tool_call(user_message: str, model_output: str) -> bool:
@@ -96,7 +120,7 @@ class AgentCore:
             return self.registry.get_relevant_schemas(
                 query,
                 max_tools=8,
-                always_include=["terminal", "file_operations", "app_control"],
+                always_include=["terminal", "file_operations", "app_control", "capsule"],
             )
         return self.registry.get_schemas()
     
@@ -123,7 +147,7 @@ class AgentCore:
         # 构建消息列表（使用语义搜索优化上下文）
         context_messages = context.get_context_messages(current_query=user_message)
         messages = [
-            {"role": "system", "content": get_system_prompt_for_query(user_message)},
+            {"role": "system", "content": get_system_prompt_for_query(user_message, session_id)},
             *context_messages
         ]
         
@@ -238,7 +262,9 @@ class AgentCore:
         # 构建消息列表（使用增强后的查询进行语义搜索）
         context_messages = context.get_context_messages(current_query=enhanced_message)
         
-        base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message)
+        # 企业级：Query 分级 + 分层 Prompt（intent 注入）
+        intent_result = classify(enhanced_message, session_id=session_id)
+        base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message, session_id)
         combined_extra = "\n\n".join(p for p in [extra_system_prompt, evomap_context] if p)
         system_prompt = f"{base_prompt}\n\n{combined_extra}" if combined_extra else base_prompt
         
@@ -248,6 +274,10 @@ class AgentCore:
         ]
         
         logger.info(f"Context: {len(context_messages)} messages for query, local_mode={use_local_mode}, provider={provider}, model={model_name}")
+        
+        # 按任务类型动态 max_tokens：简单对话 4096，复杂生成 16384，减少截断
+        stream_max_tokens = 4096 if intent_result.tier == QueryTier.SIMPLE else 16384
+        logger.info(f"Query tier={intent_result.tier.value} -> max_tokens={stream_max_tokens}")
         
         # 本地模型不传递 tools（通过 prompt 描述工具）
         tool_schemas = None if use_local_mode else self.get_tool_schemas(query=enhanced_message)
@@ -277,7 +307,8 @@ class AgentCore:
                 logger.info(f"Starting LLM stream (local_mode={use_local_mode})...")
                 async for chunk in self.llm.chat_stream(
                     messages=messages,
-                    tools=tool_schemas
+                    tools=tool_schemas,
+                    max_tokens=stream_max_tokens,
                 ):
                     logger.debug(f"Received chunk: {chunk.get('type')}")
                     
@@ -388,14 +419,26 @@ class AgentCore:
                 logger.info(f"LLM stream completed. Tool calls: {len(tool_calls)}, Content length: {len(current_content)}")
                 
                 if tool_calls:
+                    # 企业级 Execution Guard：按 intent 拦截信息追问下的写/执行类工具
+                    allowed_indices = [i for i, tc in enumerate(tool_calls) if guard_check(intent_result.intent, tc.get("name") or "", session_id).allowed]
+                    blocked_indices = [i for i in range(len(tool_calls)) if i not in allowed_indices]
+                    allowed_tool_calls = [tool_calls[i] for i in allowed_indices]
+                    tool_results = [None] * len(tool_calls)
+
                     yield {"type": "tool_executing", "count": len(tool_calls)}
                     
-                    tool_results = []
-                    async for ev in self._execute_tools_with_streaming_logs(tool_calls, session_id):
-                        if ev.get("type") == "execution_log":
-                            yield ev
-                        else:
-                            tool_results = ev.get("results", [])
+                    if allowed_tool_calls:
+                        async for ev in self._execute_tools_with_streaming_logs(allowed_tool_calls, session_id):
+                            if ev.get("type") == "execution_log":
+                                yield ev
+                            else:
+                                real_results = ev.get("results", [])
+                        for idx, real_idx in enumerate(allowed_indices):
+                            tool_results[real_idx] = real_results[idx]
+                    for i in blocked_indices:
+                        tc = tool_calls[i]
+                        tool_results[i] = ToolResult(success=False, error=get_guard_fallback_message(tc.get("name") or ""))
+                        logger.info("execution_guard blocked tool=%s intent=%s", tc.get("name"), intent_result.intent.value)
                     
                     if use_local_mode:
                         # 本地模型：将工具调用和结果作为对话历史
@@ -408,6 +451,7 @@ class AgentCore:
                         
                         # 将工具结果作为用户消息（模拟系统反馈）
                         for tc, result in zip(tool_calls, tool_results):
+                            _record_created_files(context, tc, result)
                             result_text = LocalToolParser.format_tool_result(tc["name"], result)
                             messages.append({
                                 "role": "user",
@@ -470,6 +514,7 @@ class AgentCore:
                         })
                         
                         for tc, result in zip(tool_calls, tool_results):
+                            _record_created_files(context, tc, result)
                             messages.append({
                                 "role": "tool",
                                 "tool_call_id": tc["id"],
@@ -558,7 +603,11 @@ class AgentCore:
             name = tc["name"]
             args = dict(tc.get("arguments", {}))
             logger.info(f"Executing tool: {name} with args: {args}")
-            result = await execute_tool(name, args, registry=self.registry, bind_target_fn=bind_fn)
+            set_current_session_id(session_id)
+            try:
+                result = await execute_tool(name, args, registry=self.registry, bind_target_fn=bind_fn)
+            finally:
+                set_current_session_id(None)
             results.append(result)
             logger.info(f"Tool {name} result: success={result.success}")
             if result.success:
@@ -584,6 +633,7 @@ class AgentCore:
             tools_logger.addHandler(handler)
             orig_level = tools_logger.level
             tools_logger.setLevel(logging.DEBUG)
+            set_current_session_id(session_id)
             try:
                 task = asyncio.create_task(
                     execute_tool(name, args, registry=self.registry, bind_target_fn=bind_fn)
@@ -623,6 +673,7 @@ class AgentCore:
                         clear_current_task(session_id)
                         logger.info(f"TaskContext: single-step task done, cleared current_task")
             finally:
+                set_current_session_id(None)
                 tools_logger.removeHandler(handler)
                 tools_logger.setLevel(orig_level)
         yield {"type": "_tool_results", "results": results}

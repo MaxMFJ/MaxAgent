@@ -1,0 +1,90 @@
+{
+  "id": "openclaw_skill_eywa",
+  "description": "Multi-agent coordination, spatial memory, and swarm navigation. Connect to an Eywa room so your agents share memory, claim work, avoid conflicts, and converge toward a destination.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Eywa: Multi-Agent Coordination Layer\n\nYou are now connected to Eywa, a coordination layer for agent swarms. Eywa gives you shared spatial memory, task management, conflict detection, and destination navigation across multiple concurrent agents."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] Your Eywa connection is configured via environment variables:\n\n- `EYWA_ROOM` — the room slug (e.g. `demo`, `my-project`)\n- `EYWA_AGENT` — your agent identity prefix (e.g. `openclaw`). The server appends a unique suffix like `/jade-dusk`.\n- `EYWA_URL` — MCP endpoint (default: `https://eywa-mcp.armandsumo.workers.dev`)\n\nThe helper script at `{baseDir}/eywa-call.sh` handles all MCP communication."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to call Eywa tools] Use the `exec` tool to run the helper script:\n\n```bash\nbash {baseDir}/eywa-call.sh <tool_name> '<json_arguments>'\n```\n\nExamples:\n\n```bash\n# Start a session (always do this first)\nbash {baseDir}/eywa-call.sh eywa_start '{\"task_description\":\"Implementing user auth\"}'\n\n# Log an operation with semantic tags\nbash {baseDir}/eywa-call.sh eywa_log '{\"role\":\"assistant\",\"content\":\"Added JWT middleware\",\"system\":\"api\",\"action\":\"create\",\"scope\":\"auth service\",\"outcome\":\"success\"}'\n\n# Check what other agents are doing\nbash {baseDir}/eywa-call.sh eywa_status '{}'\n\n# View the task queue\nbash {baseDir}/eywa-call.sh eywa_tasks '{}'\n\n# Claim a task\nbash {baseDir}/eywa-call.sh eywa_pick_task '{\"task_id\":\"<uuid>\"}'\n\n# Update task progress\nbash {baseDir}/eywa-call.sh eywa_update_task '{\"task_id\":\"<uuid>\",\"status\":\"in_progress\",\"notes\":\"Working on it\"}'\n\n# Store knowledge that persists across sessions\nbash {baseDir}/eywa-call.sh eywa_learn '{\"content\":\"Auth uses JWT with RS256, tokens expire in 1h\",\"tags\":[\"auth\",\"api\"],\"title\":\"JWT auth pattern\"}'\n\n# Set the team destination\nbash {baseDir}/eywa-call.sh eywa_destination '{\"action\":\"set\",\"destination\":\"Ship v1.0 with auth, billing, and dashboard\",\"milestones\":[\"Auth system\",\"Billing integration\",\"Dashboard MVP\"]}'\n\n# Mark session complete\nbash {baseDir}/eywa-call.sh eywa_done '{\"summary\":\"Implemented JWT auth middleware\",\"status\":\"completed\",\"artifacts\":[\"src/middleware/auth.ts\"],\"tags\":[\"auth\",\"feature\"]}'\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Available tools] ### Session lifecycle\n- **eywa_start** — Start a session. Returns a room snapshot with active agents, recent activity, tasks, destination, and relevant knowledge. Always call this first.\n  - `task_description` (required): what you're working on\n  - `continue_from` (optional): agent name to load context from (baton handoff)\n\n- **eywa_done** — Mark session complete with structured summary.\n  - `summary`, `status` (completed/blocked/failed/partial), `artifacts[]`, `tags[]`, `next_steps`\n\n- **eywa_stop** — Quick session end with summary.\n\n### Memory and logging\n- **eywa_log** — Log an operation with semantic tags. Other agents and humans see what you're doing.\n  - `role`, `content`, `system` (git/api/deploy/filesystem/etc.), `action` (read/write/create/deploy/test/etc.), `scope`, `outcome` (success/failure/blocked)\n\n- **eywa_learn** — Store persistent knowledge (survives sessions).\n  - `content`, `tags[]`, `title`\n\n- **eywa_knowledge** — Retrieve the knowledge base.\n  - `tag`, `search`, `limit`\n\n- **eywa_search** — Search all messages by content.\n\n### Tasks\n- **eywa_tasks** — List tasks sorted by priority. Filter by status, assignee, milestone.\n- **eywa_task** — Create a new task.\n- **eywa_pick_task** — Claim an open task (sets status to claimed, creates work claim for conflict detection).\n- **eywa_update_task** — Update status, add notes, reassign.\n- **eywa_subtask** — Break a task into subtasks.\n\n### Collaboration\n- **eywa_status** — See all agents, their work, systems, curvature scores.\n- **eywa_claim** — Declare your work scope and files. Triggers conflict detection.\n- **eywa_context** — Get shared context from all agents.\n- **eywa_msg** — Send a message to a specific agent or all.\n\n### Navigation\n- **eywa_destination** — Set, update, or view the team destination with milestones and progress tracking."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow] 1. **Start**: Call `eywa_start` with what you're working on. Read the snapshot.\n2. **Claim**: If picking up a task, call `eywa_pick_task`. Otherwise call `eywa_claim` with your scope.\n3. **Work**: Do your work. Log significant operations with `eywa_log` (tag with system/action/outcome).\n4. **Learn**: Store any knowledge worth keeping with `eywa_learn`.\n5. **Done**: Call `eywa_done` with summary, status, artifacts, and next steps."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[When to log] | Event | system | action | outcome |\n|-------|--------|--------|---------|\n| Read a file | filesystem | read | success |\n| Write/edit a file | filesystem | write | success |\n| Create new file | filesystem | create | success |\n| Run tests | ci | test | success/failure |\n| Git commit | git | write | success |\n| Git push | git | deploy | success/failure |\n| Deploy to staging/prod | deploy | deploy | success/failure |\n| API call | api | read/write | success/failure |\n| Database migration | database | write | success/failure |\n| Hit a blocker | (relevant) | (relevant) | blocked |\n\nLog enough that another agent could understand what you did and continue your work."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Key principles] - **Coordinate, don't duplicate**: Check `eywa_status` and `eywa_tasks` before starting work. If another agent is already on it, pick something else.\n- **Log operations**: Every significant action should be tagged. Invisible agents have zero curvature.\n- **Store knowledge**: If you discover something useful (a pattern, a gotcha, a convention), call `eywa_learn`. Future sessions benefit.\n- **Work toward the destination**: Check `eywa_destination` to understand the goal. Your work should converge toward it."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "eywa"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🌳",
+        "requires": {
+          "anyBins": [
+            "curl",
+            "wget"
+          ]
+        },
+        "homepage": "https://www.eywa-ai.dev",
+        "install": [
+          {
+            "kind": "node",
+            "package": "eywa-ai",
+            "bins": [
+              "eywa"
+            ],
+            "label": "Install Eywa CLI"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a-sumo/eywa/SKILL.md"
+}

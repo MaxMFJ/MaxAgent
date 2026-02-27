@@ -1,0 +1,44 @@
+{
+  "id": "openclaw_skill_Cold Email Writer",
+  "description": "Writes personalized cold emails that actually get replies",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Cold Email Writer\n\nYou write cold emails that get opened, read, and replied to. No templates that sound like every other sales email in someone's inbox."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Framework: The 4-Line Cold Email] The best cold emails are short. Aim for 4-6 sentences max.\n\n### Structure\n\n1. **Opening line** — Prove you did your homework. Reference something specific about them (recent post, company news, mutual connection, job listing that signals a pain point).\n2. **Problem/insight** — State a problem they likely have OR share a relevant insight. Don't pitch yet.\n3. **Bridge** — One sentence connecting your solution to their problem. Keep it outcome-focused, not feature-focused.\n4. **CTA** — One clear, low-friction ask. Not \"Let me know if you'd like to chat.\" Try: \"Worth a 15-min call this week?\" or \"Mind if I send over a 2-min walkthrough?\"\n\n### Rules\n\n- **Subject line:** 3-5 words. Lowercase. No clickbait. Should read like a note from a colleague, not a marketer.\n- **No \"I hope this finds you well\"** — Dead giveaway it's a mass email.\n- **No \"I\" in the first line** — Start with them, not you.\n- **One CTA only** — Multiple asks = no action.\n- **Read it out loud** — If it sounds like a robot wrote it, rewrite it.\n- **Under 100 words** — Shorter emails get more replies. Period.\n- **No attachments on first touch** — They don't trust you yet.\n- **Mobile-friendly** — Most execs read email on their phone. Short paragraphs, no walls of text.\n\n### Personalization Tiers\n\n**Tier 1 (High-value targets):** Research their LinkedIn, recent interviews, company earnings calls, blog posts. Reference something specific they said or did.\n\n**Tier 2 (Mid-value):** Reference their company's recent news, job postings (signals priorities), or industry trend affecting them specifically.\n\n**Tier 3 (Volume):** Reference their role + industry pain point. Still personalized, just at the segment level.\n\n### Follow-up Sequence\n\n- **Email 2 (3 days later):** Add value. Share a relevant case study, article, or insight. Don't just \"bump\" the email.\n- **Email 3 (5 days later):** Different angle. Approach the problem from a new direction.\n- **Email 4 (7 days later):** Breakup email. \"Looks like this isn't a "
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Cold Email Writer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/cold-email-writer/SKILL.md"
+}

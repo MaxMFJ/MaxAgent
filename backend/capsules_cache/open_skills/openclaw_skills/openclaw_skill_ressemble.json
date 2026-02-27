@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_ressemble",
+  "description": "Text-to-Speech and Speech-to-Text integration using Resemble AI HTTP API.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Ressemble – Text & Voice AI Integration\n\nThis skill integrates OpenClaw with the Resemble AI HTTP API, enabling:\n\n- 🎙 Speech-to-Text (audio transcription)\n- 🔊 Text-to-Speech (voice synthesis)\n\nIt uses direct HTTP calls to Resemble's production endpoints and supports asynchronous transcription polling.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] ### resemble-tts\nGenerate high-quality speech audio from text input.\n\nSupports:\n- Custom `voice_uuid`\n- MP3 output format\n- Base64 audio return\n\n### resemble-stt\nTranscribe audio files to text using Resemble AI.\n\nSupports:\n- Multipart audio upload\n- Automatic polling until transcription is complete\n- Returns clean transcript text\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] You must define the environment variable:\n\n```bash\nexport RESEMBLE_API_KEY=\"your_api_key_here\""
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ressemble"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adriano-vr/ressemble/SKILL.md"
+}

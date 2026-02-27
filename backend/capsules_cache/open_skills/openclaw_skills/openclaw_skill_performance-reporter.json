@@ -1,0 +1,166 @@
+{
+  "id": "openclaw_skill_performance-reporter",
+  "description": "Use when the user asks to \"generate SEO report\", \"performance report\", \"traffic report\", \"SEO dashboard\", \"report to stakeholders\", \"show me the numbers\", \"monthly SEO report\", or \"present SEO results to my boss\". Generates comprehensive SEO and GEO performance reports combining rankings, traffic, backlinks, and AI visibility metrics. Creates executive summaries and detailed analyses for stakeholder reporting. For detailed rank tracking, see rank-tracker. For link-specific analysis, see backlink-analyzer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Performance Reporter\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../rank-tracker/) · [backlink-analyzer](../backlink-analyzer/) · **performance-reporter** · [alert-manager](../alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill creates comprehensive SEO and GEO performance reports that combine multiple metrics into actionable insights. It produces executive summaries, detailed analyses, and visual data presentations for stakeholder communication."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Monthly/quarterly SEO reporting\n- Executive stakeholder updates\n- Client reporting for agencies\n- Tracking campaign performance\n- Combining multiple SEO metrics\n- Creating GEO visibility reports\n- Documenting ROI from SEO efforts"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Data Aggregation**: Combines multiple SEO data sources\n2. **Trend Analysis**: Identifies patterns across metrics\n3. **Executive Summaries**: Creates high-level overviews\n4. **Visual Reports**: Presents data in clear formats\n5. **Benchmark Comparison**: Tracks against goals and competitors\n6. **Content Quality Tracking**: Integrates CORE-EEAT scores across audited pages\n7. **ROI Calculation**: Measures SEO investment returns\n8. **Recommendations**: Suggests actions based on data"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Generate Performance Report\n\n```\nCreate an SEO performance report for [domain] for [time period]\n```\n\n### Executive Summary\n\n```\nGenerate an executive summary of SEO performance for [month/quarter]\n```\n\n### Specific Report Types\n\n```\nCreate a GEO visibility report for [domain]\n```\n\n```\nGenerate a content performance report\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~analytics + ~~search console + ~~SEO tool + ~~AI monitor connected:**\nAutomatically aggregate traffic metrics from ~~analytics, search performance data from ~~search console, ranking and backlink data from ~~SEO tool, and GEO visibility metrics from ~~AI monitor. Creates comprehensive multi-source reports with historical trends.\n\n**With manual data only:**\nAsk the user to provide:\n1. Analytics screenshots or traffic data export (sessions, users, conversions)\n2. Search Console data (impressions, clicks, average position)\n3. Keyword ranking data for the reporting period\n4. Backlink metrics (referring domains, new/lost links)\n5. Key performance indicators and goals for comparison\n6. AI citation data if tracking GEO metrics\n\nProceed with the full analysis using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests a performance report:\n\n1. **Define Report Parameters**\n\n   ```markdown\n   ## Report Configuration\n   \n   **Domain**: [domain]\n   **Report Period**: [start date] to [end date]\n   **Comparison Period**: [previous period for comparison]\n   **Report Type**: [Monthly/Quarterly/Annual/Custom]\n   **Audience**: [Executive/Technical/Client]\n   **Focus Areas**: [Rankings/Traffic/Content/Backlinks/GEO]\n   ```\n\n2. **Create Executive Summary**\n\n   ```markdown\n   # SEO Performance Report\n   \n   **Domain**: [domain]\n   **Period**: [date range]\n   **Prepared**: [date]\n   \n   ---\n   \n   ## Executive Summary\n   \n   ### Overall Performance: [Excellent/Good/Needs Attention/Critical]\n   \n   **Key Highlights**:\n   \n   🟢 **Wins**:\n   - [Win 1 - e.g., \"Organic traffic increased 25%\"]\n   - [Win 2 - e.g., \"3 new #1 rankings achieved\"]\n   - [Win 3 - e.g., \"Conversion rate improved 15%\"]\n   \n   🟡 **Watch Areas**:\n   - [Area 1 - e.g., \"Mobile rankings declining slightly\"]\n   - [Area 2 - e.g., \"Competitor gaining ground on key terms\"]\n   \n   🔴 **Action Required**:\n   - [Issue 1 - e.g., \"Technical SEO audit needed\"]\n   \n   ### Key Metrics at a Glance\n   \n   | Metric | This Period | Last Period | Change | Target | Status |\n   |--------|-------------|-------------|--------|--------|--------|\n   | Organic Traffic | [X] | [Y] | [+/-Z%] | [T] | ✅/⚠️/❌ |\n   | Keyword Rankings (Top 10) | [X] | [Y] | [+/-Z] | [T] | ✅/⚠️/❌ |\n   | Organic Conversions | [X] | [Y] | [+/-Z%] | [T] | ✅/⚠️/❌ |\n   | Domain Authority | [X] | [Y] | [+/-Z] | [T] | ✅/⚠️/❌ |\n   | AI Citations | [X] | [Y] | [+/-Z%] | [T] | ✅/⚠️/❌ |\n   \n   ### SEO ROI\n   \n   **Investment**: $[X] (content, tools, effort)\n   **Organic Revenue**: $[Y]\n   **ROI**: [Z]%\n   ```\n\n3. **Report Organic Traffic Performance**\n\n   ```markdown\n   ## Organic Traffic Analysis\n   \n   ### Traffic Overview\n   \n   | Metric | This Period | vs Last Period | vs Last Year |\n   |--------|-------------|----------------|--------------|\n   | Sessions | [X] | "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Reporting period clearly defined with comparison period\n- [ ] All required data sources available or alternatives noted\n- [ ] Target audience identified (executive/technical/client)\n- [ ] Performance goals and KPIs established for benchmarking\n\n### Output Validation\n- [ ] Every metric cites its data source and collection date\n- [ ] Trends include period-over-period comparisons\n- [ ] Recommendations are specific, prioritized, and actionable\n- [ ] Source of each data point clearly stated (~~analytics data, ~~search console data, ~~SEO tool data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Create a monthly SEO report for cloudhosting.com for January 2025\"\n\n**Output**:\n\n```markdown\n# CloudHosting SEO & GEO Performance Report\n\n**Domain**: cloudhosting.com\n**Period**: January 1-31, 2025\n**Comparison**: vs December 2024\n**Prepared**: February 3, 2025\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Executive Summary] ### Overall Performance: Good\n\n**Key Highlights**:\n\n🟢 **Wins**:\n- Organic traffic increased 15.3% (45,200 → 52,100 sessions)\n- 4 new Top 10 keyword rankings in \"cloud hosting\" cluster\n- Organic conversions up 11.8% (612 → 684 trial signups)\n\n🟡 **Watch Areas**:\n- Mobile page speed declining (LCP 3.1s → 3.4s)\n- Competitor SiteGround gaining on \"managed cloud hosting\" terms\n\n🔴 **Action Required**:\n- Fix crawl errors on /pricing/ pages (37 404s detected)\n\n### Key Metrics at a Glance\n\n| Metric | Jan 2025 | Dec 2024 | Change | Target | Status |\n|--------|----------|----------|--------|--------|--------|\n| Organic Traffic | 52,100 | 45,200 | +15.3% | 50,000 | ✅ |\n| Keywords Top 10 | 87 | 79 | +8 | 90 | ⚠️ |\n| Organic Conversions | 684 | 612 | +11.8% | 700 | ⚠️ |\n| Domain Rating | 54 | 53 | +1 | 55 | ⚠️ |\n| AI Citations | 18 | 12 | +50.0% | 20 | ⚠️ |\n\n### SEO ROI\n\n**Investment**: $8,200 (content production, tools, link building)\n**Organic Revenue**: $41,040 (684 trials × 12% close rate × $500 MRR)\n**ROI**: 400%\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Organic Traffic Analysis] ### Traffic Overview\n\n| Metric | Jan 2025 | vs Dec 2024 | vs Jan 2024 |\n|--------|----------|-------------|-------------|\n| Sessions | 52,100 | +15.3% | +38.2% |\n| Users | 41,680 | +14.1% | +35.7% |\n| Pageviews | 98,990 | +12.6% | +29.4% |\n| Avg. Session Duration | 2m 48s | +6.2% | +18.3% |\n| Bounce Rate | 42.3% | -3.1% | -8.7% |\n\n### Top Performing Pages\n\n| Page | Sessions | Change | Conversions |\n|------|----------|--------|-------------|\n| /guide/cloud-hosting | 8,420 | +22.1% | 142 |\n| /compare/aws-vs-gcp | 5,310 | +31.4% | 87 |\n| /pricing | 4,890 | +9.8% | 201 |\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[GEO (AI Visibility) Performance] ### AI Citation Overview\n\n| Metric | Jan 2025 | Dec 2024 | Change |\n|--------|----------|----------|--------|\n| Keywords with AI Overview | 34/120 | 28/120 | +6 |\n| Your AI Citations | 18 | 12 | +50.0% |\n| Citation Rate | 15.0% | 10.0% | +5.0% |\n| Avg Citation Position | 2.4 | 3.1 | +0.7 |\n\n### GEO Wins This Period\n\n| Query | Citation Status | Source Page | Impact |\n|-------|-----------------|-------------|--------|\n| \"best cloud hosting for startups\" | 🆕 New citation | /guide/cloud-hosting | High visibility |\n| \"cloud hosting vs shared hosting\" | ⬆️ Position 4→2 | /compare/cloud-vs-shared | Better exposure |\n| \"managed cloud hosting benefits\" | 🆕 New citation | /features/managed | High visibility |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Domain Authority (CITE Score)] ### CITE Score Summary\n\n| Metric | Jan 2025 | Dec 2024 | Change |\n|--------|----------|----------|--------|\n| CITE Score | 71/100 | 67/100 | +4 |\n| C — Citation | 68/100 | 65/100 | +3 |\n| I — Identity | 55/100 | 52/100 | +3 |\n| T — Trust | 82/100 | 80/100 | +2 |\n| E — Eminence | 61/100 | 58/100 | +3 |\n\n**Veto Status**: ✅ No triggers\n\n_For full 40-item evaluation, run `/seo:audit-domain`_\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Recommendations & Next Steps] ### Immediate Actions (This Week)\n\n| Priority | Action | Expected Impact | Owner |\n|----------|--------|-----------------|-------|\n| P0 | Fix 37 crawl errors on /pricing/ pages | Recover ~800 lost sessions/month | Dev team |\n\n### Short-term (This Month)\n\n| Priority | Action | Expected Impact | Owner |\n|----------|--------|-----------------|-------|\n| P1 | Optimize mobile LCP on top 10 landing pages | Improve mobile rankings for 15+ keywords | Dev team |\n| P1 | Publish 3 comparison pages targeting AI Overview queries | +5-8 new AI citations | Content team |\n\n### Long-term (This Quarter)\n\n| Priority | Action | Expected Impact | Owner |\n|----------|--------|-----------------|-------|\n| P2 | Build Wikidata entry and Schema.org for CloudHost Inc. | Strengthen CITE Identity score by +10 pts | SEO lead |\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Report Templates by Audience] ### Executive Report (1 page)\n\nFocus on: Business impact, ROI, top-line metrics, key recommendations\n\n### Marketing Team Report (3-5 pages)\n\nFocus on: Detailed metrics, content performance, campaign results\n\n### Technical SEO Report (5-10 pages)\n\nFocus on: Crawl data, technical issues, detailed rankings, backlink analysis\n\n### Client Report (2-3 pages)\n\nFocus on: Progress against goals, wins, clear recommendations"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Lead with insights** - Start with what matters, not raw data\n2. **Visualize data** - Charts and graphs improve comprehension\n3. **Compare periods** - Context makes data meaningful\n4. **Include actions** - Every report should drive decisions\n5. **Customize for audience** - Executives need different info than technical teams\n6. **Track GEO metrics** - AI visibility is increasingly important"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[SEO/GEO Metric Definitions and Benchmarks] ### Organic Search Metrics\n\n| Metric | Definition | Good Range | Warning | Source |\n|--------|-----------|-----------|---------|--------|\n| Organic sessions | Visits from organic search | Growing MoM | >10% decline | ~~analytics |\n| Keyword visibility | % of target keywords in top 100 | >60% | <40% | ~~SEO tool |\n| Average position | Mean position across tracked keywords | <20 | >30 | ~~search console |\n| Organic CTR | Clicks / impressions from search | >3% | <1.5% | ~~search console |\n| Pages indexed | Pages in Google index | Growing | Dropping | ~~search console |\n| Organic conversion rate | Conversions / organic sessions | >2% | <0.5% | ~~analytics |\n| Non-brand organic traffic | Organic traffic minus brand searches | >50% of total organic | <30% | ~~analytics |\n\n### GEO/AI Visibility Metrics\n\n| Metric | Definition | Good Range | Warning | Source |\n|--------|-----------|-----------|---------|--------|\n| AI citation rate | % of monitored queries citing your content | >20% | <5% | ~~AI monitor |\n| AI citation position | Average position in AI response citations | Top 3 sources | Not cited | ~~AI monitor |\n| AI answer coverage | % of your topics appearing in AI answers | Growing | Declining | ~~AI monitor |\n| Brand mention in AI | Times your brand is mentioned in AI responses | Growing | Zero | ~~AI monitor |\n\n### Domain Authority Metrics\n\n| Metric | Definition | Good Range | Warning | Source |\n|--------|-----------|-----------|---------|--------|\n| Domain Rating/Authority | Overall domain strength | Growing | Declining | ~~SEO tool |\n| Referring domains | Unique domains linking to you | Growing MoM | Loss >10% MoM | ~~link database |\n| Backlink growth rate | Net new backlinks per month | Positive | Negative trend | ~~link database |\n| Toxic link ratio | Toxic links / total links | <5% | >10% | ~~link database |"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Reporting Templates by Audience] ### Executive Report (C-Suite / Leadership)\n\n**Focus:** Business outcomes, ROI, competitive position\n**Length:** 1 page + appendix\n**Frequency:** Monthly or Quarterly\n\n| Section | Content |\n|---------|---------|\n| Traffic & Revenue | Organic traffic trend + attributed revenue |\n| Competitive Position | Visibility share vs. top 3 competitors |\n| AI Visibility | AI citation trend and coverage |\n| Key Wins | Top 3 achievements with business impact |\n| Risks | Top 3 concerns with proposed mitigation |\n| Investment Ask | Resources needed for next period |\n\n### Marketing Team Report\n\n**Focus:** Channel performance, content effectiveness, technical health\n**Length:** 2-3 pages\n**Frequency:** Monthly\n\n| Section | Content |\n|---------|---------|\n| Keyword Performance | Rankings gained/lost, new keywords discovered |\n| Content Performance | Top pages by traffic, engagement, conversions |\n| Technical Health | Crawl errors, speed scores, indexation |\n| Backlink Profile | New links, lost links, quality assessment |\n| GEO Performance | AI citation changes, new citations |\n| Action Items | P0-P3 prioritized task list |\n\n### Technical SEO Report\n\n**Focus:** Crawlability, indexation, speed, errors\n**Length:** Detailed\n**Frequency:** Weekly or Bi-weekly\n\n| Section | Content |\n|---------|---------|\n| Crawl Stats | Pages crawled, errors, crawl budget usage |\n| Index Coverage | Indexed/excluded/errored pages |\n| Core Web Vitals | LCP, CLS, INP trends |\n| Error Log | New 4xx/5xx errors with resolution status |\n| Schema Validation | New warnings, rich result eligibility |\n| Technical Debt | Outstanding issues by priority |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Trend Analysis Framework] ### Period-Over-Period Analysis\n\n| Comparison | Best For | Limitation |\n|-----------|---------|-----------|\n| Week over week (WoW) | Detecting sudden changes | Noisy, affected by day-of-week patterns |\n| Month over month (MoM) | Identifying trends | Seasonal bias |\n| Year over year (YoY) | Accounting for seasonality | Does not reflect recent trajectory |\n| Rolling 30-day average | Smoothing noise | Lags behind real changes |\n\n### Trend Interpretation Guidelines\n\n| Pattern | Likely Cause | Recommended Action |\n|---------|-------------|-------------------|\n| Steady growth | Strategy is working | Continue, optimize high performers |\n| Sudden spike then drop | Viral content or algorithm volatility | Investigate cause, build on if repeatable |\n| Gradual decline | Content decay, competition, technical debt | Comprehensive audit needed |\n| Flat line | Plateau — existing strategy maxed out | New content areas, new link strategies |\n| Seasonal pattern | Industry/demand cycles | Plan content calendar around peaks |"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[SEO Attribution Guidance] ### Attribution Challenges in SEO\n\n| Challenge | Impact | Mitigation |\n|----------|--------|-----------|\n| Long conversion paths | SEO rarely gets last-touch credit | Use assisted conversions report |\n| Brand vs. non-brand | Brand searches inflate organic metrics | Always separate brand/non-brand |\n| Cross-device journeys | Mobile search to desktop conversion | Enable cross-device tracking |\n| SEO + paid overlap | Cannibalization or lift? | Test turning off paid for branded terms |\n| Content assists sales | Hard to attribute | Track content touches in CRM |"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Reference Materials] - [KPI Definitions](./references/kpi-definitions.md) — Complete SEO/GEO metric definitions with benchmarks, good ranges, and warning thresholds\n- [Report Templates](./references/report-templates.md) — Report templates by audience (executive, marketing, technical, client)"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Related Skills] - [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Include CORE-EEAT scores as page-level content quality KPIs\n- [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) — Include CITE score as a domain-level KPI in periodic reports\n- [rank-tracker](../rank-tracker/) — Detailed ranking data\n- [backlink-analyzer](../backlink-analyzer/) — Link profile data\n- [alert-manager](../alert-manager/) — Set up report triggers\n- [serp-analysis](../../research/serp-analysis/) — SERP composition data\n- [memory-management](../../cross-cutting/memory-management/) — Archive reports in project memory\n- [entity-optimizer](../../cross-cutting/entity-optimizer/) — Track branded search and Knowledge Panel metrics\n- [technical-seo-checker](../../optimize/technical-seo-checker/) — Technical health data feeds into reports"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "performance_reporter"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "geo",
+        "performance report",
+        "seo report",
+        "traffic analysis",
+        "seo dashboard",
+        "executive summary",
+        "analytics report",
+        "kpi tracking"
+      ],
+      "triggers": [
+        "generate SEO report",
+        "performance report",
+        "traffic report",
+        "SEO dashboard",
+        "report to stakeholders",
+        "monthly report",
+        "SEO analytics",
+        "show me the numbers",
+        "monthly SEO report",
+        "present SEO results to my boss"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/performance-reporter/SKILL.md"
+}

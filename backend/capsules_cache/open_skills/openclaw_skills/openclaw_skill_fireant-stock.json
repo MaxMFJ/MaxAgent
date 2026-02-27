@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_fireant-stock",
+  "description": "Automated Vietnamese stock price and index checking on FireAnt.vn. Use when checking current stock prices, market indices, trading volumes, or financial information for Vietnamese stocks (HOSE, HNX, UPCOM) and market indices (VNINDEX, HNX30, VN30). Accepts stock symbols like DPM, VCB, FPT, or indices like VNINDEX. Returns formatted price/index data, market statistics, and key financial metrics.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # FireAnt Stock Price Checker"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Automatically retrieves real-time stock information from FireAnt.vn for Vietnamese equities. Handles the full workflow from searching to data extraction and formatting."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] Check a single stock:\n```bash\nscripts/check_stock.py DPM\n```\n\nCheck multiple stocks:\n```bash\nscripts/check_stock.py VCB FPT BID\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Workflow] 1. **Search** - Uses Google search to find the FireAnt stock page for the symbol\n2. **Navigate** - Opens the FireAnt stock page via browser automation  \n3. **Extract** - Parses current price, volume, market cap, and key statistics\n4. **Format** - Returns structured data in readable format"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Supported Data] ### For Stocks:\n- **Current Price** - Real-time price with change percentage\n- **Trading Data** - Volume, value, opening/high/low prices  \n- **Market Metrics** - Market cap, beta, P/E ratio, reference price\n- **Technical Analysis** - Moving averages (MA10, MA50)\n- **Company Info** - Full company name, stock exchange listing\n\n### For Indices (VNINDEX, HNX30, VN30, etc.):\n- **Current Index** - Real-time index value with change percentage\n- **Trading Data** - Total volume, matched volume, value traded\n- **Foreign Trading** - NĐTNN (foreign investor) buy/sell activity and net position\n- **Technical Analysis** - Moving averages (MA10, MA50)\n- **Market Overview** - Reference price, opening, high/low range"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage Patterns] **Single stock inquiry:**\n\"Check giá cổ phiếu DPM\"\n\"What's the current price of VCB?\"\n\n**Multiple stocks:**\n\"Compare VCB, BID, and CTG prices\"\n\"Show me bank stocks: VCB BID CTG\"\n\n**Market indices:**\n\"Check VNINDEX\"\n\"How is the market doing today?\" (→ VNINDEX)\n\"Show me VN30 index\"\n\n**Mixed (stocks + index):**\n\"Check ACB, L18, AAA và VNINDEX\"\n\"Give me tech stocks and market index: FPT VNM VNINDEX\"\n\n**Market research:**\n\"Find information about DPM stock on FireAnt\"\n\"Get latest trading data for FPT\""
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Scripts] ### scripts/check_stock.py\n\nMain script that automates the full stock checking workflow for one or more symbols (stocks or indices).\n\n**Usage:** `python3 scripts/check_stock.py <SYMBOL1> [SYMBOL2] ...`\n\n**Examples:**\n```bash\n# Check stocks\npython3 scripts/check_stock.py ACB VCB FPT\n\n# Check index\npython3 scripts/check_stock.py VNINDEX\n\n# Check mixed\npython3 scripts/check_stock.py ACB L18 AAA VNINDEX\n```\n\n**Returns:** Formatted stock/index data including price/index value, volume, and key metrics.\n\n**Note:** FireAnt URL format is the same for both stocks and indices: `https://fireant.vn/ma-chung-khoan/{SYMBOL}`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fireant_stock"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aholake/vietstock/SKILL.md"
+}

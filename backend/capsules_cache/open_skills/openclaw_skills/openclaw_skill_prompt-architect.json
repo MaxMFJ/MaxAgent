@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_prompt-architect",
+  "description": "Transform rough ideas into professional-grade LLM prompts. Analyzes text, images, links, and documents to craft optimized prompts using proven frameworks (CoT, Few-Shot, Persona, etc.).\nUSE WHEN: user wants to improve a prompt, create a prompt from scratch, optimize an existing prompt, convert a vague idea into a structured prompt, analyze why a prompt isn't working, or asks \"write me a prompt for...\", \"improve this prompt\", \"prompt engineer this\".\nDON'T USE WHEN: user wants to execute the prompt itself (just run it), wants general writing help without prompt context, asks for code/articles/tweets (use appropriate skill instead), or wants to chat about prompt engineering theory without producing a prompt.\nEDGE CASES: - \"Fix this prompt\" → this skill (optimization) - \"Write me a blog post\" → NOT this skill (content creation, not prompt creation) - \"Write me a prompt that generates blog posts\" → this skill - \"Why isn't my prompt working?\" → this skill (diagnosis + fix) - \"اكتب لي برومبت\" → this skill - \"حسن هالبرومبت\" → this skill - \"اكتب لي مقال\" → NOT this skill (use katib-al-maqalat)\nINPUTS: Rough idea, existing prompt, images, links, documents, or any combination. OUTPUTS: Optimized prompt in a code block, ready to copy. SUCCESS: Prompt is clear, structured, uses appropriate framework, and achieves the user's goal.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # The Prompt Architect\n\nTransform rough concepts into professional-grade LLM prompts."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Workflow] Follow these 4 steps for every interaction. Do not skip steps.\n\n### Step 1: Ingest and Analyze\n\nWhen the user submits input, do NOT generate the final prompt immediately. Perform deep analysis:\n\n- **Text**: Identify core intent, even if vague\n- **Images**: Extract visual style, subject, mood, composition details\n- **Links**: Browse or infer context to extract key information\n- **Documents**: Review and summarize relevant constraints\n\n### Step 2: Clarify (Mandatory)\n\nAsk **5-10 clarifying questions** based on analysis. Cover these categories:\n\n| Category | What to Ask |\n|---|---|\n| Purpose | What specific outcome do you need? |\n| Audience | Who consumes this output? |\n| Tone & Style | Professional, witty, academic, cinematic? |\n| Format | Code block, blog post, JSON, narrative? |\n| Context | Background info the model needs? |\n| Constraints | What to avoid? Length limits? |\n| Examples | Specific styles or references to mimic? |\n\nAdapt question count to complexity: simple requests get 5, complex/multimodal get up to 10-15.\n\n**Opening format:**\n> I've analyzed your input. To craft the right prompt, I need a few details:\n>\n> 1. [Question]\n> 2. [Question]\n> ...\n\n### Step 3: Language Selection\n\nAfter the user answers, ask exactly:\n\n> Would you like the final prompt in English or Arabic?\n\n### Step 4: Generate the Prompt\n\nConstruct the optimized prompt using:\n- User's input + media analysis + answers to clarifying questions\n- Appropriate framework from `references/frameworks.md`\n- Quality criteria from `references/quality-criteria.md`\n\n**Output rules:**\n- Deliver inside a **code block** for easy copying\n- Include a brief note explaining which framework was used and why\n- If the prompt is complex, add inline comments\n\n**Delivery format:**\n> Here's your optimized prompt:\n>\n> ```\n> [Final Polished Prompt]\n> ```\n>\n> **Framework used:** [Name] - [One-line reason]"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Framework Selection Guide] Choose the right framework based on the task. See `references/frameworks.md` for full details.\n\n| Task Type | Recommended Framework |\n|---|---|\n| Reasoning/analysis | Chain-of-Thought (CoT) |\n| Creative/open-ended | Persona + constraints |\n| Structured data output | JSON schema + few-shot |\n| Multi-step workflows | Prompt chaining |\n| Classification/decisions | Few-shot with edge cases |\n| Complex problem-solving | Tree-of-Thought |\n| Task + tool use | ReAct pattern |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Templates] See `references/templates.md` for ready-to-use prompt templates organized by use case:\n- System prompt templates\n- Analysis prompt templates\n- Creative prompt templates\n- Code generation templates\n- Data extraction templates"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quality Checklist] Before delivering, verify against `references/quality-criteria.md`:\n\n1. **Clarity**: No ambiguity in instructions\n2. **Structure**: Logical flow, clear sections\n3. **Specificity**: Concrete examples over vague descriptions\n4. **Constraints**: Explicit boundaries (length, format, tone)\n5. **Framework fit**: Right technique for the task\n6. **Testability**: Can you tell if the output is correct?"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Anti-Patterns to Avoid] - Vague role assignments (\"Be a helpful assistant\")\n- Contradictory instructions\n- Over-specification that kills creativity\n- Missing output format specification\n- No examples when few-shot would help\n- Ignoring the model's strengths (multimodal, reasoning, etc.)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "prompt_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdullah4ai/prompt-architect/SKILL.md"
+}

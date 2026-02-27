@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_seo-dataforseo",
+  "description": "SEO keyword research using the DataForSEO API. Perform keyword analysis, YouTube keyword research, competitor analysis, SERP analysis, and trend tracking. Use when the user asks to: research keywords, analyze search volume/CPC/competition, find keyword suggestions, check keyword difficulty, analyze competitors, get trending topics, do YouTube SEO research, or optimize landing page keywords. Requires a DataForSEO API account and credentials in .env file.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SEO Keyword Research (DataForSEO)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] Install dependencies:\n\n```bash\npip install -r scripts/requirements.txt\n```\n\nConfigure credentials by creating a `.env` file in the project root:\n\n```\nDATAFORSEO_LOGIN=your_email@example.com\nDATAFORSEO_PASSWORD=your_api_password\n```\n\nGet credentials from: https://app.dataforseo.com/api-access"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] | User says | Function to call |\n|-----------|-----------------|\n| \"Research keywords for [topic]\" | `keyword_research(\"topic\")` |\n| \"YouTube keyword data for [idea]\" | `youtube_keyword_research(\"idea\")` |\n| \"Analyze competitor [domain.com]\" | `competitor_analysis(\"domain.com\")` |\n| \"What's trending?\" | `trending_topics()` |\n| \"Keyword analysis for [list]\" | `full_keyword_analysis([\"kw1\", \"kw2\"])` |\n| \"Landing page keywords for [topic]\" | `landing_page_keyword_research([\"kw1\"], \"competitor.com\")` |\n\nExecute functions by importing from `scripts/main.py`:\n\n```python\nimport sys\nfrom pathlib import Path\nsys.path.insert(0, str(Path(\"scripts\")))\nfrom main import *\n\nresult = keyword_research(\"AI website builders\")\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow Pattern] Every research task follows three phases:\n\n### 1. Research\nRun API functions. Each function call hits the DataForSEO API and returns structured data.\n\n### 2. Auto-Save\nAll results automatically save as timestamped JSON files to `results/{category}/`. File naming pattern: `YYYYMMDD_HHMMSS__operation__keyword__extra_info.json`\n\n### 3. Summarize\nAfter research, read the saved JSON files and create a markdown summary in `results/summary/` with data tables, ranked opportunities, and strategic recommendations."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[High-Level Functions] These are the primary functions in `scripts/main.py`. Each orchestrates multiple API calls for a complete research workflow.\n\n| Function | Purpose | What it gathers |\n|----------|---------|----------------|\n| `keyword_research(keyword)` | Single keyword deep-dive | Overview, suggestions, related keywords, difficulty |\n| `youtube_keyword_research(keyword)` | YouTube content research | Overview, suggestions, YouTube SERP rankings, YouTube trends |\n| `landing_page_keyword_research(keywords, competitor_domain)` | Landing page SEO | Overview, intent, difficulty, SERP analysis, competitor keywords |\n| `full_keyword_analysis(keywords)` | Strategic content planning | Overview, difficulty, intent, keyword ideas, historical volume, Google Trends |\n| `competitor_analysis(domain, keywords)` | Competitor intelligence | Domain keywords, Google Ads keywords, competitor domains |\n| `trending_topics(location_name)` | Current trends | Currently trending searches |\n\n### Parameters\n\nAll functions accept an optional `location_name` parameter (default: \"United States\"). Most functions also have boolean flags to skip specific sub-analyses (e.g., `include_suggestions=False`).\n\n### Individual API Functions\n\nFor granular control, import specific functions from the API modules. See [references/api-reference.md](references/api-reference.md) for the complete list of 25 API functions with parameters, limits, and examples."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Results Storage] Results auto-save to `results/` with this structure:\n\n```\nresults/\n├── keywords_data/    # Search volume, CPC, competition\n├── labs/             # Suggestions, difficulty, intent\n├── serp/             # Google/YouTube rankings\n├── trends/           # Google Trends data\n└── summary/          # Human-readable markdown summaries\n```\n\n### Managing Results\n\n```python\nfrom core.storage import list_results, load_result, get_latest_result\n\n# List recent results\nfiles = list_results(category=\"labs\", limit=10)\n\n# Load a specific result\ndata = load_result(files[0])\n\n# Get most recent result for an operation\nlatest = get_latest_result(category=\"labs\", operation=\"keyword_suggestions\")\n```\n\n### Utility Functions\n\n```python\nfrom main import get_recent_results, load_latest\n\n# List recent files across all categories\nfiles = get_recent_results(limit=10)\n\n# Load latest result for a category\ndata = load_latest(\"labs\", \"keyword_suggestions\")\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Creating Summaries] After running research, create a markdown summary document in `results/summary/`. Include:\n\n- **Data tables** with volumes, CPC, competition, difficulty\n- **Ranked lists** of opportunities (sorted by volume or opportunity score)\n- **SERP analysis** showing what currently ranks\n- **Recommendations** for content strategy, titles, tags\n\nName the summary file descriptively (e.g., `results/summary/ai-tools-keyword-research.md`)."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Tips] 1. **Be specific** — \"Get keyword suggestions for 'AI website builders'\" works better than \"research AI stuff\"\n2. **Request summaries** — Always create a summary document after research, named specifically\n3. **Batch related keywords** — Pass multiple related keywords at once for comparison\n4. **Specify the goal** — \"for a YouTube video\" vs \"for a landing page\" changes which data matters most\n5. **Ask for competition analysis** — \"Show me what videos are ranking\" helps identify content gaps"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Defaults] - **Location**: United States (code 2840)\n- **Language**: English\n- **API Limits**: 700 keywords for volume/overview, 1000 for difficulty/intent, 5 for trends, 200 for keyword ideas"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "seo_dataforseo"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamkristopher/seo-dataforseo/SKILL.md"
+}

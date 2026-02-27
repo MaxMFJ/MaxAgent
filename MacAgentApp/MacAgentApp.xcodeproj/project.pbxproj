@@ -30,6 +30,7 @@
 		B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012234567890ABCDEF1 /* RichMarkdownView.swift */; };
 		B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */; };
 		B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000016234567890ABCDEF1 /* CodeBlockView.swift */; };
+		B1000041234567890ABCDEF1 /* ThinkingBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */; };
 		B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000018234567890ABCDEF1 /* MarkdownElements.swift */; };
 		B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A234567890ABCDEF1 /* AsyncImageView.swift */; };
 		B100001B234567890ABCDEF1 /* Base64ImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001C234567890ABCDEF1 /* Base64ImageView.swift */; };
@@ -76,6 +77,7 @@
 		B1000012234567890ABCDEF1 /* RichMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMarkdownView.swift; sourceTree = "<group>"; };
 		B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineMarkdownText.swift; sourceTree = "<group>"; };
 		B1000016234567890ABCDEF1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
+		B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingBlockView.swift; sourceTree = "<group>"; };
 		B1000018234567890ABCDEF1 /* MarkdownElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownElements.swift; sourceTree = "<group>"; };
 		B100001A234567890ABCDEF1 /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncImageView.swift; sourceTree = "<group>"; };
 		B100001C234567890ABCDEF1 /* Base64ImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64ImageView.swift; sourceTree = "<group>"; };
@@ -255,6 +257,7 @@
 				B1000037234567890ABCDEF1 /* RichMessageTextView.swift */,
 				B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */,
 				B1000016234567890ABCDEF1 /* CodeBlockView.swift */,
+				B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */,
 				B1000018234567890ABCDEF1 /* MarkdownElements.swift */,
 			);
 			path = "Markdown渲染";
@@ -398,6 +401,7 @@
 				B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */,
 				B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */,
 				B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */,
+				B1000041234567890ABCDEF1 /* ThinkingBlockView.swift in Sources */,
 				B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */,
 				B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */,
 				B100001B234567890ABCDEF1 /* Base64ImageView.swift in Sources */,

@@ -1,0 +1,152 @@
+{
+  "id": "openclaw_skill_polymarket-copytrading",
+  "description": "Mirror positions from top Polymarket traders using Simmer API. Size-weighted aggregation across multiple wallets.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket Copytrading\n\nMirror positions from successful Polymarket traders using the Simmer SDK.\n\n> **This is a template.** The default logic mirrors whale wallets by size-weighted allocation — remix it with your own wallet selection criteria, position filters, or rebalancing rules. The skill handles all the plumbing (wallet fetching, conflict detection, trade execution). Your agent provides the alpha."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- Copytrade whale wallets on Polymarket\n- Paper trade (copytrade with $SIM) to test strategies without real money\n- Check what positions a wallet holds\n- Follow specific trader addresses\n- Check their copytrading positions"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Check account balance and positions\npython scripts/status.py\n\n# Detailed position list\npython scripts/status.py --positions\n```\n\n**API Reference:**\n- Base URL: `https://api.simmer.markets`\n- Auth: `Authorization: Bearer $SIMMER_API_KEY`\n- Portfolio: `GET /api/sdk/portfolio`\n- Positions: `GET /api/sdk/positions`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Finding Whale Wallets] - **[predicting.top](https://predicting.top)** — Leaderboard of top Polymarket traders with wallet addresses\n- **[alphawhale.trade](https://alphawhale.trade)** — Tools for copying and tracking top performers\n- **Polymarket Leaderboard** — Official rankings (requires account)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Start (Ad-Hoc Usage)] **User provides wallet(s) directly in chat:**\n```\nUser: \"Copytrade this wallet: 0x1234...abcd\"\nUser: \"What positions does 0x5678...efgh have?\"\nUser: \"Follow these whales: 0xaaa..., 0xbbb...\"\n```\n\n→ Run with `--wallets` flag:\n```bash\npython copytrading_trader.py --wallets 0x1234...abcd\npython copytrading_trader.py --wallets 0xaaa...,0xbbb... --dry-run\n```\n\nThis is the simplest way - no setup needed, just pass wallets directly."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Persistent Setup (Optional)] For automated recurring scans, wallets can be saved in environment:\n\n| Setting | Environment Variable | Default |\n|---------|---------------------|---------|\n| Target wallets | `SIMMER_COPYTRADING_WALLETS` | (none) |\n| Top N positions | `SIMMER_COPYTRADING_TOP_N` | auto |\n| Max per position | `SIMMER_COPYTRADING_MAX_USD` | 50 |\n| Max trades/run | `SIMMER_COPYTRADING_MAX_TRADES` | 10 |\n\n**Top N auto-calculation (when not specified):**\n- Balance < $50: Top 5 positions\n- Balance $50-200: Top 10 positions\n- Balance $200-500: Top 25 positions\n- Balance $500+: Top 50 positions\n\n**Polymarket Constraints:**\n- Minimum 5 shares per order\n- SDK enforces $1.00 minimum position value (filters dust positions)\n\n> ⚠️ **Start Conservative:** Begin with small amounts (`--max-usd 5-10`) and `--dry-run` to understand how the skill behaves before scaling up."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[How It Works] Each cycle the script:\n1. Fetches positions from all target wallets via Simmer API\n2. Combines using size-weighted aggregation (larger wallets = more influence)\n3. Detects conflicts (one wallet long YES, another long NO) and skips those markets\n4. Applies Top-N filtering to concentrate on highest-conviction positions\n5. Auto-imports missing markets from Polymarket\n6. Calculates rebalance trades to match target allocations\n7. Executes trades via Simmer SDK (respects spending limits)\n8. Reports results back to user"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[$SIM Paper Trading] Copytrading supports $SIM mode — mirror whale positions using simulated money on Simmer's LMSR markets. No wallet or USDC required.\n\n```bash\n# Paper trade with $SIM (explicit)\npython copytrading_trader.py --venue simmer --wallets 0x123... --live\n\n# Auto-detect: if your account has no linked wallet, $SIM is used automatically\npython copytrading_trader.py --wallets 0x123... --live\n```\n\nIn $SIM mode:\n- Trades execute on Simmer's LMSR at real Polymarket prices\n- Each market gets an independent $10K $SIM balance\n- Positions tracked in your Simmer portfolio (source: `sdk:copytrading`)\n- Whale signals still come from real Polymarket data"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Running the Skill] **Run a scan (dry run by default — no trades):**\n```bash\npython copytrading_trader.py\n```\n\n**Execute real trades:**\n```bash\npython copytrading_trader.py --live\n```\n\n**Check positions only:**\n```bash\npython copytrading_trader.py --positions\n```\n\n**View current config:**\n```bash\npython copytrading_trader.py --config\n```\n\n**Override wallets for one run:**\n```bash\npython copytrading_trader.py --wallets 0x123...,0x456...\n```\n\n**Full rebalance mode (includes sells):**\n```bash\npython copytrading_trader.py --rebalance\n```\n\n**Sell when whales exit positions:**\n```bash\npython copytrading_trader.py --whale-exits\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Reporting Results] After each run, message the user with:\n- Current configuration (wallets, Top N, max position)\n- Number of wallets fetched and total positions found\n- Markets skipped due to conflicts\n- Trades executed (or skipped with reason)\n- Current portfolio positions\n\nExample output to share:\n```\n🐋 Copytrading Scan Complete\n\nConfiguration:\n• Following 2 wallets\n• Top 10 positions, max $50 each\n• Balance: $250.00 USDC\n\nFetched positions:\n• 0x1234...abcd: 15 positions\n• 0x5678...efgh: 22 positions\n• Combined: 28 unique markets\n• Conflicts skipped: 2\n\nTop 10 by allocation:\n1. \"Will BTC hit $100k?\" - 18.5% → BUY YES\n2. \"Trump pardons X?\" - 12.3% → BUY NO\n3. \"Fed rate cut Jan?\" - 9.8% → Already held\n...\n\nTrades executed: 4 buys ($180 total)\n• Bought 45 YES shares on \"Will BTC hit $100k?\" @ $0.82\n• Bought 120 NO shares on \"Trump pardons X?\" @ $0.15\n...\n\nNext scan in 4 hours.\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Example Conversations] **User: \"Copytrade 0x1234...abcd\"**\n→ Run: `python copytrading_trader.py --wallets 0x1234...abcd`\n→ Report what positions that wallet has and what trades would execute\n\n**User: \"What is 0x5678...efgh holding?\"**\n→ Run: `python copytrading_trader.py --wallets 0x5678...efgh --dry-run`\n→ Show their positions without trading\n\n**User: \"Follow these wallets: 0xaaa..., 0xbbb..., 0xccc...\"**\n→ Run: `python copytrading_trader.py --wallets 0xaaa...,0xbbb...,0xccc...`\n→ Aggregate positions across all wallets, report results\n\n**User: \"Copytrade this whale but only top 5 positions\"**\n→ Run: `python copytrading_trader.py --wallets 0x... --top-n 5`\n\n**User: \"How are my positions doing?\"**\n→ Run: `python copytrading_trader.py --positions`\n→ Show current Polymarket positions with P&L\n\n**User: \"Show copytrading config\"**\n→ Run: `python copytrading_trader.py --config`\n→ Display current settings\n\n**User: \"Sell positions that whales have exited\"**\n→ Run: `python copytrading_trader.py --whale-exits`\n→ Compares your positions to whales, sells any they've closed\n\n**User: \"Do a full rebalance to match the whales\"**\n→ Run: `python copytrading_trader.py --rebalance`\n→ Includes both buys AND sells to match whale allocations"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Finding Good Wallets to Follow] Common approaches:\n1. **Leaderboard tracking**: Check Polymarket leaderboards for consistent performers\n2. **Whale watchers**: Follow known profitable traders on social media\n3. **Specific strategies**: Follow wallets known for weather, politics, or crypto trades\n\nThe skill works best when:\n- Following 2-5 wallets for diversification\n- Wallets have similar conviction (don't mix degen with conservative)\n- Wallets trade markets available on Polymarket"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Order too small\" / \"below minimum (5)\"**\n- Polymarket requires minimum 5 shares per order\n- Increase `--max-usd` or reduce `--top-n` to concentrate into fewer positions\n\n**\"No wallets specified\"**\n- Provide wallet addresses in your message, e.g., \"copytrade 0x1234...\"\n- Or set SIMMER_COPYTRADING_WALLETS environment variable for recurring scans\n\n**\"Agent has no USDC balance\"**\n- Need USDC in your Polymarket wallet, or use `--venue simmer` for $SIM paper trading\n- Check wallet is linked at simmer.markets/dashboard\n\n**\"Conflict skipped\"**\n- Wallets disagree on this market (one long YES, other long NO)\n- Markets with net position < 10% are skipped\n\n**\"Insufficient balance\"**\n- Not enough USDC for all trades\n- Reduce SIMMER_COPYTRADING_TOP_N or SIMMER_COPYTRADING_MAX_USD\n\n**\"Market could not be imported\"**\n- Some markets may not be importable (resolved, private, etc.)\n- These are skipped automatically\n\n**\"External wallet requires a pre-signed order\"**\n- `WALLET_PRIVATE_KEY` is not set in the environment\n- The SDK signs orders automatically when this env var is present — no manual signing code needed\n- Fix: `export WALLET_PRIVATE_KEY=0x<your-polymarket-wallet-private-key>`\n- Do NOT attempt to sign orders manually or modify the skill code — the SDK handles it\n\n**\"Balance shows $0 but I have USDC on Polygon\"**\n- Polymarket uses **USDC.e** (bridged USDC, contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`) — not native USDC\n- If you bridged USDC to Polygon recently, you likely received native USDC\n- Swap native USDC to USDC.e, then retry"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_copytrading"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🐋",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "copytrading_trader.py"
+        },
+        "tunables": [
+          {
+            "env": "SIMMER_COPYTRADING_MAX_USD",
+            "type": "number",
+            "default": 50,
+            "range": [
+              1,
+              200
+            ],
+            "step": 5,
+            "label": "Max bet per trade"
+          },
+          {
+            "env": "SIMMER_COPYTRADING_TOP_N",
+            "type": "number",
+            "default": 5,
+            "range": [
+              1,
+              20
+            ],
+            "step": 1,
+            "label": "Positions to track"
+          },
+          {
+            "env": "SIMMER_COPYTRADING_MAX_TRADES",
+            "type": "number",
+            "default": 5,
+            "range": [
+              1,
+              20
+            ],
+            "step": 1,
+            "label": "Max trades per run"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-copytrading/SKILL.md"
+}

@@ -1,6 +1,5 @@
 {
   "capsule_sources": [],
-
   "open_skill_sources": [
     {
       "id": "anthropic_skills",
@@ -19,8 +18,17 @@
       "branch": "main",
       "path": "skills",
       "enabled": true
+    },
+    {
+      "id": "openclaw_skills",
+      "name": "OpenClaw Skills (ClawHub)",
+      "owner": "openclaw",
+      "repo": "skills",
+      "branch": "main",
+      "path": "skills",
+      "enabled": true,
+      "id_prefix": "openclaw_"
     }
   ],
-
-  "_strategy_note": "默认使用 Strategy 2 (open_skill_sources)。设置环境变量 EVOMAP_AUTH_CODE 后自动切换到 Strategy 1 (EvoMap)。capsule_sources 用于自定义 Capsule JSON 仓库。"
+  "_strategy_note": "默认使用 Strategy 2 (open_skill_sources)。设置 EVOMAP_AUTH_CODE 后切换到 Strategy 1。openclaw_skills 含 5700+ 技能，首次同步较慢，可设 enabled:false 禁用。"
 }

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_Contract Analyzer",
+  "description": "Analyzes contracts and agreements for risks, unusual terms, and missing clauses",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Contract Analyzer\n\nYou analyze contracts like a careful business attorney. Flag risks, explain terms in plain English, catch what's missing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Analysis Process] When given a contract or agreement:\n\n### 1. Quick Summary\n- **Type:** (NDA, SaaS agreement, employment, freelance, partnership, etc.)\n- **Parties:** Who's involved\n- **Key Terms:** Duration, value, obligations\n- **Governing Law:** Jurisdiction\n\n### 2. Risk Analysis\n\nFlag each risk as: 🔴 High | 🟡 Medium | 🟢 Low\n\nCommon risks to check:\n- **Liability caps** — Are they reasonable? Unlimited liability?\n- **Indemnification** — One-sided? Too broad?\n- **Termination** — Can you exit? Penalties?\n- **IP ownership** — Who owns what's created?\n- **Non-compete/non-solicit** — Scope and duration reasonable?\n- **Auto-renewal** — Hidden? Hard to cancel?\n- **Payment terms** — Net 30? Net 90? Penalties?\n- **Confidentiality** — Duration? Scope?\n- **Force majeure** — Present? Adequate?\n- **Data/privacy** — Compliant with regulations?\n\n### 3. Missing Clauses\nList important clauses that should be there but aren't.\n\n### 4. Plain English Summary\nExplain what you're actually agreeing to in simple terms.\n\n### 5. Negotiation Points\nTop 3-5 things to push back on, with suggested alternative language."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output Format] ```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Contract Analysis: [Title/Type]] **Risk Level: [Low/Medium/High/Critical]**\n\n### Summary\n...\n\n### Risk Flags\n| # | Clause | Risk | Issue | Suggestion |\n|---|--------|------|-------|------------|\n...\n\n### Missing Clauses\n...\n\n### Plain English\n...\n\n### Top Negotiation Points\n...\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Rules] - Always note: \"This is AI analysis, not legal advice. Consult an attorney for binding decisions.\"\n- Be specific about clause numbers/sections\n- Explain WHY something is risky, not just that it is\n- Consider the user's likely position (usually the smaller party)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Related Tools] - Business proposals: `clawhub install afrexai-proposal-gen`\n- Industry context: https://afrexai-cto.github.io/context-packs/ ($47/pack)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Contract Analyzer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-contract-analyzer/SKILL.md"
+}

@@ -51,7 +51,8 @@ async def plan_upgrade(goal: str, llm_chat) -> Optional[UpgradePlan]:
     ]
     try:
         response = await llm_chat(messages, tools=None)
-        content = (response.get("content") or "").strip()
+        from ..llm_utils import extract_text_from_content
+        content = extract_text_from_content(response.get("content")).strip()
         # Extract JSON block
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()

@@ -1,0 +1,78 @@
+{
+  "id": "openclaw_skill_0protocol",
+  "description": "Agents can sign plugins, rotate credentials without losing identity, and publicly attest to behavior.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 0.protocol\n\nIdentity substrate for autonomous agents. Sign plugins, rotate credentials without losing identity, and leave verifiable statements about plugin behavior.\n\nThree tools: `express`, `own`, `transfer`."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ### Option 1: mcporter (Recommended)\n\nAdd to `config/mcporter.json`:\n\n```json\n{\n  \"mcpServers\": {\n    \"0protocol\": {\n      \"baseUrl\": \"https://mcp.0protocol.dev/mcp\",\n      \"description\": \"Identity substrate for autonomous agents\"\n    }\n  }\n}\n```\n\nTest:\n\n```bash\nmcporter list 0protocol --schema\n```\n\n### Option 2: Direct MCP Config\n\n```json\n{\n  \"mcpServers\": {\n    \"0protocol\": {\n      \"url\": \"https://mcp.0protocol.dev/mcp\"\n    }\n  }\n}\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Tools] | Tool | Description |\n|------|-------------|\n| `express` | Create signed expression — sign plugins, log work products, record attestations |\n| `own` | Query wallet, set signature expression, lookup other agents |\n| `transfer` | Authenticated handoff with server-witnessed receipt |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Canonical Use Case: Plugin Trust] ### 1. Sign a plugin\n\n```bash\nmcporter call '0protocol.express(\n  expression_type: \"claim\",\n  payload: {\n    claim_type: \"artifact/signature\",\n    subject: \"plugin:weather-fetcher-v2\",\n    predicate: \"signed\",\n    object: \"sha256:a3f8c2d1e9b7...\"\n  }\n)'\n```\n\nThe agent's identity is now permanently associated with this plugin hash. This survives restarts, platform changes, and credential rotation.\n\n### 2. Attest to behavior\n\n```bash\nmcporter call '0protocol.express(\n  expression_type: \"claim\",\n  payload: {\n    claim_type: \"behavior/report\",\n    subject: \"plugin:weather-fetcher-v2\",\n    predicate: \"used_successfully\",\n    object: \"100_calls_no_errors\",\n    evidence_refs: [\"expr:abc123...\"]\n  }\n)'\n```\n\nA recorded claim. Not consensus. Not reputation. A signed statement from one agent about an artifact.\n\n### 3. Transfer to another agent\n\n```bash\nmcporter call '0protocol.transfer(\n  to: \"8b2c4d5e...\",\n  payload: {\n    type: \"task_handoff\",\n    expression_refs: [\"expr_abc123\"],\n    context: \"analysis complete\"\n  },\n  visibility: \"public\"\n)'\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guarantees] | Guarantee | How |\n|-----------|-----|\n| **Authorship** | Ed25519 signatures. Agent generates keypair locally. |\n| **Integrity** | Append-only expression log. Server-witnessed. |\n| **Ordering** | Monotonic log index. Server-signed timestamps. |\n| **Transfer authenticity** | Both signatures recorded. |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[What This Is Not] - Not authentication (your auth is unchanged)\n- Not reputation (Phase 2)\n- Not payments or tokens\n- Not required for execution"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Resources] - [README / Spec](https://github.com/0isone/0protocol)\n- [API Reference](https://github.com/0isone/0protocol/blob/main/API.md)\n- [Migration Guide](https://github.com/0isone/0protocol/blob/main/migration.md)\n- [Why](https://github.com/0isone/0protocol/blob/main/WHY.md)"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "0protocol"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🪪",
+        "requires": {
+          "bins": [
+            "mcporter"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0isone/0protocol/SKILL.md"
+}

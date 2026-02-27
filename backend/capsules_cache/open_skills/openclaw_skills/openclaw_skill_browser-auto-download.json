@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_browser-auto-download",
+  "description": "Browser-automated file download with enhanced features. Auto-detects platform (Windows/macOS/Linux, 64/32-bit, ARM/Intel), handles multi-step navigation (homepage to platform-specific pages), captures auto-downloads triggered on page load, and falls back to button clicking when needed. Ideal for complex download flows where curl/wget fail due to client-side rendering, automatic downloads, or multi-page navigation. Features page scrolling for lazy content, extended wait times, and Golang support.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Browser Auto Download v4.1.0 (Enhanced)\r\n\r\nDownload files from dynamic webpages with **intelligent detection and multi-step navigation**."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Key Features] - **Auto-download capture**: Detects downloads triggered automatically on page load\r\n- **Multi-step navigation**: Finds and navigates to platform-specific pages (PC/Desktop versions)\r\n- **Platform auto-detection**: Windows x64/ARM64, macOS Intel/Apple Silicon, Linux\r\n- **Event listening**: Captures all download events without requiring button clicks\r\n- **Smart fallback**: Tries multiple strategies (auto-download, navigation, clicking)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] Use this skill for:\r\n- **Auto-download sites**: Downloads start automatically when page loads\r\n- **Multi-step flows**: Homepage - click \"PC version\" - download page\r\n- **Dynamic content**: Download links generated via JavaScript\r\n- **Interactive downloads**: Requires clicking buttons or navigating UI\r\n\r\n**NOT for**: Direct file URLs (use `curl`/`wget` instead)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ### Option 1: Automatic (Recommended)\r\n\r\n```bash\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://example.com/download\"\r\n```\r\n\r\nThe script will:\r\n1. Check for auto-downloads on page load\r\n2. Look for platform-specific page links (PC/Desktop version)\r\n3. Navigate if needed\r\n4. Try clicking download buttons as fallback\r\n\r\n### Option 2: Built-in Shortcuts\r\n\r\n```bash\r\n# WeChat DevTools\r\npython skills/browser-auto-download/scripts/auto_download.py --wechat\r\n\r\n# Meitu Xiuxiu\r\npython skills/browser-auto-download/scripts/auto_download.py --meitu\r\n```\r\n\r\n### Option 3: Python Module\r\n\r\n```python\r\nfrom skills.browser-auto-download.scripts.auto_download import auto_download\r\n\r\nresult = auto_download(\r\n    url=\"https://example.com/download\",\r\n    auto_select=True,   # Platform detection\r\n    auto_navigate=True  # Multi-step navigation\r\n)\r\n\r\nif result:\r\n    print(f\"Downloaded: {result['path']}\")\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How It Works] ### Three-Stage Strategy\r\n\r\n**Stage 1: Auto-Download Detection**\r\n```\r\nPage loads - Check for downloads - Success?\r\n    Yes:                    No:\r\n    Save file               Go to Stage 2\r\n```\r\n\r\n**Stage 2: Multi-Step Navigation**\r\n```\r\nLook for \"PC/Desktop\" link - Navigate - Check downloads - Success?\r\n    Yes:                        No:\r\n    Save file                  Go to Stage 3\r\n```\r\n\r\n**Stage 3: Button Clicking**\r\n```\r\nTry multiple selectors - Click - Wait for download - Save\r\n```\r\n\r\n### Platform-Specific Page Detection\r\n\r\nAutomatically finds links like:\r\n- \"meitu for PC\" - pc.meitu.com\r\n- \"Desktop version\" - desktop.example.com\r\n- \"Windows Download\" - windows.example.com\r\n\r\nKeywords: `pc`, `desktop`, `windows`, `mac`, `download`, `电脑`, `桌面`, `客户端`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] ### Auto-Download Sites (Best Case)\r\n\r\n```bash\r\n# Sites that trigger download on page load\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://pc.meitu.com/en/pc?download=pc\"\r\n```\r\n\r\n### Multi-Step Navigation\r\n\r\n```bash\r\n# Homepage - PC version - Download\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://xiuxiu.meitu.com/\" \\\r\n  --auto-navigate  # Enable (default: True)\r\n```\r\n\r\n### Manual Selector (Fallback)\r\n\r\n```bash\r\n# If auto-detection fails\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://example.com/download\" \\\r\n  --selector \"button:has-text('Download for free')\"\r\n```\r\n\r\n### Disable Features\r\n\r\n```bash\r\n# Don't navigate to platform pages\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://example.com\" \\\r\n  --no-auto-navigate\r\n\r\n# Don't detect platform\r\npython skills/browser-auto-download/scripts/auto_download.py \\\r\n  --url \"https://example.com\" \\\r\n  --no-auto-select\r\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Platform Detection] | System | Architecture | Keywords Used |\r\n|--------|--------------|---------------|\r\n| Windows | AMD64/x86_64 | windows, win64, x64, 64-bit, pc |\r\n| Windows | x86/i686 | windows, win32, x86, 32-bit, pc |\r\n| macOS | ARM64 (M1/M2/M3) | macos, arm64, apple silicon |\r\n| macOS | x86_64 (Intel) | macos, x64, intel |\r\n| Linux | x86_64 | linux, x64, amd64 |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] **Download not starting**:\r\n- Use `--headless` (default: False) to observe the process\r\n- Check stderr for auto-download messages\r\n- Try `--no-auto-navigate` if navigation is causing issues\r\n- Use `--selector` to manually specify button\r\n\r\n**Wrong version downloaded**:\r\n- Check platform detection in stderr output\r\n- Use `--no-auto-select` and manually specify `--selector`\r\n- Verify the site offers multiple versions\r\n\r\n**Navigation going to wrong page**:\r\n- Disable with `--no-auto-navigate`\r\n- The site may not have platform-specific pages\r\n\r\n**File not saved**:\r\n- Check write permissions in output directory\r\n- Ensure sufficient disk space\r\n- Wait for large files (up to 3 minutes)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Output Format] ### stderr (Progress)\r\n```\r\nStarting browser (visible)...\r\nOpening: https://example.com\r\nChecking for auto-downloads...\r\nChecking for platform-specific page link...\r\nFound platform page: https://pc.example.com\r\nNavigating to platform page...\r\nDownload detected: software_v2.1.0_win64.exe\r\nSaving: software_v2.1.0_win64.exe\r\n\r\nSUCCESS!\r\nFile: C:\\Users\\User\\Downloads\\software_v2.1.0_win64.exe\r\nSize: 231.9 MB\r\n```\r\n\r\n### stdout (JSON result)\r\n```json\r\n{\r\n  \"path\": \"C:\\\\Users\\\\User\\\\Downloads\\\\software_v2.1.0_win64.exe\",\r\n  \"filename\": \"software_v2.1.0_win64.exe\",\r\n  \"size_bytes\": 243209941,\r\n  \"size_mb\": 231.9,\r\n  \"platform\": \"Windows AMD64\"\r\n}\r\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Real-World Examples] ### Meitu Xiuxiu (Multi-step + Auto-download)\r\n\r\n```python\r\nfrom auto_download import quick_download_meitu\r\n\r\nresult = quick_download_meitu()\r\n# Flow: Homepage - PC page link - Navigate - Auto-download\r\n```\r\n\r\n### WeChat DevTools (Button click)\r\n\r\n```python\r\nfrom auto_download import quick_download_wechat_devtools\r\n\r\nresult = quick_download_wechat_devtools()\r\n# Flow: Homepage - Click \"Stable Windows 64\" - Download\r\n```\r\n\r\n### Generic Software (Mixed)\r\n\r\n```python\r\nresult = auto_download(\r\n    url=\"https://example.com/downloads\",\r\n    auto_select=True,    # Detect Windows 64-bit\r\n    auto_navigate=True   # Find \"Desktop version\" link\r\n)\r\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Requirements] ```bash\r\npip install playwright\r\nplaywright install chromium\r\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Advanced Usage] ### Custom Platform Keywords\r\n\r\nModify `get_system_preference()` in the script to add custom keywords.\r\n\r\n### Integration with Scripts\r\n\r\n```python\r\nimport subprocess\r\nimport json\r\n\r\nresult = subprocess.run([\r\n    'python', 'skills/browser-auto-download/scripts/auto_download.py',\r\n    '--url', 'https://example.com/download'\r\n], capture_output=True, text=True)\r\n\r\nif result.returncode == 0:\r\n    data = json.loads(result.stdout)\r\n    print(f\"Downloaded: {data['path']}\")  # Use the file\r\n```\r\n\r\n### Batch Downloads\r\n\r\n```python\r\nurls = [\r\n    \"https://example1.com/download\",\r\n    \"https://example2.com/download\",\r\n    \"https://example3.com/download\"\r\n]\r\n\r\nfor url in urls:\r\n    result = auto_download(url)\r\n    if result:\r\n        print(f\"Success: {result['filename']}\")\r\n```"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "browser_auto_download"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronxx/browser-auto-download/SKILL.md"
+}

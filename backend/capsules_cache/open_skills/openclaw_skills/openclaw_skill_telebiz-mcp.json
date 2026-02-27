@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_telebiz-mcp",
+  "description": "Access Telegram data via MCP using the telebiz-tt browser client. Lists chats, reads messages, searches, manages folders, and sends messages through an authenticated Telegram session.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # telebiz-mcp\n\nMCP integration for Telegram via telebiz-tt browser client."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Rules (read this first)] - **Rate limits are strict**: max 20 calls/request, 30 calls/min, 500ms between calls, heavy ops 1s.\n- For adding many chats to folders: **do NOT use `batchAddToFolder` with multiple chatIds** (known bug). Loop `addChatToFolder` sequentially.\n- For CRM linking: `linkEntityToChat` is **unstable** in our tests. We observed `company` failing with Validation error, and at one point `organization` succeeding — but later `organization` also failed. Treat `linkEntityToChat` as unreliable until upstream clarifies schema/feature flags.\n- Prefer reversible operations and clean up test artifacts (folders, groups) immediately."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Architecture] ```\n┌──────────────┐     ┌──────────────────┐     ┌─────────────────┐\n│ Clawdbot     │────▶│ MCP Server       │────▶│ WebSocket Relay │\n│ (mcporter)   │     │ (stdio)          │     │ (port 9716)     │\n└──────────────┘     └──────────────────┘     └────────┬────────┘\n                                                       │\n                                                       ▼\n                                              ┌─────────────────┐\n                                              │ Browser         │\n                                              │ (telebiz-tt)    │\n                                              │ [executor]      │\n                                              └─────────────────┘\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Setup] ### Prerequisites\n- Node.js 18+\n- Telegram account\n\n### 1. Install telebiz-mcp\n\n```bash\nnpm install -g @telebiz/telebiz-mcp\n```\n\n### 2. Open Telebiz in browser\n\nGo to **https://telebiz.io** and login with your Telegram account.\n\n### 3. Start the HTTP server\n\n```bash\ncd ~/clawd/skills/telebiz-mcp\n./start-http.sh\n```\n\nThis starts a persistent server that:\n- Runs telebiz-mcp internally\n- Keeps browser connection alive  \n- Exposes HTTP API on port 9718\n\n### 4. Enable MCP in Telebiz\n\nIn telebiz.io: **Settings → Agent → Local MCP**\n\nThe status should show \"Connected\" once the server is running.\n\n### 4. Verify connection\n\n```bash\n# Quick health check\ncd ~/clawd/skills/telebiz-mcp\nnpm run health\n\n# Should show:\n# 📱 Telebiz MCP Status\n# ────────────────────\n# Relay: ✅ Running\n# Executor: ✅ Connected\n# Tools: 31 available\n```\n\n### 5. Test via mcporter\n\n```bash\ncd ~/clawd\nmcporter call telebiz.listChats limit:5\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Health Monitoring] ### Manual Check\n\n```bash\n# Check status\nnpm run health\n\n# JSON output for automation\nnode dist/health.js --json\n```\n\n### Monitor Script\n\nThe monitor tracks state changes and can be used with cron:\n\n```bash\n# Check and alert on changes\nnpm run monitor\n\n# Quiet mode - only output on state change\nnode dist/monitor.js --quiet\n\n# JSON output\nnode dist/monitor.js --json\n```\n\nExit codes:\n- `0` = Healthy (relay up, executor connected)\n- `1` = Degraded (relay up, executor disconnected)\n- `2` = Down (relay not running)\n- `3` = State changed (for alerting)\n\n### Cron Integration\n\nAdd to crontab for periodic monitoring:\n\n```bash\n# Check every 5 minutes, alert on changes\n*/5 * * * * cd ~/clawd/skills/telebiz-mcp && node dist/monitor.js --quiet >> /var/log/telebiz-monitor.log 2>&1\n```\n\n### Heartbeat Integration\n\nAdd to `HEARTBEAT.md` for Clawdbot monitoring:\n\n```markdown\n### Telebiz MCP (every 2h)\n- [ ] Run: `cd ~/clawd/skills/telebiz-mcp && npm run health`\n- [ ] If degraded/down: Alert Albert via Telegram\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Available Tools] ### Chat Tools\n| Tool | Description |\n|------|-------------|\n| `listChats` | List chats with filters (type, unread, archived, etc.) |\n| `getChatInfo` | Get detailed chat information |\n| `getCurrentChat` | Get currently open chat |\n| `openChat` | Navigate to a chat |\n| `archiveChat` | Archive a chat |\n| `unarchiveChat` | Unarchive a chat |\n| `pinChat` | Pin a chat |\n| `unpinChat` | Unpin a chat |\n| `muteChat` | Mute notifications |\n| `unmuteChat` | Unmute notifications |\n| `deleteChat` | Delete/leave chat ⚠️ |\n\n### Message Tools\n| Tool | Description |\n|------|-------------|\n| `sendMessage` | Send text message (markdown supported) |\n| `forwardMessages` | Forward messages between chats |\n| `deleteMessages` | Delete messages ⚠️ |\n| `searchMessages` | Search globally or in a chat |\n| `getRecentMessages` | Get message history |\n| `markChatAsRead` | Mark all messages as read |\n\n### Folder Tools\n| Tool | Description |\n|------|-------------|\n| `listFolders` | List all chat folders |\n| `createFolder` | Create a new folder |\n| `addChatToFolder` | Add chat to folders |\n| `removeChatFromFolder` | Remove chat from folders |\n| `deleteFolder` | Delete a folder ⚠️ |\n\n### Member Tools\n| Tool | Description |\n|------|-------------|\n| `getChatMembers` | List group/channel members |\n| `addChatMembers` | Add users to group |\n| `removeChatMember` | Remove user from group |\n| `createGroup` | Create a new group |\n\n### User Tools\n| Tool | Description |\n|------|-------------|\n| `searchUsers` | Search by name/username |\n| `getUserInfo` | Get user details |\n\n### Batch Tools\n| Tool | Description |\n|------|-------------|\n| `batchSendMessage` | Send to multiple chats |\n| `batchAddToFolder` | Add multiple chats to folder |\n| `batchArchive` | Archive multiple chats |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Usage Examples] ### Find chats waiting for my reply\n```bash\nmcporter call telebiz.listChats iAmLastSender=false hasUnread=true limit:20\n```\n\n### Find stale conversations I started\n```bash\nmcporter call telebiz.listChats iAmLastSender=true lastMessageOlderThanDays:7 limit:20\n```\n\n### Search all messages\n```bash\nmcporter call telebiz.searchMessages query=\"invoice\" limit:20\n```\n\n### Search in specific chat\n```bash\nmcporter call telebiz.searchMessages query=\"meeting\" chatId=-1001234567890 limit:10\n```\n\n### Send message\n```bash\nmcporter call telebiz.sendMessage chatId=-1001234567890 text=\"Hello from Clawdbot!\"\n```\n\n### Get recent messages\n```bash\nmcporter call telebiz.getRecentMessages chatId=-1001234567890 limit:50\n```\n\n### Paginate through history\n```bash\n# Page 1 (newest 50)\nmcporter call telebiz.getRecentMessages chatId=-1001234567890 limit:50 offset:0\n\n# Page 2 (messages 51-100)\nmcporter call telebiz.getRecentMessages chatId=-1001234567890 limit:50 offset:50\n```\n\n### Organize chats\n```bash\n# List folders\nmcporter call telebiz.listFolders\n\n# Add chats to folder\nmcporter call telebiz.batchAddToFolder chatIds='[\"-1001234\",\"-1001235\"]' folderId:5\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Rate Limiting] The browser enforces rate limits to prevent Telegram flood protection:\n- **Max calls per request**: 20\n- **Max calls per minute**: 30\n- **Min delay between calls**: 500ms\n- **Delay for heavy operations** (send/forward/delete): 1s\n\n(These values come from the Telebiz UI and are the effective limits we observed in practice.)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Known Issues / Workarounds (Feb 2026)] ### `batchAddToFolder` fails for multiple chatIds\nObserved behavior:\n- `batchAddToFolder(folderId, chatIds=[one])` works (or reports `alreadyIncluded`)\n- `batchAddToFolder(folderId, chatIds=[two or more])` fails with: **\"Error: Failed to update folder\"**\n- Repro confirmed for both:\n  - Auto + another **group**\n  - Auto + a **private** chat\n\n**Workaround:** loop sequentially:\n- `addChatToFolder(chatId=A, folderIds=[folderId])`\n- `addChatToFolder(chatId=B, folderIds=[folderId])`\n\n### `linkEntityToChat` is unstable / schema mismatch\nObserved behavior (Feb 2026):\n- `linkEntityToChat` returns **\"Validation error\"** for `entityType=deal`, `contact`, and `company`.\n- In one run, using `entityType=\"organization\"` successfully linked a HubSpot company to a chat — but later `organization` also returned **\"Validation error\"**.\n\n**Implication:** this tool is either behind a feature flag, has changing server-side validation, or the published schema/enums don’t match what the backend expects.\n\n**Workaround:**\n- Prefer linking via `createContact/createDeal/createCompany` (these link to the chat at creation time).\n- Use `associateEntities` to connect deal↔company/contact.\n- Don’t depend on `linkEntityToChat` until upstream provides a stable contract + better error messages."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Relay not starting\n```bash\n# Check if port is in use\nss -tlnp | grep 9716\n\n# Kill existing process\npkill -f \"relay.js\"\n\n# Start fresh\n./start-relay.sh\n```\n\n### Browser not connecting\n1. Verify relay is running: `npm run health`\n2. Check browser console (F12) for WebSocket errors\n3. Ensure MCP is enabled in Settings → Agent → Enable MCP\n4. Try refreshing the telebiz-tt page\n\n### \"Executor not connected\" error\nThe browser tab with telebiz-tt must be:\n- Open and visible (not suspended)\n- Logged into Telegram\n- MCP enabled in settings\n\n### Rate limit errors\n- Reduce batch sizes\n- Add delays between operations\n- Be more specific in filters to reduce API calls\n\n### Session expired\nIf Telegram session expires:\n1. Refresh the telebiz-tt browser page\n2. Re-login if prompted\n3. Re-enable MCP in settings"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Configuration] ### Environment Variables\n\n| Variable | Default | Description |\n|----------|---------|-------------|\n| `TELEBIZ_PORT` | `9716` | Relay WebSocket port |\n| `TELEBIZ_RELAY_URL` | `ws://localhost:9716` | Relay URL for MCP server |\n| `TELEBIZ_STATE_FILE` | `~/.telebiz-mcp-state.json` | Monitor state file |\n\n### mcporter Config\n\nLocated at `~/clawd/config/mcporter.json`:\n\n```json\n{\n  \"mcpServers\": {\n    \"telebiz\": {\n      \"url\": \"http://localhost:9718/mcp\"\n    }\n  }\n}\n```\n\n**Note**: Use the HTTP URL (not stdio) to avoid spawning conflicts."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Security Notes] - The browser holds your Telegram session - keep it secure\n- Don't expose the relay port (9716) to the internet\n- Review tool calls before executing destructive operations\n- Rate limits help prevent accidental spam"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "telebiz_mcp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "📱"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/acastellana/telebiz-mcp-skill/SKILL.md"
+}

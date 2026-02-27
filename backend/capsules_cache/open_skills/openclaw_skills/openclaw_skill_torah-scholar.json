@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_torah-scholar",
+  "description": "Search and explore Jewish texts (Torah, Tanach, Talmud, Midrash, commentaries) via Sefaria API. Use when researching Torah sources, looking up verses, finding commentaries, cross-references, or preparing divrei Torah. Supports Hebrew and English. Handles references like \"Genesis 1:1\", \"Berakhot 2a\", \"Mishnah Avot 1:1\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Torah Scholar\n\nResearch Jewish texts with full access to the Sefaria library: Tanach, Talmud Bavli/Yerushalmi, Mishnah, Midrash, Zohar, and thousands of commentaries."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Search across all texts\ntorah search \"love your neighbor\"\n\n# Get specific verse with Hebrew + English\ntorah verse \"Leviticus 19:18\"\n\n# Find commentaries on a verse\ntorah links \"Genesis 1:1\"\n\n# This week's parsha\ntorah parsha\n\n# Today's learning schedule (Daf Yomi, etc.)\ntorah today\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description | Example |\n|---------|-------------|---------|\n| `torah search <query>` | Full-text search | `torah search \"tikkun olam\"` |\n| `torah verse <ref>` | Get text + translation | `torah verse \"Psalms 23\"` |\n| `torah links <ref>` | Commentaries & cross-refs | `torah links \"Exodus 20:1\"` |\n| `torah related <ref>` | Related texts & topics | `torah related \"Deuteronomy 6:4\"` |\n| `torah parsha` | This week's portion | `torah parsha` |\n| `torah today` | Daily learning schedule | `torah today` |\n| `torah dvar` | Generate dvar Torah | `torah dvar` |\n| `torah dvar ref <ref>` | Dvar on specific verse | `torah dvar ref \"Genesis 12:1\"` |\n| `torah dvar theme <theme>` | Dvar with theme focus | `torah dvar theme \"leadership\"` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Reference Formats] ### Tanach (Hebrew Bible)\n- Books: Genesis, Exodus, Leviticus, Numbers, Deuteronomy (Torah)\n- Nevi'im: Joshua, Judges, Samuel, Kings, Isaiah, Jeremiah, Ezekiel, etc.\n- Ketuvim: Psalms, Proverbs, Job, Song of Songs, Ruth, Ecclesiastes, etc.\n- Format: `Book Chapter:Verse` or `Book Chapter:Start-End`\n- Examples: `Genesis 1:1`, `Psalms 23`, `Isaiah 40:1-5`\n\n### Talmud\n- Bavli (Babylonian): `Tractate DafNumber` + `a` or `b`\n- Examples: `Berakhot 2a`, `Shabbat 31a`, `Bava Metzia 59b`\n- Major tractates: Berakhot, Shabbat, Eruvin, Pesachim, Yoma, Sukkah, Beitzah, Rosh Hashanah, Taanit, Megillah, Moed Katan, Chagigah, Yevamot, Ketubot, Nedarim, Nazir, Sotah, Gittin, Kiddushin, Bava Kamma, Bava Metzia, Bava Batra, Sanhedrin, Makkot, Shevuot, Avodah Zarah, Horayot, Zevachim, Menachot, Chullin, Bekhorot, Arakhin, Temurah, Keritot, Meilah, Tamid, Niddah\n\n### Mishnah\n- Format: `Mishnah Tractate Chapter:Mishnah`\n- Examples: `Mishnah Avot 1:1`, `Mishnah Berakhot 1:1`\n\n### Midrash\n- Midrash Rabbah: `Genesis Rabbah 1:1`, `Exodus Rabbah 1:1`\n- Midrash Tanchuma: `Tanchuma Bereshit 1`\n- Other: `Pirkei DeRabbi Eliezer 1`\n\n### Commentaries\n- Access via `torah links <ref>` to see Rashi, Ramban, Ibn Ezra, Sforno, etc."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Research Workflows] ### Find Sources on a Topic\n```bash\n# 1. Search for topic\ntorah search \"repentance teshuvah\"\n\n# 2. Get full text of relevant result\ntorah verse \"Maimonides Hilchot Teshuvah 2:1\"\n\n# 3. Find related commentaries\ntorah links \"Maimonides Hilchot Teshuvah 2:1\"\n```\n\n### Prepare a Dvar Torah\n```bash\n# 1. Get this week's parsha\ntorah parsha\n\n# 2. Read the opening verses\ntorah verse \"Genesis 12:1-5\"  # (adjust to actual parsha)\n\n# 3. Find commentaries for insights\ntorah links \"Genesis 12:1\"\n\n# 4. Search for thematic connections\ntorah search \"lech lecha journey\"\n```\n\n### Study Daf Yomi\n```bash\n# 1. Check today's daf\ntorah today\n\n# 2. Get the text\ntorah verse \"Berakhot 2a\"  # (from calendar)\n\n# 3. See what it connects to\ntorah links \"Berakhot 2a\"\n```\n\n### Generate a Dvar Torah\n```bash\n# Quick dvar for this week's parsha\ntorah dvar\n\n# Focus on specific verse\ntorah dvar ref \"Exodus 28:1\"\n\n# Explore a theme across sources\ntorah dvar theme \"holiness and service\"\n```\n\nThe dvar generator outputs:\n- Opening verses with Hebrew + English\n- Key commentaries (Rashi, Ramban, Sforno, etc.)\n- Related sources across the library\n- Suggested structure (hook → problem → sources → resolution → application)\n- Themes to explore further"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Python API] For advanced usage, import directly:\n\n```python\nfrom scripts.sefaria import get_text, search, get_links, get_parsha\n\n# Get verse\nresult = get_text(\"Genesis 1:1\")\nprint(result.get(\"he\"))  # Hebrew\nprint(result.get(\"text\"))  # English\n\n# Search\nresults = search(\"golden rule\", limit=5)\n\n# Get commentaries\nlinks = get_links(\"Leviticus 19:18\")\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Tips] - **Hebrew search**: Sefaria supports Hebrew queries: `torah search \"ואהבת לרעך כמוך\"`\n- **Partial refs**: `torah verse \"Psalms 23\"` returns entire chapter\n- **Ranges**: `torah verse \"Genesis 1:1-5\"` for multiple verses\n- **Talmud context**: Daf refs include both amud a and b context"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Limitations] - Rate-limited by Sefaria (be respectful of their free API)\n- Some texts may have Hebrew only (no English translation)\n- Search is full-text, not semantic (exact/stemmed matches)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Source] Powered by [Sefaria](https://www.sefaria.org) — the free, open-source library of Jewish texts."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "torah_scholar"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abeperl/torah-scholar/SKILL.md"
+}

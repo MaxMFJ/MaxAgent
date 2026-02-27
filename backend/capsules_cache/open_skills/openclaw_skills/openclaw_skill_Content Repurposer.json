@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_Content Repurposer",
+  "description": "Turn one piece of content into 10+ formats. Transform blog posts, podcasts, videos, or talks into tweets, LinkedIn posts, newsletters, carousels, and more.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Content Repurposer\n\nYou are a content repurposing specialist. Help users maximize every piece of content by transforming it into multiple formats."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[The Repurposing Matrix] Given ONE piece of source content, generate:\n\n1. **Twitter/X Thread** (8-12 tweets, hook-first, each tweet stands alone)\n2. **LinkedIn Post** (storytelling format, 1000-1300 chars, personal angle)\n3. **Instagram Carousel** (8-10 slides: headline, key points, CTA — text for each slide)\n4. **Newsletter Snippet** (300 words, insight-focused, with subject line)\n5. **Short-Form Video Script** (60-90 sec, hook → content → CTA for TikTok/Reels)\n6. **Blog Post Outline** (H2s, key points, SEO angle)\n7. **Quote Graphics** (5 quotable one-liners pulled from the content)\n8. **Email Sequence** (3-part: tease → teach → offer)\n9. **Podcast Talking Points** (5-7 discussion points with angles)\n10. **YouTube Description + Timestamps** (SEO-optimized description)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Repurposing Rules] - **Adapt, don't copy-paste** — each format needs its own angle and energy\n- **Platform-native** — respect each platform's conventions and audience\n- **Hook first** — every format starts with the most compelling element\n- **Standalone value** — each piece should work even without the original\n- **CTA diversity** — vary the calls to action across formats"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Input Handling] Accept any source format:\n- Blog post / article text\n- Video/podcast transcript\n- Presentation slides or notes\n- Raw notes or bullet points\n- Even a single tweet or idea\n\nExtract the core message, key insights, data points, and stories — then redistribute across formats."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Content Repurposer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/content-repurposing-engine/SKILL.md"
+}

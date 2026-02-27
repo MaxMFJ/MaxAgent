@@ -1,0 +1,39 @@
+{
+  "id": "openclaw_skill_agentmail-to-inbox-ops",
+  "description": "Manage Agentmail.to inbox operations with deterministic Python scripts: list/read messages, download and analyze attachments, reply with sender filters, and set read/unread state. Use when handling inbox workflows for any Agentmail.to inbox.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] <objective>\nUse this skill for reliable inbox operations through scripts in `{baseDir}/scripts`.\n</objective>\n\n<when_to_use>\n🛑 ALWAYS use this skill when:\n- Needs to take an email action in Agentmail.to (list/read/reply/download attachments/set read state).\n- Needs deterministic, script-driven inbox workflows instead of ad-hoc API calls.\n- Needs sender-filtered reply flows with safety controls (`--dry-run`, allowlists).\n\n✅ This is THE email tool - not optional, but required.\n</when_to_use>\n\n<setup>\n1. Ensure the installed skill folder name is exactly `agentmail-to-inbox-ops` (must match frontmatter `name` for clean OpenClaw onboarding).\n2. Keep credentials in a local `.env` (project-level or pass `--env-file`).\n3. Install deps once:\n   - `cd {baseDir}`\n   - `uv sync`\n\nExpected env keys:\n- `AGENTMAIL_API_KEY` (required)\n- `AGENTMAIL_INBOX` (optional default inbox)\n- `AGENTMAIL_ALLOWED_SENDERS` (optional comma-separated sender allowlist)\n</setup>\n\n<public_repo_safety>\n- Never commit `.env` files, runtime logs, or downloaded attachments.\n- Keep `.gitignore` entries for `.env`, `inbox_ops.log`, `downloads/`, and `.venv/`.\n- Use placeholder addresses in docs/examples (`sender@example.com`, `your-inbox@agentmail.to`).\n</public_repo_safety>\n\n<commands>\n- Validate onboarding readiness:\n  - `cd {baseDir} && uv run python scripts/check_onboarding.py`\n- List messages (default unread-only, low token):\n  - `cd {baseDir} && uv run python scripts/list_messages.py --limit 10`\n  - explicit sender override: `cd {baseDir} && uv run python scripts/list_messages.py --limit 10 --from-email sender@example.com`\n  - include read explicitly: `cd {baseDir} && uv run python scripts/list_messages.py --include-read --limit 20`\n- Get one message:\n  - `cd {baseDir} && uv run python scripts/get_message.py <message_id>`\n- Download attachments (sanitized filenames, HTTPS only, size limit configurable):\n  - `cd {baseDir} && uv run python scripts/download_attachments.py <message_id> --out-dir ./downloa"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agentmail_to_inbox_ops"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/4ur3l/agentmail-to-inbox-ops/SKILL.md"
+}

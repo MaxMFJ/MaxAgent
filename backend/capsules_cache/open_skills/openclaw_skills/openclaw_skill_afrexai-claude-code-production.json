@@ -1,0 +1,168 @@
+{
+  "id": "openclaw_skill_afrexai-claude-code-production",
+  "description": "Complete Claude Code productivity system — project setup, prompting patterns, sub-agent orchestration, context management, debugging, refactoring, TDD, and shipping 10X faster. Zero scripts needed.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Claude Code Production Engineering\n\nThe complete methodology for shipping production code with Claude Code at 10X speed. Not installation scripts — actual patterns, workflows, and techniques that compound your output.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Health Check (run mentally before every session)] | Signal | Healthy | Fix |\n|--------|---------|-----|\n| CLAUDE.md exists at project root | ✅ | Create one (see §1) |\n| .claueignore configured | ✅ | Add noise directories |\n| Session context under 60% | ✅ | `/compact` or start fresh |\n| Clear task scope before prompting | ✅ | Write task brief first |\n| Tests exist for target code | ✅ | Write tests first (§7) |\n| Git clean before big changes | ✅ | Commit or stash |\n| Sub-agents for parallel work | ✅ | Use `/new` or Task tool |\n| Verifying output, not trusting blindly | ✅ | Always review diffs |\n\nScore: /8. Below 6 = slow, buggy sessions. Fix before coding.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[1. Project Setup — CLAUDE.md Architecture] CLAUDE.md is your project's brain. Claude reads it at session start. A good one saves thousands of tokens per session.\n\n### Template\n\n```markdown\n# Project: [name]"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tech Stack] - Language: TypeScript (strict mode)\n- Framework: Next.js 15 App Router\n- Database: PostgreSQL via Drizzle ORM\n- Testing: Vitest + Playwright\n- Styling: Tailwind CSS v4"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Architecture Rules] - Max 50 lines per function, 300 lines per file\n- One responsibility per file\n- All exports typed — no `any`\n- Errors as values (Result type), not thrown exceptions\n- Database: migrations via `drizzle-kit generate` then `drizzle-kit push`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[File Structure] src/\n  app/         → Next.js routes (thin — call services)\n  lib/         → Business logic (pure functions)\n  db/          → Schema, migrations, queries\n  components/  → UI (server components default, 'use client' only when needed)\n  types/       → Shared type definitions"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Commands] - `pnpm dev` — start dev server\n- `pnpm test` — run vitest\n- `pnpm test:e2e` — run playwright\n- `pnpm lint` — eslint + tsc --noEmit\n- `pnpm db:generate` — generate migration\n- `pnpm db:push` — apply migration"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Conventions] - Imports: absolute from `@/` (mapped to `src/`)\n- Naming: camelCase functions, PascalCase components/types, SCREAMING_SNAKE constants\n- Commits: conventional commits (feat:, fix:, refactor:, test:, docs:)\n- PRs: always create branch, never commit to main directly\n```\n\n### CLAUDE.md Rules\n\n1. **Be specific** — \"TypeScript strict\" not \"use types.\" Stack versions, not just names.\n2. **Include commands** — Claude needs to know how to run things. Exact commands, not descriptions.\n3. **Architecture decisions** — document WHY, not just what. \"Errors as values because we use Result type\" tells Claude the pattern.\n4. **Keep it under 200 lines** — CLAUDE.md is read every session. Bloat wastes tokens.\n5. **Update when patterns change** — stale CLAUDE.md causes Claude to fight your codebase.\n6. **Nested CLAUDE.md** — subdirectories can have their own. Claude merges them. Use for monorepo packages.\n\n### .claueignore\n\n```\nnode_modules/\n.next/\ndist/\ncoverage/\n*.lock\n.git/\n*.min.js\n*.map\npublic/assets/\n```\n\nRule: if Claude doesn't need to read it, ignore it. Large lock files and build artifacts waste context.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[2. Prompting Patterns — The 5 That Matter] ### Pattern 1: Task Brief (use for any non-trivial work)\n\n```\nTask: Add user authentication with magic links\nContext: Using Resend for email, no password system exists yet\nConstraints:\n- Server actions only (no API routes)\n- Session via httpOnly cookies\n- Token expires in 15 minutes\nAcceptance: User enters email → receives link → clicks → logged in → cookie set\nStart with: the database schema for sessions and tokens\n```\n\nWhy it works: scope + constraints + acceptance criteria + starting point. Claude doesn't wander.\n\n### Pattern 2: Show, Don't Tell\n\nBad: \"Make the API more robust\"\nGood: \"Add input validation to POST /api/users — validate email format, name 1-100 chars, reject extra fields. Return 422 with field-level errors matching this shape: `{ errors: { field: string, message: string }[] }`\"\n\nRule: if you can't describe the exact output shape, you don't know what you want yet. Think first.\n\n### Pattern 3: Incremental Refinement\n\n```\nStep 1: \"Create the database schema for a todo app with projects and tasks\"\n[review output]\nStep 2: \"Now add the CRUD service layer for tasks — pure functions, no framework imports\"\n[review output]\nStep 3: \"Now the API routes that call those services — input validation with zod\"\n```\n\nWhy: Claude produces better code in focused steps than in one massive prompt. Each step builds verified context.\n\n### Pattern 4: Fix With Evidence\n\nBad: \"It's broken\"\nGood: \"Running `pnpm test` gives this error:\n```\nTypeError: Cannot read properties of undefined (reading 'id')\n  at getUserById (src/lib/users.ts:23:15)\n```\nThe function expects a User object but receives undefined when the database query returns no rows. Add a null check and return a Result type.\"\n\nRule: paste the actual error. Claude is excellent at fixing bugs when it can see the stack trace.\n\n### Pattern 5: Architecture Discussion\n\n```\nI'm deciding between these approaches for real-time updates:\nA) Server-Sent Events from Next.js API routes\nB) WebSocket via separate service\nC) Polling e"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[3. Context Management — The #1 Productivity Lever] ### Context Is Milk — It Spoils\n\n| Context % | Action |\n|-----------|--------|\n| 0-30% | Fresh. Do complex work here. |\n| 30-60% | Good. Continue current task. |\n| 60-80% | Getting stale. Finish current unit, then compact. |\n| 80%+ | Dangerous. `/compact` immediately or start new session. |\n\n### When to Start Fresh (`/new`)\n\n- Switching to unrelated task\n- Context above 70%\n- Claude starts repeating itself or making mistakes it didn't make earlier\n- After shipping a feature (clean slate for next one)\n\n### When to Compact (`/compact`)\n\n- Mid-task but context bloating from exploration\n- After a debugging session (lots of error output consumed context)\n- Before a complex implementation step\n\n### Context-Efficient Habits\n\n1. **Don't paste entire files** — reference by path. Claude can read them.\n2. **Don't re-explain** — if it's in CLAUDE.md, don't repeat it in prompts.\n3. **Use specific file paths** — \"Look at `src/lib/auth.ts` line 45\" not \"look at the auth code.\"\n4. **Close tangents** — if Claude goes down a rabbit hole, redirect immediately. Don't let bad output consume context.\n5. **One concern per message** — \"Fix the auth bug AND refactor the database layer AND add tests\" = context explosion. Sequential > parallel in a single session.\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[4. Sub-Agent Orchestration — Parallel Productivity] ### When to Use Sub-Agents\n\n| Scenario | Pattern |\n|----------|---------|\n| Independent features | Spawn sub-agent per feature |\n| Tests + implementation | One agent writes tests, main writes code |\n| Research + build | Sub-agent researches API docs, main builds |\n| Refactor + maintain | Sub-agent refactors module A, main works on B |\n| Code review | Sub-agent reviews your PR with fresh eyes |\n\n### Task Tool Pattern (Claude Code native)\n\n```\nUse the Task tool to:\n1. Research the Stripe API for subscription billing\n2. Return: webhook event types we need, API calls for create/update/cancel, error codes to handle\n```\n\nTask tool spawns a sub-agent with its own context. Results come back summarized. Perfect for research that would bloat your main context.\n\n### Handoff Documents\n\nWhen a sub-agent finishes complex work, have it write a HANDOFF.md:\n\n```markdown"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[What Was Done] - Implemented Stripe webhook handler at src/app/api/webhooks/stripe/route.ts\n- Added 4 event handlers: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.deleted"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Key Decisions] - Used Stripe SDK v14 (not raw HTTP) for type safety\n- Webhook signature verification via stripe.webhooks.constructEvent()\n- Idempotency: check processed_events table before handling"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[What's Next] - Wire up subscription status updates to user table\n- Add retry logic for failed database writes\n- E2E test with Stripe CLI: `stripe trigger checkout.session.completed`"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Gotchas] - Must use raw body (not parsed JSON) for signature verification\n- Next.js App Router: export const runtime = 'nodejs' (not edge)\n```\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[5. Debugging Workflow — Systematic, Not Random] ### The DEBUG Protocol\n\n**D**escribe the symptom (what you see vs. what you expect)\n**E**rror output (paste full stack trace, not summary)\n**B**isect (when did it last work? what changed?)\n**U**nit isolate (can you reproduce in a test?)\n**G**enerate hypothesis (ask Claude for 3 possible causes, ranked)\n\n### Effective Bug Prompts\n\n```\nBug: Users see stale data after updating their profile.\n\nExpected: After PUT /api/profile, the profile page shows updated data.\nActual: Old data persists until hard refresh (Cmd+Shift+R).\n\nStack:\n- Next.js 15 App Router\n- Server component fetches user data\n- Client component with form calls server action\n- Server action calls db.update()\n\nHypothesis: Next.js is caching the server component fetch. Need to revalidate.\n\nCan you confirm and show me the fix?\n```\n\n### When Claude Gets Stuck\n\n1. **Add constraints** — \"The fix must not change the API contract\" narrows the search space.\n2. **Share what you've tried** — \"I already tried revalidatePath('/profile') and it didn't work because...\"\n3. **Ask for alternatives** — \"Give me 3 different approaches to solve this, with tradeoffs.\"\n4. **Fresh session** — sometimes the context is poisoned. Start clean with just the bug description.\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[6. Refactoring Patterns — Safe Large-Scale Changes] ### The Refactoring Safety Net\n\nBefore any refactoring session:\n\n```\nBefore we start refactoring:\n1. Run the test suite and confirm it passes: `pnpm test`\n2. Commit current state: `git add -A && git commit -m \"chore: pre-refactor checkpoint\"`\n3. Create a branch: `git checkout -b refactor/[description]`\n```\n\n### Safe Refactoring Prompts\n\n**Extract function:**\n```\nExtract the email validation logic from src/lib/users.ts (lines 34-67) into a separate\nfunction `validateEmail` in src/lib/validation.ts. Update all imports. Run tests after.\n```\n\n**Rename across codebase:**\n```\nRename the `getUserData` function to `fetchUserProfile` across the entire codebase.\nThis includes: function definition, all call sites, all imports, all test references.\nRun `pnpm test` and `pnpm lint` after to verify nothing broke.\n```\n\n**Split large file:**\n```\nsrc/lib/api.ts is 800 lines. Split it into:\n- src/lib/api/users.ts (user-related functions)\n- src/lib/api/projects.ts (project-related functions)\n- src/lib/api/shared.ts (shared types and helpers)\n- src/lib/api/index.ts (re-exports for backward compatibility)\n\nPreserve all existing exports from the index file so no external imports break.\nRun tests after each file move.\n```\n\n### Multi-File Refactoring Rules\n\n1. **One type of change at a time** — don't rename AND restructure AND optimize simultaneously.\n2. **Run tests after each step** — catch breaks early, not after 20 files changed.\n3. **Preserve exports** — use index.ts re-exports so consumers don't break.\n4. **Commit incrementally** — one commit per logical change, not one giant commit.\n\n---"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[7. Test-Driven Development With Claude Code] ### The TDD Loop\n\n```\nStep 1: \"Write a failing test for: creating a user with valid email stores them in the database\"\nStep 2: [verify test fails for the right reason]\nStep 3: \"Now write the minimum code to make this test pass\"\nStep 4: [verify test passes]\nStep 5: \"Refactor the implementation — the test must still pass\"\n```\n\n### Why TDD Works Especially Well With Claude\n\n- **Tests are acceptance criteria** — Claude knows exactly what \"done\" means.\n- **Immediate verification** — no ambiguity about whether the code works.\n- **Prevents gold-plating** — \"minimum code to pass\" stops Claude from over-engineering.\n- **Regression safety** — future changes can't silently break working features.\n\n### Test-First Prompts\n\n```\nWrite tests for a `calculateShipping` function that:\n- Free shipping for orders over $100\n- $5.99 flat rate for orders $50-$100\n- $9.99 flat rate for orders under $50\n- International orders: add $15 surcharge\n- Express: 2x the base rate\n- Edge cases: $0 order, negative amount (throw), exactly $50, exactly $100\n\nUse vitest. Don't implement the function yet — just the tests.\n```\n\nThen: \"Now implement `calculateShipping` to pass all tests.\"\n\n---"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[8. Git Workflow With Claude Code] ### Pre-Work Checklist\n\n```bash\ngit status          # Clean working tree?\ngit pull            # Up to date?\ngit checkout -b feat/[description]   # New branch\n```\n\n### Commit Strategy\n\n| Scope | Commit Pattern |\n|-------|---------------|\n| Single function added | `feat: add calculateShipping function` |\n| Bug fixed | `fix: handle null user in profile fetch` |\n| Tests added | `test: add shipping calculation edge cases` |\n| Refactor (no behavior change) | `refactor: extract validation into shared module` |\n| Multiple related changes | Commit each logical unit separately |\n| Large feature | Multiple commits on feature branch, squash on merge |\n\n### Claude Code Git Prompts\n\n```\n# After completing work:\n\"Commit the changes with an appropriate conventional commit message. \nGroup related files into logical commits if there are multiple concerns.\"\n\n# For PR creation:\n\"Create a PR description for these changes. Include:\n- What changed and why\n- How to test it\n- Any migration steps needed\n- Screenshots if UI changed\"\n```\n\n---"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[9. Code Review Mode — Claude as Reviewer] ### Review Prompt Template\n\n```\nReview this code for:\n1. Correctness — does it do what it claims?\n2. Security — any injection, auth bypass, data leak risks?\n3. Performance — N+1 queries, unnecessary re-renders, missing indexes?\n4. Maintainability — clear naming, reasonable complexity, documented edge cases?\n5. Testing — are the tests sufficient? Any missing cases?\n\nBe specific. For each issue, cite the file:line and suggest a fix.\nSkip style nits unless they affect readability.\n```\n\n### Self-Review Before PR\n\n```\nI'm about to open a PR. Review all changed files (`git diff main`) for:\n- Any hardcoded secrets or credentials\n- TODO/FIXME/HACK comments that should be resolved\n- Console.logs that should be removed\n- Missing error handling\n- Type assertions (as any) that should be proper types\n- Missing tests for new public functions\n```\n\n---"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[10. Production Shipping Checklist] Before deploying any Claude-generated code:\n\n### P0 — Must Do\n\n- [ ] All tests pass (`pnpm test && pnpm test:e2e`)\n- [ ] Linting clean (`pnpm lint`)\n- [ ] Type checking clean (`tsc --noEmit`)\n- [ ] No hardcoded secrets in code (grep for API keys, tokens, passwords)\n- [ ] Error handling exists for all external calls (DB, API, file I/O)\n- [ ] Input validation on all user-facing endpoints\n- [ ] Database migrations reviewed (no data loss, backward compatible)\n\n### P1 — Should Do\n\n- [ ] Performance: no N+1 queries, no unbounded lists, pagination exists\n- [ ] Logging: structured logs at appropriate levels (not console.log)\n- [ ] Auth: all new endpoints have proper authorization checks\n- [ ] Rate limiting on public endpoints\n- [ ] Rollback plan documented (how to revert if broken)\n\n### P2 — Nice to Have\n\n- [ ] Load test with expected traffic\n- [ ] Monitoring alerts for new endpoints\n- [ ] Documentation updated (API docs, README, CHANGELOG)\n- [ ] Accessibility checked (if UI changes)\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[11. Anti-Patterns — What Kills Productivity] | Anti-Pattern | Why It's Bad | Fix |\n|-------------|-------------|-----|\n| \"Build me a full app\" in one prompt | Context explosion, mediocre everything | Break into 5-10 focused tasks |\n| Accepting code without reading it | Bugs compound, technical debt grows | Review every diff. Question anything unclear. |\n| Re-prompting the same thing hoping for different results | Wastes tokens and context | Change your prompt. Add constraints. Try a different approach. |\n| Ignoring test failures | \"It mostly works\" → production incidents | Fix tests immediately. Green before moving on. |\n| Never using `/compact` | Context degrades, Claude gets confused | Compact every 30-45 minutes of active work |\n| Pasting entire codebases | Context full of noise | Reference files by path. Let Claude read what it needs. |\n| Using Claude for tasks you should think through | Outsourcing architecture decisions to AI | Discuss with Claude, but YOU decide. |\n| Not committing between tasks | Can't revert, can't bisect | Commit after every working state |\n| Prompting in vague language | \"Make it better\" → random changes | Specific inputs, specific outputs, specific constraints |\n| Fighting Claude's suggestions | If Claude keeps suggesting something different, maybe it's right | Consider the suggestion. Explain why your way is better if you disagree. |\n\n---"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[12. Speed Multipliers — Advanced Techniques] ### Slash Commands Reference\n\n| Command | When to Use |\n|---------|------------|\n| `/new` | New task, fresh context |\n| `/compact` | Context getting heavy, mid-task |\n| `/clear` | Nuclear option — wipe everything |\n| `/cost` | Check token spend this session |\n| `/model` | Switch models (Sonnet for speed, Opus for complexity) |\n| `/vim` | Enter vim mode for file editing |\n\n### Model Selection Strategy\n\n| Task Type | Best Model | Why |\n|-----------|-----------|-----|\n| Simple bug fix | Sonnet | Fast, cheap, sufficient |\n| New feature implementation | Sonnet | Good balance of speed + quality |\n| Complex architecture | Opus | Deeper reasoning, better tradeoff analysis |\n| Code review | Opus | Catches subtle issues |\n| Refactoring | Sonnet | Mechanical changes, speed matters |\n| Debugging race conditions | Opus | Needs to reason about state |\n\n### Keyboard Shortcuts\n\n- `Esc` → interrupt Claude (stop generation if going wrong direction)\n- `Up arrow` → edit last prompt (fix typo without re-typing)\n- `Tab` → accept file edit suggestion\n\n### Session Stacking\n\nFor maximum throughput on a large feature:\n1. Terminal 1: main implementation (Claude Code)\n2. Terminal 2: tests for what Terminal 1 builds (Claude Code with `/new`)\n3. Terminal 3: manual testing / running the app\n\n---"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[13. Workflow Templates] ### New Feature Workflow\n\n```\n1. \"Create branch feat/[name]\"\n2. \"Write failing tests for [feature spec]\"\n3. \"Implement minimum code to pass tests\"\n4. \"Refactor — tests must stay green\"\n5. \"Run full test suite + lint + typecheck\"\n6. \"Commit with conventional commit message\"\n7. \"Self-review: check diff for security, performance, missing edge cases\"\n8. \"Create PR with description\"\n```\n\n### Bug Fix Workflow\n\n```\n1. \"Create branch fix/[description]\"\n2. \"Write a test that reproduces this bug: [paste error]\"\n3. \"Fix the bug — test must pass\"\n4. \"Run full test suite to check for regressions\"\n5. \"Commit: fix: [description of what was wrong]\"\n```\n\n### Refactoring Workflow\n\n```\n1. \"Create branch refactor/[description]\"\n2. \"Run tests — confirm all green\"\n3. \"Commit pre-refactor state\"\n4. \"[Specific refactoring instruction]\"\n5. \"Run tests — must still be green\"\n6. \"Commit this step\"\n7. [Repeat 4-6 for each refactoring step]\n```\n\n### Spike / Research Workflow\n\n```\n1. \"Use Task tool to research [topic]. Return: key findings, API surface, gotchas, recommended approach.\"\n2. [Read Task output]\n3. \"Based on the research, build a minimal proof of concept in /tmp/spike-[name]/\"\n4. [Evaluate POC]\n5. \"Spike looks good. Now implement properly in the main codebase.\"\n```\n\n---"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[14. Measuring Your Productivity] Track these weekly:\n\n| Metric | Target | How to Measure |\n|--------|--------|----------------|\n| Features shipped | 3-5/week | Git commits tagged feat: |\n| Bugs introduced | <1/week | Post-deploy incidents |\n| Test coverage trend | ↑ or stable | Coverage reports |\n| Token cost / feature | Decreasing | `/cost` per session |\n| Time to first working code | <30 min | Stopwatch from task start |\n| Context compacts per session | 1-2 | Count your `/compact` usage |\n\n---"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Natural Language Commands] | Say This | Does This |\n|----------|----------|\n| \"Set up my project for Claude Code\" | Creates CLAUDE.md + .claueignore from your stack |\n| \"Review this code\" | Runs 5-dimension review on changed files |\n| \"Help me debug [error]\" | Walks through DEBUG protocol |\n| \"Refactor [file/module]\" | Safe refactoring with test verification |\n| \"Write tests for [function]\" | TDD-style test generation |\n| \"Ship this feature\" | Runs production checklist |\n| \"Start a new task\" | Clean context + branch setup |\n| \"How's my productivity?\" | Reviews git log and suggests improvements |\n| \"Optimize my CLAUDE.md\" | Reviews and improves your project config |\n| \"What model should I use for [task]?\" | Model selection recommendation |\n| \"Help me with my PR\" | PR description + self-review |\n| \"Estimate this task\" | Breaks down into steps with time estimates |\n\n---\n\n*Built by [AfrexAI](https://afrexai-cto.github.io/context-packs/) — AI-native business tools that ship.*"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_claude_code_production"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "⚡"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-claude-code-production/SKILL.md"
+}

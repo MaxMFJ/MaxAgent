@@ -1,30 +1,54 @@
 import SwiftUI
 import AppKit
 
+// MARK: - 自定义 NSScrollView：通过 intrinsicContentSize 向 SwiftUI 正确报告内容高度，避免 Binding 导致的布局循环
+private final class IntrinsicSizeScrollView: NSScrollView {
+    override var intrinsicContentSize: NSSize {
+        guard let textView = documentView as? NSTextView,
+              let layoutManager = textView.layoutManager,
+              let container = textView.textContainer else {
+            return NSSize(width: NSView.noIntrinsicMetric, height: 24)
+        }
+        layoutManager.ensureLayout(for: container)
+        let glyphRange = layoutManager.glyphRange(for: container)
+        if glyphRange.length > 0 {
+            let usedRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: container)
+            let inset = textView.textContainerInset
+            let height = max(24, ceil(usedRect.height + inset.height * 2))
+            return NSSize(width: NSView.noIntrinsicMetric, height: height)
+        }
+        return NSSize(width: NSView.noIntrinsicMetric, height: 24)
+    }
+
+    override func resize(withOldSuperviewSize oldSize: NSSize) {
+        invalidateIntrinsicContentSize()
+        super.resize(withOldSuperviewSize: oldSize)
+    }
+}
+
 /// 基于 NSTextView 的富文本消息视图：整条消息一个文本视图，支持跨段/跨代码块选择、复制，链接系统级可点击。
+/// 使用 intrinsicContentSize 报告高度，避免 Binding + Task 导致的布局抖动和窗口 resize 时高度异常。
 struct RichMessageTextView: NSViewRepresentable {
     /// 原始 markdown 字符串（当未提供 attributedContent 时用于构建）
     var content: String = ""
     /// 仅用于「仅文本元素」的预构建内容（与 content 二选一，优先使用）
     var attributedContent: NSAttributedString? = nil
     var width: CGFloat = 500
-    /// 向 SwiftUI 报告内容高度，避免 NSViewRepresentable 被压成 0 高度导致不显示
-    @Binding var reportedHeight: CGFloat
-    
+
     private var effectiveAttributedString: NSAttributedString {
         if let attr = attributedContent { return attr }
         return RichMessageTextView.buildAttributedString(from: content)
     }
-    
+
     func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSTextView.scrollableTextView()
+        let scrollView = IntrinsicSizeScrollView()
         scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
         scrollView.autohidesScrollers = true
-        
-        guard let textView = scrollView.documentView as? NSTextView else { return scrollView }
+
+        let textView = NSTextView(frame: .zero)
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
@@ -37,14 +61,18 @@ struct RichMessageTextView: NSViewRepresentable {
             .foregroundColor: NSColor.linkColor,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
         ]
-        
+
+        scrollView.documentView = textView
         textView.textStorage?.setAttributedString(effectiveAttributedString)
-        // 延迟一帧再上报高度，确保 NSTextView 已完成布局（首帧时 container 可能尚未正确 layout）
-        DispatchQueue.main.async { updateReportedHeight(textView: textView) }
-        
+
+        // 首帧布局可能未完成，延迟一帧再 invalidate 确保 intrinsicContentSize 正确
+        DispatchQueue.main.async {
+            scrollView.invalidateIntrinsicContentSize()
+        }
+
         return scrollView
     }
-    
+
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
         let attr = effectiveAttributedString
@@ -52,26 +80,7 @@ struct RichMessageTextView: NSViewRepresentable {
             textView.textStorage?.setAttributedString(attr)
         }
         textView.textContainer?.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
-        updateReportedHeight(textView: textView)
-    }
-    
-    private func updateReportedHeight(textView: NSTextView) {
-        guard let layoutManager = textView.layoutManager,
-              let container = textView.textContainer else { return }
-        layoutManager.ensureLayout(for: container)
-        let glyphRange = layoutManager.glyphRange(for: container)
-        let newHeight: CGFloat
-        if glyphRange.length > 0 {
-            let usedRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: container)
-            let inset = textView.textContainerInset
-            newHeight = max(24, ceil(usedRect.height + inset.height * 2))
-        } else {
-            newHeight = 24
-        }
-        // 延后到当前 view 更新周期之后再写状态，避免 "Publishing changes from within view updates"
-        Task { @MainActor in
-            reportedHeight = newHeight
-        }
+        scrollView.invalidateIntrinsicContentSize()
     }
     
     // MARK: - Build NSAttributedString from markdown content

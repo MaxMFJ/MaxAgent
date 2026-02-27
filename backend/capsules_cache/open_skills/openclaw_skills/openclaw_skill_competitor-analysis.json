@@ -1,0 +1,154 @@
+{
+  "id": "openclaw_skill_competitor-analysis",
+  "description": "Use when the user asks to \"analyze competitors\", \"competitor SEO\", \"who ranks for\", \"competitive analysis\", \"what are my competitors doing\", \"what are they doing differently\", \"why do they rank higher\", or \"spy on competitor SEO\". Analyzes competitor SEO and GEO strategies including their ranking keywords, content approaches, backlink profiles, and AI citation patterns. Reveals opportunities to outperform competition. For content-focused gap analysis, see content-gap-analysis. For link profile specifics, see backlink-analyzer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Competitor Analysis\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../keyword-research/) · **competitor-analysis** · [serp-analysis](../serp-analysis/) · [content-gap-analysis](../content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill provides comprehensive analysis of competitor SEO and GEO strategies, revealing what's working in your market and identifying opportunities to outperform the competition."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Entering a new market or niche\n- Planning content strategy based on competitor success\n- Understanding why competitors rank higher\n- Finding backlink and partnership opportunities\n- Identifying content gaps competitors are missing\n- Analyzing competitor AI citation strategies\n- Benchmarking your SEO performance"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Keyword Analysis**: Identifies keywords competitors rank for\n2. **Content Audit**: Analyzes competitor content strategies and formats\n3. **Backlink Profiling**: Reviews competitor link-building approaches\n4. **Technical Assessment**: Evaluates competitor site health\n5. **GEO Analysis**: Identifies how competitors appear in AI responses\n6. **Gap Identification**: Finds opportunities competitors miss\n7. **Strategy Extraction**: Reveals actionable insights from competitor success"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Basic Competitor Analysis\n\n```\nAnalyze SEO strategy for [competitor URL]\n```\n\n```\nCompare my site [URL] against [competitor 1], [competitor 2], [competitor 3]\n```\n\n### Specific Analysis\n\n```\nWhat content is driving the most traffic for [competitor]?\n```\n\n```\nAnalyze why [competitor] ranks #1 for [keyword]\n```\n\n### GEO-Focused Analysis\n\n```\nHow is [competitor] getting cited in AI responses? What can I learn?\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~SEO tool + ~~analytics + ~~AI monitor connected:**\nAutomatically pull competitor keyword rankings, backlink profiles, top performing content, domain authority metrics from ~~SEO tool. Compare against your site's metrics from ~~analytics and ~~search console. Check AI citation patterns for both your site and competitors using ~~AI monitor.\n\n**With manual data only:**\nAsk the user to provide:\n1. Competitor URLs to analyze (2-5 recommended)\n2. Your own site URL and current metrics (traffic, rankings if known)\n3. Industry or niche context\n4. Specific aspects to focus on (keywords, content, backlinks, etc.)\n5. Any known competitor strengths or weaknesses\n\nProceed with the full analysis using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests competitor analysis:\n\n1. **Identify Competitors**\n\n   If not specified, help identify competitors:\n   \n   ```markdown\n   ### Competitor Identification Framework\n   \n   **Direct Competitors** (same product/service)\n   - Search \"[your main keyword]\" and note top 5 organic results\n   - Check who's advertising for your keywords\n   - Ask: Who do customers compare you to?\n   \n   **Indirect Competitors** (different solution, same problem)\n   - Search problem-focused keywords\n   - Look at alternative solutions\n   \n   **Content Competitors** (compete for same keywords)\n   - May not sell same product\n   - Rank for your target keywords\n   - Include media sites, blogs, aggregators\n   ```\n\n2. **Gather Competitor Data**\n\n   For each competitor, collect:\n   \n   ```markdown\n   ## Competitor Profile: [Name]\n   \n   **Basic Info**\n   - URL: [website]\n   - Domain Age: [years]\n   - Estimated Traffic: [monthly visits]\n   - Domain Authority/Rating: [score]\n   \n   **Business Model**\n   - Type: [SaaS/E-commerce/Content/etc.]\n   - Target Audience: [description]\n   - Key Offerings: [products/services]\n   ```\n\n3. **Analyze Keyword Rankings**\n\n   ```markdown\n   ### Keyword Analysis: [Competitor]\n   \n   **Total Keywords Ranking**: [X]\n   **Keywords in Top 10**: [X]\n   **Keywords in Top 3**: [X]\n   \n   #### Top Performing Keywords\n   \n   | Keyword | Position | Volume | Traffic Est. | Page |\n   |---------|----------|--------|--------------|------|\n   | [kw 1] | [pos] | [vol] | [traffic] | [url] |\n   | [kw 2] | [pos] | [vol] | [traffic] | [url] |\n   \n   #### Keyword Distribution by Intent\n   \n   - Informational: [X]% ([keywords])\n   - Commercial: [X]% ([keywords])  \n   - Transactional: [X]% ([keywords])\n   - Navigational: [X]% ([keywords])\n   \n   #### Keyword Gaps (They rank, you don't)\n   \n   | Keyword | Their Position | Volume | Opportunity |\n   |---------|----------------|--------|-------------|\n   | [kw 1] | [pos] | [vol] | [analysis] |\n   ```\n\n4. **Audit Content Strategy**"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Competitor URLs verified as relevant to your niche\n- [ ] Analysis scope defined (comprehensive or specific focus area)\n- [ ] Your own site metrics available for comparison\n- [ ] Minimum 2-3 competitors identified for meaningful patterns\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] Competitor strengths backed by measurable evidence (metrics, rankings)\n- [ ] Opportunities based on identifiable gaps, not assumptions\n- [ ] Action plan items are specific and actionable (not vague strategies)\n- [ ] Source of each data point clearly stated (~~SEO tool data, ~~analytics data, ~~AI monitor data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Analyze why HubSpot ranks so well for marketing-related keywords\"\n\n**Output**:\n\n```markdown\n# Competitive Analysis: HubSpot"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[SEO Strategy Overview] HubSpot dominates marketing keywords through a combination of:\n1. **Massive content moat** - 10,000+ blog posts\n2. **Free tools as linkbait** - Website grader, email signature generator\n3. **Educational brand** - Academy, certifications, courses\n4. **Topic cluster model** - Pioneered the pillar/cluster approach"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[What Makes Them Successful] ### Content Strategy\n\n**Publishing Volume**: 50-100 posts/month\n**Average Word Count**: 2,500+ words\n**Content Types**:\n- In-depth guides (35%)\n- How-to tutorials (25%)\n- Templates & examples (20%)\n- Data/research (10%)\n- Tools & calculators (10%)\n\n**Top Performing Content Pattern**:\n1. Ultimate guides on broad topics\n2. Free templates with email gate\n3. Statistics roundup posts\n4. Definition posts (\"What is [term]\")\n\n### GEO Success Factors\n\nHubSpot appears in AI responses frequently because:\n\n1. **Clear definitions** at the start of every post\n   > \"Inbound marketing is a business methodology that attracts customers by creating valuable content and experiences tailored to them.\"\n\n2. **Quotable statistics**\n   > \"Companies that blog get 55% more website visitors\"\n\n3. **Comprehensive coverage** - AI trusts their authority\n\n### Linkable Assets\n\n| Asset | Backlinks | Why It Works |\n|-------|-----------|--------------|\n| Website Grader | 45,000+ | Free, instant value |\n| Marketing Statistics | 12,000+ | Quotable reference |\n| Blog Ideas Generator | 8,500+ | Solves real problem |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Weaknesses to Exploit] 1. **Content becoming dated** - Many posts 3+ years old\n2. **Generic advice** - Lacks industry-specific depth\n3. **Enterprise focus** - Underserves solopreneurs\n4. **Slow innovation** - Same formats for years"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Your Opportunities] 1. Create more specific, niche content they can't cover\n2. Target long-tail keywords they ignore\n3. Build interactive tools in emerging areas\n4. Add original research they don't have\n5. Focus on GEO-optimized definitions in your niche\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Advanced Analysis Types] ### Content Gap Analysis\n\n```\nShow me content [competitor] has that I don't, sorted by traffic potential\n```\n\n### Link Intersection\n\n```\nFind sites linking to [competitor 1] AND [competitor 2] but not me\n```\n\n### SERP Feature Analysis\n\n```\nWhat SERP features do competitors win? (Featured snippets, PAA, etc.)\n```\n\n### Historical Tracking\n\n```\nHow has [competitor]'s SEO strategy evolved over the past year?\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Analyze 3-5 competitors** for comprehensive view\n2. **Include indirect competitors** - they often have innovative approaches\n3. **Look beyond rankings** - analyze content quality, user experience\n4. **Study their failures** - avoid their mistakes\n5. **Monitor regularly** - competitor strategies evolve\n6. **Focus on actionable insights** - what can you actually implement?"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Messaging Comparison Framework] ### Messaging Matrix\n\nCompare competitor messaging across key dimensions:\n\n| Dimension | Your Site | Competitor A | Competitor B | Competitor C |\n|-----------|-----------|-------------|-------------|-------------|\n| Core value proposition | | | | |\n| Primary CTA | | | | |\n| Hero headline | | | | |\n| Tone/Voice | | | | |\n| Key differentiator claim | | | | |\n| Social proof type | | | | |\n| Category framing | | | | |\n| Target audience signal | | | | |\n\n### Narrative Analysis Framework\n\nFor each competitor, identify their story arc:\n\n| Element | Description | How to Identify |\n|---------|------------|----------------|\n| **Villain** | Problem or enemy they position against | Homepage hero, \"why us\" page — what status quo do they attack? |\n| **Hero** | Who is the hero in their story | Customer stories, case studies — is the hero the customer or the product? |\n| **Transformation** | What before/after do they promise | Results pages, testimonials — what measurable change? |\n| **Stakes** | What happens if you don't act | Risk messaging, urgency signals — FOMO or loss framing? |\n\n### Value Proposition Comparison\n\nFor each competitor, extract:\n\n```\n**[Competitor Name]**\n- Promise: what they promise the customer will achieve\n- Evidence: how they prove it (data, testimonials, demos)\n- Mechanism: how their product delivers (the \"how it works\")\n- Uniqueness: what they claim only they can do\n```"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Positioning Strategy Frameworks] ### Positioning Map (2x2 Matrix)\n\nPlot competitors on key dimension pairs:\n\n| Axis Pair | Best For |\n|-----------|---------|\n| Price vs. Capability | Understanding market tiers |\n| Ease of Use vs. Power | Evaluating UX tradeoffs |\n| SMB vs. Enterprise Focus | Identifying segment gaps |\n| Point Solution vs. Platform | Finding positioning space |\n| Established vs. Innovative | Timing market entry |\n\n### Positioning Statement Reverse-Engineering\n\nFor each competitor, reconstruct their implicit positioning:\n\n> For **[target audience]**, **[product]** is the **[category]** that **[key benefit]** because **[reason to believe]**."
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Competitive Battlecard Template] ### Quick Reference Card Structure\n\n| Section | Content |\n|---------|---------|\n| **Overview** | One-sentence description + target customer + pricing model |\n| **Their Pitch** | Tagline + top 3 claimed differentiators |\n| **Strengths** | Where they genuinely compete well (be honest) |\n| **Weaknesses** | Consistent complaints from reviews, technical limitations |\n| **Your Differentiators** | 3-5 specific ways you're different, with proof |\n| **Objection Handling** | \"If they say X → respond with Y\" table |\n| **Landmines to Set** | Questions that highlight your advantages |\n| **Win/Loss Themes** | Common reasons deals are won/lost against them |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Reference Materials] - [Battlecard Template](./references/battlecard-template.md) — Quick-reference competitive battlecard for sales and marketing teams\n- [Positioning Frameworks](./references/positioning-frameworks.md) — Positioning maps, strategy matrices, and differentiation frameworks"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Related Skills] - [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) — Compare CITE domain authority scores across competitors for domain-level benchmarking\n- [keyword-research](../keyword-research/) — Research keywords competitors rank for\n- [content-gap-analysis](../content-gap-analysis/) — Find content opportunities\n- [backlink-analyzer](../../monitor/backlink-analyzer/) — Deep-dive into backlinks\n- [serp-analysis](../serp-analysis/) — Understand search result composition\n- [memory-management](../../cross-cutting/memory-management/) — Store competitor data in project memory\n- [entity-optimizer](../../cross-cutting/entity-optimizer/) — Compare entity presence against competitors"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "competitor_analysis"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "medium",
+      "tags": [
+        "seo",
+        "geo",
+        "competitor analysis",
+        "competitive intelligence",
+        "benchmarking",
+        "market analysis",
+        "ranking analysis"
+      ],
+      "triggers": [
+        "analyze competitors",
+        "competitor SEO",
+        "who ranks for",
+        "competitive analysis",
+        "what are my competitors doing",
+        "competitor keywords",
+        "competitor backlinks",
+        "what are they doing differently",
+        "why do they rank higher",
+        "spy on competitor SEO"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/competitor-analysis/SKILL.md"
+}

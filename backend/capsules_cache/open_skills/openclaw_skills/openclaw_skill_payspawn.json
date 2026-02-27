@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_payspawn",
+  "description": "Add spending controls to any AI agent that makes API payments. Supports x402 auto-pay, daily limits, per-transaction limits, address allowlists, and fleet provisioning. Use when your agent calls paid APIs or sends payments autonomously. Works on Base with USDC.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # PaySpawn — Agent Payment Controls\n\nSet spending limits for AI agents that make payments autonomously. Limits are enforced at the smart contract level on Base — not in software, not on a server. The contract cannot be overridden."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Install] ```bash\nnpm install @payspawn/sdk\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Credential Setup (One Human Step)] Before the agent can make payments, the wallet owner must create a credential:\n\n1. Go to [payspawn.ai/dashboard](https://payspawn.ai/dashboard)\n2. Connect your wallet (MetaMask, Coinbase Wallet, or any USDC wallet on Base)\n3. Approve a USDC spending ceiling (one on-chain transaction, ~$0.005 gas)\n4. Set limits: daily cap, per-transaction cap, optional address whitelist\n5. Sign the credential (EIP-712 signature — no gas, no transaction)\n6. Copy the credential string and set it as `PAYSPAWN_CREDENTIAL` in your environment\n\nThe credential is not a private key. Your wallet key never leaves your control. The agent can only spend within the limits you set — the contract enforces this and cannot be bypassed."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ```typescript\nimport { PaySpawn } from \"@payspawn/sdk\";\nconst ps = new PaySpawn(process.env.PAYSPAWN_CREDENTIAL);\n\n// Auto-pay x402 APIs within your set limits\nconst res = await ps.fetch(\"https://api.example.com/endpoint\");\n\n// Send a payment\nawait ps.pay(\"0xRecipientAddress\", 1.00);\n\n// Check balance and remaining daily allowance\nconst { balance, remaining } = await ps.check();\n\n// Pause all payments instantly (on-chain, immediate effect)\nawait ps.agent.pause();\n\n// Resume payments\nawait ps.agent.unpause();\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Fleet Mode] Provision multiple agent credentials from one shared pool. One wallet funds the pool; each agent gets its own credential with its own daily limit.\n\n```typescript\n// Create a shared budget pool\nconst pool = await ps.pool.create({ totalBudget: 100, agentDailyLimit: 10 });\n\n// Fund the pool: send USDC to pool.address from your wallet\n\n// Provision credentials for each agent\nconst fleet = await ps.fleet.provision({ poolAddress: pool.address, count: 10 });\n// fleet[0], fleet[1], ... → credential strings, one per agent\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Contract Enforcement] Every payment is checked by the PaySpawn V5 contract on Base before any USDC moves:\n\n- Daily allowance exceeded → transaction reverts\n- Amount exceeds per-tx cap → transaction reverts  \n- Recipient not on whitelist → transaction reverts\n\nNo API override. No config flag. Math runs first, every time.\n\n**Contract address (Base Mainnet):** `0xaa8e6815b0E8a3006DEe0c3171Cf9CA165fd862e`  \n**USDC (Base):** `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Links] - [payspawn.ai](https://payspawn.ai)\n- [payspawn.ai/dashboard](https://payspawn.ai/dashboard)\n- [@payspawn](https://x.com/payspawn)\n- [npm: @payspawn/sdk](https://www.npmjs.com/package/@payspawn/sdk)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "payspawn"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔐",
+        "color": "#F65B1A"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adambrainai/payspawn/SKILL.md"
+}

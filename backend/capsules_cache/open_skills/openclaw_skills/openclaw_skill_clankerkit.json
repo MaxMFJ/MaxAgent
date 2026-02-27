@@ -1,0 +1,81 @@
+{
+  "id": "openclaw_skill_clankerkit",
+  "description": "Autonomous wallet operations for AI agents on Monad — swap, stake, deploy wallets, trade memecoins, and manage spending policies via natural language.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClankerKit - Autonomous Wallet for AI Agents on Monad\n\nClankerKit gives your AI agent autonomous financial capabilities on Monad blockchain. Deploy a smart contract wallet, set spending policies, swap tokens via Kuru DEX, stake MON, trade memecoins with strategies, and execute cross-chain swaps."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Install the skill\nclaw skill install clankerkit\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Required | Description |\n|---|---|---|\n| `AGENT_WALLET_ADDRESS` | Yes | Deployed AgentWallet contract address |\n| `POLICY_ENGINE_ADDRESS` | Yes | Deployed PolicyEngine contract address |\n| `AGENT_PRIVATE_KEY` | Yes | Agent's private key (with 0x prefix) |\n| `OWNER_ADDRESS` | Yes | Human owner address |\n| `MONAD_RPC_URL` | No | Monad RPC URL (default: testnet) |\n| `MONAD_NETWORK` | No | `testnet` or `mainnet` (default: testnet) |\n| `ZEROX_API_KEY` | No | 0x Swap API key (only for `zerox_swap`) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tools (32 total)] ### Wallet Management\n\n#### `get_wallet_info`\nGet wallet address, owner, agent, MON balance, and policy state.\n\n#### `get_token_balance`\nGet ERC-20 token balance of the agent wallet.\n- **token**: Token symbol (WMON, USDC, CHOG, DAK, YAKI) or contract address\n\n#### `send_tokens`\nSend native MON tokens from the wallet.\n- **to**: Recipient address\n- **amount**: Amount in human-readable form (e.g. \"0.5\")\n\n#### `send_token`\nSend ERC-20 tokens from the wallet.\n- **token**: Token contract address\n- **to**: Recipient address\n- **amount**: Amount in human-readable form\n\n#### `execute_transaction`\nExecute an arbitrary contract call via the wallet.\n- **target**: Target contract address\n- **value**: Native MON to send (wei, default \"0\")\n- **data**: Encoded calldata (hex)\n\n#### `ensure_gas`\nEnsure the agent EOA has enough MON for gas fees. If the EOA balance is below the minimum threshold, automatically sends MON from the AgentWallet contract to the EOA. Users only need to fund the wallet contract — the agent tops up its own gas from there.\n- **minBalance**: Minimum acceptable EOA balance in MON (human-readable, default \"0.01\")\n- **topUpAmount**: Amount of MON to send to EOA if below minimum (human-readable, default \"0.05\")\n\n### Policy & Security\n\n#### `get_policy`\nView current spending limits (daily/weekly), usage, and allowlists.\n\n#### `create_policy`\nCreate a spending policy. Must be called once before guarded transactions work.\n- **dailyLimit**: Max MON per day (human-readable, e.g. \"1.0\")\n- **weeklyLimit**: Max MON per week (defaults to 7x daily)\n- **allowedTokens**: Optional ERC-20 address allowlist\n- **allowedContracts**: Optional contract address allowlist\n- **requireApprovalAbove**: MON threshold for owner approval\n\n#### `update_daily_limit`\nUpdate the daily spending limit.\n- **newLimit**: New limit in human-readable MON\n\n### Token Swaps (Kuru DEX)\n\n#### `swap_tokens`\nSwap tokens on Monad via Kuru Flow aggregator. Accepts symbols (MON, USDC, WMON, CHOG, DAK, AUSD, WETH,"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security Features] - **Spending Limits**: Daily and weekly caps on agent spending\n- **Token Allowlists**: Restrict which tokens the agent can transfer\n- **Contract Whitelists**: Only allow calls to approved contracts\n- **Approval Thresholds**: Require human approval above certain amounts\n- **Emergency Controls**: Owner can pause or withdraw funds anytime\n- **Access Control**: PolicyEngine recordExecution() only callable by the wallet contract"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Example Session] ```\nUser: Check my gas and fund up if needed\n\nAgent: [calls ensure_gas]\nEOA already has sufficient gas balance. EOA: 0.221 MON, Wallet: 0.075 MON.\n\nUser: Set a daily limit of 2 MON\n\nAgent: [calls create_policy with dailyLimit=\"2.0\"]\nPolicy created: 2 MON daily, 14 MON weekly.\n\nUser: Swap 0.1 MON for CHOG\n\nAgent: [calls swap_tokens with tokenIn=\"MON\", tokenOut=\"CHOG\", amount=\"0.1\"]\nSwapped 0.1 MON -> 2.71 CHOG via Kuru Flow.\n\nUser: What's my portfolio?\n\nAgent: [calls get_wallet_info, get_meme_tokens, get_staking_info]\nWallet: 1.9 MON\nCHOG: 2.71 (worth ~0.1 MON)\nStaked: 0.5 MON with validator #1\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[License] MIT"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clankerkit"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "AGENT_WALLET_ADDRESS",
+            "POLICY_ENGINE_ADDRESS",
+            "AGENT_PRIVATE_KEY",
+            "OWNER_ADDRESS"
+          ],
+          "primaryEnv": "AGENT_PRIVATE_KEY"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xsoydev/clankerkit/SKILL.md"
+}

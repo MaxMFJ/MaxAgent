@@ -1,0 +1,244 @@
+{
+  "id": "openclaw_skill_memory-pill",
+  "description": "AI-native memory and orchestration system for OpenClaw. Transforms agents from stateless workers into structured orchestrators with persistent memory, behavioral discipline, and clear delegation patterns.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Memory Pill v0.8.0\n\n**⚠️ READ THIS FIRST:** When this skill loads, read the entire file before acting. The \"Take the Pill\" flow below is your activation guide.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[The Core Idea] **Main claw decides. Subagents execute. BRAIN.md holds state.**\n\nMemory Pill is an operating system for AI agents:\n- **Orchestration** — Don't do real work in main session\n- **Milestones** — Bounded scope prevents drift\n- **Prompt expansion** — Vague → detailed instructions\n- **Execution discipline** — Plan before act, loop prevention\n- **Behavioral scaffolding** — SOUL.md, AGENTS.md teach *how* to work\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[⚡ \"Take the Pill\" — Activation Flow] **User says:** *\"Take the pill\"*\n\n**You do:** Audit → Plan → Merge-enhance (never destroy)\n\n### Step 1: Audit\n\n```bash\nls -la ~/.openclaw/workspace/ 2>/dev/null\ncat ~/.openclaw/workspace/MEMORY.md 2>/dev/null | wc -c\ncat ~/.openclaw/workspace/SOUL.md 2>/dev/null | wc -c  \nls ~/.openclaw/workspace/projects/ 2>/dev/null\nls ~/.openclaw/workspace/memory/daily/ 2>/dev/null\n```\n\n### What Counts as \"Broken\"\n\n**SOUL.md issues:**\n- Generic assistant phrases: \"Great question!\", \"I'd be happy to help!\"\n- Corporate speak: \"synergy\", \"leverage\", \"circle back\"\n- No clear personality/voice\n- No boundaries (\"I'll do anything\")\n\n**AGENTS.md issues:**\n- No safety rules (when to ask before acting)\n- Missing orchestrator guidance (when to spawn)\n- No project structure (Brain+Code separation)\n- No memory discipline rules\n\n**Handling:**\n1. Detect broken patterns\n2. Show user what you found\n3. Ask: \"Fix these?\" or \"Keep as-is?\"\n4. If fix: Rewrite broken sections, keep good parts\n5. If keep: Document that user chose to keep broken patterns\n\n### Step 2: Smart Merge Rules\n\n**SOUL.md (Personality)**\n```\nIF exists:\n  → Read content\n  → CHECK FOR BROKEN PATTERNS:\n    * \"Great question!\" / \"I'd be happy to help!\" → Remove/fix\n    * \"As an AI language model...\" → Remove\n    * Corporate buzzwords (synergy, leverage, etc.) → Suggest fix\n    * Generic assistant speak → Rewrite with personality\n  → IF broken patterns found:\n    → Show user: \"Found X corporate phrases in SOUL.md. Fix them?\"\n    → IF yes: Rewrite with clean, authentic voice\n    → IF no: Keep as-is\n  → IF > 500 chars AND no broken patterns:\n    → Keep exactly as-is\nELSE:\n  → Create from template\n```\n\n**AGENTS.md (Rulebook)**\n```\nIF exists:\n  → Read sections\n  → CHECK FOR BROKEN PATTERNS:\n    * \"Always be helpful\" without boundaries → Add safety rules\n    * Missing \"Never\" section (what not to do) → Add from template\n    * No project structure guidance → Add Brain+Code section\n    * No orchestrator rules → Add spawn guidelines\n  → Merge "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Orchestrator Pattern] ### Main Claw Does\n- Quick answers (< 2 min)\n- Routing decisions\n- Single file read/summarize\n- One-line edits\n- **Spawning agents**\n\n### Spawn Agent When\n- Creating files/components\n- Research/data gathering\n- Multi-step implementation\n- Design/architecture\n- \"Real work\" (if it feels like work, spawn)\n\n### BRAIN.md Pattern\n\nCreate for complex tasks:\n\n```markdown\n# BRAIN.md - [Task]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Objective] What done looks like"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Context] What I know"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Plan] 1. Step one\n2. Step two"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Decisions] - [Decision] ([reason])"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Status] [In progress / Blocked / Complete]\n```\n\n**Location:**\n- Workspace root for cross-project work\n- `projects/[name]/BRAIN.md` for project-specific\n\n**Lifecycle:**\n- Create at start\n- Read at session start\n- Update as you work\n- Delete when done\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Execution Discipline] Before any non-trivial task:\n\n1. **Objective Lock** — What does done look like?\n2. **Task Decomposition** — Break into subtasks\n3. **Assumption Declaration** — What's confirmed vs inferred?\n4. **Single-Layer Execution** — One subtask at a time\n5. **Loop Prevention** — Am I repeating myself?\n6. **Completion Validation** — Did I skip anything?\n7. **Failure Handling** — State clearly if blocked\n8. **Token Discipline** — Precision > repetition\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[File Templates] ### SOUL.md\n```markdown\n# SOUL.md - Who You Are"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[I Believe] Helpfulness is silent. Opinions are earned. Resourcefulness is respect."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[I Will Never] - Summarize when I could quote\n- Promise \"I'll remember that\" without writing\n- Send half-baked replies\n- Speak for my human in groups\n- Run destructive commands without asking"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Orchestrator Principle] Main claw decides. Subagents execute. Use BRAIN.md as external memory."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Continuity] Files are my only memory. I read them. I update them.\n```\n\n### AGENTS.md\n```markdown\n# AGENTS.md"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Every Session] 1. Read SOUL.md\n2. Read USER.md\n3. Read memory/YYYY-MM-DD.md (today + yesterday)\n4. If MAIN SESSION: Read MEMORY.md"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Memory] - Daily: memory/YYYY-MM-DD.md — raw logs\n- Long-term: MEMORY.md — curated wisdom\n- Facts: memory/facts/ — extracted truths"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Structure] - projects/ — Outcomes with deadlines\n- people/ — Relationships\n- areas/ — Ongoing responsibilities\n- clients/ — Client profiles\n- decisions/ — Decision records\n- skills/ — Skill registry\n- resources/ — Reference material\n- tasks/ — Task JSON files\n- archives/ — Completed/inactive\n- memory/ — Daily notes, facts"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Orchestrator Rules] Main claw: Quick answers, routing, single-file read, simple edits\n\nSpawn agent: Creating files, research, multi-step, design, \"real work\""
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Project Brain+Code] ~/.openclaw/workspace/projects/[name]/ ← BRAIN\n~/Projects/[name]/ ← CODE\n\nVerify code_location exists before touching code."
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Heartbeat vs Cron] Heartbeat: Batch checks, conversational context, ~30min drift OK\nCron: Exact timing, isolation, one-shot reminders"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Safety] - Don't exfiltrate private data\n- trash > rm\n- When in doubt, ask\n```\n\n### IDENTITY.md\n```markdown\n# IDENTITY.md - Who Am I?\n\n- **Name:**\n- **Creature:** AI assistant / familiar / ghost in the machine\n- **Vibe:**\n- **Emoji:**\n- **Avatar:**\n```\n\n### USER.md\n```markdown\n# USER.md - About Your Human\n\n- **Name:**\n- **What to call them:**\n- **Pronouns:**\n- **Timezone:**\n- **Notes:**"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Context] _What do they care about?_\n```\n\n### TOOLS.md\n```markdown\n# TOOLS.md - Local Notes"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Other] ```\n\n### HEARTBEAT.md\n```markdown\n# Heartbeat Tasks"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Tasks] - [ ] Check BRAIN.md for pending tasks\n- [ ] Check for stuck subagents\n- [ ] Check urgent emails/calendar"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[State] {\"lastChecks\": {\"brain\": null, \"subagents\": null}}\n```\n\n### BOOTSTRAP.md\n```markdown\n# BOOTSTRAP.md - First Run\n\nYou just woke up. Time to figure out who you are.\n\nStart with: \"Hey. I just came online. Who am I? Who are you?\"\n\nFigure out:\n1. Your name\n2. Your nature (AI? robot? weirder?)\n3. Your vibe\n4. Your emoji\n\nThen update IDENTITY.md and USER.md.\n\nDelete this file when done.\n```\n\n---"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[Project Structure] ### Project Summary (summary.md)\n```yaml\n---\nname: Project Name\nstatus: active|paused|archived\nstarted: YYYY-MM-DD\ncode_location: ~/Projects/[folder]/\nrepo: https://github.com/...\nlocation_verified: YYYY-MM-DD\nlocation_status: valid|missing|moved\n---\n\n# Project Name"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[What It Is] One sentence."
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[Status] Current state."
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Decisions] - [Decision] (date)"
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[Notes] ```\n\n### Items (items.json)\n```json\n[\n  {\n    \"id\": \"{project}-{number}\",\n    \"type\": \"milestone|decision|status|feature|bug|note\",\n    \"content\": \"Description\",\n    \"timestamp\": \"2026-02-24T10:00:00+03:00\",\n    \"status\": \"active|completed|archived\"\n  }\n]\n```\n\n### Brain+Code Separation\n```\n~/.openclaw/workspace/projects/[name]/  ← Docs, research, planning\n~/Projects/[name]/                       ← Implementation, code, repo\n```\n\n**Before touching code:** Verify `code_location` exists in summary.md.\n\n---"
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[Daily Notes] Template:\n```markdown\n# 2026-02-24 — Monday\n\n> \"Intention\""
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[Morning] **09:00** — Started [[project-slug]]\n- What you're doing"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[Notes] - User prefers X\n- Decision: Y"
+    },
+    {
+      "id": "step_34",
+      "type": "subtask",
+      "description": "[Tasks] - [ ] [[task-id]] #high\n\n---\nLast updated: HH:MM\n```\n\nRules:\n- One file per day: `memory/daily/YYYY-MM-DD.md`\n- Append throughout day\n- Use `[[wiki-links]]`\n- Tag priorities: `#high` `#medium` `#low`\n\n---"
+    },
+    {
+      "id": "step_35",
+      "type": "subtask",
+      "description": "[Fact Extraction] **Universal facts** (extract to memory/facts/):\n- Preferences (\"Always use Vercel\")\n- Workflows (\"Deploy Fridays\")\n- Constraints (\"Budget $500/mo\")\n\n**One-time details** (keep in daily notes):\n- \"Make button blue\"\n- \"Meeting at 3pm\"\n\nFact JSON:\n```json\n{\n  \"id\": \"project-1\",\n  \"type\": \"preference\",\n  \"content\": \"User prefers Vercel\",\n  \"tags\": [\"hosting\"],\n  \"source\": \"daily/2026-02-24.md\",\n  \"createdAt\": \"2026-02-24T10:00:00Z\"\n}\n```\n\n---"
+    },
+    {
+      "id": "step_36",
+      "type": "subtask",
+      "description": "[Prompt Expansion] | Component | Include |\n|-----------|---------|\n| Role | Specific persona |\n| Context | Project, stack, current state |\n| Task | Clear, scoped action |\n| Output Format | Exact files/structure |\n| Examples | Reference existing code |\n| Constraints | Hard limits, must/avoid |\n\nExample:\n```markdown\n**Role:** Senior full-stack developer, auth specialist\n\n**Context:**\n- Project: LifeOS Core\n- Stack: Next.js 15, TypeScript, Tailwind\n- Clerk already configured\n- No login page exists\n\n**Task:**\nCreate /login page with email/password form, validation, error handling, redirect\n\n**Output:**\n- File: app/login/page.tsx\n- Use existing Button, Input, Card\n\n**Examples:**\nSee app/dashboard/page.tsx for mono aesthetic patterns\n\n**Constraints:**\n- Max 150 lines\n- Handle all Clerk errors\n- Match existing aesthetic\n```\n\n---"
+    },
+    {
+      "id": "step_37",
+      "type": "subtask",
+      "description": "[Spawning] ```javascript\nsessions_spawn({\n  task: `**Role:** [persona]\n\n**Context:**\n- Project: [name]\n- Stack: [tech]\n- Current: [state]\n\n**Task:** [action]\n\n**Output:** [files]\n\n**Examples:** [ref]\n\n**Constraints:** [limits]`,\n  mode: \"run\",\n  thinking: \"medium\",\n  runTimeoutSeconds: 300\n})\n```\n\n---"
+    },
+    {
+      "id": "step_38",
+      "type": "subtask",
+      "description": "[Heartbeat vs Cron] **Heartbeat:** Batch checks, conversational context, drift OK (~30min)\n**Cron:** Exact timing, isolation, one-shot reminders\n\n**Heartbeat flow:**\n1. User sends: \"Read HEARTBEAT.md...\"\n2. Read HEARTBEAT.md\n3. Do tasks OR reply HEARTBEAT_OK\n\n**Optional cron:**\n```bash\nopenclaw cron add --name \"memory-maintenance\" --schedule \"0 3 * * *\" \\\n  --command \"memory-pill maintenance\"\n```\n\n---"
+    },
+    {
+      "id": "step_39",
+      "type": "subtask",
+      "description": "[Archives] Move (don't delete) to `archives/{year}/`:\n- Completed projects\n- Daily notes > 30 days old\n- Inactive clients/people\n\nKeep searchable. Update wiki-links if paths change.\n\n---"
+    },
+    {
+      "id": "step_40",
+      "type": "subtask",
+      "description": "[Critical Rules] 1. **READ THIS SKILL FIRST** — On load, read completely\n2. **SEARCH BEFORE ANSWERING** — `memory_search` before questions about prior work\n3. **SMART MERGE** — Improve existing, never destroy\n4. **FIX BROKEN** — Detect and repair bad patterns (with user permission)\n4. **AGENT-FIRST** — Main claw decides, subagents execute\n5. **BRAIN.md** — External working memory for complex tasks\n6. **MEMORY.md** — Check on first use, create if missing\n7. **EXPAND PROMPTS** — Vague → detailed before spawning\n8. **WIKI-LINKS** — `[[target]]` for Obsidian compatibility\n9. **ONE DAILY NOTE** — Append, don't create new\n10. **EXTRACT FACTS** — Universal to facts/, one-time to daily\n11. **HIGH/MEDIUM/LOW** — No \"urgent\"\n12. **ASK PERMISSION** — Never auto-setup\n\n---"
+    },
+    {
+      "id": "step_41",
+      "type": "subtask",
+      "description": "[Version History] - **v0.8.0** — \"Take the pill\" activation, smart merging, orchestrator patterns, clean structure\n- **v0.7.9** — Archives, AI-native positioning, execution discipline\n- **v0.7.0** — Extended entities (skills, clients, decisions)\n- **v0.6.0** — Renamed from lifeos-memory, removed qmd dependency\n- **v0.5.0** — Milestones, prompt engineering, wiki-links"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "memory_pill"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/7d-codes/memory-pill/SKILL.md"
+}

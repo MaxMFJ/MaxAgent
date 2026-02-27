@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_devboxes",
+  "description": "Manage development environment containers (devboxes) with web-accessible VSCode, VNC, and app routing via Traefik or Cloudflare Tunnels. Use when the user asks to create, start, stop, list, or manage devboxes/dev environments, spin up a development container, set up a coding sandbox, or configure the devbox infrastructure for the first time (onboarding).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Devbox Skill\n\nDevboxes are OpenClaw sandbox containers running a custom image with VSCode Web, noVNC, Chromium (CDP), and up to 5 app ports routed via **Traefik** or **Cloudflare Tunnels**.\n\nOpenClaw manages the full container lifecycle. The **main agent** assigns each devbox a sequential ID by maintaining a local counter file, then passes `DEVBOX_ID` to the subagent task. The entrypoint uses this ID to write Traefik routes and build `APP_URL_*` env vars."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[File Locations] Resolve paths relative to this SKILL.md's parent directory.\n\nKey files:\n\n- `references/setup-script-guide.md` — conventions for project setup scripts (`.openclaw/setup.sh`)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Architecture] - **Agent id:** `devbox` (configured in openclaw.json)\n- **Sandbox mode:** `all` / `scope: session` — one container per session\n- **Image:** `ghcr.io/adshrc/openclaw-devbox:latest` (pulled from GHCR)\n- **Network:** `traefik` (for Traefik routing) or default Docker network (for Cloudflare Tunnel routing)\n- **Browser:** `sandbox.browser.enabled: true`, CDP on port 9222\n\n### ID Assignment\n\nThe **main agent** manages the devbox counter:\n\n1. Reads and increments `/home/node/.openclaw/.devbox-counter` before spawning\n2. Passes the assigned `DEVBOX_ID` to the devbox agent via the task description\n3. The devbox agent must `export DEVBOX_ID={id}` as the very first action\n\n### Entrypoint\n\nThe container's entrypoint expects `DEVBOX_ID` to already be set as an environment variable and then:\n\n1. Builds `APP_URL_1..5`, `VSCODE_URL`, `NOVNC_URL` from tags + domain + ID\n2. Writes `/etc/devbox.env` and `/etc/profile.d/devbox.sh` (available in all shells)\n3. Routes based on `ROUTING_MODE`:\n   - **`traefik`** (default): Writes Traefik config to `/traefik/devbox-{id}.yml`\n   - **`cloudflared`**: Generates cloudflared ingress config, registers DNS CNAME records via CF API, starts `cloudflared tunnel run`\n\n### Bind Mounts (configured in openclaw.json)\n\n| Agent path                     | Devbox container path | Purpose                                       |\n| ------------------------------ | --------------------- | --------------------------------------------- |\n| `/home/node/.openclaw/traefik` | `/traefik`            | Route configs (only if using Traefik routing) |\n\n**Important:** Due to OpenClaw Security measures, all user capabilites are dropped by default. So even root (in the devbox) has no write access to bind mounts, and can only read from them. The only solution currently is `chmod 777` on the host path that is mapped to `/home/node/.openclaw/traefik`.\n\n### Known Paths\n\nThese paths are always the same inside the OpenClaw container:\n\n- **OpenClaw data:** `/home/node/.openclaw`\n- "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Onboarding Flow] **Important:** After this skill is installed, the next step MUST be this onboarding flow. The user CANNOT use the devboxes skill until the onboarding flow is completed and the infrastructure is set up.\n\n**Important:** This runs on the MAIN agent, NOT in a sandbox. The main agent has access to `exec`, `gateway`, and the file system.\n\nWhen the user asks to set up the devbox skill, do the following:\n\n### Step 1: Verify Docker Access\n\nVerify that you have access to the Docker socket and Docker binary:\n\n```bash\nwhich docker\ndocker version\n```\n\nIf not, abort here and tell the user they need to run the OpenClaw container with:\n\n```\n-v /usr/bin/docker:/usr/bin/docker:ro\n-v /var/run/docker.sock:/var/run/docker.sock\n```\n\nand that they need to set `chmod 666 /var/run/docker.sock` manually on the host, so that the OpenClaw container can work with it.\n\nThe OpenClaw container needs to be restarted then. After that, they can ask to set up the devbox skill again.\n\n### Step 2: Gather configuration info\n\nAsk the user for:\n\n- **Routing mode**: Traefik or Cloudflare Tunnel?\n- **Domain**: with wildcard A-Record pointing to the server (e.g. `*.example.com`)\n- **GitHub token** (optional): for cloning private repos inside devboxes\n\nIf **Cloudflare Tunnel** is chosen, also ask for:\n\n- **Cloudflare API token**: must have permissions for the zone (DNS edit + Tunnel edit)\n\n### Step 3: Validate the Host Mapping Path (ONLY if using Traefik routing, skip otherwise!)\n\nFind out what the host path/mapping is for `/home/node/.openclaw` inside the container:\n\n```bash\n# Returns the host path that is mapped to /home/node/.openclaw inside the container\ndocker inspect --format='{{range .Mounts}}{{if eq .Destination \"/home/node/.openclaw\"}}{{.Source}}{{end}}{{end}}' $(hostname)\n```\n\nStore the value as `HOST_OPENCLAW_PATH`. If `HOST_OPENCLAW_PATH` is a \"system directory\", OpenClaw will not be able to spawn a devbox.\n\nSystem directories are: /etc, /private/etc, /proc, /sys, /dev, /root, /boot, /run, /var/run"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow: Spawn a Devbox] ### Step 1: Assign ID (main agent)\n\nRead and increment the counter file:\n\n```bash\nDEVBOX_ID=$(( $(cat /home/node/.openclaw/.devbox-counter) + 1 ))\necho \"$DEVBOX_ID\" > /home/node/.openclaw/.devbox-counter\n```\n\n### Step 2: Spawn subagent (main agent)\n\nUse `devbox-<id>` as the label and include the `DEVBOX_ID` in the task:\n\n```python\nsessions_spawn(\n    agentId=\"devbox\",\n    label=f\"devbox-{DEVBOX_ID}\",\n    task=f\"Your task description. Your DEVBOX_ID is {DEVBOX_ID} — run `export DEVBOX_ID={DEVBOX_ID}` as your very first action before doing anything else. GitHub token is in $GITHUB_TOKEN. After exporting DEVBOX_ID, env vars (APP_URL_*, etc.) are in your shell via `source /etc/profile.d/devbox.sh`. ALWAYS use /workspace as the working directory! When cloning, the structure must be /workspace/<repo>.\"\n)\n```\n\n### Step 3: Report URLs to user (main agent)\n\nThe main agent already knows the assigned ID from Step 1. Report:\n\n- VSCode: `https://vscode-{DEVBOX_ID}.{domain}`\n- noVNC: `https://novnc-{DEVBOX_ID}.{domain}/vnc.html`\n- App URLs: `https://{tag}-{DEVBOX_ID}.{domain}`\n\n### Cleanup\n\nOpenClaw manages container lifecycle — containers are removed when sessions end. Traefik route configs left behind are harmless."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Environment Variables] ### Static (set in openclaw.json sandbox.docker.env)\n\n| Variable          | Example                    | Description                                          |\n| ----------------- | -------------------------- | ---------------------------------------------------- |\n| `ROUTING_MODE`    | `traefik` or `cloudflared` | Routing backend (default: `traefik`)                 |\n| `GITHUB_TOKEN`    | `ghp_...`                  | GitHub PAT for cloning                               |\n| `DEVBOX_DOMAIN`   | `example.com`              | Base domain                                          |\n| `APP_TAG_1..5`    | `app1`, `app2`, ...        | Route tags                                           |\n| `ENABLE_VNC`      | `true`                     | Enable noVNC                                         |\n| `ENABLE_VSCODE`   | `true`                     | Enable VSCode Web                                    |\n| `CF_TUNNEL_TOKEN` | `eyJ...`                   | Cloudflare tunnel run token (cloudflared only)       |\n| `CF_API_TOKEN`    | `abc123`                   | CF API token for DNS registration (cloudflared only) |\n| `CF_ZONE_ID`      | `xyz789`                   | CF zone ID for the domain (cloudflared only)         |\n| `CF_TUNNEL_ID`    | `uuid`                     | CF tunnel ID for CNAME targets (cloudflared only)    |\n\n### Dynamic (built by entrypoint, available in all shells)\n\n| Variable        | Example                                | Description                 |\n| --------------- | -------------------------------------- | --------------------------- |\n| `DEVBOX_ID`     | `1`                                    | Auto-assigned sequential ID |\n| `APP_URL_1..5`  | `https://app1-1.example.com`           | Full URLs per app slot      |\n| `APP_PORT_1..5` | `8003..8007`                           | Internal ports              |\n| `VSCODE_URL`    | `https://vscode-1.example.com`         | VSCode Web URL              |\n| `NOVNC_URL`     | `https://novnc-1.example.com/vnc.html` | noVNC "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Browser] The devbox agent has browser access via Chromium CDP (port 9222). The subagent can use the `browser` tool to navigate, screenshot, and interact with apps running inside the container (use `http://localhost:{port}`)."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Project Setup Scripts] Projects can include `.openclaw/setup.sh` that runs inside the devbox. It has access to all env vars (`APP_URL_*`, `APP_PORT_*`, `DEVBOX_ID`, etc.) via `/etc/profile.d/devbox.sh`.\n\nSee `references/setup-script-guide.md` for conventions."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "devboxes"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adshrc/devboxes/SKILL.md"
+}

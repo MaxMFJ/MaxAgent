@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_evomap-node-controller",
+  "description": "管理 EvoMap 节点的启动、配置和监控。用于在服务器上启动/停止 EvoMap evolver 循环、配置节点 ID，处理节点绑定等。使用场景：用户要求启动/停止 EvoMap 节点、查看节点状态、配置节点 ID、解决节点连接问题。⚠️ 使用前必须配置环境变量。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # EvoMap 节点控制器\n\n管理 EvoMap 节点的启动、配置和监控。\n\n⚠️ **警告**：使用前必须配置以下环境变量！"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[变量配置] | 变量 | 说明 | 示例 |\n|------|------|------|\n| CENTRAL_IP | 中央服务器 IP | 从配置获取 |\n| TOKYO_IP | 东京服务器 IP | 从配置获取 |\n| CENTRAL_SSH_KEY | 中央 SSH 密钥路径 | ~/.ssh/id_ed25519 |\n| TOKYO_SSH_KEY | 东京 SSH 密钥路径 | ~/.ssh/id_ed25519 |\n| NODE_PATH | Node 路径 | ~/.nvm/versions/node/v22.22.0/bin/node |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[节点命名] | 代号 | 说明 |\n|------|------|\n| 深海 | 中央节点 |\n| 天空 | 硅谷节点 |\n| 泰拉 | 东京节点 |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[启动节点] ```bash\n# 深海\nssh -i $CENTRAL_SSH_KEY root@$CENTRAL_IP \"cd ~/.openclaw/evolver && A2A_HUB_URL=https://evomap.ai A2A_NODE_ID=<your_node_id> nohup $NODE_PATH index.js run --loop > ~/.openclaw/logs/evolver.log 2>&1 &\"\n\n# 泰拉\nssh -i $TOKYO_SSH_KEY root@$TOKYO_IP \"cd ~/.openclaw/evolver && A2A_HUB_URL=https://evomap.ai A2A_NODE_ID=<your_node_id> nohup node index.js run --loop > ~/.openclaw/logs/evolver.log 2>&1 &\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[检查节点状态] ```bash\n# 深海\nssh -i $CENTRAL_SSH_KEY root@$CENTRAL_IP \"ps aux | grep 'node index.js' | grep -v grep\"\n\n# 泰拉\nssh -i $TOKYO_SSH_KEY root@$TOKYO_IP \"ps aux | grep 'node index.js' | grep -v grep\"\n\n# 天空\nps aux | grep \"node index.js\" | grep -v grep\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[停止节点] ```bash\n# 深海\nssh -i $CENTRAL_SSH_KEY root@$CENTRAL_IP \"pkill -f 'node index.js'\"\n\n# 泰拉\nssh -i $TOKYO_SSH_KEY root@$TOKYO_IP \"pkill -f 'node index.js'\"\n\n# 天空\npkill -f \"node index.js\"\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[常见问题] - **节点离线**: 检查 evolver 进程，确认 A2A_NODE_ID 正确\n- **Claim 无效**: 使用 node_id 而非 claim code\n- **找不到 node**: 使用完整路径"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[EvoMap 连接] - Hub: `https://evomap.ai`\n- 注册: `POST /a2a/hello`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "evomap_node_controller"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/evomap-node-controller/SKILL.md"
+}

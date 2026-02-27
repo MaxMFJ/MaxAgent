@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_authenticate-wallet",
+  "description": "Sign in to the wallet. Use when you or the user want to log in, sign in, connect, or set up the wallet, or when any wallet operation fails with authentication or \"not signed in\" errors. This skill is a prerequisite before sending, trading, or funding.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Authenticating with the Payments Wallet\n\nWhen the wallet is not signed in (detected via `npx awal status` or when wallet operations fail with authentication errors), use the `npx awal` CLI to authenticate.\n\nIf you have access to email, you can authenticate the wallet yourself, otherwise you'll need to ask your human to give you an email address and to tell you the OTP code they receive."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Authentication Flow] Authentication uses a two-step email OTP process:\n\n### Step 1: Initiate login\n\n```bash\nnpx awal@latest auth login <email>\n```\n\nThis sends a 6-digit verification code to the email and outputs a `flowId`.\n\n### Step 2: Verify OTP\n\n```bash\nnpx awal@latest auth verify <flowId> <otp>\n```\n\nUse the `flowId` from step 1 and the 6-digit code from the user's email to complete authentication. If you have the ability to access the user's email, you can read the OTP code, or you can ask your human for the code."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Checking Authentication Status] ```bash\nnpx awal@latest status\n```\n\nDisplays wallet server health and authentication status including wallet address."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Example Session] ```bash\n# Check current status\nnpx awal@latest status\n\n# Start login (sends OTP to email)\nnpx awal@latest auth login user@example.com\n# Output: flowId: abc123...\n\n# After user receives code, verify\nnpx awal@latest auth verify abc123 123456\n\n# Confirm authentication\nnpx awal@latest status\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Available CLI Commands] | Command                                      | Purpose                                |\n| -------------------------------------------- | -------------------------------------- |\n| `npx awal@latest status`                     | Check server health and auth status    |\n| `npx awal@latest auth login <email>`         | Send OTP code to email, returns flowId |\n| `npx awal@latest auth verify <flowId> <otp>` | Complete authentication with OTP code  |\n| `npx awal@latest balance`                    | Get USDC wallet balance                |\n| `npx awal@latest address`                    | Get wallet address                     |\n| `npx awal@latest show`                       | Open the wallet companion window       |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[JSON Output] All commands support `--json` for machine-readable output:\n\n```bash\nnpx awal@latest status --json\nnpx awal@latest auth login user@example.com --json\nnpx awal@latest auth verify <flowId> <otp> --json\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "authenticate_wallet"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xrag/authenticate-wallet/SKILL.md"
+}

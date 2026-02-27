@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_mineru-pdf-extractor",
+  "description": "Extract PDF content to Markdown using MinerU API. Supports formulas, tables, OCR. Provides both local file and online URL parsing methods.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MinerU PDF Extractor\n\nExtract PDF documents to structured Markdown using the MinerU API. Supports formula recognition, table extraction, and OCR.\n\n> **Note**: This is a community skill, not an official MinerU product. You need to obtain your own API key from [MinerU](https://mineru.net/).\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[📁 Skill Structure] ```\nmineru-pdf-extractor/\n├── SKILL.md                          # English documentation\n├── SKILL_zh.md                       # Chinese documentation\n├── docs/                             # Documentation\n│   ├── Local_File_Parsing_Guide.md   # Local PDF parsing detailed guide (English)\n│   ├── Online_URL_Parsing_Guide.md   # Online PDF parsing detailed guide (English)\n│   ├── MinerU_本地文档解析完整流程.md  # Local parsing complete guide (Chinese)\n│   └── MinerU_在线文档解析完整流程.md  # Online parsing complete guide (Chinese)\n└── scripts/                          # Executable scripts\n    ├── local_file_step1_apply_upload_url.sh    # Local parsing Step 1\n    ├── local_file_step2_upload_file.sh         # Local parsing Step 2\n    ├── local_file_step3_poll_result.sh         # Local parsing Step 3\n    ├── local_file_step4_download.sh            # Local parsing Step 4\n    ├── online_file_step1_submit_task.sh        # Online parsing Step 1\n    └── online_file_step2_poll_result.sh        # Online parsing Step 2\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🔧 Requirements] ### Required Environment Variables\n\nScripts automatically read MinerU Token from environment variables (choose one):\n\n```bash\n# Option 1: Set MINERU_TOKEN\nexport MINERU_TOKEN=\"your_api_token_here\"\n\n# Option 2: Set MINERU_API_KEY\nexport MINERU_API_KEY=\"your_api_token_here\"\n```\n\n### Required Command-Line Tools\n\n- `curl` - For HTTP requests (usually pre-installed)\n- `unzip` - For extracting results (usually pre-installed)\n\n### Optional Tools\n\n- `jq` - For enhanced JSON parsing and security (recommended but not required)\n  - If not installed, scripts will use fallback methods\n  - Install: `apt-get install jq` (Debian/Ubuntu) or `brew install jq` (macOS)\n\n### Optional Configuration\n\n```bash\n# Set API base URL (default is pre-configured)\nexport MINERU_BASE_URL=\"https://mineru.net/api/v4\"\n```\n\n> 💡 **Get Token**: Visit https://mineru.net/apiManage/docs to register and obtain an API Key\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[📄 Feature 1: Parse Local PDF Documents] For locally stored PDF files. Requires 4 steps.\n\n### Quick Start\n\n```bash\ncd scripts/\n\n# Step 1: Apply for upload URL\n./local_file_step1_apply_upload_url.sh /path/to/your.pdf\n# Output: BATCH_ID=xxx UPLOAD_URL=xxx\n\n# Step 2: Upload file\n./local_file_step2_upload_file.sh \"$UPLOAD_URL\" /path/to/your.pdf\n\n# Step 3: Poll for results\n./local_file_step3_poll_result.sh \"$BATCH_ID\"\n# Output: FULL_ZIP_URL=xxx\n\n# Step 4: Download results\n./local_file_step4_download.sh \"$FULL_ZIP_URL\" result.zip extracted/\n```\n\n### Script Descriptions\n\n#### local_file_step1_apply_upload_url.sh\n\nApply for upload URL and batch_id.\n\n**Usage:**\n```bash\n./local_file_step1_apply_upload_url.sh <pdf_file_path> [language] [layout_model]\n```\n\n**Parameters:**\n- `language`: `ch` (Chinese), `en` (English), `auto` (auto-detect), default `ch`\n- `layout_model`: `doclayout_yolo` (fast), `layoutlmv3` (accurate), default `doclayout_yolo`\n\n**Output:**\n```\nBATCH_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\nUPLOAD_URL=https://mineru.oss-cn-shanghai.aliyuncs.com/...\n```\n\n---\n\n#### local_file_step2_upload_file.sh\n\nUpload PDF file to the presigned URL.\n\n**Usage:**\n```bash\n./local_file_step2_upload_file.sh <upload_url> <pdf_file_path>\n```\n\n---\n\n#### local_file_step3_poll_result.sh\n\nPoll extraction results until completion or failure.\n\n**Usage:**\n```bash\n./local_file_step3_poll_result.sh <batch_id> [max_retries] [retry_interval_seconds]\n```\n\n**Output:**\n```\nFULL_ZIP_URL=https://cdn-mineru.openxlab.org.cn/pdf/.../xxx.zip\n```\n\n---\n\n#### local_file_step4_download.sh\n\nDownload result ZIP and extract.\n\n**Usage:**\n```bash\n./local_file_step4_download.sh <zip_url> [output_zip_filename] [extract_directory_name]\n```\n\n**Output Structure:**\n```\nextracted/\n├── full.md              # 📄 Markdown document (main result)\n├── images/              # 🖼️ Extracted images\n├── content_list.json    # Structured content\n└── layout.json          # Layout analysis data\n```\n\n### Detailed Documentation\n\n📚 **Complete Guide**: See `docs/Local_File_Parsing_G"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[🌐 Feature 2: Parse Online PDF Documents (URL Method)] For PDF files already available online (e.g., arXiv, websites). Only 2 steps, more concise and efficient.\n\n### Quick Start\n\n```bash\ncd scripts/\n\n# Step 1: Submit parsing task (provide URL directly)\n./online_file_step1_submit_task.sh \"https://arxiv.org/pdf/2410.17247.pdf\"\n# Output: TASK_ID=xxx\n\n# Step 2: Poll results and auto-download/extract\n./online_file_step2_poll_result.sh \"$TASK_ID\" extracted/\n```\n\n### Script Descriptions\n\n#### online_file_step1_submit_task.sh\n\nSubmit parsing task for online PDF.\n\n**Usage:**\n```bash\n./online_file_step1_submit_task.sh <pdf_url> [language] [layout_model]\n```\n\n**Parameters:**\n- `pdf_url`: Complete URL of the online PDF (required)\n- `language`: `ch` (Chinese), `en` (English), `auto` (auto-detect), default `ch`\n- `layout_model`: `doclayout_yolo` (fast), `layoutlmv3` (accurate), default `doclayout_yolo`\n\n**Output:**\n```\nTASK_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```\n\n---\n\n#### online_file_step2_poll_result.sh\n\nPoll extraction results, automatically download and extract when complete.\n\n**Usage:**\n```bash\n./online_file_step2_poll_result.sh <task_id> [output_directory] [max_retries] [retry_interval_seconds]\n```\n\n**Output Structure:**\n```\nextracted/\n├── full.md              # 📄 Markdown document (main result)\n├── images/              # 🖼️ Extracted images\n├── content_list.json    # Structured content\n└── layout.json          # Layout analysis data\n```\n\n### Detailed Documentation\n\n📚 **Complete Guide**: See `docs/Online_URL_Parsing_Guide.md`\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[📊 Comparison of Two Parsing Methods] | Feature | **Local PDF Parsing** | **Online PDF Parsing** |\n|---------|----------------------|------------------------|\n| **Steps** | 4 steps | 2 steps |\n| **Upload Required** | ✅ Yes | ❌ No |\n| **Average Time** | 30-60 seconds | 10-20 seconds |\n| **Use Case** | Local files | Files already online (arXiv, websites, etc.) |\n| **File Size Limit** | 200MB | Limited by source server |\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[⚙️ Advanced Usage] ### Batch Process Local Files\n\n```bash\nfor pdf in /path/to/pdfs/*.pdf; do\n    echo \"Processing: $pdf\"\n    \n    # Step 1\n    result=$(./local_file_step1_apply_upload_url.sh \"$pdf\" 2>&1)\n    batch_id=$(echo \"$result\" | grep BATCH_ID | cut -d= -f2)\n    upload_url=$(echo \"$result\" | grep UPLOAD_URL | cut -d= -f2)\n    \n    # Step 2\n    ./local_file_step2_upload_file.sh \"$upload_url\" \"$pdf\"\n    \n    # Step 3\n    zip_url=$(./local_file_step3_poll_result.sh \"$batch_id\" | grep FULL_ZIP_URL | cut -d= -f2)\n    \n    # Step 4\n    filename=$(basename \"$pdf\" .pdf)\n    ./local_file_step4_download.sh \"$zip_url\" \"${filename}.zip\" \"${filename}_extracted\"\ndone\n```\n\n### Batch Process Online Files\n\n```bash\nfor url in \\\n  \"https://arxiv.org/pdf/2410.17247.pdf\" \\\n  \"https://arxiv.org/pdf/2409.12345.pdf\"; do\n    echo \"Processing: $url\"\n    \n    # Step 1\n    result=$(./online_file_step1_submit_task.sh \"$url\" 2>&1)\n    task_id=$(echo \"$result\" | grep TASK_ID | cut -d= -f2)\n    \n    # Step 2\n    filename=$(basename \"$url\" .pdf)\n    ./online_file_step2_poll_result.sh \"$task_id\" \"${filename}_extracted\"\ndone\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[⚠️ Notes] 1. **Token Configuration**: Scripts prioritize `MINERU_TOKEN`, fall back to `MINERU_API_KEY` if not found\n2. **Token Security**: Do not hard-code tokens in scripts; use environment variables\n3. **URL Accessibility**: For online parsing, ensure the provided URL is publicly accessible\n4. **File Limits**: Single file recommended not exceeding 200MB, maximum 600 pages\n5. **Network Stability**: Ensure stable network when uploading large files\n6. **Security**: This skill includes input validation and sanitization to prevent JSON injection and directory traversal attacks\n7. **Optional jq**: Installing `jq` provides enhanced JSON parsing and additional security checks\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[📚 Reference Documentation] | Document | Description |\n|----------|-------------|\n| `docs/Local_File_Parsing_Guide.md` | Detailed curl commands and parameters for local PDF parsing |\n| `docs/Online_URL_Parsing_Guide.md` | Detailed curl commands and parameters for online PDF parsing |\n\nExternal Resources:\n- 🏠 **MinerU Official**: https://mineru.net/\n- 📖 **API Documentation**: https://mineru.net/apiManage/docs\n- 💻 **GitHub Repository**: https://github.com/opendatalab/MinerU\n\n---\n\n*Skill Version: 1.0.0*  \n*Release Date: 2026-02-18*  \n*Community Skill - Not affiliated with MinerU official*"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mineru_pdf_extractor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a-i-r/mineru-pdf-extractor/SKILL.md"
+}

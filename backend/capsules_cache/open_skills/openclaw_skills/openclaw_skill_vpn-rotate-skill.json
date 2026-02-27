@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_vpn-rotate-skill",
+  "description": "Bypass API rate limits by rotating VPN servers. Works with any OpenVPN-compatible VPN (ProtonVPN, NordVPN, Mullvad, etc.). Automatically rotates to new server every N requests for fresh IPs. Use for high-volume scraping, government APIs, geo-restricted data.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # VPN Rotate Skill\n\nRotate VPN servers to bypass API rate limits. Works with any OpenVPN-compatible VPN."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Run Setup Wizard\n\n```bash\n./scripts/setup.sh\n```\n\nThis will:\n- Check OpenVPN is installed\n- Help you configure your VPN provider\n- Set up passwordless sudo\n- Test the connection\n\n### 2. Manual Setup\n\nIf you prefer manual setup:\n\n```bash\n# Install OpenVPN\nsudo apt install openvpn\n\n# Create config directory\nmkdir -p ~/.vpn/servers\n\n# Download .ovpn files from your VPN provider\n# Put them in ~/.vpn/servers/\n\n# Create credentials file\necho \"your_username\" > ~/.vpn/creds.txt\necho \"your_password\" >> ~/.vpn/creds.txt\nchmod 600 ~/.vpn/creds.txt\n\n# Enable passwordless sudo for openvpn\necho \"$USER ALL=(ALL) NOPASSWD: /usr/sbin/openvpn, /usr/bin/killall\" | sudo tee /etc/sudoers.d/openvpn\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Decorator (Recommended)\n\n```python\nfrom scripts.decorator import with_vpn_rotation\n\n@with_vpn_rotation(rotate_every=10, delay=1.0)\ndef scrape(url):\n    return requests.get(url).json()\n\n# Automatically rotates VPN every 10 calls\nfor url in urls:\n    data = scrape(url)\n```\n\n### VPN Class\n\n```python\nfrom scripts.vpn import VPN\n\nvpn = VPN()\n\n# Connect\nvpn.connect()\nprint(vpn.get_ip())  # New IP\n\n# Rotate (disconnect + reconnect to different server)\nvpn.rotate()\nprint(vpn.get_ip())  # Different IP\n\n# Disconnect\nvpn.disconnect()\n```\n\n### Context Manager\n\n```python\nfrom scripts.vpn import VPN\n\nvpn = VPN()\n\nwith vpn.session():\n    # VPN connected\n    for url in urls:\n        vpn.before_request()  # Handles rotation\n        data = requests.get(url).json()\n# VPN disconnected\n```\n\n### CLI\n\n```bash\npython scripts/vpn.py connect\npython scripts/vpn.py status\npython scripts/vpn.py rotate\npython scripts/vpn.py disconnect\npython scripts/vpn.py ip\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] ### Decorator Options\n\n```python\n@with_vpn_rotation(\n    rotate_every=10,      # Rotate after N requests\n    delay=1.0,            # Seconds between requests\n    config_dir=None,      # Override config directory\n    creds_file=None,      # Override credentials file\n    country=None,         # Filter servers by country prefix (e.g., \"us\")\n    auto_connect=True,    # Connect automatically on first request\n)\n```\n\n### VPN Class Options\n\n```python\nVPN(\n    config_dir=\"~/.vpn/servers\",\n    creds_file=\"~/.vpn/creds.txt\", \n    rotate_every=10,\n    delay=1.0,\n    verbose=True,\n)\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Recommended Settings] | API Aggressiveness | rotate_every | delay |\n|-------------------|--------------|-------|\n| Aggressive (Catastro, LinkedIn) | 5 | 2.0s |\n| Standard | 10 | 1.0s |\n| Lenient | 20-50 | 0.5s |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Files] ```\nvpn-rotate-skill/\n├── SKILL.md              # This file\n├── README.md             # Overview\n├── scripts/\n│   ├── vpn.py            # VPN controller\n│   ├── decorator.py      # @with_vpn_rotation\n│   └── setup.sh          # Setup wizard\n├── examples/\n│   └── catastro.py       # Spanish property API example\n└── providers/\n    ├── protonvpn.md      # ProtonVPN setup\n    ├── nordvpn.md        # NordVPN setup\n    └── mullvad.md        # Mullvad setup\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### \"sudo: a password is required\"\n\nRun the setup script or manually add sudoers entry:\n```bash\necho \"$USER ALL=(ALL) NOPASSWD: /usr/sbin/openvpn, /usr/bin/killall\" | sudo tee /etc/sudoers.d/openvpn\n```\n\n### Connection fails\n\n1. Check credentials are correct\n2. Test manually: `sudo openvpn --config ~/.vpn/servers/server.ovpn --auth-user-pass ~/.vpn/creds.txt`\n3. Check VPN provider account is active\n\n### Still getting blocked\n\n1. Lower `rotate_every` (try 5 instead of 10)\n2. Increase `delay` (try 2-3 seconds)\n3. Check if API blocks VPN IPs entirely\n\n### No .ovpn files\n\nDownload from your VPN provider:\n- ProtonVPN: https://protonvpn.com/support/vpn-config-download/\n- NordVPN: https://nordvpn.com/ovpn/\n- Mullvad: https://mullvad.net/en/account/#/openvpn-config"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "vpn_rotate_skill"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/acastellana/vpn-rotate-skill/SKILL.md"
+}

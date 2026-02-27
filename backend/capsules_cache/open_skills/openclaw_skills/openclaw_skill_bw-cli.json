@@ -1,0 +1,100 @@
+{
+  "id": "openclaw_skill_bw-cli",
+  "description": "Interact with Bitwarden password manager using the bw CLI. Covers authentication (login/unlock/logout/status), vault operations (list/get/create/edit/delete/restore items, folders, attachments, collections), password/passphrase generation, organization management, and Send/receive. Use for \"bitwarden\", \"bw\", \"password safe\", \"vaultwarden\", \"vault\", \"password manager\", \"generate password\", \"get password\", \"unlock vault\", \"share send\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Bitwarden CLI\n\nComplete reference for interacting with Bitwarden via the command-line interface.\n\n**Official documentation:** https://bitwarden.com/help/cli/  \n**Markdown version (for agents):** https://bitwarden.com/help/cli.md"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Reference] ### Installation\n\n```bash\n# Native executable (recommended)\n# https://bitwarden.com/download/?app=cli\n\n# npm\nnpm install -g @bitwarden/cli\n\n# Linux package managers\nchoco install bitwarden-cli  # Windows via Chocolatey\nsnap install bw              # Linux via Snap\n```\n\n### Authentication Flow (Preferred: Unlock First)\n\n**Standard-Workflow (unlock-first):**\n```bash\n# 1. Try unlock first (fast, most common case)\nexport BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw 2>/dev/null)\n\n# 2. Only if unlock fails, fall back to login\nif [ -z \"$BW_SESSION\" ]; then\n  bw login \"$BW_EMAIL\" \"$BW_PASSWORD\"\n  export BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)\nfi\n\n# 3. Sync before any vault operation\nbw sync\n\n# 4. End session\nbw lock                      # Lock (keep login)\nbw logout                    # Complete logout\n```\n\n**Alternative: Direct login methods**\n```bash\nbw login                     # Interactive login (email + password)\nbw login --apikey           # API key login (uses BW_CLIENTID/BW_CLIENTSECRET from .secrets)\nbw login --sso              # SSO login\nbw unlock                    # Interactive unlock\nbw unlock --passwordenv BW_PASSWORD     # Auto-available from sourced .secrets\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Session & Configuration Commands] ### status\n\nCheck authentication and vault status:\n\n```bash\nbw status\n```\n\nReturns: `unauthenticated`, `locked`, or `unlocked`.\n\n### config\n\nConfigure CLI settings:\n\n```bash\n# Set server (self-hosted or regional)\nbw config server https://vault.example.com\nbw config server https://vault.bitwarden.eu   # EU cloud\nbw config server                              # Check current\n\n# Individual service URLs\nbw config server --web-vault <url> --api <url> --identity <url>\n```\n\n### sync\n\nSync local vault with server (always run before vault operations):\n\n```bash\nbw sync                     # Full sync\nbw sync --last             # Show last sync timestamp\n```\n\n### update\n\nCheck for updates (does not auto-install):\n\n```bash\nbw update\n```\n\n### serve\n\nStart REST API server:\n\n```bash\nbw serve --port 8087 --hostname localhost\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Vault Item Commands] ### list\n\nList vault objects:\n\n```bash\n# Items\nbw list items\nbw list items --search github\nbw list items --folderid <id> --collectionid <id>\nbw list items --url https://example.com\nbw list items --trash                        # Items in trash\n\n# Folders\nbw list folders\n\n# Collections\nbw list collections                          # All collections\nbw list org-collections --organizationid <id>  # Org collections\n\n# Organizations\nbw list organizations\nbw list org-members --organizationid <id>\n```\n\n### get\n\nRetrieve single values or items:\n\n```bash\n# Get specific fields (by name or ID)\nbw get password \"GitHub\"\nbw get username \"GitHub\"\nbw get totp \"GitHub\"                         # 2FA code\nbw get notes \"GitHub\"\nbw get uri \"GitHub\"\n\n# Get full item JSON\nbw get item \"GitHub\"\nbw get item <uuid> --pretty\n\n# Other objects\nbw get folder <id>\nbw get collection <id>\nbw get organization <id>\nbw get org-collection <id> --organizationid <id>\n\n# Templates for create operations\nbw get template item\nbw get template item.login\nbw get template item.card\nbw get template item.identity\nbw get template item.securenote\nbw get template folder\nbw get template collection\nbw get template item-collections\n\n# Security\nbw get fingerprint <user-id>\nbw get fingerprint me\nbw get exposed <password>                    # Check if password is breached\n\n# Attachments\nbw get attachment <filename> --itemid <id> --output /path/\n```\n\n### create\n\nCreate new objects:\n\n```bash\n# Create folder\nbw get template folder | jq '.name=\"Work\"' | bw encode | bw create folder\n\n# Create login item\nbw get template item | jq \\\n  '.name=\"Service\" | .login=$(bw get template item.login | jq '.username=\"user@example.com\" | .password=\"secret\"')' \\\n  | bw encode | bw create item\n\n# Create secure note (type=2)\nbw get template item | jq \\\n  '.type=2 | .secureNote.type=0 | .name=\"Note\" | .notes=\"Content\"' \\\n  | bw encode | bw create item\n\n# Create card (type=3)\nbw get template item | jq \\\n  '.type=3 | .name=\"My Card\" | .card=$(bw get t"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Password Generation] ### generate\n\nGenerate passwords or passphrases:\n\n```bash\n# Password (default: 14 chars)\nbw generate\nbw generate --uppercase --lowercase --number --special --length 20\nbw generate -ulns --length 32\n\n# Passphrase\nbw generate --passphrase --words 4 --separator \"-\" --capitalize --includeNumber\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Send Commands (Secure Sharing)] ### send\n\nCreate ephemeral shares:\n\n```bash\n# Text Send\nbw send -n \"Secret\" -d 7 --hidden \"This text vanishes in 7 days\"\n\n# File Send\nbw send -n \"Doc\" -d 14 -f /path/to/file.pdf\n\n# Advanced options\nbw send --password accesspass -f file.txt\n```\n\n### receive\n\nAccess received Sends:\n\n```bash\nbw receive <url> --password <pass>\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Organization Commands] ### move\n\nShare items to organization:\n\n```bash\necho '[\"collection-uuid\"]' | bw encode | bw move <item-id> <organization-id>\n```\n\n### confirm\n\nConfirm invited members:\n\n```bash\nbw get fingerprint <user-id>\nbw confirm org-member <user-id> --organizationid <id>\n```\n\n### device-approval\n\nManage device approvals:\n\n```bash\nbw device-approval list --organizationid <id>\nbw device-approval approve <request-id> --organizationid <id>\nbw device-approval approve-all --organizationid <id>\nbw device-approval deny <request-id> --organizationid <id>\nbw device-approval deny-all --organizationid <id>\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Import & Export] ### import\n\nImport from other password managers:\n\n```bash\nbw import --formats                          # List supported formats\nbw import lastpasscsv ./export.csv\nbw import bitwardencsv ./import.csv --organizationid <id>\n```\n\n### export\n\nExport vault data:\n\n```bash\nbw export                                    # CSV format\nbw export --format json\nbw export --format encrypted_json\nbw export --format encrypted_json --password <custom-pass>\nbw export --format zip                       # Includes attachments\nbw export --output /path/ --raw              # Output to file or stdout\nbw export --organizationid <id> --format json\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Utilities] ### encode\n\nBase64 encode JSON for create/edit operations:\n\n```bash\nbw get template folder | jq '.name=\"Test\"' | bw encode | bw create folder\n```\n\n### generate (password)\n\nSee [Password Generation](#password-generation).\n\n### Global Options\n\nAvailable on all commands:\n\n```bash\n--pretty                     # Format JSON output with tabs\n--raw                        # Return raw output\n--response                   # JSON formatted response\n--quiet                      # No stdout (use for piping secrets)\n--nointeraction             # Don't prompt for input\n--session <key>             # Pass session key directly\n--version                   # CLI version\n--help                      # Command help\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Security Reference] ### Secure Password Storage (Workspace .secrets)\n\nStore the master password in a `.secrets` file in the workspace root and auto-load it:\n\n```bash\n# Create .secrets file\nmkdir -p ~/.openclaw/workspace\necho \"BW_PASSWORD=your_master_password\" > ~/.openclaw/workspace/.secrets\nchmod 600 ~/.openclaw/workspace/.secrets\n\n# Add to .gitignore\necho \".secrets\" >> ~/.openclaw/workspace/.gitignore\n\n# Auto-source in shell config (run once)\necho 'source ~/.openclaw/workspace/.secrets 2>/dev/null' >> ~/.bashrc\n# OR for zsh:\necho 'source ~/.openclaw/workspace/.secrets 2>/dev/null' >> ~/.zshrc\n```\n\n**Now BW_PASSWORD is always available:**\n\n```bash\nbw unlock --passwordenv BW_PASSWORD\n```\n\n**Security requirements:**\n- File must be mode `600` (user read/write only)\n- Must add `.secrets` to `.gitignore`\n- Never commit the .secrets file\n- Auto-sourcing happens on new shell sessions; run `source ~/.openclaw/workspace/.secrets` for current session\n\n### API Key Authentication (Workspace .secrets)\n\nFor automated/API key login, store credentials in the same `.secrets` file:\n\n```bash\n# Add API credentials to .secrets\necho \"BW_CLIENTID=user.xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\" >> ~/.openclaw/workspace/.secrets\necho \"BW_CLIENTSECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\" >> ~/.openclaw/workspace/.secrets\nchmod 600 ~/.openclaw/workspace/.secrets\n```\n\n**Login with API key:**\n\n```bash\nbw login --apikey\n```\n\n**⚠️ Known Issue / Workaround**\n\nOn some self-hosted Vaultwarden instances, `bw login --apikey` may fail with:\n```\nUser Decryption Options are required for client initialization\n```\n\n**Workaround - Use Email/Password Login:**\n\n```bash\n# Add EMAIL to .secrets\necho \"BW_EMAIL=your@email.com\" >> ~/.openclaw/workspace/.secrets\n\n# Login with email + password (instead of --apikey)\nbw login \"$BW_EMAIL\" \"$BW_PASSWORD\"\n\n# Or as one-liner\nset -a && source ~/.openclaw/workspace/.secrets && set +a && bw login \"$BW_EMAIL\" \"$BW_PASSWORD\"\n\n# Then unlock as usual\nbw unlock --passwordenv BW_PASSWORD\n```\n\n**Full workflow "
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Unlock first, login only if needed**: Try `bw unlock` first as it's faster; only run `bw login` if unlock fails (vault not initialized)\n2. **Always sync**: Run `bw sync` before any vault operation\n3. **Secure session**: Use `bw lock` when done\n4. **Protect secrets**: Never log BW_SESSION or BW_PASSWORD\n5. **Secure storage**: Keep .secrets file at mode 600, never commit it\n6. **Auto-source**: Add to ~/.bashrc or ~/.zshrc for persistent env vars\n7. **Verify fingerprints**: Before confirming org members"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Issue | Solution |\n|-------|----------|\n| \"Bot detected\" | Use `--apikey` or provide `client_secret` |\n| \"Vault is locked\" | Run `bw unlock` and export BW_SESSION |\n| Self-signed cert error | Set `NODE_EXTRA_CA_CERTS` |\n| Need debug info | `export BITWARDENCLI_DEBUG=true` |\n\n---\n\n**References:**\n- HTML documentation: https://bitwarden.com/help/cli/\n- Markdown (fetchable): https://bitwarden.com/help/cli.md\n- Personal API Key: https://bitwarden.com/help/personal-api-key/"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "bw_cli"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "author": "tfm",
+      "version": "1.9.0",
+      "docs": "https://bitwarden.com/help/cli/",
+      "docs-md": "https://bitwarden.com/help/cli.md",
+      "api-key-docs": "https://bitwarden.com/help/personal-api-key/"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x7466/bw-cli/SKILL.md"
+}

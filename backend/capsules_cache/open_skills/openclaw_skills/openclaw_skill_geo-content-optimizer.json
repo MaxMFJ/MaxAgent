@@ -1,0 +1,126 @@
+{
+  "id": "openclaw_skill_geo-content-optimizer",
+  "description": "Use when the user asks to \"optimize for AI\", \"get cited by ChatGPT\", \"AI optimization\", \"appear in AI answers\", \"GEO optimization\", \"get cited by AI\", \"show up in ChatGPT answers\", \"AI does not mention my brand\", or \"make content AI-quotable\". Optimizes content for Generative Engine Optimization (GEO) to increase chances of being cited by AI systems like ChatGPT, Claude, Perplexity, and Google AI Overviews. Makes content AI-friendly while maintaining SEO value. For SEO-focused writing, see seo-content-writer. For entity and brand presence, see entity-optimizer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # GEO Content Optimizer\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../seo-content-writer/) · **geo-content-optimizer** · [meta-tags-optimizer](../meta-tags-optimizer/) · [schema-markup-generator](../schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill optimizes content to appear in AI-generated responses. As AI systems increasingly answer user queries directly, getting cited by these systems becomes crucial for visibility."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Optimizing existing content for AI citations\n- Creating new content designed for both SEO and GEO\n- Improving chances of appearing in AI Overviews\n- Making content more quotable by AI systems\n- Adding authority signals that AI systems trust\n- Structuring content for AI comprehension\n- Competing for visibility in the AI-first search era"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Citation Optimization**: Makes content more likely to be quoted by AI\n2. **Structure Enhancement**: Formats content for AI comprehension\n3. **Authority Building**: Adds signals that AI systems trust\n4. **Factual Enhancement**: Improves accuracy and verifiability\n5. **Quote Creation**: Creates memorable, citeable statements\n6. **Source Attribution**: Adds proper citations that AI can verify\n7. **GEO Scoring**: Evaluates content's AI-friendliness"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Optimize Existing Content\n\n```\nOptimize this content for GEO/AI citations: [content or URL]\n```\n\n```\nMake this article more likely to be cited by AI systems\n```\n\n### Create GEO-Optimized Content\n\n```\nWrite content about [topic] optimized for both SEO and GEO\n```\n\n### GEO Audit\n\n```\nAudit this content for GEO readiness and suggest improvements\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~AI monitor + ~~SEO tool connected:**\nAutomatically pull AI citation patterns (which content is being cited by ChatGPT, Claude, Perplexity), current AI visibility scores, competitor citation frequency, and AI Overview appearance tracking.\n\n**With manual data only:**\nAsk the user to provide:\n1. Target queries where they want AI citations\n2. Current content URL or full content text\n3. Any known instances where competitors are being cited by AI\n\nProceed with the full workflow using provided data. Note in the output which metrics are from automated collection vs. user-provided data."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests GEO optimization:\n\n1. **Load CORE-EEAT GEO-First Optimization Targets**\n\n   Before optimizing, load GEO-critical items from the [CORE-EEAT Benchmark](../../references/core-eeat-benchmark.md):\n\n   ```markdown\n   ### CORE-EEAT GEO-First Targets\n\n   These items have the highest impact on AI engine citation. Use as optimization checklist:\n\n   **Top 6 Priority Items**:\n   | Rank | ID | Standard | Why It Matters |\n   |------|----|----------|---------------|\n   | 1 | C02 | Direct Answer in first 150 words | All engines extract from first paragraph |\n   | 2 | C09 | Structured FAQ with Schema | Directly matches AI follow-up queries |\n   | 3 | O03 | Data in tables, not prose | Most extractable structured format |\n   | 4 | O05 | JSON-LD Schema Markup | Helps AI understand content type |\n   | 5 | E01 | Original first-party data | AI prefers exclusive, verifiable sources |\n   | 6 | O02 | Key Takeaways / Summary Box | First choice for AI summary citations |\n\n   **All GEO-First Items** (optimize for all when possible):\n   C02, C04, C05, C07, C08, C09 | O02, O03, O04, O05, O06, O09\n   R01, R02, R03, R04, R05, R07, R09 | E01, E02, E03, E04, E06, E08, E09, E10\n   Exp10 | Ept05, Ept08 | A08\n\n   **AI Engine Preferences**:\n   | Engine | Priority Items |\n   |--------|----------------|\n   | Google AI Overview | C02, O03, O05, C09 |\n   | ChatGPT Browse | C02, R01, R02, E01 |\n   | Perplexity AI | E01, R03, R05, Ept05 |\n   | Claude | R04, Ept08, Exp10, R03 |\n\n   _Full benchmark: [references/core-eeat-benchmark.md](../../references/core-eeat-benchmark.md)_\n   ```\n\n2. **Understand GEO Fundamentals**\n\n   ```markdown\n   ### How AI Systems Select Content to Cite\n   \n   AI systems prioritize content that is:\n   \n   **Authoritative**\n   - From recognized experts or trusted sources\n   - Contains proper citations and references\n   - Shows expertise signals (author credentials, original research)\n   \n   **Accurate**\n   - Factually correct and verifiable\n   - Up-to-date information"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Content source identified (URL, full text, or content draft)\n- [ ] Target AI queries or topics clearly defined\n- [ ] Current GEO baseline assessed (if optimizing existing content)\n\n### Output Validation\n- [ ] At least 3 clear, quotable definitions added\n- [ ] Factual density improved with at least 5 verifiable statistics\n- [ ] All claims have source citations from authoritative sources\n- [ ] Q&A format sections cover top 5 user queries\n- [ ] GEO score improvement of at least 50% from baseline\n- [ ] Source of each data point clearly stated (~~AI monitor data, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Optimize this paragraph for GEO: 'Email marketing is a good way to reach customers. It's been around for a while and many businesses use it. You can send newsletters, promotions, and other messages.'\"\n\n**Output**:\n\n```markdown"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[GEO-Optimized Version] **Email marketing** is a digital marketing strategy that uses email to promote \nproducts, build customer relationships, and drive conversions. According to \nthe Data & Marketing Association, email marketing delivers an average ROI \nof $42 for every $1 invested, making it the highest-performing digital \nmarketing channel.\n\n### Key email marketing formats include:\n\n1. **Newsletters**: Regular updates sharing company news, industry insights, \n   and valuable content to maintain subscriber engagement\n2. **Promotional emails**: Time-sensitive offers, discounts, and product \n   announcements designed to drive immediate sales\n3. **Transactional emails**: Order confirmations, shipping updates, and \n   account notifications with 8x higher open rates than marketing emails\n4. **Automated sequences**: Pre-scheduled email series triggered by user \n   actions, such as welcome series or abandoned cart reminders\n\n> **Key statistic**: 81% of small businesses rely on email as their primary \n> customer acquisition channel (Emarsys, 2024).\n\n---\n\n### Changes Made:\n\n| Element | Before | After |\n|---------|--------|-------|\n| Definition | None | Clear definition with category |\n| Statistics | None | 2 specific stats with sources |\n| Structure | Single paragraph | Structured list with headers |\n| Authority | None | DMA and Emarsys citations |\n| Quotable statements | 0 | 3 standalone facts |\n\n**GEO Score**: Improved from 1/10 to 8/10\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[GEO Optimization Checklist] Use this checklist for any content:\n\n```markdown\n### GEO Readiness Checklist\n\n**Definitions & Clarity**\n- [ ] Key terms are clearly defined\n- [ ] Definitions can stand alone as answers\n- [ ] Language is precise and unambiguous\n\n**Quotable Content**\n- [ ] Specific statistics included\n- [ ] Facts have source citations\n- [ ] Memorable statements created\n\n**Authority**\n- [ ] Expert quotes or credentials present\n- [ ] Authoritative sources cited\n- [ ] Original data or research included\n\n**Structure**\n- [ ] Q&A format sections included\n- [ ] Clear headings match common queries\n- [ ] Comparison tables where relevant\n- [ ] Numbered lists for processes\n\n**Technical**\n- [ ] FAQ schema markup added\n- [ ] Content freshness indicated\n- [ ] Sources are verifiable\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Answer the question first** - Put the answer in the first sentence\n2. **Be specific** - Vague content doesn't get cited\n3. **Cite sources** - AI systems trust verifiable information\n4. **Stay current** - Update statistics and facts regularly\n5. **Match query format** - Questions deserve direct answers\n6. **Build authority** - Expert credentials increase citation likelihood"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Reference Materials] - [AI Citation Patterns](./references/ai-citation-patterns.md) - How Google AI Overviews, ChatGPT, Perplexity, and Claude select and cite sources\n- [Quotable Content Examples](./references/quotable-content-examples.md) - Before/after examples of content optimized for AI citation"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Related Skills] - [seo-content-writer](../seo-content-writer/) — Create SEO content to optimize\n- [schema-markup-generator](../schema-markup-generator/) — Add structured data\n- [keyword-research](../../research/keyword-research/) — Identify keyword targets for GEO optimization\n- [content-refresher](../../optimize/content-refresher/) — Update content for freshness\n- [serp-analysis](../../research/serp-analysis/) — Analyze AI Overview patterns\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit\n- [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) — Domain-level AI citation signals (CITE C05-C08) complement page-level GEO optimization"
+    }
+  ],
+  "task_type": "business",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "geo_content_optimizer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "high",
+      "tags": [
+        "geo",
+        "ai optimization",
+        "ai citations",
+        "chatgpt",
+        "perplexity",
+        "google ai overviews",
+        "generative engine optimization",
+        "llm optimization"
+      ],
+      "triggers": [
+        "optimize for AI",
+        "get cited by ChatGPT",
+        "AI optimization",
+        "appear in AI answers",
+        "GEO optimization",
+        "AI-friendly content",
+        "LLM citations",
+        "get cited by AI",
+        "show up in ChatGPT answers",
+        "AI doesn't mention my brand",
+        "make content AI-quotable"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/geo-content-optimizer/SKILL.md"
+}

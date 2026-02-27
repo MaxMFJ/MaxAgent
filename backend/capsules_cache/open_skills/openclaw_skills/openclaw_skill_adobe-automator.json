@@ -1,0 +1,71 @@
+{
+  "id": "openclaw_skill_adobe-automator",
+  "description": "Universal Adobe application automation via ExtendScript bridge. Supports Photoshop, Illustrator, InDesign, Premiere Pro, and After Effects.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Adobe Master Automator (v1.1.2)\n\nA generalized skill for automating multiple Adobe applications using a cross-platform ExtendScript bridge."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Supported Applications] - **Photoshop**\n- **Illustrator**\n- **InDesign**\n- **Premiere Pro**\n- **After Effects**"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### runScript\nExecutes raw ExtendScript (ES3) in the target application.\n\n**Parameters:**\n- `app`: Target application (`photoshop`, `illustrator`, `indesign`, `premiere`, `aftereffects`).\n- `script`: The JSX code to execute."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🛠 AI Protocol] ### 1. Technical Constraints\n- **ES3 Syntax Only**: Adobe apps use the ExtendScript (ES3) engine. Avoid modern JS features.\n- **Target App Availability**: Ensure the target application is installed and running (or able to launch) on the host system.\n\n### 2. Security & Side Effects\n> [!CAUTION]\n> **High Risk Capability**: The `runScript` command accepts and executes **arbitrary ExtendScript (JSX)** code. Attempting to restrict this would break the skill's core purpose, but users must be aware of the implications.\n\n- **Filesystem Access**: The Adobe ExtendScript engine has **unrestricted access to the host filesystem** via the `File` and `Folder` objects.\n- **Untrusted Scripts**: ❌ **NEVER** execute scripts from untrusted sources. A malicious script could delete files, exfiltrate data, or install persistent malware.\n- **Verification**: Always inspect the `script` parameter payload before allowing execution."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup] The skill automatically detects your operating system and routes commands to the appropriate application.\n- **Windows**: Uses built-in `cscript` (Windows Script Host).\n- **macOS**: Uses built-in `osascript` (AppleScript).\n\n---\nDeveloped for the OpenClaw community by [Abdul Karim Mia](https://github.com/abdul-karim-mia)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "adobe_automator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [],
+          "os": [
+            "windows",
+            "macos"
+          ],
+          "env": [],
+          "config": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdul-karim-mia/adobe-automator/SKILL.md"
+}

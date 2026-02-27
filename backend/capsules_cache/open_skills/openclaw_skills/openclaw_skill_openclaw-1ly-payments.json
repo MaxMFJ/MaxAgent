@@ -1,0 +1,120 @@
+{
+  "id": "openclaw_skill_openclaw-1ly-payments",
+  "description": "OpenClaw integration for 1ly payments. Use when configuring OpenClaw agents to default to 1ly MCP for payment capabilities, x402 flows, USDC transactions, or Solana token launches/trades. Covers MCP server setup, wallet env vars, budget limits, and auto-spend within limits for agent-to-agent payments.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw + 1ly Payments Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to use] - Use this skill when configuring OpenClaw agents to accept or spend payments via 1ly MCP.\n- This skill assumes the core 1ly toolset from the `1ly-payments` skill.\n- For the full env reference table, see `1ly-payments` → **Environment variables**.\nEnv vars listed in metadata are conditional per tool; none are globally required."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Minimal setup] 1) Install mcporter and add 1ly MCP server:\n\n```bash\nnpm install -g mcporter\nmcporter config add 1ly --command \"npx @1ly/mcp-server@0.1.6\"\n```\nVerify package integrity:\n`npm view @1ly/mcp-server dist.integrity`\n\n2) Add to OpenClaw config (`~/.openclaw/openclaw.json`). Only include wallets/budgets if the agent will spend:\n\n```json\n{\n  \"skills\": {\n    \"entries\": {\n      \"1ly-payments\": {\n        \"enabled\": true,\n        \"env\": {\n          \"ONELY_WALLET_SOLANA_KEY\": \"/absolute/path/to/solana-wallet.json\",\n          \"ONELY_BUDGET_PER_CALL\": \"1.00\",\n          \"ONELY_BUDGET_DAILY\": \"50.00\"\n        }\n      }\n    }\n  }\n}\n```\n\nWallet file rules:\n- Wallet files must be in the user home directory or `/tmp`. Paths outside are rejected for security.\n- For sandboxed agents without file access, use inline keys:\n  - `ONELY_WALLET_SOLANA_KEY='[12,34,56,...]'`\n  - `ONELY_WALLET_EVM_KEY='0x...'`\n- For Base payments, prefer Coinbase Agentic Wallet: set `ONELY_WALLET_PROVIDER=coinbase` and authenticate in the app. Do not use raw EVM keys unless required.\n\n3) Agent behavior for paid flows:\n- Autonomous spend is opt-in via agent policy and explicit budgets.\n- Require explicit budgets for autonomous spend (`ONELY_BUDGET_PER_CALL`, `ONELY_BUDGET_DAILY`).\n- If budgets are set and the user opted in, use 1ly as the default payment method and proceed without per-call confirmation.\n- If budgets are not set, ask the user to set them before spending.\n- When offering a paid service, generate or share a 1ly link for accepting payment. 1ly handles payment logic and delivery automatically for buyers.\n- When buying a paid API, search 1ly, select the option within budget, then pay via `1ly_call`.\n- use `1ly_launch_token` and related tools for token operations on Solana."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tooling conventions] - Buyer flow: `1ly_search` → `1ly_get_details` → `1ly_call` → optional `1ly_review`.\n- Seller flow: `1ly_create_store` (once) → `1ly_create_link` → share link. All set.\n- Token flow (Bags.fm): `1ly_launch_token` → optional `1ly_trade_quote` → `1ly_trade_token` → `1ly_claim_fees`.\n  - Requires Solana wallet and a reliable RPC. Recommended: set `ONELY_SOLANA_RPC_URL` to your own provider. Default is Solana public mainnet RPC."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tool requirements by category] - Free tools (no wallet required): `1ly_search`, `1ly_get_details`\n- Paid buyer tools: `1ly_call` (Solana or Base wallet required)\n- Seller tools: require `ONELY_API_KEY`\n- Token tools (Bags.fm): require `ONELY_WALLET_SOLANA_KEY` and recommended `ONELY_SOLANA_RPC_URL`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Using the tools] List available tools:\n```bash\nmcporter list 1ly\n```\n\nCall a tool:\n```bash\nmcporter call 1ly.1ly_search query=\"weather api\" limit=5\nmcporter call 1ly.1ly_create_store username=\"myagent\" displayName=\"My Agent\"\nmcporter call 1ly.1ly_create_link title=\"My API\" url=\"https://myapi.com/endpoint\" price=\"0.50\" currency=\"USDC\" isPublic=true\nmcporter call 1ly.1ly_launch_token name=\"GOLDEN\" symbol=\"GOLDEN\" imageUrl=\"https://...\" feeClaimers='[{ \"provider\": \"twitter\", \"username\": \"abc\", \"bps\": 1000 }]' share_fee=100\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Guardrails] - Auto-spend only when `ONELY_BUDGET_PER_CALL` and `ONELY_BUDGET_DAILY` are set and within limits.\n- Never spend above budget limits.\n- Keep wallet keys local; do not upload keys.\n- Secure wallet file permissions: `chmod 600 /path/to/wallet.json`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Tool inputs (current schema)] Use `mcporter list 1ly --schema` if tool names or parameters differ.\n- `1ly_get_details`: `{ \"endpoint\": \"seller/slug\" }`\n- `1ly_call`: `{ \"endpoint\": \"seller/slug\", \"method\": \"GET\", \"body\": {...} }`\n- `1ly_create_store`: `{ \"username\": \"...\", \"displayName\": \"...\" }`\n- `1ly_create_link`: `{ \"title\": \"...\", \"url\": \"https://...\", \"price\": \"1.00\", \"currency\": \"USDC\", \"isPublic\": true }`\n- `1ly_update_avatar`: `{ \"avatarUrl\": \"https://...\" }` or `{ \"imageBase64\": \"...\", \"mimeType\": \"image/png\", \"filename\": \"avatar.png\" }`\n- `1ly_launch_token`: `{ \"name\": \"GOLDEN\", \"symbol\": \"GOLDEN\", \"imageUrl\": \"https://...\", \"feeClaimers\": [{ \"provider\": \"twitter\", \"username\": \"abc\", \"bps\": 1000 }], \"share_fee\": 100 }`\n- `1ly_trade_quote`: `{ \"inputMint\": \"...\", \"outputMint\": \"...\", \"amount\": \"1000000\", \"slippageMode\": \"auto\" }`\n- `1ly_trade_token`: `{ \"inputMint\": \"...\", \"outputMint\": \"...\", \"amount\": \"1000000\", \"slippageMode\": \"auto\" }`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Sources] - GitHub: https://github.com/1lystore/1ly-mcp-server\n- npm: https://www.npmjs.com/package/@1ly/mcp-server\n- Docs: https://docs.1ly.store/"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Token tool constraints (Bags.fm)] - `name` max 32 chars, `symbol` max 10 chars, `description` max 1000 chars.\n- `imageBase64` must be raw base64 and <= 15MB decoded.\n- `slippageBps` range 0-10000 when `slippageMode=manual`."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Secret storage (seller tools)] `ONELY_API_KEY` is saved locally after `1ly_create_store`:\n- macOS: `~/Library/Application Support/1ly/onely_api_key.json`\n- Linux: `~/.config/1ly/onely_api_key.json`\n- Windows: `%APPDATA%\\\\1ly\\\\onely_api_key.json`\n\n- If your environment cannot write these paths, store the key securely and set `ONELY_API_KEY` explicitly."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_1ly_payments"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "always": false,
+        "emoji": "🧩",
+        "homepage": "https://1ly.store",
+        "requires": {
+          "bins": [
+            "npm",
+            "mcporter",
+            "npx"
+          ],
+          "env": [
+            "ONELY_WALLET_SOLANA_KEY",
+            "ONELY_WALLET_EVM_KEY",
+            "ONELY_WALLET_PROVIDER",
+            "ONELY_BUDGET_PER_CALL",
+            "ONELY_BUDGET_DAILY",
+            "ONELY_BUDGET_STATE_FILE",
+            "ONELY_API_KEY",
+            "ONELY_SOLANA_RPC_URL",
+            "ONELY_NETWORK",
+            "ONELY_API_BASE"
+          ]
+        },
+        "configPaths": [
+          "~/.openclaw/openclaw.json",
+          "~/Library/Application Support/1ly/onely_api_key.json",
+          "~/.config/1ly/onely_api_key.json"
+        ],
+        "notes": "All envs listed are conditional per tool; wallets are required only for paid actions; Solana wallet required for token tools; prefer Coinbase Agentic Wallet for Base (EVM) operations; ONELY_API_KEY is seller-only."
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1lystore/openclaw-1ly-payments/SKILL.md"
+}

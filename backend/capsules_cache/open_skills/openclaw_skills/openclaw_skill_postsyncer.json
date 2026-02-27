@@ -1,0 +1,58 @@
+{
+  "id": "openclaw_skill_postsyncer",
+  "description": "Manage your PostSyncer social media workflows.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # PostSyncer Skill\n\nAutomate your social media scheduling with PostSyncer."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Get your API Key from [PostSyncer Settings](https://app.postsyncer.com/settings).\n2. Set it: `export POSTSYNCER_API_KEY=\"your_key\"`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### Workspaces\nList your workspaces.\n\n```bash\npostsyncer workspaces\n```\n\n### Posts\nList your scheduled/published posts.\n\n```bash\npostsyncer posts\n```\n\n### Create Post\n(Basic text post)\n\n```bash\npostsyncer create-post -w <workspace_id> -t \"Hello world\"\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "postsyncer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔄",
+        "requires": {
+          "env": [
+            "POSTSYNCER_API_KEY"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abakermi/openclaw-postsyncer/SKILL.md"
+}

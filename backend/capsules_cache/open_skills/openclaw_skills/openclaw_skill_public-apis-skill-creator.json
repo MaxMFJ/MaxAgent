@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_public-apis-skill-creator",
+  "description": "公共API/免费API SKILL生成器：从 public-apis/public-apis 自动检索免费 API，按功能推荐并给出最小可用调用示例（curl/Python/JS），并可自动生成自定义名称的 API skill。用户提到“公共API”“免费API”“public APIs”“找接口/找API”“生成API skill”时触发。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # public-apis-skill-creator"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[能力] - 按功能关键词搜索 public-apis 仓库里的免费 API\n- 输出 API 的认证要求、HTTPS、CORS、文档链接\n- 自动生成最小可用示例（curl / Python / JavaScript）\n- 自动生成“公共API/免费API”对应的 skill 包（名称可自定义）\n- 查看并打印 public-apis 全量 API 列表（支持 --top / --json）"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[用法] ### 1) 按功能找 API\n```bash\nbash {baseDir}/scripts/search_api.sh \"weather forecast\"\n```\n\n### 2) 自动推荐 + 生成调用模板（一步到位）\n```bash\nbash {baseDir}/scripts/solve_task.sh \"weather api\"\n# 指定用推荐列表第 2 个 API\nbash {baseDir}/scripts/solve_task.sh \"weather api\" --pick 2\n# 可选：尝试对选中 API 做一次 GET 探测\nbash {baseDir}/scripts/solve_task.sh \"weather api\" --pick 2 --try\n```\n\n### 3) 自动生成对应 skill（支持自定义名称）\n```bash\nbash {baseDir}/scripts/solve_task.sh \"weather api\" \\\n  --pick 2 \\\n  --make-skill \\\n  --skill-name weather-api-skill\n```\n会在 `skills/<skill-name>/` 下生成可直接使用的 skill 骨架。\n\n### 4) 手动生成调用模板\n```bash\nbash {baseDir}/scripts/gen_usage.sh \\\n  --name \"Open-Meteo\" \\\n  --url \"https://api.open-meteo.com/v1/forecast?latitude=39.9&longitude=116.4&hourly=temperature_2m\" \\\n  --auth \"No\"\n```\n\n### 5) 打印 public-apis 全部列表\n```bash\nbash {baseDir}/scripts/list_all_apis.sh\n# 只看前 50 条\nbash {baseDir}/scripts/list_all_apis.sh --top 50\n# JSON 输出\nbash {baseDir}/scripts/list_all_apis.sh --json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[典型请求示例] - \"帮我找免费天气 API 并给 Python 示例\"\n- \"找一个免费汇率 API，要求 HTTPS 且无需 key\"\n- \"我想做新闻聚合，推荐 3 个 API 并比较\"\n- \"基于公共API生成一个新免费天气 skill，名称叫 weather-free\""
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "public_apis_skill_creator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/547895019/public-apis-skill-creator/SKILL.md"
+}

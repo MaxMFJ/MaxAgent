@@ -1,0 +1,122 @@
+{
+  "id": "openclaw_skill_polymarket-elon-tweets",
+  "description": "Trade Polymarket \"Elon Musk # tweets\" markets using XTracker post count data. Buys adjacent range buckets when combined cost < $1 for structural edge. Use when user wants to trade tweet count markets, automate Elon tweet bets, check XTracker stats, or run noovd-style trading.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polymarket Elon Tweet Trader\n\nTrade \"Elon Musk # tweets\" markets on Polymarket using XTracker post count data."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user wants to:\n- Trade Elon Musk tweet count markets automatically\n- Set up @noovd-style bucket trading\n- Check XTracker pace and stats for current tweet events\n- Monitor and exit existing tweet market positions\n- Configure bucket spread or entry thresholds"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How the Strategy Works] Polymarket runs weekly \"How many tweets will Elon post?\" events with range buckets (e.g., 200-219, 220-239, 240-259). Exactly one bucket resolves YES = $1. The strategy:\n\n1. **Get XTracker pace** — XTracker tracks Elon's real-time post count and projects the final total\n2. **Find center bucket** — The bucket containing XTracker's projected pace\n3. **Buy adjacent buckets** — Buy the center + neighbors (configurable spread)\n4. **Check combined cost** — Only buy if the sum of bucket prices < $1 (the +EV threshold)\n5. **One bucket pays $1** — When the event resolves, one of your buckets pays $1, covering costs"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup Flow] When user asks to install or configure this skill:\n\n1. **Install the Simmer SDK**\n   ```bash\n   pip install simmer-sdk\n   ```\n\n2. **Ask for Simmer API key**\n   - They can get it from simmer.markets/dashboard → SDK tab\n   - Store in environment as `SIMMER_API_KEY`\n\n3. **Ask for wallet private key** (required for live trading)\n   - This is the private key for their Polymarket wallet (the wallet that holds USDC)\n   - Store in environment as `WALLET_PRIVATE_KEY`\n   - The SDK uses this to sign orders client-side automatically — no manual signing needed\n\n4. **Ask about settings** (or confirm defaults)\n   - Max bucket sum: Combined price threshold (default 90¢)\n   - Max position: Amount per bucket (default $5.00)\n   - Bucket spread: How many neighbors to buy (default 1 = center ± 1)\n   - Exit threshold: When to sell (default 65¢)\n\n5. **Save settings to config.json or environment variables**\n\n6. **Set up cron** (disabled by default — user must enable scheduling)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuration] | Setting | Env Variable | Config Key | Default | Description |\n|---------|-------------|------------|---------|-------------|\n| Max bucket sum | `SIMMER_ELON_MAX_BUCKET_SUM` | `max_bucket_sum` | 0.90 | Only buy if cluster prices sum < this |\n| Max position | `SIMMER_ELON_MAX_POSITION` | `max_position_usd` | 5.00 | Maximum USD per bucket |\n| Bucket spread | `SIMMER_ELON_BUCKET_SPREAD` | `bucket_spread` | 1 | Neighbors on each side (1 = 3 buckets) |\n| Smart sizing % | `SIMMER_ELON_SIZING_PCT` | `sizing_pct` | 0.05 | % of balance per trade |\n| Max trades/run | `SIMMER_ELON_MAX_TRADES` | `max_trades_per_run` | 6 | Maximum trades per scan cycle |\n| Exit threshold | `SIMMER_ELON_EXIT` | `exit_threshold` | 0.65 | Sell when bucket price above this |\n| Slippage max | `SIMMER_ELON_SLIPPAGE_MAX` | `slippage_max_pct` | 0.05 | Skip trade if slippage exceeds this |\n| Min position | `SIMMER_ELON_MIN_POSITION` | `min_position_usd` | 2.00 | Floor for smart sizing (USD) |\n| Data source | `SIMMER_ELON_DATA_SOURCE` | `data_source` | xtracker | Data source (xtracker) |\n\nConfig priority: config.json > environment variables > defaults."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick Commands] ```bash\n# Check account balance and positions\npython scripts/status.py\n\n# Detailed position list\npython scripts/status.py --positions\n```\n\n**API Reference:**\n- Base URL: `https://api.simmer.markets`\n- Auth: `Authorization: Bearer $SIMMER_API_KEY`\n- Portfolio: `GET /api/sdk/portfolio`\n- Positions: `GET /api/sdk/positions`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Running the Skill] ```bash\n# Dry run (default — shows opportunities, no trades)\npython elon_tweets.py\n\n# Execute real trades\npython elon_tweets.py --live\n\n# With smart position sizing (uses portfolio balance)\npython elon_tweets.py --live --smart-sizing\n\n# Show XTracker stats only\npython elon_tweets.py --stats\n\n# Check positions only\npython elon_tweets.py --positions\n\n# View config\npython elon_tweets.py --config\n\n# Update config\npython elon_tweets.py --set max_position_usd=10.00\n\n# Disable safeguards (not recommended)\npython elon_tweets.py --no-safeguards\n\n# Quiet mode — only output on trades/errors (ideal for cron)\npython elon_tweets.py --live --quiet\n\n# Combine: frequent scanning, minimal noise\npython elon_tweets.py --live --smart-sizing --quiet\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[How It Works] Each cycle the script:\n1. Fetches active XTracker trackings for Elon Musk tweet events\n2. Gets real-time stats: current count, projected pace, days remaining\n3. Searches Simmer for matching tweet count markets (auto-imports if missing)\n4. Finds the bucket matching XTracker's pace projection\n5. Evaluates adjacent buckets (center ± spread)\n6. **Entry**: If sum of cluster prices < max_bucket_sum → BUY each bucket\n7. **Exit**: Checks open positions, sells if any bucket price > exit_threshold\n8. **Safeguards**: Checks context for flip-flop warnings, slippage\n9. **Tagging**: All trades tagged with `sdk:elon-tweets` for tracking"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Auto-Import] If tweet count markets aren't on Simmer yet, the skill automatically imports them:\n- Derives the Polymarket event URL from the XTracker tracking title\n- Uses the SDK import endpoint (supports multi-outcome events)\n- Imports all outcome buckets as a group\n- Counts as 1 daily import regardless of bucket count"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Smart Sizing] With `--smart-sizing`, position size is calculated as:\n- 5% of available USDC balance (configurable via `sizing_pct`)\n- Capped at max position setting ($5.00 default)\n- Falls back to fixed size if portfolio unavailable"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Safeguards] Before trading, the skill checks:\n- **Flip-flop warning**: Skips if you've been reversing too much\n- **Slippage**: Skips if estimated slippage > 15%\n- **Market status**: Skips closed or resolved markets\n- **Extreme prices**: Skips buckets priced > 98% or < 2%\n\nDisable with `--no-safeguards` (not recommended)."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Source Tagging] All trades are tagged with `source: \"sdk:elon-tweets\"`. This means:\n- Portfolio shows breakdown by strategy\n- Other skills won't sell your tweet positions\n- You can track tweet trading P&L separately"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Example Output] ```\n🐦 Simmer Elon Tweet Trader\n==================================================\n\n⚙️ Configuration:\n  Max bucket sum:  $0.90\n  Max position:    $5.00\n  Bucket spread:   1 (center ± 1 = 3 buckets)\n  Exit threshold:  65%\n  Data source:     xtracker\n\n📊 XTracker Stats:\n  Tracking: Elon Musk # tweets Feb 13 - Feb 20\n  Current count: 187 posts\n  Pace: 243 projected\n  Days remaining: 2.3\n\n🎯 Target cluster: 240-259 (center) + 220-239, 260-279\n  240-259: $0.35\n  220-239: $0.22\n  260-279: $0.18\n  Cluster sum: $0.75 (< $0.90 threshold) ✅\n\n  Executing trades...\n  ✅ Bought 14.3 shares of 240-259 @ $0.35\n  ✅ Bought 22.7 shares of 220-239 @ $0.22\n  ✅ Bought 27.8 shares of 260-279 @ $0.18\n\n📊 Summary:\n  Events scanned: 2\n  Clusters evaluated: 2\n  Trades executed: 3\n  Exits: 0\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"No XTracker trackings found\"**\n- XTracker may not have active Elon tweet events\n- New events usually start on Wednesdays/Thursdays\n\n**\"Cluster sum $X.XX exceeds threshold\"**\n- Buckets are too expensive — edge is too thin\n- Wait for prices to drop or widen bucket_spread\n\n**\"No matching Simmer markets found\"**\n- Markets may not be imported yet — skill will auto-import on next run\n- Check that your API key has import capacity (10/day free, 50/day Pro)\n\n**\"Safeguard blocked: flip-flop warning\"**\n- You've been changing direction too much on this market\n- Wait before trading again\n\n**\"External wallet requires a pre-signed order\"**\n- `WALLET_PRIVATE_KEY` is not set in the environment\n- The SDK signs orders automatically when this env var is present — no manual signing code needed\n- Fix: `export WALLET_PRIVATE_KEY=0x<your-polymarket-wallet-private-key>`\n- Do NOT attempt to sign orders manually or modify the skill code — the SDK handles it\n\n**\"Balance shows $0 but I have USDC on Polygon\"**\n- Polymarket uses **USDC.e** (bridged USDC, contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`) — not native USDC\n- If you bridged USDC to Polygon recently, you likely received native USDC\n- Swap native USDC to USDC.e, then retry\n\n**\"API key invalid\"**\n- Get new key from simmer.markets/dashboard → SDK tab"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polymarket_elon_tweets"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🐦",
+        "requires": {
+          "env": [
+            "SIMMER_API_KEY"
+          ],
+          "pip": [
+            "simmer-sdk"
+          ]
+        },
+        "cron": null,
+        "autostart": false,
+        "automaton": {
+          "managed": true,
+          "entrypoint": "elon_tweets.py"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/polymarket-elon-tweets/SKILL.md"
+}

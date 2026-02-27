@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_windows-tts",
+  "description": "在 Windows 11 上\"直接发声\"的 TTS（从 WSL2/TUI 调用 powershell.exe + System.Speech）。适用于用户说\"说出来/读出来/语音播报/用TTS\"，或反馈\"没声音/tts 生成的 mp3 是空的/播不出来\"，以及需要中文语音但 OpenClaw 内置 tts 不可用时。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Windows TTS (WSL2)\n\nUse Windows built-in TTS via `powershell.exe` so audio plays through the **Windows 默认输出设备**（无需 WSLg/PulseAudio）。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[什么时候用这个 skill（触发提示）] 当用户出现以下表达时，优先用本 skill，而不是 OpenClaw 内置 `tts`（后者可能生成空 mp3 或在某些环境无声）：\n- \"说出来 / 读出来 / 念一下 / 语音播报 / 用 TTS\"\n- \"还没声音 / 没声音 / 播不出来\"\n- \"中文语音\"且希望**直接从电脑扬声器播放**\n\n> 注意：本 skill 是\"直接播放\"，不会返回音频文件路径。"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start（直接说出来）] Run from WSL:\n\n```bash\nbash {baseDir}/scripts/say.sh \"你好，我是你的助手。\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[List installed voices] ```bash\nbash {baseDir}/scripts/list_voices.sh\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Speak with a specific voice] ```bash\nbash {baseDir}/scripts/say.sh --voice \"VOICE_NAME\" \"你好，我以后会用这个声音说话。\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes] - If you embed PowerShell directly in bash, remember: **escape `$`** or use outer single quotes; otherwise bash expands `$s` and breaks the command.\n- If the user reports errors like `=New-Object` or `TypeName:` prompts, prefer the provided scripts instead of ad-hoc quoting."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "windows_tts"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/547895019/windows-tts-wsl2/SKILL.md"
+}

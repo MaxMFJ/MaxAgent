@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_expense-tracker",
+  "description": "Track daily expenses in structured markdown files organized by month. Use when the user wants to log spending, view expense summaries, analyze spending patterns, or manage personal finance tracking. Supports categories, tags, and monthly summaries.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Expense Tracker\n\nLog and track daily expenses in markdown files organized by month."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Log an expense\n\n```bash\npython3 scripts/log_expense.py log <amount> <category> [--description \"text\"] [--tags \"tag1,tag2\"] [--date YYYY-MM-DD]\n```\n\nExamples:\n\n```bash\n# Simple expense\npython3 scripts/log_expense.py log 45000 Coffee\n\n# With description\npython3 scripts/log_expense.py log 250000 Dining --description \"Lunch with team\"\n\n# With tags\npython3 scripts/log_expense.py log 500000 Shopping --tags \"clothes,sale\" --description \"New shirt\"\n\n# Specify date (for backdating)\npython3 scripts/log_expense.py log 1200000 Vehicle --description \"Gas\" --date 2026-02-15\n```\n\n### View monthly summary\n\n```bash\n# Current month\npython3 scripts/log_expense.py summary\n\n# Specific month\npython3 scripts/log_expense.py summary 2026-02\n\n# JSON output (for parsing)\npython3 scripts/log_expense.py summary 2026-02 --json\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[File Organization] Expenses are stored in `expenses/` directory at workspace root:\n\n```\nexpenses/\n├── 2026-01.md\n├── 2026-02.md\n└── 2026-03.md\n```\n\nEach file contains a markdown table:\n\n```markdown\n# Expenses - 2026-02\n\n| Date | Category | Amount (VND) | Description | Tags |\n|------|----------|-------------|-------------|------|\n| 2026-02-17 | Coffee | 45,000 | | |\n| 2026-02-17 | Dining | 250,000 | Lunch with team | |\n| 2026-02-17 | Shopping | 500,000 | New shirt | clothes,sale |\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Categories] See `references/categories.md` for common expense categories. Use existing categories or create custom ones as needed.\n\nCommon categories:\n- **Housing** - Rent, utilities, home expenses\n- **Vehicle** - Gas, maintenance, parking\n- **Dining** - Restaurants, food delivery\n- **Coffee** - Cafes, coffee shops\n- **Shopping** - Clothes, electronics, general purchases\n- **Entertainment** - Movies, games, hobbies\n- **Healthcare** - Medicine, doctor visits\n- **Subscriptions** - Netflix, Spotify, gym, apps\n- **Savings** - Investments, emergency fund\n- **Debt Payment** - Loans, credit cards\n- **Miscellaneous** - Other expenses"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow Examples] ### Log daily expenses from conversation\n\nWhen the user mentions spending money:\n\n```bash\n# User: \"Just paid 35k for coffee\"\npython3 scripts/log_expense.py log 35000 Coffee\n\n# User: \"Grabbed lunch for 120k at Phở 24\"\npython3 scripts/log_expense.py log 120000 Dining --description \"Phở 24\"\n\n# User: \"Filled up gas, 400k\"\npython3 scripts/log_expense.py log 400000 Vehicle --description \"Gas\"\n```\n\n### Monthly review\n\n```bash\n# Get summary\npython3 scripts/log_expense.py summary 2026-02\n\n# Read the expense file to see details\ncat expenses/2026-02.md\n```\n\n### Analyze spending patterns\n\n```bash\n# Get JSON for analysis\npython3 scripts/log_expense.py summary 2026-02 --json\n\n# Compare multiple months\npython3 scripts/log_expense.py summary 2026-01 --json > jan.json\npython3 scripts/log_expense.py summary 2026-02 --json > feb.json\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Tips] - **Batch logging**: User can tell you multiple expenses at once, log them all\n- **Category consistency**: Use the same category names to enable accurate summaries\n- **Tags for filtering**: Use tags for subcategories (e.g., \"work\", \"weekend\", \"urgent\")\n- **Descriptions**: Add context that helps identify the expense later\n- **Regular reviews**: Suggest monthly summaries to track spending patterns"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Integration with Financial Goals] When tracking expenses, consider:\n\n1. **Budget tracking**: Compare monthly totals to target budget\n2. **Spending patterns**: Identify high-spend categories\n3. **Emergency fund**: Track savings progress\n4. **Debt reduction**: Monitor debt payment progress\n5. **Financial ratios**: Calculate expenses as % of income"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Script Reference] ### log_expense.py\n\n**Commands:**\n- `log` - Add an expense entry\n- `summary` - View monthly summary\n\n**Arguments (log):**\n- `amount` - Amount in VND (required)\n- `category` - Category name (required)\n- `--description/-d` - Optional description\n- `--tags/-t` - Optional comma-separated tags\n- `--date` - Optional date (YYYY-MM-DD, defaults to today)\n- `--workspace` - Optional workspace path (defaults to ~/.openclaw/workspace)\n\n**Arguments (summary):**\n- `year_month` - Optional YYYY-MM (defaults to current month)\n- `--json` - Output as JSON\n- `--workspace` - Optional workspace path\n\n**Output:**\n- Creates/updates markdown files in `expenses/` directory\n- Prints confirmation with file location\n- Summary shows total, count, and breakdown by category"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "expense_tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aholake/expense-tracker/SKILL.md"
+}

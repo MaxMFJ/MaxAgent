@@ -30,6 +30,8 @@
 		VCT004 /* ConversationListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC014 /* ConversationListViewController.m */; };
 		VIW001 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* MessageCell.m */; };
 		VIW002 /* InputView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* InputView.m */; };
+		UTIL001 /* ThinkingContentParser.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* ThinkingContentParser.m */; };
+		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,10 @@
 		SRC015H /* TTSService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TTSService.h; sourceTree = "<group>"; };
 		SRC016 /* VoiceInputService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceInputService.m; sourceTree = "<group>"; };
 		SRC016H /* VoiceInputService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceInputService.h; sourceTree = "<group>"; };
+		SRC017 /* ThinkingContentParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingContentParser.m; sourceTree = "<group>"; };
+		SRC017H /* ThinkingContentParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingContentParser.h; sourceTree = "<group>"; };
+		SRC018 /* ThinkingBlockView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingBlockView.m; sourceTree = "<group>"; };
+		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };
 		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -114,6 +120,7 @@
 				MODELS /* Models */,
 				VIEWCONTROLLERS /* ViewControllers */,
 				VIEWS /* Views */,
+				UTILS /* Utils */,
 				RESOURCES /* Resources */,
 				RES_INFO /* Info.plist */,
 			);
@@ -209,8 +216,19 @@
 				SRC009 /* MessageCell.m */,
 				SRC010H /* InputView.h */,
 				SRC010 /* InputView.m */,
+				SRC018H /* ThinkingBlockView.h */,
+				SRC018 /* ThinkingBlockView.m */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		UTILS /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				SRC017H /* ThinkingContentParser.h */,
+				SRC017 /* ThinkingContentParser.m */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -326,6 +344,8 @@
 				VCT004 /* ConversationListViewController.m in Sources */,
 				VIW001 /* MessageCell.m in Sources */,
 				VIW002 /* InputView.m in Sources */,
+				UTIL001 /* ThinkingContentParser.m in Sources */,
+				VIW003 /* ThinkingBlockView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

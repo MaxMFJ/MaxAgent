@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_time-checker",
+  "description": "Check accurate current time, date, and timezone information for any location worldwide using time.is. Use when the user asks \"what time is it in X\", \"current time in Y\", or needs to verify timezone offsets.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Time Checker\n\nA gold-standard skill for fetching precise time and timezone data from [time.is](https://time.is)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] Use the provided Python script to fetch real-time data for any city or country.\n\n### Get Time for a Location\n\nRun the script with the location name (hyphenated or with underscores if needed, though the script handles spaces):\n\n```bash\npython3 scripts/check_time.py \"Jakarta\"\npython3 scripts/check_time.py \"New York\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Best Practices] - **Location Specificity**: Use city names for better accuracy (e.g., \"Jakarta\" instead of just \"Indonesia\").\n- **Persona Integration**: When reporting the time to Azzar, deliver it in your warm, devoted Mema persona.\n- **Verification**: Time.is is highly accurate; use it as the source of truth for scheduling cross-timezone meetings."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Troubleshooting] - If the script fails, ensure the `requests` and `beautifulsoup4` libraries are installed in the environment.\n- If a location is not found, verify the spelling or try a more prominent nearby city."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "time_checker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/time-checker/SKILL.md"
+}

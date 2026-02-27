@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_demo-video",
+  "description": "Create product demo videos by automating browser interactions and capturing frames. Use when the user wants to record a demo, walkthrough, product showcase, or interactive video of a web application. Supports Playwright CDP screencast for high-quality capture and FFmpeg for video encoding.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Demo Video Creator\n\nCreate polished product demo videos by automating browser interactions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] 1. **Plan** the demo sequence (pages, interactions, timing)\n2. **Record** frames using Playwright CDP screencast\n3. **Encode** to video with FFmpeg"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Prerequisites\n\n- Clawdbot browser running (`browser action=start profile=clawd`)\n- App accessible via browser (localhost or remote)\n- FFmpeg installed for encoding\n\n### Recording Workflow\n\n1. Start the Clawdbot browser if not running\n2. Navigate to the app manually or via `browser action=open`\n3. Customize `scripts/record-demo.js` for the target app\n4. Run: `node scripts/record-demo.js`\n5. Encode: `bash scripts/frames-to-video.sh`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Planning a Demo] See `references/demo-planning.md` for guidance on:\n- Structuring demo sequences\n- Timing and pacing\n- Interaction patterns\n- What makes demos compelling"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Scripts] ### `scripts/record-demo.js`\n\nTemplate Playwright script that:\n- Connects to Clawdbot browser via CDP\n- Starts screencast capture (JPEG frames)\n- Executes demo sequence (navigation, clicks, hovers, typing)\n- Saves frames to output directory\n\n**Customize for each demo:**\n- `DEMO_SEQUENCES` array - define pages and interactions\n- `OUTPUT_DIR` - where to save frames\n- `FRAME_SKIP` - skip every Nth frame (lower = more frames)\n\n### `scripts/frames-to-video.sh`\n\nFFmpeg encoding script with presets:\n- `mp4` - H.264, good quality/size balance (default)\n- `gif` - Animated GIF for embedding\n- `webm` - VP9, smaller files\n\nUsage: `./frames-to-video.sh [input_dir] [output_name] [format]`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Interaction Patterns] ```javascript\n// Navigation\nawait page.goto('http://localhost/dashboard');\nawait page.waitForTimeout(2000);\n\n// Click element\nawait page.locator('button:has-text(\"Create\")').click();\nawait page.waitForTimeout(500);\n\n// Hover (show tooltips, hover states)\nawait page.locator('.card').first().hover();\nawait page.waitForTimeout(1000);\n\n// Type text\nawait page.locator('input[placeholder=\"Search\"]').fill('query');\nawait page.waitForTimeout(500);\n\n// Press key\nawait page.keyboard.press('Enter');\nawait page.keyboard.press('Escape');\n\n// Scroll\nawait page.evaluate(() => window.scrollBy(0, 300));\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Tips] - **Timing**: 2s on page load, 0.5-1s between interactions, 1.5s to show results\n- **Frame skip**: Use 3-5 for smooth video, 8-10 for smaller files\n- **Quality**: 85-90 JPEG quality balances size and clarity\n- **Resolution**: Browser window size determines output resolution\n- **Loops**: GIFs should loop seamlessly - end where you started"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "demo_video"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xs4m1337/demo-video/SKILL.md"
+}

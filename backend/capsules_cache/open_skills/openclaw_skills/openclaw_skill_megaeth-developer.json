@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_megaeth-developer",
+  "description": "End-to-end MegaETH development playbook (Feb 2026). Covers wallet operations, token swaps (Kyber Network), eth_sendRawTransactionSync (EIP-7966) for instant receipts, JSON-RPC batching, real-time mini-block subscriptions, storage-aware contract patterns (Solady RedBlackTreeLib), MegaEVM gas model, WebSocket keepalive, bridging from Ethereum, and debugging with mega-evme. Use when building on MegaETH, managing wallets, sending transactions, or deploying contracts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MegaETH Development Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What this Skill is for] Use this Skill when the user asks for:\n- Wallet setup and management on MegaETH\n- Sending transactions, checking balances, token operations\n- Token swaps via Kyber Network aggregator\n- MegaETH dApp frontend (React / Next.js with real-time updates)\n- RPC configuration and transaction flow optimization\n- Smart contract development with MegaEVM considerations\n- Storage optimization (avoiding expensive SSTORE costs)\n- Gas estimation and fee configuration\n- Testing and debugging MegaETH transactions\n- WebSocket subscriptions and mini-block streaming\n- Bridging ETH from Ethereum to MegaETH"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Chain Configuration] | Network | Chain ID | RPC | Explorer |\n|---------|----------|-----|----------|\n| Mainnet | 4326 | `https://mainnet.megaeth.com/rpc` | `https://mega.etherscan.io` |\n| Testnet | 6343 | `https://carrot.megaeth.com/rpc` | `https://megaeth-testnet-v2.blockscout.com` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Default stack decisions (opinionated)] ### 1. Transaction submission: eth_sendRawTransactionSync first\n- Use `eth_sendRawTransactionSync` (EIP-7966) — returns receipt in <10ms\n- Eliminates polling for `eth_getTransactionReceipt`\n- Docs: https://docs.megaeth.com/realtime-api\n\n### 2. RPC: Multicall for eth_call batching (v2.0.14+)\n- Prefer Multicall (`aggregate3`) for batching multiple `eth_call` requests\n- As of v2.0.14, `eth_call` is 2-10x faster; Multicall amortizes per-RPC overhead\n- Still avoid mixing slow methods (`eth_getLogs`) with fast ones in same request\n\n**Note:** Earlier guidance recommended JSON-RPC batching over Multicall for caching benefits. With v2.0.14's performance improvements, Multicall is now preferred.\n\n### 3. WebSocket: keepalive required\n- Send `eth_chainId` every 30 seconds\n- 50 connections per VIP endpoint, 10 subscriptions per connection\n- Use `miniBlocks` subscription for real-time data\n\n### 4. Storage: slot reuse patterns\n- SSTORE 0→non-zero costs 2M gas × multiplier (expensive)\n- Use Solady's RedBlackTreeLib instead of Solidity mappings\n- Design for slot reuse, not constant allocation\n\n### 5. Gas: skip estimation when possible\n- Base fee stable at 0.001 gwei, no EIP-1559 adjustment\n- Ignore `eth_maxPriorityFeePerGas` (returns 0)\n- Hardcode gas limits to save round-trip\n- Always use remote `eth_estimateGas` (MegaEVM costs differ from standard EVM)\n\n### 6. Debugging: mega-evme CLI\n- Replay transactions with full traces\n- Profile gas by opcode\n- https://github.com/megaeth-labs/mega-evm"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Operating procedure] ### 1. Classify the task layer\n- Frontend/WebSocket layer\n- RPC/transaction layer\n- Smart contract layer\n- Testing/debugging layer\n\n### 2. Pick the right patterns\n- Frontend: single WebSocket → broadcast to users (not per-user connections)\n- Transactions: sign locally → `eth_sendRawTransactionSync` → done\n- Contracts: check SSTORE patterns, avoid volatile data access limits\n- Testing: use mega-evme for replay, Foundry with `--skip-simulation`\n\n### 3. Implement with MegaETH-specific correctness\nAlways be explicit about:\n- Chain ID (4326 mainnet, 6343 testnet)\n- Gas limit (hardcode when possible)\n- Base fee (0.001 gwei, no buffer)\n- Storage costs (new slots are expensive)\n- Volatile data limits (20M gas after block.timestamp access)\n\n### 4. Deliverables expectations\nWhen implementing changes, provide:\n- Exact files changed + diffs\n- Commands to build/test/deploy\n- Gas cost notes for storage-heavy operations\n- RPC optimization notes if applicable"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Progressive disclosure (read when needed)] - Wallet operations: [wallet-operations.md](wallet-operations.md)\n- Frontend patterns: [frontend-patterns.md](frontend-patterns.md)\n- RPC methods reference: [rpc-methods.md](rpc-methods.md)\n- Smart contract patterns: [smart-contracts.md](smart-contracts.md)\n- Storage optimization: [storage-optimization.md](storage-optimization.md)\n- Gas model: [gas-model.md](gas-model.md)\n- Testing & debugging: [testing.md](testing.md)\n- Security considerations: [security.md](security.md)\n- Reference links: [resources.md](resources.md)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "megaeth_developer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xguardbot/megaeth/SKILL.md"
+}

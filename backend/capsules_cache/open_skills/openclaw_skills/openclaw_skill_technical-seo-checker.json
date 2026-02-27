@@ -1,0 +1,162 @@
+{
+  "id": "openclaw_skill_technical-seo-checker",
+  "description": "Use when the user asks to \"technical SEO audit\", \"check page speed\", \"crawl issues\", \"Core Web Vitals\", \"site indexing problems\", \"my site is slow\", \"Google cannot crawl my site\", \"mobile issues\", or \"indexing problems\". Performs technical SEO audits covering site speed, crawlability, indexability, mobile-friendliness, security, and structured data. Identifies technical issues preventing optimal search performance. For content and heading element issues, see on-page-seo-auditor. For link architecture, see internal-linking-optimizer.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Technical SEO Checker\n\n\n> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`\n\n<details>\n<summary>Browse all 20 skills</summary>\n\n**Research** · [keyword-research](../../research/keyword-research/) · [competitor-analysis](../../research/competitor-analysis/) · [serp-analysis](../../research/serp-analysis/) · [content-gap-analysis](../../research/content-gap-analysis/)\n\n**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)\n\n**Optimize** · [on-page-seo-auditor](../on-page-seo-auditor/) · **technical-seo-checker** · [internal-linking-optimizer](../internal-linking-optimizer/) · [content-refresher](../content-refresher/)\n\n**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)\n\n**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)\n\n</details>\n\nThis skill performs comprehensive technical SEO audits to identify issues that may prevent search engines from properly crawling, indexing, and ranking your site."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] - Launching a new website\n- Diagnosing ranking drops\n- Pre-migration SEO audits\n- Regular technical health checks\n- Identifying crawl and index issues\n- Improving site performance\n- Fixing Core Web Vitals issues"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **Crawlability Audit**: Checks robots.txt, sitemaps, crawl issues\n2. **Indexability Review**: Analyzes index status and blockers\n3. **Site Speed Analysis**: Evaluates Core Web Vitals and performance\n4. **Mobile-Friendliness**: Checks mobile optimization\n5. **Security Check**: Reviews HTTPS and security headers\n6. **Structured Data Audit**: Validates schema markup\n7. **URL Structure Analysis**: Reviews URL patterns and redirects\n8. **International SEO**: Checks hreflang and localization"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] ### Full Technical Audit\n\n```\nPerform a technical SEO audit for [URL/domain]\n```\n\n### Specific Issue Check\n\n```\nCheck Core Web Vitals for [URL]\n```\n\n```\nAudit crawlability and indexability for [domain]\n```\n\n### Pre-Migration Audit\n\n```\nTechnical SEO checklist for migrating [old domain] to [new domain]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Sources] > See [CONNECTORS.md](../../CONNECTORS.md) for tool category placeholders.\n\n**With ~~web crawler + ~~page speed tool + ~~CDN connected:**\nClaude can automatically crawl the entire site structure via ~~web crawler, pull Core Web Vitals and performance metrics from ~~page speed tool, analyze caching headers from ~~CDN, and fetch mobile-friendliness data. This enables comprehensive automated technical audits.\n\n**With manual data only:**\nAsk the user to provide:\n1. Site URL(s) to audit\n2. PageSpeed Insights screenshots or reports\n3. robots.txt file content\n4. sitemap.xml URL or file\n\nProceed with the full audit using provided data. Note in the output which findings are from automated crawl vs. manual review."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Instructions] When a user requests a technical SEO audit:\n\n1. **Audit Crawlability**\n\n   ```markdown\n   ## Crawlability Analysis\n   \n   ### Robots.txt Review\n   \n   **URL**: [domain]/robots.txt\n   **Status**: [Found/Not Found/Error]\n   \n   **Current Content**:\n   ```\n   [robots.txt content]\n   ```\n   \n   | Check | Status | Notes |\n   |-------|--------|-------|\n   | File exists | ✅/❌ | [notes] |\n   | Valid syntax | ✅/⚠️/❌ | [errors found] |\n   | Sitemap declared | ✅/❌ | [sitemap URL] |\n   | Important pages blocked | ✅/⚠️/❌ | [blocked paths] |\n   | Assets blocked | ✅/⚠️/❌ | [CSS/JS blocked?] |\n   | Correct user-agents | ✅/⚠️/❌ | [notes] |\n   \n   **Issues Found**:\n   - [Issue 1]\n   - [Issue 2]\n   \n   **Recommended robots.txt**:\n   ```\n   User-agent: *\n   Allow: /\n   Disallow: /admin/\n   Disallow: /private/\n   \n   Sitemap: https://example.com/sitemap.xml\n   ```\n   \n   ---\n   \n   ### XML Sitemap Review\n   \n   **Sitemap URL**: [URL]\n   **Status**: [Found/Not Found/Error]\n   \n   | Check | Status | Notes |\n   |-------|--------|-------|\n   | Sitemap exists | ✅/❌ | [notes] |\n   | Valid XML format | ✅/⚠️/❌ | [errors] |\n   | In robots.txt | ✅/❌ | [notes] |\n   | Submitted to ~~search console | ✅/⚠️/❌ | [notes] |\n   | URLs count | [X] | [appropriate?] |\n   | Only indexable URLs | ✅/⚠️/❌ | [notes] |\n   | Includes priority | ✅/⚠️ | [notes] |\n   | Includes lastmod | ✅/⚠️ | [accurate?] |\n   \n   **Issues Found**:\n   - [Issue 1]\n   \n   ---\n   \n   ### Crawl Budget Analysis\n   \n   | Factor | Status | Impact |\n   |--------|--------|--------|\n   | Crawl errors | [X] errors | [Low/Med/High] |\n   | Duplicate content | [X] pages | [Low/Med/High] |\n   | Thin content | [X] pages | [Low/Med/High] |\n   | Redirect chains | [X] found | [Low/Med/High] |\n   | Orphan pages | [X] found | [Low/Med/High] |\n   \n   **Crawlability Score**: [X]/10\n   ```\n\n2. **Audit Indexability**\n\n   ```markdown\n   ## Indexability Analysis\n   \n   ### Index Status Overview\n   \n   | Metric | Count | Notes |\n   |--------|-------|-------|\n  "
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Validation Checkpoints] ### Input Validation\n- [ ] Site URL or domain clearly specified\n- [ ] Access to technical data (robots.txt, sitemap, or crawl results)\n- [ ] Performance metrics available (via ~~page speed tool or screenshots)\n\n### Output Validation\n- [ ] Every recommendation cites specific data points (not generic advice)\n- [ ] All issues include affected URLs or page counts\n- [ ] Performance metrics include actual numbers with units (seconds, KB, etc.)\n- [ ] Source of each data point clearly stated (~~web crawler data, ~~page speed tool, user-provided, or estimated)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Example] **User**: \"Check the technical SEO of cloudhosting.com\"\n\n**Output**:\n\n```markdown\n# Technical SEO Audit Report\n\n**Domain**: cloudhosting.com\n**Audit Date**: 2024-09-15\n**Pages Analyzed**: 312"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Crawlability Analysis] ### Robots.txt Review\n\n**URL**: cloudhosting.com/robots.txt\n**Status**: Found\n\n| Check | Status | Notes |\n|-------|--------|-------|\n| File exists | ✅ | 200 response |\n| Valid syntax | ⚠️ | Wildcard pattern `Disallow: /*?` too aggressive — blocks faceted pages |\n| Sitemap declared | ❌ | No Sitemap directive in robots.txt |\n| Important pages blocked | ⚠️ | /pricing/ blocked by `Disallow: /pricing` rule |\n| Assets blocked | ✅ | CSS/JS accessible |\n\n**Issues Found**:\n- Sitemap URL not declared in robots.txt\n- `/pricing/` inadvertently blocked — high-value commercial page\n\n### XML Sitemap Review\n\n**Sitemap URL**: cloudhosting.com/sitemap.xml\n**Status**: Found (not referenced in robots.txt)\n\n| Check | Status | Notes |\n|-------|--------|-------|\n| Sitemap exists | ✅ | Valid XML, 287 URLs |\n| Only indexable URLs | ❌ | 23 noindex URLs included |\n| Includes lastmod | ⚠️ | All dates set to 2023-01-01 — not accurate |\n\n**Crawlability Score**: 5/10"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Performance Analysis] ### Core Web Vitals\n\n| Metric | Mobile | Desktop | Target | Status |\n|--------|--------|---------|--------|--------|\n| LCP (Largest Contentful Paint) | 4.8s | 2.1s | <2.5s | ❌ Mobile / ✅ Desktop |\n| FID (First Input Delay) | 45ms | 12ms | <100ms | ✅ / ✅ |\n| CLS (Cumulative Layout Shift) | 0.24 | 0.08 | <0.1 | ❌ Mobile / ✅ Desktop |\n| INP (Interaction to Next Paint) | 380ms | 140ms | <200ms | ❌ Mobile / ✅ Desktop |\n\n### Additional Performance Metrics\n\n| Metric | Value | Status |\n|--------|-------|--------|\n| Time to First Byte (TTFB) | 1,240ms | ❌ |\n| Page Size | 3.8MB | ❌ |\n| Requests | 94 | ⚠️ |\n\n**LCP Issues**:\n- Uncompressed hero image (2.4MB PNG): Convert to WebP, est. save 1.9MB\n- No CDN detected: TTFB 1,240ms from origin server\n\n**CLS Issues**:\n- Ad banner at top of page injects without reserved height (0.18 shift contribution)\n\n**Performance Score**: 3/10"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Security Analysis] ### HTTPS Status\n\n| Check | Status | Notes |\n|-------|--------|-------|\n| SSL certificate valid | ✅ | Expires: 2025-03-22 |\n| HTTPS enforced | ⚠️ | http://cloudhosting.com returns 200 instead of 301 redirect |\n| Mixed content | ❌ | 7 images loaded over HTTP on /features/ page |\n| HSTS enabled | ❌ | Header not present |\n\n**Security Score**: 5/10"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Structured Data Analysis] ### Schema Markup Found\n\n| Schema Type | Pages | Valid | Errors |\n|-------------|-------|-------|--------|\n| Organization | 1 (homepage) | ✅ | None |\n| Article | 0 | — | Missing on 48 blog posts |\n| Product | 0 | — | Missing on 5 plan pages |\n| FAQ | 0 | — | Missing on 12 pages with FAQ content |\n\n**Structured Data Score**: 3/10"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Overall Technical Health: 42/100] ```\nScore Breakdown:\n█████░░░░░ Crawlability: 5/10\n██████░░░░ Indexability: 6/10\n███░░░░░░░ Performance: 3/10\n██████░░░░ Mobile: 6/10\n█████░░░░░ Security: 5/10\n██████░░░░ URL Structure: 6/10\n███░░░░░░░ Structured Data: 3/10\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Priority Issues] ### 🔴 Critical (Fix Immediately)\n1. **Mobile LCP 4.8s (target <2.5s)** — Compress hero image to WebP (est. save 1.9MB) and implement a CDN to reduce TTFB from 1,240ms to <400ms.\n\n### 🟡 Important (Fix Soon)\n2. **HTTP not redirecting to HTTPS** — Add 301 redirect from http:// to https:// and enable HSTS header. 7 mixed-content images on /features/ need URL updates.\n\n### 🟢 Minor (Optimize)\n3. **No Article/FAQ schema on blog posts** — Add Article schema to 48 blog posts and FAQ schema to 12 FAQ pages for rich result eligibility.\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Technical SEO Checklist] ```markdown\n### Crawlability\n- [ ] robots.txt is valid and not blocking important content\n- [ ] XML sitemap exists and is submitted to ~~search console\n- [ ] No crawl errors in ~~search console\n- [ ] No redirect chains or loops\n\n### Indexability  \n- [ ] Important pages are indexable\n- [ ] Canonical tags are correct\n- [ ] No duplicate content issues\n- [ ] Pagination is handled correctly\n\n### Performance\n- [ ] Core Web Vitals pass\n- [ ] Page speed under 3 seconds\n- [ ] Images are optimized\n- [ ] JS/CSS are minified\n\n### Mobile\n- [ ] Mobile-friendly test passes\n- [ ] Viewport is configured\n- [ ] Touch elements are properly sized\n\n### Security\n- [ ] HTTPS is enforced\n- [ ] SSL certificate is valid\n- [ ] No mixed content\n- [ ] Security headers present\n\n### Structure\n- [ ] URLs are clean and descriptive\n- [ ] Site architecture is logical\n- [ ] Internal linking is strong\n```"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Tips for Success] 1. **Prioritize by impact** - Fix critical issues first\n2. **Monitor continuously** - Use ~~search console alerts\n3. **Test changes** - Verify fixes work before deploying widely\n4. **Document everything** - Track changes for troubleshooting\n5. **Regular audits** - Schedule quarterly technical reviews"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Technical SEO Severity Framework] ### Issue Classification\n\n| Severity | Impact Description | Examples | Response Time |\n|----------|-------------------|---------|---------------|\n| **Critical** | Prevents indexation or causes site-wide issues | Robots.txt blocking site, noindex on key pages, site-wide 500 errors | Same day |\n| **High** | Significantly impacts rankings or user experience | Slow page speed, missing hreflang, duplicate content, redirect chains | Within 1 week |\n| **Medium** | Affects specific pages or has moderate impact | Missing schema, suboptimal canonicals, thin content pages | Within 1 month |\n| **Low** | Minor optimization opportunities | Image compression, minor CLS issues, non-essential schema missing | Next quarter |\n\n### Technical Debt Prioritization Matrix\n\n| Factor | Weight | Assessment |\n|--------|--------|-----------|\n| Pages affected | 30% | Site-wide > Section > Single page |\n| Revenue impact | 25% | Revenue pages > Blog > Utility pages |\n| Fix difficulty | 20% | Config change < Template change < Code rewrite |\n| Competitive impact | 15% | Competitors passing you > parity > you ahead |\n| Crawl budget waste | 10% | High waste > Moderate > Minimal |"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Core Web Vitals Optimization Quick Reference] ### LCP (Largest Contentful Paint) Optimization\n\n| Root Cause | Detection | Fix |\n|-----------|-----------|-----|\n| Large hero image | PageSpeed Insights | Serve WebP, resize to container, add loading=\"lazy\" |\n| Render-blocking CSS/JS | DevTools Coverage | Defer non-critical, inline critical CSS |\n| Slow server response | TTFB >800ms | CDN, server-side caching, upgrade hosting |\n| Third-party scripts | DevTools Network | Defer/async, use facade pattern |\n\n### CLS (Cumulative Layout Shift) Optimization\n\n| Root Cause | Detection | Fix |\n|-----------|-----------|-----|\n| Images without dimensions | DevTools | Add explicit width/height attributes |\n| Ads/embeds without reserved space | Visual inspection | Set min-height on containers |\n| Web fonts causing FOUT | DevTools | font-display: swap + preload fonts |\n| Dynamic content injection | Visual inspection | Reserve space with CSS |\n\n### INP (Interaction to Next Paint) Optimization\n\n| Root Cause | Detection | Fix |\n|-----------|-----------|-----|\n| Long JavaScript tasks | DevTools Performance | Break into smaller tasks, use requestIdleCallback |\n| Heavy event handlers | DevTools | Debounce/throttle, use passive listeners |\n| Main thread blocking | DevTools | Web workers for heavy computation |"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Reference Materials] - [robots.txt Reference](./references/robots-txt-reference.md) - Syntax guide, templates, common configurations\n- [HTTP Status Codes](./references/http-status-codes.md) - SEO impact of each status code, redirect best practices"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Related Skills] - [on-page-seo-auditor](../on-page-seo-auditor/) — On-page SEO audit\n- [schema-markup-generator](../../build/schema-markup-generator/) — Fix schema issues\n- [performance-reporter](../../monitor/performance-reporter/) — Monitor improvements\n- [internal-linking-optimizer](../internal-linking-optimizer/) — Fix link issues\n- [alert-manager](../../monitor/alert-manager/) — Set up alerts for technical issues found\n- [content-quality-auditor](../../cross-cutting/content-quality-auditor/) — Full 80-item CORE-EEAT audit"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "technical_seo_checker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "",
+    "extra": {
+      "author": "aaron-he-zhu",
+      "version": "2.0.0",
+      "geo-relevance": "low",
+      "tags": [
+        "seo",
+        "technical seo",
+        "page speed",
+        "core web vitals",
+        "crawlability",
+        "indexability",
+        "mobile-friendly",
+        "site speed",
+        "security audit"
+      ],
+      "triggers": [
+        "technical SEO audit",
+        "check page speed",
+        "crawl issues",
+        "Core Web Vitals",
+        "site indexing problems",
+        "mobile-friendly check",
+        "site speed",
+        "my site is slow",
+        "Google can't crawl my site",
+        "mobile issues",
+        "indexing problems"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaron-he-zhu/technical-seo-checker/SKILL.md"
+}

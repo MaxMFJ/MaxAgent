@@ -1,0 +1,123 @@
+{
+  "id": "openclaw_skill_gotchi-channeling",
+  "description": "Autonomous Aavegotchi Alchemica channeling via Bankr wallet. Daily harvesting from your Aaltar installation on your REALM parcels. No signature required - secure, automated, and frenly!",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gotchi Channeling 🔮\n\nAutonomous Alchemica harvesting for your Aavegotchi parcels. Daily channeling automation that's secure, simple, and signature-free!"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What is Channeling?] **Alchemical Channeling** lets your Aavegotchi harvest Alchemica (FUD, FOMO, ALPHA, KEK) from the Gotchiverse atmosphere using an Aaltar installation on your REALM parcel.\n\n**Rewards:** 20-70+ FUD, 10-35+ FOMO, 5-17+ ALPHA, 2-7+ KEK per channel\n**Cooldown:** 24 hours per gotchi\n**Requirements:** Aaltar installation, parcel ownership"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Features] ✅ **Daily autonomous channeling** - Set it and forget it\n✅ **Bankr wallet integration** - No private keys exposed\n✅ **Multi-gotchi support** - Channel all your gotchis\n✅ **Smart cooldown checking** - Won't waste gas on blocked txs\n✅ **Signature-free** - No backend API needed (legacy param ignored)\n✅ **Transaction tracking** - Full logs and history\n✅ **Reminder system** - Optional notifications"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Check cooldown** - Reads last channeled timestamp from contract\n2. **Build transaction** - Creates calldata for `channelAlchemica()`\n3. **Submit via Bankr** - Secure wallet handles signing & submission\n4. **Harvest Alchemica** - FUD, FOMO, ALPHA, KEK minted to your wallet\n5. **Wait 24h** - Cooldown resets, ready for next channel"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Configure Your Parcels & Gotchis\n\nCreate `~/.openclaw/workspace/skills/gotchi-channeling/config.json`:\n\n```json\n{\n  \"realmDiamond\": \"0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372\",\n  \"rpcUrl\": \"https://mainnet.base.org\",\n  \"chainId\": 8453,\n  \"channeling\": [\n    {\n      \"parcelId\": \"867\",\n      \"gotchiId\": \"9638\",\n      \"description\": \"entry-instead-social + aaigotchi\"\n    }\n  ],\n  \"enableReminders\": true,\n  \"reminderHourUTC\": 9\n}\n```\n\n**Multiple gotchis example:**\n\n```json\n{\n  \"realmDiamond\": \"0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372\",\n  \"rpcUrl\": \"https://mainnet.base.org\",\n  \"chainId\": 8453,\n  \"channeling\": [\n    {\n      \"parcelId\": \"867\",\n      \"gotchiId\": \"9638\",\n      \"description\": \"Parcel #867 + Gotchi #9638\"\n    },\n    {\n      \"parcelId\": \"867\",\n      \"gotchiId\": \"10052\",\n      \"description\": \"Parcel #867 + Gotchi #10052\"\n    },\n    {\n      \"parcelId\": \"1234\",\n      \"gotchiId\": \"21785\",\n      \"description\": \"Parcel #1234 + Gotchi #21785\"\n    }\n  ]\n}\n```\n\n### 2. Verify Bankr Configuration\n\n```bash\n# Check Bankr is configured\ncat ~/.openclaw/skills/bankr/config.json\n\n# Should contain:\n# {\n#   \"apiKey\": \"your-bankr-api-key\"\n# }\n```\n\n### 3. Test Single Channel\n\n```bash\n# Channel one gotchi manually\ncd ~/.openclaw/workspace/skills/gotchi-channeling\n./scripts/channel.sh 9638 867\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage] ### Manual Channeling\n\n**Single gotchi:**\n```bash\nchannel.sh <gotchi-id> <parcel-id>\nchannel.sh 9638 867\n```\n\n**Check if ready:**\n```bash\ncheck-cooldown.sh <gotchi-id>\ncheck-cooldown.sh 9638\n```\n\n**Channel all configured gotchis:**\n```bash\nchannel-all.sh\n```\n\n### Conversational Interface\n\n**Simple commands:**\n```\nUser: \"Channel my gotchi\"\nAAI: ✅ Gotchi #9638 channeled on Parcel #867!\n     Earned: 135.20 FUD, 67.60 FOMO, 33.80 ALPHA, 13.52 KEK\n     Next channel: 2026-02-22 03:25 UTC\n\nUser: \"Channel all gotchis\"\nAAI: 👻 Channeling all configured gotchis...\n     ✅ #9638 → 250.12 Alchemica\n     ⏰ #10052 → Wait 8h 23m\n     ✅ #21785 → 187.45 Alchemica\n     \n     Total harvested: 437.57 Alchemica\n\nUser: \"When can I channel?\"\nAAI: 👻 Channeling Status:\n     #9638 → Ready now! ✅\n     #10052 → Ready in 3h 42m\n     #21785 → Ready in 15h 8m\n```\n\n### Automated Daily Channeling\n\n**Set up cron job:**\n\n```bash\n# Channel all gotchis daily at 9 AM UTC\n0 9 * * * cd ~/.openclaw/workspace/skills/gotchi-channeling && ./scripts/channel-all.sh >> /tmp/channeling.log 2>&1\n```\n\n**Or use OpenClaw scheduler:**\n```bash\n# Add to your workspace cron config\n{\n  \"schedule\": \"0 9 * * *\",\n  \"task\": \"cd ~/.openclaw/workspace/skills/gotchi-channeling && ./scripts/channel-all.sh\",\n  \"description\": \"Daily Gotchi channeling at 9 AM UTC\"\n}\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Contract Details] ### REALM Diamond (Base)\n**Address:** `0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372`\n\n### Function: channelAlchemica\n\n```solidity\nfunction channelAlchemica(\n    uint256 _realmId,      // Parcel ID (e.g., 867)\n    uint256 _gotchiId,     // Gotchi ID (e.g., 9638)\n    uint256 _lastChanneled, // Last channel timestamp (pass 0)\n    bytes memory _signature // Legacy param - IGNORED (pass 0x)\n) external whenNotPaused gameActive\n```\n\n**Parameters:**\n- `_realmId` - Your REALM parcel token ID\n- `_gotchiId` - Your Aavegotchi token ID\n- `_lastChanneled` - Pass `0` (contract will validate)\n- `_signature` - Pass `0x` (legacy param, now ignored)\n\n**Cooldown:** 24 hours (43200 seconds)\n\n**Requirements:**\n- Must own the parcel (or have access rights)\n- Aaltar must be equipped on parcel\n- 24 hours must have passed since last channel\n- Gotchi must exist and you must own it\n\n### Alchemica Token Addresses (Base)\n\n- **FUD:** `0x2028b4043e6722ea164946c82fe806c4a43a0ff4`\n- **FOMO:** `0xa32137bfb57d2b6a9fd2956ba4b54741a6d54b58`\n- **ALPHA:** `0x15e7cac885e3730ce6389447bc0f7ac032f31947`\n- **KEK:** `0xe52b9170ff4ece4c35e796ffd74b57dec68ca0e5`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Reward Calculation] Alchemica amount depends on your gotchi's **Kinship score**.\n\n**Formula:**\n```\nbaseAmount = parcelBonus + aaltarLevel\nactualAmount = baseAmount * (kinship / 100)\n```\n\n**Typical rewards per channel:**\n- **FUD:** 135.20 (20-70 range)\n- **FOMO:** 67.60 (10-35 range)\n- **ALPHA:** 33.80 (5-17 range)\n- **KEK:** 13.52 (2-7 range)\n\n**Total:** ~250 Alchemica tokens per channel\n\n**Maximize rewards:**\n- ✅ Keep kinship high (pet your gotchi daily!)\n- ✅ Upgrade your Aaltar installation\n- ✅ Choose parcels with Alchemica boosts"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Scripts] ### channel.sh\nSingle gotchi channeling with full output\n\n**Usage:**\n```bash\n./scripts/channel.sh <gotchi-id> <parcel-id>\n```\n\n**Output:**\n- Checks cooldown\n- Builds transaction\n- Submits via Bankr\n- Shows reward amounts\n- Displays transaction hash\n\n### channel-all.sh\nBatch channel all configured gotchis\n\n**Usage:**\n```bash\n./scripts/channel-all.sh\n```\n\n**Features:**\n- Reads from config.json\n- Checks each gotchi cooldown\n- Skips if not ready\n- Batches ready gotchis\n- Shows summary report\n\n### check-cooldown.sh\nQuery on-chain cooldown status\n\n**Usage:**\n```bash\n./scripts/check-cooldown.sh <gotchi-id>\n```\n\n**Output:**\n```\n👻 Gotchi #9638 Channeling Status\n==================================\nLast channeled: 2026-02-21 03:25:17 UTC\nNext available: 2026-02-22 03:25:17 UTC\nTime remaining: 0h 0m (Ready! ✅)\n```\n\n### channel-status.sh\nMulti-gotchi status dashboard\n\n**Usage:**\n```bash\n./scripts/channel-status.sh\n```\n\n**Output:**\n```\n🔮 Gotchi Channeling Status\n============================\n\n#9638 (Parcel #867)\n✅ Ready to channel!\nLast: 24h 12m ago\n\n#10052 (Parcel #867)\n⏰ Wait 3h 42m\nLast: 20h 18m ago\n\n#21785 (Parcel #1234)\n⏰ Wait 15h 8m\nLast: 8h 52m ago\n\nSummary: 1 ready, 2 waiting\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Access Right - Only Owner\"**\n- You must own the parcel or have access rights\n- Check parcel ownership on BaseScan\n- Verify you're using the correct wallet\n\n**\"Gotchi can't channel yet\"**\n- 24 hour cooldown hasn't passed\n- Use `check-cooldown.sh` to see exact time\n- Wait until cooldown completes\n\n**\"Must equip Altar\"**\n- Your parcel needs an Aaltar installation\n- Check installations on https://gv3d.gotchiverse.io/\n- Equip an Aaltar before channeling\n\n**\"Transaction failed\"**\n- Check you have ETH for gas on Base\n- Verify contract address is correct\n- Ensure Bankr wallet is funded\n\n**\"No Alchemica received\"**\n- Check transaction on BaseScan\n- Look for Transfer events\n- Verify token balances in your wallet"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Security] ✅ **Bankr-only integration** - No private keys used\n✅ **Secure transaction signing** - Remote signing by Bankr\n✅ **No key exposure** - Keys never loaded into memory\n✅ **API key authentication** - Protected Bankr access\n✅ **Read-only cooldown checks** - Safe on-chain queries\n✅ **Transaction logging** - Full audit trail"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Monitoring] **Check channeling history:**\n```bash\n# View recent channels\ncat /tmp/channeling.log | tail -50\n\n# Count successful channels\ngrep \"SUCCESS\" /tmp/channeling.log | wc -l\n\n# Calculate total Alchemica harvested\ngrep \"Earned:\" /tmp/channeling.log | awk '{sum+=$2} END {print sum \" total Alchemica\"}'\n```\n\n**Track token balances:**\n```bash\n# Check Alchemica balances\n./scripts/check-balances.sh\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[FAQ] **Q: How often can I channel?**\nA: Once every 24 hours per gotchi.\n\n**Q: Do I need different parcels for different gotchis?**\nA: No! Multiple gotchis can channel from the same parcel (each has its own 24h cooldown).\n\n**Q: What if I have multiple Aaltars?**\nA: Each Aaltar has its own cooldown. You can configure multiple parcel+gotchi combinations.\n\n**Q: Does the signature parameter matter?**\nA: No! It's a legacy parameter that's now ignored. Always pass `0x`.\n\n**Q: Can I channel someone else's gotchi?**\nA: No. You must own both the parcel and the gotchi (or have access rights).\n\n**Q: What happens to the Alchemica?**\nA: It's minted directly to your wallet as ERC20 tokens on Base.\n\n**Q: How much does it cost?**\nA: ~$0.01-0.05 in gas per channel (Base has low fees).\n\n**Q: Can I automate this?**\nA: Yes! Use cron or OpenClaw scheduler for daily automation."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Changelog] ### v1.0.0 (2026-02-21)\n- ✅ Initial release\n- ✅ Signature-free channeling (legacy param ignored)\n- ✅ Bankr wallet integration\n- ✅ Multi-gotchi support\n- ✅ Automated daily channeling\n- ✅ Cooldown checking\n- ✅ Transaction logging\n- ✅ Reward tracking"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Support] - **Contract:** 0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372\n- **Chain:** Base (8453)\n- **Docs:** https://docs.gotchiverse.io/\n- **Discord:** https://discord.gg/aavegotchi\n\n---\n\n**Made with 💜 by AAI 👻**\n\n*Channel your way to Alchemica riches!*\n\nLFGOTCHi! 🦞🔮💎"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gotchi_channeling"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "cast",
+            "jq",
+            "curl"
+          ],
+          "env": [
+            "BANKR_API_KEY"
+          ]
+        },
+        "primaryEnv": "BANKR_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaigotchi/gotchi-channeling/SKILL.md"
+}

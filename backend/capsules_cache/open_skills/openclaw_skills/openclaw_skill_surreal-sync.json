@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_surreal-sync",
+  "description": "Data migration and synchronization to SurrealDB from MongoDB, PostgreSQL, MySQL, Neo4j, Kafka, and JSONL. Full and incremental CDC sync. Part of the surreal-skills collection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Surreal-Sync -- Data Migration and Synchronization\n\nSurreal-Sync is a CLI tool for migrating data from various database sources to\nSurrealDB with full and incremental synchronization via Change Data Capture (CDC)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Supported Sources] | Source | Full Sync | Incremental CDC | Method |\n|--------|-----------|----------------|--------|\n| MongoDB | Yes | Yes | Change streams |\n| MySQL | Yes | Yes | Trigger-based CDC + sequence checkpoints |\n| PostgreSQL (triggers) | Yes | Yes | Trigger-based CDC + sequence checkpoints |\n| PostgreSQL (wal2json) | Yes | Yes | Logical replication with wal2json plugin |\n| Neo4j | Yes | Yes | Timestamp-based tracking |\n| JSONL Files | Yes | N/A | Batch import from JSON Lines |\n| Apache Kafka | Yes | Yes | Consumer subscriptions with deduplication |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Install surreal-sync (Rust binary)\ncargo install surreal-sync\n\n# Full sync from PostgreSQL (trigger-based)\nsurreal-sync from postgres trigger-full \\\n  --connection-string \"postgresql://user:pass@localhost/mydb\" \\\n  --surreal-endpoint \"http://localhost:8000\" \\\n  --surreal-username root \\\n  --surreal-password root \\\n  --to-namespace prod \\\n  --to-database main\n\n# Incremental CDC from PostgreSQL (wal2json)\nsurreal-sync from postgres wal2json \\\n  --connection-string \"postgresql://user:pass@localhost/mydb\" \\\n  --surreal-endpoint \"http://localhost:8000\" \\\n  --surreal-username root \\\n  --surreal-password root \\\n  --to-namespace prod \\\n  --to-database main\n\n# Full sync from MongoDB\nsurreal-sync from mongo full \\\n  --connection-string \"mongodb://localhost:27017/mydb\" \\\n  --surreal-endpoint \"http://localhost:8000\" \\\n  --surreal-username root \\\n  --surreal-password root \\\n  --to-namespace prod \\\n  --to-database main\n\n# Batch import from JSONL\nsurreal-sync from jsonl import \\\n  --file data.jsonl \\\n  --surreal-endpoint \"http://localhost:8000\" \\\n  --surreal-username root \\\n  --surreal-password root \\\n  --to-namespace prod \\\n  --to-database main\n\n# Consume from Kafka\nsurreal-sync from kafka consume \\\n  --bootstrap-servers \"localhost:9092\" \\\n  --topic my-events \\\n  --surreal-endpoint \"http://localhost:8000\" \\\n  --surreal-username root \\\n  --surreal-password root \\\n  --to-namespace prod \\\n  --to-database main\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[CLI Pattern] ```\nsurreal-sync from <SOURCE> <COMMAND> \\\n  --connection-string [CONNECTION STRING] \\\n  --surreal-endpoint [SURREAL ENDPOINT] \\\n  --surreal-username [SURREAL USERNAME] \\\n  --surreal-password [SURREAL PASSWORD] \\\n  --to-namespace <NS> \\\n  --to-database <DB>\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Key Features] - Automatic schema inference and SurrealDB table creation\n- Record ID mapping from source primary keys\n- Relationship extraction and graph edge creation\n- Configurable batch sizes and parallelism\n- Resumable sync with checkpoint tracking\n- Deduplication for Kafka consumers"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Full Documentation] See the main skill's rule file for complete guidance:\n- **[rules/surreal-sync.md](../../rules/surreal-sync.md)** -- source configuration, schema mapping, CDC setup, conflict resolution, and production deployment\n- **[surrealdb/surreal-sync](https://github.com/surrealdb/surreal-sync)** -- upstream repository"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "surreal_sync"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "version": "1.0.4",
+      "author": "24601",
+      "parent_skill": "surrealdb",
+      "snapshot_date": "2026-02-19",
+      "upstream": {
+        "repo": "surrealdb/surreal-sync",
+        "release": "v0.3.4",
+        "sha": "8166b2b041b1"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/24601/surrealdb/skills/surreal-sync/SKILL.md"
+}

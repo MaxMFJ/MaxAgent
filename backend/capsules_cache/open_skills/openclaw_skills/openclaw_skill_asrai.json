@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_asrai",
+  "description": "Crypto market analysis using Asrai API. Covers technical analysis, screeners, sentiment, forecasting, smart money, Elliott Wave, cashflow, DEX data, and AI-powered market insights. Use when asked about crypto signals, market overview, coin analysis, or anything crypto-related. Endpoints are pay-per-use via x402 on Base mainnet ($0.05 USDC per call).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Asrai — Crypto Analysis via x402"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[How to call endpoints] - Base URL: `https://x402.asrai.me`\r\n- Payment: x402 automatic payment via `asrai-mcp` MCP tools (already installed)\r\n- Each endpoint costs **$0.05 USDC** on Base mainnet ($0.10 for `/ai`)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Use the MCP tools] Use the installed `asrai` MCP tools — they handle x402 payment automatically:\r\n\r\n| Question type | Use tool |\r\n|---|---|\r\n| Market overview, what's moving | `market_overview` |\r\n| TA for a coin (signals, indicators) | `technical_analysis(symbol, timeframe)` |\r\n| Market mood, fear/greed, sentiment | `sentiment` |\r\n| Price forecast for a coin | `forecast(symbol)` |\r\n| Find coins by criteria | `screener(type)` |\r\n| Smart money, order blocks, FVGs | `smart_money(symbol, timeframe)` |\r\n| Elliott Wave count | `elliott_wave(symbol, timeframe)` |\r\n| Ichimoku cloud analysis | `ichimoku(symbol, timeframe)` |\r\n| Capital flow | `cashflow(mode, symbol)` |\r\n| Coin stats, info | `coin_info(symbol)` |\r\n| DEX token data | `dexscreener(contract_address)` |\r\n| Low cap tokens on a chain | `chain_tokens(chain, max_mcap)` |\r\n| Portfolio analysis | `portfolio(symbol)` |\r\n| Latest narratives/news | `channel_summary` |\r\n| Freeform crypto question | `ask_ai(question)` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output rules] - Keep responses **easy to scan**: short lines + whitespace + emoji section headers.\r\n- **Do not mention tools, endpoints, or x402 payments** in user-facing output.\r\n- Avoid low-liquidity noise: prefer coins appearing in 2+ lists with volume confirmation.\r\n- For core context use BTC/ETH daily signals as market thermometer."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Default analysis pattern] 1. **Set regime** — BTC/ETH trend + market mood\r\n2. **Find signals** — movers, volume anomalies, sentiment extremes\r\n3. **Translate to action** — 1–2 practical notes"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[References] - Full endpoint catalog: `skills/asrai/references/endpoints.md`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "asrai"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abuzerasr/asrai-x402/SKILL.md"
+}

@@ -1,0 +1,124 @@
+{
+  "id": "openclaw_skill_soulflow",
+  "description": "General-purpose AI workflow framework for OpenClaw. Build custom multi-step workflows for any task — dev, ops, research, content, or automation. Ships with dev workflow examples.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SoulFlow — Workflow Framework for OpenClaw\n\n**A framework for building custom AI workflows.** Each workflow is a series of steps that execute in isolated agent sessions with full tool access. Define your workflow in JSON, invoke it naturally, and let the agents handle the execution.\n\n**What you can build:**\n- Development pipelines (security audits, bug fixes, feature development)\n- Content workflows (research → draft → edit → publish)\n- Operations automation (deploy → verify → rollback-on-fail)\n- Research pipelines (gather → analyze → synthesize → report)\n- Any multi-step task that benefits from isolated, focused agent sessions\n\n**Ships with 3 example dev workflows** to show you how it works. Build your own for anything."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] **Natural language (easiest):**\nJust tell your agent what you need:\n- \"Run a security audit on my project at ~/myapp\"\n- \"Fix this bug: users can't login with Google OAuth in ~/webapp\"\n- \"Build a referral system for ~/webapp\"\n\nYour agent reads this SKILL.md and invokes SoulFlow automatically.\n\n**Command line:**\n```bash\ncd ~/.openclaw/workspace/soulflow\n\n# Run a security audit\nnode soulflow.js run security-audit \"Audit the codebase at ~/project for vulnerabilities\"\n\n# Fix a bug\nnode soulflow.js run bug-fix \"Login returns 500 when email has uppercase letters in ~/myapp\"\n\n# Build a feature\nnode soulflow.js run feature-dev \"Add dark mode toggle to the settings page in ~/myapp\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How It Works] SoulFlow connects to your local OpenClaw gateway via WebSocket and runs each workflow step as an isolated agent session. A dedicated `soulflow-worker` agent is auto-created with minimal context — no memory bleed from your main agent.\n\nEach step:\n1. Gets a fresh session (no context bloat)\n2. Receives the task + output from previous steps\n3. Has full tool access (read, write, edit, exec, browser)\n4. Must complete its work and report results\n\n**Auto-notifications (v1.1.0+):** When workflows complete, SoulFlow automatically notifies the main agent session with results. No need to manually check status."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Example Workflows (Included)] **These are examples to show what's possible. Build your own for any domain.**\n\n### security-audit\n**Scan → Prioritize → Fix → Verify**\nDevelopment example: Reads your source files, identifies vulnerabilities by severity, applies fixes, then verifies them.\n\n### bug-fix\n**Triage → Fix → Verify**\nDevelopment example: Investigates the root cause by reading code, applies the fix, then verifies it didn't introduce regressions.\n\n### feature-dev\n**Plan → Implement → Review**\nDevelopment example: Architects the implementation plan, writes the code, then reviews for quality and correctness.\n\n**Want content workflows? Research pipelines? Deploy automation?** Create your own `.workflow.json` — see Custom Workflows below."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ```bash\nnode soulflow.js run <workflow> \"<task>\"    # Run a workflow\nnode soulflow.js list                       # List available workflows\nnode soulflow.js runs                       # List past runs\nnode soulflow.js status [run-id]            # Check run status\nnode soulflow.js test                       # Test gateway connection\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Natural Language (via your agent)] **The agent knows how to invoke SoulFlow for you.** Just describe what you want:\n\n**Security audits:**\n- \"Audit my app for security issues\"\n- \"Check ~/myapp for vulnerabilities\"\n- \"Scan the codebase for security problems\"\n\n**Bug fixes:**\n- \"Fix this bug: login fails when...\"\n- \"There's a problem with the payment flow\"\n- \"Users are seeing 500 errors when they...\"\n\n**Features:**\n- \"Build a referral system\"\n- \"Add dark mode to the settings page\"\n- \"Implement OAuth login with Google\"\n\n**How it works:**\n1. You tell your agent what you need\n2. Your agent reads this SKILL.md\n3. Agent invokes `node soulflow.js run <workflow> \"<task>\"`\n4. SoulFlow runs the workflow and reports back\n\n**Pattern matching:** The agent matches your message to workflows:\n- Security audit → keywords: \"audit\", \"security\", \"scan\", \"vulnerabilit\"\n- Bug fix → keywords: \"fix\", \"bug\", \"broken\", \"not working\", \"error\"\n- Feature dev → keywords: \"build\", \"add\", \"implement\", \"create\", \"feature\"\n\n**No workflow matches?** Agent will ask which workflow you want or suggest creating a custom one."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Custom Workflows] **You can create workflows for ANY task.** Define them in JSON and place in the `workflows/` directory.\n\n### Creating via Chat\n\nTell your agent:\n> \"Create a SoulFlow workflow for [your use case]\"\n\nExamples:\n- \"Create a workflow for content publishing: research topic → draft article → edit → publish to blog\"\n- \"Create a workflow for deployment: run tests → build → deploy → verify health checks → rollback if failed\"\n- \"Create a workflow for weekly reports: gather metrics → analyze trends → generate summary → send email\"\n\nYour agent will:\n1. Design the workflow steps\n2. Write the `.workflow.json` file to `workflows/`\n3. Show you how to run it\n\n### Manual Creation\n\nCreate a `.workflow.json` file in the `workflows/` directory:\n\n```json\n{\n  \"id\": \"my-workflow\",\n  \"name\": \"My Custom Workflow\",\n  \"version\": 1,\n  \"description\": \"What this workflow does\",\n  \"steps\": [\n    {\n      \"id\": \"step1\",\n      \"name\": \"First Step\",\n      \"input\": \"Do this thing: {{task}}\",\n      \"expects\": \"STATUS: done\",\n      \"maxRetries\": 1\n    },\n    {\n      \"id\": \"step2\",\n      \"name\": \"Second Step\",\n      \"input\": \"Now do this based on step 1:\\n\\n{{step1_output}}\\n\\nOriginal task: {{task}}\",\n      \"expects\": \"STATUS: done\",\n      \"maxRetries\": 1\n    }\n  ]\n}\n```\n\n### Variables\n\n- `{{task}}` — The user's original task description\n- `{{stepid_output}}` — Full output from a previous step (e.g. `{{scan_output}}`)\n- Any `KEY: value` lines in step output become variables (e.g. `ROOT_CAUSE: ...` → `{{root_cause}}`)\n\n### Prompt Tips\n\nFor best results, write prompts that:\n- Explicitly tell the agent to use tools: \"Use `read` to examine the file\", \"Use `edit` to apply the fix\"\n- Say \"Do NOT just describe — actually do it\"\n- End with \"When done, end with: STATUS: done\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Architecture] - **Zero dependencies** — Pure Node.js 22 (native WebSocket)\n- **Gateway-native** — Connects via WebSocket with challenge-response auth\n- **Session isolation** — Each step in a fresh session\n- **Dedicated worker** — Auto-creates `soulflow-worker` agent with minimal brain files\n- **JSON state** — Run history saved to `~/.openclaw/workspace/.soulflow/runs/`\n- **10-minute timeout** per step (configurable)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Requirements] - OpenClaw 2026.2.x or later\n- Node.js 22+ (for native WebSocket)\n- Gateway with token auth configured"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Security & Permissions] **What SoulFlow does to your OpenClaw instance:**\n\n1. **Reads your gateway config** (`~/.openclaw/openclaw.json`) to obtain the authentication token needed to connect via WebSocket\n2. **Modifies your gateway config** (`~/.openclaw/openclaw.json`) via `config.patch` to register the soulflow-worker agent\n3. **Creates a dedicated worker agent** (`soulflow-worker`) with minimal brain files (SOUL.md only, no memory/history)\n4. **Copies authProfiles from existing agents** — Worker inherits credentials for external services (GitHub, cloud providers, etc.) that your other agents use\n5. **Grants the worker full tool access** (read, write, edit, exec, browser) — this is required for workflows to actually perform tasks\n6. **Writes run state** to `~/.openclaw/workspace/.soulflow/runs/` as JSON files\n\n**Why these permissions are needed:**\n- **Config read/write**: Required to authenticate with the gateway and register the worker agent (same as `openclaw` CLI tool)\n- **Agent creation**: Each workflow step runs in an isolated session to prevent context bleed\n- **authProfiles inheritance**: Allows workflows to interact with external services (e.g., git push, cloud API calls) using your existing credentials\n- **Full tools**: Workflows need real capabilities (e.g., security-audit reads files, bug-fix edits code, deploy-pipeline pushes to git)\n- **Filesystem write**: Stores workflow history and allows workflows to create/modify files\n\n**Security considerations:**\n- Worker agent has NO access to your main agent's memory or history\n- Worker DOES inherit your external service credentials (authProfiles) — can access GitHub, cloud APIs, etc.\n- Workflows run with YOUR permissions (same as running commands yourself)\n- Malicious workflows could read/modify files, run commands, or access external services\n- **Only install SoulFlow if you trust the skill author** (review code on GitHub first)\n- **Only run workflows you trust** — custom workflows from untrusted sources could exfiltrate data or mi"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[For Agents: How to Invoke SoulFlow] When the user requests a workflow (security audit, bug fix, feature build, etc.), you should:\n\n1. **Identify the workflow** by matching keywords:\n   - Security audit: \"audit\", \"security\", \"scan\", \"vulnerabilit\"\n   - Bug fix: \"fix\", \"bug\", \"broken\", \"not working\", \"error\"\n   - Feature dev: \"build\", \"add\", \"implement\", \"create\", \"feature\"\n   - Custom: check `workflows/*.workflow.json` for other options\n\n2. **Extract the task description** — the user's description of what they want done\n\n3. **Invoke SoulFlow** using exec:\n   ```bash\n   cd /root/.openclaw/workspace/soulflow && node soulflow.js run <workflow> \"<task>\"\n   ```\n\n4. **Monitor the run** — SoulFlow will output the run ID, then show progress as each step completes\n\n5. **Report results** — When complete, relay the final status to the user\n\n**Example:**\n```\nUser: \"Run a security audit on ~/myapp\"\nYou: [exec] cd /root/.openclaw/workspace/soulflow && node soulflow.js run security-audit \"Audit ~/myapp for vulnerabilities\"\n```\n\n**Creating workflows for users:**\nIf the user asks you to create a custom workflow:\n1. Design the workflow steps based on their requirements\n2. Write a `.workflow.json` file to `/root/.openclaw/workspace/soulflow/workflows/`\n3. Show them how to run it\n\nSee CONTRIBUTING.md for workflow design best practices."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "soulflow"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "⚙️",
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "config_files": [
+            "~/.openclaw/openclaw.json"
+          ]
+        },
+        "permissions": {
+          "config": {
+            "read": [
+              "~/.openclaw/openclaw.json"
+            ],
+            "write": [
+              "~/.openclaw/openclaw.json"
+            ]
+          },
+          "gateway": "modify",
+          "agents": "create",
+          "filesystem": {
+            "read": [
+              "~/.openclaw/workspace"
+            ],
+            "write": [
+              "~/.openclaw/workspace/.soulflow",
+              "~/.openclaw/agents/soulflow-worker"
+            ]
+          },
+          "credentials": "inherit"
+        },
+        "security_note": "Creates a dedicated 'soulflow-worker' agent with full tool access (read, write, edit, exec, browser) to execute workflow steps. Reads gateway config (~/.openclaw/openclaw.json) for authentication token. Modifies gateway config to add/manage worker agent. Worker inherits authProfiles from existing agents (grants access to external services like GitHub, cloud providers). All operations run locally with your existing OpenClaw permissions. Only install if you trust the skill author and have reviewed the code."
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xtommythomas-dev/soulflow/SKILL.md"
+}

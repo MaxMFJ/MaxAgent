@@ -1,0 +1,174 @@
+{
+  "id": "openclaw_skill_hookaido",
+  "description": "Operate Hookaido inbound/outbound webhook flows, queue triage, MCP workflows, and gRPC-pull workers. Use when tasks involve Hookaidofile authoring, `hookaido` CLI commands (`run`, `config fmt`, `config validate`, `mcp serve`), pull operations (`dequeue`/`ack`/`nack`/`extend`) over HTTP or gRPC, Admin API backlog/DLQ handling, or production hardening for webhook/webhooks ingress and delivery.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Hookaido"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Implement and troubleshoot Hookaido with a config-first workflow: edit `Hookaidofile`, validate, run, exercise ingress/pull flows, then diagnose queue health and DLQ behavior.\nUse conservative, reversible changes and validate before runtime operations."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Confirm target topology: inbound+pull (HTTP or gRPC), push outbound, or internal queue.\n2. Choose runtime mode and ensure `hookaido` exists where tools execute.\n   - Host-binary mode: use the install action from `metadata.openclaw.install`.\n   - Host fallback: run `bash {baseDir}/scripts/install_hookaido.sh` (pinned `v1.5.0`, SHA256-verified).\n   - Docker-sandbox mode: use a sandbox image that already includes `hookaido` (preferred), or install inside sandbox via `agents.defaults.sandbox.docker.setupCommand`.\n   - Keep host install actions available as fallback and to satisfy `metadata.openclaw.requires.bins`.\n3. Inspect and update `Hookaidofile` minimally.\n4. Run format and validation before starting or reloading:\n   - `hookaido config fmt --config ./Hookaidofile`\n   - `hookaido config validate --config ./Hookaidofile`\n5. Start runtime and verify health:\n   - `hookaido run --config ./Hookaidofile --db ./.data/hookaido.db`\n   - `curl http://127.0.0.1:2019/healthz?details=1`\n6. Validate end-to-end behavior:\n   - ingress request accepted and queued\n   - consumer `dequeue`/`ack`/`nack`/`extend` path works (HTTP pull, plus gRPC pull when enabled)\n7. For incidents, inspect backlog and DLQ first, then mutate."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Task Playbooks] ### Configure Ingress and Pull Consumption\n\n1. Define a route with explicit auth and pull path (HTTP pull, optional gRPC pull worker listener).\n2. Keep secrets in env/file refs, never inline.\n3. Verify route and global pull auth are consistent.\n4. Test with a real webhook payload and a dequeue/ack cycle.\n\nPrefer this baseline:\n\n```hcl\ningress {\n  listen :8080\n}\n\npull_api {\n  listen :9443\n  grpc_listen :9943 # optional gRPC pull-worker listener\n  auth token env:HOOKAIDO_PULL_TOKEN\n}\n\n/webhooks/github {\n  auth hmac env:HOOKAIDO_INGRESS_SECRET\n  pull { path /pull/github }\n}\n```\n\n### Configure Push Delivery\n\n1. Use push delivery only when inbound connectivity to the service is acceptable.\n2. Set timeout and retry policy explicitly.\n3. Validate downstream idempotency since delivery is at-least-once.\n\n```hcl\n/webhooks/stripe {\n  auth hmac env:STRIPE_SIGNING_SECRET\n  deliver \"https://billing.internal/stripe\" {\n    retry exponential max 8 base 2s cap 2m jitter 0.2\n    timeout 10s\n  }\n}\n```\n\n### Operate Queue and DLQ\n\n1. Start with health details and backlog endpoints.\n2. Inspect DLQ before requeue or delete.\n3. If requeueing many items, explain expected impact and rollback path.\n4. Require clear operator reason strings for mutating admin calls.\n\nUse:\n\n- `GET /healthz?details=1`\n- `GET /backlog/trends`\n- `GET /dlq`\n- `POST /dlq/requeue`\n- `POST /dlq/delete`\n\n### Use MCP Mode for AI Operations\n\n1. Default to `--role read` for diagnostics.\n2. Enable mutations only with explicit operator intent:\n   - `--enable-mutations --role operate --principal <identity>`\n3. Enable runtime control only for admin workflows:\n   - `--enable-runtime-control --role admin --pid-file <path>`\n4. Include `reason` for mutation calls and keep it specific."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Validation Checklist] - `hookaido config validate` returns success before runtime start/reload.\n- Health endpoint is reachable and reports expected queue/backend state.\n- Pull consumer can `dequeue`, `ack`, `nack`, and `extend` with valid token (HTTP and optional gRPC transport).\n- For push mode, retry/timeout behavior is explicitly configured.\n- Any DLQ mutation is scoped, justified, and logged."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Safety Rules] - Do not disable auth to \"make tests pass.\"\n- Do not suggest direct mutations before read-only diagnostics.\n- Treat queue operations as at-least-once; require idempotent handlers.\n- Keep secrets in `env:` or `file:` refs."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[References] - Read `references/operations.md` for command snippets and API payload templates."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "hookaido"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "homepage": "https://github.com/nuetzliches/hookaido",
+        "requires": {
+          "bins": [
+            "hookaido"
+          ]
+        },
+        "install": [
+          {
+            "id": "download-darwin-amd64",
+            "kind": "download",
+            "os": [
+              "darwin"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_darwin_amd64.tar.gz",
+            "archive": "tar.gz",
+            "extract": true,
+            "stripComponents": 1,
+            "targetDir": "~/.local/bin",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (macOS amd64)"
+          },
+          {
+            "id": "download-darwin-arm64",
+            "kind": "download",
+            "os": [
+              "darwin"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_darwin_arm64.tar.gz",
+            "archive": "tar.gz",
+            "extract": true,
+            "stripComponents": 1,
+            "targetDir": "~/.local/bin",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (macOS arm64)"
+          },
+          {
+            "id": "download-linux-amd64",
+            "kind": "download",
+            "os": [
+              "linux"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_linux_amd64.tar.gz",
+            "archive": "tar.gz",
+            "extract": true,
+            "stripComponents": 1,
+            "targetDir": "~/.local/bin",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (Linux amd64)"
+          },
+          {
+            "id": "download-linux-arm64",
+            "kind": "download",
+            "os": [
+              "linux"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_linux_arm64.tar.gz",
+            "archive": "tar.gz",
+            "extract": true,
+            "stripComponents": 1,
+            "targetDir": "~/.local/bin",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (Linux arm64)"
+          },
+          {
+            "id": "download-windows-amd64",
+            "kind": "download",
+            "os": [
+              "win32"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_windows_amd64.zip",
+            "archive": "zip",
+            "extract": true,
+            "targetDir": "~/.openclaw/tools/hookaido",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (Windows amd64)"
+          },
+          {
+            "id": "download-windows-arm64",
+            "kind": "download",
+            "os": [
+              "win32"
+            ],
+            "url": "https://github.com/nuetzliches/hookaido/releases/download/v1.5.0/hookaido_v1.5.0_windows_arm64.zip",
+            "archive": "zip",
+            "extract": true,
+            "targetDir": "~/.openclaw/tools/hookaido",
+            "bins": [
+              "hookaido"
+            ],
+            "label": "Download hookaido v1.5.0 (Windows arm64)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/7schmiede/hookaido/SKILL.md"
+}

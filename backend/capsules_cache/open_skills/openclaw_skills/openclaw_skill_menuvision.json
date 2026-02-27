@@ -1,0 +1,157 @@
+{
+  "id": "openclaw_skill_menuvision",
+  "description": "Build beautiful HTML photo menus from restaurant URLs, PDFs, or photos using Gemini Vision and AI image generation",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # MenuVision - Restaurant Menu Builder\r\n\r\nBuild a beautiful HTML photo menu for any restaurant from URLs, PDFs, or photos."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] When the user wants to create a digital menu for a restaurant. Triggers: \"build a menu\", \"create restaurant menu\", \"menu from PDF\", \"menu from photos\", \"digital menu\", \"menuvision\"."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```\r\n1. Extract:  URL/PDF/photo  →  menu_data.json     (Gemini Vision)\r\n2. Generate: menu_data.json →  images/*.jpg        (Gemini Image)\r\n3. Build:    menu_data.json + images → Menu.html   (CSS/JS inline, images relative)\r\n```\r\n\r\n### Example usage (ask the AI):\r\n- \"Build a menu for https://www.shoyu.at/menus\"\r\n- \"Create a photo menu from this PDF\" (attach file)\r\n- \"Make a digital menu from these photos of a restaurant menu\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Pipeline Components] The AI agent creates these scripts:\r\n\r\n| Script | Purpose |\r\n|--------|---------|\r\n| `extract_menu.py` | Extract menu data from URL/PDF/photo → structured JSON |\r\n| `generate_images.py` | Generate food photos via Gemini Image |\r\n| `build_menu.py` | Build HTML menu from JSON + images (CSS/JS inline, images as relative paths) |\r\n| `publish_menu.py` | (Optional) Publish HTML to GitHub Pages |\r\n\r\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[DATA CONTRACT (Critical)] All three pipeline stages share this exact JSON schema. The AI agent MUST use these field names — any deviation breaks the pipeline.\r\n\r\n### menu_data.json Schema\r\n\r\n```json\r\n{\r\n  \"restaurant\": {\r\n    \"name\": \"Restaurant Name (if visible)\",\r\n    \"cuisine\": \"cuisine type (Chinese, Indian, Austrian, Japanese, etc.)\",\r\n    \"tagline\": \"any subtitle or tagline\"\r\n  },\r\n  \"sections\": [\r\n    {\r\n      \"title\": \"Section Name (in primary language)\",\r\n      \"title_secondary\": \"Section name in secondary language (if present, else empty string)\",\r\n      \"category\": \"food or drink\",\r\n      \"note\": \"Any section note (e.g. 'served with rice', 'Mon-Fri 11-15h')\",\r\n      \"items\": [\r\n        {\r\n          \"code\": \"M1\",\r\n          \"name\": \"Dish Name (primary language)\",\r\n          \"name_secondary\": \"Name in secondary language (if present)\",\r\n          \"description\": \"Brief description (primary language)\",\r\n          \"description_secondary\": \"Description in secondary language (if present)\",\r\n          \"price\": \"12,90\",\r\n          \"price_prefix\": \"\",\r\n          \"allergens\": \"A C F\",\r\n          \"dietary\": [\"vegan\", \"spicy\"],\r\n          \"variants\": []\r\n        }\r\n      ]\r\n    }\r\n  ],\r\n  \"allergen_legend\": {\r\n    \"A\": \"Gluten\",\r\n    \"B\": \"Crustaceans\"\r\n  },\r\n  \"metadata\": {\r\n    \"languages\": [\"German\", \"English\"],\r\n    \"currency\": \"EUR\"\r\n  }\r\n}\r\n```\r\n\r\n### Field Reference\r\n\r\n| Field | Type | Required | Notes |\r\n|-------|------|----------|-------|\r\n| `restaurant.name` | string | Yes | Display name in HTML header |\r\n| `restaurant.cuisine` | string | Yes | Passed to `build_food_prompt()` as cuisine context |\r\n| `restaurant.tagline` | string | No | Subtitle line in HTML header |\r\n| `sections[].title` | string | Yes | Section heading in primary language |\r\n| `sections[].title_secondary` | string | No | Section heading in secondary language |\r\n| `sections[].category` | `\"food\"` or `\"drink\"` | Yes | Drives food grid vs drink list layout. Only `\"food\"` items get generated images. |\r\n| `sections[].note"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[EXTRACTION PROMPT] Send this exact prompt to Gemini. It defines the schema AND the extraction rules. Do not paraphrase it.\r\n\r\n```\r\nYou are a restaurant menu data extractor. Analyze this menu content and extract ALL items into structured JSON.\r\n\r\nReturn this exact JSON structure:\r\n{\r\n  \"restaurant\": {\r\n    \"name\": \"Restaurant Name (if visible)\",\r\n    \"cuisine\": \"cuisine type (Chinese, Indian, Austrian, Japanese, etc.)\",\r\n    \"tagline\": \"any subtitle or tagline\"\r\n  },\r\n  \"sections\": [\r\n    {\r\n      \"title\": \"Section Name (in primary language)\",\r\n      \"title_secondary\": \"Section name in secondary language (if present, else empty string)\",\r\n      \"category\": \"food or drink\",\r\n      \"note\": \"Any section note (e.g. 'served with rice', 'Mon-Fri 11-15h')\",\r\n      \"items\": [\r\n        {\r\n          \"code\": \"M1\",\r\n          \"name\": \"Dish Name (primary language)\",\r\n          \"name_secondary\": \"Name in secondary language (if present)\",\r\n          \"description\": \"Brief description (primary language)\",\r\n          \"description_secondary\": \"Description in secondary language (if present)\",\r\n          \"price\": \"12,90\",\r\n          \"price_prefix\": \"\",\r\n          \"allergens\": \"A C F\",\r\n          \"dietary\": [\"vegan\", \"spicy\"],\r\n          \"variants\": []\r\n        }\r\n      ]\r\n    }\r\n  ],\r\n  \"allergen_legend\": {\r\n    \"A\": \"Gluten\",\r\n    \"B\": \"Crustaceans\"\r\n  },\r\n  \"metadata\": {\r\n    \"languages\": [\"German\", \"English\"],\r\n    \"currency\": \"EUR\"\r\n  }\r\n}\r\n\r\nCRITICAL RULES:\r\n1. Extract EVERY item. Do not skip ANY dish, drink, or menu entry.\r\n2. Preserve original item codes/numbers if present (M1, K2, S3, etc.). If none exist, generate sequential codes per section (e.g. A1, A2 for appetizers, M1, M2 for mains).\r\n3. Extract prices EXACTLY as written (preserve comma/period format).\r\n4. If an item has a price prefix like \"ab\" (starting from), capture it in \"price_prefix\".\r\n5. If an item has multiple size/quantity variants (e.g. 6 Stk / 12 Stk / 18 Stk at different prices), use the \"variants\" array:\r\n   [{\"label\": \"6 Stk\","
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[GEMINI API CONFIGURATION] ```python\r\nimport os\r\nfrom google import genai\r\n\r\nclient = genai.Client(api_key=os.environ[\"GOOGLE_API_KEY\"])\r\n\r\ndef gemini_config():\r\n    return genai.types.GenerateContentConfig(\r\n        max_output_tokens=65536,          # 64K — needed for large menus\r\n        response_mime_type=\"application/json\",  # JSON mode — critical\r\n    )\r\n\r\n# Model: gemini-2.5-flash (default)\r\nresponse = client.models.generate_content(\r\n    model=\"gemini-2.5-flash\",\r\n    contents=prompt_text,    # or [image, prompt_text] for vision\r\n    config=gemini_config(),\r\n)\r\n\r\n# ALWAYS check for truncation\r\nif response.candidates[0].finish_reason.name == \"MAX_TOKENS\":\r\n    print(\"WARNING: Response truncated. Menu may be incomplete.\")\r\n```\r\n\r\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[IMAGE PROMPT TEMPLATE] Use this exact function. It produces the casual phone-photo aesthetic that makes menus look authentic.\r\n\r\n```python\r\ndef build_food_prompt(name: str, description: str, cuisine: str = \"\") -> str:\r\n    cuisine_context = f\" {cuisine}\" if cuisine else \"\"\r\n    food_desc = f\"{name}\"\r\n    if description and description != name:\r\n        food_desc += f\" ({description})\"\r\n\r\n    return (\r\n        f\"A photo of {food_desc} at a{cuisine_context} restaurant. \"\r\n        f\"Taken casually with a phone from across the table at a 45-degree angle. \"\r\n        f\"The plate sits on a dark wooden table and takes up only 30% of the frame. \"\r\n        f\"Lots of visible table surface around the plate. Chopsticks, napkins, \"\r\n        f\"a glass of water, and small side dishes scattered naturally nearby. \"\r\n        f\"Blurred restaurant interior in the background — other diners, pendant lights, \"\r\n        f\"wooden chairs visible but out of focus. Warm ambient lighting. \"\r\n        f\"NOT a close-up. NOT professional food photography. \"\r\n        f\"It looks like someone quickly snapped a photo before eating.\"\r\n    )\r\n```\r\n\r\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[IMAGE GENERATION API CALLS] ### Gemini 2.5 Flash Image\r\n\r\n```python\r\nimport os, io\r\nfrom PIL import Image\r\nfrom google import genai\r\n\r\nclient = genai.Client(api_key=os.environ[\"GOOGLE_API_KEY\"])\r\n\r\ndef generate_gemini(client, name, description, output_path, cuisine=\"\"):\r\n    prompt = build_food_prompt(name, description, cuisine)\r\n\r\n    response = client.models.generate_content(\r\n        model=\"gemini-2.5-flash-image\",       # NOT gemini-2.5-flash (that's text-only)\r\n        contents=prompt,\r\n        config=genai.types.GenerateContentConfig(\r\n            response_modalities=[\"TEXT\", \"IMAGE\"],  # critical — requests image output\r\n        ),\r\n    )\r\n\r\n    # Extract generated image from response parts\r\n    for part in response.candidates[0].content.parts:\r\n        if part.inline_data is not None:\r\n            img = Image.open(io.BytesIO(part.inline_data.data)).convert(\"RGB\")\r\n            # Center-crop to square, resize to 800x800\r\n            w, h = img.size\r\n            side = min(w, h)\r\n            left = (w - side) // 2\r\n            top = (h - side) // 2\r\n            img = img.crop((left, top, left + side, top + side))\r\n            img = img.resize((800, 800), Image.LANCZOS)\r\n            img.save(str(output_path), \"JPEG\", quality=82)\r\n            return\r\n    raise RuntimeError(\"No image in Gemini response\")\r\n```\r\n\r\n### Skip drinks\r\nOnly generate images for `category == \"food\"` sections. Drinks get a text-only list in the HTML output.\r\n\r\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[MULTILINGUAL / CJK HANDLING] Menus can be in ANY language. The pipeline handles this through bilingual fields and smart prompt routing.\r\n\r\n### Extraction (all languages)\r\n- `name` / `description` = primary language (whatever the menu is mostly written in)\r\n- `name_secondary` / `description_secondary` = secondary language (if bilingual)\r\n- Works for: German/English, Chinese/English, Japanese/English, Thai/English, Arabic/English, Korean/English, etc.\r\n\r\n### Image Generation (CJK-safe prompting)\r\nCJK characters produce bad image prompts. Before calling `build_food_prompt()`, swap to the Latin name:\r\n\r\n```python\r\ndef prepare_for_image_gen(name, name_secondary, description):\r\n    \"\"\"Use Latin-script name for image prompts. CJK → use secondary name.\"\"\"\r\n    display_name = name\r\n    if name_secondary:\r\n        if any(ord(c) > 0x2E80 for c in name):  # CJK/Hangul/Kana detection\r\n            display_name = name_secondary\r\n            description = description or name\r\n        else:\r\n            description = description or name_secondary\r\n    return display_name, description\r\n```\r\n\r\n**Unicode ranges covered by `ord(c) > 0x2E80`:**\r\n- CJK Unified Ideographs (Chinese characters)\r\n- Hiragana / Katakana (Japanese)\r\n- Hangul (Korean)\r\n- CJK Compatibility, Radicals, Extensions\r\n\r\n### HTML Output (all scripts)\r\n- `name` renders as the large display text\r\n- `name_secondary` renders below it in smaller text\r\n- Both use Google Fonts with CJK fallback (`Noto Sans SC`, `Noto Sans JP`, `Noto Sans KR`)\r\n\r\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[FILE NAMING CONVENTIONS] ### Auto-derivation\r\nAll filenames are derived from the restaurant name or source URL:\r\n```python\r\nstem = \"shoyu\"  # derived from URL domain, PDF filename, or restaurant name\r\ndata_file = f\"menu_data_{stem}.json\"\r\nimages_dir = Path(f\"images/{stem}\")\r\nhtml_file = f\"{restaurant_name}_Menu.html\"  # e.g. \"Shoyu_Menu.html\"\r\n```\r\n\r\n### Image files\r\n```\r\nimages/{restaurant_stem}/{code}.jpg\r\n\r\n# restaurant_stem = data filename minus \"menu_data_\" prefix\r\n# Example: menu_data_shoyu.json → images/shoyu/M1.jpg\r\n```\r\n\r\n### Image path matching (in build step)\r\nReturns POSIX-style string paths with `./` prefix for cross-platform HTML compatibility:\r\n```python\r\ndef find_image(code: str, images_dir: Path):\r\n    \"\"\"Return relative POSIX path string to image, or None.\"\"\"\r\n    if not images_dir.is_dir():\r\n        return None\r\n    rel = images_dir.as_posix()\r\n    if not rel.startswith(\"./\"):\r\n        rel = \"./\" + rel\r\n    # 1. Exact match\r\n    for ext in (\"jpg\", \"jpeg\", \"webp\", \"png\"):\r\n        candidate = images_dir / f\"{code}.{ext}\"\r\n        if candidate.exists():\r\n            return f\"{rel}/{code}.{ext}\"\r\n    # 2. Case-insensitive fallback\r\n    for f in images_dir.iterdir():\r\n        if f.stem.lower() == code.lower() and f.suffix.lower() in (\".jpg\", \".jpeg\", \".webp\", \".png\"):\r\n            return f\"{rel}/{f.name}\"\r\n    return None\r\n```\r\n\r\n### Output HTML\r\n```\r\n{RestaurantName}_Menu.html    # CSS/JS inline, images as relative file paths\r\n```\r\n\r\n### Image rendering (build step)\r\nThe build script uses `find_image()` to resolve each food item's photo, falling back to a gradient SVG placeholder when no image exists:\r\n\r\n```python\r\nimport base64\r\nimport html as html_mod\r\n\r\nGRADIENT_COLORS = [\r\n    (\"#c41e3a\", \"#8b0000\"), (\"#ff6b6b\", \"#ee5a24\"), (\"#fdcb6e\", \"#e17055\"),\r\n    (\"#00b894\", \"#00cec9\"), (\"#6c5ce7\", \"#a29bfe\"), (\"#e17055\", \"#d63031\"),\r\n    (\"#00cec9\", \"#0984e3\"), (\"#fab1a0\", \"#e17055\"), (\"#e8a87c\", \"#d4956b\"),\r\n    (\"#fd79a8\", \"#e84393\"),\r\n]\r\n\r\ndef make_placeholder_svg(code: str, na"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[ROBUSTNESS PATTERNS] ### Retry Logic\r\nAll Gemini API calls should retry on transient failures:\r\n```python\r\nimport time\r\n\r\ndef call_with_retry(fn, *args, max_retries=3, **kwargs):\r\n    \"\"\"Retry API calls with exponential backoff.\"\"\"\r\n    for attempt in range(max_retries):\r\n        try:\r\n            return fn(*args, **kwargs)\r\n        except Exception as e:\r\n            if attempt == max_retries - 1:\r\n                raise\r\n            wait = 2 ** attempt\r\n            print(f\"  Retry {attempt + 1}/{max_retries} in {wait}s: {e}\")\r\n            time.sleep(wait)\r\n```\r\n\r\n### JSON Response Parsing\r\nGemini sometimes wraps JSON in markdown fences or produces trailing commas. Parse defensively — try raw parse first, apply trailing comma fix only as last resort (unconditional fix can corrupt valid JSON strings containing `,]` patterns):\r\n```python\r\nimport re, json\r\n\r\ndef parse_gemini_json(raw: str) -> dict:\r\n    \"\"\"Parse JSON from Gemini, handling markdown fences and quirks.\"\"\"\r\n    text = raw.strip()\r\n    # Strip markdown code fences\r\n    if text.startswith(\"```\"):\r\n        text = re.sub(r\"^```\\w*\\n?\", \"\", text)\r\n        text = re.sub(r\"\\n?```$\", \"\", text)\r\n    text = text.strip()\r\n    # Try direct parse first\r\n    try:\r\n        return json.loads(text)\r\n    except json.JSONDecodeError:\r\n        pass\r\n    # Try extracting JSON object from surrounding text\r\n    match = re.search(r\"\\{.*\\}\", text, re.DOTALL)\r\n    if match:\r\n        candidate = match.group(0)\r\n        try:\r\n            return json.loads(candidate)\r\n        except json.JSONDecodeError:\r\n            pass\r\n        # Fix trailing commas and retry\r\n        candidate = re.sub(r\",\\s*([\\]}])\", r\"\\1\", candidate)\r\n        try:\r\n            return json.loads(candidate)\r\n        except json.JSONDecodeError:\r\n            pass\r\n    # Last resort: fix trailing commas on original\r\n    text = re.sub(r\",\\s*([\\]}])\", r\"\\1\", text)\r\n    return json.loads(text)\r\n```\r\n\r\n### Post-Processing\r\nAfter extraction, run these cleanups:\r\n```python\r\ndef generate_codes"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[EXTRACTION DETAILS] ### HTML URLs\r\n1. Fetch page with `requests`\r\n2. Check text density to detect static vs JS-rendered:\r\n   `density = len(soup.get_text(strip=True)) / len(raw_html)`\r\n3. **Density override**: If 5+ price patterns found (`r\"[$€£¥₹CHF]\\s*\\d+[.,]\\d{2}|\\d+[.,]\\d{2}\\s*[$€£¥₹]\"`), force density to 1.0 (treat as static)\r\n4. **Static** (density >= 0.02): Clean HTML, send text to Gemini 2.5 Flash (JSON mode)\r\n5. **JS-rendered** (density < 0.02, e.g. Wix, Framer): Screenshot with Playwright, send to Gemini Vision\r\n6. **Screenshot height cap**: If screenshot > 6000px tall, resize proportionally to fit\r\n7. **Large menus** (>12k chars text): Chunked extraction, merge like PDF multi-page. Deduplicate by tracking `seen_codes = set()` across chunks — for each item in each chunk's sections, skip if `item[\"code\"]` already in `seen_codes`. Only append sections that still have items after dedup.\r\n\r\n### PDF Files\r\n1. Convert each page to image via PyMuPDF (200 DPI)\r\n2. Send each page image to Gemini Vision\r\n3. Merge results across pages (deduplicate items by code)\r\n\r\n### Photos\r\n1. Load image directly\r\n2. Resize if >10MB\r\n3. Send to Gemini Vision\r\n\r\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[HTML OUTPUT FEATURES] - 3-column Instagram-style grid (9:16 portrait tiles)\r\n- Gradient text overlay with name + secondary language + price\r\n- Tap-to-select with green checkmark\r\n- Receipt/bill on Selection tab with +/- quantity controls\r\n- Category pill navigation with scroll sync\r\n- Drinks section below grid with currency-prefixed prices\r\n- Allergen legend\r\n- **Currency converter** — minimalist button in header (e.g. `€` pill) that cycles or opens a picker for: EUR, USD, AUD, CAD, GBP. Converts all displayed prices client-side using snapshot exchange rates embedded at build time. Updates grid overlays, receipt totals, drink prices, and variant prices. Source currency comes from `metadata.currency`.\r\n- Fully responsive, dark mode\r\n- All CSS/JS inline, images via relative file paths (`./images/{stem}/{code}.jpg`), only Google Fonts external\r\n- Gradient SVG placeholders for missing images (inline base64 SVG, not raster)\r\n- **CJK font loading** via Google Fonts link tag:\r\n  `family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700`\r\n- CSS `font-family` stack: primary font, then `'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', sans-serif`\r\n\r\n### Currency Converter\r\n\r\nA minimalist currency toggle built into the HTML output. All client-side, no API calls at runtime.\r\n\r\n**Implementation:**\r\n- The build script embeds a `RATES` object with snapshot exchange rates (base: USD) at build time\r\n- Source currency is read from `metadata.currency` in the JSON data\r\n- All prices are stored in `data-price` attributes as **numeric** values (not raw strings like \"12,90\")\r\n- A small pill button in the header shows the current currency symbol (e.g. `€`)\r\n- Tapping opens a mini-picker or cycles through: EUR (`€`), USD (`$`), GBP (`£`), AUD (`A$`), CAD (`C$`)\r\n- On currency change, JavaScript converts all `data-price` values and updates displayed text\r\n- Receipt totals in the Selection tab also convert via `convertPrice()` using `SOURCE_CURRENCY` and `currentCurrency`\r\n"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Branding Customization] ```bash\r\n--name \"Restaurant Name\"     # Header brand text\r\n--tagline \"Cuisine · City\"   # Subtitle\r\n--accent \"#ff6b00\"           # Primary color (pills, active tab, drink prices)\r\n--bg \"#0a0a0a\"               # Background color\r\n```\r\n\r\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[COST SUMMARY] | Component | Cost |\r\n|-----------|------|\r\n| Extraction (per page) | ~$0.001 |\r\n| Image generation (per food item) | $0.039 |\r\n| **80 food items** | **~$3.12** |\r\n| Time (80 food items) | ~8 min |\r\n\r\nDrinks are not image-generated (text-only list), so actual cost depends on food-to-drink ratio."
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[DEPENDENCIES] Requires **Python 3.9+**.\r\n\r\nRequired:\r\n- `google-genai` (extraction + image generation)\r\n- `Pillow` (image processing)\r\n\r\nFor HTML URLs:\r\n- `requests` (HTTP fetching)\r\n- `beautifulsoup4` (HTML parsing)\r\n\r\nFor JS-rendered sites:\r\n- `playwright` (headless browser screenshots)\r\n\r\nFor PDF files:\r\n- `PyMuPDF` (PDF to image conversion)\r\n\r\n```bash\r\npip install google-genai Pillow requests beautifulsoup4 PyMuPDF\r\npip install playwright && playwright install chromium\r\n```"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[ENVIRONMENT VARIABLES] - `GOOGLE_API_KEY` — Required for extraction and image generation\r\n- `GITHUB_PAT` — Required for GitHub Pages publishing\r\n- `GITHUB_OWNER` — Your GitHub username (default: reads from git config)\r\n- `GITHUB_REPO` — Your GitHub Pages repo name (default: `menus`)"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[PUBLISHING] ### Default: Portable HTML (no setup)\r\n\r\nWhen no `GITHUB_*` environment variables are set, the pipeline generates a **self-contained HTML file** with base64-embedded images. Users can:\r\n- Open the file directly in any browser\r\n- Email it or share via any file-sharing service\r\n- Upload to any static host (Netlify Drop, Vercel, GitHub Pages, S3)\r\n\r\nNo hosting setup, no API keys beyond `GOOGLE_API_KEY`, no git configuration needed.\r\n\r\n### Optional: GitHub Pages (requires setup)\r\n\r\nFor users who want a persistent gallery with multiple menus:\r\n\r\n1. Create a GitHub repo for your menus (e.g. `your-username/menus`)\r\n2. Enable GitHub Pages on the `main` branch\r\n3. Set environment variables (must be accessible to the Python process):\r\n```bash\r\nexport GITHUB_PAT=\"your-personal-access-token\"   # Required — used for git push auth\r\nexport GITHUB_OWNER=\"your-username\"               # Required — YOUR GitHub username\r\nexport GITHUB_REPO=\"menus\"                        # Optional — defaults to \"menus\"\r\n```\r\n\r\n**Important:** `publish_menu.py` MUST read `GITHUB_OWNER` and `GITHUB_REPO` from environment variables. Never hardcode a specific user's repo. The generated code should construct the repo URL dynamically:\r\n```python\r\nowner = os.environ[\"GITHUB_OWNER\"]\r\nrepo = os.environ.get(\"GITHUB_REPO\", \"menus\")\r\nGITHUB_REPO = f\"{owner}/{repo}\"\r\nGITHUB_PAGES_BASE = f\"https://{owner}.github.io/{repo}\"\r\n```\r\n\r\n### Publish\r\n```bash\r\npython publish_menu.py Restaurant_Menu.html --name \"Restaurant\" --tagline \"Cuisine · City\" --cuisine Type\r\n```\r\n\r\nGallery: `https://<your-username>.github.io/<repo>/`\r\n\r\n### How publishing works\r\n\r\n`publish_menu.py` clones the menus repo to a **temp directory on native filesystem** (`git clone --depth=1`), copies files there, commits, and pushes. This avoids all NTFS bind mount permission issues that occur when operating directly on mounted volumes in Docker containers.\r\n\r\nKey implementation details:\r\n1. `git clone --depth=1` to a `tempfile.mkdtemp()` directory (native"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[EXTERNAL ENDPOINTS] | Endpoint | Data Sent | Purpose |\r\n|----------|-----------|---------|\r\n| `generativelanguage.googleapis.com` | Menu text, page screenshots, PDF page images, food photo prompts | Gemini API for extraction (JSON mode) and image generation |\r\n| Target restaurant URL | HTTP GET only | Fetching the menu page HTML for extraction |\r\n| `api.github.com` | Generated HTML file, image files | Publishing menu to GitHub Pages (optional, requires `GITHUB_PAT`) |\r\n| `fonts.googleapis.com` | None (CSS link in HTML output) | Google Fonts loaded client-side when menu HTML is opened in browser |\r\n\r\nNo analytics, telemetry, or tracking. No data is sent to any endpoint beyond those listed above."
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[SECURITY & PRIVACY] - **API keys**: `GOOGLE_API_KEY` is read from environment variables, never hardcoded or logged\r\n- **GitHub PAT**: Used only for authenticated pushes to the user's own repo; never transmitted elsewhere\r\n- **Restaurant data**: Menu content is sent to the Gemini API for processing. No data is stored server-side beyond Google's standard API retention\r\n- **Generated images**: Stored locally in `images/` directory. When published, uploaded only to the user's own GitHub Pages repo\r\n- **No telemetry**: The pipeline collects no analytics, metrics, or usage data\r\n- **Local-first**: All processing happens locally except Gemini API calls. The HTML output and images remain on the user's machine unless they explicitly publish"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[KNOWN LIMITATIONS] - Tabbed Wix menus: Only first visible tab extracted\r\n- Google Maps photo URLs: Not supported (use direct image files)\r\n- Very large menus (300+ items): May need manual chunk review"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "menuvision"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "GOOGLE_API_KEY"
+          ],
+          "bins": [
+            "python3"
+          ]
+        },
+        "primaryEnv": "GOOGLE_API_KEY",
+        "homepage": "https://github.com/ademczuk/MenuVision"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ademczuk/menuvision/SKILL.md"
+}

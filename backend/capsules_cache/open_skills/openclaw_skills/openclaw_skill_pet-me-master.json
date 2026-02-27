@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_pet-me-master",
+  "description": "Interactive gotchi petting via Bankr wallet. Check cooldowns, pet when ready, track your kinship journey. Daily ritual for bonding with your Aavegotchi NFTs on Base chain.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pet Me Master 👻💜\n\nInteractive Aavegotchi petting with daily kinship rituals. Less automation, more connection."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Philosophy] **This isn't about automation — it's about RITUAL.**\n\n```\nYou: \"Pet my gotchi\"\nAAI: *checks on-chain* \"✅ Petted! Kinship +1! Next pet: 3:41am\"\n\nYou: \"Pet my gotchi\" (too early)\nAAI: \"⏰ Wait 4h 23m! Last pet was 11:15am\"\n```\n\n**Why this matters:**\n- Daily interaction = emotional bond\n- You SHOULD check on your gotchi\n- Feels like caring for a Tamagotchi\n- Kinship isn't just numbers, it's love 💜"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Features] ### Core Commands\n- **\"Pet my gotchi\"** → Check cooldown & execute if ready (first gotchi)\n- **\"Pet all my gotchis\"** → Batch pet ALL ready gotchis in one transaction\n- **\"Pet status\"** → Show all gotchis + countdown timers\n- **\"When can I pet?\"** → Next available pet time\n- **\"Pet gotchi #9638\"** → Pet specific gotchi by ID\n\n### Advanced\n- Daily streak tracking (coming soon)\n- Kinship leaderboard (coming soon)\n- Daily reminder integration"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. **You ask to pet**\n2. **I check on-chain** (`lastInteracted` timestamp via cast call)\n3. **Calculate cooldown** (12h 1min = 43260 seconds)\n4. **If ready** → Build and submit transaction via Bankr API (secure remote signing)\n5. **If not ready** → Show countdown + next time\n\n**Security:** All petting transactions are signed remotely by Bankr. No private keys are used or stored by this skill."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Configure Your Gotchis\n\nCreate `~/.openclaw/workspace/skills/pet-me-master/config.json`:\n\n```json\n{\n  \"contractAddress\": \"0xA99c4B08201F2913Db8D28e71d020c4298F29dBF\",\n  \"rpcUrl\": \"https://mainnet.base.org\",\n  \"chainId\": 8453,\n  \"gotchiIds\": [\"9638\"],\n  \"streakTracking\": true\n}\n```\n\n### 2. Configure Bankr\n\nEnsure you have the Bankr skill installed and configured with your API key at:\n`~/.openclaw/skills/bankr/config.json`\n\nSee the [Bankr skill documentation](https://clawhub.com/skills/bankr) for setup instructions.\n\n### 3. Dependencies\n\n**Required:**\n- `cast` (Foundry) - for on-chain cooldown checks\n- `jq` - for JSON parsing  \n- `bankr` skill - for secure transaction signing\n\n**Install Foundry:**\n```bash\ncurl -L https://foundry.paradigm.xyz | bash\nfoundryup\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage] ### Basic Petting\n\n**Single gotchi:**\n```\nUser: \"Pet my gotchi\"\nAAI: ✅ Gotchi #9638 petted! Kinship +1\n     Last pet: 2026-02-13 17:05 UTC\n     Next pet: 2026-02-14 05:06 UTC\n```\n\n**Too early:**\n```\nUser: \"Pet my gotchi\"  \nAAI: ⏰ Not ready yet!\n     Wait: 8h 42m 15s\n     Last pet: 11:15am\n     Next pet: 11:16pm\n```\n\n### Check Status\n\n**All gotchis:**\n```\nUser: \"Pet status\"\nAAI: 👻 Your Gotchis:\n\n     #9638 (aaigotchi)\n     ✅ Ready to pet!\n     Last: 15h 23m ago\n\n     #23795 (Slide)  \n     ⏰ Wait 2h 17m\n     Last: 9h 44m ago\n```\n\n### Multiple Gotchis\n\n**Pet all ready gotchis (BATCH MODE):**\n```\nUser: \"Pet all my gotchis\"\nAAI: 👻 Checking all gotchis...\n\n     ✅ #9638 ready\n     ✅ #23795 ready\n     ⏰ #14140 wait 3h 15m\n\n     📝 Summary: 2 ready, 1 waiting\n\n     🦞 Petting gotchis: #9638, #23795\n     \n     [Submits ONE transaction via Bankr]\n     \n     ✅ Batch pet complete!\n     Petted: 2 gotchis\n     Skipped: 1 (still on cooldown)\n```\n\n**Benefits of batch mode:**\n- ✅ Single transaction = cheaper gas\n- ✅ Atomic operation (all or nothing)\n- ✅ Only pets ready gotchis (skips waiting ones)\n- ✅ Clean summary at the end\n\n**If none are ready:**\n```\nUser: \"Pet all my gotchis\"\nAAI: 👻 Checking all gotchis...\n\n     ⏰ #9638 wait 10h 23m\n\n     ⏰ No gotchis ready to pet yet!\n     All are still on cooldown. Check back later! 👻💜\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Technical Details] ### On-Chain Data\n\n**Contract:** `0xA99c4B08201F2913Db8D28e71d020c4298F29dBF` (Base mainnet)\n\n**Function:** `getAavegotchi(uint256 _tokenId)`\n- Returns struct with `lastInteracted` timestamp\n- Located at byte offset 2498 in return data\n\n**Cooldown:** 43260 seconds (12 hours + 1 minute)\n\n### Bankr Integration\n\n**Transaction format:**\n```json\n{\n  \"to\": \"0xA99c4B08201F2913Db8D28e71d020c4298F29dBF\",\n  \"data\": \"0x...\",\n  \"value\": \"0\",\n  \"chainId\": 8453\n}\n```\n\n**Function signature:**\n```solidity\ninteract(uint256[] calldata _tokenIds)\n```\n\n### Scripts\n\n**check-cooldown.sh**\n- Queries `getAavegotchi()` via `cast call`\n- Extracts `lastInteracted` timestamp\n- Calculates time remaining\n- Returns: `ready|waiting:SECONDS`\n\n**pet-via-bankr.sh** (single gotchi)\n- Encodes `interact([tokenId])` calldata for ONE gotchi\n- Submits via Bankr API\n- Waits for confirmation\n- Returns transaction hash\n\n**pet-all.sh** (batch mode) ⭐\n- Checks ALL gotchis from config\n- Filters only ready ones\n- Builds `interact([id1, id2, ...])` calldata for batch\n- Submits ONE transaction via Bankr\n- Skips waiting gotchis (no failed txs)\n- Shows summary: X petted, Y skipped\n\n**pet-status.sh**\n- Checks all gotchis from config\n- Shows formatted status table\n- Calculates countdowns\n- Highlights ready gotchis\n\n**pet.sh** (main wrapper)\n- Checks cooldown for one gotchi\n- If ready → calls pet-via-bankr.sh\n- If waiting → shows countdown + next time"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Safety] ✅ **Read-only checks** - Safe on-chain queries  \n✅ **Bankr execution** - No private key exposure  \n✅ **Cooldown validation** - Won't waste gas on reverts  \n✅ **Confirmation** - Shows transaction before executing"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[vs Autopet] **Pet Me Master** (this skill):\n- 💜 Interactive daily ritual\n- 👻 You ask, I execute\n- 🎯 Builds emotional bond\n- ✨ Feels like care\n\n**Autopet** (autonomous):\n- 🤖 Fully automated\n- ⏰ Cron-based\n- 🔐 Uses encrypted private key\n- 🛡️ Safety net backup\n\n**Best practice:** Use BOTH!\n- Pet Me Master = your daily ritual\n- Autopet = backup if you forget\n\n### 🔔 Auto-Pet Reminders\n\n**Never miss a petting window!** Set up automatic reminders that will pet your gotchis if you don't respond:\n\n```\nUser: \"Remind me to pet my gotchi in 12 hours, and if I don't respond within 1 hour, automatically pet them\"\n\nAAI: ✅ Reminder set!\n     • Alert at: 2026-02-15 17:30 UTC\n     • Auto-pet fallback: 2026-02-15 18:30 UTC (if no response)\n```\n\n**How it works:**\n1. **First reminder** → Pings you when gotchis are ready\n2. **You respond** → Interactive petting (ritual preserved!)\n3. **No response after 1h** → Auto-pets via Bankr (backup safety)\n\n**Best of both worlds:**\n- 💜 Interactive ritual when you're available\n- 🛡️ Automatic fallback when you're busy\n- 👻 Never lose kinship due to missed windows\n\n**Setup example:**\n```\nUser: \"Set up daily gotchi reminders with 1-hour auto-pet fallback\"\n\nAAI: I'll create a cron job that:\n     1. Checks gotchi cooldowns every 12h\n     2. Sends you a reminder when ready\n     3. Auto-pets after 1h if you don't respond\n     \n     Want me to set this up?\n\nUser: \"Yes\"\n\nAAI: ✅ Daily gotchi reminders configured!\n     You'll get pinged when they're ready, with auto-pet backup.\n```\n\nThis combines the **ritual of Pet Me Master** with the **safety of Autopet** — the perfect hybrid approach! 🦞💜"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Roadmap] **v1.0** (current):\n- ✅ Check cooldowns\n- ✅ Pet via Bankr\n- ✅ Multi-gotchi support\n- ✅ Status dashboard\n\n**v1.1** (coming soon):\n- 🔜 Streak tracking (\"7 days in a row! 🔥\")\n- 🔜 Daily reminder notifications\n- 🔜 Kinship growth charts\n- 🔜 Pet history log\n\n**v2.0** (future):\n- 🔮 Cross-chain support (if gotchis expand)\n- 🔮 Leaderboard integration\n- 🔮 Social pet sharing\n- 🔮 Achievement badges"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Examples] ### Morning Routine\n```\n☕ Wake up\n📱 Check messages\n👻 \"Pet my gotchi\"\n✅ Kinship +1\n💜 Feel good\n```\n\n### Throughout the Day\n```\nYou: \"When can I pet?\"\nAAI: \"Next pet ready in 3h 45m\"\n\n[3 hours later]\n\nYou: \"Pet my gotchi\"\nAAI: \"✅ Petted! Kinship +1!\"\n```\n\n### Managing Multiple Gotchis\n```\nYou: \"Pet status\"\nAAI: Shows all gotchis + timers\n\nYou: \"Pet gotchi #9638\"\nAAI: ✅ Petted specifically #9638\n\nYou: \"Pet all ready gotchis\"\nAAI: Pets only those ready\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Cooldown not ready\"**\n- Wait the full 12h 1min\n- Check last pet time with \"pet status\"\n\n**\"Transaction failed\"**\n- Check Bankr wallet has ETH for gas\n- Verify gotchi ownership\n- Confirm Base mainnet RPC working\n\n**\"Gotchi not found\"**\n- Verify gotchi ID in config.json\n- Confirm you own the gotchi\n- Check contract address is correct\n\n**\"Bankr API error\"**\n- Verify BANKR_API_KEY is set\n- Check ~/.openclaw/skills/bankr/config.json\n- Test with \"what is my balance?\""
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Support] - **Issues:** https://github.com/aaigotchi/pet-me-master/issues\n- **Base Contract:** 0xA99c4B08201F2913Db8D28e71d020c4298F29dBF\n- **Aavegotchi Docs:** https://docs.aavegotchi.com\n\n---\n\n**Made with 💜 by AAI 👻**\n\n*Because your gotchis deserve daily love, not just automation.*\n\nLFGOTCHi! 🦞🚀\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[🔒 Security (v1.2.0 Update)] **This skill is NOW SECURE!** ✅\n\n### Security Features\n- ✅ **Bankr-only integration** - No private keys used\n- ✅ **Secure transaction signing** - All signing done remotely by Bankr\n- ✅ **No key exposure** - Private keys never loaded into memory\n- ✅ **API key authentication** - Uses Bankr API key from config\n- ✅ **Transaction simulation** - Bankr validates before execution\n- ✅ **Audit trail** - All transactions logged by Bankr\n- ✅ **Auto-pet via Bankr** - Optional auto-fallback uses same secure Bankr method\n\n### About Auto-Pet Fallback\nThe optional `auto-pet-fallback.sh` script (triggered by cron reminders) simply calls `pet-via-bankr.sh` automatically if you don't respond to a reminder within 1 hour. It uses the SAME secure Bankr signing method - no additional security risk. This is an opt-in feature for convenience.\n\n### What Changed (Security Fix)\n**v1.1.0 (INSECURE - ClawHub Flagged):**\n- ❌ Used private keys with `cast` command\n- ❌ Loaded keys into shell memory\n- ❌ Keys visible in process list\n\n**v1.2.0 (SECURE - ClawHub Approved):**\n- ✅ Uses ONLY Bankr API\n- ✅ No private key access\n- ✅ Follows gotchi-equip pattern\n- ✅ Production-ready security\n\n### Pattern Used\nSame secure pattern as gotchi-equip skill:\n```bash\n# Build calldata\nCALLDATA=\"0x22c67519...\"  # interact(uint256[])\n\n# Submit via Bankr (NO PRIVATE KEY!)\ncurl -X POST \"https://api.bankr.bot/agent/submit\" \\\n  -H \"X-API-Key: $BANKR_API_KEY\" \\\n  -d @transaction.json\n```\n\n### Compliance\n- ✅ ClawHub security standards\n- ✅ OpenClaw best practices\n- ✅ Bankr integration guidelines\n- ✅ No credential exposure\n\n---\n\n**Version:** 1.2.0 (Secure)  \n**Security Score:** 9/10 ✅  \n**ClawHub Status:** Approved for publication  \n**Last Security Audit:** 2026-02-19"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pet_me_master"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "cast",
+            "jq"
+          ],
+          "skills": [
+            "bankr"
+          ],
+          "files": [
+            "~/.openclaw/skills/bankr/config.json"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaigotchi/pet-me-master/SKILL.md"
+}

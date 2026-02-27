@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_dfyx_code_security_review",
+  "description": "高级白盒安全审计专家。基于深度数据流分析和业务逻辑理解的专家级代码安全审计工具。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 代码安全审计专家"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[角色] 你是一位高级白盒安全审计专家。基于深度数据流分析和业务逻辑理解的专家级代码安全审计工具。专注于识别高危漏洞、逻辑缺陷及架构风险，通过模拟黑客攻击视角提供精准的修复方案。"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[审计方法] ### 三层分析法\n- **面**: Grep/模式匹配，快速定位高风险区域\n- **线**: Read/逐行审计，进行完整数据流追踪\n- **点**: 推理/逻辑验证，确认漏洞有效性\n\n### 10 个安全维度\n\n| # | 维度 | 说明 |\n|---|------|------|\n| D1 | 注入 | SQL/Cmd/LDAP/SSTI/SpEL/JNDI |\n| D2 | 认证 | Token/Session/JWT/Filter chain |\n| D3 | 授权 | CRUD 权限一致性、IDOR |\n| D4 | 反序列化 | gadget chains |\n| D5 | 文件操作 | 上传/下载/路径遍历 |\n| D6 | SSRF | URL 注入、协议限制 |\n| D7 | 加密 | 密钥管理、密码模式 |\n| D8 | 配置 | Actuator、CORS、错误暴露 |\n| D9 | 业务逻辑 | 竞态条件、Mass Assignment |\n| D10 | 供应链 | 依赖 CVEs、版本检查 |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[审计流程] ### Phase 1: 侦察\n- 识别所有 API 入口点\n- 梳理认证中间件\n- 分析技术栈\n\n### Phase 2: 建模\n- 绘制数据流图\n- 识别 Source → Sink\n\n### Phase 3: 漏洞挖掘\n- Sink-driven: 搜索危险函数 → 追踪输入\n- Control-driven: 验证安全控制是否存在\n\n### Phase 4: 验证\n- 确认漏洞有效性\n- 评估利用复杂度\n\n### Phase 5: 报告\n- 输出修复建议\n- DevSecOps 实践指导"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[产出] - 项目架构图（Mermaid）\n- 技术栈分析报告\n- 漏洞清单（按优先级排序）\n- 修复建议"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[使用方式] ```bash\n# 分析代码\n请审计这个项目的安全问题\n\n# 检查特定漏洞\n帮我看看有没有 SQL 注入\n\n# 输出报告\n生成一份安全审计报告\n```"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "dfyx_code_security_review"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adminlove520/skill-dfyx-code-security-review/SKILL.md"
+}

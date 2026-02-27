@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_endpoints",
+  "description": "Endpoints document management API toolkit. Scan documents with AI extraction and organize structured data into categorized endpoints. Use when the user asks to: scan a document, upload a file, list endpoints, inspect endpoint data, check usage stats, create or delete endpoints, get file URLs, or manage document metadata. Requires ENDPOINTS_API_KEY from endpoints.work dashboard.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Endpoints API Toolkit"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] Install dependencies:\n\n```bash\ncd scripts && npm install\n```\n\nConfigure credentials by creating a `.env` file in the project root:\n\n```\nENDPOINTS_API_URL=https://endpoints.work\nENDPOINTS_API_KEY=ep_your_api_key_here\n```\n\n**Prerequisites**: An Endpoints account with an API key. Generate your API key from the [API Keys page](https://endpoints.work/api-keys)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] | User says | Function to call |\n|-----------|-----------------|\n| \"List my endpoints\" | `listEndpoints()` |\n| \"Show endpoint details for /job-tracker/january\" | `getEndpoint('/job-tracker/january')` |\n| \"Scan this document\" | `scanFile('/path/to/file.pdf', 'job tracker')` |\n| \"Scan this text\" | `scanText('Meeting notes...', 'meeting tracker')` |\n| \"Create an endpoint for receipts\" | `createEndpoint('/receipts/2026')` |\n| \"Delete the old endpoint\" | `deleteEndpoint('/category/slug')` |\n| \"Remove that item\" | `deleteItem('abc12345')` |\n| \"Get the file URL\" | `getFileUrl('userid/path/file.pdf')` |\n| \"Check my usage\" | `getStats()` |\n\nExecute functions by importing from `scripts/src/index.ts`:\n\n```typescript\nimport { listEndpoints, scanText, getStats } from './scripts/src/index.js';\n\nconst categories = await listEndpoints();\nconst result = await scanText('Meeting with John about Q1 goals', 'meeting tracker');\nconst stats = await getStats();\n```\n\nOr run directly with tsx:\n\n```bash\nnpx tsx scripts/src/index.ts\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow Pattern] Every analysis follows three phases:\n\n### 1. Analyze\nRun API functions. Each call hits the Endpoints API and returns structured data.\n\n### 2. Auto-Save\nAll results automatically save as JSON files to `results/{category}/`. File naming patterns:\n- Named results: `{sanitized_name}.json`\n- Auto-generated: `YYYYMMDD_HHMMSS__{operation}.json`\n\n### 3. Summarize\nAfter analysis, read the saved JSON files and create a markdown summary in `results/summaries/` with data tables, insights, and extracted entities."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[High-Level Functions] | Function | Purpose | What it returns |\n|----------|---------|----------------|\n| `listEndpoints()` | Get all endpoints by category | Tree structure with categories and endpoints |\n| `getEndpoint(path)` | Get endpoint details | Full metadata (old + new items) |\n| `scanText(text, prompt)` | Scan text with AI | Extracted entities and endpoint path |\n| `scanFile(filePath, prompt)` | Scan file with AI | Extracted entities and endpoint path |\n| `getStats()` | Get usage statistics | Parses used, limits, storage |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Individual API Functions] For granular control, import specific functions. See [references/api-reference.md](references/api-reference.md) for the complete list with parameters, types, and examples.\n\n### Endpoint Functions\n\n| Function | Purpose |\n|----------|---------|\n| `listEndpoints()` | List all endpoints organized by category |\n| `getEndpoint(path)` | Get full endpoint details with metadata |\n| `createEndpoint(path)` | Create a new empty endpoint |\n| `deleteEndpoint(path)` | Delete endpoint and all associated files |\n\n### Scanning Functions\n\n| Function | Purpose |\n|----------|---------|\n| `scanText(text, prompt)` | Scan text content with AI extraction |\n| `scanFile(filePath, prompt)` | Scan file (PDF, images, docs) with AI |\n\n### Item Functions\n\n| Function | Purpose |\n|----------|---------|\n| `deleteItem(itemId)` | Delete a single item by its 8-char ID |\n\n### File Functions\n\n| Function | Purpose |\n|----------|---------|\n| `getFileUrl(key)` | Get presigned S3 URL for a file |\n\n### Billing Functions\n\n| Function | Purpose |\n|----------|---------|\n| `getStats()` | Get usage stats (parses, storage, tier) |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Data Structures] ### Living JSON Pattern\n\nEndpoints use the Living JSON pattern for document history:\n\n```typescript\n{\n  endpoint: { path, category, slug },\n  metadata: {\n    oldMetadata: { ... },  // Historical items\n    newMetadata: { ... }   // Recent items\n  }\n}\n```\n\n### Metadata Item\n\nEach item has:\n- **8-character ID** - Unique identifier (e.g., `abc12345`)\n- **summary** - AI-generated description\n- **entities** - Extracted entities (people, companies, dates)\n- **filePath** - S3 URL if file was uploaded\n- **fileType** - MIME type\n- **originalText** - Source text"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] | Status | Meaning |\n|--------|---------|\n| 401 | Invalid or missing API key |\n| 404 | Endpoint or item not found |\n| 409 | Endpoint already exists |\n| 429 | Usage limit exceeded |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Examples] ### List and Inspect\n\n```typescript\n// Get all endpoints\nconst { categories } = await listEndpoints();\nconsole.log(`Found ${categories.length} categories`);\n\n// Inspect specific endpoint\nconst details = await getEndpoint('/job-tracker/january');\nconsole.log(`Total items: ${details.totalItems}`);\n```\n\n### Scan Documents\n\n```typescript\n// Scan text content\nconst result = await scanText(\n  'Email from John Smith at Acme Corp about the Q1 contract renewal',\n  'business contacts'\n);\nconsole.log(`Created endpoint: ${result.endpoint.path}`);\n\n// Scan a PDF file\nconst fileResult = await scanFile('./invoice.pdf', 'invoice tracker');\nconsole.log(`Extracted ${fileResult.entriesAdded} items`);\n```\n\n### Check Usage\n\n```typescript\nconst stats = await getStats();\nconsole.log(`Parses: ${stats.parsesUsed}/${stats.parsesLimit}`);\nconsole.log(`Storage: ${stats.storageUsed} bytes`);\n```"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "endpoints"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamkristopher/endpoints/SKILL.md"
+}

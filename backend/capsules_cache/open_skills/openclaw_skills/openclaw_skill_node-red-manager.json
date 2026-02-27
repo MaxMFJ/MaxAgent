@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_node-red-manager",
+  "description": "Manage Node-RED instances via Admin API or CLI. Automate flow deployment, install nodes, and troubleshoot issues. Use when user wants to \"build automation\", \"connect devices\", or \"fix node-red\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Node-RED Manager"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Copy `.env.example` to `.env`.\n2. Set `NODE_RED_URL`, `NODE_RED_USERNAME`, and `NODE_RED_PASSWORD` in `.env`.\n3. The script automatically handles dependencies on first run."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Infrastructure] - **Stack Location**: `deployments/node-red`\n- **Data Volume**: `deployments/node-red/data`\n- **Docker Service**: `mema-node-red`\n- **URL**: `https://flow.glassgallery.my.id`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### Flow Management\n\n```bash\n# List all flows\nscripts/nr list-flows\n\n# Get specific flow by ID\nscripts/nr get-flow <flow-id>\n\n# Deploy flows from file\nscripts/nr deploy --file assets/flows/watchdog.json\n\n# Update specific flow\nscripts/nr update-flow <flow-id> --file updated-flow.json\n\n# Delete flow\nscripts/nr delete-flow <flow-id>\n\n# Get flow runtime state\nscripts/nr get-flow-state\n\n# Set flow runtime state\nscripts/nr set-flow-state --file state.json\n```\n\n### Backup & Restore\n\n```bash\n# Backup all flows to file\nscripts/nr backup\nscripts/nr backup --output my-backup.json\n\n# Restore flows from backup\nscripts/nr restore node-red-backup-20260210_120000.json\n```\n\n### Node Management\n\n```bash\n# List installed nodes\nscripts/nr list-nodes\n\n# Install node module\nscripts/nr install-node node-red-contrib-http-request\n\n# Get node information\nscripts/nr get-node node-red-contrib-http-request\n\n# Enable/disable node\nscripts/nr enable-node node-red-contrib-http-request\nscripts/nr disable-node node-red-contrib-http-request\n\n# Remove node\nscripts/nr remove-node node-red-contrib-http-request\n```\n\n### Runtime Information\n\n```bash\n# Get runtime settings\nscripts/nr get-settings\n\n# Get runtime diagnostics\nscripts/nr get-diagnostics\n```\n\n### Context Management\n\n```bash\n# Get context value\nscripts/nr get-context flow my-key\nscripts/nr get-context global shared-data\n\n# Set context value\nscripts/nr set-context flow my-key '\"value\"'\nscripts/nr set-context global counter '42'\nscripts/nr set-context global config '{\"key\": \"value\"}'\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Docker Operations] ```bash\n# Restart Node-RED\ncd deployments/node-red && docker compose restart\n\n# View logs\ndocker logs mema-node-red --tail 100\n\n# Follow logs\ndocker logs -f mema-node-red\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Environment Variables] - `NODE_RED_URL`: Node-RED API endpoint (default: `http://localhost:1880`)\n- `NODE_RED_USERNAME`: Admin username\n- `NODE_RED_PASSWORD`: Admin password\n\nLegacy variable names (`NR_URL`, `NR_USER`, `NR_PASS`) are supported for backward compatibility."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Reference] See `references/admin-api.md` for complete Admin API endpoint documentation."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "node_red_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/node-red-manager/SKILL.md"
+}

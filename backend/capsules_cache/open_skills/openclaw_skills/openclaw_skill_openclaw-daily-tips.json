@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_openclaw-daily-tips",
+  "description": "Daily AI agent optimization tips, tricks and self-improvement strategies. Learn cost-saving, speed, memory and automation best practices from the OpenClaw community.\n\nUse when: you want daily tips to optimize your AI agent, reduce costs, improve performance, or learn automation workflows.\n\nDon't use when: you need immediate config changes - use openclaw-agent-optimize for deep audits.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # openclaw-daily-tips\n\nDaily AI agent optimization tips and self-improvement strategies for OpenClaw users."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Does] - Fetches daily optimization tips from community sources\n- Tracks your preferences and learns what works for you\n- Provides actionable advice with impact scores\n- Helps reduce costs and improve agent performance"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Get today's tip\nnode ~/.openclaw/workspace/skills/openclaw-daily-tips/scripts/openclaw-daily-tips.mjs tips\n\n# Search for specific topic\nnode ~/.openclaw/workspace/skills/openclaw-daily-tips/scripts/openclaw-daily-tips.mjs search \"cost\"\n\n# Weekly report\nnode ~/.openclaw/workspace/skills/openclaw-daily-tips/scripts/openclaw-daily-tips.mjs weekly\n\n# List all available tips\nnode ~/.openclaw/workspace/skills/openclaw-daily-tips/scripts/openclaw-daily-tips.mjs all\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Features] ### Categories\n- **Cost**: Save money on API calls, model routing\n- **Speed**: Faster responses, reduced latency\n- **Memory**: Context optimization, memory patterns\n- **Skills**: New skill recommendations\n- **Automation**: Cron, heartbeat, workflow optimization\n\n### Impact Score\n- 🟢 Low effort / High reward\n- 🟡 Medium effort / Medium reward  \n- 🔴 High effort / Experimental\n\n### Self-Learning\nThe skill remembers your preferences:\n- Saved tips are tracked\n- Skipped topics won't reappear\n- Adapts to your needs over time"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Cron Integration] Schedule daily tips at 9 AM:\n\n```json\n{\n  \"id\": \"openclaw-daily-tips\",\n  \"schedule\": { \"kind\": \"cron\", \"expr\": \"0 9 * * *\" }\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Example] ```\n📈 OPENCLAW-DAILY-TIPS - Your Agent Smarter Every Day\n\n💡 TIP OF THE DAY (High Impact)\nTitle: Use tiered model routing\n\n🟢 Low Effort | 📈 High Impact\n\nWhat:\n- Route simple tasks to cheap models\n- Route complex tasks to premium models\n- Save significant API costs\n\nHow:\n1. Add model routing in cron jobs\n2. Use cheap model for routine tasks\n3. Reserve premium for complex reasoning\n\n🔗 docs.openclaw.ai/models\n\n━━━━━━━━━━━━━━\n👍 Save this | 👎 Skip | ➕ More tips\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Categories Explained] | Category | What You'll Learn |\n|----------|------------------|\n| Cost | Model routing, token optimization, batching |\n| Speed | Caching, lazy loading, parallel execution |\n| Memory | Context discipline, progressive disclosure |\n| Skills | Skill best practices, modular design |\n| Automation | Cron optimization, alert patterns |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Tips Database] Current tips cover:\n- Tiered model selection\n- Script-first cron patterns\n- Alert-only delivery\n- Semantic memory search\n- Batch similar jobs\n- Isolated sub-agents\n- Context discipline\n- Idempotent cron jobs\n- Heartbeat optimization\n- Modular skill design"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Requirements] - Node.js 18+\n- OpenClaw workspace\n- Optional: reddit-readonly skill for community feeds"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Related Skills] - **openclaw-agent-optimize** - Deep optimization audit\n- **openclaw-token-optimizer** - Token cost optimization  \n- **memory-setup** - Memory configuration\n- **daily-digest** - General daily briefing\n- **compound-engineering** - Agent self-improvement"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Credits] Inspired by openclaw-agent-optimize and the OpenClaw community.\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Install] ```bash\nclawhub install openclaw-daily-tips\n```\n\nOr manually copy to your skills directory."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_daily_tips"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📈",
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "env": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adelpro/openclaw-daily-tips/SKILL.md"
+}

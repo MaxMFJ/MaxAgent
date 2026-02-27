@@ -1,0 +1,110 @@
+{
+  "id": "openclaw_skill_byr-cli",
+  "description": "Use BYR CLI for auth, search, detail inspection, and safe torrent download planning with JSON envelopes.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # BYR CLI Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When To Use] Use this skill when a task needs any BYR operation via CLI:\n\n- authenticate/check auth state\n- search torrents with filters\n- browse latest torrents with filters\n- inspect torrent details\n- plan or execute torrent downloads\n- fetch BYR metadata and user info\n- run local diagnostics before live calls"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Boundaries] - Work only through the `byr` binary.\n- Prefer `--json` for machine-readable output.\n- Do not infer missing IDs/paths or silently mutate files.\n- Keep read-only commands non-destructive."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Auth Notes] - Support both cookie formats in `auth import-cookie`:\n  - `uid=...; pass=...`\n  - `session_id=...; auth_token=...` (optional `refresh_token=...`)\n- Browser import:\n  - `chrome` (macOS path/decrypt flow)\n  - `safari` best effort with manual fallback\n- Always check status before live operations:\n  - `byr auth status --verify --json`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands (JSON First)] Read-only:\n\n- `byr check --json`\n- `byr whoami --json`\n- `byr doctor [--verify] --json`\n- `byr browse [--limit <n>] [--category <alias|id>] [--incldead <alias|id>] [--spstate <alias|id>] [--bookmarked <alias|id>] [--page <n>] --json`\n- `byr search --query \"<text>\" --limit <n> --json`\n- `byr search --imdb <tt-id> [--category <alias|id>] [--spstate <alias|id>] --json`\n- `byr get --id <torrent-id> --json`\n- `byr user info --json`\n- `byr meta categories --json`\n- `byr meta levels --json`\n- `byr auth status [--verify] --json`\n- `byr auth import-cookie --cookie \"<cookie-header>\" --json`\n- `byr auth import-cookie --from-browser <chrome|safari> [--profile <name>] --json`\n- `byr auth logout --json`\n\nWrite side effect:\n\n- Dry run first: `byr download --id <torrent-id> --output <path> --dry-run --json`\n- Actual write: `byr download --id <torrent-id> --output <path> --json`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Search/Browse Semantics] - `search` and `browse` return paged list data.\n- JSON fields:\n  - `matchedTotal`: estimated total hits inferred from BYR pagination range blocks.\n  - `returned`: number of items returned in current payload.\n  - `total`: backward-compatible alias of `returned`.\n- If `--page` is omitted, list commands auto-fetch subsequent pages until `--limit` is reached.\n- If `--page` is provided, only that page is fetched."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Side-Effect Policy] Before non-dry-run `download`:\n\n1. verify `--id` and `--output` are explicit\n2. run dry-run and inspect `sourceUrl/fileName`\n3. confirm intent for the output path\n\nIf parameters are missing, ask for explicit values."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error handling] - Surface `error.code` and `error.message`.\n- For `E_ARG_*`: request corrected flags/arguments.\n- For `E_AUTH_*`: re-auth guidance (`auth import-cookie` or credential refresh).\n- For `E_NOT_FOUND_*`: request different query/torrent ID.\n- For `E_UPSTREAM_*`: suggest retry and capture command/context."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Response Style] - Keep result summaries short.\n- Include key fields for search/get: `id`, `title`, `size`, `seeders`, `leechers`.\n- For list commands include both `matchedTotal` and `returned` when present.\n- Include key fields for download: `outputPath`, `sourceUrl`, `dryRun`, `bytesWritten`."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "byr_cli"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "skillKey": "byr-cli",
+        "homepage": "https://clawhub.ai",
+        "requires": {
+          "bins": [
+            "byr"
+          ]
+        },
+        "install": [
+          {
+            "id": "brew",
+            "kind": "brew",
+            "formula": "byr-pt-cli",
+            "tap": "1MoreBuild/tap",
+            "bins": [
+              "byr"
+            ],
+            "label": "Install byr CLI (Homebrew)"
+          },
+          {
+            "id": "node",
+            "kind": "node",
+            "package": "byr-pt-cli",
+            "bins": [
+              "byr"
+            ],
+            "label": "Install byr CLI (npm fallback)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1morebuild/byr-cli/SKILL.md"
+}

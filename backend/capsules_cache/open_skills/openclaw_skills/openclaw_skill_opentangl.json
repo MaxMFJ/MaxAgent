@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_opentangl",
+  "description": "Not a code generator — an entire dev team. Point it at any JS/TS project and a product vision. It plans features, writes code, verifies builds, creates PRs, reviews diffs, and merges — autonomously. Manages multiple repos as one product. Use when you want to ship code without writing it.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenTangl\n\nConfigure a self-driving development loop for any JavaScript/TypeScript project. This skill detects your project setup, generates configuration files, and prepares OpenTangl to run autonomously."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] The user must have OpenTangl cloned and installed before using this skill. If they haven't, provide these commands for them to run:\n\n```\ngit clone https://github.com/8co/opentangl.git\ncd opentangl\nnpm install\n```\n\n**Do not run these commands on the user's behalf.** Wait for confirmation that OpenTangl is installed.\n\nOnce confirmed, verify the required tools are present. Run each check and report the results:\n\n- **Node.js** ≥ 18 — run `node --version` and show the output\n- **git** — run `git --version` and show the output\n- **GitHub CLI** — run `gh auth status` and show the output (needed for PR creation and merging)\n\nReport all results to the user. If anything is missing, tell them exactly how to install it and stop until resolved."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Step 1 — Determine the Target Project] Ask the user:\n\n> Are you improving **(a)** an existing project, or **(b)** starting from scratch?\n\n### Path A: Existing Project\n\n1. Ask: **\"Where is your project?\"** Accept a path. If they say \"this directory,\" use cwd.\n2. Tell the user you'll read config files in their project directory to detect the setup. Only inspect files in the directory the user provided — do not scan outside it. Check:\n   - **Type**: `tsconfig.json` → TypeScript, `vite.config.ts` → Vite, `next.config.*` → Next.js, `serverless.yml` → Serverless\n   - **Package manager**: `package-lock.json` → npm, `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm\n   - **Build/test commands**: Read `package.json` scripts for `build`, `test`, `lint`, `typecheck`\n   - **Source dirs**: Default to `src/` if it exists\n   - **Target branch**: Check `git symbolic-ref refs/remotes/origin/HEAD` or look for `main` vs `master`\n3. Show everything you detected and confirm with the user before proceeding.\n4. Ask: \"Are there other repos that are part of this same product?\" If yes, repeat detection for each.\n\n### Path B: New Project\n\nTell the user to scaffold and initialize their project before continuing. Suggest the appropriate tool based on what they want to build:\n\n- React + Vite: `npm create vite@latest {name} -- --template react-ts`\n- Next.js: `npx create-next-app@latest {name} --typescript`\n- Express: create `package.json` + `src/index.ts` manually\n\nThey should also initialize git and create a GitHub repo:\n\n```\ncd {name}\ngit init && git add . && git commit -m \"Initial scaffold\"\ngh repo create {name} --public --source . --push\n```\n\n**Do not run these commands on the user's behalf.** Once they confirm the project exists with a GitHub remote, continue."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 2 — Generate projects.yaml] Create `projects.yaml` in the OpenTangl root directory. Each project entry needs:\n\n```yaml\nprojects:\n  - id: my-app                          # Short kebab-case ID (used in CLI flags)\n    name: my-app                        # Human-readable name\n    path: ../my-app                     # Relative path from OpenTangl root to the project\n    type: react-vite                    # Project type (see below)\n    description: React dashboard app    # One-line description\n    scan_dirs:\n      - src                             # Directories containing source code\n    skip_patterns:\n      - node_modules\n      - dist\n      - \"*.test.*\"\n    verify:                             # Commands that must pass before committing\n      - command: npm\n        args: [run, build]\n    package_manager: npm                # npm | yarn | pnpm\n    merge:\n      target_branch: main               # Branch PRs merge into\n```\n\n**Supported types:** `typescript-node`, `serverless-js`, `serverless-ts`, `react-vite`, `react-next`, `express` (or any descriptive string).\n\nFor **multi-project setups**, add an `environment` field to group related projects under a shared vision:\n\n```yaml\n  - id: my-api\n    environment: my-product\n    # ...\n  - id: my-frontend\n    environment: my-product\n    # ...\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 3 — Create the Vision Doc] Create `docs/environments/{environment}/product-vision.md` (use the project `id` as environment name for single projects, or the `environment` field for multi-project).\n\nThe vision doc has two sections:\n\n### Origin & Direction (human-authored, never modified by OpenTangl)\n\nAsk the user to describe:\n- **What This Is** — 2-3 sentences about the project\n- **Where It's Going** — long-term direction, 6-12 months out\n- **What Matters Most** — 3-5 principles guiding decisions\n\n### Current Priorities (maintained by OpenTangl after each run)\n\nAsk: **\"What are the first 3-5 things you want built or improved?\"**\n\nWrite them as Active Initiatives:\n\n```markdown\n### Active Initiatives\n\n1. **{Priority}** — {What and why}\n   - Status: not started\n```\n\nIf the user isn't sure, offer to read the codebase and suggest priorities."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 4 — Configure the LLM] The user needs to create a `.env` file in the OpenTangl root with their API key. **Do not accept or handle API keys directly** — provide the template and let the user create the file themselves.\n\nFirst, verify that `.env` appears in the project's `.gitignore` by reading the file. If it does not, add it and tell the user.\n\nThen provide the appropriate template for the user to fill in:\n\n**For OpenAI:**\n```\nOPENAI_API_KEY=sk-...\nOPENAI_MODEL=gpt-4o\nDEFAULT_AGENT=openai\n```\n\n**For Anthropic (Claude):**\n```\nANTHROPIC_API_KEY=sk-ant-...\nANTHROPIC_MODEL=claude-sonnet-4-20250514\nDEFAULT_AGENT=anthropic\n```\n\nTell the user: \"Create a `.env` file in the OpenTangl root and paste one of the templates above with your key. This file is gitignored and will never be committed.\"\n\nWait for confirmation before continuing."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 5 — Prepare the First Run] Initialize an empty task queue:\n\n```bash\nmkdir -p tasks\necho \"tasks: []\" > tasks/queue.yaml\n```\n\nThen provide the user with the command to start the autopilot. **Do not run this command on the user's behalf** — show it and let them execute it:\n\nFor a single project:\n\n```\nnpx tsx src/cli.ts autopilot --projects {project-id} --cycles 1 --feature-ratio 0.8\n```\n\nFor multi-project:\n\n```\nnpx tsx src/cli.ts autopilot --projects {api-id},{ui-id} --cycles 1 --feature-ratio 0.8\n```\n\n**What happens during a cycle:**\n1. OpenTangl reads the vision doc and scans the codebase\n2. It proposes tasks aligned with the vision\n3. It executes each task — writes code, runs verification\n4. It creates PRs, reviews them with the LLM, merges if clean\n5. It updates the vision doc with progress\n\nTell the user to review the results after the first run — check the generated PRs and the updated vision doc."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **\"No pending tasks\"** — The queue is empty. Run autopilot to have the LLM propose tasks, or add more specific priorities to the vision doc.\n- **Build failures** — OpenTangl retries up to 3 times with error feedback. If all attempts fail, the task is marked failed and skipped.\n- **Escalated PRs** — The LLM reviewer flagged critical concerns. Check the GitHub issue it created for details.\n- **\"OPENAI_API_KEY is required\"** — Create `.env` and add your key (see Step 4).\n- **Merge conflicts** — OpenTangl has a built-in conflict resolver. If it can't resolve automatically, the PR is escalated for human review."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "opentangl"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🤖",
+        "requires": {
+          "bins": [
+            "node",
+            "git",
+            "gh"
+          ],
+          "env": [
+            "OPENAI_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENAI_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/8co/opentangl/SKILL.md"
+}

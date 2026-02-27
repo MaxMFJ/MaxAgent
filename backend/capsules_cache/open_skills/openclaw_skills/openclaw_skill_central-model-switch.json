@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_central-model-switch",
+  "description": "OpenClaw 模型切换与救援技能。当模型 API 不可用时切换模型，或处理节点配对问题。触发词：模型切换、API用完、Central救援、节点掉线。⚠️ 使用前必须配置环境变量，详见变量说明。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw 模型切换与救援\n\n⚠️ **安全警告**：使用前必须配置以下环境变量，勿直接运行！"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[变量配置] | 变量 | 说明 | 示例值 |\n|------|------|--------|\n| CENTRAL_IP | 中央服务器 IP | 从配置文件获取 |\n| SSH_KEY | SSH 私钥路径 | ~/.ssh/id_ed25519 |\n| API_KEY | 模型 API Key | 从平台获取 |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[实施步骤] ### 1. 连接目标服务器\n```bash\nssh -i $SSH_KEY root@$CENTRAL_IP\n```\n\n### 2. 检查当前配置\n```bash\ncat ~/.openclaw/openclaw.json | grep -A5 'primary'\n```\n\n### 3. 更新模型配置\n\n根据你的模型提供商修改配置（以 OpenAI 为例）：\n\n```bash\n# 备份配置\ncp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak\n\n# 使用 sed 修改默认模型（请根据实际情况调整）\nsed -i 's/\"primary\": \"[^\"]*\"/\"primary\": \"gpt-4o-mini\"/' ~/.openclaw/openclaw.json\n```\n\n或使用 Python：\n\n```python3\nimport json\n\nwith open('/root/.openclaw/openclaw.json', 'r') as f:\n    cfg = json.load(f)\n\n# 修改默认模型\ncfg['agents']['defaults']['model']['primary'] = 'your-model-id'\n\nwith open('/root/.openclaw/openclaw.json', 'w') as f:\n    json.dump(cfg, f, indent=2)\n```\n\n### 4. 重启 Gateway\n\n优先使用 systemd：\n```bash\nsudo systemctl restart openclaw-gateway\n```\n\n如无 systemd：\n```bash\ncd ~/.openclaw\npkill -f openclaw-gateway\nnohup npx openclaw gateway > /tmp/gateway.log 2>&1 &\n```\n\n### 5. 验证\n```bash\n# 检查进程状态\nps aux | grep openclaw-gateway\n\n# 测试 API\ncurl -s http://localhost:18789/health\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[节点配对救援（如掉线）] ### 节点重新配对\n\n```bash\n# 删除旧的配对信息\nrm ~/.openclaw/node.json\n\n# 重新启动节点\ncd ~/.openclaw\nnpx openclaw node run --host <gateway_ip> --port <gateway_port>\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[安全建议] 1. **始终备份**：修改配置前先备份\n2. **验证 IP**：确认目标服务器 IP 正确\n3. **检查 Key**：API Key 只在本地使用，勿上传\n4. **最小权限**：使用 sudo 而非 root 登录\n5. **监控日志**：查看 `/tmp/gateway.log` 排查问题"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[相关文件] - `~/.openclaw/openclaw.json` - 配置文件\n- `/tmp/gateway.log` - 运行日志"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "central_model_switch"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2233admin/central-model-switch/SKILL.md"
+}

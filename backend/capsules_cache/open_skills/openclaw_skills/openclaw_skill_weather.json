@@ -1,0 +1,58 @@
+{
+  "id": "openclaw_skill_weather",
+  "description": "Get current weather and forecasts (no API key required).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Weather\n\nTwo free services, no API keys needed."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[wttr.in (primary)] Quick one-liner:\n```bash\ncurl -s \"wttr.in/London?format=3\"\n# Output: London: ⛅️ +8°C\n```\n\nCompact format:\n```bash\ncurl -s \"wttr.in/London?format=%l:+%c+%t+%h+%w\"\n# Output: London: ⛅️ +8°C 71% ↙5km/h\n```\n\nFull forecast:\n```bash\ncurl -s \"wttr.in/London?T\"\n```\n\nFormat codes: `%c` condition · `%t` temp · `%h` humidity · `%w` wind · `%l` location · `%m` moon\n\nTips:\n- URL-encode spaces: `wttr.in/New+York`\n- Airport codes: `wttr.in/JFK`\n- Units: `?m` (metric) `?u` (USCS)\n- Today only: `?1` · Current only: `?0`\n- PNG: `curl -s \"wttr.in/Berlin.png\" -o /tmp/weather.png`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Open-Meteo (fallback, JSON)] Free, no key, good for programmatic use:\n```bash\ncurl -s \"https://api.open-meteo.com/v1/forecast?latitude=51.5&longitude=-0.12&current_weather=true\"\n```\n\nFind coordinates for a city, then query. Returns JSON with temp, windspeed, weathercode.\n\nDocs: https://open-meteo.com/en/docs"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "weather"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🌤️",
+        "requires": {
+          "bins": [
+            "curl"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adityak472/weather-aditya/SKILL.md"
+}

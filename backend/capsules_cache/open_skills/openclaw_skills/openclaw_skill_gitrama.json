@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_gitrama",
+  "description": "Git history intelligence powered by AI. Use when the user asks about git history, commit messages, branch names, repo insights, code archaeology, or wants to understand what happened in a codebase. Triggers on: \"git history\", \"commit message\", \"branch name\", \"who changed\", \"what happened\", \"repo summary\", \"code archaeology\", \"semantic search git\", \"generate commit\", \"smart commit\", \"git log analysis\", \"contributor insights\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gitrama — Git History Intelligence\n\nGitrama is a CLI tool that brings AI-powered semantic search and intelligence to your Git history. It includes **AskGIT**, an embedded AI assistant that understands your entire repo context.\n\nAll AI processing is handled server-side via `api.gitrama.ai`. No API keys required — just install and use."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Capabilities] ### 1. AskGIT — Semantic Git History Chat\nAsk natural language questions about your repository:\n- \"What changes were made to the authentication module last month?\"\n- \"Who has been the main contributor to the API layer?\"\n- \"Summarize the last 20 commits\"\n- \"What breaking changes happened between v1.0 and v2.0?\"\n\n**Command:** `gtr chat`\n\nAskGIT automatically gathers context from 10 git subprocess calls (branch info, recent commits, diffs, contributors, file tree) and sends that context to api.gitrama.ai for intelligent analysis.\n\n### 2. Smart Commit Message Generation\nGenerate conventional commit messages from staged changes:\n- Analyzes your `git diff --staged`\n- Produces properly formatted conventional commits (feat:, fix:, docs:, etc.)\n- Respects your project's commit conventions\n\n**Command:** `gtr commit`\n\n### 3. Branch Name Generation\nGenerate clean, descriptive branch names from a task description:\n- Follows git branch naming conventions\n- Includes type prefixes (feature/, bugfix/, hotfix/)\n- Keeps names concise and meaningful\n\n**Command:** `gtr branch`\n\n### 4. Git Log Analysis & Repo Insights\nGet AI-powered analysis of your repository:\n- Contributor activity patterns\n- Code change frequency by area\n- Release history summaries\n- Technical debt indicators\n\n**Command:** `gtr chat` then ask about repo insights"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation] Gitrama is distributed via PyPI:\n\n```bash\npip install gitrama\n```\n\nVerify installation:\n\n```bash\ngtr version\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] No API keys or configuration needed. Gitrama connects to api.gitrama.ai for all AI processing out of the box.\n\nOptional configuration available via:\n\n```bash\ngtr config\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage Examples] When the user asks about git history or repo context, run the appropriate gitrama command:\n\n```bash\n# Start an interactive chat about the repo\ngtr chat\n\n# Generate a commit message for staged changes\ngtr commit\n\n# Generate a branch name\ngtr branch \"add user authentication with OAuth\"\n\n# Quick shortcuts\ngtr c   # alias for commit\ngtr b   # alias for branch\ngtr ch  # alias for chat\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Data Flow] ```\nLocal CLI (gtr) → gathers git context locally → POST to api.gitrama.ai → AI response\n```\n\n- Git context (commits, diffs, branch info) is collected locally via git subprocess calls\n- Context is sent to api.gitrama.ai for AI processing\n- No API keys are stored or required on the user's machine\n- No sensitive IP runs locally — the intelligence layer lives server-side"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Important Notes] - Gitrama must be run inside a git repository\n- AskGIT maintains a 40-message conversation history for multi-turn context\n- The tool collects repo context automatically — no manual configuration needed\n- Repository data sent to api.gitrama.ai is used only for generating responses and is not stored"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] If `gtr` is not found after install:\n```bash\n# Ensure pip scripts are on PATH\npython3 -m gitrama --version\n```\n\nIf connection errors occur:\n```bash\n# Verify api.gitrama.ai is reachable\ncurl -s https://api.gitrama.ai/health\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Links] - Website: https://gitrama.ai\n- PyPI: https://pypi.org/project/gitrama/"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gitrama"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🌿",
+        "requires": {
+          "bins": [
+            "git",
+            "pip"
+          ],
+          "binsAnyOf": [
+            "python3",
+            "python"
+          ]
+        },
+        "install": {
+          "pip": [
+            "gitrama"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahmaxdev/gitrama/SKILL.md"
+}

@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_fal-api",
+  "description": "Generate images, videos, and audio via fal.ai API (FLUX, SDXL, Whisper, etc.)",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # fal.ai API Skill\n\nGenerate images, videos, and transcripts using fal.ai's API with support for FLUX, Stable Diffusion, Whisper, and more."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - Queue-based async generation (submit → poll → result)\n- Support for 600+ AI models\n- Image generation (FLUX, SDXL, Recraft)\n- Video generation (MiniMax, WAN)\n- Speech-to-text (Whisper)\n- Stdlib-only dependencies (no `fal_client` required)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] 1. Get your API key from https://fal.ai/dashboard/keys\n2. Configure with:\n\n```bash\nexport FAL_KEY=\"your-api-key\"\n```\n\nOr via clawdbot config:\n\n```bash\nclawdbot config set skill.fal_api.key YOUR_API_KEY\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### Interactive Mode\n\n```\nYou: Generate a cyberpunk cityscape with FLUX\nKlawf: Creates the image and returns the URL\n```\n\n### Python Script\n\n```python\nfrom fal_api import FalAPI\n\napi = FalAPI()\n\n# Generate and wait\nurls = api.generate_and_wait(\n    prompt=\"A serene Japanese garden\",\n    model=\"flux-dev\"\n)\nprint(urls)\n```\n\n### Available Models\n\n| Model         | Endpoint                              | Type         |\n| ------------- | ------------------------------------- | ------------ |\n| flux-schnell  | `fal-ai/flux/schnell`                 | Image (fast) |\n| flux-dev      | `fal-ai/flux/dev`                     | Image        |\n| flux-pro      | `fal-ai/flux-pro/v1.1-ultra`          | Image (2K)   |\n| fast-sdxl     | `fal-ai/fast-sdxl`                    | Image        |\n| recraft-v3    | `fal-ai/recraft-v3`                   | Image        |\n| sd35-large    | `fal-ai/stable-diffusion-v35-large`   | Image        |\n| minimax-video | `fal-ai/minimax-video/image-to-video` | Video        |\n| wan-video     | `fal-ai/wan/v2.1/1.3b/text-to-video`  | Video        |\n| whisper       | `fal-ai/whisper`                      | Audio        |\n\nFor the full list, run:\n\n```bash\npython3 fal_api.py --list-models\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Parameters] | Parameter  | Type | Default          | Description                                        |\n| ---------- | ---- | ---------------- | -------------------------------------------------- |\n| prompt     | str  | required         | Image/video description                            |\n| model      | str  | \"flux-dev\"       | Model name from table above                        |\n| image_size | str  | \"landscape_16_9\" | Preset: square, portrait_4_3, landscape_16_9, etc. |\n| num_images | int  | 1                | Number of images to generate                       |\n| seed       | int  | None             | Random seed for reproducibility                    |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built following the krea-api skill pattern. Uses fal.ai's queue-based API for reliable async generation."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fal_api"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "FAL_KEY"
+          ]
+        },
+        "primaryEnv": "FAL_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agmmnn/fal-ai/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_shellmail",
+  "description": "Email API for AI agents. Check inbox, read emails, extract OTP codes, search messages via ShellMail. Trigger on \"check email\", \"inbox\", \"otp\", \"verification code\", \"shellmail\", or any email-related requests.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ShellMail\n\nEmail for AI agents via shellmail.ai. Create inboxes, receive mail, extract OTPs automatically."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[First-Time Setup] If no token is configured:\n\n1. Ask user for desired email name (e.g., \"atlas\") and a recovery email\n   - Or use `auto` for the name to generate a random address (e.g., \"swift-reef-4821\")\n2. Run: `{baseDir}/scripts/shellmail.sh create <name> <recovery_email>`\n3. If the address is already taken:\n   - Suggest a different name or use `auto`\n   - Do NOT suggest recovery unless the user confirms it's their previous inbox\n4. Save the returned token:\n\n```\ngateway config.patch {\"skills\":{\"entries\":{\"shellmail\":{\"env\":{\"SHELLMAIL_TOKEN\":\"sm_...\"}}}}}\n```\n\n5. Tell user to save the token safely — it won't be shown again\n6. Suggest user send a test email to their new address to verify it's working\n7. Once they confirm, run `inbox` to show the test email arrived"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Token Recovery] Only use recovery if the user explicitly says they lost access to an existing inbox they own:\n\n```bash\n{baseDir}/scripts/shellmail.sh recover <address@shellmail.ai> <recovery_email>\n```\n\nThis sends a new token to the recovery email on file. Do not suggest this for \"address taken\" errors."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ```bash\n{baseDir}/scripts/shellmail.sh <command>\n```\n\n### Check Inbox\n```bash\n{baseDir}/scripts/shellmail.sh inbox\n{baseDir}/scripts/shellmail.sh inbox --unread\n```\n\n### Read Email\n```bash\n{baseDir}/scripts/shellmail.sh read <email_id>\n```\n\n### Get OTP Code\n```bash\n# Get latest OTP\n{baseDir}/scripts/shellmail.sh otp\n\n# Wait up to 30 seconds for OTP\n{baseDir}/scripts/shellmail.sh otp --wait 30\n\n# Filter by sender\n{baseDir}/scripts/shellmail.sh otp --wait 30 --from github.com\n```\n\n### Search Emails\n```bash\n{baseDir}/scripts/shellmail.sh search --query \"verification\"\n{baseDir}/scripts/shellmail.sh search --otp\n{baseDir}/scripts/shellmail.sh search --from stripe.com\n```\n\n### Other Commands\n```bash\n{baseDir}/scripts/shellmail.sh mark-read <id>\n{baseDir}/scripts/shellmail.sh archive <id>\n{baseDir}/scripts/shellmail.sh delete <id>\n{baseDir}/scripts/shellmail.sh health\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Patterns] **User says \"check my email\":**\n```bash\n{baseDir}/scripts/shellmail.sh inbox --unread\n```\n\n**User says \"get the verification code\":**\n```bash\n{baseDir}/scripts/shellmail.sh otp --wait 30\n```\n\n**User says \"wait for GitHub OTP\":**\n```bash\n{baseDir}/scripts/shellmail.sh otp --wait 30 --from github.com\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Reference] Base URL: `https://shellmail.ai`\n\nAll endpoints use `Authorization: Bearer $SHELLMAIL_TOKEN`\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/api/mail` | GET | List emails (?unread=true&limit=50) |\n| `/api/mail/:id` | GET | Read full email |\n| `/api/mail/:id` | PATCH | Update {is_read, is_archived} |\n| `/api/mail/:id` | DELETE | Delete email |\n| `/api/mail/otp` | GET | Get OTP (?timeout=30000&from=domain) |\n| `/api/mail/search` | GET | Search (?q=text&from=domain&has_otp=true) |\n| `/api/addresses` | POST | Create {local, recovery_email} |"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "shellmail"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronbatchelder/shellmail/SKILL.md"
+}

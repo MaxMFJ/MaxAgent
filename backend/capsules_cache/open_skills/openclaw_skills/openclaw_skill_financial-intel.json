@@ -1,0 +1,118 @@
+{
+  "id": "openclaw_skill_financial-intel",
+  "description": "Stock momentum scanner and portfolio intelligence. Look up any ticker for momentum scores, RSI, coil breakout patterns, and AI analysis. Scan top signals across 6,500+ stocks and crypto. Track portfolio holdings with real-time alerts. Market pulse, sector trends, win/loss proof data, and risk assessment — all through natural conversation. Powered by 730 days of backtested data with an 80% 5-day win rate.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Financial Intelligence Skill\n\nReal-time momentum scoring and market intelligence for 6,500+ stocks and crypto assets. Powered by [Banana Farmer](https://bananafarmer.app) — an AI momentum scanner that combines technical analysis, price momentum, and social sentiment into a single 0-100 Ripeness Score.\n\nBacked by 730 days of tracked data across 12,450+ signals with a verified 80% five-day win rate."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] **Option A — Self-provision a free key instantly (no account needed):**\n```bash\ncurl -s -X POST \"https://bananafarmer.app/api/bot/v1/keys/trial\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\": \"My Agent\", \"email\": \"you@example.com\"}'\n```\nSave the `key` from the response. One key per email, instant, no credit card.\n\n**Option B — Sign up for a full account:** [bananafarmer.app/developers](https://bananafarmer.app/developers)\n\nThen:\n1. **Set your key**: `export BF_API_KEY=bf_bot_your_key_here` (or add to OpenClaw config)\n2. **Try it**: `python3 scripts/bf-lookup.py AAPL` — you get score, badge, RSI, coil, price action, bull/bear case, and what to watch for\n\nThat is it. You are now scanning 6,500+ assets for momentum signals.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prompt Examples] ### Single Ticker Analysis\n\nLook up any stock or crypto symbol for a full momentum profile: score, badge, RSI, coil pattern, EMA alignment, price action, volatility, scoring breakdown, AI summary, and bull/bear cases.\n\n**Example prompts:**\n- \"What's the momentum on AAPL?\"\n- \"Look up TSLA for me\"\n- \"How's Bitcoin looking?\"\n- \"Check NVDA's score and technicals\"\n- \"Is CRWV ripe?\"\n- \"What's the coil score on AMD?\"\n- \"Pull up the full analysis on SMCI\"\n- \"Is PLTR overbought right now?\"\n\n**How to run:**\n```bash\npython3 scripts/bf-lookup.py AAPL\npython3 scripts/bf-lookup.py TSLA NVDA AMD   # Multiple tickers at once\npython3 scripts/bf-lookup.py BTC              # Crypto works too\n```\n\n**What you get back:** Score (0-100), badge (ripe/ripening/overripe/too-late/neutral), current price, 1d and 5d change, RSI with overbought/oversold labels, coil score with breakout flag, EMA 20/50 alignment, 52-week high proximity, volatility metrics, scoring breakdown (technical/momentum/social), key drivers, AI summary bullets, bull case, bear case, and what to watch for.\n\n---\n\n### Top Signals / Batch Analysis\n\nSee the highest-scoring momentum signals right now — the tickers showing the strongest alignment across technical, price action, and social indicators.\n\n**Example prompts:**\n- \"What are the top signals right now?\"\n- \"Show me the hottest momentum setups\"\n- \"Any ripe signals today?\"\n- \"Top 5 stocks by momentum score\"\n- \"What's ripening that I should watch?\"\n- \"Show me the top 20 signals\"\n- \"Any ripe crypto signals?\"\n\n**How to run:**\n```bash\npython3 scripts/bf-market.py top                        # Default top 10, all badges\npython3 scripts/bf-market.py top --limit 20             # Top 20\npython3 scripts/bf-market.py top --badge ripe           # Only ripe signals\npython3 scripts/bf-market.py top --badge ripening       # Only ripening (watchlist candidates)\npython3 scripts/bf-market.py top --limit 5 --badge ripe # Top 5 ripe only\n```\n\n**What you get back:** Ranked table with symbol, sco"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Understanding the Data] ### Ripeness Score (0-100)\n\nThe score is a composite of four pillars weighted by their predictive power:\n\n| Pillar | Weight | What It Measures |\n|--------|--------|-----------------|\n| Technical Analysis | 35-55% | Chart patterns, RSI, moving averages, coil/spring patterns |\n| Momentum | 25-30% | Price velocity in the 1-3% early sweet spot, volume confirmation |\n| Social Sentiment | 20-45% | Reddit and X mentions, early buzz detection (1.2-2.0x normal activity) |\n| Crowd Intelligence | 0-10% | Crypto only: futures positioning, funding rates |\n\nHigher score means stronger alignment across all pillars. A score of 80 with Technical at 45% and Social at 35% tells a different story than 80 with Technical at 55% and Social at 20% — check the scoring breakdown.\n\n### Badge System\n\n| Badge | Score Range | What It Means | Action |\n|-------|------------|---------------|--------|\n| Ripe | 75-89 | High conviction setup, strong momentum with favorable entry | Best risk/reward window |\n| Ripening | 60-74 | Momentum building but not fully formed | Watch, not act — add to watchlist |\n| Overripe | 90-100 | Extended, may be due for consolidation or pullback | Caution, tighten stops |\n| Too-Late | N/A | Already made significant move, chasing carries elevated risk | Do not chase |\n| Neutral | Below 60 | No significant momentum signal | No edge, stay patient |\n\nScore thresholds for significance: 95+ is rare and highest conviction, 85-94 is strong, 80-84 is actionable.\n\n### RSI (Relative Strength Index)\n\nRSI measures momentum on a 0-100 scale:\n- **Below 30**: Oversold. Price has been beaten down; potential bounce zone. Does not mean \"buy\" — it means selling pressure may be exhausting.\n- **30-70**: Normal range. No extreme reading.\n- **Above 70**: Overbought. Price has been running hard; watch for pullback. Does not mean \"sell\" — strong trends stay overbought for weeks.\n- **Above 80**: Strongly overbought. Higher probability of mean reversion.\n\n### Coil Score (0-100)\n\nThe coil score measur"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Track Record] The system is not new. It has been tracking signals for over two years:\n\n- **12,450+ signals analyzed** across 730 days\n- **6,563 unique stocks** tracked\n- **80% five-day win rate** with +4.51% average return\n- **76.5% one-day win rate** climbing to **80.1% by one month**\n- Win rate is consistent across score thresholds: 80+ scores all perform between 79-81%\n\n### Win Rate by Score Threshold (5-day horizon)\n\n| Score Range | Win Rate | Avg Return | Sample Size |\n|-------------|----------|------------|-------------|\n| 80-85 | 80.2% | +4.60% | 3,096 |\n| 85-90 | 79.2% | +4.45% | 3,115 |\n| 90-95 | 79.4% | +4.42% | 3,124 |\n| 95+ | 80.7% | +4.56% | 3,115 |\n\n### The Patience Edge\n\nThe data shows holding longer improves outcomes. Day-one win rate is 76.5%. By day five, it is 79.9%. By one month, 80.1%. Average returns scale from +1.35% (1 day) to +8.16% (1 month). The optimal risk/reward window is the 5-to-10-day holding period.\n\nThis is not a day-trading system. It catches momentum at 2% instead of 15%, then lets the move develop over days.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error Handling] ### BF_API_KEY not set\n\n```\nERROR: BF_API_KEY not set. Get your key at https://bananafarmer.app\n```\n\n**Fix:** Export your API key: `export BF_API_KEY=bf_bot_your_key_here`. Or add it to your OpenClaw config or `.env` file.\n\n### No signal data available\n\n```\n$XYZ: No signal data available\n```\n\n**Cause:** The symbol is not tracked, was delisted, or is a very low-volume OTC stock. Banana Farmer tracks 6,500+ stocks from NYSE and NASDAQ plus popular crypto. Penny stocks and OTC issues may not have enough data for a signal.\n\n**Fix:** Verify the ticker symbol is correct. Try the exchange-standard format (no special characters). Crypto tickers use their standard symbols (BTC, ETH, SOL).\n\n### API timeout or connection error\n\n```\n$AAPL: Error — <urlopen error timed out>\n```\n\n**Cause:** The Banana Farmer API did not respond within 15 seconds. This can happen during high-traffic market opens or if the service is temporarily down.\n\n**Fix:** Wait 30 seconds and retry. If repeated, check system health with `python3 scripts/bf-market.py health`. If health also times out, the API may be experiencing downtime.\n\n### Rate limiting\n\nThe API rate limits depend on your tier: Free (10/min, 50/day), Pro (60/min, 10K/day), Max (120/min, 50K/day). Under normal usage you will not hit these limits. If you do:\n\n**Fix:** Space out requests. The portfolio script fetches one symbol at a time, so a portfolio of 20 holdings makes 21 API calls (20 lookups + 1 health check). This is well within limits.\n\n### Stale data warning\n\nIf `bf-market.py health` reports data freshness as \"stale\" during market hours, the data pipeline may be delayed. Signals and scores are based on data that refreshes every 15 minutes. Stale data (> 30 minutes old) during open market hours means scores may not reflect current conditions.\n\n**Fix:** Note the staleness in your analysis. Prices move, but momentum signals are directional and usually remain valid for the session unless there is a major intraday reversal.\n\n### 403 Forbi"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Advanced Usage] ### JSON Output Mode\n\nFor programmatic processing, the portfolio script supports JSON output:\n\n```bash\npython3 scripts/bf-portfolio.py portfolios.json --json\n```\n\nThis returns a JSON object with a `brief` field (the formatted text) and a `signals` field (score and badge for each looked-up symbol). Use this for piping into other tools, dashboards, or automated workflows.\n\n### Multi-Account Portfolios\n\nThe portfolio file supports multiple accounts with different risk profiles. Each account gets its own section in the brief with account-specific alerts. A conservative account holding a high-momentum stock will get a NOTE alert that an aggressive account would not.\n\nSupported risk profiles: `conservative`, `moderate`, `aggressive`. The `--account` filter accepts partial matches on both the account `id` and `name` fields.\n\n```bash\npython3 scripts/bf-portfolio.py portfolios.json --account ira\npython3 scripts/bf-portfolio.py portfolios.json --account retirement\n```\n\n### Combining Scripts\n\nChain scripts together for richer analysis:\n\n```bash\n# Morning routine: health check, then top signals, then portfolio\npython3 scripts/bf-market.py health && python3 scripts/bf-market.py top --limit 5 && python3 scripts/bf-portfolio.py portfolios.json\n\n# Find this week's winners, then deep-dive the top one\npython3 scripts/bf-movers.py --days 7 --limit 1\n\n# Scan for ripe signals and look up each one\npython3 scripts/bf-market.py top --badge ripe --limit 5\npython3 scripts/bf-lookup.py AAPL NVDA AMD  # use the symbols from top output\n```\n\n### Filtering Top Signals\n\nThe `top` command supports badge and limit filters:\n\n```bash\npython3 scripts/bf-market.py top --badge ripe --limit 5     # Only highest conviction\npython3 scripts/bf-market.py top --badge ripening --limit 10 # Watchlist candidates\npython3 scripts/bf-market.py top --limit 50                  # Broad scan\n```\n\n### Movers Time Range\n\nControl the lookback window for performance tracking:\n\n```bash\npython3 scripts/bf-movers.py --days 1 -"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Scripts Reference] | Script | Purpose | Key Arguments |\n|--------|---------|---------------|\n| `bf-lookup.py` | Deep analysis of specific tickers | `SYMBOL [SYMBOL2 ...]` |\n| `bf-market.py` | Market overview and signal scanning | `health`, `top [--limit N] [--badge X]`, `pulse` |\n| `bf-portfolio.py` | Portfolio intelligence with alerts | `FILE.json [--account NAME] [--json]` |\n| `bf-movers.py` | Winners/losers proof data | `[--days N] [--limit N]` |\n| `bf-compare.py` | Side-by-side ticker comparison table | `SYMBOL1 SYMBOL2 [SYMBOL3 ...] [--json]` |\n| `bf-watchlist.py` | Curated picks, scorecard, horizons | `picks`, `scorecard`, `horizons` `[--json]` |\n| `bf-sectors.py` | Sector momentum breakdown | `[--json]` |\n\nAll scripts are in the `scripts/` directory. All require `python3` and `BF_API_KEY` in the environment. No additional pip packages are needed — everything uses the Python standard library.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Pricing] | Plan | Price | What You Get |\n|------|-------|-------------|\n| Free | $0 | Health, discover, top 3 signals. 10 req/min, 50/day. Enough to verify it works. |\n| Pro | $49/month ($39/mo annual) | Full 50+ leaderboard, all endpoints, proof images, portfolio, movers, watchlist, 30-day score history. 60 req/min, 10K/day. |\n| Max | $149/month ($119/mo annual) | Everything in Pro + historical scores with exact prices at signal, calculated returns, full 730+ day backtesting, bulk export, webhooks. 120 req/min, 50K/day. |\n\nGet your key instantly at [bananafarmer.app/developers](https://bananafarmer.app/developers). Free tier works immediately — no credit card needed.\n\nFor comparison: Danelfin Pro charges $79/mo for AI scores with historical data but no prices attached. Polygon.io charges $79-500/mo for raw price data with zero intelligence. Alpha Vantage is $50-250/mo for raw data. Banana Farmer Max at $149/mo gives you both — momentum intelligence AND exact prices at every signal — with 730+ days of backtesting proof. Still less than Polygon's mid-tier, with far more intelligence.\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Security] This skill is designed with transparency and safety in mind:\n\n- **Outbound HTTPS only**: All scripts make only outbound HTTPS calls to `bananafarmer.app`. No other network connections, no inbound listeners, no file exfiltration.\n- **Zero pip dependencies**: Every script uses only the Python standard library (`json`, `urllib`, `ssl`, `os`, `sys`). No third-party packages to audit.\n- **MIT licensed**: Full source code is readable and auditable.\n- **No secrets in code**: API key is read from the `BF_API_KEY` environment variable only. Never hardcoded, never logged.\n- **Read-only**: The skill reads market data. It does not execute trades, manage accounts, or modify any files on your system.\n- **Infrastructure security**: [Security practices](https://bananafarmer.app/security) — TLS 1.3, AES-256, Cloudflare WAF, Stripe PCI DSS Level 1.\n- **Legal**: [Terms of Service](https://bananafarmer.app/terms) · [Privacy Policy](https://bananafarmer.app/privacy) · [System Status](https://bananafarmer.app/status)\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Disclaimer] This skill provides financial data, momentum scores, and analytical intelligence. It is **not** financial advice. All data is for informational and research purposes only.\n\n- This tool does not make buy or sell recommendations\n- Past performance does not guarantee future results\n- Users should do their own research and consult a licensed financial advisor before making investment decisions\n- Win rates and return figures are historical and based on backtested signal data\n- Stock data is delayed 15 minutes per exchange rules; crypto data is near real-time\n\nBy using this skill, you agree to the [Banana Farmer API Terms](https://bananafarmer.app/terms#api).\n\nMarket data sourced by [Tiingo.com](https://tiingo.com). Momentum scoring, analysis, and the Ripeness Score methodology by [Banana Farmer](https://bananafarmer.app)."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "financial_intel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "requires": {
+          "bins": [
+            "python3"
+          ],
+          "env": [
+            "BF_API_KEY"
+          ]
+        },
+        "primaryEnv": "BF_API_KEY",
+        "emoji": "📊",
+        "version": "1.9.0",
+        "author": "clawd",
+        "license": "MIT",
+        "homepage": "https://bananafarmer.app",
+        "tags": [
+          "stocks",
+          "crypto",
+          "momentum",
+          "portfolio",
+          "market-data",
+          "trading",
+          "signals",
+          "technical-analysis",
+          "financial-data",
+          "scanner"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adamandjarvis/banana-farmer/SKILL.md"
+}

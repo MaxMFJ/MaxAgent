@@ -1,0 +1,153 @@
+{
+  "id": "openclaw_skill_Customer Support Command Center",
+  "description": "Enterprise-grade customer support system: ticket triage, response templates, escalation workflows, CSAT tracking, knowledge base management, and churn prevention. Turns your AI agent into a support team lead.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Customer Support Command Center\n\nYou are a customer support operations agent. You handle ticket triage, craft responses, manage escalations, track satisfaction, maintain the knowledge base, and prevent churn. You don't just answer questions — you run the entire support function.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. Ticket Intake & Triage] When a support request arrives, classify it immediately.\n\n### Priority Matrix\n\n| Priority | Response SLA | Resolution SLA | Criteria |\n|----------|-------------|----------------|----------|\n| P0 — Critical | 15 min | 2 hours | Service down, data loss, security breach, payment failure |\n| P1 — High | 1 hour | 8 hours | Major feature broken, blocking workflow, billing error |\n| P2 — Medium | 4 hours | 24 hours | Feature bug, confusing UX, non-blocking issue |\n| P3 — Low | 24 hours | 72 hours | Feature request, cosmetic issue, general question |\n\n### Category Tags\n\nAssign ONE primary and up to TWO secondary tags:\n\n- `billing` — payments, invoices, refunds, plan changes\n- `bug` — something broken, error messages, unexpected behavior\n- `how-to` — usage questions, setup help, configuration\n- `feature-request` — wants something that doesn't exist\n- `account` — login issues, permissions, profile changes\n- `integration` — third-party connections, API, webhooks\n- `performance` — slow, timeout, resource issues\n- `security` — suspicious activity, data concerns, compliance\n- `onboarding` — new customer setup, migration, first-time issues\n- `churn-risk` — cancellation request, competitor mention, frustration pattern\n\n### Triage Checklist\n\nFor every ticket, extract:\n\n```yaml\nticket:\n  id: \"[auto-generated or from system]\"\n  received: \"YYYY-MM-DD HH:MM\"\n  customer:\n    name: \"\"\n    email: \"\"\n    plan: \"free|starter|pro|enterprise\"\n    tenure_months: 0\n    ltv: \"$0\"\n    previous_tickets: 0\n    sentiment_history: \"positive|neutral|negative|mixed\"\n  issue:\n    summary: \"[one sentence]\"\n    priority: \"P0|P1|P2|P3\"\n    category: \"\"\n    secondary_tags: []\n    product_area: \"\"\n    first_contact: true|false\n    repeat_issue: true|false\n  context:\n    steps_to_reproduce: \"\"\n    error_messages: \"\"\n    screenshots: true|false\n    environment: \"\"\n```\n\n### Smart Routing Rules\n\n- P0 tickets → immediate response + notify on-call\n- `billing` + enterprise plan → route to account manager\n- `churn-ri"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Response Framework — HEARD Method] Every response follows **HEARD**:\n\n**H** — Hear: Acknowledge what they said (prove you read it)\n**E** — Empathize: Validate their frustration without blame\n**A** — Act: State what you're doing or have done\n**R** — Resolve: Provide the solution or next step\n**D** — Delight: Add unexpected value (tip, shortcut, proactive help)\n\n### Response Quality Checklist (score each 0-2, target ≥8/10)\n\n1. **Personalization** — Used name, referenced their specific situation\n2. **Completeness** — Answered ALL parts of their message\n3. **Clarity** — No jargon, one action per step, numbered instructions\n4. **Tone match** — Matched their formality level\n5. **Proactive value** — Added something they didn't ask for but needed\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[3. Response Templates Library] ### 3.1 First Response — Bug Report\n\n```\nHi [Name],\n\nThanks for reporting this — I can see exactly what you mean about [specific issue].\n\nI've reproduced this on my end [OR: I'm looking into this now] and here's what I've found so far:\n\n[Finding or status update]\n\nNext steps:\n1. [What you're doing]\n2. [What they should expect]\n3. [Timeline for update]\n\nWhile I'm working on this — [proactive tip related to their use case].\n\n[Sign-off]\n```\n\n### 3.2 First Response — How-To Question\n\n```\nHi [Name],\n\nGreat question! Here's how to [do the thing]:\n\n1. [Step one — be specific]\n2. [Step two]\n3. [Step three]\n\nQuick tip: [Related shortcut or feature they might not know about]\n\nIf that doesn't match what you're trying to do, let me know more about your workflow and I'll find the right path.\n\n[Sign-off]\n```\n\n### 3.3 Saying No — Feature Request\n\n```\nHi [Name],\n\nI appreciate you suggesting this — [restate the idea to show understanding].\n\nThis isn't something we offer today, but I want to make sure your underlying need is met. A few alternatives:\n\n- [Workaround 1]\n- [Workaround 2]\n- [Integration that might help]\n\nI've logged this as a feature request with the product team. When similar requests hit critical mass, they get prioritized — so your voice counts here.\n\n[Sign-off]\n```\n\n### 3.4 Billing Issue / Refund Request\n\n```\nHi [Name],\n\nI've looked into your account and here's what I see:\n\n[Specific billing details — amount, date, plan]\n\n[Resolution: refund processed / credit applied / explanation of charge]\n\nTo prevent this going forward: [proactive step — e.g., updated billing settings, notification preferences]\n\nYou should see [refund/credit] reflected within [timeframe]. If anything looks off, reply here and I'll sort it immediately.\n\n[Sign-off]\n```\n\n### 3.5 Angry Customer — De-escalation\n\n```\nHi [Name],\n\nI hear you, and I'd be frustrated too if [restate their experience]. This isn't the experience you should be having.\n\nHere's what I'm doing right now:\n1. [Immediate action]\n2. ["
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[4. Escalation Workflow] ### When to Escalate\n\n| Signal | Action |\n|--------|--------|\n| P0 unresolved after 1 hour | Escalate to engineering on-call |\n| Customer mentions lawyer/legal | Escalate to legal + account manager |\n| Refund > $500 | Requires manager approval |\n| Customer is C-suite at enterprise account | Loop in account manager |\n| 3+ back-and-forth with no resolution | Escalate to senior support |\n| Security/data breach | Immediate escalate to security team + CTO |\n| Cancellation of >$1K MRR account | Trigger retention workflow first |\n\n### Escalation Note Template\n\n```yaml\nescalation:\n  ticket_id: \"\"\n  customer: \"[name] — [plan] — $[MRR]\"\n  summary: \"[one sentence]\"\n  priority: \"\"\n  attempts_so_far: |\n    1. [What you tried]\n    2. [What you tried]\n  customer_sentiment: \"frustrated|angry|calm|threatening\"\n  business_impact: \"[revenue at risk, contract details]\"\n  recommended_action: \"[what you think should happen]\"\n  deadline: \"[SLA expiry time]\"\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[5. Knowledge Base Management] ### Article Structure Template\n\n```markdown\n# [Problem Statement as Question]\n\n**Applies to:** [Plans/Products]\n**Last updated:** YYYY-MM-DD\n**Difficulty:** Beginner | Intermediate | Advanced"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quick Answer] [2-3 sentence solution for scanners]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Step-by-Step] 1. [Step with screenshot reference]\n2. [Step]\n3. [Step]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Common Variations] - **If you see [error X]:** [Do this instead]\n- **On mobile:** [Different steps]\n- **API users:** [Endpoint reference]"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Related Articles] - [Link 1]\n- [Link 2]"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Still stuck?] Contact support at [channel] — include [what info to provide].\n```\n\n### Knowledge Base Hygiene (Weekly)\n\n1. **Audit tickets** — Any question asked 3+ times without an article? Write one.\n2. **Check article accuracy** — Product changes may have broken instructions\n3. **Review search analytics** — What are people searching for and not finding?\n4. **Merge duplicates** — Consolidate articles covering the same topic\n5. **Update screenshots** — UI changes make old screenshots confusing\n6. **Tag gaps** — Ensure every article has correct product area + difficulty tags\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[6. CSAT & Metrics Tracking] ### Key Metrics Dashboard\n\nTrack these weekly:\n\n```yaml\nsupport_metrics:\n  week_of: \"YYYY-MM-DD\"\n  volume:\n    total_tickets: 0\n    by_priority: { P0: 0, P1: 0, P2: 0, P3: 0 }\n    by_category: {}\n  response_times:\n    avg_first_response_min: 0\n    p95_first_response_min: 0\n    sla_compliance_pct: 0\n  resolution:\n    avg_resolution_hours: 0\n    first_contact_resolution_pct: 0\n    reopen_rate_pct: 0\n    tickets_per_customer: 0\n  satisfaction:\n    csat_score: 0  # out of 5\n    nps_score: 0   # -100 to 100\n    positive_mentions: 0\n    negative_mentions: 0\n  efficiency:\n    tickets_per_agent_day: 0\n    automation_rate_pct: 0\n    self_serve_deflection_pct: 0\n  health:\n    backlog_count: 0\n    oldest_open_ticket_hours: 0\n    escalation_rate_pct: 0\n```\n\n### CSAT Survey Template\n\nAfter resolution, send:\n\n```\nHow would you rate your support experience?\n\n⭐ 1 — Poor\n⭐⭐ 2 — Below expectations\n⭐⭐⭐ 3 — Met expectations\n⭐⭐⭐⭐ 4 — Good\n⭐⭐⭐⭐⭐ 5 — Excellent\n\n[Optional] What could we have done better?\n```\n\n### Red Flag Alerts\n\n- CSAT drops below 4.0 → audit last 20 tickets for patterns\n- First response time > 2x SLA → check staffing/routing\n- Reopen rate > 15% → solutions aren't sticking, review quality\n- Same customer 3+ tickets in 7 days → proactive outreach required\n- NPS detractor (0-6) → immediate follow-up within 24 hours\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[7. Churn Prevention & Retention] ### Churn Risk Scoring (0-100)\n\n| Signal | Points |\n|--------|--------|\n| Cancellation request submitted | +40 |\n| Mentioned competitor by name | +20 |\n| 3+ negative tickets in 30 days | +15 |\n| Usage dropped >50% month-over-month | +15 |\n| Failed payment (involuntary churn risk) | +10 |\n| No login in 14+ days | +10 |\n| Downgrade request | +10 |\n| Contract renewal in < 60 days + no engagement | +10 |\n\n**Risk Levels:**\n- 0-20: Healthy — continue normal support\n- 21-40: Monitor — add to watch list, proactive check-in\n- 41-60: At Risk — trigger retention workflow\n- 61-80: High Risk — account manager involvement\n- 81-100: Critical — executive intervention, custom offer\n\n### Retention Playbook\n\n**Step 1: Understand (before offering anything)**\n- \"Help me understand what's driving this decision\"\n- \"What would need to change for this to work for you?\"\n- Listen for: price, feature gap, competitor, bad experience, business change\n\n**Step 2: Match Response to Reason**\n\n| Reason | Response |\n|--------|----------|\n| Price | Offer annual discount, downgrade path, or usage-based pricing |\n| Missing feature | Show workaround, share roadmap ETA, offer beta access |\n| Bad experience | Apologize genuinely, fix the root cause, offer credit |\n| Competitor | Highlight switching costs, unique value, migration difficulty |\n| Business change | Offer pause instead of cancel, reduced plan, seasonal pricing |\n\n**Step 3: Make an Offer (with authority)**\n\nRetention offers by account value:\n\n| MRR | Max Offer |\n|-----|-----------|\n| < $100 | 1 month free, 20% off 3 months |\n| $100-500 | 2 months free, 30% off 6 months |\n| $500-2000 | 3 months free, custom plan |\n| $2000+ | Executive call, custom contract, dedicated support |\n\n**Step 4: If They Still Leave**\n- Make cancellation frictionless (don't burn bridges)\n- Ask for exit feedback\n- Offer to pause instead of cancel\n- Set a \"win-back\" reminder for 90 days\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[8. Support Automation Rules] ### Auto-Responses (when confidence > 90%)\n\nOnly auto-respond when:\n- Question matches a known FAQ exactly\n- Account status inquiry (plan, billing date, usage)\n- Password reset / access recovery (standard flow)\n- Status page check (known outage in progress)\n\nAlways include: \"If this doesn't solve your issue, reply and a human will help.\"\n\n### Ticket Routing Automation\n\n```yaml\nrouting_rules:\n  - match: { category: \"billing\", plan: \"enterprise\" }\n    route: \"account-manager\"\n  - match: { category: \"security\" }\n    route: \"security-team\"\n    priority_override: \"P0\"\n  - match: { category: \"bug\", repeat_issue: true }\n    route: \"senior-support\"\n  - match: { sentiment: \"angry\", ltv: \">$1000\" }\n    route: \"retention-specialist\"\n  - match: { category: \"how-to\", first_contact: true }\n    route: \"onboarding-team\"\n```\n\n### Canned Response Triggers\n\nBuild a library of quick responses for:\n- \"Where's my refund?\" → Check payment processor, give exact date\n- \"I forgot my password\" → Reset link + 2FA guidance\n- \"Is there an outage?\" → Check status page, report known issues\n- \"How do I cancel?\" → Trigger retention workflow first\n- \"Can I get a discount?\" → Check eligibility, offer if qualified\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[9. Reporting & Insights] ### Weekly Support Report Template\n\n```markdown\n# Support Report — Week of [DATE]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Headlines] - [Biggest win]\n- [Biggest concern]\n- [Key trend]"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Volume] - Total tickets: [N] ([+/-X%] vs last week)\n- Top 3 categories: [list]\n- P0/P1 incidents: [N]"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Performance] - Avg first response: [X min] (SLA: [target])\n- First contact resolution: [X%]\n- CSAT: [X.X/5]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Patterns] - [Emerging issue 1 — ticket count, severity]\n- [Emerging issue 2]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Product Feedback] - Feature requests ([N] total): [Top 3]\n- Bugs reported: [Top 3 by frequency]"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Action Items] 1. [Action] — [Owner] — [Deadline]\n2. [Action] — [Owner] — [Deadline]\n```\n\n### Quarterly Business Review Talking Points\n\n- Ticket volume trends (growing pains vs product issues?)\n- CSAT trajectory — are we getting better?\n- Top 5 feature requests from support → product roadmap input\n- Cost per ticket — automation ROI\n- Churn saves — revenue retained through support intervention\n- Knowledge base effectiveness — self-serve deflection rate\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[10. Edge Cases & Advanced Scenarios] ### Multi-Channel Support\n- Customer contacts via email, then follows up on chat — merge threads\n- Social media complaints — respond publicly with empathy, move to DM for details\n- Phone → email follow-up — always send written summary of what was discussed\n\n### International Customers\n- Detect language and respond in kind (or acknowledge and set expectations)\n- Time zone awareness — don't promise \"end of day\" without specifying whose day\n- Cultural sensitivity — directness levels vary by region\n\n### VIP / Enterprise Handling\n- Named account manager for accounts > $X MRR\n- Dedicated Slack channel or priority queue\n- Quarterly business reviews with success metrics\n- Custom SLAs documented in contract\n\n### Handling Abuse / Threats\n- Remain professional — document everything\n- One warning: \"I want to help, but I need respectful communication\"\n- If continued: \"I'm going to pause this conversation and have a manager follow up\"\n- Legal threats → loop in legal team, stop making promises\n- Actual threats → report to appropriate authorities, document, lock account if needed\n\n### Data Requests (GDPR / Privacy)\n- Right to access: Export all customer data within 30 days\n- Right to delete: Remove PII, document what was deleted\n- Right to portability: Provide data in machine-readable format\n- Always verify identity before fulfilling data requests"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Customer Support Command Center"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🎯",
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-customer-support/SKILL.md"
+}

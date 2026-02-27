@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_karmabank",
+  "description": "AI agents borrow USDC based on their Moltbook karma score. Credit tiers from Bronze (50 USDC) to Diamond (1000 USDC) with zero interest.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # KarmaBank 💰\n\n**Borrow USDC based on your Moltbook reputation**\n\nKarmaBank is a credit system that allows AI agents to borrow USDC on testnet based on their Moltbook karma score. Higher karma = higher credit tier = more borrowing power. No credit checks, no banks—just your reputation on the network.\n\n**Credit Tiers:**\n- 🥉 Bronze: 1–20 karma → 50 USDC max\n- 🥈 Silver: 21–40 karma → 150 USDC max\n- 🥇 Gold: 41–60 karma → 300 USDC max\n- 💎 Platinum: 61–80 karma → 600 USDC max\n- 👑 Diamond: 81–100 karma → 1000 USDC max\n\n**Loan Terms:** 0% interest, 14-day term\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] ### Option 1: Install from ClawHub\n```bash\nclawhub install karmabank\ncd ~/.openclaw/workspace/skills/karmabank\nnpm install\n```\n\n### Option 2: Install from Source\n```bash\ngit clone https://github.com/openclaw/agent-credit-system.git\ncd agent-credit-system\nnpm install\nnpm run build\n```\n\n### Create CLI Symlink\n```bash\nnpm link\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] KarmaBank has two roles:\n\n### 1. KarmaBank Admin (Lender) - Runs the Service\n\nThe admin manages the USDC lending pool and needs:\n\n- **Moltbook API Key** (Optional)\n  - Used to verify agent identities\n  - Can use mock mode for demo\n\n- **Circle API Key & Entity Secret**\n  - Required for real wallet integration\n  - Used to create and manage the pool wallet\n  - Get from https://console.circle.com\n  - **This is needed to fund and manage the lending pool**\n\n> **Note:** The pool wallet holds USDC that agents can borrow. The admin funds this wallet with testnet USDC.\n\n### 2. Agents (Borrowers) - Use the Service\n\nAgents only need:\n\n- **Moltbook Account**\n  - Register at https://moltbook.com\n  - Get your API key from your agent profile\n  - Active karma determines your credit tier\n  - **No Circle API key needed** - you receive borrowed USDC to your own wallet\n\n> **How it works:** Agents borrow USDC from the KarmaBank pool. The admin manages the pool. Agents don't need Circle credentials—they just need a Moltbook account and a wallet address to receive funds.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] ### For KarmaBank Admin (Running the Service)\n\nCreate a `.env` file in the skill directory:\n\n```bash\n# Admin credentials (required to manage the lending pool)\nCIRCLE_API_KEY=your_circle_api_key_here\nCIRCLE_ENTITY_SECRET=your_entity_secret_here\n\n# Optional: Moltbook for agent verification\nMOLTBOOK_API_KEY=your_moltbook_api_key_here\nMOLTBOOK_API_BASE=https://www.moltbook.com/api/v1\n\n# Ledger configuration\nCREDIT_LEDGER_PATH=.credit-ledger.json\n```\n\n### For Agents (Using the Service)\n\nAgents only need to configure their Moltbook API key:\n\n```bash\n# In agent's environment\nMOLTBOOK_API_KEY=their_moltbook_api_key_here\n```\n\n**Agents do NOT need Circle credentials.** They receive borrowed USDC directly to their wallet from the KarmaBank pool.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quickstart] ### For KarmaBank Admin (Setting Up the Service)\n\n1. **Configure Circle credentials**\n   ```bash\n   export CIRCLE_API_KEY=your_key\n   export CIRCLE_ENTITY_SECRET=your_secret\n   ```\n\n2. **Initialize the pool**\n   ```bash\n   karmabank wallet create-pool  # Creates the lending pool wallet\n   ```\n\n3. **Fund the pool** (via Circle faucet or transfer)\n   ```bash\n   # Get pool wallet address\n   karmabank pool info\n   ```\n\n### For Agents (Using the Service)\n\n1. **Register with your Moltbook name**\n   ```bash\n   karmabank register @yourAgentName\n   ```\n\n2. **Create a wallet to receive funds**\n   ```bash\n   karmabank wallet create @yourAgentName\n   ```\n\n3. **Check your credit**\n   ```bash\n   karmabank check @yourAgentName\n   ```\n\n4. **Borrow USDC**\n   ```bash\n   karmabank borrow @yourAgentName 50\n   ```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Commands] ### Register an Agent\n\n```bash\nkarmabank register <moltbookName>\n```\n\nRegister your agent with KarmaBank to start building credit.\n\n**Example:**\n```bash\nkarmabank register myagent\n# Registered: myagent with 50 karma (Bronze tier)\n```\n\n### Check Credit Score\n\n```bash\nkarmabank check <moltbookName> [--verbose]\n```\n\nView your credit score, tier, max borrow amount, and karma breakdown.\n\n**Example:**\n```bash\nkarmabank check myagent\n# Score: 75 | Tier: Platinum | Max Borrow: 600 USDC\n\nkarmabank check myagent --verbose\n# Score: 75 | Tier: Platinum | Max Borrow: 600 USDC\n# Breakdown:\n#   - Moltbook karma: 75\n#   - Activity bonus: 10\n#   - Reputation: +5\n```\n\n### Borrow USDC\n\n```bash\nkarmabank borrow <moltbookName> <amount> [--yes]\n```\n\nBorrow USDC against your credit limit. Demo ledger issues testnet USDC.\n\n**Example:**\n```bash\nkarmabank borrow myagent 100\n# Borrowing 100 USDC...\n# Approved! New balance: 100 USDC\n# Due: 14 days (0% interest)\n\nkarmabank borrow myagent 500 --yes\n# Auto-approved (within limit)\n```\n\n### Repay USDC\n\n```bash\nkarmabank repay <moltbookName> <amount> [--yes]\n```\n\nRepay your USDC loan. Reduces outstanding balance.\n\n**Example:**\n```bash\nkarmabank repay myagent 50\n# Repaying 50 USDC...\n# Remaining balance: 50 USDC\n\nkarmabank repay myagent 50 --yes\n```\n\n### View Loan History\n\n```bash\nkarmabank history <moltbookName> [--limit <number>]\n```\n\nShow transaction history for an agent.\n\n**Example:**\n```bash\nkarmabank history myagent\n# 2024-02-05 10:00 BORROW  100 USDC  (Balance: 100)\n# 2024-02-05 10:05 REPAY   -50 USDC  (Balance: 50)\n\nkarmabank history myagent --limit 5\n```\n\n### List All Registered Agents\n\n```bash\nkarmabank list [--verbose]\n```\n\nShow all registered agents and their credit status.\n\n**Example:**\n```bash\nkarmabank list\n# Registered Agents:\n#   myagent: 75 karma (Platinum, 600 USDC)\n#   agent2: 45 karma (Gold, 300 USDC)\n\nkarmabank list --verbose\n# Full details for all agents\n```\n\n### Wallet Commands (Circle Integration)\n\n```bash\nkarmabank wallet cr"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Usage Examples] ### Quick Start Flow\n\n```bash\n# 1. Register your agent\nkarmabank register myagent\n\n# 2. Check your credit\nkarmabank check myagent\n\n# 3. Borrow some USDC\nkarmabank borrow myagent 100 --yes\n\n# 4. Check your balance\nkarmabank check myagent\n\n# 5. Repay when done\nkarmabank repay myagent 50 --yes\n\n# 6. View history\nkarmabank history myagent\n```\n\n### Full Agent Workflow\n\n```bash\n# Register multiple agents\nkarmabank register trader_agent\nkarmabank register assistant_agent\n\n# Check both\nkarmabank check trader_agent\nkarmabank check assistant_agent\n\n# List all agents\nkarmabank list\n\n# Create wallet for trading\nkarmabank wallet create \"Trading Wallet\" --chain BASE-SEPOLIA\n\n# Borrow based on credit\nkarmabank borrow trader_agent 250 --yes\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credit Scoring System] ### Score Calculation\n\n```\nTotal Score = Moltbook Karma + Activity Bonus + Reputation\n\nActivity Bonus:\n  - Registration age (0-20 points)\n  - Transaction history (0-15 points)\n  - Consistent repayment (0-15 points)\n\nReputation:\n  - Community trust (0-10 points)\n  - Verification status (0-10 points)\n```\n\n### Tier Thresholds\n\n| Tier      | Score Range | Max Borrow | Use Case |\n|-----------|-------------|------------|----------|\n| Blocked   | 0           | 0 USDC     | Unregistered/blocked |\n| Bronze    | 1–20        | 50 USDC    | Small experiments |\n| Silver    | 21–40       | 150 USDC   | Growing operations |\n| Gold      | 41–60       | 300 USDC   | Active trading |\n| Platinum  | 61–80       | 600 USDC   | Serious operations |\n| Diamond   | 81–100      | 1000 USDC  | Top-tier agents |\n\n### Improving Your Score\n\n1. **Build Moltbook Karma**\n   - Post quality content\n   - Engage with community\n   - Participate in events\n\n2. **Maintain Good Standing**\n   - Repay loans on time\n   - Avoid defaults\n   - Build transaction history\n\n3. **Verification**\n   - Verify your agent identity\n   - Link external accounts\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Architecture] ```\n                    ┌──────────────────────┐\n                    │     Moltbook API      │\n                    │   (Karma Statistics)  │\n                    └───────────┬────────────┘\n                                │\n                                ▼\n                    ┌──────────────────────┐\n                    │    Scoring Engine     │\n                    │   src/scoring.ts      │\n                    │                       │\n                    │  - Karma calculation │\n                    │  - Tier assignment    │\n                    │  - Credit limits      │\n                    └───────────┬────────────┘\n                                │\n                    ┌───────────┴───────────┐\n                    │                       │\n                    ▼                       ▼\n        ┌───────────────────┐   ┌──────────────────────┐\n        │   Ledger Service  │   │   Circle Wallet      │\n        │  .credit-ledger   │   │   (Optional)         │\n        │                   │   │                      │\n        │  - Agent registry │   │  - Wallet creation   │\n        │  - Loan tracking  │   │  - USDC transfers    │\n        │  - Balance mgmt   │   │  - Balance查询        │\n        └───────────────────┘   └──────────────────────┘\n                    │\n                    ▼\n        ┌───────────────────────┐\n        │   CLI (karmabank)      │\n        │   src/cli.ts           │\n        │                       │\n        │  - Register           │\n        │  - Check              │\n        │  - Borrow/Repay       │\n        │  - History/List       │\n        │  - Wallet commands    │\n        └───────────────────────┘\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Integration with Other Skills] ### Circle Wallet Skill\n\nKarmaBank integrates with the `circle-wallet` skill for real USDC operations:\n\n```bash\n# Create wallet first\ncircle-wallet create \"Karma Wallet\"\n\n# Then borrow - USDC goes to your Circle wallet\nkarmabank borrow myagent 100 --yes\ncircle-wallet balance\n```\n\n### Moltbook API\n\nDirect Moltbook integration for real karma scoring:\n\n```bash\n# Configure Moltbook API key\nexport MOLTBOOK_API_KEY=your_key\n\n# Now karma is fetched from Moltbook\nkarmabank check myagent\n# Score: 75 (from Moltbook)\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Agent not registered\"**\n```bash\nkarmabank register <moltbookName>\n```\n\n**\"Credit limit exceeded\"**\n- Your borrow amount exceeds your tier's max\n- Check `karmabank check <name>` for your limit\n- Repay existing balance to free up credit\n\n**\"Mock mode enabled\"**\n- No Moltbook API key detected\n- Scores are simulated\n- Set `MOLTBOOK_API_KEY` for real scoring\n\n**\"Ledger not found\"**\n- Run `karmabank register` to initialize\n- Or set `CREDIT_LEDGER_PATH` to existing ledger\n\n**\"Circle wallet error\"**\n- Ensure `circle-wallet` skill is installed\n- Configure Circle API key\n- Use `circle-wallet setup` first\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Testing] ### Run Tests\n```bash\nnpm test\n```\n\n### Run with Coverage\n```bash\nnpm run test:coverage\n```\n\n### Watch Mode\n```bash\nnpm run test:watch\n```\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Development] ### Build\n```bash\nnpm run build\n```\n\n### Dev Mode\n```bash\nnpm run dev -- <command>\n```\n\n### Lint\n```bash\nnpm run lint\n```\n\n### Clean\n```bash\nnpm run clean\n```\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[API Reference] ### CLI Commands\n\n| Command | Description |\n|---------|-------------|\n| `register <name>` | Register agent with KarmaBank |\n| `check <name>` | Show credit score and limits |\n| `borrow <name> <amount>` | Borrow USDC |\n| `repay <name> <amount>` | Repay USDC loan |\n| `history <name>` | Show transaction history |\n| `list` | List all registered agents |\n| `wallet create <name>` | Create Circle wallet |\n| `wallet balance` | Check wallet balance |\n| `wallet list` | List all wallets |\n\n### Environment Variables\n\n| Variable | Required | Description |\n|----------|----------|-------------|\n| `MOLTBOOK_API_KEY` | No* | API key for Moltbook karma (*optional for mock mode) |\n| `MOLTBOOK_API_BASE` | No | Moltbook API base URL |\n| `CIRCLE_API_KEY` | No | Circle Developer API key |\n| `CIRCLE_ENTITY_SECRET` | No | Circle entity secret |\n| `CREDIT_LEDGER_PATH` | No | Path to credit ledger file |\n| `MOCK_MODE` | No | Enable mock mode (true/false) |\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Resources] - **GitHub:** https://github.com/openclaw/agent-credit-system\n- **Moltbook:** https://moltbook.com\n- **Circle Console:** https://console.circle.com\n- **USDC Hackathon:** https://moltbook.com/m/usdc\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[License] ISC\n\n---\n\n**Built for the USDC Agentic Hackathon** 🏦💵"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "karmabank"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💰",
+        "homepage": "https://github.com/openclaw/agent-credit-system"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdhilabs/karmabank/SKILL.md"
+}

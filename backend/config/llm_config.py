@@ -34,6 +34,7 @@ def save_llm_config(
     api_key: Optional[str] = None,
     base_url: Optional[str] = None,
     model: Optional[str] = None,
+    max_tokens: Optional[int] = None,
     remote_fallback_provider: Optional[str] = None,
 ) -> dict:
     cfg = load_llm_config()
@@ -45,6 +46,8 @@ def save_llm_config(
         cfg["base_url"] = base_url
     if model is not None:
         cfg["model"] = model
+    if max_tokens is not None and max_tokens > 0:
+        cfg["max_tokens"] = max_tokens
     # 持久化 LM Studio 的 base_url，供本地检测多端口时使用
     if (provider or cfg.get("provider")) == "lmstudio" and (base_url is not None or cfg.get("base_url")):
         cfg["lm_studio_base_url"] = base_url or cfg.get("base_url", "")

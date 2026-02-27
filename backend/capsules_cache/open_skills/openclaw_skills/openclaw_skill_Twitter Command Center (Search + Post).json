@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_Twitter Command Center (Search + Post)",
+  "description": "Search X (Twitter) in real time, extract relevant posts, and publish tweets/replies instantly—perfect for social listening, engagement, and rapid content ops.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Twitter 🐦\r\n\r\n**Twitter/X data access and automation for autonomous agents. Powered by AIsa.**\r\n\r\nOne API key. Full Twitter intelligence."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🔥 What Can You Do?] ### Monitor Influencers\r\n```\r\n\"Get Elon Musk's latest tweets and notify me of any AI-related posts\"\r\n```\r\n\r\n### Track Trends\r\n```\r\n\"What's trending on Twitter worldwide right now?\"\r\n```\r\n\r\n### Social Listening\r\n```\r\n\"Search for tweets mentioning our product and analyze sentiment\"\r\n```\r\n\r\n### Automated Engagement\r\n```\r\n\"Like and retweet posts from @OpenAI that mention GPT-5\"\r\n```\r\n\r\n### Competitor Intel\r\n```\r\n\"Monitor @anthropic and @GoogleAI - alert me on new announcements\"\r\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\r\nexport AISA_API_KEY=\"your-key\"\r\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### Read Operations (No Login Required)\r\n\r\n```bash\r\n# Get user info\r\ncurl \"https://api.aisa.one/apis/v1/twitter/user/info?userName=elonmusk\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Get user's latest tweets\r\ncurl \"https://api.aisa.one/apis/v1/twitter/user/user_last_tweet?userName=elonmusk\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Advanced tweet search (queryType is required: Latest or Top)\r\ncurl \"https://api.aisa.one/apis/v1/twitter/tweet/advanced_search?query=AI+agents&queryType=Latest\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Search top tweets\r\ncurl \"https://api.aisa.one/apis/v1/twitter/tweet/advanced_search?query=AI+agents&queryType=Top\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Get trending topics (worldwide)\r\ncurl \"https://api.aisa.one/apis/v1/twitter/trends?woeid=1\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Search users by keyword\r\ncurl \"https://api.aisa.one/apis/v1/twitter/user/search_user?keyword=AI+researcher\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Get tweets by ID\r\ncurl \"https://api.aisa.one/apis/v1/twitter/tweet/tweetById?tweet_ids=123456789\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Get user followers\r\ncurl \"https://api.aisa.one/apis/v1/twitter/user/user_followers?userName=elonmusk\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n\r\n# Get user followings\r\ncurl \"https://api.aisa.one/apis/v1/twitter/user/user_followings?userName=elonmusk\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\"\r\n```\r\n\r\n### Write Operations (Requires Login)\r\n\r\n> ⚠️ **Warning**: Posting requires account login. Use responsibly to avoid rate limits or account suspension.\r\n\r\n```bash\r\n# Step 1: Login first (async, check status after)\r\ncurl -X POST \"https://api.aisa.one/apis/v1/twitter/user_login_v3\" \\\r\n  -H \"Authorization: Bearer $AISA_API_KEY\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\"user_name\":\"myaccount\",\"email\":\"me@example.com\",\"password\":\"xxx\",\"proxy\":\"http://user:pass@ip:port\"}'\r\n\r\n# Step 2: Check login sta"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Python Client] ```bash\r\n# User operations\r\npython3 {baseDir}/scripts/twitter_client.py user-info --username elonmusk\r\npython3 {baseDir}/scripts/twitter_client.py tweets --username elonmusk\r\npython3 {baseDir}/scripts/twitter_client.py followers --username elonmusk\r\npython3 {baseDir}/scripts/twitter_client.py followings --username elonmusk\r\n\r\n# Search & Discovery\r\npython3 {baseDir}/scripts/twitter_client.py search --query \"AI agents\"\r\npython3 {baseDir}/scripts/twitter_client.py user-search --keyword \"AI researcher\"\r\npython3 {baseDir}/scripts/twitter_client.py trends --woeid 1\r\n\r\n# Post operations (requires login)\r\npython3 {baseDir}/scripts/twitter_client.py login --username myaccount --email me@example.com --password xxx --proxy \"http://user:pass@ip:port\"\r\npython3 {baseDir}/scripts/twitter_client.py post --username myaccount --text \"Hello!\"\r\npython3 {baseDir}/scripts/twitter_client.py like --username myaccount --tweet-id 1234567890\r\npython3 {baseDir}/scripts/twitter_client.py retweet --username myaccount --tweet-id 1234567890\r\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Endpoints Reference] | Endpoint | Method | Description |\r\n|----------|--------|-------------|\r\n| `/twitter/user/info` | GET | Get user profile |\r\n| `/twitter/user/user_last_tweet` | GET | Get user's recent tweets |\r\n| `/twitter/user/user_followers` | GET | Get user followers |\r\n| `/twitter/user/user_followings` | GET | Get user followings |\r\n| `/twitter/user/search_user` | GET | Search users by keyword |\r\n| `/twitter/tweet/advanced_search` | GET | Advanced tweet search |\r\n| `/twitter/tweet/tweetById` | GET | Get tweets by IDs |\r\n| `/twitter/trends` | GET | Get trending topics |\r\n| `/twitter/user_login_v3` | POST | Login to account |\r\n| `/twitter/send_tweet_v3` | POST | Send a tweet |\r\n| `/twitter/like_tweet_v3` | POST | Like a tweet |\r\n| `/twitter/retweet_v3` | POST | Retweet |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Pricing] | API | Cost |\r\n|-----|------|\r\n| Twitter read query | ~$0.0004 |\r\n| Twitter post/like/retweet | ~$0.001 |\r\n\r\nEvery response includes `usage.cost` and `usage.credits_remaining`."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Get Started] 1. Sign up at [aisa.one](https://aisa.one)\r\n2. Get your API key\r\n3. Add credits (pay-as-you-go)\r\n4. Set environment variable: `export AISA_API_KEY=\"your-key\"`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Full API Reference] See [API Reference](https://aisa.mintlify.app/api-reference/introduction) for complete endpoint documentation."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Twitter Command Center (Search + Post)"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🐦",
+        "requires": {
+          "bins": [
+            "curl",
+            "python3"
+          ],
+          "env": [
+            "AISA_API_KEY"
+          ]
+        },
+        "primaryEnv": "AISA_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aisapay/aisa-twitter-api/SKILL.md"
+}

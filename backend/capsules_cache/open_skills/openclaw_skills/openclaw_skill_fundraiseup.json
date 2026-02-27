@@ -1,0 +1,145 @@
+{
+  "id": "openclaw_skill_fundraiseup",
+  "description": "Interact with FundraiseUp REST API to manage donations, recurring plans, supporters, campaigns, and donor portal access. Process online and offline donations, retrieve fundraising analytics, and integrate with nonprofit CRM systems.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # FundraiseUp API Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill enables Claude to interact with the FundraiseUp REST API for processing donations, managing recurring plans, retrieving supporter data, and accessing fundraising analytics. FundraiseUp is a digital fundraising platform that allows nonprofits to process donations from various channels."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Configuration] Required environment variables:\n\n\n```FUNDRAISEUP_API_KEY ```- API Key (e.g., ```ABEDDDD_XSSSHwzZc98KR53CWQeWeclA```)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Base URL] ```\nhttps://api.fundraiseup.com/v1\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Authentication] ### API Key Generation\n1. Go to Dashboard > Settings > API keys\n2. Click \"Create API key\"\n3. Enter a descriptive name\n4. Select data mode:\n   - **Live data**: For production use\n   - **Test data**: For testing (keys have `test_` prefix)\n5. Select permissions:\n   - Retrieve donation data\n   - Create new donations\n   - Generate Donor Portal access links\n6. Save the API key securely (shown only once)\n\n### Authentication Header\nAll API requests must include the `Authorization` header with Bearer token:\n\n```bash\nAuthorization: Bearer YOUR_API_KEY\n```\n\n### Important Notes\n- API keys are scoped to specific accounts/subaccounts\n- Parent account API keys cannot create donations for subaccounts\n- Only Organization Administrators can create API keys\n- Never expose API keys publicly"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Rate Limits] - **8 requests per second**\n- **128 requests per minute**\n- Implement retry logic with exponential backoff for rate limit handling"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Required Headers] ```bash\nContent-Type: application/json\nAccept: application/json\nAuthorization: Bearer YOUR_API_KEY\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[API Endpoints] ### 1. Donations\n\n#### List Donations\n**Endpoint:** `GET /donations`\n\n**Description:** Retrieve all donations with cursor-based pagination.\n\n**Query Parameters:**\n- `limit` (optional): Number of records per page (1-100, default: 10)\n- `starting_after` (optional): Cursor for pagination (donation ID)\n- `ending_before` (optional): Cursor for backward pagination (donation ID)\n- Note: `starting_after` and `ending_before` are mutually exclusive\n\n**Example Request:**\n```bash\ncurl --request GET \\\n  --url 'https://api.fundraiseup.com/v1/donations?limit=50' \\\n  --header 'Accept: application/json' \\\n  --header 'Authorization: Bearer {{FUNDRAISEUP_API_KEY}}'\n```\n\n**Response Fields:**\n- `id`: Donation identifier\n- `created_at`: ISO 8601 timestamp\n- `livemode`: Boolean (true for live, false for test)\n- `amount`: Donation amount in selected currency\n- `amount_in_default_currency`: Amount in organization's default currency\n- `currency`: Three-letter ISO code (lowercase)\n- `status`: Donation status (e.g., succeeded, pending, failed)\n- `campaign`: Campaign details (id, code, name)\n- `supporter`: Supporter information\n- `recurring_plan`: Recurring plan details (if applicable)\n- `designation`: Fund/program designation\n- `tribute`: Tribute information (if provided)\n- `custom_fields`: Array of custom field values\n- `processing_fee`: Processing fee details\n- `platform_fee`: Platform fee details\n- `fees_covered`: Amount of fees covered by donor\n\n---\n\n#### Get Single Donation\n**Endpoint:** `GET /donations/{id}`\n\n**Description:** Retrieve details of a specific donation.\n\n**Path Parameters:**\n- `id` (required): Donation ID\n\n**Example Request:**\n```bash\ncurl --request GET \\\n  --url 'https://api.fundraiseup.com/v1/donations/DFQLCFEP' \\\n  --header 'Accept: application/json' \\\n  --header 'Authorization: Bearer {{FUNDRAISEUP_API_KEY}}'\n```\n\n---\n\n#### Create Donation\n**Endpoint:** `POST /donations`\n\n**Description:** Create a one-time or recurring donation. API-created donations will have \"API\" as t"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Pagination Best Practices] All list endpoints use cursor-based pagination:\n\n1. **Initial Request:** Set `limit` parameter (1-100)\n2. **Next Page:** Use the last item's `id` in `starting_after`\n3. **Previous Page:** Use the first item's `id` in `ending_before`\n4. **Sorting:** Records sorted by creation date (newest first), then by ID (Z to A)\n\n**Example Pagination Flow:**\n```bash\n# Page 1\nGET /donations?limit=50\n\n# Page 2 (use last donation ID from page 1)\nGET /donations?limit=50&starting_after=LAST_DONATION_ID\n\n# Previous page\nGET /donations?limit=50&ending_before=FIRST_DONATION_ID\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Error Handling] ### Standard HTTP Response Codes\n- `200 OK`: Successful GET request\n- `201 Created`: Successful POST request\n- `400 Bad Request`: Invalid request parameters\n- `401 Unauthorized`: Missing or invalid API key\n- `403 Forbidden`: Insufficient permissions\n- `404 Not Found`: Resource not found\n- `429 Too Many Requests`: Rate limit exceeded\n- `500 Internal Server Error`: Server error\n\n### Best Practices\n1. Implement exponential backoff for rate limits\n2. Log all API errors with request details\n3. Validate data before sending to API\n4. Handle null values gracefully\n5. Check for finalized fees using Events endpoint\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Code Examples] ### Python Example\n```python\nimport requests\nimport os\n\nAPI_KEY = os.environ.get('FUNDRAISEUP_API_KEY')\nBASE_URL = 'https://api.fundraiseup.com/v1'\n\nheaders = {\n    'Authorization': f'Bearer {API_KEY}',\n    'Accept': 'application/json',\n    'Content-Type': 'application/json'\n}\n\n# List donations\ndef get_donations(limit=50):\n    url = f'{BASE_URL}/donations'\n    params = {'limit': limit}\n    response = requests.get(url, headers=headers, params=params)\n    response.raise_for_status()\n    return response.json()\n\n# Create donation\ndef create_donation(campaign_id, amount, currency, payment_method_id, supporter):\n    url = f'{BASE_URL}/donations'\n    data = {\n        'campaign_id': campaign_id,\n        'amount': str(amount),\n        'currency': currency,\n        'payment_method_id': payment_method_id,\n        'supporter': supporter\n    }\n    response = requests.post(url, headers=headers, json=data)\n    response.raise_for_status()\n    return response.json()\n\n# Get single donation\ndef get_donation(donation_id):\n    url = f'{BASE_URL}/donations/{donation_id}'\n    response = requests.get(url, headers=headers)\n    response.raise_for_status()\n    return response.json()\n```\n\n### Node.js Example\n```javascript\nconst axios = require('axios');\n\nconst API_KEY = process.env.FUNDRAISEUP_API_KEY;\nconst BASE_URL = 'https://api.fundraiseup.com/v1';\n\nconst headers = {\n  'Authorization': `Bearer ${API_KEY}`,\n  'Accept': 'application/json',\n  'Content-Type': 'application/json'\n};\n\n// List donations\nasync function getDonations(limit = 50) {\n  const response = await axios.get(`${BASE_URL}/donations`, {\n    headers,\n    params: { limit }\n  });\n  return response.data;\n}\n\n// Create donation\nasync function createDonation(campaignId, amount, currency, paymentMethodId, supporter) {\n  const response = await axios.post(`${BASE_URL}/donations`, {\n    campaign_id: campaignId,\n    amount: amount.toString(),\n    currency,\n    payment_method_id: paymentMethodId,\n    supporter\n  }, { headers });\n  return res"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Testing] ### Test Mode\n- Generate API keys with \"Test data\" mode\n- Test keys have `test_` prefix\n- Test mode data doesn't affect live data or banking networks\n- Use test Stripe Payment Methods for creating test donations\n\n### URL Parameter for Testing\nAdd `fundraiseupLivemode=no` to any URL for testing without processing real donations\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Integration Patterns] ### Historical Data Sync\n1. Use `limit` parameter to fetch batches (recommended: 50-100)\n2. Use `starting_after` with last record ID for next batch\n3. Process batches sequentially\n4. Implement error handling and retry logic\n\n### Real-time Polling\n1. Poll API at regular intervals (respect rate limits)\n2. Use Events endpoint to track changes\n3. Store last processed record ID\n4. Use `starting_after` to get only new records\n\n### Event-Based Integration\n- Use Zapier for event triggers (FundraiseUp doesn't support direct webhooks)\n- Configure Zapier to trigger on FundraiseUp events\n- Trigger sync jobs in your system based on events\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Common Use Cases] 1. **Processing Offline Donations**\n   - Face-to-face fundraising\n   - Direct mail donations\n   - Telethon pledges\n   - Event registrations\n\n2. **CRM Integration**\n   - Sync donation data to CRM (Salesforce, HubSpot, etc.)\n   - Update supporter records\n   - Track recurring plans\n   - Generate reports\n\n3. **Analytics and Reporting**\n   - Export donation data for BI tools\n   - Track campaign performance\n   - Analyze donor behavior\n   - Calculate lifetime value\n\n4. **Donor Portal Integration**\n   - Seamless authentication from custom portals\n   - Direct access to recurring plan management\n   - Single sign-on experience\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Security Best Practices] 1. **API Key Management**\n   - Store API keys in environment variables (never hardcode)\n   - Use separate keys for different integrations\n   - Rotate keys periodically\n   - Revoke compromised keys immediately\n\n2. **HTTPS Only**\n   - All requests must use HTTPS\n   - HTTP requests are rejected\n\n3. **Data Validation**\n   - Validate all input before sending to API\n   - Sanitize user-provided data\n   - Check response data before processing\n\n4. **PCI Compliance**\n   - Never handle raw card data in your application\n   - Use Stripe Payment Methods API for card processing\n   - Meet PCI DSS requirements (SAQ D for direct API integration)\n   - Consider using Stripe Elements to reduce PCI scope\n\n5. **Donor Portal Security**\n   - Validate supporter ownership before generating access links\n   - Use automatic redirects (never manual links)\n   - Never share access links via email or public channels\n   - Access links expire in 1 minute\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Limitations and Considerations] 1. **Payment Methods:** Currently only credit cards are supported\n2. **Updates:** Only allowed within 24 hours of creation, only for API-created records\n3. **Bulk Operations:** No bulk update support\n4. **Webhooks:** Direct webhooks not supported (use Zapier for events)\n5. **Subaccounts:** Parent API keys cannot create donations for subaccounts\n6. **Fee Calculations:** Fees may be 0 initially; use Events endpoint for finalized fees\n7. **Address Validation:** API does not format or verify addresses\n8. **Email Validation:** API does not verify email addresses\n9. **Migration:** REST API is not a migration mechanism (use Migration service)\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Additional Resources] - Official Documentation: https://fundraiseup.com/docs/rest-api/\n- API Resources: https://fundraiseup.com/docs/rest-api-resources/\n- Donor Portal Integration: https://fundraiseup.com/docs/seamless-donor-portal/\n- Support: https://fundraiseup.com/support/\n\n---"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Common Issues\n\n**401 Unauthorized**\n- Check API key is correct and active\n- Verify Authorization header format\n- Ensure API key has required permissions\n\n**429 Rate Limit Exceeded**\n- Implement exponential backoff\n- Reduce request frequency\n- Batch operations where possible\n\n**400 Bad Request**\n- Validate all required fields are present\n- Check data types and formats\n- Ensure currency codes are lowercase\n- Verify amount format (decimal string)\n\n**Fees Showing as 0**\n- Fees are finalized asynchronously\n- Use Events endpoint to get finalized fees\n- Look for `donation.success` event\n\n**Cannot Update Donation**\n- Verify donation was created via API\n- Ensure update is within 24 hours\n- Check API key permissions\n\n---"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Version Information] - API Version: v1\n- Last Updated: February 2026\n- Supported Payment Methods: Credit Card only"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fundraiseup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": [
+      "bash_tool",
+      "web_search",
+      "web_fetch"
+    ],
+    "extra": {
+      "author": "Amish",
+      "version": "1.0.0",
+      "api_version": "v1",
+      "tags": [
+        "fundraising",
+        "donations",
+        "nonprofit",
+        "payments",
+        "crm-integration",
+        "stripe"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aamish99/fundraiseup/SKILL.md"
+}

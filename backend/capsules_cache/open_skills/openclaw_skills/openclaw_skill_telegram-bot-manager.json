@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_telegram-bot-manager",
+  "description": "Manage and configure Telegram bots for OpenClaw. Use when setting up Telegram integrations, troubleshooting bot connectivity, configuring bot tokens, or managing Telegram channel/webhook settings. Handles bot registration, token validation, and network connectivity checks for api.telegram.org.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Telegram Bot Manager"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Setup a new Telegram bot\n\n1. **Create bot via BotFather**\n   - Message @BotFather on Telegram\n   - Use `/newbot` command\n   - Follow prompts for bot name and username\n   - Copy the bot token (format: `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`)\n\n2. **Configure in OpenClaw**\n   - Add token to OpenClaw config\n   - Enable Telegram plugin\n   - Set up pairing mode for DM access\n\n### Validate bot configuration\n\n```bash\n# Test Telegram API connectivity\ncurl -I https://api.telegram.org\n\n# Check bot token validity\ncurl -s \"https://api.telegram.org/bot<YOUR_TOKEN>/getMe\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Common Workflows] ### Troubleshooting connectivity issues\n\nWhen api.telegram.org is unreachable:\n\n1. **Check network access**\n   ```bash\n   curl -I -m 10 https://api.telegram.org\n   ```\n\n2. **Verify DNS resolution**\n   ```bash\n   nslookup api.telegram.org\n   ```\n\n3. **Test alternative endpoints**\n   ```bash\n   curl -I https://telegram.org\n   ```\n\n### Configuring OpenClaw Telegram integration\n\nSee [OPENCLAW_CONFIG.md](references/OPENCLAW_CONFIG.md) for detailed configuration steps.\n\n### Bot token security\n\n- Never commit bot tokens to version control\n- Store tokens in environment variables or secure config files\n- Rotate tokens if compromised\n- Use different tokens for different environments (dev/prod)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Bot Commands Reference] Common Telegram bot commands for BotFather:\n\n- `/newbot` - Create a new bot\n- `/mybots` - Manage your bots\n- `/setdescription` - Set bot description\n- `/setabouttext` - Set about text\n- `/setuserpic` - Set bot profile picture\n- `/setcommands` - Set bot commands\n- `/token` - Generate new token\n- `/revoke` - Revoke current token\n- `/setprivacy` - Configure privacy mode"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Webhook vs Polling] ### Webhook (Recommended for production)\n- Bot receives updates via HTTP POST\n- Requires public HTTPS endpoint\n- More efficient for high-volume bots\n\n### Polling (Good for development)\n- Bot continuously checks for updates\n- Simpler setup, no public endpoint needed\n- Easier to debug locally\n\nSee [WEBHOOK_SETUP.md](references/WEBHOOK_SETUP.md) for webhook configuration."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error Handling] ### Common errors and solutions\n\n**\"Connection timed out\"**\n- Check firewall rules\n- Verify proxy configuration\n- Test with different network\n\n**\"Invalid token\"**\n- Verify token format (should contain colon)\n- Check for extra spaces or characters\n- Regenerate token if needed\n\n**\"Bot not responding\"**\n- Verify bot is not blocked\n- Check bot privacy settings\n- Ensure bot has proper permissions"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Testing Your Bot] ### Manual testing\n1. Search for your bot username on Telegram\n2. Start a conversation with `/start`\n3. Test basic commands\n\n### Automated testing\nUse the test script in `scripts/test_bot.py` for automated validation."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[References] - [Telegram Bot API Documentation](https://core.telegram.org/bots/api)\n- [BotFather Documentation](https://core.telegram.org/bots#6-botfather)\n- [OpenClaw Configuration Guide](references/OPENCLAW_CONFIG.md)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "telegram_bot_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/362224222/telegram-bot-manager/SKILL.md"
+}

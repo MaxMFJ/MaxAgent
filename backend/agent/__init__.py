@@ -58,6 +58,8 @@ from .self_upgrade import (
     upgrade,
     get_orchestrator as get_self_upgrade_orchestrator,
 )
+from .query_classifier import Intent, QueryTier, classify, IntentResult
+from .execution_guard import check as execution_guard_check, GuardResult, get_guard_fallback_message
 
 __all__ = [
     "AgentCore",
@@ -142,4 +144,12 @@ __all__ = [
     "SelfUpgradeOrchestrator",
     "upgrade",
     "get_self_upgrade_orchestrator",
+    # Enterprise Query & Execution Guard
+    "Intent",
+    "QueryTier",
+    "classify",
+    "IntentResult",
+    "execution_guard_check",
+    "GuardResult",
+    "get_guard_fallback_message",
 ]

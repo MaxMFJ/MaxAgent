@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_openclaw-skill-m365-task-manager-by-altf1be",
+  "description": "Manage lightweight Microsoft 365 task workflows with Microsoft To Do and Planner. Use when a user needs to quickly create, assign, track, and follow up operational tasks in M365 with clear owners, due dates, status, and daily reminders.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # M365 Task Manager\n\nUse this skill to perform real Microsoft Graph CRUD operations for Microsoft To Do tasks."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. Create an Entra app registration for delegated sign-in.\n2. Add Microsoft Graph delegated permissions:\n   - `Tasks.ReadWrite`\n   - `User.Read`\n   - `offline_access`\n3. Configure environment variables:\n\n```bash\nM365_TENANT_ID=your-tenant-id-or-common\nM365_CLIENT_ID=your-public-client-app-id\n# optional\nM365_TOKEN_CACHE_PATH=/home/user/.cache/openclaw/m365-task-manager-token.json\n```\n\n4. Install dependencies at repo root:\n\n```bash\nnpm install\n```\n\nOn first run, the script uses Device Code login and caches tokens for reuse."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ```bash\n# profile connection\nnode skills/m365-task-manager/scripts/m365-todo.mjs info\n\n# list Microsoft To Do lists\nnode skills/m365-task-manager/scripts/m365-todo.mjs lists\n\n# list tasks\nnode skills/m365-task-manager/scripts/m365-todo.mjs tasks:list --list-name \"Tasks\"\n\n# create task\nnode skills/m365-task-manager/scripts/m365-todo.mjs tasks:create --list-name \"Tasks\" --title \"2026-03-01-submit-weekly-status-report\" --due 2026-03-01\n\n# update task\nnode skills/m365-task-manager/scripts/m365-todo.mjs tasks:update --list-name \"Tasks\" --task-id <TASK_ID> --status inProgress\n\n# delete task\nnode skills/m365-task-manager/scripts/m365-todo.mjs tasks:delete --list-name \"Tasks\" --task-id <TASK_ID>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Operating standard] - Task title pattern: `YYYY-MM-DD-short-action-owner`\n- Required fields: title, owner, due date, status\n- Status values: `Open`, `In Progress`, `Blocked`, `Done`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[References] - `references/playbook.md` for operating guidance."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/m365-todo.mjs` for Graph CRUD on Microsoft To Do.\n- `scripts/format-task-name.sh` for deterministic task naming."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Author] Abdelkrim BOUJRAF - ALT-F1 SRL - https://www.alt-f1.be"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[License] MIT"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_skill_m365_task_manager_by_altf1be"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "✅",
+        "requires": {
+          "env": [
+            "M365_TENANT_ID",
+            "M365_CLIENT_ID"
+          ]
+        },
+        "primaryEnv": "M365_TENANT_ID"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abdelkrim/openclaw-skill-m365-task-manager-by-altf1be/SKILL.md"
+}

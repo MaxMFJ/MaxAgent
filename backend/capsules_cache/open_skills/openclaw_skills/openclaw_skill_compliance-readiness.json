@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_compliance-readiness",
+  "description": "AI Compliance Readiness Assessment — evaluate how prepared an organization is for AI governance regulations (EU AI Act, NIST AI RMF, HHS mandates, state bar AI rules). Scores readiness across 8 dimensions and generates an action plan. Use when assessing AI compliance gaps, preparing for audits, or building a governance roadmap.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AI Compliance Readiness Assessment\n\nEvaluate organizational readiness for AI governance regulations and generate an actionable compliance roadmap."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Assessing AI compliance posture before an audit\n- Preparing for EU AI Act (Aug 2026), HHS AI mandates, NIST AI RMF\n- Building a governance roadmap for AI deployments\n- Evaluating risk exposure from current AI usage"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to Use] When asked to assess AI compliance readiness, gather these inputs:\n\n### Required Inputs\n1. **Industry** (legal, healthcare, financial-services, insurance, construction, manufacturing, government, other)\n2. **Company size** (employees or revenue range)\n3. **AI systems in use** (list: chatbots, document review, fraud detection, hiring tools, customer service, analytics, other)\n4. **Jurisdictions** (US-only, EU-exposed, both, global)\n\n### Optional Inputs\n- Current governance framework (if any)\n- Upcoming audit dates\n- Existing compliance certifications (SOC2, ISO 27001, HIPAA, etc.)\n- Number of AI vendors/tools in use"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Assessment Framework] Score each dimension 1-5 (1=no controls, 5=mature):\n\n### 8 Dimensions\n1. **Risk Classification** — Have you categorized AI systems by risk level per EU AI Act / NIST?\n2. **Documentation** — Technical docs, model cards, data lineage for each AI system?\n3. **Human Oversight** — Defined human-in-the-loop processes for high-risk decisions?\n4. **Bias & Fairness** — Regular bias audits, fairness metrics, disparate impact testing?\n5. **Data Governance** — Training data provenance, consent, retention, and deletion policies?\n6. **Incident Response** — AI-specific incident playbook, reporting procedures, rollback plans?\n7. **Vendor Management** — AI vendor risk assessments, contractual AI governance requirements?\n8. **Audit Trail** — Logging, explainability, decision traceability for AI-assisted outputs?\n\n### Scoring\n- **35-40**: Compliance-ready — minor gaps to address\n- **25-34**: Partially prepared — significant work needed in specific areas\n- **15-24**: High risk — major gaps across multiple dimensions\n- **8-14**: Critical — immediate action required before any regulatory review"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] Generate a report with:\n\n1. **Executive Summary** — Overall score, risk level, top 3 gaps\n2. **Dimension Scores** — Table with score, evidence, and gap description per dimension\n3. **Regulatory Exposure** — Which regulations apply and key deadlines:\n   - EU AI Act: Aug 2, 2026 (high-risk system requirements)\n   - HHS AI Transparency: April 3, 2026 (healthcare)\n   - NIST AI RMF: Ongoing (federal contractors + best practice)\n   - State bar AI rules: Varies (legal industry)"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "compliance_readiness"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/compliance-readiness/SKILL.md"
+}

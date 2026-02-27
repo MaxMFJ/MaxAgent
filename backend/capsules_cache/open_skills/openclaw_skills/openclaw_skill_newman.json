@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_newman",
+  "description": "Automated API testing with Postman collections via Newman CLI. Use when user requests API testing, collection execution, automated testing, CI/CD integration, or mentions \"Postman\", \"Newman\", \"API tests\", \"run collection\", or \"automated testing\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Newman - Postman CLI Runner\n\nNewman is the command-line Collection Runner for Postman. Run and test Postman collections directly from the command line with powerful reporting, environment management, and CI/CD integration."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Installation\n\n```bash\n# Global install (recommended)\nnpm install -g newman\n\n# Project-specific\nnpm install --save-dev newman\n\n# Verify\nnewman --version\n```\n\n### Basic Execution\n\n```bash\n# Run collection\nnewman run collection.json\n\n# With environment\nnewman run collection.json -e environment.json\n\n# With globals\nnewman run collection.json -g globals.json\n\n# Combined\nnewman run collection.json -e env.json -g globals.json -d data.csv\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Workflows] ### 1. Export from Postman Desktop\n\n**In Postman:**\n1. Collections → Click \"...\" → Export\n2. Choose \"Collection v2.1\" (recommended)\n3. Save as `collection.json`\n\n**Environment:**\n1. Environments → Click \"...\" → Export\n2. Save as `environment.json`\n\n### 2. Run Tests\n\n```bash\n# Basic run\nnewman run collection.json\n\n# With detailed output\nnewman run collection.json --verbose\n\n# Fail on errors\nnewman run collection.json --bail\n\n# Custom timeout (30s)\nnewman run collection.json --timeout-request 30000\n```\n\n### 3. Data-Driven Testing\n\n**CSV format:**\n```csv\nusername,password\nuser1,pass1\nuser2,pass2\n```\n\n**Run:**\n```bash\nnewman run collection.json -d test_data.csv --iteration-count 2\n```\n\n### 4. Reporters\n\n```bash\n# CLI only (default)\nnewman run collection.json\n\n# HTML report\nnewman run collection.json --reporters cli,html --reporter-html-export report.html\n\n# JSON export\nnewman run collection.json --reporters cli,json --reporter-json-export results.json\n\n# JUnit (for CI)\nnewman run collection.json --reporters cli,junit --reporter-junit-export junit.xml\n\n# Multiple reporters\nnewman run collection.json --reporters cli,html,json,junit \\\n  --reporter-html-export ./reports/newman.html \\\n  --reporter-json-export ./reports/newman.json \\\n  --reporter-junit-export ./reports/newman.xml\n```\n\n### 5. Security Best Practices\n\n**❌ NEVER hardcode secrets in collections!**\n\nUse environment variables:\n\n```bash\n# Export sensitive vars\nexport API_KEY=\"your-secret-key\"\nexport DB_PASSWORD=\"your-db-pass\"\n\n# Newman auto-loads from env\nnewman run collection.json -e environment.json\n\n# Or pass directly\nnewman run collection.json --env-var \"API_KEY=secret\" --env-var \"DB_PASSWORD=pass\"\n```\n\n**In Postman collection tests:**\n```javascript\n// Use {{API_KEY}} in requests\npm.request.headers.add({key: 'Authorization', value: `Bearer {{API_KEY}}`});\n\n// Access in scripts\nconst apiKey = pm.environment.get(\"API_KEY\");\n```\n\n**Environment file (environment.json):**\n```json\n{\n  \"name\": \"Production\",\n  \"values\":"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Common Use Cases] ### CI/CD Integration\n\nSee `references/ci-cd-examples.md` for GitHub Actions, GitLab CI, and Jenkins examples.\n\n### Automated Regression Testing\n\n```bash\n#!/bin/bash\n# scripts/run-api-tests.sh\n\nset -e\n\necho \"Running API tests...\"\n\nnewman run collections/api-tests.json \\\n  -e environments/staging.json \\\n  --reporters cli,html,junit \\\n  --reporter-html-export ./test-results/newman.html \\\n  --reporter-junit-export ./test-results/newman.xml \\\n  --bail \\\n  --color on\n\necho \"Tests completed. Report: ./test-results/newman.html\"\n```\n\n### Load Testing\n\n```bash\n# Run with high iteration count\nnewman run collection.json \\\n  -n 100 \\\n  --delay-request 100 \\\n  --timeout-request 5000 \\\n  --reporters cli,json \\\n  --reporter-json-export load-test-results.json\n```\n\n### Parallel Execution\n\n```bash\n# Install parallel runner\nnpm install -g newman-parallel\n\n# Run collections in parallel\nnewman-parallel -c collection1.json,collection2.json,collection3.json \\\n  -e environment.json \\\n  --reporters cli,html\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Advanced Features] ### Custom Scripts\n\n**Pre-request Script (in Postman):**\n```javascript\n// Generate dynamic values\npm.environment.set(\"timestamp\", Date.now());\npm.environment.set(\"nonce\", Math.random().toString(36).substring(7));\n```\n\n**Test Script (in Postman):**\n```javascript\n// Status code check\npm.test(\"Status is 200\", function() {\n    pm.response.to.have.status(200);\n});\n\n// Response body validation\npm.test(\"Response has user ID\", function() {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('user_id');\n});\n\n// Response time check\npm.test(\"Response time < 500ms\", function() {\n    pm.expect(pm.response.responseTime).to.be.below(500);\n});\n\n// Set variable from response\npm.environment.set(\"user_token\", pm.response.json().token);\n```\n\n### SSL/TLS Configuration\n\n```bash\n# Disable SSL verification (dev only!)\nnewman run collection.json --insecure\n\n# Custom CA certificate\nnewman run collection.json --ssl-client-cert-list cert-list.json\n\n# Client certificates\nnewman run collection.json \\\n  --ssl-client-cert client.pem \\\n  --ssl-client-key key.pem \\\n  --ssl-client-passphrase \"secret\"\n```\n\n### Error Handling\n\n```bash\n# Continue on errors\nnewman run collection.json --suppress-exit-code\n\n# Fail fast\nnewman run collection.json --bail\n\n# Custom error handling in wrapper\n#!/bin/bash\nnewman run collection.json -e env.json\nEXIT_CODE=$?\n\nif [ $EXIT_CODE -ne 0 ]; then\n    echo \"Tests failed! Exit code: $EXIT_CODE\"\n    # Send alert, rollback deployment, etc.\n    exit 1\nfi\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Troubleshooting] **Collection not found:**\n- Use absolute paths: `newman run /full/path/to/collection.json`\n- Check file permissions: `ls -la collection.json`\n\n**Environment variables not loading:**\n- Verify syntax: `{{$processEnvironment.VAR_NAME}}`\n- Check export: `echo $VAR_NAME`\n- Use `--env-var` flag as fallback\n\n**Timeout errors:**\n- Increase timeout: `--timeout-request 60000` (60s)\n- Check network connectivity\n- Verify API endpoint is reachable\n\n**SSL errors:**\n- Development: Use `--insecure` temporarily\n- Production: Add CA cert with `--ssl-extra-ca-certs`\n\n**Memory issues (large collections):**\n- Reduce iteration count\n- Split collection into smaller parts\n- Increase Node heap: `NODE_OPTIONS=--max-old-space-size=4096 newman run ...`"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Version Control**: Store collections and environments in Git\n2. **Environment Separation**: Separate files for dev/staging/prod\n3. **Secret Management**: Use environment variables, never commit secrets\n4. **Meaningful Names**: Use descriptive collection and folder names\n5. **Test Atomicity**: Each request should test one specific thing\n6. **Assertions**: Add comprehensive test scripts to every request\n7. **Documentation**: Use Postman descriptions for context\n8. **CI Integration**: Run Newman in CI pipeline for every PR\n9. **Reports**: Archive HTML reports for historical analysis\n10. **Timeouts**: Set reasonable timeout values for production APIs"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[References] - **CI/CD Examples**: See `references/ci-cd-examples.md`\n- **Advanced Patterns**: See `references/advanced-patterns.md`\n- **Official Docs**: https://learning.postman.com/docs/running-collections/using-newman-cli/command-line-integration-with-newman/"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "newman"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/newman/SKILL.md"
+}

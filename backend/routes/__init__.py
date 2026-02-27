@@ -13,6 +13,7 @@ from .self_healing import router as self_healing_router
 from .evomap import router as evomap_router
 from .capsules import router as capsules_router
 from .chat import router as chat_router
+from .workspace import router as workspace_router
 
 all_routers = [
     health_router,
@@ -26,4 +27,5 @@ all_routers = [
     evomap_router,
     capsules_router,
     chat_router,
+    workspace_router,
 ]

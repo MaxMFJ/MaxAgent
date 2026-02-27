@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_linkedin-dm",
+  "description": "Send personalized LinkedIn direct messages to a list of existing 1st-degree connections via browser automation. Use when the user wants to message LinkedIn connections with AI-personalized outreach — e.g. nurturing leads, following up after events, reconnecting with contacts, or announcing something. Takes a data file (CSV/TSV) or plain list with connection names and companies, asks for outreach context/goal, generates a tailored message per person, and sends each one via browser automation. Handles message compose flow, character limits, and incremental status tracking.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LinkedIn DM\n\nSends personalized LinkedIn messages to existing 1st-degree connections. Each message has:\n- A **personalized opening** unique to each person (based on their profile + relationship to the sender)\n- A **consistent product/pitch section** confirmed once by the user and reused for all messages\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[⚠️ Pre-flight Checklist — Confirm Before Starting] ### 1. Connection List\nAsk the user for their data file or list. Must include (or be added):\n- **Person Name** — full name\n- **Company/Role** — their current company or role\n- **LinkedIn URL** — optional but helpful\n- **Message Status** — column for tracking (add if missing)\n\nIf only a plain list is provided, offer to convert to TSV.\n\n### 2. Read Sender's LinkedIn Profile (mandatory)\nBefore writing any messages, navigate to `/in/me/` and read the sender's profile:\n- **Name** and **current role/company**\n- **Career history** — companies, roles, years\n- **Education** — college, degree, batch years\n- **Location**\n\nStore these facts. They are used to identify relationship hooks with each connection.\n\n### 3. Confirm the Pitch (once, upfront)\nAsk the user:\n> *\"What's your pitch / product message? This will be the consistent part of every message. Describe it in 1–2 sentences.\"*\n\nThen draft a polished pitch section (2–4 sentences max, punchy and clear). Show it to the user and get explicit approval. **Do not start sending until the pitch is confirmed.**\n\nExample prompt: *\"Here's the pitch I'll use for everyone — confirm or edit:*\n> *'I'm building an AI calling agent — you give it a phone number + context, and it handles the call end-to-end. Think customer follow-ups, research calls, vendor coordination — anything phone-based that eats into your day. Happy to show you a demo if this sounds useful.'\"*\n\n### 4. Browser Setup\n- **Option A — Chrome Browser Relay** (`profile=\"chrome\"`): extension attached to LinkedIn tab (badge ON) — recommended for flagged accounts\n- **Option B — OpenClaw Isolated Browser** (`profile=\"openclaw\"`): openclaw-managed Chrome, LinkedIn logged in\n\n### 5. CRM Sheet\nAsk the user for a Google Sheet ID/URL to log outreach results. If they don't have one, offer to set one up (create tab + write headers). Confirm `gog` is authenticated (`gog auth list`).\n\nIf the user skips this, fall back to local `linkedin_dm_progress.json` but remind them the follow-up sk"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Relationship Analysis (per person)] Before writing a message, compare the connection's profile against the sender's profile to find the strongest hook. Use this hierarchy — pick the highest that applies:\n\n| Priority | Hook | Example opener |\n|---|---|---|\n| 1 | **Same company** (current or past) | \"You and I both spent time at CRED…\" |\n| 2 | **Same college + overlapping years** | \"Fellow BITS Goa 2018 batch here…\" |\n| 3 | **Same college** (different years) | \"BITS connect here — saw your journey from…\" |\n| 4 | **Same industry/function** | \"Both been in fintech/product for a while…\" |\n| 5 | **Mutual connection** | \"We're both connected to [Name]…\" |\n| 6 | **Their work context** (no personal hook) | \"Seen what you've built at [Company]…\" |\n\nCombine the hook with a line about **their current work** to show you know what they do.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Message Structure] Send as **two separate messages** per person, back to back:\n\n**Message 1 — Personalized opener** (unique per person)\n```\n[Relationship hook — 1 sentence]\n[Acknowledgement of their work/role — 1 sentence]\n```\nTarget: 100–180 chars. Feels like a genuine reach-out from someone who knows them.\n\n**Message 2 — Pitch** (identical for everyone, confirmed upfront)\n```\n[Product description — 1–2 sentences]\n[Relevant use case for their role — 1 sentence]\n[Soft CTA — 1 sentence]\n```\nTarget: 150–250 chars. Clear, punchy, no filler.\n\n**Why two messages?**\n- Opener lands first — they see it before the pitch, feels more personal\n- Pitch is clearly a separate thought, not buried at the end\n- Mirrors how a human would actually message a connection\n\n**Fallback:** If sending two messages is technically difficult (e.g. bubble re-focusing issues), use `Shift+Enter` twice between the opener and pitch to create a paragraph break within a single message.\n\n**Do not:**\n- Open with \"I hope you're well\" or \"I came across your profile\"\n- Use the same opening for multiple people\n- Change the pitch section per person\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Batch Preview Before Sending] Generate messages for the **entire list first**. Present them in a table:\n\n| Name | Company | Relationship Hook Used | Message Preview |\n|---|---|---|---|\n| Shorya Saini | Razorpay | Same BITS batch | Hey Shorya, BITS Goa 2018 batch… |\n\nGet user approval on the full batch before opening the browser. Allow edits per row.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Sending Flow (Per Person)] 1. **Navigate to `/feed/`** — mandatory, no exceptions, no skipping\n2. **Wait 3–5 seconds**\n3. **Search connections** at `linkedin.com/mynetwork/invite-connect/connections/` — type name in \"Search by name\"\n4. **Handle results:**\n   - 1 match → confirm name + headline → click to open profile\n   - Multiple matches → show user, ask which one\n   - 0 matches → mark `Not a Connection`, skip\n5. **Read their profile** if not already done (for personalisation)\n6. **Click Message button** on their profile\n7. **Send Message 1** — personalized opener only, send it\n8. **Send Message 2** — pitch only, send it immediately after\n9. **Confirm both delivered**\n10. **Log to CRM sheet** — append row via `gog sheets append` with all fields (see CRM Tracking section)\n\nSee `references/browser-workflow.md` for exact browser automation steps.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Status Values] | Status | Meaning |\n|---|---|\n| `Sent` | Message delivered this session |\n| `Already Messaged` | Recent conversation exists — skip |\n| `Not a Connection` | No Message button or not in connections search |\n| `Profile Not Found` | Could not identify the right person |\n| `Skipped` | User chose to skip |\n| `Failed` | Browser error — retry next session |\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Anti-Detection Rules] - `/feed/` before **every single profile** — non-negotiable\n- 3–5 second wait after feed loads\n- Max **15–20 messages per session**\n- Stop immediately if LinkedIn warns about messaging rate — tell the user\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[CRM Tracking — Google Sheet] After each message is sent, append a row to a Google Sheet. This sheet is the source of truth for all outreach — current session and future follow-up.\n\n### Sheet Setup\n\nAsk the user for a Google Sheet ID or URL at the start of the session (or offer to create a new one). The sheet should have a tab named `Outreach` with these columns:\n\n| Col | Field | Notes |\n|---|---|---|\n| A | Date Sent | ISO date, e.g. `2026-02-13` |\n| B | Person Name | Full name |\n| C | Role / Title | Their current headline from LinkedIn |\n| D | Company | Current company |\n| E | LinkedIn URL | Profile URL |\n| F | Relationship Hook | What hook was used (e.g. \"Same batch BITS Goa 2018\", \"Both at CRED 2022–23\") |\n| G | Opener Sent | Exact text of Message 1 |\n| H | Pitch Sent | Exact text of Message 2 |\n| I | Campaign | Short label for this batch (e.g. \"AI Calling - Feb 2026\") |\n| J | Status | Always `Sent` when first logged — updated by follow-up skill |\n| K | Notes | Anything notable (prior conversation, context, mutual connection used) |\n| L | Last Updated | Timestamp of last status change |\n\n**Column I (Status) lifecycle** — only `Sent` is written by this skill. The follow-up skill will update to:\n`Replied` · `Call Scheduled` · `Demo Done` · `Follow Up Sent` · `No Response` · `Closed Won` · `Closed Lost`\n\n### Appending a Row\n\nAfter each message pair is sent, run:\n\n```bash\ngog sheets append <SHEET_ID> \"Outreach!A:L\" \\\n  --values-json '[[\"<date>\",\"<name>\",\"<role>\",\"<company>\",\"<url>\",\"<hook>\",\"<opener>\",\"<pitch>\",\"<campaign>\",\"Sent\",\"<notes>\",\"<timestamp>\"]]' \\\n  --insert INSERT_ROWS\n```\n\n### First-Time Setup\n\nIf no sheet exists yet, tell the user:\n> \"I'll need a Google Sheet to track outreach. Share an existing sheet ID/URL, or I can create one with the right columns.\"\n\nTo create a new sheet, use Drive (or ask user to create one and share the ID). Then write the header row:\n\n```bash\ngog sheets update <SHEET_ID> \"Outreach!A1:L1\" \\\n  --values-json '[[\"Date Sent\",\"Person Name\",\"Role / Title\",\"Company"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "linkedin_dm"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/10madh/linkedin-dm/SKILL.md"
+}

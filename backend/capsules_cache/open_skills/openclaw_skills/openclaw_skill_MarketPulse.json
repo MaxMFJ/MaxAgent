@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_MarketPulse",
+  "description": "Query real-time and historical financial data across equities and crypto—prices, market moves, metrics, and trends for analysis, alerts, and reporting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Market 📊\n\n**Complete market data for autonomous agents. Powered by AIsa.**\n\nOne API key. Stocks + Crypto + Financials. Everything you need."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[🔥 What Can You Do?] ### Cross-Asset Portfolio\n```\n\"Get BTC, ETH prices alongside AAPL, NVDA stock data for my portfolio\"\n```\n\n### Investment Research\n```\n\"Full analysis: NVDA price trends, insider trades, analyst estimates, SEC filings\"\n```\n\n### Crypto Tracking\n```\n\"Real-time prices for BTC, ETH, SOL with 30-day historical charts\"\n```\n\n### Earnings Analysis\n```\n\"Get Tesla earnings reports, analyst estimates, and price reaction\"\n```\n\n### Market Screening\n```\n\"Find stocks with P/E < 15 and revenue growth > 20%\"\n```\n\n### Whale Watching\n```\n\"Track insider trades at Apple and correlate with price movements\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nexport AISA_API_KEY=\"your-key\"\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🏦 Traditional Finance] ### Stock Prices\n\n```bash\n# Historical price data (daily)\ncurl \"https://api.aisa.one/apis/v1/financial/prices?ticker=AAPL&interval=day&interval_multiplier=1&start_date=2025-01-01&end_date=2025-12-31\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Weekly price data\ncurl \"https://api.aisa.one/apis/v1/financial/prices?ticker=AAPL&interval=week&interval_multiplier=1&start_date=2025-01-01&end_date=2025-12-31\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Minute-level data (intraday)\ncurl \"https://api.aisa.one/apis/v1/financial/prices?ticker=AAPL&interval=minute&interval_multiplier=5&start_date=2025-01-15&end_date=2025-01-15\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Parameters:**\n- `ticker`: Stock symbol (required)\n- `interval`: `second`, `minute`, `day`, `week`, `month`, `year` (required)\n- `interval_multiplier`: Multiplier for interval, e.g., 5 for 5-minute bars (required)\n- `start_date`: Start date YYYY-MM-DD (required)\n- `end_date`: End date YYYY-MM-DD (required)\n\n### Company News\n\n```bash\n# Get news by ticker\ncurl \"https://api.aisa.one/apis/v1/financial/news?ticker=AAPL&limit=10\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Financial Statements\n\n```bash\n# All financial statements\ncurl \"https://api.aisa.one/apis/v1/financial/financial_statements/all?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Income statements\ncurl \"https://api.aisa.one/apis/v1/financial/financial_statements/income?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Balance sheets\ncurl \"https://api.aisa.one/apis/v1/financial/financial_statements/balance?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Cash flow statements\ncurl \"https://api.aisa.one/apis/v1/financial/financial_statements/cash?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Financial Metrics\n\n```bash\n# Real-time financial metrics snapshot\ncurl \"https://api.aisa.one/apis/v1/financial/financial-metrics/snapshot?ticker=AAPL\" \\\n  -H \"Authorization: Bearer $AISA_"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[₿ Cryptocurrency] ### Real-Time Price Snapshot\n\n```bash\n# Get current BTC price (use ticker format: SYMBOL-USD)\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices/snapshot?ticker=BTC-USD\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Get current ETH price\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices/snapshot?ticker=ETH-USD\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Get current SOL price\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices/snapshot?ticker=SOL-USD\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Get TRUMP token price\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices/snapshot?ticker=TRUMP-USD\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n**Note:** Crypto tickers use format `SYMBOL-USD` (e.g., `BTC-USD`, `ETH-USD`).\n\n### Historical Price Data\n\n```bash\n# Get BTC historical prices (daily)\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices?ticker=BTC-USD&interval=day&interval_multiplier=1&start_date=2025-01-01&end_date=2025-01-31\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n\n# Get ETH hourly data\ncurl \"https://api.aisa.one/apis/v1/financial/crypto/prices?ticker=ETH-USD&interval=minute&interval_multiplier=60&start_date=2025-01-15&end_date=2025-01-16\" \\\n  -H \"Authorization: Bearer $AISA_API_KEY\"\n```\n\n### Supported Cryptocurrencies\n\n| Ticker | Name |\n|--------|------|\n| BTC-USD | Bitcoin |\n| ETH-USD | Ethereum |\n| SOL-USD | Solana |\n| BNB-USD | Binance Coin |\n| XRP-USD | Ripple |\n| DOGE-USD | Dogecoin |\n| ADA-USD | Cardano |\n| AVAX-USD | Avalanche |\n| DOT-USD | Polkadot |\n| MATIC-USD | Polygon |\n| LINK-USD | Chainlink |\n| UNI-USD | Uniswap |\n| ATOM-USD | Cosmos |\n| LTC-USD | Litecoin |\n| TRUMP-USD | Trump Token |\n| ... | And many more |\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Python Client] ```bash\n# ==================== Stock Data ====================\n# Note: start_date and end_date are REQUIRED for prices\npython3 {baseDir}/scripts/market_client.py stock prices --ticker AAPL --start 2025-01-01 --end 2025-01-31\npython3 {baseDir}/scripts/market_client.py stock prices --ticker AAPL --start 2025-01-01 --end 2025-01-31 --interval week\npython3 {baseDir}/scripts/market_client.py stock news --ticker AAPL --count 10\n\n# ==================== Financial Statements ====================\npython3 {baseDir}/scripts/market_client.py stock statements --ticker AAPL --type all\npython3 {baseDir}/scripts/market_client.py stock statements --ticker AAPL --type income\npython3 {baseDir}/scripts/market_client.py stock statements --ticker AAPL --type balance\npython3 {baseDir}/scripts/market_client.py stock statements --ticker AAPL --type cash\n\n# ==================== Metrics & Analysis ====================\npython3 {baseDir}/scripts/market_client.py stock metrics --ticker AAPL\npython3 {baseDir}/scripts/market_client.py stock analyst --ticker AAPL\n\n# ==================== Insider & Institutional ====================\npython3 {baseDir}/scripts/market_client.py stock insider --ticker AAPL\npython3 {baseDir}/scripts/market_client.py stock ownership --ticker AAPL\n\n# ==================== SEC Filings ====================\npython3 {baseDir}/scripts/market_client.py stock filings --ticker AAPL\n\n# ==================== Stock Screener ====================\npython3 {baseDir}/scripts/market_client.py stock screen --pe-max 15 --growth-min 0.2\n\n# ==================== Interest Rates ====================\npython3 {baseDir}/scripts/market_client.py stock rates\npython3 {baseDir}/scripts/market_client.py stock rates --historical\n\n# ==================== Crypto Data ====================\n# Note: Use ticker format SYMBOL-USD (or just SYMBOL, auto-converted)\npython3 {baseDir}/scripts/market_client.py crypto snapshot --ticker BTC-USD\npython3 {baseDir}/scripts/market_client.py crypto snapshot --ticker ETH  # Auto-co"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Endpoints Reference] ### Traditional Finance\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/financial/prices` | GET | Historical stock prices (requires interval params) |\n| `/financial/news` | GET | Company news by ticker |\n| `/financial/financial_statements/all` | GET | All financial statements |\n| `/financial/financial_statements/income` | GET | Income statements |\n| `/financial/financial_statements/balance` | GET | Balance sheets |\n| `/financial/financial_statements/cash` | GET | Cash flow statements |\n| `/financial/financial-metrics/snapshot` | GET | Real-time financial metrics |\n| `/financial/financial-metrics` | GET | Historical metrics |\n| `/financial/analyst/eps` | GET | EPS estimates |\n| `/financial/insider/trades` | GET | Insider trades |\n| `/financial/institutional/ownership` | GET | Institutional ownership |\n| `/financial/sec/filings` | GET | SEC filings |\n| `/financial/sec/items` | GET | SEC filing items |\n| `/financial/company/facts` | GET | Company facts |\n| `/financial/search/stock` | POST | Stock screener |\n| `/financial/interest_rates/snapshot` | GET | Current interest rates |\n| `/financial/interest_rates/historical` | GET | Historical rates |\n\n### Cryptocurrency\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/financial/crypto/prices/snapshot` | GET | Real-time price snapshot |\n| `/financial/crypto/prices` | GET | Historical OHLCV data |\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Pricing] | API | Cost |\n|-----|------|\n| Stock prices | ~$0.001 |\n| Company news | ~$0.001 |\n| Financial statements | ~$0.002 |\n| Analyst estimates | ~$0.002 |\n| SEC filings | ~$0.001 |\n| Crypto snapshot | ~$0.0005 |\n| Crypto historical | ~$0.001 |\n\nEvery response includes `usage.cost` and `usage.credits_remaining`.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Get Started] 1. Sign up at [aisa.one](https://aisa.one)\n2. Get your API key\n3. Add credits (pay-as-you-go)\n4. Set environment variable: `export AISA_API_KEY=\"your-key\"`"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Full API Reference] See [API Reference](https://aisa.mintlify.app/api-reference/introduction) for complete endpoint documentation."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "MarketPulse"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📊",
+        "requires": {
+          "bins": [
+            "curl",
+            "python3"
+          ],
+          "env": [
+            "AISA_API_KEY"
+          ]
+        },
+        "primaryEnv": "AISA_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aisapay/financial-data/SKILL.md"
+}

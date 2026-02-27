@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_mema-vault",
+  "description": "Secure credential manager using AES-256 (Fernet) encryption. Stores, retrieves, and rotates secrets using a mandatory Master Key. Use for managing API keys, database credentials, and other sensitive tokens.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Mema Vault"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - **Master Key**: Must be set as an environment variable `MEMA_VAULT_MASTER_KEY`.\n- **Dependencies**: Requires `cryptography` Python package."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Workflows] ### 1. Store a Secret\nEncrypt and save a new credential.\n- **Usage**: `python3 $WORKSPACE/skills/mema-vault/scripts/vault.py set <service> <user> <password> [--meta \"info\"]`\n\n### 2. Retrieve a Secret\nFetch a credential. By default, the password is masked in output.\n- **Usage**: `python3 $WORKSPACE/skills/mema-vault/scripts/vault.py get <service>`\n- **Show Raw**: Use `--show` flag only when required for secure injection.\n\n### 3. List Credentials\n- **Usage**: `python3 $WORKSPACE/skills/mema-vault/scripts/vault.py list`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Security Standards] - **Encryption**: AES-256 CBC via PBKDF2HMAC (480,000 iterations).\n- **Masking**: Secrets are masked in standard logs/output unless explicitly requested.\n- **Isolation**: The Master Key should never be stored in plaintext on disk."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mema_vault"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "MEMA_VAULT_MASTER_KEY"
+          ]
+        },
+        "install": [
+          {
+            "id": "pip",
+            "kind": "exec",
+            "command": "pip install cryptography"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/mema-vault/SKILL.md"
+}

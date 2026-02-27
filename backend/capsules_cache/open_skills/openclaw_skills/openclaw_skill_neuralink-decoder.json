@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_neuralink-decoder",
+  "description": "Simulates and decodes neural spike activity into cursor movement (BCI).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Neuralink Decoder Skill\n\nThis skill simulates a Brain-Computer Interface (BCI).\nIt generates synthetic neural spiking data based on cosine tuning (motor cortex model) and uses a linear decoder to reconstruct cursor velocity."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Neural Simulator**: Generates realistic spike trains for 64 neurons.\n- **Decoder**: Maps spike rates to 2D velocity ($v_x, v_y$).\n- **Visualization**: Prints the decoded trajectory."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] - `decode`: Run the simulation and decoding loop."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "neuralink_decoder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/neuralink-decoder/SKILL.md"
+}

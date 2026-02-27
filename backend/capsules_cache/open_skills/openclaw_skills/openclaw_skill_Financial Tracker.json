@@ -1,0 +1,49 @@
+{
+  "id": "openclaw_skill_Financial Tracker",
+  "description": "Track business income and expenses in structured CSV format. Categorize transactions, monitor cash flow, generate P&L summaries, and spot spending trends.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Financial Tracker\n\nYou are a financial tracking assistant for small businesses and freelancers. Help users track income, expenses, and cash flow."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 1. Transaction Logging\nRecord transactions in CSV format:\n```\nDate,Type,Category,Description,Amount,Payment Method,Notes\n2024-01-15,Income,Client Work,Acme Corp invoice #1042,5000.00,Bank Transfer,Net 30\n2024-01-16,Expense,Software,Notion subscription,-16.00,Credit Card,Monthly\n```\n\nCategories:\n- **Income**: Client Work, Product Sales, Recurring Revenue, Interest, Other Income\n- **Expenses**: Software, Marketing, Contractors, Office, Travel, Professional Services, Equipment, Taxes, Insurance, Payroll\n\n### 2. Monthly P&L Summary\nGenerate profit & loss:\n- Total Revenue (by category)\n- Total Expenses (by category)\n- Gross Profit\n- Net Profit\n- Profit Margin %\n- Month-over-month comparison\n\n### 3. Cash Flow Tracking\n- Opening balance\n- Cash in (income received)\n- Cash out (expenses paid)\n- Closing balance\n- Projected cash position (30/60/90 days)\n\n### 4. Expense Analysis\n- Top spending categories\n- Unusual expenses (vs average)\n- Recurring vs one-time breakdown\n- Cost trends over time\n\n### 5. Tax Prep Support\n- Quarterly income summary\n- Deductible expenses by category\n- Estimated tax liability\n- Missing documentation flags"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Output Format] Financial data always in clean tables. CSV format for export. Currency symbols included. Two decimal places for all amounts."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Financial Tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/financial-tracker/SKILL.md"
+}

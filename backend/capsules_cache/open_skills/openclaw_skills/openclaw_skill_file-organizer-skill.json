@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_file-organizer-skill",
+  "description": "Organize files in directories by grouping them into folders based on their extensions or date. Includes Dry-Run, Recursive, and Undo capabilities.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # File Organizer (Gold Standard)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Smart Sorting**: Group by Extension (Default) or Date (Year/Month).\n- **Safety**: Conflict resolution (auto-rename), Dry Run mode, and Undo capability.\n- **Deep Clean**: Recursive scanning option.\n- **Audit**: Generates `organize_history.json` for tracking."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Basic Sort (by Extension)\n```bash\npython3 scripts/organize.py /path/to/folder\n```\n\n### Date Sort (Year/Month)\nGreat for photos or archives.\n```bash\npython3 scripts/organize.py /path/to/folder --date\n```\n\n### Dry Run (Simulate)\nSee what *would* happen without moving anything.\n```bash\npython3 scripts/organize.py /path/to/folder --dry-run\n```\n\n### Undo\nRevert changes using the history file.\n```bash\npython3 scripts/organize.py --undo /path/to/folder/organize_history.json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Config] Modify `scripts/organize.py` `get_default_mapping()` to add custom extensions."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "file_organizer_skill"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/file-organizer-skill/SKILL.md"
+}

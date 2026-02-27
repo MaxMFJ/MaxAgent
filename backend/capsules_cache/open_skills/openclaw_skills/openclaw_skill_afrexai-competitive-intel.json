@@ -1,0 +1,149 @@
+{
+  "id": "openclaw_skill_afrexai-competitive-intel",
+  "description": "Complete competitive intelligence system — market mapping, product teardowns, pricing intel, win/loss analysis, battlecards, and strategic monitoring. Goes far beyond SEO to cover the full business landscape.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Competitive Intelligence Engine\n\nA complete system for understanding, tracking, and outmaneuvering competitors. Covers market mapping, product analysis, pricing intelligence, sales battlecards, win/loss analysis, and ongoing monitoring."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Entering a new market or launching a product\n- Losing deals to competitors and need to understand why\n- Quarterly strategy reviews\n- Pricing decisions (new product or adjustment)\n- Sales team needs competitive talking points\n- M&A due diligence on a target or acquirer\n- Investor pitch prep (show you understand the landscape)\n- Content strategy informed by competitor gaps\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 1: Market Mapping] ### 1.1 Competitor Identification\n\nClassify every competitor into one of four tiers:\n\n| Tier | Definition | Example | Monitoring Frequency |\n|------|-----------|---------|---------------------|\n| **Direct** | Same product, same buyer | Your closest rivals | Weekly |\n| **Adjacent** | Different product, overlapping buyer | Platform expanding into your space | Bi-weekly |\n| **Indirect** | Different solution to same problem | Spreadsheets replacing your SaaS | Monthly |\n| **Emerging** | Early-stage, same vision | YC startups in your category | Monthly |\n\n### Discovery Methods\n\nSearch these sources systematically:\n\n1. **Google**: \"[your category] software/tool/service\" — note top 10 organic + ads\n2. **G2/Capterra/TrustRadius**: Your category page — note top 10 by reviews\n3. **Product Hunt**: Search your keywords — sort by votes\n4. **Crunchbase**: Search your category — filter funded companies\n5. **LinkedIn**: \"[competitor name]\" company pages — note employee count trends\n6. **Reddit/HN**: \"alternative to [leader]\" or \"[category] recommendations\"\n7. **Customer interviews**: \"Who else did you evaluate?\"\n8. **Lost deal notes**: Who did you lose to and why?\n\n### Market Map YAML\n\n```yaml\nmarket_map:\n  category: \"[Your Category]\"\n  date: \"YYYY-MM-DD\"\n  total_addressable_market: \"$XB\"\n  \n  competitors:\n    - name: \"Competitor A\"\n      tier: \"direct\"\n      website: \"https://...\"\n      founded: 2019\n      funding: \"$50M Series B\"\n      estimated_revenue: \"$10-20M ARR\"\n      employee_count: 150\n      employee_trend: \"growing\"  # growing | stable | shrinking\n      hq: \"San Francisco, CA\"\n      key_customers: [\"Customer 1\", \"Customer 2\"]\n      primary_market: \"mid-market\"  # smb | mid-market | enterprise\n      positioning: \"All-in-one platform for X\"\n      strengths: [\"Feature A\", \"Strong brand\"]\n      weaknesses: [\"Expensive\", \"Slow support\"]\n      threat_level: \"high\"  # low | medium | high | critical\n      notes: \"\"\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 2: Product Teardown] ### 2.1 Feature Matrix\n\nFor each direct competitor, build a feature comparison:\n\n```yaml\nfeature_matrix:\n  last_updated: \"YYYY-MM-DD\"\n  \n  categories:\n    - name: \"Core Features\"\n      features:\n        - name: \"Feature X\"\n          us: \"full\"       # none | partial | full | superior\n          competitor_a: \"full\"\n          competitor_b: \"partial\"\n          weight: 5        # 1-5 importance to buyer\n          notes: \"We have deeper customization\"\n          \n        - name: \"Feature Y\"\n          us: \"none\"\n          competitor_a: \"full\"\n          competitor_b: \"full\"\n          weight: 3\n          notes: \"On our roadmap for Q3\"\n    \n    - name: \"Integrations\"\n      features:\n        - name: \"Salesforce\"\n          us: \"full\"\n          competitor_a: \"partial\"\n          weight: 4\n```\n\n### 2.2 Product Teardown Template\n\nFor each major competitor, conduct a structured teardown:\n\n```markdown"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[[Competitor Name] Product Teardown] **Date:** YYYY-MM-DD\n**Analyst:** [name]\n\n### First Impressions (0-5 min)\n- Homepage messaging: What problem do they lead with?\n- Sign-up friction: How many steps? What info required?\n- Time to value: How fast can you DO something?\n- Design quality: Modern, dated, cluttered, clean?\n\n### Onboarding (5-30 min)\n- Guided tour? Checklist? Video? Nothing?\n- Sample data provided? Sandbox mode?\n- How quickly did you feel competent?\n- What confused you?\n\n### Core Workflow\n- Complete their primary use case end-to-end\n- Note: steps required, clicks per task, speed, error handling\n- Screenshot key screens\n\n### Differentiators\n- What can they do that we can't? (be honest)\n- What's their \"magic moment\"?\n- What do their happiest customers praise? (check G2 reviews)\n\n### Weaknesses\n- Where did you get stuck?\n- What felt missing or half-baked?\n- What do their angriest customers complain about? (check G2 1-2 star reviews)\n\n### Pricing vs Value\n- What plan would a typical customer need?\n- Price per user/month at that tier?\n- Any hidden costs (implementation, support, integrations)?\n- Free trial? Freemium? Money-back guarantee?\n\n### Technical Assessment\n- Stack: (check Wappalyzer, BuiltWith, job postings)\n- API: Public? REST/GraphQL? Rate limits? Docs quality?\n- Mobile: Native app? Responsive web? PWA?\n- Performance: Page load speed, UI responsiveness\n- Uptime: Status page? Historical incidents?\n```\n\n### 2.3 UX Scoring Rubric\n\nScore each competitor's product (0-10 per dimension):\n\n| Dimension | What to Evaluate | Weight |\n|-----------|-----------------|--------|\n| **Ease of Setup** | Time to first value, onboarding friction | 15% |\n| **Core UX** | Primary workflow efficiency, intuitiveness | 25% |\n| **Feature Depth** | Covers edge cases, power user needs | 20% |\n| **Reliability** | Uptime, bugs encountered, error handling | 15% |\n| **Integrations** | Ecosystem breadth, API quality | 10% |\n| **Support** | Response time, quality, self-serve resources | 10% |\n| **Mobile** | Native quality"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Phase 3: Pricing Intelligence] ### 3.1 Pricing Comparison Table\n\n```yaml\npricing_intel:\n  date: \"YYYY-MM-DD\"\n  \n  competitors:\n    - name: \"Us\"\n      model: \"per-seat\"  # per-seat | usage | flat | hybrid | freemium\n      entry_price: \"$29/user/mo\"\n      mid_price: \"$79/user/mo\"\n      enterprise_price: \"Custom\"\n      free_tier: true\n      free_limits: \"5 users, 1000 records\"\n      annual_discount: \"20%\"\n      contract_required: false\n      implementation_fee: \"$0\"\n      hidden_costs: []\n      \n    - name: \"Competitor A\"\n      model: \"per-seat\"\n      entry_price: \"$49/user/mo\"\n      mid_price: \"$99/user/mo\"\n      enterprise_price: \"Custom ($150+/user)\"\n      free_tier: false\n      annual_discount: \"15%\"\n      contract_required: true  # annual minimum\n      implementation_fee: \"$5,000\"\n      hidden_costs: [\"API access on enterprise only\", \"SSO $50/user extra\"]\n```\n\n### 3.2 Price Positioning Analysis\n\nAnswer these questions:\n\n1. **Where do we sit?** Map all competitors on a 2x2: Price (low→high) vs Feature depth (basic→advanced)\n2. **Who's cheapest?** At 10 users? 50 users? 200 users? (pricing often crosses over at scale)\n3. **Total Cost of Ownership**: Include implementation, training, migration, hidden fees\n4. **Value ratio**: Features-per-dollar compared to each competitor\n5. **Pricing trend**: Are competitors raising prices? (check Wayback Machine on /pricing)\n6. **Discount behavior**: Do they discount aggressively in deals? (ask sales team, check G2 reviews mentioning price)\n\n### 3.3 Pricing Strategy Recommendations\n\nBased on analysis, recommend one of:\n\n| Strategy | When to Use | Risk |\n|----------|------------|------|\n| **Premium** | Clearly superior product + brand | Losing price-sensitive deals |\n| **Parity** | Similar product, compete on other axes | Race to bottom |\n| **Penetration** | New entrant, need market share fast | Perception of low quality |\n| **Value** | Better product at lower price | Margin pressure if costs rise |\n| **Niche** | Specialized for segment competitors ignore | Smal"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Phase 4: Sales Battlecards] ### 4.1 Battlecard Template\n\nCreate one per direct competitor:\n\n```markdown\n# 🏆 Battlecard: Us vs [Competitor]\n**Last Updated:** YYYY-MM-DD | **Confidence:** High/Medium/Low"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Quick Stats] | Metric | Us | Them |\n|--------|-----|------|\n| Founded | | |\n| Funding | | |\n| Est. Revenue | | |\n| Employees | | |\n| G2 Rating | | |\n| Gartner Position | | |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Their Pitch (in their words)] \"[Their homepage headline or elevator pitch]\""
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Why Customers Choose Us Over Them] 1. **[Reason 1]**: [Specific proof point — customer quote, metric, demo moment]\n2. **[Reason 2]**: [Specific proof point]\n3. **[Reason 3]**: [Specific proof point]"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Why Customers Choose Them Over Us (be honest)] 1. **[Reason 1]**: [And how to counter it]\n2. **[Reason 2]**: [And how to counter it]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Landmines to Plant 🧨] Questions to ask the prospect that expose competitor weaknesses:\n1. \"Ask them how they handle [weakness area] — you'll find it requires [workaround]\"\n2. \"Request a demo of [specific feature] — it's not as deep as it looks\"\n3. \"Ask about [hidden cost] — it's not on the pricing page\""
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Objection Handling] **\"[Competitor] is cheaper\"**\n> Response: \"At first glance, yes. But when you factor in [hidden cost 1], [hidden cost 2], and [limitation requiring workaround], the total cost is actually [higher/comparable]. Plus, [our unique value] saves you [X hours/dollars] per [period].\"\n\n**\"[Competitor] has [feature we lack]\"**\n> Response: \"[Acknowledge honestly]. Here's why our customers find that [our approach] actually works better for [their use case]: [specific reasoning]. [Customer name] evaluated both and chose us specifically because [reason].\"\n\n**\"We're already using [Competitor]\"**\n> Response: \"That makes sense — they're solid at [genuine strength]. The customers who switch to us typically hit a wall with [specific limitation]. Are you experiencing [common pain point with that competitor]?\""
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Trap Plays (When to Walk Away)] - If prospect needs [specific capability we truly lack], acknowledge it honestly\n- If they're deeply embedded in [competitor ecosystem], switching cost may be too high\n- If deal size is below $[X], cost of competing isn't worth it"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Win Stories] - **[Customer A]**: Switched from [Competitor] because [reason]. Result: [metric improvement]\n- **[Customer B]**: Evaluated both, chose us because [reason]. Quote: \"[testimonial]\""
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Recent Intel] - [Date]: [Competitor] announced [product change/funding/hire]\n- [Date]: [Customer feedback about competitor]\n```\n\n### 4.2 Quick Objection Matrix\n\nFor the sales team's daily use:\n\n| Objection | Short Response | Proof Point |\n|-----------|---------------|-------------|\n| \"Too expensive\" | [Value reframe] | [ROI stat or customer quote] |\n| \"Never heard of you\" | [Social proof] | [Customer logos, G2 rank] |\n| \"Missing [feature]\" | [Alternative or roadmap] | [Workaround or timeline] |\n| \"Happy with current tool\" | [Trigger question] | [Common pain with incumbent] |\n| \"Need enterprise features\" | [What we have] | [Enterprise customer reference] |\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Phase 5: Win/Loss Analysis] ### 5.1 Win/Loss Interview Framework\n\nAfter every significant deal (won or lost), capture:\n\n```yaml\nwin_loss:\n  deal: \"[Company Name]\"\n  date: \"YYYY-MM-DD\"\n  outcome: \"won\"  # won | lost | no-decision\n  deal_size: \"$X ARR\"\n  sales_cycle_days: 45\n  competitors_evaluated: [\"Competitor A\", \"Competitor B\"]\n  \n  decision_factors:\n    - factor: \"Ease of use\"\n      importance: 5  # 1-5\n      our_score: 4   # 1-5\n      winner_score: 3\n      notes: \"Demo experience was decisive\"\n      \n    - factor: \"Price\"\n      importance: 4\n      our_score: 3\n      winner_score: 4\n      notes: \"We were 20% more expensive but justified by ROI\"\n      \n    - factor: \"Integration with Salesforce\"\n      importance: 5\n      our_score: 5\n      winner_score: 2\n      notes: \"They required middleware; we're native\"\n  \n  champion: \"VP of Sales\"\n  decision_maker: \"CRO\"\n  buying_trigger: \"Previous tool couldn't scale past 50 users\"\n  \n  key_quote: \"Your Salesforce integration sealed the deal\"\n  \n  lessons:\n    - \"Lead with integration story for Salesforce-heavy orgs\"\n    - \"ROI calculator was critical for justifying premium price\"\n```\n\n### 5.2 Win/Loss Trend Dashboard\n\nTrack quarterly:\n\n```markdown"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Q[X] Win/Loss Summary] ### Win Rate by Competitor\n| Competitor | Wins | Losses | Win Rate | Trend |\n|-----------|------|--------|----------|-------|\n| Competitor A | 12 | 8 | 60% | ↑ (was 50%) |\n| Competitor B | 5 | 15 | 25% | ↓ (was 35%) |\n| No competition | 20 | 3 | 87% | → |\n\n### Top Win Reasons (ranked by frequency)\n1. Ease of use (mentioned in 65% of wins)\n2. Integration depth (55%)\n3. Customer support (40%)\n\n### Top Loss Reasons (ranked by frequency)\n1. Price (mentioned in 70% of losses)\n2. Missing [specific feature] (45%)\n3. Incumbent relationship (30%)\n\n### Action Items from This Quarter's Losses\n1. [Feature gap] → Product team building for Q[X+1]\n2. [Price objection] → New ROI calculator + case study\n3. [Competitor strength] → Invest in [counter-strategy]\n```\n\n---"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Phase 6: Ongoing Monitoring] ### 6.1 Competitor Signal Tracking\n\nSet up monitoring for each direct competitor:\n\n| Signal | Source | Frequency | What to Look For |\n|--------|--------|-----------|-----------------|\n| **Product changes** | Their changelog/blog | Weekly | New features, deprecations |\n| **Pricing changes** | /pricing page + Wayback | Monthly | Price increases, new tiers, model changes |\n| **Hiring** | LinkedIn Jobs | Bi-weekly | Engineering surge = new product. Sales surge = growth push |\n| **Funding** | Crunchbase, TechCrunch | As it happens | New round = aggressive expansion coming |\n| **Leadership** | LinkedIn, press | As it happens | New CEO/CRO = strategy shift likely |\n| **Reviews** | G2, Capterra | Monthly | Sentiment shifts, recurring complaints |\n| **Content** | Their blog, social | Weekly | Messaging changes, new positioning |\n| **Customers** | Press releases, case studies | Monthly | Logos gained, industries targeted |\n| **Community** | Reddit, HN, Twitter | Weekly | Complaints, praise, feature requests |\n\n### 6.2 Weekly Intel Brief Template\n\n```markdown"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Competitive Intel Brief — Week of [Date]] ### 🔴 Critical (action needed)\n- [Competitor X] launched [feature] that directly competes with our [feature]\n  - Impact: [assessment]\n  - Recommended response: [action]\n\n### 🟡 Notable (monitor)\n- [Competitor Y] raised Series C ($40M) — expect aggressive hiring/marketing\n- [Competitor Z] changed pricing model from per-seat to usage-based\n\n### 🟢 Informational\n- [Competitor X] published blog post about [topic]\n- [Competitor Y] hiring 3 new enterprise AEs in EMEA\n\n### Win/Loss This Week\n- Won [Deal] vs [Competitor] — reason: [X]\n- Lost [Deal] to [Competitor] — reason: [X]\n```\n\n### 6.3 Quarterly Competitive Review Agenda\n\n1. **Market map update** (15 min): Any new entrants? Any exits? Tier changes?\n2. **Feature gap review** (20 min): What did competitors ship? What should we respond to?\n3. **Win/loss trends** (15 min): Are we gaining or losing ground? Against whom?\n4. **Pricing check** (10 min): Any pricing changes? Is our positioning still right?\n5. **Battlecard refresh** (15 min): Update all active battlecards\n6. **Strategic decisions** (15 min): Based on all intel, what should we invest in / deprioritize?\n\n---"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Phase 7: Strategic Frameworks] ### 7.1 Competitive Moat Assessment\n\nRate your moat and each competitor's (1-5):\n\n| Moat Type | Description | Us | Comp A | Comp B |\n|-----------|------------|-----|--------|--------|\n| **Network Effects** | Product gets better with more users | | | |\n| **Switching Costs** | Pain of leaving increases over time | | | |\n| **Data Advantage** | Proprietary data that improves product | | | |\n| **Brand** | Trust, recognition, preference | | | |\n| **Scale Economies** | Cost advantages from size | | | |\n| **Regulatory** | Licenses, certifications, compliance | | | |\n| **Technology** | Patents, proprietary tech, speed | | | |\n| **Ecosystem** | Integrations, partnerships, marketplace | | | |\n\n**Total moat score = sum. Higher = harder to displace.**\n\n### 7.2 Competitor Response Prediction\n\nFor each major competitor move, predict their likely response to YOUR moves:\n\n```markdown\n**If we [action]...**\n- Competitor A will likely: [response] because [reasoning]\n- Competitor B will likely: [response] because [reasoning]\n- Timeline: [how fast they'll respond]\n- Our counter-move: [what we do next]\n```\n\n### 7.3 Blue Ocean Opportunities\n\nAfter mapping all competitors, look for:\n\n1. **Underserved segments**: Customer types everyone ignores (too small? too niche? too complex?)\n2. **Unmet needs**: Features/capabilities no one offers that customers actually want\n3. **Experience gaps**: The workflow everyone does poorly\n4. **Business model innovation**: Could you win by charging differently? (usage vs seat vs outcome-based)\n5. **Channel gaps**: Where are customers NOT being reached? (vertical communities, specific geographies, languages)\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Edge Cases & Advanced Techniques] ### Stealth Competitors\n- Monitor patent filings in your space (Google Patents)\n- Watch YC/Techstars demo days for category entrants\n- Track job postings at big tech for [your category] keywords — could signal internal build\n\n### International Competitors\n- Search in target language for your category\n- Check local review sites (Capterra has country-specific)\n- Different markets have different leaders — map per region\n\n### Platform Risk\n- If you build on a platform (Salesforce, Shopify, etc.), monitor the platform itself\n- Platforms often build features that commoditize plugins\n- Track platform's acquisition history in your space\n\n### Competitor Intelligence Ethics\n- ✅ Public information (websites, press, job postings, reviews, patents)\n- ✅ Customer feedback about competitors (win/loss interviews)\n- ✅ Product trials and demos (sign up normally)\n- ❌ Fake identities to access gated content\n- ❌ Poaching employees for intel\n- ❌ Accessing confidential documents\n- ❌ Reverse engineering protected code\n\n---"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Natural Language Commands] | Command | What It Does |\n|---------|-------------|\n| \"Map my competitive landscape\" | Full Phase 1 market mapping |\n| \"Tear down [competitor]\" | Product teardown (Phase 2) |\n| \"Compare pricing with [competitors]\" | Pricing intelligence (Phase 3) |\n| \"Build battlecard for [competitor]\" | Sales battlecard (Phase 4) |\n| \"Analyze our win/loss data\" | Win/loss patterns (Phase 5) |\n| \"Weekly competitive brief\" | Monitoring summary (Phase 6) |\n| \"Assess our competitive moat\" | Strategic analysis (Phase 7) |\n| \"Find blue ocean opportunities\" | Gap analysis (Phase 7.3) |\n| \"How should we respond to [competitor move]?\" | Response prediction (Phase 7.2) |\n| \"Full competitive review\" | All phases, comprehensive output |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "afrexai_competitive_intel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-competitive-intel/SKILL.md"
+}

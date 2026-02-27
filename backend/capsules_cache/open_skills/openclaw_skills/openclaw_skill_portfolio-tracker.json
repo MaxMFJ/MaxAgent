@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_portfolio-tracker",
+  "description": "An investment portfolio tracker that runs entirely locally. All data stays in ~/.portfolio-tracker/.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Portfolio Tracker Skill\n\nAn investment portfolio tracker that runs entirely locally. All data stays in `~/.portfolio-tracker/`."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Architecture] - **Data**: `~/.portfolio-tracker/data.json` (portfolios, assets, prices)\n- **Config**: `~/.portfolio-tracker/config.json` (API keys, wallet addresses, user profile)\n- **Scripts**: TypeScript CLI tools in `<skill-path>/scripts/`, run via `npx tsx`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[First-Time Setup] Before running any script, ensure dependencies are installed:\n\n```bash\nnpm install --prefix <skill-path>/scripts\n```\n\nReplace `<skill-path>` with the actual installed path of this skill."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How Scripts Work] Each script is a standalone CLI tool. Run them with:\n\n```bash\nnpx tsx <skill-path>/scripts/<script>.ts <command> [args]\n```\n\nScripts read from stdin when needed and output JSON to stdout.\n\n### data-store.ts\n- `load` — Read portfolio data (creates default if missing)\n- `save` — Write portfolio data (JSON from stdin)\n- `load-config` — Read config\n- `save-config` — Write config (JSON from stdin)\n\n### fetch-prices.ts\n- `crypto <symbol>` — Get crypto price (Binance → CoinGecko)\n- `stock <symbol>` — Get stock price (Yahoo Finance)\n- `fx` — Get USD/CNY/HKD exchange rates\n- `historical <symbol>` — Get 3yr monthly historical data\n- `search <query>` — Search for assets by name/symbol\n- `refresh` — Batch refresh prices (assets JSON from stdin)\n\n### binance-sync.ts\n- `sync <apiKey> <apiSecret>` — Fetch all Binance balances (6 account types)\n- `validate <apiKey> <apiSecret>` — Validate API credentials\n\n### ibkr-sync.ts\n- `sync <token> <queryId>` — Fetch IBKR positions via Flex Query\n- `validate <token> <queryId>` — Validate IBKR credentials\n\n### blockchain-sync.ts\n- `sync <address> [chain]` — Fetch wallet balances (single chain or all 5 EVM chains)\n- `validate <address>` — Validate EVM address"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Data Types] ### Asset\n```json\n{\n  \"id\": \"unique-id\",\n  \"type\": \"CRYPTO | USSTOCK | HKSTOCK | ASHARE | CASH\",\n  \"symbol\": \"BTC\",\n  \"name\": \"Bitcoin\",\n  \"quantity\": 1.5,\n  \"avgPrice\": 40000,\n  \"currentPrice\": 50000,\n  \"currency\": \"USD | CNY | HKD\",\n  \"transactions\": [],\n  \"source\": { \"type\": \"manual | binance | wallet | ibkr\" }\n}\n```\n\n### Portfolio\n```json\n{\n  \"id\": \"unique-id\",\n  \"name\": \"Main\",\n  \"assets\": [...]\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workflow Patterns] ### Viewing Portfolio\n1. Load data via `data-store.ts load`\n2. Find current portfolio by `currentPortfolioId`\n3. Calculate total value using `quantity * currentPrice` per asset\n4. Convert to display currency using `exchangeRates`\n5. Present as a formatted table\n\n### Adding Assets\n1. Load data\n2. Search for the asset using `fetch-prices.ts search <query>`\n3. Get current price via `fetch-prices.ts crypto/stock <symbol>`\n4. Add asset to current portfolio with a generated unique ID\n5. Save data\n\n### Refreshing Prices\n1. Load data\n2. Pipe current portfolio assets to `fetch-prices.ts refresh` via stdin\n3. Also run `fetch-prices.ts fx` for exchange rates\n4. Update each asset's `currentPrice` and the `exchangeRates`\n5. Set `lastPriceRefresh` to current ISO timestamp\n6. Save data\n\n### Syncing from Exchange/Wallet\n1. Load config to get credentials\n2. Run the appropriate sync script\n3. Merge results: update existing assets (match by symbol+source), add new ones\n4. Save data"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Commands] Available user commands:\n- `/portfolio` — View and manage portfolios\n- `/prices` — Refresh all prices\n- `/setup` — Configure API keys and wallets\n- `/sync-binance` — Sync from Binance\n- `/sync-ibkr` — Sync from Interactive Brokers\n- `/sync-wallet` — Sync from blockchain wallet\n- `/advise` — Get AI investment advice"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "portfolio_tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aigeneralstore/portfolio-tracking-skill/SKILL.md"
+}

@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_moltycash",
+  "description": "Send USDC to molty users via A2A protocol. Use when the user wants to send cryptocurrency payments, tip someone, or pay a molty username.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # moltycash\n\nSend USDC to any [molty.cash](https://molty.cash) user from the command line. Supports Base and Solana via the [x402](https://x402.org) protocol."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] Set up your private key:\n\n```bash\n# For Base\nexport EVM_PRIVATE_KEY=\"your_base_private_key\"\n\n# For Solana\nexport SVM_PRIVATE_KEY=\"your_solana_private_key\"\n```\n\nSend your first payment:\n\n```bash\nnpx moltycash send KarpathyMolty 1¢\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Install] ```bash\n# Run directly (recommended)\nnpx moltycash --help\n\n# Or install globally\nnpm install -g moltycash\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ```bash\nnpx moltycash send <molty_name> <amount> [--network <base|solana>]\n```\n\n### Examples\n\n```bash\nnpx moltycash send KarpathyMolty 1¢\nnpx moltycash send KarpathyMolty 0.5\nnpx moltycash send KarpathyMolty 0.5 --network solana\n```\n\n### Amount formats\n\n| Format | Example | Value |\n|--------|---------|-------|\n| Cents | `50¢` | $0.50 |\n| Dollar | `$0.50` | $0.50 |\n| Decimal | `0.5` | $0.50 |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Environment variables] | Variable | Description |\n|----------|-------------|\n| `EVM_PRIVATE_KEY` | Base wallet private key (`0x...`) |\n| `SVM_PRIVATE_KEY` | Solana wallet private key (base58) |\n| `MOLTY_IDENTITY_TOKEN` | Optional — appear as verified sender |\n\nIf only one key is set, that network is used automatically. If both are set, use `--network`."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Verified Sender (Optional)] Include your identity token to appear as a verified sender in transaction history.\n\n1. Login to molty.cash with your X account\n2. Open the profile dropdown and click \"Identity Token\"\n3. Generate your token and copy it\n4. Store it as `MOLTY_IDENTITY_TOKEN` environment variable\n\nVerified senders appear with a checkmark badge in the payment feed. Without a token, payments appear as anonymous `molty-agent-xxxx`."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[OpenClaw Setup] Store credentials securely using OpenClaw's environment configuration.\n\nAdd to `~/.openclaw/.env`:\n```\nEVM_PRIVATE_KEY=0x...\nSVM_PRIVATE_KEY=...\nMOLTY_IDENTITY_TOKEN=...\n```\n\n### Security Best Practices\n\n1. **File permissions**: `chmod 600 ~/.openclaw/.env`\n2. **State directory**: `chmod 700 ~/.openclaw`\n3. **Run security audit**: `openclaw security audit --deep`\n4. **Never commit** credentials to version control"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Links] - [molty.cash](https://molty.cash)\n- [x402.org](https://x402.org)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltycash"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Requires EVM_PRIVATE_KEY (Base) or SVM_PRIVATE_KEY (Solana) environment variable",
+    "extra": {
+      "author": "molty.cash",
+      "version": "2.0.0"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xsnackbaker/moltycash/SKILL.md"
+}

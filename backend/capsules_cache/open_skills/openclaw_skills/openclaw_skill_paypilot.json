@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_paypilot",
+  "description": "Process payments, send invoices, issue refunds, and manage transactions via a secure payment gateway proxy. Use when a user asks to charge someone, send a payment link, check sales, issue a refund, create recurring billing, or manage any payment-related task. Also use for merchant onboarding and first-time payment setup.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # PayPilot — Payment Processing for AI Agents\n\nAccept payments, send invoices, issue refunds, and track sales — all through conversation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] PayPilot connects to a hosted API proxy at `https://paypilot.agms.com`. On first use, check for credentials:\n\n```bash\ncat ~/.config/paypilot/config.json\n```\n\nIf no config exists, guide the user through setup:\n\n1. **Register** on the PayPilot proxy:\n```bash\ncurl -s \"https://paypilot.agms.com/v1/auth/register\" -X POST \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"BUSINESS_NAME\",\"email\":\"EMAIL\",\"password\":\"PASSWORD\"}'\n```\n\n2. **Login** to get an access token:\n```bash\ncurl -s \"https://paypilot.agms.com/v1/auth/login\" -X POST \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"email\":\"EMAIL\",\"password\":\"PASSWORD\"}'\n```\n\n3. **Configure** the payment gateway key:\n```bash\ncurl -s \"https://paypilot.agms.com/v1/auth/configure\" -X POST \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer $TOKEN\" \\\n  -d '{\"gateway_key\":\"YOUR_GATEWAY_KEY\"}'\n```\n\n4. **Save** credentials locally:\n```bash\nmkdir -p ~/.config/paypilot\ncat > ~/.config/paypilot/config.json << 'EOF'\n{\n  \"api_url\": \"https://paypilot.agms.com\",\n  \"email\": \"merchant@example.com\",\n  \"token\": \"jwt_token_here\"\n}\nEOF\nchmod 600 ~/.config/paypilot/config.json\n```\n\nIf the user doesn't have a gateway account, start the onboarding process:\n\n1. Collect basic info conversationally:\n   - Business name\n   - Contact name\n   - Email\n   - Phone\n   - Business type (retail, restaurant, ecommerce, mobile, etc.)\n\n2. Save the lead to our system:\n```bash\ncurl -s \"https://paypilot.agms.com/v1/onboard\" -X POST \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"business_name\":\"Acme Corp\",\"contact_name\":\"John Doe\",\"email\":\"john@acme.com\",\"phone\":\"555-1234\",\"business_type\":\"retail\"}'\n```\n\n3. Send them the full application link to complete and e-sign:\n> \"Great! To finish your application, complete the form here: **https://agms.com/get-started/**\n> It takes about 5-10 minutes. You'll need your business address, Tax ID, and banking info. After you submit, you'll e-sign right away and typically get approved within 24-48 hours.\n>"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Authentication] All payment endpoints require a JWT bearer token. Load config and set headers:\n\n```bash\nCONFIG=$(cat ~/.config/paypilot/config.json)\nAPI=$(echo $CONFIG | jq -r '.api_url')\nTOKEN=$(echo $CONFIG | jq -r '.token')\nAUTH=\"Authorization: Bearer $TOKEN\"\n```\n\nIf a request returns 401, re-login and update the saved token.\n\nTo refresh an expired token:\n```bash\n# Re-login\nLOGIN=$(curl -s \"$API/v1/auth/login\" -X POST \\\n  -H \"Content-Type: application/json\" \\\n  -d \"{\\\"email\\\":\\\"$(echo $CONFIG | jq -r '.email')\\\",\\\"password\\\":\\\"YOUR_PASSWORD\\\"}\")\nNEW_TOKEN=$(echo $LOGIN | jq -r '.access_token')\n\n# Update config\njq --arg t \"$NEW_TOKEN\" '.token = $t' ~/.config/paypilot/config.json > /tmp/pp.json && mv /tmp/pp.json ~/.config/paypilot/config.json\nchmod 600 ~/.config/paypilot/config.json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Commands] ### Charge / Sale\nProcess a payment using a vaulted card token. **Never handle raw card numbers.**\n\n```bash\ncurl -s \"$API/v1/payments/charge\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"amount\":500.00,\"token\":\"VAULT_ID\",\"description\":\"Consulting — January\"}'\n```\n\n### Send Invoice / Payment Link\n```bash\ncurl -s \"$API/v1/payments/invoice\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"amount\":500.00,\"email\":\"john@example.com\",\"description\":\"Consulting — January\"}'\n```\n\n### Refund\n```bash\n# Full refund\ncurl -s \"$API/v1/payments/refund\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"transaction_id\":\"TXN_ID\"}'\n\n# Partial refund\ncurl -s \"$API/v1/payments/refund\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"transaction_id\":\"TXN_ID\",\"amount\":50.00}'\n```\n\n### Void (same-day cancel)\n```bash\ncurl -s \"$API/v1/payments/void\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"transaction_id\":\"TXN_ID\"}'\n```\n\n### View Transactions\n```bash\ncurl -s \"$API/v1/transactions\" -H \"$AUTH\" | jq .\n```\n\n### Sales Summary\n```bash\ncurl -s \"$API/v1/transactions/summary\" -H \"$AUTH\" | jq .\n```\n\n### Customer Vault (Tokenize Cards Securely)\nStore a card securely — returns a vault token. The customer enters card details through a secure form; raw card data never touches the agent.\n\n```bash\ncurl -s \"$API/v1/vault/add\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"first_name\":\"John\",\"last_name\":\"Smith\",\"email\":\"john@example.com\"}'\n```\n\n### Charge a Vaulted Card\n```bash\ncurl -s \"$API/v1/vault/charge\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"vault_id\":\"VAULT_ID\",\"amount\":99.00,\"description\":\"Monthly service\"}'\n```\n\n### Recurring Billing\n```bash\n# Create subscription\ncurl -s \"$API/v1/subscriptions\" -X POST \\\n  -H \"Content-Type: application/json\" -H \"$AUTH\" \\\n  -d '{\"vault_id\":\"VAULT_ID\",\"plan_id\":\"monthly_99\",\"amount\":99.00,\"interval\":\"monthly\"}'\n"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Security Rules] - **NEVER** ask for, log, or store raw credit card numbers\n- **NEVER** include card numbers in conversation history or memory files\n- **ALWAYS** use payment links or customer vault tokens for charges\n- **ALWAYS** use HTTPS — the proxy enforces TLS\n- API tokens and gateway keys must stay in config files, never in chat\n- The proxy encrypts gateway keys at rest (AES-256-GCM)\n- Rate limited: 60 requests/min global, 5/min on auth endpoints"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Response Patterns] When a payment succeeds:\n> \"✅ Payment of $500.00 processed. Transaction ID: abc123.\"\n\nWhen sending an invoice:\n> \"📧 Payment link for $500.00 sent to john@example.com.\"\n\nWhen a payment fails:\n> \"❌ Payment declined. Want to try a different method or send a payment link instead?\"\n\nWhen checking sales:\n> \"📊 This month: 23 transactions · $4,750 in sales · 2 refunds ($150) · Net: $4,600\""
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[API Reference] For detailed gateway API documentation, see `references/gateway-api.md`.\nFor payment flow diagrams, see `references/payment-flows.md`.\nFor PCI compliance guidelines, see `references/pci-compliance.md`."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "paypilot"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agmsyumet/paypilot-agms/SKILL.md"
+}
