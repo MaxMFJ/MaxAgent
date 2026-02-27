@@ -1,8 +1,11 @@
 # 技能 Capsule
 
+技能 Capsule 支持**本地**和**在线**技能：本地自定义脚本 + OpenClaw 社区技能库（数千个，按需加载）。
+
 ## 何时使用
 - 用户任务涉及「技能」「自动化」「批量处理」「特定场景」时，先 capsule find 再执行
 - 系统推荐匹配 Capsule 时，直接调用 capsule execute
+- **用户问「能加载哪些工具」「有哪些技能」「在线工具」时**：说明有 OpenClaw 在线技能库（Coding、Git、DevOps、PDF、搜索等分类），用 capsule find(task=...) 搜索后 execute 执行，不要只说「聚焦本地」而忽略在线技能能力
 
 ## 调用流程
 1. capsule find(task="用户任务关键词") → 获取匹配列表

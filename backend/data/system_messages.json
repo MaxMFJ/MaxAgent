@@ -18,5 +18,25 @@
     "category": "system_error",
     "timestamp": "2026-02-27T14:29:35.895639",
     "read": true
+  },
+  {
+    "id": "98994079-15ef-4c0a-99b9-e360166df30b",
+    "level": "info",
+    "title": "任务完成",
+    "content": "任务: 列出当前skill情况\n总结: 当前系统中未注册任何技能，技能库为空。\n动作数: 3",
+    "source": "autonomous_task",
+    "category": "task",
+    "timestamp": "2026-02-27T15:41:56.401019",
+    "read": true
+  },
+  {
+    "id": "55336cb0-436a-42f3-a530-57265ffa960f",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "type object 'QueryTier' has no attribute 'FULL'",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-02-27T15:50:27.765149",
+    "read": true
   }
 ]

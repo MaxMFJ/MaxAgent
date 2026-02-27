@@ -11,12 +11,13 @@ Strategy 2 (Open Skills): 默认策略。从公开 GitHub 仓库（anthropics/sk
 始终加载: 本地 ./capsules/ 目录中的手写 Capsule JSON。
 
 调度逻辑:
-  1. 加载本地 ./capsules/（始终）
-  2. 如果 Strategy 1 可用 → 使用 EvoMap sync
-  3. 否则 → Strategy 2: sync_open_skill_sources
-  4. 校验 + 注册到 CapsuleRegistry
+  1. 加载本地 ./capsules/ + 已有缓存（始终，不阻塞）
+  2. 校验 + 注册到 CapsuleRegistry（用户可立即使用已缓存技能）
+  3. Open Skills: sync 在后台执行，不阻塞启动
+  4. EvoMap: 仍同步执行 sync
 """
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -50,6 +51,7 @@ async def execute_strategy(
     cache_dir: Optional[Path] = None,
     force_strategy: Optional[str] = None,
     start_scheduler: bool = False,
+    run_sync: bool = True,
 ) -> Dict[str, Any]:
     """
     按策略优先级加载技能：
@@ -66,27 +68,28 @@ async def execute_strategy(
         "total_loaded": 0,
     }
 
-    # ── Step 1: 本地 Capsule（始终加载）──
+    # ── Step 1: 本地 + 已有缓存（不阻塞，用户可立即使用）──
     local_raw = load_all_local(
         capsules_dir=capsules_dir or DEFAULT_CAPSULES_DIR,
         cache_dir=cache_dir or DEFAULT_CAPSULES_CACHE,
     )
     result["local"]["loaded"] = len(local_raw)
-    all_raw = list(local_raw)
-
-    # ── Step 2: 按策略拉取远程技能 ──
-    if strategy == "evomap":
-        result["remote"] = await _run_evomap_strategy(cache_dir)
-    else:
-        result["remote"] = await _run_open_skills_strategy(cache_dir)
-
-    # 加载远程缓存
     remote_raw = _load_remote_cache(strategy, cache_dir)
-    all_raw.extend(remote_raw)
 
+    # 合并并去重（按 id，后加载覆盖）
+    by_id: Dict[str, Dict[str, Any]] = {}
+    for c in local_raw:
+        cid = c.get("id") or c.get("gene") or ""
+        if cid:
+            by_id[cid] = c
+    for c in remote_raw:
+        cid = c.get("id") or c.get("gene") or ""
+        if cid:
+            by_id[cid] = c
+    all_raw = list(by_id.values())
     result["total_loaded"] = len(all_raw)
 
-    # ── Step 3: 校验 + 注册 ──
+    # ── Step 2: 校验 + 注册（立即生效）──
     validated = validate_capsules(all_raw, allow_gep_conversion=True, check_safety=True)
     registry = get_capsule_registry()
     registered = registry.register_many(validated)
@@ -94,9 +97,19 @@ async def execute_strategy(
 
     logger.info(
         f"Capsule strategy [{strategy}]: "
-        f"local={result['local']['loaded']}, remote={len(remote_raw)}, "
+        f"local={result['local']['loaded']}, remote_cache={len(remote_raw)}, "
         f"registered={registered}"
     )
+
+    # ── Step 3: 远程 sync（Open Skills 放后台，不阻塞；EvoMap 仍同步）──
+    if run_sync:
+        if strategy == "evomap":
+            result["remote"] = await _run_evomap_strategy(cache_dir)
+        else:
+            result["remote"] = {"type": "open_skills", "sync": "background"}
+            asyncio.create_task(_background_open_skills_sync(cache_dir))
+    else:
+        result["remote"] = {"type": strategy, "sync": "skipped"}
 
     # ── Step 4: 可选定时刷新 ──
     if start_scheduler:
@@ -124,13 +137,48 @@ async def _run_evomap_strategy(cache_dir: Optional[Path] = None) -> Dict[str, An
         return await _run_open_skills_strategy(cache_dir)
 
 
+async def _background_open_skills_sync(cache_dir: Optional[Path] = None) -> None:
+    """
+    后台执行 Open Skills sync；完成后增量更新 registry，使新拉取的技能立即可用。
+    """
+    try:
+        sync_result = await _run_open_skills_strategy(cache_dir)
+        if "error" in sync_result:
+            logger.warning(f"Open skills background sync failed: {sync_result['error']}")
+            return
+        # 增量加载新缓存并注册
+        try:
+            from .open_skill_sources import load_cached_open_skills
+            new_raw = load_cached_open_skills(cache_dir)
+            if new_raw:
+                validated = validate_capsules(new_raw, allow_gep_conversion=True, check_safety=True)
+                registry = get_capsule_registry()
+                added = registry.register_many(validated)
+                if added > 0:
+                    logger.info(f"Open skills sync complete: {added} new capsules registered")
+        except Exception as e:
+            logger.debug(f"Incremental registry update skipped: {e}")
+    except Exception as e:
+        logger.warning(f"Open skills background sync error: {e}")
+
+
 async def _run_open_skills_strategy(cache_dir: Optional[Path] = None) -> Dict[str, Any]:
     """
     Strategy 2: 从公开 GitHub 仓库拉取 Agent Skills。
+    先拉取 VoltAgent/awesome-openclaw-skills 索引（轻量、快速），再拉取 SKILL.md。
     """
     try:
         from .open_skill_sources import sync_open_skill_sources
-        sync_result = await sync_open_skill_sources(cache_dir=cache_dir)
+        from .skill_index import sync_skill_index
+        sync_result: Dict[str, Any] = {}
+        # 先拉取 awesome 索引（单次 HTTP，秒级），确保 prompt 能注入
+        try:
+            ok, total = await sync_skill_index(cache_dir)
+            if ok:
+                sync_result["skill_index"] = {"synced": True, "total": total}
+        except Exception as ei:
+            logger.debug(f"Skill index sync skipped: {ei}")
+        sync_result.update(await sync_open_skill_sources(cache_dir=cache_dir))
         return {"type": "open_skills", "sync": sync_result}
     except Exception as e:
         logger.warning(f"Open skills strategy failed: {e}")
@@ -160,11 +208,9 @@ async def reload_with_strategy(
     previous = len(registry)
     reset_capsule_registry()
 
-    if run_sync:
-        result = await execute_strategy(capsules_dir, cache_dir, force_strategy)
-    else:
-        # 只加载本地+缓存，不拉取远程
-        result = await execute_strategy(capsules_dir, cache_dir, force_strategy=force_strategy)
+    result = await execute_strategy(
+        capsules_dir, cache_dir, force_strategy=force_strategy, run_sync=run_sync
+    )
 
     result["previous_count"] = previous
     return result

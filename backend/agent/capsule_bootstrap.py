@@ -49,6 +49,14 @@ async def bootstrap_capsules(
         except Exception:
             pass
 
+        # 轻量同步：若索引不存在则拉取（单次 HTTP，秒级），供 prompt 注入「在线技能」提示
+        try:
+            from .skill_index import sync_skill_index, load_cached_index
+            if not load_cached_index(cache_dir):
+                await sync_skill_index(cache_dir)
+        except Exception:
+            pass
+
         validated = validate_capsules(raw, allow_gep_conversion=True, check_safety=True)
         registry = get_capsule_registry()
         registered = registry.register_many(validated)

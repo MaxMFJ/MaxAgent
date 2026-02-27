@@ -21,3 +21,6 @@
 {"ts": "2026-02-27T06:46:17.539052Z", "session_id": "55D25349-D2A4-40A2-A485-84E53CA22068", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "terminal"}
 {"ts": "2026-02-27T06:46:25.176640Z", "session_id": "55D25349-D2A4-40A2-A485-84E53CA22068", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "terminal"}
 {"ts": "2026-02-27T06:46:36.939601Z", "session_id": "55D25349-D2A4-40A2-A485-84E53CA22068", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "app_control"}
+{"ts": "2026-02-27T08:02:46.264252Z", "session_id": "5833F365-E244-4F03-A870-9EB827AA95F0", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "capsule"}
+{"ts": "2026-02-27T08:02:51.433871Z", "session_id": "5833F365-E244-4F03-A870-9EB827AA95F0", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "capsule"}
+{"ts": "2026-02-27T08:11:12.602946Z", "session_id": "AD00DEAD-1EA9-4253-AB45-38C9EFB4D03F", "allowed": true, "reason": "intent_allows_execution", "intent": "execution", "tool_name": "capsule"}

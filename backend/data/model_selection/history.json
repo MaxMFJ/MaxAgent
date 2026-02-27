@@ -383,5 +383,16 @@
     "token_usage": 0,
     "quality_score": 0.0,
     "timestamp": "2026-02-27T12:34:16.659127"
+  },
+  {
+    "task_hash": "d73044eb7028",
+    "task_description": "列出当前skill情况",
+    "model_type": "local",
+    "task_type": "simple_operation",
+    "success": true,
+    "execution_time_ms": 48731,
+    "token_usage": 0,
+    "quality_score": 0.0,
+    "timestamp": "2026-02-27T15:41:56.397454"
   }
 ]

@@ -242,6 +242,19 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
         except Exception as e:
             logger.debug(f"Failed to inject capsule hint: {e}")
 
+    # 在线技能索引注入（COMPLEX 时）：让 LLM 快速了解可加载的 OpenClaw 技能，用 capsule find 按需匹配
+    if result.tier == QueryTier.COMPLEX:
+        try:
+            from .skill_index import get_skill_index_for_prompt
+            index_hint = get_skill_index_for_prompt(max_chars=1200)
+            if index_hint:
+                if capsule_hint:
+                    capsule_hint += f"\n\n[{index_hint}]"
+                else:
+                    capsule_hint = f"\n\n[{index_hint}]"
+        except Exception as e:
+            logger.debug(f"Failed to inject skill index: {e}")
+
     # Workspace 上下文注入（当前工作区、打开的文件）
     workspace_hint = ""
     try:

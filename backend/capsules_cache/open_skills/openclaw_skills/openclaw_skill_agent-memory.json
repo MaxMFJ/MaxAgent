@@ -55,4 +55,8 @@
     "compatibility": "Python 3.10+, Docker (Qdrant + Neo4j), OpenRouter API key",
     "extra": {
       "openclaw": {
-        "emoji": 
+        "emoji": "🧠"
+      }
+    }
+  }
+}
