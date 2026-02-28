@@ -9,18 +9,19 @@ struct WelcomeView: View {
             Image(systemName: "sparkles")
                 .font(.system(size: 60))
                 .foregroundStyle(.linearGradient(
-                    colors: [.blue, .purple],
+                    colors: [CyberColor.cyan, CyberColor.green],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
+                .shadow(color: CyberColor.cyan.opacity(0.4), radius: 12)
             
             Text("MacAgent")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.system(size: 34, weight: .bold, design: .monospaced))
+                .foregroundColor(CyberColor.textPrimary)
             
             Text("你的 macOS 智能助手")
                 .font(.title3)
-                .foregroundColor(.secondary)
+                .foregroundColor(CyberColor.textSecond)
             
             VStack(alignment: .leading, spacing: 12) {
                 FeatureRow(icon: "folder", title: "文件管理", description: "创建、移动、删除文件和文件夹")
@@ -30,7 +31,11 @@ struct WelcomeView: View {
                 FeatureRow(icon: "doc.on.clipboard", title: "剪贴板", description: "读取和写入剪贴板内容")
             }
             .padding()
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(CyberColor.bg2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(CyberColor.cyan.opacity(0.15), lineWidth: 0.5)
+            )
             .cornerRadius(12)
             
             Spacer()
@@ -48,15 +53,16 @@ struct FeatureRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.accentColor)
+                .foregroundColor(CyberColor.cyan)
                 .frame(width: 32)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .fontWeight(.medium)
+                    .foregroundColor(CyberColor.textPrimary)
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
             }
         }
     }

@@ -177,7 +177,8 @@ class ContextManager:
     def __init__(self, max_sessions: int = 100):
         self.sessions: Dict[str, ConversationContext] = {}
         self.max_sessions = max_sessions
-        self._storage_dir = os.path.join(os.path.dirname(__file__), "..", "data", "contexts")
+        from paths import DATA_DIR
+        self._storage_dir = os.path.join(DATA_DIR, "contexts")
         os.makedirs(self._storage_dir, exist_ok=True)
     
     def get_or_create(self, session_id: str) -> ConversationContext:

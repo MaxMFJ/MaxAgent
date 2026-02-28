@@ -72,25 +72,75 @@
     _finalText = @"";
     _isRunning = YES;
 
-    _recognitionRequest = [[SFSpeechAudioBufferRecognitionRequest alloc] init];
-    _recognitionRequest.shouldReportPartialResults = YES;
-    _recognitionRequest.requiresOnDeviceRecognition = NO;
-
-    AVAudioInputNode *inputNode = self.audioEngine.inputNode;
-    AVAudioFormat *format = [inputNode outputFormatForBus:0];
-
-    __weak typeof(self) wself = self;
-    [inputNode installTapOnBus:0 bufferSize:1024 format:format block:^(AVAudioPCMBuffer *buffer, AVAudioTime *time) {
-        [wself.recognitionRequest appendAudioPCMBuffer:buffer];
-    }];
-
-    [self.audioEngine prepare];
-    NSError *error = nil;
-    if (![self.audioEngine startAndReturnError:&error]) {
+    // 1. 配置 AVAudioSession（必须在访问 inputNode 之前）
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    NSError *sessionError = nil;
+    [session setCategory:AVAudioSessionCategoryRecord
+                    mode:AVAudioSessionModeMeasurement
+                 options:AVAudioSessionCategoryOptionDuckOthers
+                   error:&sessionError];
+    if (sessionError) {
+        NSLog(@"[VoiceInput] Audio session category error: %@", sessionError);
+        _isRunning = NO;
+        return;
+    }
+    [session setActive:YES
+           withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
+                 error:&sessionError];
+    if (sessionError) {
+        NSLog(@"[VoiceInput] Audio session activate error: %@", sessionError);
         _isRunning = NO;
         return;
     }
 
+    _recognitionRequest = [[SFSpeechAudioBufferRecognitionRequest alloc] init];
+    _recognitionRequest.shouldReportPartialResults = YES;
+    _recognitionRequest.requiresOnDeviceRecognition = NO;
+
+    // 2. 获取 inputNode（此时 audio session 已正确配置）
+    AVAudioInputNode *inputNode = self.audioEngine.inputNode;
+
+    // 3. 获取硬件原生格式并验证
+    AVAudioFormat *hwFormat = [inputNode outputFormatForBus:0];
+    AVAudioFormat *recordingFormat = hwFormat;
+
+    // 如果硬件格式无效，手动创建 16kHz mono 格式（语音识别常用格式）
+    if (!recordingFormat || recordingFormat.channelCount == 0 || recordingFormat.sampleRate == 0) {
+        recordingFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32
+                                                          sampleRate:16000
+                                                            channels:1
+                                                         interleaved:NO];
+    }
+
+    // 4. 安装 tap（使用 @try 防止格式不匹配导致的异常崩溃）
+    @try {
+        [inputNode installTapOnBus:0 bufferSize:1024 format:recordingFormat block:^(AVAudioPCMBuffer *buffer, AVAudioTime *time) {
+            [self.recognitionRequest appendAudioPCMBuffer:buffer];
+        }];
+    } @catch (NSException *exception) {
+        NSLog(@"[VoiceInput] Tap install failed with format %@, retrying with nil format: %@", recordingFormat, exception);
+        // 回退方案：使用 nil 格式（让系统自动选择匹配的格式）
+        @try {
+            [inputNode removeTapOnBus:0];
+            [inputNode installTapOnBus:0 bufferSize:1024 format:nil block:^(AVAudioPCMBuffer *buffer, AVAudioTime *time) {
+                [self.recognitionRequest appendAudioPCMBuffer:buffer];
+            }];
+        } @catch (NSException *ex2) {
+            NSLog(@"[VoiceInput] Tap install failed even with nil format: %@", ex2);
+            _isRunning = NO;
+            return;
+        }
+    }
+
+    [self.audioEngine prepare];
+    NSError *error = nil;
+    if (![self.audioEngine startAndReturnError:&error]) {
+        NSLog(@"[VoiceInput] Engine start error: %@", error);
+        _isRunning = NO;
+        return;
+    }
+
+    __weak typeof(self) wself = self;
     _recognitionTask = [self.speechRecognizer recognitionTaskWithRequest:_recognitionRequest resultHandler:^(SFSpeechRecognitionResult * _Nullable result, NSError * _Nullable err) {
         __strong typeof(wself) self = wself;
         if (!self) return;
@@ -143,9 +193,21 @@
     _recognitionTask = nil;
     [_recognitionRequest endAudio];
     _recognitionRequest = nil;
-    [self.audioEngine stop];
-    [self.audioEngine.inputNode removeTapOnBus:0];
+    if (self.audioEngine.isRunning) {
+        [self.audioEngine stop];
+    }
+    @try {
+        [self.audioEngine.inputNode removeTapOnBus:0];
+    } @catch (NSException *exception) {
+        NSLog(@"[VoiceInput] removeTap exception: %@", exception);
+    }
     _isRunning = NO;
+
+    // 反激活 audio session，让其他 app 恢复音频
+    NSError *deactivateError = nil;
+    [[AVAudioSession sharedInstance] setActive:NO
+                                   withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
+                                         error:&deactivateError];
 }
 
 - (void)scheduleSilenceSubmit {

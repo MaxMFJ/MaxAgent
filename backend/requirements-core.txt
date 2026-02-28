@@ -1,0 +1,19 @@
+# 核心依赖（~80MB），不含 RAG/向量搜索（torch/sentence-transformers 等 ~600MB）
+# RAG 依赖在用户首次启用向量搜索时自动安装到 Application Support
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+websockets>=12.0
+openai>=1.12.0
+httpx>=0.26.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+psutil>=5.9.0
+pyperclip>=1.8.2
+python-dotenv>=1.0.0
+# 联网搜索
+duckduckgo_search>=4.0.0
+beautifulsoup4>=4.12.0
+# EvoMap 进化网络
+aiohttp>=3.9.0
+# vector_store 依赖（即使 RAG 关闭也需导入）
+numpy>=1.24.0

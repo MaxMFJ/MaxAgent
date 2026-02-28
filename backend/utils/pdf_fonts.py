@@ -10,6 +10,7 @@ macOS 中文字体注册工具
 
 import logging
 import os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ _BOLD_CANDIDATES = [
 ]
 
 
-def _find_font(candidates: list) -> str | None:
+def _find_font(candidates: list) -> Optional[str]:
     for path in candidates:
         if os.path.isfile(path):
             return path

@@ -15,9 +15,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # MacAgent backend 根目录
-BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from paths import DATA_DIR, BACKEND_ROOT
+
 GENERATED_TOOLS_DIR = os.path.join(BACKEND_ROOT, "tools", "generated")
-DATA_DIR = os.path.join(BACKEND_ROOT, "data")
 SIGNATURES_FILE = os.path.join(DATA_DIR, "signatures.json")
 
 # 允许写入的路径（必须是这些目录下的子路径）

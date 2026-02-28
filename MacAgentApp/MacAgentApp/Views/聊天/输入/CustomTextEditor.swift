@@ -14,8 +14,9 @@ struct CustomTextEditor: NSViewRepresentable {
         
         textView.delegate = context.coordinator
         textView.isRichText = false
-        textView.font = NSFont.systemFont(ofSize: 14)
-        textView.textColor = NSColor.labelColor
+        textView.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.textColor = NSColor(red: 0.88, green: 0.92, blue: 1.0, alpha: 1.0)  // CyberColor.textPrimary
+        textView.insertionPointColor = NSColor(red: 0.0, green: 0.90, blue: 1.0, alpha: 1.0)  // CyberColor.cyan
         textView.backgroundColor = NSColor.clear
         textView.isEditable = true
         textView.isSelectable = true
@@ -105,8 +106,8 @@ struct CustomTextEditor: NSViewRepresentable {
             
             if placeholderLabel == nil {
                 let label = NSTextField(labelWithString: placeholderString)
-                label.textColor = NSColor.placeholderTextColor
-                label.font = NSFont.systemFont(ofSize: 14)
+                label.textColor = NSColor(red: 0.45, green: 0.52, blue: 0.65, alpha: 0.7)  // CyberColor.textSecond
+                label.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
                 label.backgroundColor = NSColor.clear
                 label.isBordered = false
                 label.isEditable = false

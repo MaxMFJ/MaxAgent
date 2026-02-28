@@ -12,7 +12,8 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # 学习数据存储目录
-LEARNING_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "learning")
+from paths import DATA_DIR
+LEARNING_DATA_DIR = os.path.join(DATA_DIR, "learning")
 os.makedirs(LEARNING_DATA_DIR, exist_ok=True)
 
 # 任务模式数据库

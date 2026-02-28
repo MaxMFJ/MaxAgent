@@ -28,12 +28,14 @@ from .stop_policy import (
 )
 from .capsule_registry import get_capsule_registry
 from .safety import validate_action_safe
+from .prompt_loader import get_project_context_for_prompt
 from tools.router import execute_tool
 
 try:
     from core.task_state_machine import TaskStateMachine, TaskState
     from core.error_model import to_agent_error, AgentError, ErrorCategory
     from core.timeout_policy import get_timeout_policy
+    from core.trace_logger import append_span as trace_append_span
 except ImportError:
     TaskStateMachine = None  # type: ignore
     TaskState = None  # type: ignore
@@ -41,6 +43,7 @@ except ImportError:
     AgentError = None
     ErrorCategory = None
     get_timeout_policy = None
+    trace_append_span = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,9 @@ logger = logging.getLogger(__name__)
 ESCALATION_NORMAL = 0          # No intervention
 ESCALATION_FORCE_SWITCH = 1    # Force a different approach (layer 2)
 ESCALATION_SKILL_FALLBACK = 2  # Inject skill guidance (layer 3)
+
+# 首步解析加固：第一步且模型返回长纯文本时，不当作 finish，重试并注入强约束 prompt
+FIRST_STEP_PLAIN_TEXT_MIN_LEN = 200
 
 
 AUTONOMOUS_SYSTEM_PROMPT = """你是一个完全自主执行的 macOS Agent，会代表用户自动完成各种任务，无需用户干预。你拥有终端、文件、截图、联网搜索等工具，可执行用户请求的操作。请按以下格式输出动作。
@@ -134,6 +140,11 @@ AUTONOMOUS_SYSTEM_PROMPT = """你是一个完全自主执行的 macOS Agent，�
     ```json
     {"action_type": "finish", "params": {"summary": "任务完成总结", "success": true}, "reasoning": "任务已完成"}
     ```
+
+## 执行步骤（按阶段思考）
+- **Gather**：根据需要读取文件、搜索、查看错误信息以理解当前状态。
+- **Act**：执行一个具体动作（run_shell / call_tool / write_file 等）。
+- **Verify**：根据工具返回判断是否达成子目标、是否需重试或调整策略。
 
 ## 执行规则
 
@@ -786,8 +797,11 @@ class AutonomousAgent:
                     if _delay > 0:
                         await asyncio.sleep(_delay)
                 
-                action = await self._generate_action(context)
-                
+                llm_events: List[Dict[str, Any]] = []
+                action = await self._generate_action(context, llm_events=llm_events)
+                for evt in llm_events:
+                    yield evt
+
                 if action is None:
                     context.retry_count += 1
                     backoff_seconds = min(2 ** context.retry_count, 30)
@@ -853,6 +867,15 @@ class AutonomousAgent:
                     
                     if state_machine and TaskState is not None:
                         state_machine.transition(TaskState.COMPLETED)
+                    # action_log 供 HIST 展示 tools_used；token_usage 来自 context 或 stop_policy 累积
+                    action_log = [
+                        {"action_type": log.action.action_type.value, "tool_name": log.action.action_type.value}
+                        for log in context.action_logs
+                    ]
+                    total_t = context.total_tokens
+                    if total_t == 0 and self._stop_policy and hasattr(self._stop_policy, "cost_tracker"):
+                        total_t = self._stop_policy.cost_tracker.total_tokens
+                    token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": total_t}
                     yield {
                         "type": "task_complete",
                         "task_id": task_id,
@@ -861,6 +884,8 @@ class AutonomousAgent:
                         "total_actions": len(context.action_logs),
                         "iterations": context.current_iteration,
                         "execution_time_ms": execution_time_ms,
+                        "action_log": action_log,
+                        "token_usage": token_usage,
                         "model_type": self._current_selection.model_type.value if self._current_selection else None,
                         "success_rate": context.get_success_rate(),
                         "stop_policy_stats": stop_stats
@@ -888,16 +913,29 @@ class AutonomousAgent:
                 if state_machine and TaskState is not None:
                     state_machine.transition(TaskState.RUNNING)
                 context.add_action_log(action, result)
-                
-                # Record iteration in stop policy
+                if trace_append_span:
+                    try:
+                        trace_append_span(context.task_id, {
+                            "iteration": context.current_iteration,
+                            "type": "tool",
+                            "action_type": action.action_type.value,
+                            "latency_ms": result.execution_time_ms,
+                            "success": result.success,
+                            "error": result.error[:200] if result.error else None,
+                        })
+                    except Exception:
+                        pass
+                # Record iteration in stop policy（含本轮 LLM token 消耗）
                 if self._stop_policy:
+                    token_cost = getattr(self, "_last_llm_tokens", 0)
                     self._stop_policy.record_iteration(
                         iteration=context.current_iteration,
                         action_type=action.action_type.value,
                         action_params=action.params,
                         output=result.output,
                         success=result.success,
-                        execution_time_ms=result.execution_time_ms
+                        execution_time_ms=result.execution_time_ms,
+                        token_cost=token_cost
                     )
                 
                 chunk = {
@@ -908,14 +946,22 @@ class AutonomousAgent:
                     "error": result.error,
                     "execution_time_ms": result.execution_time_ms
                 }
-                # 截图等工具返回 dict 时，单独带上 screenshot_path 供前端展示图片（避免 output 被截断导致 JSON 解析失败）
+                # 截图等工具返回 dict 时：action_result 仅带 path（保持消息体小），图片单独发 screenshot chunk 避免大 payload 导致 WebSocket 失败
                 if isinstance(result.output, dict):
                     if result.output.get("screenshot_path"):
                         chunk["screenshot_path"] = result.output["screenshot_path"]
-                    if result.output.get("image_base64"):
-                        chunk["image_base64"] = result.output["image_base64"]
-                        chunk["mime_type"] = result.output.get("mime_type", "image/png")
-                yield chunk
+                    if result.output.get("screenshot_path") and result.output.get("image_base64"):
+                        yield chunk
+                        yield {
+                            "type": "screenshot",
+                            "screenshot_path": result.output["screenshot_path"],
+                            "image_base64": result.output["image_base64"],
+                            "mime_type": result.output.get("mime_type", "image/png"),
+                        }
+                    else:
+                        yield chunk
+                else:
+                    yield chunk
                 
                 if not result.success:
                     context.consecutive_action_failures += 1
@@ -1102,13 +1148,21 @@ class AutonomousAgent:
             err_payload["stop_policy_stats"] = self._stop_policy.get_statistics() if self._stop_policy else None
             yield err_payload
     
-    async def _generate_action(self, context: TaskContext) -> Optional[AgentAction]:
-        """Generate the next action using LLM with context enrichment."""
+    async def _generate_action(
+        self, context: TaskContext, llm_events: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[AgentAction]:
+        """Generate the next action using LLM with context enrichment.
+        If llm_events is provided, append llm_request_start/llm_request_end for monitoring.
+        """
         # Build system prompt with user context (layer 1)
         user_ctx = getattr(self, "_user_context", "")
         system_prompt = AUTONOMOUS_SYSTEM_PROMPT.replace(
             "{user_context}", user_ctx if user_ctx else ""
         )
+        # 注入项目上下文（MACAGENT.md），每轮携带项目约定与能力边界
+        project_ctx = get_project_context_for_prompt()
+        if project_ctx:
+            system_prompt = project_ctx + "\n\n---\n\n" + system_prompt
 
         # v3.1: 结构化上下文（可选）+ Goal 重述
         try:
@@ -1178,10 +1232,18 @@ class AutonomousAgent:
                 next_prompt += "\n\n【重试提示】上轮输出可能被截断。请只输出一个简洁的 JSON 动作，报告内容不要全部内嵌在 content 中；可先 finish 简要总结，或分步 write_file。"
             messages.append({"role": "user", "content": next_prompt})
         
+        llm_start = time.time()
         try:
             import asyncio
             model_info = f"{self.llm.config.provider}/{self.llm.config.model}"
             logger.info(f"Generating action with LLM: {model_info}")
+            if llm_events is not None:
+                llm_events.append({
+                    "type": "llm_request_start",
+                    "provider": self.llm.config.provider,
+                    "model": self.llm.config.model or "",
+                    "iteration": context.current_iteration,
+                })
             # 多步任务后易输出长 JSON（如报告），提高 max_tokens 避免截断
             steps = len(context.action_logs)
             if steps >= 8:
@@ -1200,6 +1262,25 @@ class AutonomousAgent:
             raw_content = response.get("content", "")
             content = extract_text_from_content(raw_content)
             finish_reason = response.get("finish_reason", "")
+            usage = response.get("usage") or {}
+            tokens = usage.get("total_tokens", 0)
+            context.total_tokens += tokens
+            setattr(self, "_last_llm_tokens", tokens)
+            latency_ms = int((time.time() - llm_start) * 1000)
+            if llm_events is not None:
+                llm_events.append({
+                    "type": "llm_request_end",
+                    "provider": self.llm.config.provider,
+                    "model": self.llm.config.model or "",
+                    "iteration": context.current_iteration,
+                    "latency_ms": latency_ms,
+                    "usage": {
+                        "prompt_tokens": usage.get("prompt_tokens", 0),
+                        "completion_tokens": usage.get("completion_tokens", 0),
+                        "total_tokens": tokens,
+                    },
+                    "response_preview": (content[:200] + "…") if len(content) > 200 else content,
+                })
 
             if not content:
                 logger.warning("Empty LLM response (finish_reason=%s)", finish_reason)
@@ -1241,7 +1322,7 @@ class AutonomousAgent:
                         # 第一步且长文本：多为模型“说明无法完成”，先重试强提示 JSON；最后一次重试时不再拒绝，避免连续解析失败
                         retry_count = getattr(context, "retry_count", 0)
                         is_last_retry = retry_count >= context.max_retries - 1
-                        if not context.action_logs and len(text) > 200 and not is_last_retry:
+                        if not context.action_logs and len(text) > FIRST_STEP_PLAIN_TEXT_MIN_LEN and not is_last_retry:
                             logger.info(
                                 "First step: rejecting long plain-text as finish (len=%d), will retry with JSON reminder",
                                 len(text),
@@ -1261,13 +1342,49 @@ class AutonomousAgent:
                     logger.warning(f"Action validation failed: {validation_error}")
                     return None
             
+            if trace_append_span:
+                try:
+                    span = {
+                        "iteration": context.current_iteration,
+                        "type": "llm",
+                        "model": model_info,
+                        "latency_ms": int((time.time() - llm_start) * 1000),
+                        "success": action is not None,
+                    }
+                    if action is None:
+                        span["error"] = "parse_failed"
+                    trace_append_span(context.task_id, span)
+                except Exception:
+                    pass
             return action
             
         except asyncio.TimeoutError:
             logger.error("LLM request timed out (TimeoutPolicy.llm_timeout or 120s fallback)")
+            if llm_events is not None:
+                llm_events.append({
+                    "type": "llm_request_end",
+                    "provider": self.llm.config.provider,
+                    "model": self.llm.config.model or "",
+                    "iteration": context.current_iteration,
+                    "latency_ms": int((time.time() - llm_start) * 1000),
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                    "response_preview": None,
+                    "error": "timeout",
+                })
             return None
         except Exception as e:
             logger.error(f"Error generating action: {e}")
+            if llm_events is not None:
+                llm_events.append({
+                    "type": "llm_request_end",
+                    "provider": self.llm.config.provider,
+                    "model": self.llm.config.model or "",
+                    "iteration": context.current_iteration,
+                    "latency_ms": int((time.time() - llm_start) * 1000),
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                    "response_preview": None,
+                    "error": str(e)[:200],
+                })
             return None
     
     async def _execute_action(self, action: AgentAction) -> ActionResult:

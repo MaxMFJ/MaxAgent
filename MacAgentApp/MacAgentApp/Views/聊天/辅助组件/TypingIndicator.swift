@@ -7,7 +7,7 @@ struct TypingIndicator: View {
         HStack(spacing: 4) {
             ForEach(0..<3) { index in
                 Circle()
-                    .fill(Color.secondary)
+                    .fill(CyberColor.cyan)
                     .frame(width: 8, height: 8)
                     .opacity(animating ? 0.3 : 1.0)
                     .animation(

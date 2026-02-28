@@ -8,36 +8,41 @@ struct SidebarView: View {
             // Header
             HStack {
                 Text("对话历史")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(CyberColor.cyan)
+                    .tracking(1)
                 
                 Spacer()
                 
                 Button(action: { viewModel.newConversation() }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
+                        .foregroundColor(CyberColor.cyan)
                 }
                 .buttonStyle(.plain)
                 .help("新建对话")
             }
             .padding()
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 1)
             
             // Conversation List
             if viewModel.conversations.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.system(size: 40))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CyberColor.textSecond)
                     
                     Text("暂无对话")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CyberColor.textSecond)
                     
                     Button("开始新对话") {
                         viewModel.newConversation()
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(CyberColor.cyan)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -63,19 +68,23 @@ struct SidebarView: View {
                     }
                 }
                 .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
             }
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 1)
             
             // Connection Status
             HStack {
                 Circle()
-                    .fill(viewModel.isConnected ? Color.green : Color.red)
+                    .fill(viewModel.isConnected ? CyberColor.green : CyberColor.red)
                     .frame(width: 8, height: 8)
+                    .shadow(color: (viewModel.isConnected ? CyberColor.green : CyberColor.red).opacity(0.5), radius: 4)
                 
                 Text(viewModel.isConnected ? "已连接" : "未连接")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(CyberColor.textSecond)
                 
                 Spacer()
                 
@@ -84,12 +93,14 @@ struct SidebarView: View {
                         viewModel.connect()
                     }
                     .font(.caption)
+                    .foregroundColor(CyberColor.cyan)
                     .buttonStyle(.link)
                 }
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+        .background(CyberColor.bg1)
     }
 }
 
@@ -100,18 +111,19 @@ struct ConversationRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(conversation.title)
                 .font(.body)
+                .foregroundColor(CyberColor.textPrimary)
                 .lineLimit(1)
             
             HStack {
                 Text(conversation.updatedAt.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
                 
                 Spacer()
                 
                 Text("\(conversation.messages.count) 条消息")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
             }
         }
         .padding(.vertical, 4)

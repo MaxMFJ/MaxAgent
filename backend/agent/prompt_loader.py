@@ -12,10 +12,10 @@ from .query_classifier import Intent, QueryTier, classify
 
 logger = logging.getLogger(__name__)
 
-# Bootstrap 配置（参考 OpenClaw）
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_PROMPTS_DIR = os.path.join(_BACKEND_DIR, "data", "prompts")
-_DATA_DIR = os.path.join(_BACKEND_DIR, "data")
+# Bootstrap 配置（支持 MACAGENT_DATA_DIR 打包路径）
+from paths import DATA_DIR as _DATA_DIR
+
+_PROMPTS_DIR = os.path.join(_DATA_DIR, "prompts")
 BOOTSTRAP_MAX_CHARS = int(os.environ.get("MACAGENT_BOOTSTRAP_MAX_CHARS", "8000"))
 BOOTSTRAP_TOTAL_MAX_CHARS = int(os.environ.get("MACAGENT_BOOTSTRAP_TOTAL_MAX_CHARS", "20000"))
 
@@ -27,6 +27,10 @@ BOOTSTRAP_FILES = [
     ("capsule", os.path.join(_PROMPTS_DIR, "capsule.md")),
     ("constraints", os.path.join(_PROMPTS_DIR, "constraints.md")),
 ]
+
+# 项目上下文（类 CLAUDE.md），供 Agent 每轮注入，减少漂移
+MACAGENT_CONTEXT_PATH = os.path.join(_PROMPTS_DIR, "MACAGENT.md")
+PROJECT_CONTEXT_MAX_CHARS = int(os.environ.get("MACAGENT_PROJECT_CONTEXT_MAX_CHARS", "2000"))
 
 # ── 内嵌兜底（Bootstrap 文件缺失时使用）────────────────────────────────────────
 SYSTEM_PROMPT_LITE_FALLBACK = """你是 Chow Duck，macOS 智能助手。
@@ -86,6 +90,16 @@ def _load_bootstrap_section(path: str, max_chars: int) -> str:
     except Exception as e:
         logger.warning(f"Failed to load bootstrap {path}: {e}")
         return ""
+
+
+def get_project_context_for_prompt(max_chars: int = None) -> str:
+    """加载项目上下文（MACAGENT.md），供 system prompt 注入，截断到 max_chars。"""
+    if max_chars is None:
+        max_chars = PROJECT_CONTEXT_MAX_CHARS
+    content = _load_bootstrap_section(MACAGENT_CONTEXT_PATH, max_chars)
+    if not content:
+        return ""
+    return content.strip()
 
 
 def _load_bootstrap_full() -> str:
@@ -204,6 +218,10 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
 
     result = classify(query, session_id=session_id)
     base = _get_cached_bootstrap_lite() if result.tier == QueryTier.SIMPLE else _get_cached_bootstrap_full()
+    # 注入项目上下文（MACAGENT.md），减少长对话漂移
+    project_ctx = get_project_context_for_prompt()
+    if project_ctx:
+        base = project_ctx + "\n\n---\n\n" + base
     logger.info("prompt_tier=%s intent=%s query_preview=%s", result.tier.value, result.intent.value, result.query_preview[:30])
 
     # Intent 注入：纯追问时显式提示模型仅根据历史回答

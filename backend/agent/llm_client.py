@@ -18,6 +18,7 @@ except ImportError:
     get_timeout_policy = None
 
 from .llm_utils import extract_text_from_content
+from .usage_tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +154,12 @@ class LLMClient:
                 "tool_calls": None,
                 "finish_reason": response.choices[0].finish_reason
             }
+            if hasattr(response, "usage") and response.usage:
+                result["usage"] = {
+                    "prompt_tokens": getattr(response.usage, "prompt_tokens", 0) or 0,
+                    "completion_tokens": getattr(response.usage, "completion_tokens", 0) or 0,
+                    "total_tokens": getattr(response.usage, "total_tokens", 0) or 0,
+                }
             
             if message.tool_calls:
                 result["tool_calls"] = [
@@ -164,9 +171,26 @@ class LLMClient:
                     for tc in message.tool_calls
                 ]
             
+            # ── Track usage ──
+            usage = result.get("usage", {})
+            UsageTracker.shared().record_call(
+                model=self.config.model,
+                provider=self.config.provider,
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+                success=True,
+            )
+            
             return result
             
         except Exception as e:
+            UsageTracker.shared().record_call(
+                model=self.config.model,
+                provider=self.config.provider,
+                success=False,
+                error=str(e)[:200],
+            )
             logger.error(f"LLM chat error: {e}")
             raise
     
@@ -305,6 +329,16 @@ class LLMClient:
                             yield {"type": "tool_call", "tool_call": tc}
                     
                     yield {"type": "finish", "finish_reason": finish_reason, "usage": usage_info}
+                    # ── Track usage (stream) ──
+                    _u = usage_info or {}
+                    UsageTracker.shared().record_call(
+                        model=self.config.model,
+                        provider=self.config.provider,
+                        prompt_tokens=_u.get("prompt_tokens", 0),
+                        completion_tokens=_u.get("completion_tokens", 0),
+                        total_tokens=_u.get("total_tokens", 0),
+                        success=True,
+                    )
             
             if chunk_count == 0:
                 logger.warning(
@@ -338,6 +372,13 @@ class LLMClient:
                     "请检查：1) LM Studio 是否已加载模型；2) 模型是否支持当前请求（如视觉模型需传图）；3) 查看 LM Studio 控制台详细错误。"
                 )
             yield {"type": "error", "error": err_msg}
+            # ── Track failed stream ──
+            UsageTracker.shared().record_call(
+                model=self.config.model,
+                provider=self.config.provider,
+                success=False,
+                error=str(e)[:200],
+            )
     
     async def simple_chat(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Simple chat without tools"""

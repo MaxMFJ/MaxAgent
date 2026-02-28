@@ -12,6 +12,7 @@
 import asyncio
 import logging
 import json
+import os
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, AsyncGenerator
@@ -118,7 +119,8 @@ class SelfHealingAgent:
         
         self.max_iterations = max_iterations
         self.auto_heal = auto_heal
-        self.strategy_db_path = strategy_db_path or "data/strategy_db.json"
+        from paths import DATA_DIR
+        self.strategy_db_path = strategy_db_path or os.path.join(DATA_DIR, "strategy_db.json")
         
         self.current_status = HealingStatus.IDLE
         self.healing_history: List[HealingResult] = []

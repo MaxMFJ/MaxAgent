@@ -169,6 +169,35 @@ class ProcessManager: ObservableObject {
     
     // MARK: - Backend Management
     
+    /// 获取可写的 data 目录（打包后 Bundle 内 data 只读，需使用 Application Support）
+    private func getWritableDataDir(backendPath: String) -> String? {
+        let bundleDataPath = (backendPath as NSString).appendingPathComponent("data")
+        // 若 bundle 内 data 可写，直接使用
+        if FileManager.default.isWritableFile(atPath: bundleDataPath) {
+            return nil  // 使用默认路径
+        }
+        // 使用 Application Support，首次启动时从 bundle 复制 data 模板
+        guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let appSupport = support.appendingPathComponent("com.macagent.app", isDirectory: true)
+        let dataDir = appSupport.appendingPathComponent("backend_data", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dataDir, withIntermediateDirectories: true)
+        // 首次：若 backend_data 为空，从 bundle 复制 data 内容
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: dataDir.path)) ?? []
+        if contents.isEmpty, FileManager.default.fileExists(atPath: bundleDataPath) {
+            copyDataFromBundle(from: bundleDataPath, to: dataDir.path)
+        }
+        return dataDir.path
+    }
+    
+    private func copyDataFromBundle(from srcPath: String, to dstPath: String) {
+        guard let items = try? FileManager.default.contentsOfDirectory(atPath: srcPath) else { return }
+        for item in items {
+            let src = (srcPath as NSString).appendingPathComponent(item)
+            let dst = (dstPath as NSString).appendingPathComponent(item)
+            try? FileManager.default.copyItem(atPath: src, toPath: dst)
+        }
+    }
+    
     func startBackend() {
         guard !isBackendRunning else { return }
         
@@ -180,6 +209,17 @@ class ProcessManager: ObservableObject {
             return
         }
         
+        let startScript = (backendPath as NSString).appendingPathComponent("start.sh")
+        guard FileManager.default.fileExists(atPath: startScript) else {
+            addLog(to: &backendLogs, message: "start.sh not found at: \(backendPath)", level: .error)
+            return
+        }
+        
+        var env = ProcessInfo.processInfo.environment
+        if let dataDir = getWritableDataDir(backendPath: backendPath) {
+            env["MACAGENT_DATA_DIR"] = dataDir
+        }
+        
         let process = Process()
         let pipe = Pipe()
         let errorPipe = Pipe()
@@ -188,7 +228,7 @@ class ProcessManager: ObservableObject {
         process.arguments = ["-c", "cd '\(backendPath)' && bash start.sh"]
         process.standardOutput = pipe
         process.standardError = errorPipe
-        process.environment = ProcessInfo.processInfo.environment
+        process.environment = env
         
         // 读取标准输出
         pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
@@ -230,6 +270,10 @@ class ProcessManager: ObservableObject {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 await checkBackendStatus()
             }
+            // 启动/停止后端后提示重启 App，避免状态不一致或意外退出导致用户无感知
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .backendSettingDidChange, object: nil)
+            }
         } catch {
             addLog(to: &backendLogs, message: "Failed to start backend: \(error.localizedDescription)", level: .error)
         }
@@ -246,6 +290,10 @@ class ProcessManager: ObservableObject {
         isBackendRunning = false
         addLog(to: &backendLogs, message: "Backend service stopped", level: .info)
         
+        // 提示重启 App，避免「停止后台导致程序关闭」后用户无感知，可自动重新打开
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .backendSettingDidChange, object: nil)
+        }
         guard wasStartedByApp else { return }
         // 由本 App 启动时，必须按端口杀掉实际占用 8765 的子进程（如 python main.py），
         // 否则子进程会继续运行，状态轮询会再次显示「已运行」
@@ -357,26 +405,51 @@ class ProcessManager: ObservableObject {
     
     // MARK: - Helpers
     
+    /// 返回 backend 目录路径。Debug 优先用项目 backend，Archive 用 Bundle 内置
     private func getBackendPath() -> String {
-        // 尝试找到后端路径
-        let possiblePaths = [
-            // 开发路径
-            FileManager.default.currentDirectoryPath + "/../backend",
-            // 相对于应用的路径
-            Bundle.main.bundlePath + "/../../../backend",
-            // 固定路径（用户可以自定义）
-            NSHomeDirectory() + "/Desktop/未命名文件夹/MacAgent/backend"
-        ]
+        let inDerivedData = Bundle.main.bundlePath.contains("DerivedData")
         
-        for path in possiblePaths {
-            let startScript = (path as NSString).appendingPathComponent("start.sh")
-            if FileManager.default.fileExists(atPath: startScript) {
-                return path
+        // Debug 模式：优先使用项目 backend（Copy Backend 仅 Archive 执行，Debug 不打包）
+        if inDerivedData {
+            let cwd = FileManager.default.currentDirectoryPath
+            let cwdBackend = (cwd as NSString).appendingPathComponent("../backend")
+            let cwdResolved = (cwdBackend as NSString).standardizingPath
+            if FileManager.default.fileExists(atPath: (cwdResolved as NSString).appendingPathComponent("start.sh")) {
+                return cwdResolved
+            }
+            let home = FileManager.default.homeDirectoryForCurrentUser.path
+            let candidates = [
+                home + "/Desktop/未命名文件夹/MacAgent/backend",
+                home + "/Desktop/MacAgent/backend",
+            ]
+            for path in candidates {
+                if FileManager.default.fileExists(atPath: (path as NSString).appendingPathComponent("start.sh")) {
+                    return path
+                }
             }
         }
         
-        // 默认返回最后一个
-        return possiblePaths.last!
+        // 打包后：App Bundle 内 Resources/backend
+        if let resourcesPath = Bundle.main.resourcePath {
+            let bundledBackend = (resourcesPath as NSString).appendingPathComponent("backend")
+            let startScript = (bundledBackend as NSString).appendingPathComponent("start.sh")
+            if FileManager.default.fileExists(atPath: startScript) {
+                return bundledBackend
+            }
+        }
+        
+        // 4. 与 .app 同级的 backend（非 DerivedData 场景）
+        var appDir = Bundle.main.bundlePath
+        for _ in 0..<5 {
+            appDir = (appDir as NSString).deletingLastPathComponent
+            let devBackend = (appDir as NSString).appendingPathComponent("backend")
+            if FileManager.default.fileExists(atPath: (devBackend as NSString).appendingPathComponent("start.sh")) {
+                return devBackend
+            }
+        }
+        
+        // 5. 兜底
+        return (Bundle.main.resourcePath ?? "") + "/backend"
     }
     
     private func addLog(to logs: inout [LogEntry], message: String, level: LogEntry.LogLevel) {
@@ -416,4 +489,9 @@ class ProcessManager: ObservableObject {
             ollamaLogs.removeAll()
         }
     }
+}
+
+extension Notification.Name {
+    /// 启动/停止后端后发送，用于提示用户并自动重启 App，避免程序关闭后用户无感知
+    static let backendSettingDidChange = Notification.Name("BackendSettingDidChange")
 }

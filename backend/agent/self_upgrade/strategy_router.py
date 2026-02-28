@@ -6,7 +6,7 @@ Heuristics can override planner strategy.
 """
 
 import logging
-from typing import Set
+from typing import Optional, Set
 
 from .models import UpgradePlan, ImplementationStrategy
 
@@ -19,7 +19,7 @@ CURSOR_CLI_INDICATORS = [
 MULTI_FILE_INDICATORS = ["multiple files", "integration", "多文件", "集成", "整合"]
 
 
-def route_strategy(plan: UpgradePlan, existing_tool_names: Set[str] | None = None) -> ImplementationStrategy:
+def route_strategy(plan: UpgradePlan, existing_tool_names: Optional[Set[str]] = None) -> ImplementationStrategy:
     """
     Route upgrade plan to implementation strategy.
     Planner strategy can be overridden by heuristics.

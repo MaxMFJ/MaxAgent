@@ -6,22 +6,25 @@ struct ToolPanelView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Tab Header
-            Picker("", selection: $selectedTab) {
-                Text("工具").tag(0)
-                Text("历史").tag(1)
-                Text("任务").tag(2)
-                Text("执行日志").tag(3)
+            // Cyber Tab Header
+            HStack(spacing: 0) {
+                CyberTab(title: "矩阵", icon: "cpu", index: 0, selected: $selectedTab)
+                CyberTab(title: "历史", icon: "clock", index: 1, selected: $selectedTab)
+                CyberTab(title: "任务", icon: "bolt.fill", index: 2, selected: $selectedTab)
+                CyberTab(title: "日志", icon: "terminal", index: 3, selected: $selectedTab)
             }
-            .pickerStyle(.segmented)
-            .padding()
+            .padding(.horizontal, 8)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 1)
             
             // Content
             switch selectedTab {
             case 0:
-                ToolsListView()
+                ToolMatrixView()
             case 1:
                 ToolHistoryView()
             case 2:
@@ -29,81 +32,351 @@ struct ToolPanelView: View {
             case 3:
                 ExecutionLogsView()
             default:
-                ToolsListView()
+                ToolMatrixView()
             }
         }
+        .background(CyberColor.bg1)
     }
 }
 
-struct ToolsListView: View {
+// MARK: - Cyber Tab Button
+
+private struct CyberTab: View {
+    let title: String
+    let icon: String
+    let index: Int
+    @Binding var selected: Int
+    @State private var isHovering = false
+    
+    private var isSelected: Bool { selected == index }
+    
+    var body: some View {
+        Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selected = index } }) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(title)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+            }
+            .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(isSelected ? CyberColor.cyan.opacity(0.1) : (isHovering ? CyberColor.bg2 : Color.clear))
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(isSelected ? CyberColor.cyan.opacity(0.4) : Color.clear, lineWidth: 0.5)
+            )
+            .cornerRadius(4)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+    }
+}
+
+// MARK: - Tool Matrix View (CPU Die Layout)
+
+struct ToolMatrixView: View {
     @EnvironmentObject var viewModel: AgentViewModel
+    @State private var selectedTool: ToolDefinition? = nil
     
     var body: some View {
         if viewModel.availableTools.isEmpty {
-            VStack(spacing: 12) {
-                Image(systemName: "wrench.and.screwdriver")
-                    .font(.system(size: 40))
-                    .foregroundColor(.secondary)
+            // Loading State
+            VStack(spacing: 16) {
+                ZStack {
+                    // Spinning ring
+                    Circle()
+                        .stroke(CyberColor.cyan.opacity(0.15), lineWidth: 2)
+                        .frame(width: 50, height: 50)
+                    
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .tint(CyberColor.cyan)
+                }
                 
-                Text("加载工具中...")
-                    .foregroundColor(.secondary)
-                
-                ProgressView()
+                Text("LOADING TOOLS...")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundColor(CyberColor.textSecond)
+                    .tracking(2)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List {
-                ForEach(viewModel.availableTools) { tool in
-                    ToolRow(tool: tool)
+            ScrollView {
+                VStack(spacing: 12) {
+                    // Matrix Header
+                    HStack {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 10))
+                            .foregroundColor(CyberColor.cyan)
+                        Text("SYSTEM TOOLS")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(CyberColor.cyan)
+                            .tracking(2)
+                        
+                        Spacer()
+                        
+                        Text("\(viewModel.availableTools.count) UNITS")
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundColor(CyberColor.textSecond)
+                    }
+                    .padding(.horizontal, 4)
+                    
+                    // Tool Matrix Grid — 手动分行，点击 cell 后在该行下方展开详情
+                    let tools = viewModel.availableTools
+                    let colCount = 3
+                    let rowCount = (tools.count + colCount - 1) / colCount
+                    
+                    ForEach(0..<rowCount, id: \.self) { row in
+                        let startIdx = row * colCount
+                        let endIdx = min(startIdx + colCount, tools.count)
+                        
+                        // 本行的 cells
+                        HStack(spacing: 8) {
+                            ForEach(startIdx..<endIdx, id: \.self) { idx in
+                                let tool = tools[idx]
+                                ToolMatrixCell(
+                                    tool: tool,
+                                    isSelected: selectedTool?.id == tool.id
+                                ) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        selectedTool = selectedTool?.id == tool.id ? nil : tool
+                                    }
+                                }
+                            }
+                            // 填充空位确保均匀宽度
+                            if endIdx - startIdx < colCount {
+                                ForEach(0..<(colCount - (endIdx - startIdx)), id: \.self) { _ in
+                                    Color.clear.frame(maxWidth: .infinity)
+                                }
+                            }
+                        }
+                        
+                        // 如果选中的 tool 在当前行，紧跟在该行下方展开详情
+                        if let sel = selectedTool,
+                           let selIdx = tools.firstIndex(where: { $0.id == sel.id }),
+                           selIdx >= startIdx && selIdx < endIdx {
+                            ToolDetailPanel(tool: sel)
+                                .transition(.asymmetric(
+                                    insertion: .scale(scale: 0.95).combined(with: .opacity),
+                                    removal: .opacity
+                                ))
+                        }
+                    }
                 }
+                .padding(12)
             }
-            .listStyle(.inset)
         }
     }
 }
 
-struct ToolRow: View {
+// MARK: - Matrix Cell (Chip Die)
+
+private struct ToolMatrixCell: View {
     let tool: ToolDefinition
-    @State private var isExpanded = false
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var isHovering = false
+    
+    private var borderColor: Color {
+        isSelected ? CyberColor.cyan : (isHovering ? CyberColor.cyanDim : CyberColor.border)
+    }
+    
+    private var bgColor: Color {
+        isSelected ? CyberColor.cyan.opacity(0.08) : (isHovering ? CyberColor.bgHighlight : CyberColor.bg2)
+    }
     
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            Text(tool.description)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.vertical, 4)
-        } label: {
-            HStack {
+        Button(action: onTap) {
+            VStack(spacing: 8) {
+                // Icon with glow
+                ZStack {
+                    if isSelected || isHovering {
+                        Circle()
+                            .fill(CyberColor.cyan.opacity(0.1))
+                            .frame(width: 36, height: 36)
+                            .blur(radius: 4)
+                    }
+                    
+                    Image(systemName: iconForTool(tool.name))
+                        .font(.system(size: 20, weight: .light))
+                        .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.cyanDim)
+                        .shadow(color: isSelected ? CyberColor.cyan.opacity(0.5) : .clear, radius: 4)
+                }
+                .frame(height: 32)
+                
+                // Name
+                Text(displayNameForTool(tool.name))
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundColor(isSelected ? CyberColor.textPrimary : CyberColor.textSecond)
+                    .lineLimit(1)
+                
+                // Status dot
+                Circle()
+                    .fill(CyberColor.green)
+                    .frame(width: 4, height: 4)
+                    .shadow(color: CyberColor.green.opacity(0.5), radius: 2)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 4)
+            .background(bgColor)
+            .overlay(
+                ZStack {
+                    // Main border
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(borderColor, lineWidth: isSelected ? 1.2 : 0.5)
+                    
+                    // Corner accents (chip pads)
+                    CornerPads(color: borderColor, padSize: 4)
+                }
+            )
+            .cornerRadius(6)
+            .shadow(color: isSelected ? CyberColor.cyan.opacity(0.12) : .clear, radius: 6)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) { isHovering = hovering }
+        }
+    }
+}
+
+// MARK: - Corner Pads (Chip-like decoration)
+
+private struct CornerPads: View {
+    let color: Color
+    let padSize: CGFloat
+    
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            
+            // Top-left corner lines
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: padSize))
+                p.addLine(to: CGPoint(x: 0, y: 0))
+                p.addLine(to: CGPoint(x: padSize, y: 0))
+            }
+            .stroke(color.opacity(0.6), lineWidth: 1.5)
+            
+            // Top-right
+            Path { p in
+                p.move(to: CGPoint(x: w - padSize, y: 0))
+                p.addLine(to: CGPoint(x: w, y: 0))
+                p.addLine(to: CGPoint(x: w, y: padSize))
+            }
+            .stroke(color.opacity(0.6), lineWidth: 1.5)
+            
+            // Bottom-left
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: h - padSize))
+                p.addLine(to: CGPoint(x: 0, y: h))
+                p.addLine(to: CGPoint(x: padSize, y: h))
+            }
+            .stroke(color.opacity(0.6), lineWidth: 1.5)
+            
+            // Bottom-right
+            Path { p in
+                p.move(to: CGPoint(x: w - padSize, y: h))
+                p.addLine(to: CGPoint(x: w, y: h))
+                p.addLine(to: CGPoint(x: w, y: h - padSize))
+            }
+            .stroke(color.opacity(0.6), lineWidth: 1.5)
+        }
+    }
+}
+
+// MARK: - Tool Detail Panel
+
+private struct ToolDetailPanel: View {
+    let tool: ToolDefinition
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
                 Image(systemName: iconForTool(tool.name))
-                    .foregroundColor(.accentColor)
-                    .frame(width: 24)
+                    .font(.system(size: 14))
+                    .foregroundColor(CyberColor.cyan)
                 
                 Text(displayNameForTool(tool.name))
-                    .font(.body)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundColor(CyberColor.textPrimary)
+                
+                Spacer()
+                
+                Text("ONLINE")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundColor(CyberColor.green)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(CyberColor.green.opacity(0.1))
+                    .cornerRadius(3)
+            }
+            
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 0.5)
+            
+            Text(tool.description)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(CyberColor.textSecond)
+                .lineSpacing(3)
+            
+            // Parameter info
+            if !tool.parameters.isEmpty {
+                Rectangle()
+                    .fill(CyberColor.border)
+                    .frame(height: 0.5)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 9))
+                        .foregroundColor(CyberColor.textSecond)
+                    Text("参数: \(tool.parameters.count)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond)
+                }
             }
         }
+        .padding(12)
+        .background(CyberColor.bg2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(CyberColor.cyan.opacity(0.25), lineWidth: 0.5)
+        )
+        .cornerRadius(6)
     }
-    
-    private func iconForTool(_ name: String) -> String {
-        switch name {
-        case "file_operations": return "folder"
-        case "terminal": return "terminal"
-        case "app_control": return "app.badge"
-        case "system_info": return "cpu"
-        case "clipboard": return "doc.on.clipboard"
-        default: return "wrench"
-        }
+}
+
+// MARK: - Tool Name/Icon Helpers
+
+private func iconForTool(_ name: String) -> String {
+    switch name {
+    case "file_operations": return "folder"
+    case "terminal": return "terminal"
+    case "app_control": return "app.badge"
+    case "system_info": return "cpu"
+    case "clipboard": return "doc.on.clipboard"
+    case "screen_capture": return "camera.viewfinder"
+    case "browser": return "globe"
+    case "keyboard": return "keyboard"
+    case "accessibility": return "accessibility"
+    default: return "wrench.and.screwdriver"
     }
-    
-    private func displayNameForTool(_ name: String) -> String {
-        switch name {
-        case "file_operations": return "文件操作"
-        case "terminal": return "终端命令"
-        case "app_control": return "应用控制"
-        case "system_info": return "系统信息"
-        case "clipboard": return "剪贴板"
-        default: return name
-        }
+}
+
+private func displayNameForTool(_ name: String) -> String {
+    switch name {
+    case "file_operations": return "文件操作"
+    case "terminal": return "终端命令"
+    case "app_control": return "应用控制"
+    case "system_info": return "系统信息"
+    case "clipboard": return "剪贴板"
+    case "screen_capture": return "屏幕截图"
+    case "browser": return "浏览器"
+    case "keyboard": return "键盘输入"
+    case "accessibility": return "无障碍"
+    default: return name
     }
 }
 
@@ -115,19 +388,23 @@ struct ToolHistoryView: View {
             VStack(spacing: 12) {
                 Image(systemName: "clock")
                     .font(.system(size: 40))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
                 
                 Text("暂无工具调用记录")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(CyberColor.bg1)
         } else {
-            List {
-                ForEach(viewModel.recentToolCalls) { call in
-                    ToolCallRow(toolCall: call)
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(viewModel.recentToolCalls) { call in
+                        ToolCallRow(toolCall: call)
+                    }
                 }
+                .padding(8)
             }
-            .listStyle(.inset)
+            .background(CyberColor.bg1)
         }
     }
 }
@@ -140,44 +417,52 @@ struct ToolCallRow: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("参数:")
-                    .font(.caption)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundColor(CyberColor.cyan)
                 
                 Text(formatArguments(toolCall.arguments))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundColor(CyberColor.textSecond)
                 
                 if let result = toolCall.result {
-                    Divider()
+                    Rectangle()
+                        .fill(CyberColor.border)
+                        .frame(height: 0.5)
                     
                     HStack {
                         Text("结果:")
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundColor(CyberColor.cyan)
                         
                         Image(systemName: result.success ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(result.success ? .green : .red)
+                            .foregroundColor(result.success ? CyberColor.green : CyberColor.red)
                             .font(.caption)
                     }
                     
                     Text(result.output)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond)
                         .lineLimit(5)
                 }
             }
             .padding(.vertical, 4)
+            .padding(.horizontal, 8)
         } label: {
             HStack {
                 Image(systemName: toolCall.result?.success == true ? "checkmark.circle.fill" : 
                       toolCall.result?.success == false ? "xmark.circle.fill" : "arrow.triangle.2.circlepath")
-                    .foregroundColor(toolCall.result?.success == true ? .green : 
-                                    toolCall.result?.success == false ? .red : .orange)
+                    .foregroundColor(toolCall.result?.success == true ? CyberColor.green : 
+                                    toolCall.result?.success == false ? CyberColor.red : CyberColor.orange)
                 
                 Text(toolCall.name)
-                    .font(.body)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(CyberColor.textPrimary)
             }
         }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(CyberColor.bg2)
+        .cornerRadius(4)
     }
     
     private func formatArguments(_ args: [String: AnyCodable]) -> String {
@@ -197,7 +482,9 @@ struct AutonomousTaskView: View {
             if let progress = viewModel.taskProgress {
                 TaskProgressHeader(progress: progress)
                     .environmentObject(viewModel)
-                Divider()
+                Rectangle()
+                    .fill(CyberColor.border)
+                    .frame(height: 1)
             }
             
             // Action Logs
@@ -209,15 +496,19 @@ struct AutonomousTaskView: View {
             
             // Clear Button
             if !viewModel.actionLogs.isEmpty {
-                Divider()
+                Rectangle()
+                    .fill(CyberColor.border)
+                    .frame(height: 1)
                 Button(action: { viewModel.clearActionLogs() }) {
                     Label("清除日志", systemImage: "trash")
-                        .foregroundColor(.red)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(CyberColor.red)
                 }
                 .buttonStyle(.plain)
                 .padding()
             }
         }
+        .background(CyberColor.bg1)
     }
 }
 
@@ -231,38 +522,40 @@ struct TaskProgressHeader: View {
                 Circle()
                     .fill(statusColor)
                     .frame(width: 10, height: 10)
+                    .shadow(color: statusColor.opacity(0.5), radius: 3)
                 
                 Text(statusText)
-                    .font(.headline)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(CyberColor.textPrimary)
                 
                 Spacer()
                 
                 Text(progress.formattedDuration)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundColor(CyberColor.textSecond)
             }
             
             Text(progress.taskDescription)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(CyberColor.textSecond)
                 .lineLimit(2)
             
             // Model Selection Info
             if let modelType = viewModel.selectedModelType {
                 HStack(spacing: 8) {
                     Image(systemName: modelType == "local" ? "house.fill" : "cloud.fill")
-                        .foregroundColor(modelType == "local" ? .green : .blue)
+                        .foregroundColor(modelType == "local" ? CyberColor.green : CyberColor.cyan)
                     
                     Text(modelType == "local" ? "本地模型" : "远程模型")
-                        .font(.caption)
-                        .fontWeight(.medium)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(CyberColor.textPrimary)
                     
                     if viewModel.taskComplexity > 0 {
                         Text("复杂度: \(viewModel.taskComplexity)/10")
-                            .font(.caption2)
+                            .font(.system(size: 9, design: .monospaced))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(complexityColor.opacity(0.2))
+                            .background(complexityColor.opacity(0.15))
                             .foregroundColor(complexityColor)
                             .cornerRadius(4)
                     }
@@ -272,56 +565,53 @@ struct TaskProgressHeader: View {
             }
             
             HStack(spacing: 16) {
-                StatBadge(icon: "number", value: "\(progress.totalActions)", label: "动作")
-                StatBadge(icon: "checkmark.circle", value: "\(progress.successfulActions)", label: "成功")
-                StatBadge(icon: "xmark.circle", value: "\(progress.failedActions)", label: "失败")
+                CyberStatMini(icon: "number", value: "\(progress.totalActions)", label: "动作", color: CyberColor.cyan)
+                CyberStatMini(icon: "checkmark.circle", value: "\(progress.successfulActions)", label: "成功", color: CyberColor.green)
+                CyberStatMini(icon: "xmark.circle", value: "\(progress.failedActions)", label: "失败", color: CyberColor.red)
             }
         }
         .padding()
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(CyberColor.bg2)
     }
     
     private var complexityColor: Color {
-        if viewModel.taskComplexity <= 3 {
-            return .green
-        } else if viewModel.taskComplexity <= 6 {
-            return .orange
-        } else {
-            return .red
-        }
+        if viewModel.taskComplexity <= 3 { return CyberColor.green }
+        else if viewModel.taskComplexity <= 6 { return CyberColor.orange }
+        else { return CyberColor.red }
     }
     
     private var statusColor: Color {
         switch progress.status {
-        case .running: return .orange
-        case .completed: return .green
-        case .failed: return .red
+        case .running: return CyberColor.orange
+        case .completed: return CyberColor.green
+        case .failed: return CyberColor.red
         }
     }
     
     private var statusText: String {
         switch progress.status {
-        case .running: return "执行中..."
-        case .completed: return "已完成"
-        case .failed: return "失败"
+        case .running: return "EXECUTING..."
+        case .completed: return "COMPLETED"
+        case .failed: return "FAILED"
         }
     }
 }
 
-struct StatBadge: View {
+private struct CyberStatMini: View {
     let icon: String
     let value: String
     let label: String
+    var color: Color = CyberColor.cyan
     
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(.system(size: 9))
+                .foregroundColor(color)
             Text(value)
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundColor(color)
         }
-        .foregroundColor(.secondary)
     }
 }
 
@@ -329,21 +619,25 @@ struct EmptyTaskView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "robot")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
+        VStack(spacing: 16) {
+            Image(systemName: "bolt.circle")
+                .font(.system(size: 40, weight: .ultraLight))
+                .foregroundColor(CyberColor.cyanDim)
             
-            Text("自主执行")
-                .font(.headline)
+            Text("AUTONOMOUS MODE")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(CyberColor.textPrimary)
+                .tracking(2)
             
             Text("在聊天框输入任务后点击 🤖 按钮\n自动选择本地/远程模型执行")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(CyberColor.textSecond)
                 .multilineTextAlignment(.center)
+                .lineSpacing(3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(CyberColor.bg1)
     }
 }
 
@@ -354,25 +648,32 @@ struct ActionLogsList: View {
         VStack(spacing: 0) {
             // Toolbar
             HStack {
-                Text("执行日志")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet.rectangle")
+                        .font(.system(size: 9))
+                        .foregroundColor(CyberColor.cyan)
+                    Text("EXECUTION LOG")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(CyberColor.cyan)
+                        .tracking(1)
+                }
                 
                 Spacer()
                 
                 Button(action: copyAllLogs) {
-                    Label("复制全部", systemImage: "doc.on.doc")
-                        .font(.caption)
+                    Label("复制", systemImage: "doc.on.doc")
+                        .font(.system(size: 9, design: .monospaced))
                 }
                 .buttonStyle(.plain)
-                .foregroundColor(.accentColor)
+                .foregroundColor(CyberColor.cyanDim)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(CyberColor.bg2)
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 0.5)
             
             // Log TextView
             ScrollViewReader { proxy in
@@ -390,7 +691,7 @@ struct ActionLogsList: View {
                     }
                 }
             }
-            .background(Color(NSColor.textBackgroundColor))
+            .background(CyberColor.bg0)
         }
     }
     
@@ -398,50 +699,45 @@ struct ActionLogsList: View {
         var result = AttributedString()
         
         for log in logs {
-            // Status icon and action type
             var header = AttributedString()
             let statusSymbol: String
             let statusColor: Color
             
             switch log.status {
             case .pending:
-                statusSymbol = "⏳"
-                statusColor = .secondary
+                statusSymbol = "◇"
+                statusColor = CyberColor.textSecond
             case .executing:
-                statusSymbol = "🔄"
-                statusColor = .orange
+                statusSymbol = "◈"
+                statusColor = CyberColor.orange
             case .success:
-                statusSymbol = "✅"
-                statusColor = .green
+                statusSymbol = "◆"
+                statusColor = CyberColor.green
             case .failed:
-                statusSymbol = "❌"
-                statusColor = .red
+                statusSymbol = "✕"
+                statusColor = CyberColor.red
             }
             
             header = AttributedString("\(statusSymbol) [\(log.iteration)] \(log.actionType)\n")
             header.foregroundColor = statusColor
             result.append(header)
             
-            // Reasoning
-            var reasoning = AttributedString("   原因: \(log.reasoning)\n")
-            reasoning.foregroundColor = .secondary
+            var reasoning = AttributedString("  ← \(log.reasoning)\n")
+            reasoning.foregroundColor = CyberColor.textSecond
             result.append(reasoning)
             
-            // Output
             if let output = log.output, !output.isEmpty {
-                var outputLine = AttributedString("   输出: \(output.prefix(200))\(output.count > 200 ? "..." : "")\n")
-                outputLine.foregroundColor = .primary
+                var outputLine = AttributedString("  → \(output.prefix(200))\(output.count > 200 ? "..." : "")\n")
+                outputLine.foregroundColor = CyberColor.textPrimary
                 result.append(outputLine)
             }
             
-            // Error
             if let error = log.error {
-                var errorLine = AttributedString("   错误: \(error)\n")
-                errorLine.foregroundColor = .red
+                var errorLine = AttributedString("  ✕ \(error)\n")
+                errorLine.foregroundColor = CyberColor.red
                 result.append(errorLine)
             }
             
-            // Separator
             result.append(AttributedString("\n"))
         }
         
@@ -486,46 +782,54 @@ struct ExecutionLogsView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("工具执行日志")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "terminal")
+                        .font(.system(size: 9))
+                        .foregroundColor(CyberColor.cyan)
+                    Text("RUNTIME LOG")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(CyberColor.cyan)
+                        .tracking(1)
+                }
                 
                 Spacer()
                 
                 if !viewModel.executionLogs.isEmpty {
                     Button(action: { viewModel.clearExecutionLogs() }) {
                         Label("清空", systemImage: "trash")
-                            .font(.caption)
+                            .font(.system(size: 9, design: .monospaced))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
                     
                     Button(action: copyAllLogs) {
-                        Label("复制全部", systemImage: "doc.on.doc")
-                            .font(.caption)
+                        Label("复制", systemImage: "doc.on.doc")
+                            .font(.system(size: 9, design: .monospaced))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(CyberColor.cyanDim)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(CyberColor.bg2)
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 0.5)
             
             if viewModel.executionLogs.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "terminal")
-                        .font(.system(size: 36))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 36, weight: .ultraLight))
+                        .foregroundColor(CyberColor.cyanDim)
                     Text("工具执行时，实时日志将显示在此")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(CyberColor.bg1)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -534,7 +838,7 @@ struct ExecutionLogsView: View {
                                 HStack(alignment: .top, spacing: 6) {
                                     Text(formatTime(log.timestamp))
                                         .font(.system(.caption2, design: .monospaced))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(CyberColor.textSecond)
                                     
                                     Text("[\(log.level.uppercased())]")
                                         .font(.system(.caption2, design: .monospaced))
@@ -543,12 +847,12 @@ struct ExecutionLogsView: View {
                                     if !log.toolName.isEmpty {
                                         Text("\(log.toolName):")
                                             .font(.system(.caption2, design: .monospaced))
-                                            .foregroundColor(.accentColor)
+                                            .foregroundColor(CyberColor.cyan)
                                     }
                                     
                                     Text(log.message)
                                         .font(.system(.caption, design: .monospaced))
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(CyberColor.textPrimary)
                                         .textSelection(.enabled)
                                 }
                                 .id(log.id)
@@ -564,9 +868,10 @@ struct ExecutionLogsView: View {
                         }
                     }
                 }
-                .background(Color(NSColor.textBackgroundColor))
+                .background(CyberColor.bg0)
             }
         }
+        .background(CyberColor.bg1)
     }
     
     private func formatTime(_ date: Date) -> String {
@@ -577,11 +882,11 @@ struct ExecutionLogsView: View {
     
     private func colorForLevel(_ level: String) -> Color {
         switch level.lowercased() {
-        case "error": return .red
-        case "warning": return .orange
-        case "info": return .blue
-        case "debug": return .secondary
-        default: return .secondary
+        case "error": return CyberColor.red
+        case "warning": return CyberColor.orange
+        case "info": return CyberColor.cyan
+        case "debug": return CyberColor.textSecond
+        default: return CyberColor.textSecond
         }
     }
     

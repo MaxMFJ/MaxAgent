@@ -11,8 +11,15 @@ struct SystemMessageView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("系统消息")
-                    .font(.headline)
+                HStack(spacing: 6) {
+                    Image(systemName: "bell.badge")
+                        .font(.system(size: 12))
+                        .foregroundColor(CyberColor.cyan)
+                    Text("SYSTEM MSG")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(CyberColor.cyan)
+                        .tracking(1)
+                }
                 
                 Spacer()
                 
@@ -32,7 +39,7 @@ struct SystemMessageView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(CyberColor.textSecond)
                     }
                     .menuStyle(.borderlessButton)
                     .frame(width: 24)
@@ -41,27 +48,34 @@ struct SystemMessageView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             
-            // Tab 栏：全部 | 系统错误 | 进化状态 | 任务完成 | 其他
-            Picker("分类", selection: $viewModel.selectedNotificationTab) {
+            // Tab 栏 — Cyberpunk Style
+            HStack(spacing: 0) {
                 ForEach(SystemMessageTab.allCases, id: \.self) { tab in
-                    Text(tab.tabTitle).tag(tab)
+                    CyberMsgTab(
+                        title: tab.tabTitle,
+                        isSelected: viewModel.selectedNotificationTab == tab
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectedNotificationTab = tab
+                        }
+                    }
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.border)
+                .frame(height: 1)
             
             if displayedNotifications.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: viewModel.selectedNotificationTab.category?.icon ?? "bell.slash")
-                        .font(.system(size: 36))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 36, weight: .ultraLight))
+                        .foregroundColor(CyberColor.cyanDim)
                     Text(viewModel.selectedNotificationTab == .all ? "暂无系统消息" : "该分类下暂无消息")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -77,7 +91,7 @@ struct SystemMessageView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(CyberColor.bg1)
     }
     
     private func copyAllNotifications(_ notifications: [SystemNotification]) {
@@ -90,6 +104,31 @@ struct SystemMessageView: View {
     }
 }
 
+// MARK: - Cyber Message Tab
+
+private struct CyberMsgTab: View {
+    let title: String
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            Text(title)
+                .font(.system(size: 9, weight: isSelected ? .bold : .medium, design: .monospaced))
+                .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(isSelected ? CyberColor.cyan.opacity(0.1) : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(isSelected ? CyberColor.cyan.opacity(0.3) : Color.clear, lineWidth: 0.5)
+                )
+                .cornerRadius(3)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct SystemMessageRow: View {
     let notification: SystemNotification
     let onMarkRead: () -> Void
@@ -99,9 +138,9 @@ struct SystemMessageRow: View {
     
     var levelColor: Color {
         switch notification.level {
-        case .error: return .red
-        case .warning: return .orange
-        case .info: return .blue
+        case .error: return CyberColor.red
+        case .warning: return CyberColor.orange
+        case .info: return CyberColor.cyan
         }
     }
     
@@ -113,22 +152,24 @@ struct SystemMessageRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: notification.level.icon)
                 .foregroundColor(levelColor)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .frame(width: 20, alignment: .center)
                 .padding(.top, 2)
+                .shadow(color: levelColor.opacity(0.3), radius: 2)
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(notification.title)
-                        .font(.system(size: 13, weight: notification.read ? .regular : .semibold))
+                        .font(.system(size: 12, weight: notification.read ? .regular : .semibold, design: .monospaced))
+                        .foregroundColor(CyberColor.textPrimary)
                         .lineLimit(1)
                     
                     Spacer()
                     
                     if showCopied {
                         Text("已复制")
-                            .font(.caption2)
-                            .foregroundColor(.green)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundColor(CyberColor.green)
                             .transition(.opacity)
                     }
                     
@@ -136,7 +177,7 @@ struct SystemMessageRow: View {
                         Button(action: copyToClipboard) {
                             Image(systemName: "doc.on.doc")
                                 .font(.system(size: 11))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(CyberColor.textSecond)
                         }
                         .buttonStyle(.plain)
                         .help("复制此消息")
@@ -144,28 +185,29 @@ struct SystemMessageRow: View {
                     }
                     
                     Text(notification.relativeTime)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond)
                 }
                 
                 Text(notification.content)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(CyberColor.textSecond)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 if !notification.source.isEmpty && notification.source != "system" {
                     Text("来源: \(notification.source)")
-                        .font(.caption2)
-                        .foregroundColor(Color(NSColor.tertiaryLabelColor))
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(CyberColor.textSecond.opacity(0.6))
                 }
             }
             
             if !notification.read {
                 Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 8, height: 8)
+                    .fill(CyberColor.cyan)
+                    .frame(width: 6, height: 6)
                     .padding(.top, 4)
+                    .shadow(color: CyberColor.cyan.opacity(0.5), radius: 2)
             }
         }
         .padding(.horizontal, 14)
@@ -174,9 +216,9 @@ struct SystemMessageRow: View {
             RoundedRectangle(cornerRadius: 0)
                 .fill(notification.read
                       ? Color.clear
-                      : Color.accentColor.opacity(0.04))
+                      : CyberColor.cyan.opacity(0.03))
         )
-        .background(isHovering ? Color(NSColor.controlBackgroundColor) : Color.clear)
+        .background(isHovering ? CyberColor.bg2 : Color.clear)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovering = hovering
@@ -227,15 +269,15 @@ struct NotificationBellButton: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: viewModel.unreadNotificationCount > 0 ? "bell.badge.fill" : "bell")
                     .font(.system(size: 14))
-                    .foregroundColor(viewModel.showSystemMessages || viewModel.unreadNotificationCount > 0 ? .accentColor : .secondary)
+                    .foregroundColor(viewModel.showSystemMessages || viewModel.unreadNotificationCount > 0 ? CyberColor.cyan : CyberColor.textSecond)
                 
                 if viewModel.unreadNotificationCount > 0 {
                     Text("\(min(viewModel.unreadNotificationCount, 99))")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
-                        .background(Capsule().fill(Color.red))
+                        .background(Capsule().fill(CyberColor.red))
                         .offset(x: 8, y: -6)
                 }
             }

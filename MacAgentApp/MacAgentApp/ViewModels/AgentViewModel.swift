@@ -25,8 +25,13 @@ class AgentViewModel: ObservableObject {
     /// 当前选中的 Tab（全部 / 系统错误 / 进化状态 / 任务完成 / 其他）
     @Published var selectedNotificationTab: SystemMessageTab = .all
     
+    // MARK: - LLM Streaming (real-time neural output)
+
+    @Published var llmStreamingText: String = ""
+    @Published var isStreamingLLM: Bool = false
+
     // MARK: - Autonomous Task Properties
-    
+
     @Published var currentTaskId: String?
     @Published var currentIteration: Int = 0
     @Published var actionLogs: [ActionLogEntry] = []
@@ -38,6 +43,9 @@ class AgentViewModel: ObservableObject {
     @Published var selectedModelReason: String?
     @Published var taskAnalysisType: String?
     @Published var taskComplexity: Int = 0
+
+    /// Chat 模式下 LLM 请求计数，用于生成唯一 actionId（避免第二次消息覆盖第一次）
+    private var chatLlmRequestCounter: Int = 0
     
     // MARK: - Settings
     
@@ -127,6 +135,17 @@ class AgentViewModel: ObservableObject {
     private var lastStreamingUIPushTime: Date?
     private let streamingThrottleInterval: TimeInterval = 0.12
     /// 流式期间定期保存部分内容，断线/崩溃时保留本地数据
+
+    /// 格式化自动步骤输出，便于阅读：保留换行、步骤分隔符换行、仅截断时加省略号
+    private func formatActionOutput(_ output: String?, maxChars: Int = 500) -> String {
+        guard let out = output, !out.isEmpty else { return "" }
+        let truncated = out.count > maxChars ? String(out.prefix(maxChars)) + "..." : out
+        // 将 "→" 分隔的步骤换行显示（如 "1) xxx → 2) xxx"）
+        var text = truncated.replacingOccurrences(of: " → ", with: "\n   ")
+        text = text.replacingOccurrences(of: "→ ", with: "\n   ")
+        // 多行内容每行缩进
+        return text.replacingOccurrences(of: "\n", with: "\n   ")
+    }
     private var lastStreamingSaveTime: Date?
     private let streamingSaveInterval: TimeInterval = 2.0
     /// 标记是否刚创建新 assistant 消息（用于触发滚动到底部）
@@ -569,11 +588,16 @@ class AgentViewModel: ObservableObject {
         }
         do {
             var fullContent = ""
-            
+            llmStreamingText = ""
+            isStreamingLLM = true
+            executionLogs = []
+            defer { isStreamingLLM = false }
+
             for try await chunk in backendService.sendMessageStream(messageText, sessionId: sessionId) {
                 switch chunk {
                 case .content(let text):
                     fullContent += text
+                    llmStreamingText = fullContent
                     updateAssistantMessage(content: fullContent, isStreaming: true)
                     if ttsEnabled {
                         TTSService.shared.appendAndSpeakStreamedContent(fullContent)
@@ -626,6 +650,47 @@ class AgentViewModel: ObservableObject {
                     
                 case .taskStart, .modelSelected, .actionPlan, .actionExecuting, .actionResult, .reflectStart, .reflectResult, .taskComplete:
                     break
+
+                case .llmRequestStart(let provider, let model, let iteration):
+                    let llmId = "llm_chat_\(chatLlmRequestCounter)"
+                    chatLlmRequestCounter += 1
+                    let logEntry = ActionLogEntry(
+                        actionId: llmId,
+                        actionType: "llm_request",
+                        reasoning: "请求 \(provider)/\(model)",
+                        status: .executing,
+                        output: nil,
+                        error: nil,
+                        timestamp: Date(),
+                        iteration: iteration
+                    )
+                    actionLogs = actionLogs + [logEntry]
+
+                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    let llmId = "llm_chat_\(max(0, chatLlmRequestCounter - 1))"
+                    if let index = actionLogs.lastIndex(where: { $0.actionId == llmId }) {
+                        let pt = usage["prompt_tokens"] as? Int ?? 0
+                        let ct = usage["completion_tokens"] as? Int ?? 0
+                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                        if let err = error, !err.isEmpty {
+                            out += " | 错误: \(err)"
+                        } else if let preview = responsePreview, !preview.isEmpty {
+                            out += "\n预览: \(preview)"
+                        }
+                        let updated = ActionLogEntry(
+                            actionId: llmId,
+                            actionType: "llm_request",
+                            reasoning: actionLogs[index].reasoning,
+                            status: error != nil ? .failed : .success,
+                            output: out,
+                            error: error,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: iteration
+                        )
+                        var newLogs = actionLogs
+                        newLogs[index] = updated
+                        actionLogs = newLogs
+                    }
 
                 case .retry:
                     break
@@ -753,9 +818,10 @@ class AgentViewModel: ObservableObject {
             updateCurrentConversation(conversation, shouldSave: true)
             return
         }
-        // 流式时节流：减少 @Published 触发频率，缓解列表闪烁与布局拉扯
+        // 流式时节流：减少 @Published 触发频率；但有附件更新时必须立即推送，否则截图不显示
+        let hasAttachmentUpdate = attachments != nil && !(attachments?.isEmpty ?? true)
         let now = Date()
-        if let t = lastStreamingUIPushTime, now.timeIntervalSince(t) < streamingThrottleInterval {
+        if !hasAttachmentUpdate, let t = lastStreamingUIPushTime, now.timeIntervalSince(t) < streamingThrottleInterval {
             return
         }
         lastStreamingUIPushTime = now
@@ -847,14 +913,60 @@ class AgentViewModel: ObservableObject {
                     )
                     statusContent += "🚀 任务开始执行...\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
+
+                case .llmRequestStart(let provider, let model, let iteration):
+                    let llmId = "llm_\(iteration)"
+                    let logEntry = ActionLogEntry(
+                        actionId: llmId,
+                        actionType: "llm_request",
+                        reasoning: "请求 \(provider)/\(model)",
+                        status: .executing,
+                        output: nil,
+                        error: nil,
+                        timestamp: Date(),
+                        iteration: iteration
+                    )
+                    actionLogs = actionLogs + [logEntry]
+                    statusContent += "\n☁️ LLM 请求中: \(provider)/\(model)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+
+                case .llmRequestEnd(let provider, let model, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    let llmId = "llm_\(iteration)"
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
+                        let pt = usage["prompt_tokens"] as? Int ?? 0
+                        let ct = usage["completion_tokens"] as? Int ?? 0
+                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                        if let err = error, !err.isEmpty {
+                            out += " | 错误: \(err)"
+                        } else if let preview = responsePreview, !preview.isEmpty {
+                            out += "\n预览: \(preview)"
+                        }
+                        let updated = ActionLogEntry(
+                            actionId: llmId,
+                            actionType: "llm_request",
+                            reasoning: actionLogs[index].reasoning,
+                            status: error != nil ? .failed : .success,
+                            output: out,
+                            error: error,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: iteration
+                        )
+                        var newLogs = actionLogs
+                        newLogs[index] = updated
+                        actionLogs = newLogs
+                    }
+                    let icon = error != nil ? "❌" : "✅"
+                    statusContent += "   \(icon) LLM 返回: \(latencyMs)ms, \(usage["total_tokens"] as? Int ?? 0) tokens\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                 case .actionPlan(let action, let iteration):
                     currentIteration = iteration
                     let actionType = action["action_type"] as? String ?? "unknown"
                     let reasoning = action["reasoning"] as? String ?? ""
+                    let actionId = action["action_id"] as? String ?? UUID().uuidString
                     
                     let logEntry = ActionLogEntry(
-                        actionId: action["action_id"] as? String ?? UUID().uuidString,
+                        actionId: actionId,
                         actionType: actionType,
                         reasoning: reasoning,
                         status: .pending,
@@ -864,6 +976,17 @@ class AgentViewModel: ObservableObject {
                         iteration: iteration
                     )
                     actionLogs.append(logEntry)
+                    
+                    // 工具历史：call_tool 映射到 recentToolCalls
+                    if actionType == "call_tool" {
+                        let params = action["params"] as? [String: Any] ?? [:]
+                        let toolName = params["tool_name"] as? String ?? "unknown"
+                        let args = params["args"] as? [String: Any] ?? [:]
+                        let argsCodable = args.mapValues { AnyCodable($0) }
+                        let toolCall = ToolCall(id: actionId, name: toolName, arguments: argsCodable, result: nil)
+                        recentToolCalls.insert(toolCall, at: 0)
+                        if recentToolCalls.count > 10 { recentToolCalls.removeLast() }
+                    }
                     
                     statusContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
@@ -897,11 +1020,26 @@ class AgentViewModel: ObservableObject {
                             iteration: actionLogs[index].iteration
                         )
                     }
+                    // 工具历史：更新 recentToolCalls 的 result
+                    if let tcIndex = recentToolCalls.firstIndex(where: { $0.id == actionId }) {
+                        let outStr = output ?? error ?? ""
+                        recentToolCalls[tcIndex] = ToolCall(
+                            id: recentToolCalls[tcIndex].id,
+                            name: recentToolCalls[tcIndex].name,
+                            arguments: recentToolCalls[tcIndex].arguments,
+                            result: ToolResult(success: success, output: outStr)
+                        )
+                        // 工具日志：call_tool 结果写入 executionLogs
+                        let toolName = recentToolCalls[tcIndex].name
+                        let level = success ? "info" : "error"
+                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
+                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
+                    }
                     
                     if success {
                         completedActions += 1
-                        let outputPreview = output?.prefix(100) ?? ""
-                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ": \(outputPreview)...")\n"
+                        let outputPreview = formatActionOutput(output)
+                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ":\n   \(outputPreview)")\n"
                         // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
                         var screenshotAttachment: MessageAttachment?
                         if let out = output?.data(using: .utf8),
@@ -1075,14 +1213,55 @@ class AgentViewModel: ObservableObject {
                     )
                     statusContent += "✅ 任务已恢复: \(taskDesc)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
+
+                case .llmRequestStart(let provider, let model, let iteration):
+                    let llmId = "llm_\(iteration)"
+                    let logEntry = ActionLogEntry(
+                        actionId: llmId,
+                        actionType: "llm_request",
+                        reasoning: "请求 \(provider)/\(model)",
+                        status: .executing,
+                        output: nil,
+                        error: nil,
+                        timestamp: Date(),
+                        iteration: iteration
+                    )
+                    actionLogs = actionLogs + [logEntry]
+
+                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    let llmId = "llm_\(iteration)"
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
+                        let pt = usage["prompt_tokens"] as? Int ?? 0
+                        let ct = usage["completion_tokens"] as? Int ?? 0
+                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                        if let err = error, !err.isEmpty {
+                            out += " | 错误: \(err)"
+                        } else if let preview = responsePreview, !preview.isEmpty {
+                            out += "\n预览: \(preview)"
+                        }
+                        let updated = ActionLogEntry(
+                            actionId: llmId,
+                            actionType: "llm_request",
+                            reasoning: actionLogs[index].reasoning,
+                            status: error != nil ? .failed : .success,
+                            output: out,
+                            error: error,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: iteration
+                        )
+                        var newLogs = actionLogs
+                        newLogs[index] = updated
+                        actionLogs = newLogs
+                    }
                     
                 case .actionPlan(let action, let iteration):
                     currentIteration = iteration
                     let actionType = action["action_type"] as? String ?? "unknown"
                     let reasoning = action["reasoning"] as? String ?? ""
+                    let actionId = action["action_id"] as? String ?? UUID().uuidString
                     
                     let logEntry = ActionLogEntry(
-                        actionId: action["action_id"] as? String ?? UUID().uuidString,
+                        actionId: actionId,
                         actionType: actionType,
                         reasoning: reasoning,
                         status: .pending,
@@ -1091,7 +1270,18 @@ class AgentViewModel: ObservableObject {
                         timestamp: Date(),
                         iteration: iteration
                     )
-                    actionLogs.append(logEntry)
+                    actionLogs = actionLogs + [logEntry]
+                    
+                    // 工具历史：call_tool 映射到 recentToolCalls
+                    if actionType == "call_tool" {
+                        let params = action["params"] as? [String: Any] ?? [:]
+                        let toolName = params["tool_name"] as? String ?? "unknown"
+                        let args = params["args"] as? [String: Any] ?? [:]
+                        let argsCodable = args.mapValues { AnyCodable($0) }
+                        let toolCall = ToolCall(id: actionId, name: toolName, arguments: argsCodable, result: nil)
+                        recentToolCalls.insert(toolCall, at: 0)
+                        if recentToolCalls.count > 10 { recentToolCalls.removeLast() }
+                    }
                     
                     statusContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
@@ -1125,11 +1315,26 @@ class AgentViewModel: ObservableObject {
                             iteration: actionLogs[index].iteration
                         )
                     }
+                    // 工具历史：更新 recentToolCalls 的 result
+                    if let tcIndex = recentToolCalls.firstIndex(where: { $0.id == actionId }) {
+                        let outStr = output ?? error ?? ""
+                        recentToolCalls[tcIndex] = ToolCall(
+                            id: recentToolCalls[tcIndex].id,
+                            name: recentToolCalls[tcIndex].name,
+                            arguments: recentToolCalls[tcIndex].arguments,
+                            result: ToolResult(success: success, output: outStr)
+                        )
+                        // 工具日志：call_tool 结果写入 executionLogs
+                        let toolName = recentToolCalls[tcIndex].name
+                        let level = success ? "info" : "error"
+                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
+                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
+                    }
                     
                     if success {
                         completedActions += 1
-                        let outputPreview = output?.prefix(100) ?? ""
-                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ": \(outputPreview)...")\n"
+                        let outputPreview = formatActionOutput(output)
+                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ":\n   \(outputPreview)")\n"
                         // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
                         var screenshotAttachment: MessageAttachment?
                         if let out = output?.data(using: .utf8),
@@ -1260,6 +1465,47 @@ class AgentViewModel: ObservableObject {
                     
                 case .executionLog(let toolName, _, let level, let message):
                     executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: message, toolName: toolName))
+
+                case .llmRequestStart(let provider, let model, let iteration):
+                    let llmId = "llm_chat_\(chatLlmRequestCounter)"
+                    chatLlmRequestCounter += 1
+                    let logEntry = ActionLogEntry(
+                        actionId: llmId,
+                        actionType: "llm_request",
+                        reasoning: "请求 \(provider)/\(model)",
+                        status: .executing,
+                        output: nil,
+                        error: nil,
+                        timestamp: Date(),
+                        iteration: iteration
+                    )
+                    actionLogs = actionLogs + [logEntry]
+
+                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    let llmId = "llm_chat_\(max(0, chatLlmRequestCounter - 1))"
+                    if let index = actionLogs.lastIndex(where: { $0.actionId == llmId }) {
+                        let pt = usage["prompt_tokens"] as? Int ?? 0
+                        let ct = usage["completion_tokens"] as? Int ?? 0
+                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                        if let err = error, !err.isEmpty {
+                            out += " | 错误: \(err)"
+                        } else if let preview = responsePreview, !preview.isEmpty {
+                            out += "\n预览: \(preview)"
+                        }
+                        let updated = ActionLogEntry(
+                            actionId: llmId,
+                            actionType: "llm_request",
+                            reasoning: actionLogs[index].reasoning,
+                            status: error != nil ? .failed : .success,
+                            output: out,
+                            error: error,
+                            timestamp: actionLogs[index].timestamp,
+                            iteration: iteration
+                        )
+                        var newLogs = actionLogs
+                        newLogs[index] = updated
+                        actionLogs = newLogs
+                    }
                     
                 case .imageData(let base64, let mimeType, let path):
                     let attachment = MessageAttachment.fromBase64(base64, mimeType: mimeType)

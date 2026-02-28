@@ -31,7 +31,8 @@
 		VIW001 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* MessageCell.m */; };
 		VIW002 /* InputView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* InputView.m */; };
 		UTIL001 /* ThinkingContentParser.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* ThinkingContentParser.m */; };
-		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };
+		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };			UTIL002 /* TechTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC019 /* TechTheme.m */; };
+		VOICE001 /* VoiceRainbowView.m in Sources */ = {isa = PBXBuildFile; fileRef = VOICE002 /* VoiceRainbowView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,8 +81,10 @@
 		SRC017 /* ThinkingContentParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingContentParser.m; sourceTree = "<group>"; };
 		SRC017H /* ThinkingContentParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingContentParser.h; sourceTree = "<group>"; };
 		SRC018 /* ThinkingBlockView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingBlockView.m; sourceTree = "<group>"; };
-		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };
-		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
+		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };			SRC019 /* TechTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TechTheme.m; sourceTree = "<group>"; };
+			SRC019H /* TechTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TechTheme.h; sourceTree = "<group>"; };		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
+		VOICE002 /* VoiceRainbowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceRainbowView.m; sourceTree = "<group>"; };
+		VOICE003 /* VoiceRainbowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceRainbowView.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,6 +221,8 @@
 				SRC010 /* InputView.m */,
 				SRC018H /* ThinkingBlockView.h */,
 				SRC018 /* ThinkingBlockView.m */,
+				VOICE003 /* VoiceRainbowView.h */,
+				VOICE002 /* VoiceRainbowView.m */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -227,6 +232,8 @@
 			children = (
 				SRC017H /* ThinkingContentParser.h */,
 				SRC017 /* ThinkingContentParser.m */,
+				SRC019H /* TechTheme.h */,
+				SRC019 /* TechTheme.m */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -346,6 +353,8 @@
 				VIW002 /* InputView.m in Sources */,
 				UTIL001 /* ThinkingContentParser.m in Sources */,
 				VIW003 /* ThinkingBlockView.m in Sources */,
+				UTIL002 /* TechTheme.m in Sources */,
+				VOICE001 /* VoiceRainbowView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

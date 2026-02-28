@@ -18,6 +18,8 @@ enum StreamChunk {
     case actionPlan(action: [String: Any], iteration: Int)
     case actionExecuting(actionId: String, actionType: String)
     case actionResult(actionId: String, success: Bool, output: String?, error: String?)
+    case llmRequestStart(provider: String, model: String, iteration: Int)
+    case llmRequestEnd(provider: String, model: String, iteration: Int, latencyMs: Int, usage: [String: Any], responsePreview: String?, error: String?)
     case reflectStart
     case reflectResult(reflection: String)
     case taskComplete(taskId: String, success: Bool, summary: String, totalActions: Int)
@@ -588,6 +590,22 @@ class BackendService: ObservableObject {
                                     
                                 case "tool_executing":
                                     continue
+
+                                case "llm_request_start":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    continuation.yield(.llmRequestStart(provider: provider, model: model, iteration: iteration))
+
+                                case "llm_request_end":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let latencyMs = json["latency_ms"] as? Int ?? 0
+                                    let usage = json["usage"] as? [String: Any] ?? [:]
+                                    let responsePreview = json["response_preview"] as? String
+                                    let error = json["error"] as? String
+                                    continuation.yield(.llmRequestEnd(provider: provider, model: model, iteration: iteration, latencyMs: latencyMs, usage: usage, responsePreview: responsePreview, error: error))
                                     
                                 case "execution_log":
                                     if let toolName = json["tool_name"] as? String,
@@ -798,14 +816,35 @@ class BackendService: ObservableObject {
                                     let output = json["output"] as? String
                                     let error = json["error"] as? String
                                     continuation.yield(.actionResult(actionId: actionId, success: success, output: output, error: error))
-                                    // 后端在 action_result 中单独带上 screenshot_path / image_base64 时，再发一次图片 chunk 以便聊天展示
-                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty {
-                                        if let base64 = json["image_base64"] as? String, !base64.isEmpty {
-                                            let mime = json["mime_type"] as? String ?? "image/png"
-                                            continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
-                                        } else {
-                                            continuation.yield(.localImage(path: path))
-                                        }
+                                    // 兼容旧协议：action_result 内嵌 image_base64 时直接展示；新协议由 screenshot chunk 单独推送
+                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty,
+                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                        let mime = json["mime_type"] as? String ?? "image/png"
+                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
+                                    }
+
+                                case "llm_request_start":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    continuation.yield(.llmRequestStart(provider: provider, model: model, iteration: iteration))
+
+                                case "llm_request_end":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let latencyMs = json["latency_ms"] as? Int ?? 0
+                                    let usage = json["usage"] as? [String: Any] ?? [:]
+                                    let responsePreview = json["response_preview"] as? String
+                                    let error = json["error"] as? String
+                                    continuation.yield(.llmRequestEnd(provider: provider, model: model, iteration: iteration, latencyMs: latencyMs, usage: usage, responsePreview: responsePreview, error: error))
+                                
+                                case "screenshot":
+                                    // 后端单独推送的截图 chunk，避免大 payload 导致 WebSocket 失败
+                                    if let path = json["screenshot_path"] as? String, !path.isEmpty,
+                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                        let mime = json["mime_type"] as? String ?? "image/png"
+                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
                                     }
                                     
                                 case "reflect_start":
@@ -944,6 +983,22 @@ class BackendService: ObservableObject {
                                         continuation.yield(.toolResult(name: name, success: success, result: resultStr))
                                     }
                                     
+                                case "llm_request_start":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    continuation.yield(.llmRequestStart(provider: provider, model: model, iteration: iteration))
+
+                                case "llm_request_end":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let latencyMs = json["latency_ms"] as? Int ?? 0
+                                    let usage = json["usage"] as? [String: Any] ?? [:]
+                                    let responsePreview = json["response_preview"] as? String
+                                    let error = json["error"] as? String
+                                    continuation.yield(.llmRequestEnd(provider: provider, model: model, iteration: iteration, latencyMs: latencyMs, usage: usage, responsePreview: responsePreview, error: error))
+
                                 case "execution_log":
                                     if let toolName = json["tool_name"] as? String,
                                        let level = json["level"] as? String,
@@ -1096,14 +1151,19 @@ class BackendService: ObservableObject {
                                     let output = json["output"] as? String
                                     let error = json["error"] as? String
                                     continuation.yield(.actionResult(actionId: actionId, success: success, output: output, error: error))
-                                    // 后端在 action_result 中单独带上 screenshot_path / image_base64 时，再发一次图片 chunk 以便聊天展示
-                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty {
-                                        if let base64 = json["image_base64"] as? String, !base64.isEmpty {
-                                            let mime = json["mime_type"] as? String ?? "image/png"
-                                            continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
-                                        } else {
-                                            continuation.yield(.localImage(path: path))
-                                        }
+                                    // 兼容旧协议：action_result 内嵌 image_base64 时直接展示；新协议由 screenshot chunk 单独推送
+                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty,
+                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                        let mime = json["mime_type"] as? String ?? "image/png"
+                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
+                                    }
+                                
+                                case "screenshot":
+                                    // 后端单独推送的截图 chunk，避免大 payload 导致 WebSocket 失败
+                                    if let path = json["screenshot_path"] as? String, !path.isEmpty,
+                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
+                                        let mime = json["mime_type"] as? String ?? "image/png"
+                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
                                     }
                                     
                                 case "reflect_start":
@@ -1113,6 +1173,22 @@ class BackendService: ObservableObject {
                                     let reflection = json["reflection"] as? String ?? ""
                                     continuation.yield(.reflectResult(reflection: reflection))
                                     
+                                case "llm_request_start":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    continuation.yield(.llmRequestStart(provider: provider, model: model, iteration: iteration))
+
+                                case "llm_request_end":
+                                    let provider = json["provider"] as? String ?? "unknown"
+                                    let model = json["model"] as? String ?? ""
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let latencyMs = json["latency_ms"] as? Int ?? 0
+                                    let usage = json["usage"] as? [String: Any] ?? [:]
+                                    let responsePreview = json["response_preview"] as? String
+                                    let error = json["error"] as? String
+                                    continuation.yield(.llmRequestEnd(provider: provider, model: model, iteration: iteration, latencyMs: latencyMs, usage: usage, responsePreview: responsePreview, error: error))
+
                                 case "task_complete":
                                     let taskId = json["task_id"] as? String ?? ""
                                     let success = json["success"] as? Bool ?? false

@@ -33,9 +33,9 @@ struct SettingsView: View {
             }
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
-            .background(Color(NSColor.windowBackgroundColor))
+            .background(CyberColor.bg1)
             
-            Divider()
+            Rectangle().fill(CyberColor.cyan.opacity(0.2)).frame(height: 1)
             
             // 内容区域
             Group {
@@ -77,7 +77,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            Divider()
+            Rectangle().fill(CyberColor.cyan.opacity(0.2)).frame(height: 1)
             
             // 固定底部按钮栏
             HStack {
@@ -89,10 +89,10 @@ struct SettingsView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity)
-            .background(Color(NSColor.windowBackgroundColor))
+            .background(CyberColor.bg1)
         }
         .frame(width: 650, height: 550)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(CyberColor.bg0)
     }
     
     private func closeSettings() {
@@ -115,11 +115,11 @@ struct SettingsTabButton: View {
                 Text(title)
                     .font(.system(size: 12))
             }
-            .foregroundColor(isSelected ? .accentColor : .secondary)
+            .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
             .frame(width: 70, height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .fill(isSelected ? CyberColor.cyan.opacity(0.15) : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -1039,21 +1039,22 @@ struct AboutContent: View {
             Image(systemName: "sparkles")
                 .font(.system(size: 50))
                 .foregroundStyle(.linearGradient(
-                    colors: [.blue, .purple],
+                    colors: [CyberColor.cyan, CyberColor.green],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
+                .shadow(color: CyberColor.cyan.opacity(0.4), radius: 10)
             
             Text("Chow Duck")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                .foregroundColor(CyberColor.textPrimary)
             
             Text("版本 1.0.0")
-                .foregroundColor(.secondary)
+                .foregroundColor(CyberColor.textSecond)
             
             Text("一个强大的 macOS AI 助手\n可以帮助你完成各种电脑操作任务")
                 .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+                .foregroundColor(CyberColor.textSecond)
             
             Divider()
                 .frame(width: 200)
@@ -1080,10 +1081,10 @@ struct AboutFeature: View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.accentColor)
+                .foregroundColor(CyberColor.cyan)
             Text(text)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(CyberColor.textSecond)
         }
     }
 }

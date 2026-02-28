@@ -24,7 +24,7 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+from paths import DATA_DIR
 MESSAGES_FILE = os.path.join(DATA_DIR, "system_messages.json")
 MAX_MESSAGES = 200
 # 同一条警告/错误在此时长内只保留一条（秒）

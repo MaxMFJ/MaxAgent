@@ -10,8 +10,8 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(_BACKEND_DIR, "data")
+from paths import DATA_DIR
+
 CONFIG_FILE = os.path.join(DATA_DIR, "llm_config.json")
 # 与 app_state.CLOUD_PROVIDERS 一致，用于持久化“远程回退”配置（当前为本地时，选“远程”用此配置）
 CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
@@ -88,12 +88,15 @@ def get_lm_studio_base_url() -> str:
     返回 LM Studio 的 base URL（不含 /v1），用于本地多端口检测。
     支持持久化的 lm_studio_base_url 或仅端口；未配置时默认 1234。
     统一使用 localhost，避免 127.0.0.1 与 localhost 行为差异。
+    注意：仅当 provider 为 lmstudio 时 base_url 才是 LM Studio 地址；否则 base_url 可能是云端 API，不能用于本地检测。
     """
     cfg = load_llm_config()
-    raw = (cfg.get("lm_studio_base_url") or cfg.get("base_url") or "").strip()
-    # 当前主配置是 lmstudio 时，若未单独存 lm_studio_base_url，用 base_url
-    if not raw and (cfg.get("provider") or "").strip().lower() == "lmstudio":
-        raw = (cfg.get("base_url") or "").strip()
+    provider = (cfg.get("provider") or "").strip().lower()
+    # 仅当 provider 为 lmstudio 时，base_url 才可能是 LM Studio 的地址
+    if provider == "lmstudio":
+        raw = (cfg.get("lm_studio_base_url") or cfg.get("base_url") or "").strip()
+    else:
+        raw = (cfg.get("lm_studio_base_url") or "").strip()
     if not raw:
         return "http://localhost:1234"
     # 若为纯数字，视为端口

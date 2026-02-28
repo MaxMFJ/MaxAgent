@@ -14,8 +14,8 @@ _cached: Optional[dict] = None
 def _get_config_path() -> Path:
     global _config_path
     if _config_path is None:
-        base = Path(__file__).resolve().parent.parent  # backend/
-        _config_path = base / "data" / "github_config.json"
+        from paths import DATA_DIR
+        _config_path = Path(DATA_DIR) / "github_config.json"
     return _config_path
 
 

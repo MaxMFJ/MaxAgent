@@ -389,6 +389,8 @@ async def _autonomous_task_worker(
                         success=chunk.get("success", False),
                         total_actions=chunk.get("total_actions", 0),
                         total_iterations=chunk.get("iterations", 0),
+                        execution_time_ms=chunk.get("execution_time_ms", 0),
+                        action_log=chunk.get("action_log", []),
                         token_usage=chunk.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
                     )
                     memory.add_episode(episode)

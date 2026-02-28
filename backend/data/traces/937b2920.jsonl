@@ -1,0 +1,5 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 6022, "success": true}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 3236, "success": true, "error": null}
+{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5941, "success": true}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 911, "success": true, "error": null}
+{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5634, "success": true}

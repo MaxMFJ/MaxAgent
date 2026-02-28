@@ -20,6 +20,8 @@
 		A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012234567890ABCDEF1 /* ToolPanelView.swift */; };
 		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
 		B1000001234567890ABCDEF1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002234567890ABCDEF1 /* ChatView.swift */; };
+		B1C1BE120100000000000001 /* CyberGridBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C1BE120200000000000001 /* CyberGridBackground.swift */; };
+		B1FADE0100000000000001A1 /* CyberGrid.metal in Sources */ = {isa = PBXBuildFile; fileRef = B1FADE0200000000000001A1 /* CyberGrid.metal */; };
 		B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004234567890ABCDEF1 /* MessageBubble.swift */; };
 		B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006234567890ABCDEF1 /* MessageAvatars.swift */; };
 		B1000007234567890ABCDEF1 /* UserMessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008234567890ABCDEF1 /* UserMessageContent.swift */; };
@@ -49,6 +51,13 @@
 		E1000003234567890ABCDEF1 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000004234567890ABCDEF1 /* VoiceInputService.swift */; };
 		E1000005234567890ABCDEF1 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000006234567890ABCDEF1 /* Speech.framework */; };
 		E1000007234567890ABCDEF1 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000008234567890ABCDEF1 /* AVFoundation.framework */; };
+		F1000001234567890ABCDEF1 /* MonitoringViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */; };
+		F1000003234567890ABCDEF1 /* MonitoringWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */; };
+		F1000005234567890ABCDEF1 /* ExecutionTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */; };
+		F1000007234567890ABCDEF1 /* SystemStatusDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000008234567890ABCDEF1 /* SystemStatusDashboardView.swift */; };
+		F1000009234567890ABCDEF1 /* HistoryAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000A234567890ABCDEF1 /* HistoryAnalysisView.swift */; };
+		F100000B234567890ABCDEF1 /* LogStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000C234567890ABCDEF1 /* LogStreamView.swift */; };
+		F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +76,8 @@
 		A1000014234567890ABCDEF1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
 		B1000002234567890ABCDEF1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		B1C1BE120200000000000001 /* CyberGridBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberGridBackground.swift; sourceTree = "<group>"; };
+		B1FADE0200000000000001A1 /* CyberGrid.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CyberGrid.metal; sourceTree = "<group>"; };
 		B1000004234567890ABCDEF1 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
 		B1000006234567890ABCDEF1 /* MessageAvatars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAvatars.swift; sourceTree = "<group>"; };
 		B1000008234567890ABCDEF1 /* UserMessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageContent.swift; sourceTree = "<group>"; };
@@ -98,6 +109,13 @@
 		E1000006234567890ABCDEF1 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Speech.framework; sourceTree = SDKROOT; };
 		E1000008234567890ABCDEF1 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AVFoundation.framework; sourceTree = SDKROOT; };
 		E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
+		F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringViewModel.swift; sourceTree = "<group>"; };
+		F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringWindowView.swift; sourceTree = "<group>"; };
+		F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExecutionTimelineView.swift; sourceTree = "<group>"; };
+		F1000008234567890ABCDEF1 /* SystemStatusDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatusDashboardView.swift; sourceTree = "<group>"; };
+		F100000A234567890ABCDEF1 /* HistoryAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryAnalysisView.swift; sourceTree = "<group>"; };
+		F100000C234567890ABCDEF1 /* LogStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogStreamView.swift; sourceTree = "<group>"; };
+		F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberpunkTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,16 +186,26 @@
 				A1000103234567890ABCDEF1 /* ViewModels */,
 				A1000104234567890ABCDEF1 /* Services */,
 				A1000105234567890ABCDEF1 /* Models */,
+				B1FADE0300000000000001A1 /* Shaders */,
 				A1000006234567890ABCDEF1 /* Assets.xcassets */,
 				A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */,
 			);
 			path = MacAgentApp;
 			sourceTree = "<group>";
 		};
+		B1FADE0300000000000001A1 /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				B1FADE0200000000000001A1 /* CyberGrid.metal */,
+			);
+			path = Shaders;
+			sourceTree = "<group>";
+		};
 		A1000102234567890ABCDEF1 /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				B1000030234567890ABCDEF1 /* 聊天 */,
+				F100000D234567890ABCDEF1 /* Monitoring */,
 				4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */,
 				C1000002234567890ABCDEF1 /* TunnelView.swift */,
 				A1000010234567890ABCDEF1 /* SidebarView.swift */,
@@ -192,6 +220,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000A234567890ABCDEF1 /* AgentViewModel.swift */,
+				F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -220,6 +249,7 @@
 			isa = PBXGroup;
 			children = (
 				B1000002234567890ABCDEF1 /* ChatView.swift */,
+				B1C1BE120200000000000001 /* CyberGridBackground.swift */,
 				B1000031234567890ABCDEF1 /* 消息 */,
 				B1000032234567890ABCDEF1 /* 输入 */,
 				B1000033234567890ABCDEF1 /* Markdown渲染 */,
@@ -286,6 +316,19 @@
 			path = "辅助组件";
 			sourceTree = "<group>";
 		};
+		F100000D234567890ABCDEF1 /* Monitoring */ = {
+			isa = PBXGroup;
+			children = (
+				F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */,
+				F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */,
+				F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */,
+				F1000008234567890ABCDEF1 /* SystemStatusDashboardView.swift */,
+				F100000A234567890ABCDEF1 /* HistoryAnalysisView.swift */,
+				F100000C234567890ABCDEF1 /* LogStreamView.swift */,
+			);
+			path = Monitoring;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -296,7 +339,10 @@
 				D3EABD9E1004CB61024BFAF0 /* [CP] Check Pods Manifest.lock */,
 				A10000FC234567890ABCDEF1 /* Sources */,
 				A10000FD234567890ABCDEF1 /* Frameworks */,
+				B5000001234567890ABCDEF1 /* Pre-install backend dependencies */,
+				B4000001234567890ABCDEF1 /* Copy Backend to Resources */,
 				A10000FE234567890ABCDEF1 /* Resources */,
+				B2000001234567890ABCDEF1 /* Strip venv and sensitive data from backend */,
 			);
 			buildRules = (
 			);
@@ -353,6 +399,74 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		B5000001234567890ABCDEF1 /* Pre-install backend dependencies */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 0;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PROJECT_DIR}/../backend/requirements-core.txt",
+			);
+			name = "Pre-install backend dependencies";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${PROJECT_DIR}/../backend/lib/.installed",
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n# Pre-install 核心依赖（仅 Archive 时执行，Debug 用 venv 加快构建）\nBACKEND=\"${PROJECT_DIR}/../backend\"\nif [ ! -f \"$BACKEND/requirements-core.txt\" ]; then echo \"Skip: requirements-core.txt not found\"; exit 0; fi\n\nPY=\"$(which python3 2>/dev/null || which python 2>/dev/null)\"\nif [ -z \"$PY\" ]; then echo \"error: python3 not found\"; exit 1; fi\n\nVER=\"$($PY -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>/dev/null)\"\nMAJOR=\"${VER%% *}\"\nMINOR=\"${VER##* }\"\nif [ \"$MAJOR\" -lt 3 ] || { [ \"$MAJOR\" -eq 3 ] && [ \"$MINOR\" -lt 8 ]; }; then\n  echo \"error: Python 3.8+ required, got $($PY --version 2>&1)\"; exit 1\nfi\n\nLIB=\"$BACKEND/lib\"\nrm -rf \"$LIB\"\nmkdir -p \"$LIB\"\necho \"Installing core deps to $LIB (Python $VER, ~80MB)...\"\n\"$PY\" -m pip install --quiet --target \"$LIB\" -r \"$BACKEND/requirements-core.txt\"\n\"$PY\" -c \"import sys; open('$LIB/.python_version', 'w').write(f'{sys.version_info.major}.{sys.version_info.minor}')\"\ntouch \"$LIB/.installed\"\necho \"Backend core dependencies installed\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B4000001234567890ABCDEF1 /* Copy Backend to Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 0;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PROJECT_DIR}/../backend/start.sh",
+				"${PROJECT_DIR}/../backend/main.py",
+				"${PROJECT_DIR}/../backend/requirements-core.txt",
+			);
+			name = "Copy Backend to Resources";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/start.sh",
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n# Copy backend into App Bundle (Archive + normal build)\nBACKEND_DST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\n\n# Try multiple source paths (workspace vs project)\nfor CANDIDATE in \"${PROJECT_DIR}/../backend\" \"${SRCROOT}/../backend\" \"${WORKSPACE_DIR}/backend\" \"${PROJECT_DIR}/../../backend\"; do\n  if [ -n \"$CANDIDATE\" ] && [ -d \"$CANDIDATE\" ] && [ -f \"$CANDIDATE/start.sh\" ]; then\n    BACKEND_SRC=\"$CANDIDATE\"\n    break\n  fi\ndone\n\nif [ -z \"$BACKEND_SRC\" ]; then\n  echo \"error: Backend not found. Tried PROJECT_DIR/../backend, SRCROOT/../backend, WORKSPACE_DIR/backend\" >&2\n  echo \"  PROJECT_DIR=$PROJECT_DIR\" >&2\n  echo \"  SRCROOT=$SRCROOT\" >&2\n  echo \"  WORKSPACE_DIR=$WORKSPACE_DIR\" >&2\n  exit 1\nfi\n\necho \"Copy Backend: SRC=$BACKEND_SRC -> DST=$BACKEND_DST\"\nrm -rf \"$BACKEND_DST\"\nmkdir -p \"$(dirname \"$BACKEND_DST\")\"\ncp -R \"$BACKEND_SRC\" \"$BACKEND_DST\"\n\n# Verify\nif [ ! -f \"$BACKEND_DST/start.sh\" ]; then\n  echo \"error: Backend copy failed - start.sh missing\" >&2\n  exit 1\nfi\necho \"Backend copied successfully\"\n";
+			showEnvVarsInLog = 1;
+		};
+		B2000001234567890ABCDEF1 /* Strip venv and sensitive data from backend */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 0;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/start.sh",
+			);
+			name = "Strip venv and sensitive data from backend";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/.packaged",
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# 仅 Archive 时执行：Strip venv/敏感数据，Debug 保留 venv 加快开发\nBACKEND=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\nDATA=\"$BACKEND/data\"\n\nif [ -d \"$BACKEND\" ]; then\n  find \"$BACKEND\" -type d -name \"venv\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \"__pycache__\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \".git\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  touch \"$BACKEND/.packaged\"\nfi\n\nif [ -d \"$DATA\" ]; then\n  rm -rf \"$DATA/agent_config.json\" \"$DATA/contexts\" \"$DATA/episodes\" \"$DATA/evomap\" \"$DATA/model_selection\"\n  rm -rf \"$DATA/strategy_db.json\" \"$DATA/execution_guard_metrics.jsonl\" \"$DATA/query_classifier_metrics.jsonl\"\n  rm -rf \"$DATA/signatures.json\" \"$DATA/agent_evolved_rules.md\"\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		D3EABD9E1004CB61024BFAF0 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -390,6 +504,8 @@
 				A100000B234567890ABCDEF1 /* BackendService.swift in Sources */,
 				4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */,
 				B1000001234567890ABCDEF1 /* ChatView.swift in Sources */,
+				B1C1BE120100000000000001 /* CyberGridBackground.swift in Sources */,
+				B1FADE0100000000000001A1 /* CyberGrid.metal in Sources */,
 				B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */,
 				B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */,
 				B1000007234567890ABCDEF1 /* UserMessageContent.swift in Sources */,
@@ -420,6 +536,13 @@
 				C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */,
 				E1000001234567890ABCDEF1 /* TTSService.swift in Sources */,
 				E1000003234567890ABCDEF1 /* VoiceInputService.swift in Sources */,
+				F1000001234567890ABCDEF1 /* MonitoringViewModel.swift in Sources */,
+				F1000003234567890ABCDEF1 /* MonitoringWindowView.swift in Sources */,
+				F1000005234567890ABCDEF1 /* ExecutionTimelineView.swift in Sources */,
+				F1000007234567890ABCDEF1 /* SystemStatusDashboardView.swift in Sources */,
+				F1000009234567890ABCDEF1 /* HistoryAnalysisView.swift in Sources */,
+				F100000B234567890ABCDEF1 /* LogStreamView.swift in Sources */,
+				F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -465,7 +588,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -531,7 +654,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -572,6 +695,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "用于语音输入，将您说的话转为文字发送给助手。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "用于语音识别，将您说的话转为文字并发送到对话。";
@@ -609,6 +733,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "用于语音输入，将您说的话转为文字发送给助手。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "用于语音识别，将您说的话转为文字并发送到对话。";

@@ -16,9 +16,14 @@ struct AssistantMessageContent: View {
             }
         }
         .padding(12)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(CyberColor.bg2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(CyberColor.cyan.opacity(0.15), lineWidth: 0.5)
+        )
         .cornerRadius(16)
         .cornerRadius(4, corners: .topLeft)
+        .shadow(color: CyberColor.cyan.opacity(0.08), radius: 6)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovering = hovering
@@ -48,9 +53,10 @@ struct AssistantMessageContent: View {
                 HStack(spacing: 4) {
                     ProgressView()
                         .scaleEffect(0.6)
+                        .tint(CyberColor.cyan)
                     Text("正在思考...")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CyberColor.textSecond)
                 }
             }
             
@@ -78,9 +84,10 @@ struct AssistantMessageContent: View {
                 HStack(spacing: 4) {
                     ProgressView()
                         .scaleEffect(0.6)
+                        .tint(CyberColor.cyan)
                     Text("正在思考...")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CyberColor.textSecond)
                 }
             }
             footerRow
@@ -104,7 +111,7 @@ struct AssistantMessageContent: View {
                             .font(.caption2)
                     }
                 }
-                .foregroundColor(.secondary.opacity(0.7))
+                .foregroundColor(CyberColor.textSecond)
             }
             Spacer()
             if isHovering && !message.isStreaming && !message.content.isEmpty {
@@ -117,10 +124,10 @@ struct AssistantMessageContent: View {
                         Text(showCopied ? "已复制" : "复制全部")
                             .font(.caption2)
                     }
-                    .foregroundColor(showCopied ? .green : .secondary)
+                    .foregroundColor(showCopied ? CyberColor.green : CyberColor.textSecond)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(NSColor.separatorColor).opacity(0.3))
+                    .background(CyberColor.bg1)
                     .cornerRadius(4)
                 }
                 .buttonStyle(.plain)

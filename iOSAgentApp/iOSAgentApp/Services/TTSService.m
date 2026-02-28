@@ -16,9 +16,226 @@ static NSCharacterSet *sentenceEndChars(void) {
 @property (nonatomic, assign) NSInteger spokenSentenceCount;
 @property (nonatomic, strong) NSMutableArray<NSString *> *sentenceQueue;
 @property (nonatomic, assign, readwrite) BOOL isSpeaking;
+@property (nonatomic, strong) AVSpeechSynthesisVoice *bestChineseVoice;
 @end
 
 @implementation TTSService
+
+#pragma mark - TTS Text Preprocessing
+
+/// 预处理文本：清理Markdown，百分比→中文读法，保留小数点，缩略词音译，过滤表情
++ (NSString *)preprocessForSpeech:(NSString *)text {
+    if (text.length == 0) return text;
+    NSMutableString *result = [text mutableCopy];
+
+    // 0. 清理 Markdown 语法、URL、HTML/XML标签和 thinking 块
+    {
+        // 移除 <thinking>...</thinking> 块（含内容）
+        NSRegularExpression *thinkBlock = [NSRegularExpression regularExpressionWithPattern:@"<thinking>[\\s\\S]*?</thinking>" options:NSRegularExpressionCaseInsensitive error:nil];
+        [thinkBlock replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除未闭合的 <thinking>（流式中可能没闭合）
+        NSRegularExpression *thinkOpen = [NSRegularExpression regularExpressionWithPattern:@"<thinking>[\\s\\S]*$" options:NSRegularExpressionCaseInsensitive error:nil];
+        [thinkOpen replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除所有 HTML/XML 标签 <...>
+        NSRegularExpression *htmlTags = [NSRegularExpression regularExpressionWithPattern:@"<[^>]+>" options:0 error:nil];
+        [htmlTags replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除代码块 ```...```
+        NSRegularExpression *codeBlock = [NSRegularExpression regularExpressionWithPattern:@"```[\\s\\S]*?```" options:0 error:nil];
+        [codeBlock replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除行内代码 `...`
+        NSRegularExpression *inlineCode = [NSRegularExpression regularExpressionWithPattern:@"`[^`]+`" options:0 error:nil];
+        [inlineCode replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // Markdown 链接 [text](url) → text
+        NSRegularExpression *mdLink = [NSRegularExpression regularExpressionWithPattern:@"\\[([^\\]]+)\\]\\([^)]+\\)" options:0 error:nil];
+        [mdLink replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@"$1"];
+
+        // 移除 URL
+        NSRegularExpression *url = [NSRegularExpression regularExpressionWithPattern:@"https?://[^\\s)）]+" options:0 error:nil];
+        [url replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除 Markdown 加粗/斜体: **text** → text, *text* → text, __text__ → text
+        NSRegularExpression *bold = [NSRegularExpression regularExpressionWithPattern:@"\\*{1,3}([^*]+)\\*{1,3}" options:0 error:nil];
+        [bold replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@"$1"];
+
+        NSRegularExpression *underscoreBold = [NSRegularExpression regularExpressionWithPattern:@"_{1,3}([^_]+)_{1,3}" options:0 error:nil];
+        [underscoreBold replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@"$1"];
+
+        // 移除标题符号 # ## ###
+        NSRegularExpression *heading = [NSRegularExpression regularExpressionWithPattern:@"^#{1,6}\\s*" options:NSRegularExpressionAnchorsMatchLines error:nil];
+        [heading replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除列表符号 - * 1. 2.
+        NSRegularExpression *listItem = [NSRegularExpression regularExpressionWithPattern:@"^\\s*[-*]\\s+" options:NSRegularExpressionAnchorsMatchLines error:nil];
+        [listItem replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        NSRegularExpression *numList = [NSRegularExpression regularExpressionWithPattern:@"^\\s*\\d+\\.\\s+" options:NSRegularExpressionAnchorsMatchLines error:nil];
+        [numList replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
+
+        // 移除 ~~删除线~~
+        NSRegularExpression *strikethrough = [NSRegularExpression regularExpressionWithPattern:@"~~([^~]+)~~" options:0 error:nil];
+        [strikethrough replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@"$1"];
+    }
+
+    // 1. 百分比：50% → 百分之50，3.14% → 百分之3点14
+    {
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"(\\d+(?:\\.\\d+)?)\\s*%" options:0 error:nil];
+        NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:result options:0 range:NSMakeRange(0, result.length)];
+        // 从后向前替换避免 range 偏移
+        for (NSTextCheckingResult *m in [matches reverseObjectEnumerator]) {
+            NSString *num = [result substringWithRange:[m rangeAtIndex:1]];
+            NSString *replacement = [NSString stringWithFormat:@"百分之%@", num];
+            [result replaceCharactersInRange:m.range withString:replacement];
+        }
+    }
+
+    // 2. 小数点：3.14 → 3点14（仅数字间的点）
+    {
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"(\\d)\\.(\\d)" options:0 error:nil];
+        NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:result options:0 range:NSMakeRange(0, result.length)];
+        for (NSTextCheckingResult *m in [matches reverseObjectEnumerator]) {
+            NSString *before = [result substringWithRange:[m rangeAtIndex:1]];
+            NSString *after  = [result substringWithRange:[m rangeAtIndex:2]];
+            NSString *replacement = [NSString stringWithFormat:@"%@点%@", before, after];
+            [result replaceCharactersInRange:m.range withString:replacement];
+        }
+    }
+
+    // 3. 缩略词：连续大写字母→中文字母音译 (AI→诶爱, CPU→西皮优)
+    {
+        // 英文字母中文读音映射
+        static NSDictionary<NSString *, NSString *> *letterMap;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            letterMap = @{
+                @"A": @"诶", @"B": @"比", @"C": @"西", @"D": @"迪",
+                @"E": @"伊", @"F": @"艾弗", @"G": @"吉", @"H": @"艾奇",
+                @"I": @"爱", @"J": @"杰", @"K": @"开", @"L": @"艾尔",
+                @"M": @"艾姆", @"N": @"恩", @"O": @"欧", @"P": @"皮",
+                @"Q": @"寇", @"R": @"啊", @"S": @"艾斯", @"T": @"踢",
+                @"U": @"优", @"V": @"维", @"W": @"达不留", @"X": @"艾克斯",
+                @"Y": @"歪", @"Z": @"泽"
+            };
+        });
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[A-Z]{2,}" options:0 error:nil];
+        NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:result options:0 range:NSMakeRange(0, result.length)];
+        for (NSTextCheckingResult *m in [matches reverseObjectEnumerator]) {
+            NSString *abbr = [result substringWithRange:m.range];
+            NSMutableString *phonetic = [NSMutableString string];
+            for (NSUInteger i = 0; i < abbr.length; i++) {
+                NSString *ch = [abbr substringWithRange:NSMakeRange(i, 1)];
+                NSString *mapped = letterMap[ch];
+                if (mapped) [phonetic appendString:mapped];
+                else [phonetic appendString:ch];
+            }
+            [result replaceCharactersInRange:m.range withString:phonetic];
+        }
+    }
+
+    // 4. 过滤 emoji（保留中日韩 + ASCII + 常用标点）
+    {
+        NSMutableString *filtered = [NSMutableString stringWithCapacity:result.length];
+        [result enumerateSubstringsInRange:NSMakeRange(0, result.length)
+                                   options:NSStringEnumerationByComposedCharacterSequences
+                                usingBlock:^(NSString *substring, NSRange substringRange, NSRange enclosingRange, BOOL *stop) {
+            // 取第一个字符的 Unicode 标量
+            if (substring.length == 0) return;
+            unichar first = [substring characterAtIndex:0];
+            // 跳过 surrogate pair（大多数 emoji 在增补平面），也跳过常见表情 Unicode 区间
+            BOOL isSurrogate = CFStringIsSurrogateHighCharacter(first) || CFStringIsSurrogateLowCharacter(first);
+            BOOL isEmoji = NO;
+            if (substring.length == 1) {
+                // 常见 emoji 区间：Dingbats(2700-27BF), Misc Symbols(2600-26FF),
+                // Emoticons(FE00-FE0F variation selectors), Symbols & Picts(1F000+)
+                isEmoji = (first >= 0x2600 && first <= 0x27BF) ||
+                          (first >= 0xFE00 && first <= 0xFE0F) ||
+                          (first >= 0x2B50 && first <= 0x2B55) ||
+                          (first == 0x200D); // ZWJ
+            }
+            if (!isSurrogate && !isEmoji) {
+                [filtered appendString:substring];
+            }
+        }];
+        result = filtered;
+    }
+
+    return [result copy];
+}
+
+/// 查找设备上最高质量的中文语音（Premium > Enhanced > Default）
++ (AVSpeechSynthesisVoice *)findBestChineseVoice {
+    NSArray<AVSpeechSynthesisVoice *> *allVoices = [AVSpeechSynthesisVoice speechVoices];
+    AVSpeechSynthesisVoice *best = nil;
+    NSInteger bestQuality = -1;
+
+    for (AVSpeechSynthesisVoice *voice in allVoices) {
+        // 匹配中文语音 (zh-CN, zh-TW, zh-HK)
+        if (![voice.language hasPrefix:@"zh"]) continue;
+
+        NSInteger q = (NSInteger)voice.quality; // Default=1, Enhanced=2, Premium=3
+        if (q > bestQuality) {
+            bestQuality = q;
+            best = voice;
+        }
+    }
+    // 如果没找到中文语音，fallback
+    if (!best) {
+        best = [AVSpeechSynthesisVoice voiceWithLanguage:@"zh-CN"];
+    }
+    return best;
+}
+
+/// 列出所有可用的中文语音（调试用）
++ (void)logAvailableChineseVoices {
+    for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
+        if ([voice.language hasPrefix:@"zh"]) {
+            NSLog(@"[TTS Voice] %@ | lang=%@ | quality=%ld | id=%@",
+                  voice.name, voice.language, (long)voice.quality, voice.identifier);
+        }
+    }
+}
+
++ (NSArray<AVSpeechSynthesisVoice *> *)availableChineseVoices {
+    NSMutableArray<AVSpeechSynthesisVoice *> *voices = [NSMutableArray array];
+    for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
+        if ([voice.language hasPrefix:@"zh"]) {
+            [voices addObject:voice];
+        }
+    }
+    // 按质量降序排列
+    [voices sortUsingComparator:^NSComparisonResult(AVSpeechSynthesisVoice *a, AVSpeechSynthesisVoice *b) {
+        if (a.quality != b.quality) return b.quality > a.quality ? NSOrderedDescending : NSOrderedAscending;
+        return [a.name compare:b.name];
+    }];
+    return [voices copy];
+}
+
+static NSString * const kTTSVoiceIdentifierKey = @"tts_preferred_voice_identifier";
+
+- (void)setPreferredVoiceWithIdentifier:(NSString *)identifier {
+    if (identifier) {
+        AVSpeechSynthesisVoice *voice = [AVSpeechSynthesisVoice voiceWithIdentifier:identifier];
+        if (voice) {
+            _bestChineseVoice = voice;
+            [[NSUserDefaults standardUserDefaults] setObject:identifier forKey:kTTSVoiceIdentifierKey];
+            NSLog(@"[TTS] Voice changed to: %@ (quality=%ld)", voice.name, (long)voice.quality);
+            return;
+        }
+    }
+    // nil 或找不到 → 自动选最佳
+    _bestChineseVoice = [TTSService findBestChineseVoice];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:kTTSVoiceIdentifierKey];
+    NSLog(@"[TTS] Voice reset to auto: %@", _bestChineseVoice.name);
+}
+
+- (AVSpeechSynthesisVoice *)currentVoice {
+    return _bestChineseVoice;
+}
+
 
 + (instancetype)sharedService {
     static TTSService *shared = nil;
@@ -36,16 +253,41 @@ static NSCharacterSet *sentenceEndChars(void) {
         _synthesizer.delegate = self;
         _pendingSentenceBuffer = @"";
         _sentenceQueue = [NSMutableArray array];
+
+        // 加载用户偏好语音或自动选最佳
+        NSString *savedId = [[NSUserDefaults standardUserDefaults] stringForKey:kTTSVoiceIdentifierKey];
+        if (savedId) {
+            AVSpeechSynthesisVoice *saved = [AVSpeechSynthesisVoice voiceWithIdentifier:savedId];
+            _bestChineseVoice = saved ?: [TTSService findBestChineseVoice];
+        } else {
+            _bestChineseVoice = [TTSService findBestChineseVoice];
+        }
+
+        // 配置 AVAudioSession 支持后台播放
+        NSError *error = nil;
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                         withOptions:AVAudioSessionCategoryOptionDuckOthers
+                                               error:&error];
+        if (error) {
+            NSLog(@"[TTS] AudioSession setCategory error: %@", error);
+        }
+        [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (error) {
+            NSLog(@"[TTS] AudioSession setActive error: %@", error);
+        }
+
+        NSLog(@"[TTS] Selected voice: %@ (quality=%ld)", _bestChineseVoice.name, (long)_bestChineseVoice.quality);
     }
     return self;
 }
 
 - (void)speak:(NSString *)text {
     NSString *t = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    t = [TTSService preprocessForSpeech:t];
     if (t.length == 0) return;
     [self stop];
     AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:t];
-    utterance.voice = [AVSpeechSynthesisVoice voiceWithLanguage:@"zh-CN"] ?: [AVSpeechSynthesisVoice voiceWithLanguage:@"en-US"];
+    utterance.voice = self.bestChineseVoice;
     [self.synthesizer speakUtterance:utterance];
     _isSpeaking = YES;
 }
@@ -73,8 +315,10 @@ static NSCharacterSet *sentenceEndChars(void) {
 }
 
 - (void)speakUtterance:(NSString *)text {
-    AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:text];
-    utterance.voice = [AVSpeechSynthesisVoice voiceWithLanguage:@"zh-CN"] ?: [AVSpeechSynthesisVoice voiceWithLanguage:@"en-US"];
+    NSString *processed = [TTSService preprocessForSpeech:text];
+    if (processed.length == 0) return;
+    AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:processed];
+    utterance.voice = self.bestChineseVoice;
     [self.synthesizer speakUtterance:utterance];
 }
 

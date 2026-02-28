@@ -22,14 +22,28 @@ build/
 
 # Backend / Python
 backend/venv/
+backend/lib/
+backend/.packaged
 backend/__pycache__/
 **/__pycache__/
 *.pyc
 .env
 .env.local
-backend/data/smtp_config.json
-backend/data/github_config.json
-backend/data/llm_config.json
 backend/models/
 .DS_Store
 *.log
+
+# Backend data - 敏感配置与运行时数据（不提交）
+backend/data/smtp_config.json
+backend/data/github_config.json
+backend/data/llm_config.json
+backend/data/agent_config.json
+backend/data/contexts/
+backend/data/episodes/
+backend/data/evomap/
+backend/data/model_selection/
+backend/data/strategy_db.json
+backend/data/execution_guard_metrics.jsonl
+backend/data/query_classifier_metrics.jsonl
+backend/data/signatures.json
+backend/data/agent_evolved_rules.md

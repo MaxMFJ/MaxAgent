@@ -3,12 +3,12 @@ Tool Validator - 工具调用校验
 校验工具存在性、参数合法性、enum、必填字段
 """
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 from .schema_registry import get_tool, validate_args
 
 
-def validate_tool_call(name: str, args: dict) -> Tuple[bool, str | None]:
+def validate_tool_call(name: str, args: dict) -> Tuple[bool, Optional[str]]:
     """
     校验工具调用是否合法
     

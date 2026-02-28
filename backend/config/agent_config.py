@@ -9,9 +9,9 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-# config 包在 backend/config/，数据目录为 backend/data/
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_DATA_DIR = os.path.join(_BACKEND_DIR, "data")
+# 数据目录支持 MACAGENT_DATA_DIR（打包后 Application Support）
+from paths import DATA_DIR as _DATA_DIR
+
 CONFIG_FILE = os.path.join(_DATA_DIR, "agent_config.json")
 
 # 默认启用 LangChain 兼容（未安装依赖时自动退化为原生）

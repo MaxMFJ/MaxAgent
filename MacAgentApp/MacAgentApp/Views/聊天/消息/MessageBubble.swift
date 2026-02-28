@@ -33,7 +33,7 @@ struct MessageBubble: View {
                 
                 Text(message.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(CyberColor.textSecond)
             }
             .contextMenu {
                 if message.role == .user {

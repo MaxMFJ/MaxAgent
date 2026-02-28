@@ -67,12 +67,14 @@ struct ChatView: View {
                 }
             }
             
-            Divider()
+            Rectangle()
+                .fill(CyberColor.cyan.opacity(0.25))
+                .frame(height: 1)
             
             // 输入区域
             InputBar()
         }
-        .background(Color(NSColor.textBackgroundColor))
+        .background(CyberGridBackground())
     }
     
     /// 滚动到底部，仅在未被用户手动滚动时生效

@@ -1,5 +1,6 @@
 #import "ConversationListViewController.h"
 #import "ConversationManager.h"
+#import "TechTheme.h"
 
 @interface ConversationListViewController () <UITableViewDataSource, UITableViewDelegate>
 
@@ -12,13 +13,27 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+
     self.title = NSLocalizedString(@"conversations", nil);
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
-    
+    self.view.backgroundColor = TechTheme.backgroundPrimary;
+
+    // 导航栏深色科技风格
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+        [appearance configureWithTransparentBackground];
+        appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.92];
+        appearance.titleTextAttributes = @{
+            NSForegroundColorAttributeName: TechTheme.neonCyan,
+            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+        };
+        self.navigationController.navigationBar.standardAppearance = appearance;
+        self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
+        self.navigationController.navigationBar.tintColor = TechTheme.neonCyan;
+    }
+
     ConversationManager *manager = [ConversationManager sharedManager];
     self.conversations = manager.conversations;
-    
+
     [self setupNavigationBar];
     [self setupTableView];
 }
@@ -36,8 +51,11 @@
     _tableView.dataSource = self;
     _tableView.delegate = self;
     _tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _tableView.backgroundColor = [UIColor clearColor];
+    _tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    _tableView.separatorColor = [TechTheme.neonCyan colorWithAlphaComponent:0.1];
     [_tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"ConversationCell"];
-    _tableView.rowHeight = 60;
+    _tableView.rowHeight = 64;
     [self.view addSubview:_tableView];
 }
 
@@ -66,33 +84,42 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"ConversationCell" forIndexPath:indexPath];
-    
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"ConversationCell"];
-    }
-    
+
     Conversation *conversation = self.conversations[indexPath.row];
     ConversationManager *manager = [ConversationManager sharedManager];
-    
+    BOOL isActive = [conversation.conversationId isEqualToString:manager.currentConversation.conversationId];
+
+    // 重用时清理旧进度条
+    cell.backgroundColor = isActive
+        ? [TechTheme.neonCyan colorWithAlphaComponent:0.07]
+        : [UIColor clearColor];
+    cell.selectedBackgroundView = [[UIView alloc] init];
+    cell.selectedBackgroundView.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.12];
+
     cell.textLabel.text = conversation.title;
-    
+    cell.textLabel.textColor = isActive ? TechTheme.neonCyan : TechTheme.textPrimary;
+    cell.textLabel.font = [UIFont monospacedSystemFontOfSize:14 weight:isActive ? UIFontWeightSemibold : UIFontWeightRegular];
+
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     formatter.dateStyle = NSDateFormatterShortStyle;
     formatter.timeStyle = NSDateFormatterShortStyle;
-    
-    NSString *messageCount = [NSString stringWithFormat:@"%lu %@", (unsigned long)conversation.messages.count, NSLocalizedString(@"messages", @"messages")];
+    NSString *messageCount = [NSString stringWithFormat:@"%lu msgs", (unsigned long)conversation.messages.count];
     NSString *timeStr = [formatter stringFromDate:conversation.updatedAt];
     cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@", messageCount, timeStr];
-    cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
-    
-    if ([conversation.conversationId isEqualToString:manager.currentConversation.conversationId]) {
-        cell.accessoryType = UITableViewCellAccessoryCheckmark;
-        cell.textLabel.font = [UIFont boldSystemFontOfSize:17];
+    cell.detailTextLabel.textColor = isActive ? [TechTheme.neonCyan colorWithAlphaComponent:0.6] : TechTheme.textDim;
+    cell.detailTextLabel.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
+
+    if (isActive) {
+        UIImage *checkImg = [UIImage systemImageNamed:@"checkmark.circle.fill"];
+        UIImageView *check = [[UIImageView alloc] initWithImage:checkImg];
+        check.tintColor = TechTheme.neonCyan;
+        check.frame = CGRectMake(0, 0, 20, 20);
+        cell.accessoryView = check;
     } else {
+        cell.accessoryView = nil;
         cell.accessoryType = UITableViewCellAccessoryNone;
-        cell.textLabel.font = [UIFont systemFontOfSize:17];
     }
-    
+
     return cell;
 }
 

@@ -107,7 +107,9 @@ class LocalLLMManager:
         return configs
 
     async def check_lm_studio(self, url: Optional[str] = None) -> list[LocalLLMConfig]:
-        """Check LM Studio and return configs for all available models (retry on 502 with backoff). URL 来自配置（多端口时由 Mac 设置或 llm_config 指定），未配置时默认 1234。"""
+        """Check LM Studio and return configs for all available models (retry on 502 with backoff).
+        支持两种 API：新 LM Studio 用 /api/v1/models（返回 models 数组），OpenAI 兼容用 /v1/models（返回 data 数组）。
+        """
         if url is None or url == "":
             try:
                 from config.llm_config import get_lm_studio_base_url
@@ -115,39 +117,45 @@ class LocalLLMManager:
             except Exception:
                 url = "http://localhost:1234"
         base = self._direct_local_url(url).rstrip("/")
-        if not base.endswith("/v1"):
-            base = f"{base}/v1"
+        if base.endswith("/v1"):
+            base = base[:-3].rstrip("/")
         configs: list[LocalLLMConfig] = []
+        paths_to_try = [(f"{base}/api/v1/models", "models", "key"), (f"{base}/v1/models", "data", "id")]
         for attempt in range(len(self._502_BACKOFF) + 1):
-            try:
-                async with httpx.AsyncClient(timeout=8.0, trust_env=False) as client:
-                    response = await client.get(f"{base}/models", headers=self._API_HEADERS)
-                    if response.status_code == 200:
-                        data = response.json()
-                        models = data.get("data", [])
-                        for m in models:
-                            mid = m.get("id", "")
-                            if mid:
-                                configs.append(LocalLLMConfig(
-                                    provider=LocalLLMProvider.LM_STUDIO,
-                                    base_url=base,
-                                    model=mid,
-                                    api_key="lm-studio",
-                                ))
-                        if configs:
-                            logger.info(f"LM Studio: {len(configs)} models ({', '.join(c.model for c in configs)})")
-                        else:
-                            logger.warning("LM Studio running but no models loaded")
-                        return configs
-                    if response.status_code == 502 and attempt < len(self._502_BACKOFF):
-                        delay = self._502_BACKOFF[attempt]
-                        logger.debug("LM Studio returned 502 (server/model may be starting), retry after %.0fs: %s", delay, (response.text or "")[:200])
-                        await asyncio.sleep(delay)
-                        continue
-            except Exception as e:
-                logger.debug(f"LM Studio not available: {e}")
-                if attempt < len(self._502_BACKOFF):
-                    await asyncio.sleep(self._502_BACKOFF[attempt])
+            for path, array_key, id_key in paths_to_try:
+                try:
+                    async with httpx.AsyncClient(timeout=8.0, trust_env=False) as client:
+                        response = await client.get(path, headers=self._API_HEADERS)
+                        if response.status_code == 200:
+                            data = response.json()
+                            models = data.get(array_key, [])
+                            api_base = f"{base}/v1" if "api/v1" in path else f"{base}/v1"
+                            for m in models:
+                                if array_key == "models" and m.get("type") != "llm":
+                                    continue
+                                mid = m.get(id_key) or m.get("id", "")
+                                if mid:
+                                    configs.append(LocalLLMConfig(
+                                        provider=LocalLLMProvider.LM_STUDIO,
+                                        base_url=api_base,
+                                        model=mid,
+                                        api_key="lm-studio",
+                                    ))
+                            if configs:
+                                logger.info(f"LM Studio: {len(configs)} models ({', '.join(c.model for c in configs)})")
+                            else:
+                                logger.warning("LM Studio running but no models loaded")
+                            return configs
+                        if response.status_code == 502 and attempt < len(self._502_BACKOFF):
+                            delay = self._502_BACKOFF[attempt]
+                            logger.debug("LM Studio returned 502 (server/model may be starting), retry after %.0fs: %s", delay, (response.text or "")[:200])
+                            await asyncio.sleep(delay)
+                            continue
+                except Exception as e:
+                    logger.debug(f"LM Studio not available at {path}: {e}")
+                    continue
+            if attempt < len(self._502_BACKOFF):
+                await asyncio.sleep(self._502_BACKOFF[attempt])
         return configs
 
     @staticmethod

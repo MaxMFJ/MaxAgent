@@ -5,7 +5,7 @@ Runtime Registry - 注册式适配器管理
 
 import platform
 import logging
-from typing import Callable, Dict, List, Optional, Type
+from typing import Callable, Dict, List, Optional, Type, Union
 
 from .base import RuntimeAdapter
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # 适配器工厂：system_name -> (adapter_class | factory_callable)
 # 允许 register(system, AdapterClass) 或 register(system, lambda: get_remote_adapter())
-_REGISTRY: Dict[str, Type[RuntimeAdapter] | Callable[[], RuntimeAdapter]] = {}
+_REGISTRY: Dict[str, Union[Type[RuntimeAdapter], Callable[[], RuntimeAdapter]]] = {}
 
 # 平台名映射
 _SYSTEM_MAP = {"Darwin": "darwin", "Linux": "linux", "Windows": "windows"}
@@ -24,7 +24,7 @@ def current_platform() -> str:
     return _SYSTEM_MAP.get(platform.system(), platform.system().lower())
 
 
-def register(system: str, adapter_cls_or_factory: Type[RuntimeAdapter] | Callable[[], RuntimeAdapter]) -> None:
+def register(system: str, adapter_cls_or_factory: Union[Type[RuntimeAdapter], Callable[[], RuntimeAdapter]]) -> None:
     """
     注册适配器
     - adapter_cls_or_factory: 类（无参实例化）或工厂函数

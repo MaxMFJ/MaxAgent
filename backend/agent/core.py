@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from typing import List, Dict, Any, Optional, AsyncGenerator
 
 from .execution_log_handler import QueueLogHandler
@@ -302,7 +303,18 @@ class AgentCore:
             tool_calls = []
             current_content = ""
             finish_reason = None
-            
+            llm_start = time.time()
+            provider = self.llm.config.provider
+            model = self.llm.config.model or ""
+
+            # 供监控中心 exec 展示在线 LLM 请求
+            yield {
+                "type": "llm_request_start",
+                "provider": provider,
+                "model": model,
+                "iteration": iteration,
+            }
+
             try:
                 logger.info(f"Starting LLM stream (local_mode={use_local_mode})...")
                 async for chunk in self.llm.chat_stream(
@@ -335,10 +347,37 @@ class AgentCore:
                             total_usage["completion_tokens"] += usage.get("completion_tokens", 0)
                             total_usage["total_tokens"] += usage.get("total_tokens", 0)
                             logger.info(f"Accumulated token usage: {total_usage}")
+                        # 供监控中心 exec 展示在线 LLM 返回
+                        latency_ms = int((time.time() - llm_start) * 1000)
+                        yield {
+                            "type": "llm_request_end",
+                            "provider": provider,
+                            "model": model,
+                            "iteration": iteration,
+                            "latency_ms": latency_ms,
+                            "usage": {
+                                "prompt_tokens": total_usage["prompt_tokens"],
+                                "completion_tokens": total_usage["completion_tokens"],
+                                "total_tokens": total_usage["total_tokens"],
+                            },
+                            "response_preview": (current_content[:200] + "…") if len(current_content) > 200 else current_content,
+                        }
                     
                     elif chunk["type"] == "error":
                         logger.error(f"Stream error: {chunk.get('error')}")
-                        yield {"type": "error", "error": chunk["error"]}
+                        err_msg = chunk.get("error", "unknown")
+                        latency_ms = int((time.time() - llm_start) * 1000)
+                        yield {
+                            "type": "llm_request_end",
+                            "provider": provider,
+                            "model": model,
+                            "iteration": iteration,
+                            "latency_ms": latency_ms,
+                            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                            "response_preview": None,
+                            "error": str(err_msg)[:200],
+                        }
+                        yield {"type": "error", "error": err_msg}
                         return
                 
                 # ── 截断自动续传：finish_reason=length 且 tool call 参数不完整 ──
@@ -346,6 +385,17 @@ class AgentCore:
                     has_truncated = any(tc.get("_truncated") for tc in tool_calls)
                     if has_truncated and truncation_retries < MAX_TRUNCATION_RETRIES:
                         truncation_retries += 1
+                        latency_ms = int((time.time() - llm_start) * 1000)
+                        yield {
+                            "type": "llm_request_end",
+                            "provider": provider,
+                            "model": model,
+                            "iteration": iteration,
+                            "latency_ms": latency_ms,
+                            "usage": dict(total_usage),
+                            "response_preview": (current_content[:200] + "…") if len(current_content) > 200 else current_content,
+                            "error": "truncated",
+                        }
                         tool_names = ", ".join(tc["name"] for tc in tool_calls)
                         logger.warning(
                             f"Tool call truncated (retry {truncation_retries}/{MAX_TRUNCATION_RETRIES}), "

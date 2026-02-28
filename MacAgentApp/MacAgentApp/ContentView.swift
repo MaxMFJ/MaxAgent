@@ -1,8 +1,13 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @StateObject private var processManager = ProcessManager.shared
+    @State private var showRestartAlert = false
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         HSplitView {
@@ -63,25 +68,44 @@ struct ContentView: View {
             }
             
             ToolbarItemGroup(placement: .primaryAction) {
-                Button(action: { 
+                Button(action: { openWindow(id: "monitoring") }) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .foregroundColor(Color(red: 0, green: 0.9, blue: 1.0).opacity(0.7))
+                }
+                .help("打开监控仪表板")
+
+                Button(action: {
                     withAnimation {
                         viewModel.showToolPanel.toggle()
                     }
                 }) {
                     Image(systemName: "sidebar.right")
-                        .foregroundColor(viewModel.showToolPanel ? .accentColor : .secondary)
+                        .foregroundColor(viewModel.showToolPanel ? Color(red: 0, green: 0.9, blue: 1.0) : Color(red: 0, green: 0.9, blue: 1.0).opacity(0.5))
                 }
                 .help(viewModel.showToolPanel ? "隐藏工具面板" : "显示工具面板")
                 
                 Button(action: { viewModel.showSettings = true }) {
                     Image(systemName: "gear")
+                        .foregroundColor(Color(red: 0, green: 0.9, blue: 1.0).opacity(0.7))
                 }
                 .help("设置")
             }
         }
-        .navigationTitle("MacAgent")
+        .navigationTitle("Chow Duck")
+        .toolbarBackground(Color(red: 0.04, green: 0.04, blue: 0.08).opacity(0.85), for: .windowToolbar)
+        .toolbarColorScheme(.dark, for: .windowToolbar)
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsView()
+        }
+        .alert("重启应用", isPresented: $showRestartAlert) {
+            Button("确定") {
+                restartApp()
+            }
+        } message: {
+            Text("后端设置已更改，即将重启应用以生效。")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .backendSettingDidChange)) { _ in
+            showRestartAlert = true
         }
         .onAppear {
             viewModel.connect()
@@ -99,6 +123,20 @@ struct ContentView: View {
             }
         }
     }
+    
+    /// 重新启动当前 App（用于后端设置更改后恢复，避免用户误以为程序关闭）
+    private func restartApp() {
+#if os(macOS)
+        let path = Bundle.main.bundlePath
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        proc.arguments = ["-n", path]
+        try? proc.run()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApplication.shared.terminate(nil)
+        }
+#endif
+    }
 }
 
 struct ServiceStatusIndicator: View {
@@ -110,14 +148,20 @@ struct ServiceStatusIndicator: View {
         Button(action: onTap) {
             HStack(spacing: 4) {
                 Circle()
-                    .fill(isRunning ? Color.green : Color.red)
+                    .fill(isRunning ? CyberColor.green : CyberColor.red)
                     .frame(width: 8, height: 8)
+                    .shadow(color: (isRunning ? CyberColor.green : CyberColor.red).opacity(0.5), radius: 4)
                 Text(label)
-                    .font(.caption)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(CyberColor.textPrimary)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(CyberColor.bg2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(CyberColor.border, lineWidth: 0.5)
+            )
             .cornerRadius(6)
         }
         .buttonStyle(.plain)

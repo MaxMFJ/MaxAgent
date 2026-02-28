@@ -33,7 +33,11 @@ struct InputBar: View {
             .frame(minHeight: 36, maxHeight: 120)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(viewModel.isVoiceInputActive ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor))
+            .background(viewModel.isVoiceInputActive ? CyberColor.red.opacity(0.12) : CyberColor.bg2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(CyberColor.cyan.opacity(0.25), lineWidth: 0.5)
+            )
             .cornerRadius(20)
             
             HStack(spacing: 10) {
@@ -41,7 +45,7 @@ struct InputBar: View {
                 Button(action: toggleVoiceInput) {
                     Image(systemName: viewModel.isVoiceInputActive ? "mic.fill" : "mic")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(viewModel.isVoiceInputActive ? .red : (viewModel.isLoading ? Color.primary.opacity(0.5) : .accentColor))
+                        .foregroundColor(viewModel.isVoiceInputActive ? .red : (viewModel.isLoading ? CyberColor.textSecond.opacity(0.5) : CyberColor.cyan))
                         .frame(width: 36, height: 36)
                         .background(viewModel.isVoiceInputActive ? Color.red.opacity(0.15) : Color.clear)
                         .clipShape(Circle())
@@ -54,9 +58,9 @@ struct InputBar: View {
                 Button(action: sendAutonomousTask) {
                     Image(systemName: "robot")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(canSend ? .orange : Color.primary.opacity(0.5))
+                        .foregroundColor(canSend ? CyberColor.green : CyberColor.textSecond.opacity(0.5))
                         .frame(width: 36, height: 36)
-                        .background(canSend ? Color.orange.opacity(0.15) : Color.clear)
+                        .background(canSend ? CyberColor.green.opacity(0.15) : Color.clear)
                         .clipShape(Circle())
                         .contentShape(Rectangle())
                 }
@@ -68,7 +72,7 @@ struct InputBar: View {
                 Button(action: viewModel.isLoading ? { viewModel.stopTask() } : onSubmit) {
                     Image(systemName: viewModel.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundColor(viewModel.isLoading ? .red : (canSendOrVoice ? .accentColor : Color.primary.opacity(0.5)))
+                        .foregroundColor(viewModel.isLoading ? CyberColor.red : (canSendOrVoice ? CyberColor.cyan : CyberColor.textSecond.opacity(0.5)))
                         .frame(width: 36, height: 36)
                         .contentShape(Rectangle())
                 }
@@ -80,7 +84,7 @@ struct InputBar: View {
             .fixedSize(horizontal: true, vertical: false)
         }
         .padding()
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(CyberColor.bg1)
     }
     
     private var canSend: Bool {

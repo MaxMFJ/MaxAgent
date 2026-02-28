@@ -2,6 +2,8 @@
 #import "ServerConfig.h"
 #import "WebSocketService.h"
 #import <AVFoundation/AVFoundation.h>
+#import "TechTheme.h"
+#import "TTSService.h"
 
 static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 static NSString * const kUserDefaultsSTTSilenceSeconds = @"sttSilenceSeconds";
@@ -43,7 +45,22 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     [super viewDidLoad];
     
     self.title = NSLocalizedString(@"settings", nil);
-    self.tableView.backgroundColor = [UIColor systemGroupedBackgroundColor];
+    self.tableView.backgroundColor = TechTheme.backgroundPrimary;
+    self.tableView.separatorColor = [TechTheme.neonCyan colorWithAlphaComponent:0.12];
+
+    // 导航栏深色科技风格
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+        [appearance configureWithTransparentBackground];
+        appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.92];
+        appearance.titleTextAttributes = @{
+            NSForegroundColorAttributeName: TechTheme.neonCyan,
+            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+        };
+        self.navigationController.navigationBar.standardAppearance = appearance;
+        self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
+        self.navigationController.navigationBar.tintColor = TechTheme.neonCyan;
+    }
     
     UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneButtonTapped)];
     self.navigationItem.rightBarButtonItem = doneButton;
@@ -130,6 +147,49 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
+- (void)showVoicePicker {
+    NSArray<AVSpeechSynthesisVoice *> *voices = [TTSService availableChineseVoices];
+    AVSpeechSynthesisVoice *current = [TTSService sharedService].currentVoice;
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"选择朗读声音"
+                                                                  message:@"选中的语音会立即试听"
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+
+    // 自动选择选项
+    UIAlertAction *autoAction = [UIAlertAction actionWithTitle:@"🔄 自动（最高质量）" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [[TTSService sharedService] setPreferredVoiceWithIdentifier:nil];
+        [self.tableView reloadData];
+    }];
+    [alert addAction:autoAction];
+
+    for (AVSpeechSynthesisVoice *voice in voices) {
+        NSString *qualityStr = @"普通";
+        if ((NSInteger)voice.quality >= 2) qualityStr = @"增强";
+        if ((NSInteger)voice.quality >= 3) qualityStr = @"优质";
+
+        NSString *title = [NSString stringWithFormat:@"%@ [%@] %@", voice.name, qualityStr, voice.language];
+        if ([voice.identifier isEqualToString:current.identifier]) {
+            title = [NSString stringWithFormat:@"✓ %@", title];
+        }
+
+        UIAlertAction *action = [UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+            [[TTSService sharedService] setPreferredVoiceWithIdentifier:voice.identifier];
+            // 试听
+            [[TTSService sharedService] speak:@"你好，我是你的语音助手"];
+            [self.tableView reloadData];
+        }];
+        [alert addAction:action];
+    }
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+
+    // iPad 兼容
+    alert.popoverPresentationController.sourceView = self.tableView;
+    alert.popoverPresentationController.sourceRect = [self.tableView rectForRowAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:SettingsSectionVoice]];
+
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
 - (void)connectButtonTapped {
     [self saveConfig];
     [[WebSocketService sharedService] disconnect];
@@ -191,7 +251,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     switch (section) {
         case SettingsSectionServer: return 2;
         case SettingsSectionStatus: return 2;
-        case SettingsSectionVoice: return 2;
+        case SettingsSectionVoice: return 3;
         case SettingsSectionActions: return 2;
         default: return 0;
     }
@@ -212,7 +272,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
         return NSLocalizedString(@"server_config_footer", nil);
     }
     if (section == SettingsSectionVoice) {
-        return NSLocalizedString(@"voice_section_footer", nil);
+        return @"\u2139\uFE0F \u53EF\u5728 \u8BBE\u7F6E > \u8F85\u52A9\u529F\u80FD > \u5B9E\u65F6\u8BED\u97F3 > \u6DFB\u52A0\u9996\u9009\u58F0\u97F3 \u4E2D\u4E0B\u8F7D\u66F4\u591A\u9AD8\u8D28\u91CF\u8BED\u97F3";
     }
     return nil;
 }
@@ -305,6 +365,16 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
                 }
                 self.ttsSwitch.on = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled];
                 cell.accessoryView = self.ttsSwitch;
+            } else if (indexPath.row == 1) {
+                cell.textLabel.text = @"\u6717\u8BFB\u58F0\u97F3";
+                AVSpeechSynthesisVoice *voice = [TTSService sharedService].currentVoice;
+                NSString *qualityStr = @"";
+                if ((NSInteger)voice.quality >= 2) qualityStr = @" (\u589E\u5F3A)";
+                if ((NSInteger)voice.quality >= 3) qualityStr = @" (\u4F18\u8D28)";
+                cell.detailTextLabel.text = [NSString stringWithFormat:@"%@%@ - %@", voice.name, qualityStr, voice.language];
+                cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                cell.selectionStyle = UITableViewCellSelectionStyleDefault;
             } else {
                 cell.textLabel.text = NSLocalizedString(@"stt_voice_input", nil);
                 cell.detailTextLabel.text = NSLocalizedString(@"stt_voice_input_hint", nil);
@@ -340,6 +410,10 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
     if (indexPath.section == SettingsSectionVoice && indexPath.row == 0) {
         [self.ttsSwitch setOn:!self.ttsSwitch.isOn animated:YES];
         [self ttsSwitchChanged:self.ttsSwitch];
+    }
+    
+    if (indexPath.section == SettingsSectionVoice && indexPath.row == 1) {
+        [self showVoicePicker];
     }
     
     if (indexPath.section == SettingsSectionActions) {

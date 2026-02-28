@@ -36,6 +36,8 @@
 
 ## 快速开始
 
+**新机器部署或遇环境/依赖问题可参考 [新环境部署指南](docs/新环境部署指南.md)。**
+
 ### 1. 安装 Python 依赖
 
 ```bash
@@ -101,6 +103,20 @@ xcodebuild -project MacAgentApp.xcodeproj -scheme MacAgentApp -configuration Deb
 4. 重新编译运行，在系统设置中对该路径下的 **MacAgentApp** 授权一次
 
 若出现 **「Framework 'Pods_MacAgentApp' not found」**，请确认已用 `.xcworkspace` 打开并执行过 `pod install`。
+
+---
+
+## 打包与后台内置
+
+**后台已内置到 Mac App**：构建时通过 Build Phase 将 `backend/` 复制到 `MacAgentApp.app/Contents/Resources/backend/`，用户无需单独部署后端。
+
+- **体积**：~180MB（仅核心依赖）。RAG/向量搜索（~600MB）在用户首次启用时自动安装到 Application Support，0 操作。
+
+- **启动/关闭**：应用内工具栏或服务管理页的「后端」开关控制启停
+- **可写数据**：Bundle 内 `data/` 只读，配置持久化到 `~/Library/Application Support/com.macagent.app/backend_data/`
+- **路径**：`ProcessManager.getBackendPath()` 优先使用 Bundle 内 backend，开发时回退到项目 `backend/`
+
+详见 `docs/打包技术路线-后台集成.md`。
 
 ---
 

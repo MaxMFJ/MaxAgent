@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <AVFoundation/AVFoundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -7,7 +8,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) BOOL isSpeaking;
 
+/// 当前使用的语音
+@property (nonatomic, strong, readonly) AVSpeechSynthesisVoice *currentVoice;
+
 + (instancetype)sharedService;
+
+/// 获取设备上所有可用的中文语音
++ (NSArray<AVSpeechSynthesisVoice *> *)availableChineseVoices;
+
+/// 设置用户选择的语音（传 nil 则自动选最佳）
+- (void)setPreferredVoiceWithIdentifier:(nullable NSString *)identifier;
 
 /// 朗读完整一段文字（会先停止当前朗读）
 - (void)speak:(NSString *)text;

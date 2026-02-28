@@ -31,7 +31,7 @@ struct ErrorBannerView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.red)
+            .background(CyberColor.red.opacity(0.85))
             
             if isExpanded {
                 ScrollView {
@@ -43,7 +43,7 @@ struct ErrorBannerView: View {
                         .padding(12)
                 }
                 .frame(maxHeight: 150)
-                .background(Color.red.opacity(0.8))
+                .background(CyberColor.bg1)
             }
         }
     }

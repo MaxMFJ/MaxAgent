@@ -81,5 +81,12 @@ backend/
 
 ## 数据与脚本
 
-- **data/**：由各 config 与 agent 模块读写（如 `data/llm_config.json`、`data/contexts/`、`data/episodes/`）。不纳入版本控制的运行时文件应已在 `.gitignore`。
+- **data/**：由各 config 与 agent 模块读写（如 `data/llm_config.json`、`data/contexts/`、`data/episodes/`、`data/traces/`）。不纳入版本控制的运行时文件应已在 `.gitignore`。
 - **scripts/**：独立脚本（如下载 embedding 模型、SMTP 测试），非服务常驻代码。
+
+---
+
+## 相关文档
+
+- 文档总览与主线目标点：[README.md](README.md)
+- 目标与路线图：[主线目标与路线图.md](主线目标与路线图.md)

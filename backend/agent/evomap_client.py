@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 EVOMAP_BASE_URL = os.environ.get("EVOMAP_BASE_URL", "https://evomap.ai/api/v1")
 EVOMAP_API_KEY = os.environ.get("EVOMAP_API_KEY", "")
 
-DATA_DIR = Path(os.path.dirname(__file__)).parent / "data" / "evomap"
+from paths import DATA_DIR as _DATA_ROOT
+DATA_DIR = Path(_DATA_ROOT) / "evomap"
 GENES_FILE = DATA_DIR / "genes.json"
 CAPSULES_FILE = DATA_DIR / "capsules.json"
 EVENTS_FILE = DATA_DIR / "events.jsonl"

@@ -357,9 +357,10 @@ class MacRuntimeAdapter(RuntimeAdapter):
             return r.success, r.error
     
     async def type_text(self, text: str) -> Tuple[bool, str]:
+        escaped = text.replace('"', '\\"')
         script = f'''
         tell application "System Events"
-            keystroke "{text.replace('"', '\\"')}"
+            keystroke "{escaped}"
         end tell
         '''
         r = await self._run_applescript(script)

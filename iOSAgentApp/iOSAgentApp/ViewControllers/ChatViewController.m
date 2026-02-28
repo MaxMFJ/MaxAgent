@@ -10,6 +10,8 @@
 #import "ConversationManager.h"
 #import "TTSService.h"
 #import "VoiceInputService.h"
+#import "TechTheme.h"
+#import "VoiceRainbowView.h"
 
 @interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate>
 
@@ -22,6 +24,13 @@
 @property (nonatomic, strong, nullable) Message *currentAssistantMessage;
 @property (nonatomic, strong) NSLayoutConstraint *inputViewBottomConstraint;
 @property (nonatomic, strong, nullable) NSTimer *autonomousTimeoutTimer;
+@property (nonatomic, strong) VoiceRainbowView *voiceRainbow;
+
+// 网格背景图层（用于动态更新颜色）
+@property (nonatomic, strong) CAShapeLayer *gridDim;
+@property (nonatomic, strong) CAShapeLayer *gridBright;
+@property (nonatomic, strong) CAShapeLayer *nodesDim;
+@property (nonatomic, strong) CAShapeLayer *nodesBright;
 
 @end
 
@@ -31,8 +40,12 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+
+    // 深空黑主背景
+    self.view.backgroundColor = TechTheme.backgroundPrimary;
+
+    // 添加网格背景动画
+    [self setupGridBackground];
     
     [self setupNavigationBar];
     [self setupUI];
@@ -53,6 +66,8 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     [VoiceInputService sharedService].onShouldSubmit = ^(NSString *text) {
         dispatch_async(dispatch_get_main_queue(), ^{
             wself.inputView.voiceInputActive = NO;
+            [wself.voiceRainbow stopFlowing];
+            [wself.voiceRainbow hideAnimated];
             [wself.inputView setText:@""];
             if (text.length > 0) {
                 [wself inputView:wself.inputView didSendMessage:text];
@@ -72,6 +87,13 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+
+    // 将彩虹视图添加到 window 最上层（不被导航栏截断）
+    if (!_voiceRainbow.superview && self.view.window) {
+        _voiceRainbow.frame = self.view.window.bounds;
+        _voiceRainbow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [self.view.window addSubview:_voiceRainbow];
+    }
     
     if ([ServerConfig sharedConfig].serverURL.length == 0) {
         [self showSettings];
@@ -80,48 +102,203 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     }
 }
 
+#pragma mark - Grid Background
+
+- (void)setupGridBackground {
+    CGFloat w = UIScreen.mainScreen.bounds.size.width;
+    CGFloat h = UIScreen.mainScreen.bounds.size.height;
+    CGFloat step = 44;
+
+    // ---- 构建网格路径 ----
+    UIBezierPath *linePath = [UIBezierPath bezierPath];
+    for (CGFloat x = 0; x < w; x += step) {
+        [linePath moveToPoint:CGPointMake(x, 0)];
+        [linePath addLineToPoint:CGPointMake(x, h)];
+    }
+    for (CGFloat y = 0; y < h; y += step) {
+        [linePath moveToPoint:CGPointMake(0, y)];
+        [linePath addLineToPoint:CGPointMake(w, y)];
+    }
+
+    // ---- 构建节点路径 ----
+    UIBezierPath *nodePath = [UIBezierPath bezierPath];
+    UIBezierPath *nodeBrightPath = [UIBezierPath bezierPath];
+    for (CGFloat x = 0; x < w; x += step) {
+        for (CGFloat y = 0; y < h; y += step) {
+            [nodePath appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(x - 1.5, y - 1.5, 3, 3)]];
+            [nodeBrightPath appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(x - 2.5, y - 2.5, 5, 5)]];
+        }
+    }
+
+    // ---- 1. 暗层：始终可见的底色网格 ----
+    _gridDim = [CAShapeLayer layer];
+    _gridDim.path = linePath.CGPath;
+    _gridDim.strokeColor = [TechTheme.neonCyan colorWithAlphaComponent:0.06].CGColor;
+    _gridDim.lineWidth = 0.5;
+    _gridDim.fillColor = nil;
+    _gridDim.frame = CGRectMake(0, 0, w, h);
+    [self.view.layer insertSublayer:_gridDim atIndex:0];
+
+    _nodesDim = [CAShapeLayer layer];
+    _nodesDim.path = nodePath.CGPath;
+    _nodesDim.fillColor = [TechTheme.neonCyan colorWithAlphaComponent:0.08].CGColor;
+    _nodesDim.strokeColor = nil;
+    _nodesDim.frame = CGRectMake(0, 0, w, h);
+    [self.view.layer insertSublayer:_nodesDim atIndex:1];
+
+    // ---- 2. 亮层：通过波浪遮罩让网格明暗波动 ----
+    _gridBright = [CAShapeLayer layer];
+    _gridBright.path = linePath.CGPath;
+    _gridBright.strokeColor = [TechTheme.neonCyan colorWithAlphaComponent:0.30].CGColor;
+    _gridBright.lineWidth = 1.0;
+    _gridBright.fillColor = nil;
+    _gridBright.frame = CGRectMake(0, 0, w, h);
+    [self.view.layer insertSublayer:_gridBright atIndex:2];
+
+    _nodesBright = [CAShapeLayer layer];
+    _nodesBright.path = nodeBrightPath.CGPath;
+    _nodesBright.fillColor = [TechTheme.neonCyan colorWithAlphaComponent:0.40].CGColor;
+    _nodesBright.strokeColor = nil;
+    _nodesBright.frame = CGRectMake(0, 0, w, h);
+    [self.view.layer insertSublayer:_nodesBright atIndex:3];
+
+    // ---- 3. 遮罩：亮带在中间，首尾透明确保无缝循环 ----
+    CGFloat maskH = h * 5;
+    CAGradientLayer *waveMask = [CAGradientLayer layer];
+    waveMask.frame = CGRectMake(0, 0, w, maskH);
+    waveMask.startPoint = CGPointMake(0.5, 0);
+    waveMask.endPoint   = CGPointMake(0.5, 1);
+    // 首尾均为透明，亮带在 0.25~0.50 区间，确保循环首尾无缝
+    waveMask.colors = @[
+        (id)[UIColor clearColor].CGColor,       // 0.00 头部透明
+        (id)[UIColor clearColor].CGColor,       // 0.20
+        (id)[UIColor whiteColor].CGColor,       // 0.28 第一道亮带
+        (id)[UIColor whiteColor].CGColor,       // 0.32
+        (id)[UIColor clearColor].CGColor,       // 0.38
+        (id)[[UIColor whiteColor] colorWithAlphaComponent:0.5].CGColor, // 0.44 第二道弱亮带
+        (id)[UIColor whiteColor].CGColor,       // 0.48
+        (id)[[UIColor whiteColor] colorWithAlphaComponent:0.5].CGColor, // 0.52
+        (id)[UIColor clearColor].CGColor,       // 0.58
+        (id)[UIColor clearColor].CGColor,       // 0.80 尾部透明
+        (id)[UIColor clearColor].CGColor        // 1.00
+    ];
+    waveMask.locations = @[@0.0, @0.20, @0.28, @0.32, @0.38,
+                           @0.44, @0.48, @0.52, @0.58, @0.80, @1.0];
+    _gridBright.mask = waveMask;
+
+    // 滚动范围：从亮带在屏幕上方 → 完整扫过 → 亮带在屏幕下方
+    CABasicAnimation *waveScroll = [CABasicAnimation animationWithKeyPath:@"position.y"];
+    waveScroll.fromValue = @(-maskH * 0.3);
+    waveScroll.toValue   = @(h + maskH * 0.3);
+    waveScroll.duration  = 16.0;
+    waveScroll.repeatCount = HUGE_VALF;
+    waveScroll.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear];
+    [waveMask addAnimation:waveScroll forKey:@"waveScroll"];
+
+    // ---- 4. 节点遮罩（同步偏移）----
+    CAGradientLayer *nodeMask = [CAGradientLayer layer];
+    nodeMask.frame = CGRectMake(0, 0, w, maskH);
+    nodeMask.startPoint = CGPointMake(0.5, 0);
+    nodeMask.endPoint   = CGPointMake(0.5, 1);
+    nodeMask.colors = waveMask.colors;
+    nodeMask.locations = waveMask.locations;
+    _nodesBright.mask = nodeMask;
+
+    CABasicAnimation *nodeScroll = [CABasicAnimation animationWithKeyPath:@"position.y"];
+    nodeScroll.fromValue = @(-maskH * 0.25);
+    nodeScroll.toValue   = @(h + maskH * 0.35);
+    nodeScroll.duration  = 16.0;
+    nodeScroll.repeatCount = HUGE_VALF;
+    nodeScroll.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear];
+    [nodeMask addAnimation:nodeScroll forKey:@"nodeScroll"];
+}
+
 #pragma mark - Setup
 
 - (void)setupNavigationBar {
+    // 导航栏半透明深色 + 霓虹青色按钮
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+        [appearance configureWithTransparentBackground];
+        appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.85];
+        appearance.titleTextAttributes = @{
+            NSForegroundColorAttributeName: TechTheme.neonCyan,
+            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+        };
+        self.navigationController.navigationBar.standardAppearance = appearance;
+        self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
+        self.navigationController.navigationBar.tintColor = TechTheme.neonCyan;
+    }
+
     UIBarButtonItem *newChatButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"square.and.pencil"] style:UIBarButtonItemStylePlain target:self action:@selector(createNewConversation)];
-    
     UIBarButtonItem *settingsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gear"] style:UIBarButtonItemStylePlain target:self action:@selector(showSettings)];
-    
     self.navigationItem.rightBarButtonItems = @[settingsButton, newChatButton];
-    
+
     UIBarButtonItem *conversationsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"text.bubble"] style:UIBarButtonItemStylePlain target:self action:@selector(showConversationList)];
-    
     UIBarButtonItem *clearButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"trash"] style:UIBarButtonItemStylePlain target:self action:@selector(clearChat)];
-    
     self.navigationItem.leftBarButtonItems = @[conversationsButton, clearButton];
 }
 
 - (void)setupUI {
+    // 状态栏：玻璃拟态深色 + 霓虹指示灯
     _statusBar = [[UIView alloc] init];
     _statusBar.translatesAutoresizingMaskIntoConstraints = NO;
-    _statusBar.backgroundColor = [UIColor systemRedColor];
+    _statusBar.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.92];
     [self.view addSubview:_statusBar];
-    
+
+    // 底部发光线
+    UIView *statusGlow = [[UIView alloc] init];
+    statusGlow.translatesAutoresizingMaskIntoConstraints = NO;
+    statusGlow.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.4];
+    [_statusBar addSubview:statusGlow];
+    [NSLayoutConstraint activateConstraints:@[
+        [statusGlow.bottomAnchor constraintEqualToAnchor:_statusBar.bottomAnchor],
+        [statusGlow.leadingAnchor constraintEqualToAnchor:_statusBar.leadingAnchor],
+        [statusGlow.trailingAnchor constraintEqualToAnchor:_statusBar.trailingAnchor],
+        [statusGlow.heightAnchor constraintEqualToConstant:1]
+    ]];
+
+    // 霓虹状态指示灯（替代 ActivityIndicator）
     _statusIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
     _statusIndicator.translatesAutoresizingMaskIntoConstraints = NO;
-    _statusIndicator.color = [UIColor whiteColor];
+    _statusIndicator.color = TechTheme.neonRed;
+    _statusIndicator.hidesWhenStopped = YES;
     [_statusBar addSubview:_statusIndicator];
-    
+
     _statusLabel = [[UILabel alloc] init];
     _statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _statusLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
-    _statusLabel.textColor = [UIColor whiteColor];
+    _statusLabel.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightMedium];
+    _statusLabel.textColor = TechTheme.textSecondary;
     _statusLabel.text = NSLocalizedString(@"status_disconnected", nil);
     [_statusBar addSubview:_statusLabel];
-    
+
+    // 右侧脉冲圆点（连接状态指示）
+    UIView *connDot = [[UIView alloc] init];
+    connDot.translatesAutoresizingMaskIntoConstraints = NO;
+    connDot.layer.cornerRadius = 5;
+    connDot.backgroundColor = TechTheme.neonRed;
+    connDot.tag = 9001;
+    [_statusBar addSubview:connDot];
+    [NSLayoutConstraint activateConstraints:@[
+        [connDot.trailingAnchor constraintEqualToAnchor:_statusBar.trailingAnchor constant:-14],
+        [connDot.centerYAnchor constraintEqualToAnchor:_statusBar.centerYAnchor],
+        [connDot.widthAnchor constraintEqualToConstant:10],
+        [connDot.heightAnchor constraintEqualToConstant:10]
+    ]];
+
     _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
     _tableView.translatesAutoresizingMaskIntoConstraints = NO;
     _tableView.dataSource = self;
     _tableView.delegate = self;
     _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    _tableView.backgroundColor = [UIColor systemBackgroundColor];
+    _tableView.backgroundColor = [UIColor clearColor];
     _tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
     [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"MessageCell"];
+
+    UITapGestureRecognizer *dismissTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    dismissTap.cancelsTouchesInView = NO;
+    [_tableView addGestureRecognizer:dismissTap];
+
     [self.view addSubview:_tableView];
     
     _inputView = [[InputView alloc] init];
@@ -152,6 +329,9 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         [_inputView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         _inputViewBottomConstraint
     ]];
+
+    // 语音模式彩虹边缘叠加层（延迟到 viewDidAppear 添加到 window）
+    _voiceRainbow = [[VoiceRainbowView alloc] init];
 }
 
 - (void)setupKeyboardObservers {
@@ -248,6 +428,10 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 #pragma mark - Keyboard
 
+- (void)dismissKeyboard {
+    [self.view endEditing:YES];
+}
+
 - (void)keyboardWillShow:(NSNotification *)notification {
     CGRect keyboardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     NSTimeInterval duration = [notification.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
@@ -285,31 +469,60 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     }
 }
 
+- (void)updateGridColorForState:(WebSocketConnectionState)state {
+    UIColor *color;
+    if (state == WebSocketConnectionStateConnected) {
+        color = TechTheme.neonCyan;
+    } else {
+        color = TechTheme.neonRed;
+    }
+    _gridDim.strokeColor    = [color colorWithAlphaComponent:0.06].CGColor;
+    _nodesDim.fillColor     = [color colorWithAlphaComponent:0.08].CGColor;
+    _gridBright.strokeColor = [color colorWithAlphaComponent:0.30].CGColor;
+    _nodesBright.fillColor  = [color colorWithAlphaComponent:0.40].CGColor;
+}
+
 - (void)updateStatusBar:(WebSocketConnectionState)state {
     dispatch_async(dispatch_get_main_queue(), ^{
+        UIView *connDot = [self.statusBar viewWithTag:9001];
+        [self updateGridColorForState:state];
+
         switch (state) {
             case WebSocketConnectionStateDisconnected:
-                self.statusBar.backgroundColor = [UIColor systemRedColor];
                 self.statusLabel.text = NSLocalizedString(@"status_disconnected", nil);
+                self.statusLabel.textColor = TechTheme.textDim;
+                self.statusIndicator.color = TechTheme.neonRed;
                 [self.statusIndicator stopAnimating];
+                connDot.backgroundColor = TechTheme.neonRed;
+                [TechTheme removePulseAnimation:connDot];
                 self.inputView.enabled = NO;
                 break;
             case WebSocketConnectionStateConnecting:
-                self.statusBar.backgroundColor = [UIColor systemOrangeColor];
                 self.statusLabel.text = NSLocalizedString(@"status_connecting", nil);
+                self.statusLabel.textColor = TechTheme.neonOrange;
+                self.statusIndicator.color = TechTheme.neonOrange;
                 [self.statusIndicator startAnimating];
+                connDot.backgroundColor = TechTheme.neonOrange;
+                [TechTheme addPulseAnimation:connDot color:[TechTheme.neonOrange colorWithAlphaComponent:0.5]];
                 self.inputView.enabled = NO;
                 break;
             case WebSocketConnectionStateConnected:
-                self.statusBar.backgroundColor = [UIColor systemGreenColor];
                 self.statusLabel.text = NSLocalizedString(@"status_connected", nil);
+                self.statusLabel.textColor = TechTheme.neonGreen;
+                self.statusIndicator.color = TechTheme.neonGreen;
                 [self.statusIndicator stopAnimating];
+                connDot.backgroundColor = TechTheme.neonGreen;
+                [TechTheme removePulseAnimation:connDot];
+                [TechTheme applyNeonGlow:connDot color:TechTheme.neonGreen radius:5];
                 self.inputView.enabled = YES;
                 break;
             case WebSocketConnectionStateReconnecting:
-                self.statusBar.backgroundColor = [UIColor systemOrangeColor];
                 self.statusLabel.text = NSLocalizedString(@"status_reconnecting", nil);
+                self.statusLabel.textColor = TechTheme.neonOrange;
+                self.statusIndicator.color = TechTheme.neonOrange;
                 [self.statusIndicator startAnimating];
+                connDot.backgroundColor = TechTheme.neonOrange;
+                [TechTheme addPulseAnimation:connDot color:[TechTheme.neonOrange colorWithAlphaComponent:0.5]];
                 self.inputView.enabled = NO;
                 break;
         }
@@ -354,6 +567,19 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             }
         }];
         [actions addObject:copyAction];
+
+        // TTS 朗读
+        BOOL ttsPlaying = [TTSService sharedService].isSpeaking;
+        NSString *ttsTitle = ttsPlaying ? @"停止朗读" : @"朗读";
+        NSString *ttsIcon = ttsPlaying ? @"speaker.slash" : @"speaker.wave.2";
+        UIAction *ttsAction = [UIAction actionWithTitle:ttsTitle image:[UIImage systemImageNamed:ttsIcon] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+            if (ttsPlaying) {
+                [[TTSService sharedService] stop];
+            } else if (message.content.length > 0) {
+                [[TTSService sharedService] speak:message.content];
+            }
+        }];
+        [actions addObject:ttsAction];
         
         if (message.role == MessageRoleUser) {
             UIAction *editAction = [UIAction actionWithTitle:NSLocalizedString(@"re_edit", nil) image:[UIImage systemImageNamed:@"pencil"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
@@ -474,10 +700,23 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)inputViewDidRequestVoiceInput:(InputView *)inputView {
     (void)inputView;
+    
+    // 未连接服务器时禁止开启语音模式
+    if ([WebSocketService sharedService].connectionState != WebSocketConnectionStateConnected) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"无法使用语音"
+                                                                       message:@"请先连接服务器后再使用语音输入"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+    
     VoiceInputService *voice = [VoiceInputService sharedService];
     if (voice.isRecording) {
         NSString *committed = [voice commitCurrentText];
         self.inputView.voiceInputActive = NO;
+        [self.voiceRainbow stopFlowing];
+        [self.voiceRainbow hideAnimated];
         [self.inputView setText:@""];
         if (committed.length > 0) {
             [self inputView:self.inputView didSendMessage:committed];
@@ -485,6 +724,8 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     } else {
         [voice startRecording];
         self.inputView.voiceInputActive = YES;
+        [self.voiceRainbow showAnimated];
+        [self.voiceRainbow startFlowing];
     }
 }
 

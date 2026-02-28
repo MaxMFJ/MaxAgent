@@ -1,4 +1,5 @@
 #import "InputView.h"
+#import "TechTheme.h"
 
 @interface InputView () <UITextViewDelegate>
 
@@ -9,6 +10,15 @@
 @property (nonatomic, strong) UILabel *placeholderLabel;
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) NSLayoutConstraint *textViewHeightConstraint;
+
+// 玻璃拟态模糊背景
+@property (nonatomic, strong) UIVisualEffectView *blurBackground;
+// 发送按钮渐变层
+@property (nonatomic, strong) CAGradientLayer *sendGradientLayer;
+// 麦克风按钮脉冲环
+@property (nonatomic, strong) UIView *voicePulseRing;
+// 防止 layoutSubviews 无限循环
+@property (nonatomic, assign) CGSize lastContainerSize;
 
 @end
 
@@ -26,96 +36,181 @@
 }
 
 - (void)setupUI {
-    self.backgroundColor = [UIColor systemBackgroundColor];
-    
-    UIView *separator = [[UIView alloc] init];
-    separator.translatesAutoresizingMaskIntoConstraints = NO;
-    separator.backgroundColor = [UIColor separatorColor];
-    [self addSubview:separator];
-    
-    _voiceButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    // 主背景：玻璃拟态深色模糊
+    self.backgroundColor = [UIColor clearColor];
+
+    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterialDark];
+    _blurBackground = [[UIVisualEffectView alloc] initWithEffect:blur];
+    _blurBackground.translatesAutoresizingMaskIntoConstraints = NO;
+    [self addSubview:_blurBackground];
+
+    // 顶部分隔线（发光青色）
+    UIView *topGlow = [[UIView alloc] init];
+    topGlow.translatesAutoresizingMaskIntoConstraints = NO;
+    topGlow.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.35];
+    [self addSubview:topGlow];
+
+    // 麦克风按钮
+    _voiceButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _voiceButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
-    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateSelected];
-    _voiceButton.tintColor = [UIColor systemGrayColor];
+    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill"
+                                   withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIFontWeightMedium]]
+                 forState:UIControlStateNormal];
+    [_voiceButton setImage:[UIImage systemImageNamed:@"mic.fill"
+                                   withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIFontWeightMedium]]
+                 forState:UIControlStateSelected];
+    _voiceButton.tintColor = TechTheme.textSecondary;
+    _voiceButton.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.08];
+    _voiceButton.layer.cornerRadius = 20;
     [_voiceButton addTarget:self action:@selector(voiceButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:_voiceButton];
-    
-    _autonomousButton = [UIButton buttonWithType:UIButtonTypeSystem];
+
+    // 脉冲环（语音激活时使用）
+    _voicePulseRing = [[UIView alloc] init];
+    _voicePulseRing.translatesAutoresizingMaskIntoConstraints = NO;
+    _voicePulseRing.layer.cornerRadius = 20;
+    _voicePulseRing.layer.borderWidth = 2;
+    _voicePulseRing.layer.borderColor = TechTheme.neonRed.CGColor;
+    _voicePulseRing.backgroundColor = [UIColor clearColor];
+    _voicePulseRing.alpha = 0;
+    _voicePulseRing.userInteractionEnabled = NO;
+    [self addSubview:_voicePulseRing];
+
+    // 自主模式按钮
+    _autonomousButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _autonomousButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [_autonomousButton setImage:[UIImage systemImageNamed:@"robot" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
-    _autonomousButton.tintColor = [UIColor systemGrayColor];
+    [_autonomousButton setImage:[UIImage systemImageNamed:@"cpu.fill"
+                                        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:19 weight:UIFontWeightMedium]]
+                       forState:UIControlStateNormal];
+    _autonomousButton.tintColor = TechTheme.textDim;
+    _autonomousButton.backgroundColor = [TechTheme.neonPurple colorWithAlphaComponent:0.08];
+    _autonomousButton.layer.cornerRadius = 20;
     [_autonomousButton addTarget:self action:@selector(autonomousButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:_autonomousButton];
-    
+
+    // 输入框容器（圆角，玻璃带霓虹边框）
     _containerView = [[UIView alloc] init];
     _containerView.translatesAutoresizingMaskIntoConstraints = NO;
-    _containerView.backgroundColor = [UIColor secondarySystemBackgroundColor];
-    _containerView.layer.cornerRadius = 20;
-    _containerView.clipsToBounds = YES;
+    _containerView.backgroundColor = [TechTheme.backgroundCard colorWithAlphaComponent:0.72];
+    _containerView.layer.cornerRadius = 22;
+    _containerView.clipsToBounds = NO;
     [self addSubview:_containerView];
-    
+
+    // 文字输入
     _textView = [[UITextView alloc] init];
     _textView.translatesAutoresizingMaskIntoConstraints = NO;
-    _textView.font = [UIFont systemFontOfSize:16];
+    _textView.font = [UIFont systemFontOfSize:15.5];
     _textView.backgroundColor = [UIColor clearColor];
+    _textView.textColor = TechTheme.textPrimary;
+    _textView.tintColor = TechTheme.neonCyan;
+    _textView.keyboardAppearance = UIKeyboardAppearanceDark;
     _textView.delegate = self;
     _textView.scrollEnabled = NO;
     [_containerView addSubview:_textView];
-    
+
+    // 点击容器区域确保激活输入框
+    UITapGestureRecognizer *containerTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(containerTapped)];
+    [_containerView addGestureRecognizer:containerTap];
+
+    // 占位文字
     _placeholderLabel = [[UILabel alloc] init];
     _placeholderLabel.translatesAutoresizingMaskIntoConstraints = NO;
     _placeholderLabel.text = NSLocalizedString(@"message_placeholder", nil);
-    _placeholderLabel.font = [UIFont systemFontOfSize:16];
-    _placeholderLabel.textColor = [UIColor placeholderTextColor];
+    _placeholderLabel.font = [UIFont systemFontOfSize:15.5];
+    _placeholderLabel.textColor = TechTheme.textDim;
     [_containerView addSubview:_placeholderLabel];
-    
-    _sendButton = [UIButton buttonWithType:UIButtonTypeSystem];
+
+    // 发送按钮
+    _sendButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _sendButton.translatesAutoresizingMaskIntoConstraints = NO;
-    UIImage *sendImage = [UIImage systemImageNamed:@"arrow.up.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]];
+    _sendButton.layer.cornerRadius = 18;
+    _sendButton.clipsToBounds = YES;
+    UIImage *sendImage = [UIImage systemImageNamed:@"arrow.up" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIFontWeightBold]];
     [_sendButton setImage:sendImage forState:UIControlStateNormal];
-    _sendButton.tintColor = [UIColor systemBlueColor];
+    _sendButton.tintColor = [UIColor whiteColor];
     [_sendButton addTarget:self action:@selector(sendButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     _sendButton.enabled = NO;
+
+    // 发送按钮渐变背景
+    _sendGradientLayer = [CAGradientLayer layer];
+    _sendGradientLayer.colors = @[
+        (id)[TechTheme.neonCyan colorWithAlphaComponent:0.9].CGColor,
+        (id)[TechTheme.neonBlue colorWithAlphaComponent:0.9].CGColor
+    ];
+    _sendGradientLayer.startPoint = CGPointMake(0, 0);
+    _sendGradientLayer.endPoint = CGPointMake(1, 1);
+    _sendGradientLayer.cornerRadius = 18;
+    [_sendButton.layer insertSublayer:_sendGradientLayer atIndex:0];
+
     [self addSubview:_sendButton];
-    
-    _textViewHeightConstraint = [_textView.heightAnchor constraintEqualToConstant:36];
-    
+
+    _textViewHeightConstraint = [_textView.heightAnchor constraintEqualToConstant:38];
+
     [NSLayoutConstraint activateConstraints:@[
-        [separator.topAnchor constraintEqualToAnchor:self.topAnchor],
-        [separator.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
-        [separator.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-        [separator.heightAnchor constraintEqualToConstant:0.5],
-        
-        [_voiceButton.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:12],
+        // 模糊背景铺满
+        [_blurBackground.topAnchor constraintEqualToAnchor:self.topAnchor],
+        [_blurBackground.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [_blurBackground.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [_blurBackground.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+
+        // 顶部发光线
+        [topGlow.topAnchor constraintEqualToAnchor:self.topAnchor],
+        [topGlow.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [topGlow.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [topGlow.heightAnchor constraintEqualToConstant:1],
+
+        // 麦克风按钮
+        [_voiceButton.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:10],
         [_voiceButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
         [_voiceButton.widthAnchor constraintEqualToConstant:40],
         [_voiceButton.heightAnchor constraintEqualToConstant:40],
-        
-        [_containerView.topAnchor constraintEqualToAnchor:self.topAnchor constant:8],
-        [_containerView.leadingAnchor constraintEqualToAnchor:_voiceButton.trailingAnchor constant:4],
-        [_containerView.bottomAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-8],
-        
-        [_autonomousButton.leadingAnchor constraintEqualToAnchor:_containerView.trailingAnchor constant:4],
+
+        // 脉冲环与麦克风按钮重叠
+        [_voicePulseRing.centerXAnchor constraintEqualToAnchor:_voiceButton.centerXAnchor],
+        [_voicePulseRing.centerYAnchor constraintEqualToAnchor:_voiceButton.centerYAnchor],
+        [_voicePulseRing.widthAnchor constraintEqualToConstant:40],
+        [_voicePulseRing.heightAnchor constraintEqualToConstant:40],
+
+        // 输入框容器
+        [_containerView.topAnchor constraintEqualToAnchor:self.topAnchor constant:10],
+        [_containerView.leadingAnchor constraintEqualToAnchor:_voiceButton.trailingAnchor constant:6],
+        [_containerView.trailingAnchor constraintEqualToAnchor:_autonomousButton.leadingAnchor constant:-6],
+        [_containerView.bottomAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-10],
+
+        // 自主模式按钮
+        [_autonomousButton.trailingAnchor constraintEqualToAnchor:_sendButton.leadingAnchor constant:-6],
         [_autonomousButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
         [_autonomousButton.widthAnchor constraintEqualToConstant:40],
         [_autonomousButton.heightAnchor constraintEqualToConstant:40],
-        
-        [_sendButton.leadingAnchor constraintEqualToAnchor:_autonomousButton.trailingAnchor constant:4],
-        [_sendButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-12],
-        [_sendButton.bottomAnchor constraintEqualToAnchor:_containerView.bottomAnchor],
-        [_sendButton.widthAnchor constraintEqualToConstant:40],
-        [_sendButton.heightAnchor constraintEqualToConstant:40],
-        
-        [_textView.topAnchor constraintEqualToAnchor:_containerView.topAnchor constant:2],
-        [_textView.leadingAnchor constraintEqualToAnchor:_containerView.leadingAnchor constant:12],
-        [_textView.trailingAnchor constraintEqualToAnchor:_containerView.trailingAnchor constant:-12],
-        [_textView.bottomAnchor constraintEqualToAnchor:_containerView.bottomAnchor constant:-2],
+
+        // 发送按钮
+        [_sendButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-10],
+        [_sendButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
+        [_sendButton.widthAnchor constraintEqualToConstant:36],
+        [_sendButton.heightAnchor constraintEqualToConstant:36],
+
+        // 文字输入
+        [_textView.topAnchor constraintEqualToAnchor:_containerView.topAnchor constant:3],
+        [_textView.leadingAnchor constraintEqualToAnchor:_containerView.leadingAnchor constant:14],
+        [_textView.trailingAnchor constraintEqualToAnchor:_containerView.trailingAnchor constant:-14],
+        [_textView.bottomAnchor constraintEqualToAnchor:_containerView.bottomAnchor constant:-3],
         _textViewHeightConstraint,
-        
+
         [_placeholderLabel.leadingAnchor constraintEqualToAnchor:_textView.leadingAnchor constant:5],
         [_placeholderLabel.centerYAnchor constraintEqualToAnchor:_textView.centerYAnchor]
     ]];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    // 更新发送按钮渐变层 frame
+    _sendGradientLayer.frame = _sendButton.bounds;
+}
+
+- (void)containerTapped {
+    if (self.enabled) {
+        [self.textView becomeFirstResponder];
+    }
 }
 
 - (void)voiceButtonTapped {
@@ -169,22 +264,69 @@
 }
 
 - (void)updateSendButton {
+    BOOL hasText = self.textView.text.length > 0;
     if (self.loading) {
+        // 停止状态：红色霓虹
         self.sendButton.enabled = YES;
-        [self.sendButton setImage:[UIImage systemImageNamed:@"stop.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
-        self.sendButton.tintColor = [UIColor systemRedColor];
+        UIImage *stopImage = [UIImage systemImageNamed:@"stop.fill"
+                                     withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIFontWeightBold]];
+        [self.sendButton setImage:stopImage forState:UIControlStateNormal];
+        self.sendButton.tintColor = [UIColor whiteColor];
+        _sendGradientLayer.colors = @[
+            (id)TechTheme.neonRed.CGColor,
+            (id)[TechTheme.neonRed colorWithAlphaComponent:0.7].CGColor
+        ];
+        [TechTheme applyNeonGlow:self.sendButton color:TechTheme.neonRed radius:8];
+    } else if (self.enabled && hasText) {
+        // 可发送：青色霓虹渐变
+        self.sendButton.enabled = YES;
+        UIImage *sendImage = [UIImage systemImageNamed:@"arrow.up"
+                                     withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIFontWeightBold]];
+        [self.sendButton setImage:sendImage forState:UIControlStateNormal];
+        self.sendButton.tintColor = [UIColor whiteColor];
+        _sendGradientLayer.colors = @[
+            (id)[TechTheme.neonCyan colorWithAlphaComponent:0.95].CGColor,
+            (id)[TechTheme.neonBlue colorWithAlphaComponent:0.9].CGColor
+        ];
+        [TechTheme applyNeonGlow:self.sendButton color:TechTheme.neonCyan radius:8];
     } else {
-        self.sendButton.enabled = self.enabled && self.textView.text.length > 0;
-        [self.sendButton setImage:[UIImage systemImageNamed:@"arrow.up.circle.fill" withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:32 weight:UIFontWeightMedium]] forState:UIControlStateNormal];
-        self.sendButton.tintColor = [UIColor systemBlueColor];
+        // 禁用状态
+        self.sendButton.enabled = NO;
+        UIImage *sendImage = [UIImage systemImageNamed:@"arrow.up"
+                                     withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIFontWeightBold]];
+        [self.sendButton setImage:sendImage forState:UIControlStateNormal];
+        self.sendButton.tintColor = [UIColor whiteColor];
+        _sendGradientLayer.colors = @[
+            (id)[TechTheme.neonCyan colorWithAlphaComponent:0.25].CGColor,
+            (id)[TechTheme.neonBlue colorWithAlphaComponent:0.2].CGColor
+        ];
+        self.sendButton.layer.shadowOpacity = 0;
     }
-    self.autonomousButton.enabled = self.enabled && self.textView.text.length > 0 && !self.loading;
+
+    BOOL autonomousEnabled = self.enabled && hasText && !self.loading;
+    self.autonomousButton.enabled = autonomousEnabled;
+    self.autonomousButton.tintColor = autonomousEnabled ? TechTheme.neonPurple : TechTheme.textDim;
+    if (autonomousEnabled) {
+        [TechTheme applyNeonGlow:self.autonomousButton color:TechTheme.neonPurple radius:5];
+    } else {
+        self.autonomousButton.layer.shadowOpacity = 0;
+    }
 }
 
 - (void)setVoiceInputActive:(BOOL)voiceInputActive {
     _voiceInputActive = voiceInputActive;
     self.voiceButton.selected = voiceInputActive;
-    self.voiceButton.tintColor = voiceInputActive ? [UIColor systemRedColor] : [UIColor systemGrayColor];
+    if (voiceInputActive) {
+        self.voiceButton.tintColor = TechTheme.neonRed;
+        self.voiceButton.backgroundColor = [TechTheme.neonRed colorWithAlphaComponent:0.15];
+        _voicePulseRing.alpha = 1;
+        [TechTheme addPulseAnimation:_voicePulseRing color:[TechTheme.neonRed colorWithAlphaComponent:0.4]];
+    } else {
+        self.voiceButton.tintColor = TechTheme.textSecondary;
+        self.voiceButton.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.08];
+        _voicePulseRing.alpha = 0;
+        [TechTheme removePulseAnimation:_voicePulseRing];
+    }
 }
 
 #pragma mark - UITextViewDelegate
