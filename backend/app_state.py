@@ -72,6 +72,7 @@ class TrackedTask:
     asyncio_task: Optional[asyncio.Task] = None
     chunks: Deque[dict] = field(default_factory=lambda: deque(maxlen=500))
     message_id: Optional[str] = None  # chat 任务的消息 ID，用于断线重连去重
+    client_sent_count: int = 0  # 已成功发送给主客户端的 chunk 数，用于断线重连去重
 
 
 class TaskTracker:
@@ -148,6 +149,13 @@ class TaskTracker:
         if tt:
             return list(tt.chunks)
         return []
+
+    def clear_chunks(self, task_id: str):
+        """清空任务的缓冲 chunk（例如客户端已全部接收后）"""
+        tt = self._tasks.get(task_id)
+        if tt:
+            tt.chunks.clear()
+            tt.client_sent_count = 0
 
     def _evict_old(self):
         finished = [

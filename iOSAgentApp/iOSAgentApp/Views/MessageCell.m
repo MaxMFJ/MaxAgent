@@ -100,6 +100,11 @@
 @property (nonatomic, strong) CAGradientLayer *bubbleGradientLayer;
 @property (nonatomic, assign) BOOL isFirstConfigure;
 
+// 缓存：避免流式更新时重复执行昂贵操作
+@property (nonatomic, copy, nullable) NSString *cachedContent;
+@property (nonatomic, assign) MessageRole cachedRole;
+@property (nonatomic, assign) BOOL cachedHasThinking;
+
 @end
 
 @implementation MessageCell
@@ -108,6 +113,7 @@
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
         _isFirstConfigure = YES;
+        _cachedRole = (MessageRole)NSIntegerMax; // sentinel
         [self setupUI];
     }
     return self;
@@ -246,6 +252,12 @@
         _bubbleGradientLayer.frame = _bubbleInner.bounds;
         _bubbleGradientLayer.cornerRadius = 18;
     }
+    
+    // 更新 shadowPath（bounds 可能在 configure 后因 Auto Layout 改变）
+    if (_bubbleView.layer.shadowOpacity > 0 && !CGRectIsEmpty(_bubbleView.bounds)) {
+        CGFloat cornerRadius = _bubbleView.layer.cornerRadius;
+        _bubbleView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:_bubbleView.bounds cornerRadius:cornerRadius].CGPath;
+    }
 }
 
 // MARK: - Configure
@@ -253,6 +265,21 @@
 - (void)configureWithMessage:(Message *)message {
     BOOL isFirst = _isFirstConfigure;
     _isFirstConfigure = NO;
+    
+    // === 快速路径：流式更新时，如果角色未变且无 thinking 块，仅更新文本 ===
+    BOOL roleChanged = (_cachedRole != message.role);
+    BOOL isStreamingUpdate = !isFirst && !roleChanged && message.status == MessageStatusStreaming;
+    
+    if (isStreamingUpdate && !_cachedHasThinking) {
+        // 快速文本更新：跳过解析、样式、glow 等昂贵操作
+        _contentLabel.text = message.content.length > 0 ? message.content : @" ";
+        _cachedContent = message.content;
+        return;
+    }
+
+    // === 完整配置路径 ===
+    _cachedContent = message.content;
+    _cachedRole = message.role;
 
     // --- 解析思维块 ---
     NSArray *parts = [ThinkingContentParser parseContent:message.content];
@@ -263,6 +290,7 @@
             break;
         }
     }
+    _cachedHasThinking = hasThinking;
 
     if (!hasThinking) {
         _contentLabel.hidden = NO;
@@ -297,66 +325,54 @@
     BOOL isToolCall   = (message.role == MessageRoleToolCall);
     BOOL isToolResult = (message.role == MessageRoleToolResult);
 
-    _bubbleLeading.active  = NO;
-    _bubbleTrailing.active = NO;
+    // 仅在角色变化或首次配置时执行昂贵的样式/glow 操作
+    if (roleChanged || isFirst) {
+        _bubbleLeading.active  = NO;
+        _bubbleTrailing.active = NO;
 
-    // 移除旧渐变层
-    if (_bubbleGradientLayer) {
-        [_bubbleGradientLayer removeFromSuperlayer];
-        _bubbleGradientLayer = nil;
-    }
+        // 移除旧渐变层
+        if (_bubbleGradientLayer) {
+            [_bubbleGradientLayer removeFromSuperlayer];
+            _bubbleGradientLayer = nil;
+        }
 
-    // 重置背景
-    _bubbleView.backgroundColor = [UIColor clearColor];
-    _bubbleInner.backgroundColor = [UIColor clearColor];
+        // 重置背景
+        _bubbleView.backgroundColor = [UIColor clearColor];
+        _bubbleInner.backgroundColor = [UIColor clearColor];
 
-    if (isUser) {
-        // ------ 用户消息：纯色 + 右侧对齐 + 青色发光（与AI气泡风格一致）------
-        _bubbleTrailing.active = YES;
-        _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
-
-        _contentLabel.textColor    = TechTheme.textPrimary;
-        _roleLabel.text            = NSLocalizedString(@"you", nil);
-        _roleLabel.textAlignment   = NSTextAlignmentRight;
-        _roleLabel.textColor       = [TechTheme.neonCyan colorWithAlphaComponent:0.7];
-
-        [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonCyan radius:8];
-
-    } else if (isToolCall) {
-        // ------ 工具调用：深橙 ------
-        _bubbleLeading.active = YES;
-        _bubbleInner.backgroundColor = TechTheme.toolCallBubble;
-
-        _contentLabel.textColor    = TechTheme.textPrimary;
-        _roleLabel.text            = [NSString stringWithFormat:@"⚙ %@", message.toolName ?: NSLocalizedString(@"tool", nil)];
-        _roleLabel.textAlignment   = NSTextAlignmentLeft;
-        _roleLabel.textColor       = [TechTheme.neonOrange colorWithAlphaComponent:0.85];
-
-        [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonOrange radius:6];
-
-    } else if (isToolResult) {
-        // ------ 工具结果：深绿 ------
-        _bubbleLeading.active = YES;
-        _bubbleInner.backgroundColor = TechTheme.toolResultBubble;
-
-        _contentLabel.textColor    = TechTheme.textPrimary;
-        _roleLabel.text            = [NSString stringWithFormat:@"✓ %@", NSLocalizedString(@"result", nil)];
-        _roleLabel.textAlignment   = NSTextAlignmentLeft;
-        _roleLabel.textColor       = [TechTheme.neonGreen colorWithAlphaComponent:0.85];
-
-        [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonGreen radius:6];
-
-    } else {
-        // ------ AI 回复：深色玻璃感 ------
-        _bubbleLeading.active = YES;
-        _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
-
-        _contentLabel.textColor    = TechTheme.textPrimary;
-        _roleLabel.text            = message.modelName ?: NSLocalizedString(@"assistant", nil);
-        _roleLabel.textAlignment   = NSTextAlignmentLeft;
-        _roleLabel.textColor       = [TechTheme.neonPurple colorWithAlphaComponent:0.85];
-
-        [TechTheme applyNeonGlow:_bubbleView color:[TechTheme.neonCyan colorWithAlphaComponent:0.4] radius:10];
+        if (isUser) {
+            _bubbleTrailing.active = YES;
+            _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
+            _contentLabel.textColor    = TechTheme.textPrimary;
+            _roleLabel.text            = NSLocalizedString(@"you", nil);
+            _roleLabel.textAlignment   = NSTextAlignmentRight;
+            _roleLabel.textColor       = [TechTheme.neonCyan colorWithAlphaComponent:0.7];
+            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonCyan radius:8];
+        } else if (isToolCall) {
+            _bubbleLeading.active = YES;
+            _bubbleInner.backgroundColor = TechTheme.toolCallBubble;
+            _contentLabel.textColor    = TechTheme.textPrimary;
+            _roleLabel.text            = [NSString stringWithFormat:@"⚙ %@", message.toolName ?: NSLocalizedString(@"tool", nil)];
+            _roleLabel.textAlignment   = NSTextAlignmentLeft;
+            _roleLabel.textColor       = [TechTheme.neonOrange colorWithAlphaComponent:0.85];
+            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonOrange radius:6];
+        } else if (isToolResult) {
+            _bubbleLeading.active = YES;
+            _bubbleInner.backgroundColor = TechTheme.toolResultBubble;
+            _contentLabel.textColor    = TechTheme.textPrimary;
+            _roleLabel.text            = [NSString stringWithFormat:@"✓ %@", NSLocalizedString(@"result", nil)];
+            _roleLabel.textAlignment   = NSTextAlignmentLeft;
+            _roleLabel.textColor       = [TechTheme.neonGreen colorWithAlphaComponent:0.85];
+            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonGreen radius:6];
+        } else {
+            _bubbleLeading.active = YES;
+            _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
+            _contentLabel.textColor    = TechTheme.textPrimary;
+            _roleLabel.text            = message.modelName ?: NSLocalizedString(@"assistant", nil);
+            _roleLabel.textAlignment   = NSTextAlignmentLeft;
+            _roleLabel.textColor       = [TechTheme.neonPurple colorWithAlphaComponent:0.85];
+            [TechTheme applyNeonGlow:_bubbleView color:[TechTheme.neonCyan colorWithAlphaComponent:0.4] radius:10];
+        }
     }
 
     // 同步 contentStackView 内文本颜色
@@ -406,6 +422,12 @@
     [_bubbleView.layer removeAllAnimations];
     // 清理 shadow
     _bubbleView.layer.shadowOpacity = 0;
+    _bubbleView.layer.shadowPath = nil;
+    _bubbleView.layer.shouldRasterize = NO;
+    // 重置缓存，确保复用后正确重新配置
+    _cachedContent = nil;
+    _cachedRole = (MessageRole)NSIntegerMax; // sentinel：确保复用后触发完整样式配置
+    _cachedHasThinking = NO;
 }
 
 - (void)imageTapped {

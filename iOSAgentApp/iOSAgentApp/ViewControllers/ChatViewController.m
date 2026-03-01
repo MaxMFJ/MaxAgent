@@ -42,9 +42,14 @@
 @property (nonatomic, strong) CAShapeLayer *nodesDim;
 @property (nonatomic, strong) CAShapeLayer *nodesBright;
 
+// 流式输出节流：避免每个 chunk 都触发 cell reload，减少主线程阻塞
+@property (nonatomic, strong, nullable) NSDate *lastStreamingUIUpdateTime;
+@property (nonatomic, assign) BOOL hasPendingStreamingUpdate;
+
 @end
 
 @implementation ChatViewController
+static const NSTimeInterval kStreamingThrottleInterval = 0.12; // 120ms，与 Mac 端一致
 
 static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
@@ -881,16 +886,19 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         
         // 检查后端 session_id 是否与本地会话匹配
         if (localSessionId && ![localSessionId isEqualToString:sessionId]) {
-            // Session 不匹配（App 重启场景），需要先同步 session_id，然后检查缓冲
+            // Session 不匹配（App 重启场景），需要先同步 session_id
             NSLog(@"[WebSocket] Session mismatch: backend=%@ local=%@, syncing session", sessionId, localSessionId);
             [[WebSocketService sharedService] createNewSession:localSessionId];
-            // createNewSession 会触发后端重新检查该 session 的任务状态
-            // 后端会通过 session_created 消息返回新的状态（但目前不支持）
-            // 因此我们需要主动发送 resume_chat 检查是否有缓冲
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                NSLog(@"[WebSocket] Checking buffered chat for local session: %@", localSessionId);
-                [[WebSocketService sharedService] resumeChat:localSessionId];
-            });
+            // 仅当有未完成的 streaming 消息时才发送 resume_chat，
+            // 避免已完成的对话被重复发送
+            if (self.currentAssistantMessage) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    NSLog(@"[WebSocket] Resuming pending streaming chat for local session: %@", localSessionId);
+                    [[WebSocketService sharedService] resumeChat:localSessionId];
+                });
+            } else {
+                NSLog(@"[WebSocket] No pending streaming message, skipping resume_chat to avoid duplication");
+            }
         } else if (hasRunningChat || hasBufferedChat) {
             // Session 匹配且有缓冲消息，直接恢复
             NSLog(@"[WebSocket] Resuming chat: running=%d, buffered=%d", hasRunningChat, hasBufferedChat);
@@ -912,9 +920,14 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         if (localSessionId && ![localSessionId isEqualToString:sessionId]) {
             NSLog(@"[WebSocket] Session mismatch (legacy): syncing to %@", localSessionId);
             [[WebSocketService sharedService] createNewSession:localSessionId];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [[WebSocketService sharedService] resumeChat:localSessionId];
-            });
+            // 仅当有未完成的 streaming 消息时才发送 resume_chat
+            if (self.currentAssistantMessage) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    [[WebSocketService sharedService] resumeChat:localSessionId];
+                });
+            } else {
+                NSLog(@"[WebSocket] No pending streaming message (legacy), skipping resume_chat");
+            }
         } else if (hasRunningChat) {
             [[WebSocketService sharedService] resumeChat:sessionId];
         }
@@ -929,14 +942,38 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 NSString *full = self.currentAssistantMessage.content ?: @"";
                 [[TTSService sharedService] appendAndSpeakStreamedContent:full];
             }
-            NSMutableArray<Message *> *messages = [self currentMessages];
-            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
-            if (index != NSNotFound) {
-                NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
-                [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
-            }
+            [self throttledUpdateStreamingCell];
         }
     });
+}
+
+/// 节流更新流式输出的 cell：每 120ms 最多刷新一次，避免阻塞主线程导致无法滚动
+- (void)throttledUpdateStreamingCell {
+    NSDate *now = [NSDate date];
+    if (self.lastStreamingUIUpdateTime && [now timeIntervalSinceDate:self.lastStreamingUIUpdateTime] < kStreamingThrottleInterval) {
+        // 节流期间：标记有待更新，稍后触发
+        if (!self.hasPendingStreamingUpdate) {
+            self.hasPendingStreamingUpdate = YES;
+            NSTimeInterval delay = kStreamingThrottleInterval - [now timeIntervalSinceDate:self.lastStreamingUIUpdateTime];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                self.hasPendingStreamingUpdate = NO;
+                [self flushStreamingCellUpdate];
+            });
+        }
+        return;
+    }
+    [self flushStreamingCellUpdate];
+}
+
+- (void)flushStreamingCellUpdate {
+    self.lastStreamingUIUpdateTime = [NSDate date];
+    if (!self.currentAssistantMessage) return;
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
+    if (index != NSNotFound) {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    }
 }
 
 - (void)webSocketService:(WebSocketService *)service didReceiveToolCall:(NSString *)toolName callId:(NSString *)callId arguments:(NSString *)arguments {
@@ -999,6 +1036,9 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName tokenUsage:(NSDictionary<NSString *,NSNumber *> *)tokenUsage {
     dispatch_async(dispatch_get_main_queue(), ^{
         [self cancelAutonomousTimeout];
+        // 重置流式节流状态
+        self.lastStreamingUIUpdateTime = nil;
+        self.hasPendingStreamingUpdate = NO;
         self.inputView.loading = NO;
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.status = MessageStatusComplete;
@@ -1160,6 +1200,11 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 if (lastMessage.role == MessageRoleAssistant && lastMessage.status == MessageStatusStreaming) {
                     NSLog(@"[Chat] Using existing streaming message for resume");
                     self.currentAssistantMessage = lastMessage;
+                } else if (lastMessage.role == MessageRoleAssistant && lastMessage.content.length > 0) {
+                    // 最后一条助手消息已有内容且非 streaming，说明之前的回复已完整接收
+                    // 跳过 resume 以避免重复显示相同内容
+                    NSLog(@"[Chat] Last assistant message already has content (len=%lu), skipping resume to avoid duplication", (unsigned long)lastMessage.content.length);
+                    return;
                 } else {
                     NSLog(@"[Chat] Creating new assistant message for resume");
                     self.currentAssistantMessage = [Message assistantMessage];

@@ -143,7 +143,7 @@ private struct ToolLogList: View {
                     }
                     .padding(8)
                 }
-                .onChange(of: vm.filteredExecutionLogs.count) { _ in
+                .onChange(of: vm.filteredExecutionLogs.count) {
                     if autoScroll, let last = vm.filteredExecutionLogs.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
@@ -185,7 +185,7 @@ private struct BackendLogList: View {
                     }
                     .padding(8)
                 }
-                .onChange(of: vm.filteredBackendLogs.count) { _ in
+                .onChange(of: vm.filteredBackendLogs.count) {
                     if autoScroll, let last = vm.filteredBackendLogs.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }

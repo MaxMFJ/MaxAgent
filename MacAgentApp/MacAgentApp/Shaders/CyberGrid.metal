@@ -26,7 +26,6 @@ float cyberHash(float2 p) {
     // ═══════════════════════ 颜色 ═══════════════════════
     half3 bgColor  = half3(0.04h, 0.04h, 0.08h);   // CyberColor.bg0
     half3 cyan     = half3(0.00h, 0.90h, 1.00h);    // CyberColor.cyan
-    half3 purple   = half3(0.45h, 0.05h, 0.60h);    // 副波紫色
 
     // ═══════════════════════ 扫描波 ═══════════════════════
     // 主波：从上往下扫

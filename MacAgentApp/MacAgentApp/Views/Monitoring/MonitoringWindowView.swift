@@ -37,6 +37,7 @@ struct MonitoringWindowView: View {
                     HStack(spacing: 2) {
                         CyberTabButton(title: "EXEC", icon: "timeline.selection.left", tag: 0, selected: $selectedTab)
                         CyberTabButton(title: "SYS",  icon: "chart.bar.fill",          tag: 1, selected: $selectedTab)
+                        CyberTabButton(title: "STATS", icon: "chart.pie.fill",          tag: 4, selected: $selectedTab)
                         CyberTabButton(title: "HIST", icon: "clock.arrow.circlepath",  tag: 2, selected: $selectedTab)
                         CyberTabButton(title: "LOGS", icon: "list.bullet.rectangle",   tag: 3, selected: $selectedTab)
                     }
@@ -63,6 +64,7 @@ struct MonitoringWindowView: View {
                     case 1: SystemStatusDashboardView().environmentObject(vm)
                     case 2: HistoryAnalysisView().environmentObject(vm)
                     case 3: LogStreamView().environmentObject(vm)
+                    case 4: UsageStatisticsView().environmentObject(vm)
                     default: ExecutionTimelineView().environmentObject(vm)
                     }
                 }

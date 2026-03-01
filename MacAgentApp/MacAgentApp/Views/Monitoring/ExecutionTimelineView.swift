@@ -148,7 +148,7 @@ private struct TimelineScrollView: View {
                     }
                     .padding(.vertical, 8)
                 }
-                .onChange(of: vm.actionLogs.count) { _ in
+                .onChange(of: vm.actionLogs.count) {
                     if autoScroll, let last = vm.actionLogs.last {
                         withAnimation(.easeOut(duration: 0.3)) {
                             proxy.scrollTo(last.id, anchor: .bottom)

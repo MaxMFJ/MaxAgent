@@ -107,6 +107,16 @@ static UIColor *UIColorFromHexA(UInt32 hex, CGFloat alpha) {
     view.layer.shadowOffset = CGSizeZero;
     view.layer.shadowRadius = radius;
     view.layer.shadowOpacity = 0.72;
+    // 设置 shadowPath 避免 GPU 每帧重新计算阴影轮廓（核心性能优化）
+    CGFloat cornerRadius = view.layer.cornerRadius;
+    if (cornerRadius > 0) {
+        view.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:view.bounds cornerRadius:cornerRadius].CGPath;
+    } else {
+        view.layer.shadowPath = [UIBezierPath bezierPathWithRect:view.bounds].CGPath;
+    }
+    // 光栅化阴影层，避免滚动时反复渲染
+    view.layer.shouldRasterize = YES;
+    view.layer.rasterizationScale = [UIScreen mainScreen].scale;
 }
 
 + (void)applyNeonBorder:(UIView *)view color:(UIColor *)color width:(CGFloat)width cornerRadius:(CGFloat)cornerRadius {

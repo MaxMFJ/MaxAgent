@@ -245,6 +245,16 @@ async def _handle_chat(
         extra_system_prompt = ""
         final_status = AutoTaskStatus.COMPLETED
 
+        def _mark_client_gone():
+            """标记客户端已断开，记录已发送的 chunk 数用于断线重连去重"""
+            nonlocal client_gone
+            if not client_gone:
+                client_gone = True
+                _tt = tracker.get(chat_task_id)
+                if _tt:
+                    # 当前 chunk 发送失败，所以已发送数 = 缓冲区长度 - 1
+                    _tt.client_sent_count = max(0, len(_tt.chunks) - 1)
+
         try:
             try:
                 from agent.web_augmented_thinking import ThinkingAugmenter
@@ -257,7 +267,7 @@ async def _handle_chat(
                         tracker.record_chunk(chat_task_id, web_chunk)
                         if not client_gone:
                             if not await safe_send_json(websocket, web_chunk):
-                                client_gone = True
+                                _mark_client_gone()
                         if not client_gone:
                             await connection_manager.broadcast_to_session(_sid, web_chunk, exclude_client=_cid)
             except Exception as e:
@@ -280,7 +290,7 @@ async def _handle_chat(
                     tracker.record_chunk(chat_task_id, to_send)
                     if not client_gone:
                         if not await safe_send_json(websocket, to_send):
-                            client_gone = True
+                            _mark_client_gone()
                             logger.info(f"Chat stream: client gone during tool_result, task continues in background (task_id={chat_task_id})")
                     if not client_gone:
                         await connection_manager.broadcast_to_session(_sid, to_send, exclude_client=_cid)
@@ -290,7 +300,7 @@ async def _handle_chat(
                         if img:
                             tracker.record_chunk(chat_task_id, img)
                             if not await safe_send_json(websocket, img):
-                                client_gone = True
+                                _mark_client_gone()
                             if not client_gone:
                                 await connection_manager.broadcast_to_session(_sid, img, exclude_client=_cid)
                 else:
@@ -301,7 +311,7 @@ async def _handle_chat(
                     tracker.record_chunk(chat_task_id, chunk)
                     if not client_gone:
                         if not await safe_send_json(websocket, chunk):
-                            client_gone = True
+                            _mark_client_gone()
                             logger.info(f"Chat stream: client gone, task continues in background (task_id={chat_task_id})")
                     if not client_gone:
                         await connection_manager.broadcast_to_session(_sid, chunk, exclude_client=_cid)
@@ -368,6 +378,9 @@ async def _handle_chat(
             except Exception as _e:
                 logger.warning(f"Failed to push error notification: {_e}")
         finally:
+            # 客户端一直在线且流式输出完成，清空缓冲防止重连重复发送
+            if not client_gone:
+                tracker.clear_chunks(chat_task_id)
             await tracker.finish(chat_task_id, final_status)
             session_stream_tasks.pop(_sid, None)
 
@@ -767,29 +780,38 @@ async def _handle_resume_chat(message: dict, websocket: WebSocket, current_sessi
 
     buffered = tracker.get_buffered_chunks(tt.task_id)
 
+    # 跳过客户端断线前已成功接收的 chunk，避免重复发送
+    skip_count = getattr(tt, 'client_sent_count', 0)
+    chunks_to_replay = buffered[skip_count:]
+
     await safe_send_json(websocket, {
         "type": "resume_chat_result",
         "session_id": session_id,
         "found": True,
         "task_id": tt.task_id,
         "status": tt.status.value,
-        "buffered_count": len(buffered),
+        "buffered_count": len(chunks_to_replay),
     })
 
-    for chunk in buffered:
+    for chunk in chunks_to_replay:
         if not await safe_send_json(websocket, chunk):
             break
 
     if tt.status == AutoTaskStatus.RUNNING:
+        # 任务仍在运行，更新已发送计数（后续新 chunk 通过 broadcast 推送）
+        tt.client_sent_count = len(buffered)
         await safe_send_json(websocket, {
             "type": "resume_chat_streaming",
             "task_id": tt.task_id,
             "message": "Chat 任务仍在执行中，后续输出将实时推送",
         })
+    else:
+        # 任务已结束，客户端已收到所有 chunk，清空缓冲防止下次重连再次重放
+        tracker.clear_chunks(tt.task_id)
 
     logger.info(
         f"Chat resumed for session {session_id}: task_id={tt.task_id}, "
-        f"status={tt.status.value}, replayed={len(buffered)} chunks"
+        f"status={tt.status.value}, replayed={len(chunks_to_replay)} chunks (skipped={skip_count})"
     )
 
 

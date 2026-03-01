@@ -300,7 +300,7 @@ struct MiniSparkLineChart: View {
             .onAppear {
                 withAnimation(.easeOut(duration: 1.2)) { drawProgress = 1 }
             }
-            .onChange(of: values.count) { _ in
+            .onChange(of: values.count) {
                 drawProgress = 0
                 withAnimation(.easeOut(duration: 0.8)) { drawProgress = 1 }
             }

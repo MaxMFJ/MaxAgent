@@ -943,7 +943,7 @@ class AgentViewModel: ObservableObject {
                     statusContent += "\n☁️ LLM 请求中: \(provider)/\(model)\n"
                     updateAssistantMessage(content: statusContent, isStreaming: true)
 
-                case .llmRequestEnd(let provider, let model, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
                     isStreamingLLM = false
                     let llmId = "llm_\(iteration)"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {

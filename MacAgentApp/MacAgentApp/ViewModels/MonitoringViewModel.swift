@@ -77,6 +77,46 @@ struct ModelSelectorInfo {
     }
 }
 
+// MARK: - 用户平台统计数据模型
+
+struct UsageOverviewData {
+    var totalRequests: Int = 0
+    var successCount: Int = 0
+    var totalTokens: Int = 0
+    var totalPromptTokens: Int = 0
+    var totalCompletionTokens: Int = 0
+    var avgRPM: Double = 0
+    var avgTPM: Double = 0
+    var rpmHistory: [Double] = []   // 30 个点, 每分钟
+    var tpmHistory: [Double] = []   // 30 个点
+    var requestHistory: [Double] = []
+}
+
+struct ModelConsumptionItem: Identifiable {
+    let id = UUID()
+    let model: String
+    let tokens: Int
+}
+
+struct ModelCallItem: Identifiable {
+    let id = UUID()
+    let model: String
+    let count: Int
+}
+
+struct ConsumptionTrendItem: Identifiable {
+    let id = UUID()
+    let time: String
+    let tokens: Int
+}
+
+struct ModelAnalysisData {
+    var consumptionDistribution: [ModelConsumptionItem] = []
+    var consumptionTrend: [ConsumptionTrendItem] = []
+    var callDistribution: [ModelCallItem] = []
+    var callRanking: [ModelCallItem] = []
+}
+
 // MARK: - MonitoringViewModel
 
 @MainActor
@@ -119,6 +159,10 @@ class MonitoringViewModel: ObservableObject {
     @Published var logLevelFilter: String? = nil
     @Published var logSearchText: String = ""
     @Published var logSourceFilter: String = "tool"
+
+    // MARK: Tab5 - 用户平台统计（HTTP 轮询）
+    @Published var usageOverview: UsageOverviewData = UsageOverviewData()
+    @Published var modelAnalysis: ModelAnalysisData = ModelAnalysisData()
 
     // MARK: 私有
     private var cancellables = Set<AnyCancellable>()
@@ -266,6 +310,8 @@ class MonitoringViewModel: ObservableObject {
                     await fetchMemoryStatus()
                     await fetchLocalLLMStatus()
                     await fetchModelSelectorStats()
+                    await fetchUsageOverview()
+                    await fetchModelAnalysis()
                 }
                 isPolling = false
                 lastPolledAt = Date()
@@ -452,6 +498,68 @@ class MonitoringViewModel: ObservableObject {
                     }
                 }
                 statistics = s
+            }
+        } catch {}
+    }
+
+    // MARK: - 用户平台统计拉取
+
+    private func fetchUsageOverview() async {
+        guard let url = URL(string: "\(baseURL)/usage-stats/overview") else { return }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var o = UsageOverviewData()
+                o.totalRequests = json["total_requests"] as? Int ?? 0
+                o.successCount = json["success_count"] as? Int ?? 0
+                o.totalTokens = json["total_tokens"] as? Int ?? 0
+                o.totalPromptTokens = json["total_prompt_tokens"] as? Int ?? 0
+                o.totalCompletionTokens = json["total_completion_tokens"] as? Int ?? 0
+                o.avgRPM = json["avg_rpm"] as? Double ?? 0
+                o.avgTPM = json["avg_tpm"] as? Double ?? 0
+                o.rpmHistory = (json["rpm_history"] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? []
+                o.tpmHistory = (json["tpm_history"] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? []
+                o.requestHistory = (json["request_history"] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? []
+                usageOverview = o
+            }
+        } catch {}
+    }
+
+    private func fetchModelAnalysis() async {
+        guard let url = URL(string: "\(baseURL)/usage-stats/model-analysis") else { return }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var m = ModelAnalysisData()
+                if let cd = json["consumption_distribution"] as? [[String: Any]] {
+                    m.consumptionDistribution = cd.compactMap { d in
+                        guard let model = d["model"] as? String,
+                              let tokens = d["tokens"] as? Int else { return nil }
+                        return ModelConsumptionItem(model: model, tokens: tokens)
+                    }
+                }
+                if let ct = json["consumption_trend"] as? [[String: Any]] {
+                    m.consumptionTrend = ct.compactMap { d in
+                        guard let time = d["time"] as? String,
+                              let tokens = d["tokens"] as? Int else { return nil }
+                        return ConsumptionTrendItem(time: time, tokens: tokens)
+                    }
+                }
+                if let callDist = json["call_distribution"] as? [[String: Any]] {
+                    m.callDistribution = callDist.compactMap { d in
+                        guard let model = d["model"] as? String,
+                              let count = d["count"] as? Int else { return nil }
+                        return ModelCallItem(model: model, count: count)
+                    }
+                }
+                if let cr = json["call_ranking"] as? [[String: Any]] {
+                    m.callRanking = cr.compactMap { d in
+                        guard let model = d["model"] as? String,
+                              let count = d["count"] as? Int else { return nil }
+                        return ModelCallItem(model: model, count: count)
+                    }
+                }
+                modelAnalysis = m
             }
         } catch {}
     }
