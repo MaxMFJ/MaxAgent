@@ -71,6 +71,7 @@ class TrackedTask:
     finished_at: Optional[float] = None
     asyncio_task: Optional[asyncio.Task] = None
     chunks: Deque[dict] = field(default_factory=lambda: deque(maxlen=500))
+    message_id: Optional[str] = None  # chat 任务的消息 ID，用于断线重连去重
 
 
 class TaskTracker:
@@ -95,6 +96,7 @@ class TaskTracker:
         self, task_id: str, session_id: str, description: str,
         asyncio_task: asyncio.Task,
         task_type: TaskType = TaskType.AUTONOMOUS,
+        message_id: Optional[str] = None,
     ) -> TrackedTask:
         async with self._lock:
             idx = self._index_for(task_type)

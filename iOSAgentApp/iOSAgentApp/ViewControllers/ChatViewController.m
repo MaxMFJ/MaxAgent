@@ -12,8 +12,10 @@
 #import "VoiceInputService.h"
 #import "TechTheme.h"
 #import "VoiceRainbowView.h"
+#import "TaskProgressView.h"
+#import "ActionLogEntry.h"
 
-@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate>
+@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate, TaskProgressViewDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) InputView *inputView;
@@ -25,6 +27,14 @@
 @property (nonatomic, strong) NSLayoutConstraint *inputViewBottomConstraint;
 @property (nonatomic, strong, nullable) NSTimer *autonomousTimeoutTimer;
 @property (nonatomic, strong) VoiceRainbowView *voiceRainbow;
+
+// 用于消息去重（避免重连时重复显示已有消息）
+@property (nonatomic, strong) NSMutableSet<NSString *> *displayedMessageIds;
+
+// 任务进度面板
+@property (nonatomic, strong) TaskProgressView *taskProgressView;
+@property (nonatomic, strong) NSLayoutConstraint *taskProgressHeightConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *tableViewBottomConstraint;
 
 // 网格背景图层（用于动态更新颜色）
 @property (nonatomic, strong) CAShapeLayer *gridDim;
@@ -41,6 +51,9 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)viewDidLoad {
     [super viewDidLoad];
 
+    // 初始化消息去重 set
+    self.displayedMessageIds = [NSMutableSet set];
+
     // 深空黑主背景
     self.view.backgroundColor = TechTheme.backgroundPrimary;
 
@@ -53,6 +66,26 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     [self setupWebSocket];
     [self setupVoiceInput];
     [self updateTitle];
+    
+    // 检查是否有未完成的 streaming 消息需要恢复
+    [self checkPendingStreamingMessage];
+}
+
+- (void)checkPendingStreamingMessage {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *currentConv = manager.currentConversation;
+    if (!currentConv || currentConv.messages.count == 0) {
+        return;
+    }
+    
+    Message *lastMessage = currentConv.messages.lastObject;
+    if (lastMessage.role == MessageRoleAssistant && lastMessage.status == MessageStatusStreaming) {
+        NSLog(@"[Chat] Found pending streaming message, setting as currentAssistantMessage");
+        self.currentAssistantMessage = lastMessage;
+        // 显示加载状态
+        self.inputView.loading = YES;
+        // WebSocket 连接成功后会自动触发 resumeChat
+    }
 }
 
 - (void)setupVoiceInput {
@@ -306,7 +339,16 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     _inputView.delegate = self;
     [self.view addSubview:_inputView];
     
+    // 任务进度面板（在输入框上方）
+    _taskProgressView = [[TaskProgressView alloc] init];
+    _taskProgressView.translatesAutoresizingMaskIntoConstraints = NO;
+    _taskProgressView.delegate = self;
+    _taskProgressView.hidden = YES;
+    [self.view addSubview:_taskProgressView];
+    
     _inputViewBottomConstraint = [_inputView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
+    _taskProgressHeightConstraint = [_taskProgressView.heightAnchor constraintEqualToConstant:0];
+    _tableViewBottomConstraint = [_tableView.bottomAnchor constraintEqualToAnchor:_taskProgressView.topAnchor];
     
     [NSLayoutConstraint activateConstraints:@[
         [_statusBar.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
@@ -323,7 +365,13 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         [_tableView.topAnchor constraintEqualToAnchor:_statusBar.bottomAnchor],
         [_tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [_tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [_tableView.bottomAnchor constraintEqualToAnchor:_inputView.topAnchor],
+        _tableViewBottomConstraint,
+        
+        // 任务进度面板
+        [_taskProgressView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:8],
+        [_taskProgressView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-8],
+        [_taskProgressView.bottomAnchor constraintEqualToAnchor:_inputView.topAnchor constant:-8],
+        _taskProgressHeightConstraint,
         
         [_inputView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [_inputView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
@@ -823,19 +871,54 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     [self updateStatusBar:state];
 }
 
+- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat hasBufferedChat:(BOOL)hasBufferedChat bufferedChatCount:(NSInteger)bufferedChatCount {
+    NSLog(@"Connected: client=%@, session=%@, running_task=%d, running_chat=%d, buffered_chat=%d, buffered_count=%ld", 
+          clientId, sessionId, hasRunningTask, hasRunningChat, hasBufferedChat, (long)bufferedChatCount);
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ConversationManager *manager = [ConversationManager sharedManager];
+        NSString *localSessionId = manager.currentConversation.conversationId;
+        
+        // 检查后端 session_id 是否与本地会话匹配
+        if (localSessionId && ![localSessionId isEqualToString:sessionId]) {
+            // Session 不匹配（App 重启场景），需要先同步 session_id，然后检查缓冲
+            NSLog(@"[WebSocket] Session mismatch: backend=%@ local=%@, syncing session", sessionId, localSessionId);
+            [[WebSocketService sharedService] createNewSession:localSessionId];
+            // createNewSession 会触发后端重新检查该 session 的任务状态
+            // 后端会通过 session_created 消息返回新的状态（但目前不支持）
+            // 因此我们需要主动发送 resume_chat 检查是否有缓冲
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                NSLog(@"[WebSocket] Checking buffered chat for local session: %@", localSessionId);
+                [[WebSocketService sharedService] resumeChat:localSessionId];
+            });
+        } else if (hasRunningChat || hasBufferedChat) {
+            // Session 匹配且有缓冲消息，直接恢复
+            NSLog(@"[WebSocket] Resuming chat: running=%d, buffered=%d", hasRunningChat, hasBufferedChat);
+            [[WebSocketService sharedService] resumeChat:sessionId];
+        }
+    });
+}
+
+// 向后兼容旧的 delegate 方法
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat {
-    NSLog(@"Connected: client=%@, session=%@, running_task=%d, running_chat=%d", 
+    NSLog(@"Connected (legacy): client=%@, session=%@, running_task=%d, running_chat=%d", 
           clientId, sessionId, hasRunningTask, hasRunningChat);
     
-    if (hasRunningChat) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            ConversationManager *manager = [ConversationManager sharedManager];
-            if (manager.currentConversation && 
-                [manager.currentConversation.conversationId isEqualToString:sessionId]) {
-                [[WebSocketService sharedService] resumeChat:sessionId];
-            }
-        });
-    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ConversationManager *manager = [ConversationManager sharedManager];
+        NSString *localSessionId = manager.currentConversation.conversationId;
+        
+        // 检查后端 session_id 是否与本地会话匹配
+        if (localSessionId && ![localSessionId isEqualToString:sessionId]) {
+            NSLog(@"[WebSocket] Session mismatch (legacy): syncing to %@", localSessionId);
+            [[WebSocketService sharedService] createNewSession:localSessionId];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [[WebSocketService sharedService] resumeChat:localSessionId];
+            });
+        } else if (hasRunningChat) {
+            [[WebSocketService sharedService] resumeChat:sessionId];
+        }
+    });
 }
 
 - (void)webSocketService:(WebSocketService *)service didReceiveContent:(NSString *)content {
@@ -1041,9 +1124,87 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     });
 }
 
-- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount {
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId status:(NSString *)status bufferedCount:(NSInteger)bufferedCount {
+    // 调用带 messageId 的版本，传 nil
+    [self webSocketService:service didResumeChatWithId:taskId status:status bufferedCount:bufferedCount messageId:nil];
+}
+
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId status:(NSString *)status bufferedCount:(NSInteger)bufferedCount messageId:(NSString *)messageId {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"[Chat] Resume chat successful: task=%@, buffered=%ld", taskId, (long)bufferedCount);
+        NSLog(@"[Chat] Resume chat: task=%@, status=%@, buffered=%ld, msgId=%@", taskId, status, (long)bufferedCount, messageId);
+        
+        // 去重检查：如果这条消息已经显示过，跳过
+        if (messageId && [self.displayedMessageIds containsObject:messageId]) {
+            NSLog(@"[Chat] Message %@ already displayed, skipping resume", messageId);
+            return;
+        }
+        
+        ConversationManager *manager = [ConversationManager sharedManager];
+        Conversation *currentConv = manager.currentConversation;
+        if (!currentConv) {
+            NSLog(@"[Chat] No current conversation for resume");
+            return;
+        }
+        
+        // 如果有缓冲的消息要恢复
+        if (bufferedCount > 0) {
+            // 记录这条消息已处理
+            if (messageId) {
+                [self.displayedMessageIds addObject:messageId];
+            }
+            
+            // 确保有 assistant message 来接收缓冲内容
+            if (!self.currentAssistantMessage) {
+                // 检查是否已有 streaming 状态的消息
+                Message *lastMessage = currentConv.messages.lastObject;
+                if (lastMessage.role == MessageRoleAssistant && lastMessage.status == MessageStatusStreaming) {
+                    NSLog(@"[Chat] Using existing streaming message for resume");
+                    self.currentAssistantMessage = lastMessage;
+                } else {
+                    NSLog(@"[Chat] Creating new assistant message for resume");
+                    self.currentAssistantMessage = [Message assistantMessage];
+                    [currentConv.messages addObject:self.currentAssistantMessage];
+                }
+            }
+            
+            [self.tableView reloadData];
+            [self scrollToBottom];
+            self.inputView.loading = YES;
+        }
+        
+        // 如果任务已经完成但没有缓冲消息（可能后端缓冲已清空）
+        BOOL isCompleted = [status isEqualToString:@"completed"] || [status isEqualToString:@"stopped"] || [status isEqualToString:@"error"];
+        if (isCompleted && bufferedCount == 0 && self.currentAssistantMessage) {
+            NSLog(@"[Chat] Task completed but no buffered messages, completing current message");
+            if (self.currentAssistantMessage.content.length == 0) {
+                self.currentAssistantMessage.content = @"[消息恢复失败]";
+            }
+            self.currentAssistantMessage.status = MessageStatusComplete;
+            self.currentAssistantMessage = nil;
+            self.inputView.loading = NO;
+            [self.tableView reloadData];
+            [manager saveConversations];
+        }
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service taskResumeDidFail:(NSString *)message {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[Chat] Task resume failed: %@", message);
+        
+        // 如果有未完成的 streaming 消息，标记为完成
+        if (self.currentAssistantMessage) {
+            if (self.currentAssistantMessage.content.length == 0) {
+                self.currentAssistantMessage.content = @"[消息恢复失败]";
+            }
+            self.currentAssistantMessage.status = MessageStatusComplete;
+            self.currentAssistantMessage = nil;
+            self.inputView.loading = NO;
+            [self.tableView reloadData];
+            
+            ConversationManager *manager = [ConversationManager sharedManager];
+            [manager saveConversations];
+        }
     });
 }
 
@@ -1058,47 +1219,68 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         if (!self.currentAssistantMessage) return;
         NSString *type = chunk[@"type"];
         NSMutableString *append = [NSMutableString string];
-        if ([type isEqualToString:@"model_selected"]) {
+        
+        // 同时更新 TaskProgressView
+        if ([type isEqualToString:@"task_start"]) {
+            [self showTaskProgressView];
+            NSString *taskId = chunk[@"task_id"] ?: @"";
+            NSString *taskDesc = chunk[@"task"] ?: @"";
+            self.taskProgressView.taskProgress = [TaskProgress progressWithTaskId:taskId description:taskDesc];
+            [self.taskProgressView.taskProgress handleTaskStart:chunk];
+            [self updateTaskProgressViewHeight];
+            [append appendString:@"🚀 任务开始执行...\n"];
+        } else if ([type isEqualToString:@"model_selected"]) {
             NSString *modelType = chunk[@"model_type"] ?: @"";
             NSString *reason = chunk[@"reason"] ?: @"";
             NSString *icon = [modelType isEqualToString:@"local"] ? @"🏠" : @"☁️";
             NSString *name = [modelType isEqualToString:@"local"] ? NSLocalizedString(@"model_local", nil) : NSLocalizedString(@"model_remote", nil);
+            [self.taskProgressView.taskProgress handleModelSelected:chunk];
             [append appendFormat:@"%@ 选择模型: %@\n", icon, name];
             if (reason.length) [append appendFormat:@"💡 %@\n\n", reason];
-        } else if ([type isEqualToString:@"task_start"]) {
-            [append appendString:@"🚀 任务开始执行...\n"];
         } else if ([type isEqualToString:@"action_plan"]) {
+            [self.taskProgressView handleActionPlan:chunk];
+            [self updateTaskProgressViewHeight];
             NSDictionary *action = chunk[@"action"];
             NSString *actionType = ([action isKindOfClass:[NSDictionary class]] ? action[@"action_type"] : nil) ?: @"unknown";
             NSString *reasoning = ([action isKindOfClass:[NSDictionary class]] ? action[@"reasoning"] : nil) ?: @"";
             NSNumber *iter = chunk[@"iteration"];
             [append appendFormat:@"\n📋 步骤 %@: %@\n   → %@\n", iter ? iter.stringValue : @"?", actionType, reasoning];
         } else if ([type isEqualToString:@"action_executing"]) {
+            [self.taskProgressView handleActionExecuting:chunk];
             NSString *actionType = chunk[@"action_type"] ?: @"";
             [append appendFormat:@"⏳ 执行中: %@\n", actionType];
         } else if ([type isEqualToString:@"action_result"]) {
+            [self.taskProgressView handleActionResult:chunk];
             id succ = chunk[@"success"];
             BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
             NSString *output = chunk[@"output"] ?: @"";
             NSString *err = chunk[@"error"] ?: @"";
             if (success && output.length) [append appendFormat:@"   ✓ %@\n", output];
             else if (err.length) [append appendFormat:@"   ✗ %@\n", err];
+        } else if ([type isEqualToString:@"llm_request_start"]) {
+            [self.taskProgressView handleLLMRequestStart:chunk];
+        } else if ([type isEqualToString:@"llm_request_end"]) {
+            [self.taskProgressView handleLLMRequestEnd:chunk];
         } else if ([type isEqualToString:@"reflect_start"]) {
             [append appendString:@"\n🔄 反思中...\n"];
         } else if ([type isEqualToString:@"reflect_result"]) {
             NSString *ref = chunk[@"reflection"] ?: chunk[@"error"] ?: @"";
             if (ref.length) [append appendFormat:@"   %@\n", ref];
         } else if ([type isEqualToString:@"task_complete"]) {
+            [self.taskProgressView handleTaskComplete:chunk];
             id succ = chunk[@"success"];
             BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
             NSString *summary = chunk[@"summary"] ?: @"";
             [append appendFormat:@"\n%@ 任务完成\n%@\n", success ? @"✅" : @"⚠️", summary];
         } else if ([type isEqualToString:@"task_stopped"]) {
+            [self.taskProgressView handleTaskStopped:chunk];
             [append appendFormat:@"\n⏹ %@\n", chunk[@"message"] ?: chunk[@"reason"] ?: NSLocalizedString(@"autonomous_stopped", nil)];
         } else if ([type isEqualToString:@"progress_update"]) {
+            [self.taskProgressView.taskProgress handleProgressUpdate:chunk];
             NSString *msg = chunk[@"message"] ?: @"";
             if (msg.length) [append appendFormat:@"%@\n", msg];
         }
+        
         if (append.length > 0) {
             self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:append];
             NSMutableArray<Message *> *messages = [self currentMessages];
@@ -1118,6 +1300,100 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 [manager saveConversations];
             }
             self.currentAssistantMessage = nil;
+            // 延迟隐藏任务进度面板
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if (!self.taskProgressView.isRunning) {
+                    [self hideTaskProgressView];
+                }
+            });
+        }
+    });
+}
+
+#pragma mark - Task Progress View
+
+- (void)showTaskProgressView {
+    self.taskProgressView.hidden = NO;
+    [self updateTaskProgressViewHeight];
+    [UIView animateWithDuration:0.3 animations:^{
+        [self.view layoutIfNeeded];
+    }];
+}
+
+- (void)hideTaskProgressView {
+    [UIView animateWithDuration:0.3 animations:^{
+        self.taskProgressHeightConstraint.constant = 0;
+        [self.view layoutIfNeeded];
+    } completion:^(BOOL finished) {
+        self.taskProgressView.hidden = YES;
+        [self.taskProgressView reset];
+    }];
+}
+
+- (void)updateTaskProgressViewHeight {
+    CGFloat height = [self.taskProgressView requiredHeight];
+    self.taskProgressHeightConstraint.constant = height;
+    [self.view layoutIfNeeded];
+}
+
+#pragma mark - TaskProgressViewDelegate
+
+- (void)taskProgressViewDidToggle:(TaskProgressView *)view {
+    [self updateTaskProgressViewHeight];
+    [UIView animateWithDuration:0.2 animations:^{
+        [self.view layoutIfNeeded];
+    }];
+}
+
+- (void)taskProgressViewDidRequestStop:(TaskProgressView *)view {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    NSString *sessionId = manager.currentConversation.conversationId ?: @"default";
+    [[WebSocketService sharedService] sendStopStream:sessionId];
+}
+
+- (void)taskProgressView:(TaskProgressView *)view didSelectActionLog:(ActionLogEntry *)entry {
+    // 显示 action 详情（可选：弹出 alert 或跳转到详情页）
+    NSString *detail = [NSString stringWithFormat:@"类型: %@\n状态: %@\n", entry.actionType, [entry statusIcon]];
+    if (entry.reasoning.length) {
+        detail = [detail stringByAppendingFormat:@"原因: %@\n", entry.reasoning];
+    }
+    if (entry.output.length) {
+        detail = [detail stringByAppendingFormat:@"输出: %@\n", entry.output];
+    }
+    if (entry.error.length) {
+        detail = [detail stringByAppendingFormat:@"错误: %@\n", entry.error];
+    }
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"步骤 %ld", (long)entry.iteration]
+                                                                   message:detail
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+#pragma mark - Detect Running Task (断线重连恢复)
+
+- (void)webSocketService:(WebSocketService *)service didDetectRunningTask:(NSString *)taskId {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ConversationManager *manager = [ConversationManager sharedManager];
+        Conversation *currentConv = manager.currentConversation;
+        if (currentConv && taskId) {
+            // 创建恢复占位消息
+            self.currentAssistantMessage = [Message assistantMessage];
+            self.currentAssistantMessage.content = @"🔄 检测到任务正在运行，正在恢复...\n";
+            [currentConv.messages addObject:self.currentAssistantMessage];
+            [self.tableView reloadData];
+            [self scrollToBottom];
+            self.inputView.loading = YES;
+            
+            // 显示任务进度面板
+            [self showTaskProgressView];
+            self.taskProgressView.taskProgress = [TaskProgress progressWithTaskId:taskId description:@"恢复中..."];
+            self.taskProgressView.taskProgress.isRunning = YES;
+            [self updateTaskProgressViewHeight];
+            
+            // 发送恢复请求
+            [[WebSocketService sharedService] resumeTask:currentConv.conversationId];
         }
     });
 }
@@ -1136,6 +1412,48 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
         }];
     }
+}
+
+#pragma mark - LLM Status (Chat Progress)
+
+- (void)webSocketService:(WebSocketService *)service didReceiveLLMStatus:(NSDictionary *)status {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *type = status[@"type"];
+        
+        if ([type isEqualToString:@"llm_request_start"]) {
+            // LLM 请求开始 - 显示加载指示器
+            NSString *provider = status[@"provider"] ?: @"";
+            NSString *model = status[@"model"] ?: @"";
+            NSString *statusText = [NSString stringWithFormat:@"正在请求 %@/%@...", provider, model];
+            
+            [self.statusIndicator startAnimating];
+            self.statusLabel.text = statusText;
+            self.statusLabel.textColor = TechTheme.neonCyan;
+        }
+        else if ([type isEqualToString:@"llm_request_end"]) {
+            // LLM 请求结束 - 停止加载指示器
+            [self.statusIndicator stopAnimating];
+            
+            NSNumber *latency = status[@"latency_ms"];
+            NSDictionary *usage = status[@"usage"];
+            NSNumber *totalTokens = usage[@"total_tokens"];
+            
+            if (latency && totalTokens) {
+                NSString *statusText = [NSString stringWithFormat:@"响应: %@ms, %@ tokens", latency, totalTokens];
+                self.statusLabel.text = statusText;
+                self.statusLabel.textColor = TechTheme.textSecondary;
+                
+                // 3秒后恢复默认状态
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    if (![self.statusIndicator isAnimating]) {
+                        self.statusLabel.text = @"";
+                    }
+                });
+            } else {
+                self.statusLabel.text = @"";
+            }
+        }
+    });
 }
 
 - (void)dealloc {

@@ -131,6 +131,8 @@ class AgentViewModel: ObservableObject {
     private let backendService = BackendService()
     private var cancellables = Set<AnyCancellable>()
     private var currentSendTask: Task<Void, Never>?
+    /// 消息去重：已显示的消息 ID，避免重连时重复显示
+    private var displayedMessageIds = Set<String>()
     /// 流式输出时节流：避免每个 chunk 都触发 @Published，减少列表闪烁（100-120ms 一次 UI 更新）
     private var lastStreamingUIPushTime: Date?
     private let streamingThrottleInterval: TimeInterval = 0.12
@@ -213,6 +215,12 @@ class AgentViewModel: ObservableObject {
             Task { @MainActor in
                 await self.resumeChatStream(sessionId: sessionId)
             }
+        }
+        
+        // 全局监控事件回调：接收来自任意客户端的任务执行事件
+        backendService.onMonitorEvent = { [weak self] sourceSession, taskId, event in
+            guard let self = self else { return }
+            self.handleMonitorEvent(sourceSession: sourceSession, taskId: taskId, event: event)
         }
     }
     
@@ -694,6 +702,10 @@ class AgentViewModel: ObservableObject {
 
                 case .retry:
                     break
+                    
+                case .chatResumeResult:
+                    // 仅用于 resumeChatStream，此处忽略
+                    break
                 }
             }
             
@@ -915,6 +927,7 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: true)
 
                 case .llmRequestStart(let provider, let model, let iteration):
+                    isStreamingLLM = true
                     let llmId = "llm_\(iteration)"
                     let logEntry = ActionLogEntry(
                         actionId: llmId,
@@ -931,6 +944,7 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: true)
 
                 case .llmRequestEnd(let provider, let model, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    isStreamingLLM = false
                     let llmId = "llm_\(iteration)"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
                         let pt = usage["prompt_tokens"] as? Int ?? 0
@@ -1008,10 +1022,12 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                 case .actionResult(let actionId, let success, let output, let error):
+                    var actionType = "unknown"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        actionType = actionLogs[index].actionType
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
-                            actionType: actionLogs[index].actionType,
+                            actionType: actionType,
                             reasoning: actionLogs[index].reasoning,
                             status: success ? .success : .failed,
                             output: output,
@@ -1034,6 +1050,12 @@ class AgentViewModel: ObservableObject {
                         let level = success ? "info" : "error"
                         let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
                         executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
+                    } else if actionType != "llm_request" {
+                        // 非 call_tool 类型动作（run_shell、read_file、write_file 等）也写入 executionLogs
+                        let outStr = output ?? error ?? ""
+                        let level = success ? "info" : "error"
+                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
+                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: actionType))
                     }
                     
                     if success {
@@ -1128,6 +1150,10 @@ class AgentViewModel: ObservableObject {
                 case .stopped:
                     statusContent += "\n\n[已终止]"
                     updateAssistantMessage(content: statusContent, isStreaming: false)
+                    
+                case .chatResumeResult:
+                    // 仅用于 resumeChatStream，此处忽略
+                    break
                 }
         
                 }
@@ -1215,6 +1241,7 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: true)
 
                 case .llmRequestStart(let provider, let model, let iteration):
+                    isStreamingLLM = true
                     let llmId = "llm_\(iteration)"
                     let logEntry = ActionLogEntry(
                         actionId: llmId,
@@ -1229,6 +1256,7 @@ class AgentViewModel: ObservableObject {
                     actionLogs = actionLogs + [logEntry]
 
                 case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
+                    isStreamingLLM = false
                     let llmId = "llm_\(iteration)"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
                         let pt = usage["prompt_tokens"] as? Int ?? 0
@@ -1303,10 +1331,12 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent, isStreaming: true)
                     
                 case .actionResult(let actionId, let success, let output, let error):
+                    var actionType = "unknown"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        actionType = actionLogs[index].actionType
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
-                            actionType: actionLogs[index].actionType,
+                            actionType: actionType,
                             reasoning: actionLogs[index].reasoning,
                             status: success ? .success : .failed,
                             output: output,
@@ -1329,6 +1359,12 @@ class AgentViewModel: ObservableObject {
                         let level = success ? "info" : "error"
                         let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
                         executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
+                    } else if actionType != "llm_request" {
+                        // 非 call_tool 类型动作（run_shell、read_file、write_file 等）也写入 executionLogs
+                        let outStr = output ?? error ?? ""
+                        let level = success ? "info" : "error"
+                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
+                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: actionType))
                     }
                     
                     if success {
@@ -1437,12 +1473,35 @@ class AgentViewModel: ObservableObject {
         
         isLoading = true
         var fullContent = ""
+        var shouldSkipContent = false  // 用于去重：跳过已显示过的消息
         if ttsEnabled { TTSService.shared.resetStreamState() }
         
         do {
             for try await chunk in backendService.resumeChat(sessionId: sessionId) {
                 switch chunk {
+                case .chatResumeResult(let found, _, _, let messageId):
+                    // 检查是否已显示过此消息
+                    if let msgId = messageId, displayedMessageIds.contains(msgId) {
+                        print("[Chat] Message \(msgId) already displayed, skipping resume")
+                        shouldSkipContent = true
+                        // 删除"正在恢复对话..."消息
+                        if var conv = currentConversation,
+                           let lastIdx = conv.messages.indices.last,
+                           conv.messages[lastIdx].content == "正在恢复对话..." {
+                            conv.messages.remove(at: lastIdx)
+                            updateCurrentConversation(conv, shouldSave: false)
+                        }
+                        isLoading = false
+                        return
+                    }
+                    // 记录消息 ID
+                    if let msgId = messageId, found {
+                        displayedMessageIds.insert(msgId)
+                    }
+                    continue
+                    
                 case .content(let text):
+                    guard !shouldSkipContent else { continue }
                     fullContent += text
                     updateAssistantMessage(content: fullContent, isStreaming: true)
                     if ttsEnabled { TTSService.shared.appendAndSpeakStreamedContent(fullContent) }
@@ -1674,5 +1733,164 @@ class AgentViewModel: ObservableObject {
     
     func toggleToolPanel() {
         showToolPanel.toggle()
+    }
+    
+    // MARK: - Global Monitor Events
+    
+    /// 处理来自任意客户端的全局监控事件
+    private func handleMonitorEvent(sourceSession: String, taskId: String, event: [String: Any]) {
+        guard let eventType = event["type"] as? String else { return }
+        
+        print("[Monitor] Received event: type=\(eventType), taskId=\(taskId), session=\(sourceSession)")
+        
+        switch eventType {
+        case "task_start":
+            let taskDesc = event["task"] as? String ?? ""
+            taskProgress = TaskProgress(
+                id: taskId,
+                taskDescription: taskDesc,
+                status: .running,
+                currentIteration: 0,
+                totalActions: 0,
+                successfulActions: 0,
+                failedActions: 0,
+                startTime: Date()
+            )
+            
+        case "llm_request_start":
+            isStreamingLLM = true
+            let provider = event["provider"] as? String ?? "unknown"
+            let model = event["model"] as? String ?? ""
+            let iteration = event["iteration"] as? Int ?? 0
+            let llmId = "llm_\(iteration)_\(taskId)"
+            let logEntry = ActionLogEntry(
+                actionId: llmId,
+                actionType: "llm_request",
+                reasoning: "请求 \(provider)/\(model)",
+                status: .executing,
+                output: nil,
+                error: nil,
+                timestamp: Date(),
+                iteration: iteration
+            )
+            actionLogs = actionLogs + [logEntry]
+            
+        case "llm_request_end":
+            isStreamingLLM = false
+            let iteration = event["iteration"] as? Int ?? 0
+            let latencyMs = event["latency_ms"] as? Int ?? 0
+            let usage = event["usage"] as? [String: Any] ?? [:]
+            let error = event["error"] as? String
+            let llmId = "llm_\(iteration)_\(taskId)"
+            if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
+                let pt = usage["prompt_tokens"] as? Int ?? 0
+                let ct = usage["completion_tokens"] as? Int ?? 0
+                var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                if let err = error, !err.isEmpty {
+                    out += " | 错误: \(err)"
+                }
+                let updated = ActionLogEntry(
+                    actionId: llmId,
+                    actionType: "llm_request",
+                    reasoning: actionLogs[index].reasoning,
+                    status: error != nil ? .failed : .success,
+                    output: out,
+                    error: error,
+                    timestamp: actionLogs[index].timestamp,
+                    iteration: iteration
+                )
+                var newLogs = actionLogs
+                newLogs[index] = updated
+                actionLogs = newLogs
+            }
+            
+        case "action_plan":
+            let action = event["action"] as? [String: Any] ?? [:]
+            let iteration = event["iteration"] as? Int ?? 0
+            currentIteration = iteration
+            let actionType = action["action_type"] as? String ?? "unknown"
+            let reasoning = action["reasoning"] as? String ?? ""
+            let actionId = action["action_id"] as? String ?? UUID().uuidString
+            
+            let logEntry = ActionLogEntry(
+                actionId: actionId,
+                actionType: actionType,
+                reasoning: reasoning,
+                status: .pending,
+                output: nil,
+                error: nil,
+                timestamp: Date(),
+                iteration: iteration
+            )
+            actionLogs.append(logEntry)
+            
+        case "action_executing":
+            let actionId = event["action_id"] as? String ?? ""
+            if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                actionLogs[index] = ActionLogEntry(
+                    actionId: actionId,
+                    actionType: actionLogs[index].actionType,
+                    reasoning: actionLogs[index].reasoning,
+                    status: .executing,
+                    output: nil,
+                    error: nil,
+                    timestamp: actionLogs[index].timestamp,
+                    iteration: actionLogs[index].iteration
+                )
+            }
+            
+        case "action_result":
+            let actionId = event["action_id"] as? String ?? ""
+            let success = event["success"] as? Bool ?? false
+            let output = event["output"] as? String
+            let error = event["error"] as? String
+            
+            var actionType = "unknown"
+            if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                actionType = actionLogs[index].actionType
+                actionLogs[index] = ActionLogEntry(
+                    actionId: actionId,
+                    actionType: actionType,
+                    reasoning: actionLogs[index].reasoning,
+                    status: success ? .success : .failed,
+                    output: output,
+                    error: error,
+                    timestamp: actionLogs[index].timestamp,
+                    iteration: actionLogs[index].iteration
+                )
+            }
+            
+            // 更新任务进度
+            if success {
+                taskProgress?.successfulActions = (taskProgress?.successfulActions ?? 0) + 1
+            } else {
+                taskProgress?.failedActions = (taskProgress?.failedActions ?? 0) + 1
+            }
+            taskProgress?.totalActions = (taskProgress?.successfulActions ?? 0) + (taskProgress?.failedActions ?? 0)
+            
+            // 写入 executionLogs（非 llm_request 类型）
+            if actionType != "llm_request" {
+                let outStr = output ?? error ?? ""
+                let level = success ? "info" : "error"
+                let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
+                executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: actionType))
+            }
+            
+        case "task_complete":
+            let success = event["success"] as? Bool ?? false
+            let summary = event["summary"] as? String ?? ""
+            taskProgress?.status = success ? .completed : .failed
+            taskProgress?.endTime = Date()
+            taskProgress?.summary = summary
+            isStreamingLLM = false
+            
+        case "task_stopped", "error":
+            taskProgress?.status = .failed
+            taskProgress?.endTime = Date()
+            isStreamingLLM = false
+            
+        default:
+            break
+        }
     }
 }

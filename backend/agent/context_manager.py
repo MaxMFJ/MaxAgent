@@ -6,6 +6,7 @@ Manages conversation history with vector-based semantic retrieval
 import os
 import json
 import logging
+import uuid
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -87,7 +88,13 @@ class ConversationContext:
                     logger.warning(f"Filtering out context-loss error response: {content[:50]}...")
                     return
         
-        msg = {"role": role, "content": content, "timestamp": datetime.now(), **kwargs}
+        msg = {
+            "id": str(uuid.uuid4()),
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now(),
+            **kwargs
+        }
         self.recent_messages.append(msg)
         self.last_active = datetime.now()
         

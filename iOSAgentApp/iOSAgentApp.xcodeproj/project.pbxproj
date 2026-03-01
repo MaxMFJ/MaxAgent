@@ -7,12 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C47421F2F5406A700B528B2 /* TaskProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C47421E2F5406A700B528B2 /* TaskProgressView.m */; };
+		4C4742222F5406CD00B528B2 /* ActionLogEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C4742212F5406CD00B528B2 /* ActionLogEntry.m */; };
 		97CDC1CBC125030C68B28F0D /* Pods_iOSAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */; };
 		APP001 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* AppDelegate.m */; };
 		APP002 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.m */; };
 		APP003 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* main.m */; };
 		FRM001 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_AV /* AVFoundation.framework */; };
 		FRM002 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_AUDIO /* AudioToolbox.framework */; };
+		FRM003 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_SPEECH /* Speech.framework */; };
 		MDL001 /* Message.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* Message.m */; };
 		MDL002 /* ServerConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC006 /* ServerConfig.m */; };
 		MDL003 /* Conversation.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC012 /* Conversation.m */; };
@@ -23,24 +26,29 @@
 		SVC001 /* WebSocketService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* WebSocketService.m */; };
 		SVC002 /* TTSService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC015 /* TTSService.m */; };
 		SVC003 /* VoiceInputService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC016 /* VoiceInputService.m */; };
-		FRM003 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_SPEECH /* Speech.framework */; };
+		UTIL001 /* ThinkingContentParser.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* ThinkingContentParser.m */; };
+		UTIL002 /* TechTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC019 /* TechTheme.m */; };
 		VCT001 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC007 /* ChatViewController.m */; };
 		VCT002 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC008 /* SettingsViewController.m */; };
 		VCT003 /* ImageZoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC011 /* ImageZoomViewController.m */; };
 		VCT004 /* ConversationListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC014 /* ConversationListViewController.m */; };
 		VIW001 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* MessageCell.m */; };
 		VIW002 /* InputView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* InputView.m */; };
-		UTIL001 /* ThinkingContentParser.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* ThinkingContentParser.m */; };
-		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };			UTIL002 /* TechTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC019 /* TechTheme.m */; };
+		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };
 		VOICE001 /* VoiceRainbowView.m in Sources */ = {isa = PBXBuildFile; fileRef = VOICE002 /* VoiceRainbowView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4C47421D2F5406A700B528B2 /* TaskProgressView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TaskProgressView.h; sourceTree = "<group>"; };
+		4C47421E2F5406A700B528B2 /* TaskProgressView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TaskProgressView.m; sourceTree = "<group>"; };
+		4C4742202F5406CD00B528B2 /* ActionLogEntry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionLogEntry.h; sourceTree = "<group>"; };
+		4C4742212F5406CD00B528B2 /* ActionLogEntry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionLogEntry.m; sourceTree = "<group>"; };
 		73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iOSAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C8841357FFDDD1B3D72ADF4F /* Pods-iOSAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSAgentApp.release.xcconfig"; path = "Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp.release.xcconfig"; sourceTree = "<group>"; };
 		E661C1AB28DF1EDB6254201B /* Pods-iOSAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
 		FRM_AUDIO /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		FRM_AV /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
 		PRODUCT /* iOSAgentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSAgentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		RES_ASSETS /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		RES_INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -81,8 +89,9 @@
 		SRC017 /* ThinkingContentParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingContentParser.m; sourceTree = "<group>"; };
 		SRC017H /* ThinkingContentParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingContentParser.h; sourceTree = "<group>"; };
 		SRC018 /* ThinkingBlockView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingBlockView.m; sourceTree = "<group>"; };
-		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };			SRC019 /* TechTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TechTheme.m; sourceTree = "<group>"; };
-			SRC019H /* TechTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TechTheme.h; sourceTree = "<group>"; };		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
+		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };
+		SRC019 /* TechTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TechTheme.m; sourceTree = "<group>"; };
+		SRC019H /* TechTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TechTheme.h; sourceTree = "<group>"; };
 		VOICE002 /* VoiceRainbowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceRainbowView.m; sourceTree = "<group>"; };
 		VOICE003 /* VoiceRainbowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceRainbowView.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -152,6 +161,8 @@
 				SRC012 /* Conversation.m */,
 				SRC013H /* ConversationManager.h */,
 				SRC013 /* ConversationManager.m */,
+				4C4742202F5406CD00B528B2 /* ActionLogEntry.h */,
+				4C4742212F5406CD00B528B2 /* ActionLogEntry.m */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -197,6 +208,17 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		UTILS /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				SRC017H /* ThinkingContentParser.h */,
+				SRC017 /* ThinkingContentParser.m */,
+				SRC019H /* TechTheme.h */,
+				SRC019 /* TechTheme.m */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
 		VIEWCONTROLLERS /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
@@ -215,6 +237,8 @@
 		VIEWS /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4C47421D2F5406A700B528B2 /* TaskProgressView.h */,
+				4C47421E2F5406A700B528B2 /* TaskProgressView.m */,
 				SRC009H /* MessageCell.h */,
 				SRC009 /* MessageCell.m */,
 				SRC010H /* InputView.h */,
@@ -225,17 +249,6 @@
 				VOICE002 /* VoiceRainbowView.m */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		UTILS /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				SRC017H /* ThinkingContentParser.h */,
-				SRC017 /* ThinkingContentParser.m */,
-				SRC019H /* TechTheme.h */,
-				SRC019 /* TechTheme.m */,
-			);
-			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -352,6 +365,8 @@
 				VIW001 /* MessageCell.m in Sources */,
 				VIW002 /* InputView.m in Sources */,
 				UTIL001 /* ThinkingContentParser.m in Sources */,
+				4C4742222F5406CD00B528B2 /* ActionLogEntry.m in Sources */,
+				4C47421F2F5406A700B528B2 /* TaskProgressView.m in Sources */,
 				VIW003 /* ThinkingBlockView.m in Sources */,
 				UTIL002 /* TechTheme.m in Sources */,
 				VOICE001 /* VoiceRainbowView.m in Sources */,

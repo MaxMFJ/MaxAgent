@@ -12,6 +12,9 @@ enum StreamChunk {
     case imageData(base64: String, mimeType: String, path: String?)
     case localImage(path: String)
     
+    // Chat resume
+    case chatResumeResult(found: Bool, taskId: String?, status: String?, messageId: String?)
+    
     // Autonomous mode chunks
     case taskStart(taskId: String, task: String)
     case modelSelected(modelType: String, reason: String, taskType: String, complexity: Int)
@@ -52,6 +55,8 @@ class BackendService: ObservableObject {
     var onTaskDetected: ((Bool, String?) -> Void)?
     /// 连接成功后检测到有运行中的 chat 流时回调
     var onChatResumeDetected: ((String) -> Void)?
+    /// 收到全局监控事件（来自任意客户端的任务执行事件）时回调
+    var onMonitorEvent: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
     
     init() {
         let config = URLSessionConfiguration.default
@@ -96,11 +101,13 @@ class BackendService: ObservableObject {
                     runningTaskId = json["running_task_id"] as? String
                     hasRunningChat = json["has_running_chat"] as? Bool ?? false
                     runningChatTaskId = json["running_chat_task_id"] as? String
+                    let hasBufferedChat = json["has_buffered_chat"] as? Bool ?? false
                     
                     if hasRunningTask {
                         onTaskDetected?(hasRunningTask, runningTaskId)
                     }
-                    if hasRunningChat, let sessionId = currentSessionId {
+                    // 只有在有运行中或有缓冲的 chat 时才触发恢复
+                    if (hasRunningChat || hasBufferedChat), let sessionId = currentSessionId {
                         onChatResumeDetected?(sessionId)
                     }
                 }
@@ -159,7 +166,11 @@ class BackendService: ObservableObject {
     
     /// 启动空闲时收包循环：响应 server_ping、处理 system_notification/tools_updated，断线时触发重连
     private func startIdleReceiveLoop() {
-        guard webSocketTask != nil, isConnected else { return }
+        guard webSocketTask != nil, isConnected else {
+            print("[BackendService] idleReceiveLoop not started: ws=\(webSocketTask != nil), connected=\(isConnected)")
+            return
+        }
+        print("[BackendService] Starting idleReceiveLoop")
         cancelIdleReceiveLoop()
         idleReceiveTask = Task { [weak self] in
             guard let self = self else { return }
@@ -188,6 +199,16 @@ class BackendService: ObservableObject {
                                 await MainActor.run { self.handleSystemNotification(json) }
                             case "tools_updated":
                                 if let cb = await MainActor.run(body: { self.onToolsUpdated }) { await cb() }
+                            case "monitor_event":
+                                // 全局监控事件：来自任意客户端的任务执行事件
+                                let sourceSession = json["source_session"] as? String ?? ""
+                                let taskId = json["task_id"] as? String ?? ""
+                                let event = json["event"] as? [String: Any] ?? [:]
+                                let eventType = event["type"] as? String ?? "unknown"
+                                print("[BackendService] Received monitor_event: type=\(eventType), taskId=\(taskId), session=\(sourceSession)")
+                                await MainActor.run {
+                                    self.onMonitorEvent?(sourceSession, taskId, event)
+                                }
                             case "client_disconnected":
                                 break
                             default:
@@ -955,6 +976,13 @@ class BackendService: ObservableObject {
                                 switch type {
                                 case "resume_chat_result":
                                     let found = json["found"] as? Bool ?? false
+                                    let taskId = json["task_id"] as? String
+                                    let status = json["status"] as? String
+                                    let messageId = json["last_message_id"] as? String
+                                    
+                                    // 发送 resume 结果，让 ViewModel 可以进行去重判断
+                                    continuation.yield(.chatResumeResult(found: found, taskId: taskId, status: status, messageId: messageId))
+                                    
                                     if !found {
                                         startIdleReceiveLoop()
                                         continuation.finish()

@@ -27,6 +27,13 @@ from .llm_adapter import MacAgentChatModel
 from .tool_adapter import mac_tools_to_langchain
 from .memory_adapter import context_messages_to_langchain
 
+# 本地 token 计数器
+try:
+    from agent.token_counter import count_tokens, count_messages_tokens
+except ImportError:
+    count_tokens = lambda t: 0
+    count_messages_tokens = lambda m: 0
+
 
 def _get_trace_callbacks() -> List[Any]:
     """
@@ -84,7 +91,6 @@ class LangChainChatRunner:
         与 AgentCore.run_stream 相同的签名与 chunk 类型：
         type: content | tool_call | tool_result | tool_executing | stream_end | error
         """
-        total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         context = self.context_manager.get_or_create(session_id)
         context.add_message("user", user_message)
 
@@ -137,6 +143,14 @@ class LangChainChatRunner:
             "chat_history": lc_messages,
         }
 
+        # 本地计算 prompt tokens
+        prompt_messages = [{"role": "system", "content": system_content}]
+        for m in context_messages:
+            prompt_messages.append(m)
+        prompt_messages.append({"role": "user", "content": user_message})
+        prompt_tokens = count_messages_tokens(prompt_messages)
+        completion_content = ""
+
         try:
             final_output = None
             content_yielded = False
@@ -147,6 +161,7 @@ class LangChainChatRunner:
                 if kind == "on_chat_model_stream":
                     chunk = data.get("chunk") or data.get("output")
                     if chunk and hasattr(chunk, "content") and chunk.content:
+                        completion_content += chunk.content
                         yield {"type": "content", "content": chunk.content}
                         content_yielded = True
 
@@ -187,6 +202,7 @@ class LangChainChatRunner:
                         final_output = output
 
             if final_output and not content_yielded:
+                completion_content += final_output
                 yield {"type": "content", "content": final_output}
             context.add_message("assistant", final_output or "")
             self.context_manager.save_session(session_id)
@@ -195,4 +211,13 @@ class LangChainChatRunner:
             yield {"type": "error", "error": str(e)}
             return
 
+        # 本地计算 completion tokens
+        completion_tokens = count_tokens(completion_content)
+        total_tokens = prompt_tokens + completion_tokens
+        total_usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
+        }
+        logger.info(f"LangChain local token count: {total_usage}")
         yield {"type": "stream_end", "usage": total_usage}

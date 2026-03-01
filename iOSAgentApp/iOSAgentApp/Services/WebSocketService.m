@@ -1,7 +1,7 @@
 #import "WebSocketService.h"
 #import "ServerConfig.h"
 
-// 安全从 JSON 字典取值，避免 NSNull 导致 boolValue/integerValue 崩溃
+// 安全从 JSON 字典取值，避免 NSNull 导致崩溃
 static inline BOOL _BoolFromJSON(id obj) {
     if (!obj || obj == [NSNull null]) return NO;
     return [obj isKindOfClass:[NSNumber class]] ? [obj boolValue] : NO;
@@ -9,6 +9,10 @@ static inline BOOL _BoolFromJSON(id obj) {
 static inline NSInteger _IntegerFromJSON(id obj) {
     if (!obj || obj == [NSNull null]) return 0;
     return [obj isKindOfClass:[NSNumber class]] ? [obj integerValue] : 0;
+}
+static inline NSString * _Nullable _StringFromJSON(id obj) {
+    if (!obj || obj == [NSNull null]) return nil;
+    return [obj isKindOfClass:[NSString class]] ? obj : nil;
 }
 
 @interface WebSocketService () <NSURLSessionWebSocketDelegate>
@@ -225,7 +229,7 @@ static inline NSInteger _IntegerFromJSON(id obj) {
                 return;
             }
             
-            NSString *model = json[@"model"];
+            NSString *model = _StringFromJSON(json[@"model"]);
             completion(YES, model);
         });
     }];
@@ -284,19 +288,31 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         return;
     }
     
-    NSString *type = json[@"type"];
+    NSString *type = _StringFromJSON(json[@"type"]);
     
     if ([type isEqualToString:@"connected"]) {
-        self.clientId = json[@"client_id"];
-        self.sessionId = json[@"session_id"];
+        self.clientId = _StringFromJSON(json[@"client_id"]);
+        self.sessionId = _StringFromJSON(json[@"session_id"]);
         self.hasRunningTask = _BoolFromJSON(json[@"has_running_task"]);
-        self.runningTaskId = json[@"running_task_id"];
+        self.runningTaskId = _StringFromJSON(json[@"running_task_id"]);
         BOOL hasRunningChat = _BoolFromJSON(json[@"has_running_chat"]);
+        BOOL hasBufferedChat = _BoolFromJSON(json[@"has_buffered_chat"]);
+        NSInteger bufferedChatCount = _IntegerFromJSON(json[@"buffered_chat_count"]);
         
-        NSLog(@"[WebSocket] Connected with client_id: %@, session_id: %@, has_running_task: %d, has_running_chat: %d", 
-              self.clientId, self.sessionId, self.hasRunningTask, hasRunningChat);
+        NSLog(@"[WebSocket] Connected with client_id: %@, session_id: %@, has_running_task: %d, has_running_chat: %d, has_buffered_chat: %d, buffered_count: %ld", 
+              self.clientId, self.sessionId, self.hasRunningTask, hasRunningChat, hasBufferedChat, (long)bufferedChatCount);
         
-        if ([self.delegate respondsToSelector:@selector(webSocketService:didConnectWithClientId:sessionId:hasRunningTask:runningTaskId:hasRunningChat:)]) {
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didConnectWithClientId:sessionId:hasRunningTask:runningTaskId:hasRunningChat:hasBufferedChat:bufferedChatCount:)]) {
+            [self.delegate webSocketService:self 
+                        didConnectWithClientId:self.clientId 
+                                     sessionId:self.sessionId 
+                               hasRunningTask:self.hasRunningTask 
+                                runningTaskId:self.runningTaskId 
+                              hasRunningChat:hasRunningChat
+                             hasBufferedChat:hasBufferedChat
+                           bufferedChatCount:bufferedChatCount];
+        } else if ([self.delegate respondsToSelector:@selector(webSocketService:didConnectWithClientId:sessionId:hasRunningTask:runningTaskId:hasRunningChat:)]) {
+            // 向后兼容旧的 delegate 方法
             [self.delegate webSocketService:self 
                         didConnectWithClientId:self.clientId 
                                      sessionId:self.sessionId 
@@ -312,14 +328,14 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         }
     }
     else if ([type isEqualToString:@"content"]) {
-        NSString *content = json[@"content"];
+        NSString *content = _StringFromJSON(json[@"content"]);
         if (content && [self.delegate respondsToSelector:@selector(webSocketService:didReceiveContent:)]) {
             [self.delegate webSocketService:self didReceiveContent:content];
         }
     }
     else if ([type isEqualToString:@"tool_call"]) {
-        NSString *toolName = json[@"name"] ?: json[@"tool_name"];
-        NSString *callId = json[@"call_id"] ?: json[@"id"];
+        NSString *toolName = _StringFromJSON(json[@"name"]) ?: _StringFromJSON(json[@"tool_name"]);
+        NSString *callId = _StringFromJSON(json[@"call_id"]) ?: _StringFromJSON(json[@"id"]);
         id args = json[@"arguments"] ?: json[@"args"];
         NSString *argsString = @"";
         
@@ -335,7 +351,7 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         }
     }
     else if ([type isEqualToString:@"tool_result"]) {
-        NSString *callId = json[@"call_id"] ?: json[@"id"];
+        NSString *callId = _StringFromJSON(json[@"call_id"]) ?: _StringFromJSON(json[@"id"]);
         id result = json[@"result"];
         NSString *resultString = @"";
         
@@ -351,31 +367,31 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         }
     }
     else if ([type isEqualToString:@"image"]) {
-        NSString *base64 = json[@"base64"];
-        NSString *mimeType = json[@"mime_type"] ?: @"image/png";
+        NSString *base64 = _StringFromJSON(json[@"base64"]);
+        NSString *mimeType = _StringFromJSON(json[@"mime_type"]) ?: @"image/png";
         
         if (base64.length > 0 && [self.delegate respondsToSelector:@selector(webSocketService:didReceiveImage:mimeType:)]) {
             [self.delegate webSocketService:self didReceiveImage:base64 mimeType:mimeType];
         }
     }
     else if ([type isEqualToString:@"user_message"]) {
-        NSString *content = json[@"content"];
-        NSString *fromClient = json[@"from_client"];
-        NSString *fromClientType = json[@"from_client_type"];
+        NSString *content = _StringFromJSON(json[@"content"]);
+        NSString *fromClient = _StringFromJSON(json[@"from_client"]);
+        NSString *fromClientType = _StringFromJSON(json[@"from_client_type"]);
         
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveUserMessage:fromClient:clientType:)]) {
             [self.delegate webSocketService:self didReceiveUserMessage:content fromClient:fromClient clientType:fromClientType];
         }
     }
     else if ([type isEqualToString:@"done"]) {
-        NSString *modelName = json[@"model"];
+        NSString *modelName = _StringFromJSON(json[@"model"]);
         NSDictionary *tokenUsage = json[@"usage"];
         if ([self.delegate respondsToSelector:@selector(webSocketServiceDidCompleteSend:modelName:tokenUsage:)]) {
             [self.delegate webSocketServiceDidCompleteSend:self modelName:modelName tokenUsage:tokenUsage];
         }
     }
     else if ([type isEqualToString:@"error"]) {
-        NSString *errorMessage = json[@"message"] ?: @"Unknown error";
+        NSString *errorMessage = _StringFromJSON(json[@"message"]) ?: @"Unknown error";
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveError:)]) {
             [self.delegate webSocketService:self didReceiveError:errorMessage];
         }
@@ -395,14 +411,14 @@ static inline NSInteger _IntegerFromJSON(id obj) {
     else if ([type isEqualToString:@"resume_result"]) {
         BOOL found = _BoolFromJSON(json[@"found"]);
         if (!found) {
-            NSString *message = json[@"message"] ?: @"未找到任务";
+            NSString *message = _StringFromJSON(json[@"message"]) ?: @"未找到任务";
             NSLog(@"[WebSocket] Resume failed: %@", message);
             if ([self.delegate respondsToSelector:@selector(webSocketService:taskResumeDidFail:)]) {
                 [self.delegate webSocketService:self taskResumeDidFail:message];
             }
         } else {
-            NSString *taskId = json[@"task_id"];
-            NSString *taskDesc = json[@"task_description"];
+            NSString *taskId = _StringFromJSON(json[@"task_id"]);
+            NSString *taskDesc = _StringFromJSON(json[@"task_description"]);
             NSLog(@"[WebSocket] Task resume successful: %@", taskId);
             if ([self.delegate respondsToSelector:@selector(webSocketService:didResumeTaskWithId:description:)]) {
                 [self.delegate webSocketService:self didResumeTaskWithId:taskId description:taskDesc];
@@ -427,16 +443,16 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         }
     }
     else if ([type isEqualToString:@"web_augmentation"]) {
-        NSString *augType = json[@"augmentation_type"] ?: @"unknown";
-        NSString *query = json[@"query"] ?: @"";
+        NSString *augType = _StringFromJSON(json[@"augmentation_type"]) ?: @"unknown";
+        NSString *query = _StringFromJSON(json[@"query"]) ?: @"";
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveWebAugmentation:query:)]) {
             [self.delegate webSocketService:self didReceiveWebAugmentation:augType query:query];
         }
     }
     else if ([type isEqualToString:@"execution_log"]) {
-        NSString *toolName = json[@"tool_name"] ?: @"";
-        NSString *level = json[@"level"] ?: @"info";
-        NSString *logMessage = json[@"message"] ?: @"";
+        NSString *toolName = _StringFromJSON(json[@"tool_name"]) ?: @"";
+        NSString *level = _StringFromJSON(json[@"level"]) ?: @"info";
+        NSString *logMessage = _StringFromJSON(json[@"message"]) ?: @"";
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveExecutionLog:level:message:)]) {
             [self.delegate webSocketService:self didReceiveExecutionLog:toolName level:level message:logMessage];
         }
@@ -456,14 +472,19 @@ static inline NSInteger _IntegerFromJSON(id obj) {
     else if ([type isEqualToString:@"resume_chat_result"]) {
         BOOL found = _BoolFromJSON(json[@"found"]);
         if (found) {
-            NSString *taskId = json[@"task_id"];
+            NSString *taskId = _StringFromJSON(json[@"task_id"]);
+            NSString *status = _StringFromJSON(json[@"status"]) ?: @"unknown";
             NSInteger bufferedCount = _IntegerFromJSON(json[@"buffered_count"]);
-            NSLog(@"[WebSocket] Chat resume successful: task=%@, buffered=%ld", taskId, (long)bufferedCount);
-            if ([self.delegate respondsToSelector:@selector(webSocketService:didResumeChatWithId:bufferedCount:)]) {
-                [self.delegate webSocketService:self didResumeChatWithId:taskId bufferedCount:bufferedCount];
+            NSString *messageId = _StringFromJSON(json[@"last_message_id"]);
+            NSLog(@"[WebSocket] Chat resume successful: task=%@, status=%@, buffered=%ld, msgId=%@", taskId, status, (long)bufferedCount, messageId);
+            // 优先调用带 messageId 的新方法
+            if ([self.delegate respondsToSelector:@selector(webSocketService:didResumeChatWithId:status:bufferedCount:messageId:)]) {
+                [self.delegate webSocketService:self didResumeChatWithId:taskId status:status bufferedCount:bufferedCount messageId:messageId];
+            } else if ([self.delegate respondsToSelector:@selector(webSocketService:didResumeChatWithId:status:bufferedCount:)]) {
+                [self.delegate webSocketService:self didResumeChatWithId:taskId status:status bufferedCount:bufferedCount];
             }
         } else {
-            NSString *message = json[@"message"] ?: @"未找到 chat 任务";
+            NSString *message = _StringFromJSON(json[@"message"]) ?: @"未找到 chat 任务";
             NSLog(@"[WebSocket] Chat resume failed: %@", message);
             if ([self.delegate respondsToSelector:@selector(webSocketService:taskResumeDidFail:)]) {
                 [self.delegate webSocketService:self taskResumeDidFail:message];
@@ -474,9 +495,19 @@ static inline NSInteger _IntegerFromJSON(id obj) {
         NSLog(@"[WebSocket] Resume chat streaming started");
     }
     else if ([type isEqualToString:@"speak"]) {
-        NSString *text = json[@"text"] ?: json[@"message"] ?: @"";
+        NSString *text = _StringFromJSON(json[@"text"]) ?: _StringFromJSON(json[@"message"]) ?: @"";
         if (text.length > 0 && [self.delegate respondsToSelector:@selector(webSocketService:didReceiveSpeak:)]) {
             [self.delegate webSocketService:self didReceiveSpeak:text];
+        }
+    }
+    else if ([type isEqualToString:@"llm_request_start"] || [type isEqualToString:@"llm_request_end"]) {
+        // LLM 操作状态 - 同时用于普通 chat 和自主任务
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveLLMStatus:)]) {
+            [self.delegate webSocketService:self didReceiveLLMStatus:json];
+        }
+        // 也转发给自主任务处理（保持兼容）
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveAutonomousChunk:)]) {
+            [self.delegate webSocketService:self didReceiveAutonomousChunk:json];
         }
     }
     else if ([type isEqualToString:@"model_selected"] || [type isEqualToString:@"task_start"] ||

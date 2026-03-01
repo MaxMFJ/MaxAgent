@@ -409,21 +409,51 @@ class ProcessManager: ObservableObject {
     private func getBackendPath() -> String {
         let inDerivedData = Bundle.main.bundlePath.contains("DerivedData")
         
+        // 辅助函数：检查路径是否包含有效的 backend
+        func isValidBackendPath(_ path: String) -> Bool {
+            let startScript = (path as NSString).appendingPathComponent("start.sh")
+            return FileManager.default.fileExists(atPath: startScript)
+        }
+        
+        // 辅助函数：从指定目录开始向上查找 backend
+        func findBackendFromPath(_ startPath: String, maxDepth: Int = 5) -> String? {
+            var currentPath = startPath
+            for _ in 0..<maxDepth {
+                // 检查当前目录下的 backend
+                let backendPath = (currentPath as NSString).appendingPathComponent("backend")
+                if isValidBackendPath(backendPath) {
+                    return backendPath
+                }
+                // 向上一级
+                let parent = (currentPath as NSString).deletingLastPathComponent
+                if parent == currentPath { break }  // 已到根目录
+                currentPath = parent
+            }
+            return nil
+        }
+        
         // Debug 模式：优先使用项目 backend（Copy Backend 仅 Archive 执行，Debug 不打包）
         if inDerivedData {
+            // 1. 从当前工作目录向上查找
             let cwd = FileManager.default.currentDirectoryPath
-            let cwdBackend = (cwd as NSString).appendingPathComponent("../backend")
-            let cwdResolved = (cwdBackend as NSString).standardizingPath
-            if FileManager.default.fileExists(atPath: (cwdResolved as NSString).appendingPathComponent("start.sh")) {
-                return cwdResolved
+            if let found = findBackendFromPath(cwd) {
+                return found
             }
+            
+            // 2. 从 App Bundle 位置向上查找
+            if let found = findBackendFromPath(Bundle.main.bundlePath) {
+                return found
+            }
+            
+            // 3. 尝试一些常用位置作为兜底
             let home = FileManager.default.homeDirectoryForCurrentUser.path
             let candidates = [
-                home + "/Desktop/未命名文件夹/MacAgent/backend",
+                home + "/Documents/GitHub/MaxAgent/backend",
+                home + "/Projects/MaxAgent/backend",
                 home + "/Desktop/MacAgent/backend",
             ]
             for path in candidates {
-                if FileManager.default.fileExists(atPath: (path as NSString).appendingPathComponent("start.sh")) {
+                if isValidBackendPath(path) {
                     return path
                 }
             }
@@ -432,23 +462,17 @@ class ProcessManager: ObservableObject {
         // 打包后：App Bundle 内 Resources/backend
         if let resourcesPath = Bundle.main.resourcePath {
             let bundledBackend = (resourcesPath as NSString).appendingPathComponent("backend")
-            let startScript = (bundledBackend as NSString).appendingPathComponent("start.sh")
-            if FileManager.default.fileExists(atPath: startScript) {
+            if isValidBackendPath(bundledBackend) {
                 return bundledBackend
             }
         }
         
-        // 4. 与 .app 同级的 backend（非 DerivedData 场景）
-        var appDir = Bundle.main.bundlePath
-        for _ in 0..<5 {
-            appDir = (appDir as NSString).deletingLastPathComponent
-            let devBackend = (appDir as NSString).appendingPathComponent("backend")
-            if FileManager.default.fileExists(atPath: (devBackend as NSString).appendingPathComponent("start.sh")) {
-                return devBackend
-            }
+        // 与 .app 同级的 backend（非 DerivedData 场景）
+        if let found = findBackendFromPath(Bundle.main.bundlePath) {
+            return found
         }
         
-        // 5. 兜底
+        // 兜底
         return (Bundle.main.resourcePath ?? "") + "/backend"
     }
     

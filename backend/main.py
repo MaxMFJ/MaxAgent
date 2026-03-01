@@ -220,6 +220,15 @@ async def lifespan(app: FastAPI):
     )
     set_autonomous_agent(autonomous)
 
+    # 任务持久化管理器初始化：加载上次中断的任务
+    try:
+        from task_persistence import get_persistence_manager
+        persistence_manager = get_persistence_manager()
+        await persistence_manager.initialize()
+        logger.info("Task persistence manager initialized")
+    except Exception as e:
+        logger.warning(f"Task persistence manager init failed: {e}")
+
     # BGE 向量模型预加载
     if os.environ.get("ENABLE_VECTOR_SEARCH", "true").lower() == "true":
         try:

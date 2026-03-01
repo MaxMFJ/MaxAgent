@@ -1,102 +1,62 @@
 [
   {
-    "id": "88694f5c-64f7-425f-93c6-200adca752aa",
+    "id": "e0e87990-b37b-412e-92bf-76a5d9553ed8",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-01T14:20:20.510194",
+    "read": true
+  },
+  {
+    "id": "ffd94fe4-bc2e-43eb-92ab-64bd1faf350f",
     "level": "warning",
     "title": "启动检查: 模块初始化异常",
     "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
     "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-02-28T09:02:34.517149",
+    "timestamp": "2026-03-01T14:20:20.511190",
     "read": true
   },
   {
-    "id": "7c590074-a9a2-46b7-a890-478545dfe8dc",
+    "id": "22a15029-7cea-42fe-8742-995d1c37a282",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "local variable 'tc' referenced before assignment",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-01T15:15:18.326583",
+    "read": true
+  },
+  {
+    "id": "4b0038bf-5495-4ada-b5d5-2d03187c8acf",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-01T15:17:21.721809",
+    "read": true
+  },
+  {
+    "id": "e8d56471-3d35-42fa-bff3-dcef2d5c08ba",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-01T15:26:13.672579",
+    "read": false
+  },
+  {
+    "id": "45908551-7594-4784-a2e1-fa3d1942bd29",
     "level": "warning",
     "title": "启动检查: 模块初始化异常",
     "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
     "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-02-28T10:17:32.633031",
-    "read": true
-  },
-  {
-    "id": "46e69c82-5d25-4ced-b905-fd38bda40d43",
-    "level": "info",
-    "title": "任务完成",
-    "content": "任务: 帮我检查系统状态\n总结: 系统内存占用率高达 86.2%，已分析并提供安全的用户手动优化方案：1) 打开活动监视器 → 2) 终止高内存进程 → 3) 清理临时文件（/tmp 或 废弃文件夹）→ 4) 可选使用 CleanMyMac 等工具。建议用户按此操作优化系统性能。\n动作数: 19",
-    "source": "autonomous_task",
-    "category": "task",
-    "timestamp": "2026-02-28T12:22:55.817154",
-    "read": true
-  },
-  {
-    "id": "10ef7716-ff94-4d11-ae48-0020c96d1d81",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-02-28T12:33:10.785211",
-    "read": true
-  },
-  {
-    "id": "a1435a47-eb8f-483a-aef8-51f823bc32b5",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-02-28T14:14:51.489194",
-    "read": true
-  },
-  {
-    "id": "7dafec2c-d217-4c88-96e5-babfcd2f9016",
-    "level": "info",
-    "title": "任务完成",
-    "content": "任务: 帮我截图桌面\n总结: 已成功截图桌面，文件保存至 /tmp/screenshot_1772260999.png\n动作数: 2",
-    "source": "autonomous_task",
-    "category": "task",
-    "timestamp": "2026-02-28T14:43:30.038259",
-    "read": true
-  },
-  {
-    "id": "96c550dc-4bf7-4b07-8806-1111dd4b6a0a",
-    "level": "info",
-    "title": "任务完成",
-    "content": "任务: 帮我截图桌面\n总结: 已成功截取桌面全屏截图，文件保存在 /tmp/screenshot_1772267537.png\n动作数: 2",
-    "source": "autonomous_task",
-    "category": "task",
-    "timestamp": "2026-02-28T16:32:29.243394",
-    "read": true
-  },
-  {
-    "id": "a150ad29-dff5-4baf-9f62-49ca696af1d4",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-02-28T16:52:21.920631",
-    "read": true
-  },
-  {
-    "id": "4b66ff08-0e50-4d17-a3c2-dca2b25d3a3c",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-02-28T17:56:36.294282",
-    "read": true
-  },
-  {
-    "id": "985ef026-a9d0-475c-a10a-89a681ddf603",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-02-28T19:28:05.686606",
-    "read": true
+    "timestamp": "2026-03-01T15:26:13.675279",
+    "read": false
   }
 ]

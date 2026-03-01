@@ -31,6 +31,13 @@ from .safety import validate_action_safe
 from .prompt_loader import get_project_context_for_prompt
 from tools.router import execute_tool
 
+# 任务持久化
+try:
+    from task_persistence import get_persistence_manager, PersistentTaskStatus
+except ImportError:
+    get_persistence_manager = None
+    PersistentTaskStatus = None
+
 try:
     from core.task_state_machine import TaskStateMachine, TaskState
     from core.error_model import to_agent_error, AgentError, ErrorCategory
@@ -701,6 +708,31 @@ class AutonomousAgent:
             adaptive_max_iterations=initial_max
         )
         
+        # 桥接会话上下文中的 created_files 到任务的 key_artifacts
+        try:
+            if self.context_manager:
+                conv_ctx = self.context_manager.get_or_create(session_id)
+                if conv_ctx.created_files:
+                    for file_path in conv_ctx.created_files:
+                        context._add_artifact("session_file", file_path, 0)
+                    logger.debug(f"Bridged {len(conv_ctx.created_files)} created_files from session to task")
+        except Exception as e:
+            logger.debug(f"Failed to bridge created_files: {e}")
+        
+        # 创建任务持久化检查点
+        if get_persistence_manager is not None:
+            try:
+                persistence = get_persistence_manager()
+                await persistence.create_task_checkpoint(
+                    task_id=task_id,
+                    session_id=session_id,
+                    task_description=task,
+                    max_iterations=self.max_iterations,
+                )
+                logger.debug(f"Task checkpoint created: {task_id}")
+            except Exception as e:
+                logger.warning(f"Failed to create task checkpoint: {e}")
+        
         logger.info(f"Starting autonomous task: {task_id} - {task[:50]}...")
         
         # Layer 1: Collect user environment context
@@ -782,8 +814,26 @@ class AutonomousAgent:
             logger.debug("Plan-and-Execute init failed: %s", e)
         
         try:
+            # 硬性上限：防止无限循环（是 max_iterations 的 2 倍）
+            HARD_ITERATION_LIMIT = self.max_iterations * 2
+            
             while True:
                 context.current_iteration += 1
+                
+                # 硬性上限检查 - 即使所有其他停止条件失效也必须停止
+                if context.current_iteration > HARD_ITERATION_LIMIT:
+                    logger.error(f"Hard iteration limit reached: {context.current_iteration} > {HARD_ITERATION_LIMIT}")
+                    context.status = "force_stopped"
+                    context.stop_reason = "hard_limit"
+                    context.stop_message = f"任务执行超过硬性上限（{HARD_ITERATION_LIMIT} 次迭代），强制终止"
+                    yield {
+                        "type": "task_stopped",
+                        "task_id": context.task_id,
+                        "reason": "hard_limit",
+                        "message": context.stop_message,
+                        "iterations": context.current_iteration - 1,
+                    }
+                    break
                 
                 # Update adaptive max in context
                 if self._stop_policy:
@@ -804,6 +854,9 @@ class AutonomousAgent:
 
                 if action is None:
                     context.retry_count += 1
+                    # 解析失败不应消耗正常迭代次数，撤销迭代计数
+                    context.current_iteration -= 1
+                    
                     backoff_seconds = min(2 ** context.retry_count, 30)
                     # 解析重试：用 retry 类型，前端显示「正在重试…」而非「错误」
                     yield {
@@ -826,8 +879,15 @@ class AutonomousAgent:
                     
                     if context.retry_count >= context.max_retries:
                         context.status = "parse_error"
-                        context.stop_reason = "consecutive_failures"
-                        context.stop_message = "连续解析失败"
+                        context.stop_reason = "consecutive_parse_failures"
+                        context.stop_message = f"LLM 连续 {context.retry_count} 次返回无法解析的内容，请检查模型配置或简化任务描述"
+                        yield {
+                            "type": "task_stopped",
+                            "task_id": context.task_id,
+                            "reason": "parse_error",
+                            "message": context.stop_message,
+                            "recommendation": "请尝试：1) 简化任务描述 2) 检查 API 配额 3) 切换模型",
+                        }
                         break
                     
                     await asyncio.sleep(backoff_seconds)
@@ -845,6 +905,29 @@ class AutonomousAgent:
                 if action.action_type == ActionType.FINISH:
                     result = await self._execute_action(action)
                     context.add_action_log(action, result)
+                    
+                    # 保存检查点 - 任务完成
+                    if get_persistence_manager is not None:
+                        try:
+                            persistence = get_persistence_manager()
+                            await persistence.update_action_checkpoint(
+                                task_id=task_id,
+                                iteration=context.current_iteration,
+                                action_type=action.action_type.value,
+                                params=action.params,
+                                reasoning=action.reasoning,
+                                success=result.success,
+                                output=result.output,
+                                error=result.error,
+                            )
+                            await persistence.update_task_status(
+                                task_id=task_id,
+                                status=PersistentTaskStatus.COMPLETED,
+                                final_result=action.params.get("summary", "任务完成"),
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to save checkpoint on finish: {e}")
+                    
                     context.status = "completed"
                     context.stop_reason = "task_complete"
                     context.completed_at = datetime.now()
@@ -913,6 +996,24 @@ class AutonomousAgent:
                 if state_machine and TaskState is not None:
                     state_machine.transition(TaskState.RUNNING)
                 context.add_action_log(action, result)
+                
+                # 保存检查点 - 每次 action 执行后
+                if get_persistence_manager is not None:
+                    try:
+                        persistence = get_persistence_manager()
+                        await persistence.update_action_checkpoint(
+                            task_id=task_id,
+                            iteration=context.current_iteration,
+                            action_type=action.action_type.value,
+                            params=action.params,
+                            reasoning=action.reasoning,
+                            success=result.success,
+                            output=result.output,
+                            error=result.error,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Failed to save action checkpoint: {e}")
+                
                 if trace_append_span:
                     try:
                         trace_append_span(context.task_id, {
@@ -964,7 +1065,11 @@ class AutonomousAgent:
                     yield chunk
                 
                 if not result.success:
-                    context.consecutive_action_failures += 1
+                    # 只有实际执行的动作（非 think）才计入连续失败
+                    # think 只是 LLM 的中间思考，不应影响连续失败计数
+                    if action.action_type != ActionType.THINK:
+                        context.consecutive_action_failures += 1
+                    
                     if context.consecutive_action_failures >= context.max_consecutive_action_failures:
                         logger.warning(
                             f"Consecutive action failures reached {context.consecutive_action_failures}, stopping"
@@ -976,6 +1081,19 @@ class AutonomousAgent:
                             f"最后错误: {result.error or '未知'}"
                         )
                         context.completed_at = datetime.now()
+                        
+                        # 更新持久化状态
+                        if get_persistence_manager is not None:
+                            try:
+                                persistence = get_persistence_manager()
+                                await persistence.update_task_status(
+                                    task_id=task_id,
+                                    status=PersistentTaskStatus.ERROR,
+                                    final_result=context.stop_message,
+                                )
+                            except Exception as e:
+                                logger.debug(f"Failed to update task status: {e}")
+                        
                         execution_time_ms = int((time.time() - self._task_start_time) * 1000) if self._task_start_time else 0
                         if self._current_selection:
                             self.model_selector.record_result(
@@ -1069,6 +1187,18 @@ class AutonomousAgent:
                         context.stop_message = decision.message
                         context.completed_at = datetime.now()
                         
+                        # 更新持久化状态
+                        if get_persistence_manager is not None:
+                            try:
+                                persistence = get_persistence_manager()
+                                await persistence.update_task_status(
+                                    task_id=task_id,
+                                    status=PersistentTaskStatus.STOPPED,
+                                    final_result=decision.message,
+                                )
+                            except Exception as e:
+                                logger.debug(f"Failed to update task status: {e}")
+                        
                         execution_time_ms = int((time.time() - self._task_start_time) * 1000) if self._task_start_time else 0
                         
                         # Record failure for model selection learning
@@ -1134,6 +1264,18 @@ class AutonomousAgent:
             context.status = "error"
             context.stop_reason = "error"
             context.stop_message = str(e)
+            
+            # 更新持久化状态
+            if get_persistence_manager is not None:
+                try:
+                    persistence = get_persistence_manager()
+                    await persistence.update_task_status(
+                        task_id=task_id,
+                        status=PersistentTaskStatus.ERROR,
+                        final_result=str(e),
+                    )
+                except Exception as pe:
+                    logger.debug(f"Failed to update task status on error: {pe}")
             
             if self._stop_policy:
                 self._stop_policy.force_stop(StopReason.ERROR, str(e))
@@ -1589,6 +1731,7 @@ class AutonomousAgent:
         runner_map = {"python": "python3", "bash": "bash", "javascript": "node", "shell": "bash"}
         runner = runner_map.get(language.lower())
         
+        script_path = None
         try:
             with tempfile.NamedTemporaryFile(
                 mode="w",
@@ -1623,8 +1766,6 @@ class AutonomousAgent:
                 timeout=120
             )
             
-            os.unlink(script_path)
-            
             stdout_str = stdout.decode("utf-8", errors="replace").strip()
             stderr_str = stderr.decode("utf-8", errors="replace").strip()
             
@@ -1634,8 +1775,18 @@ class AutonomousAgent:
                 "error": stderr_str if process.returncode != 0 else None
             }
             
+        except asyncio.TimeoutError:
+            return {"success": False, "error": "Script execution timed out (120s)"}
         except Exception as e:
             return {"success": False, "error": str(e)}
+        finally:
+            # 确保临时脚本文件被清理（除非用户要求保留）
+            if script_path and should_run:
+                try:
+                    if os.path.exists(script_path):
+                        os.unlink(script_path)
+                except Exception:
+                    pass  # 忽略清理失败，不影响主逻辑
     
     async def _handle_read_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle read_file action"""
@@ -1741,18 +1892,30 @@ class AutonomousAgent:
         if not os.path.exists(path):
             return {"success": False, "error": f"Path not found: {path}"}
         
-        dangerous_paths = ["/", "/System", "/Library", "/usr", "/bin", "/sbin", os.path.expanduser("~")]
-        if path in dangerous_paths:
-            return {"success": False, "error": f"Cannot delete protected path: {path}"}
+        # 使用 realpath 规范化路径，防止通过符号链接或 .. 绕过检查
+        real_path = os.path.realpath(path)
+        home_dir = os.path.realpath(os.path.expanduser("~"))
+        
+        # 危险路径列表（包括绝对根目录和系统路径）
+        dangerous_exact = ["/", "/System", "/Library", "/usr", "/bin", "/sbin", "/etc", "/var", home_dir]
+        dangerous_prefixes = ["/System/", "/Library/", "/usr/", "/bin/", "/sbin/", "/etc/", "/var/", "/private/"]
+        
+        if real_path in dangerous_exact:
+            return {"success": False, "error": f"Cannot delete protected path: {real_path}"}
+        
+        # 检查是否在危险前缀下
+        for prefix in dangerous_prefixes:
+            if real_path.startswith(prefix):
+                return {"success": False, "error": f"Cannot delete system path: {real_path}"}
         
         try:
-            if os.path.isdir(path):
+            if os.path.isdir(real_path):
                 if recursive:
-                    shutil.rmtree(path)
+                    shutil.rmtree(real_path)
                 else:
-                    os.rmdir(path)
+                    os.rmdir(real_path)
             else:
-                os.unlink(path)
+                os.unlink(real_path)
             return {"success": True, "output": f"Deleted: {path}"}
         except Exception as e:
             return {"success": False, "error": str(e)}

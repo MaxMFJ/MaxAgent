@@ -19,6 +19,7 @@ from app_state import (
     get_task_tracker, AutoTaskStatus, TaskType,
     get_chat_runner,
 )
+from task_persistence import get_persistence_manager, PersistentTaskStatus
 from connection_manager import (
     connection_manager, safe_send_json, ClientType,
 )
@@ -45,11 +46,62 @@ router = APIRouter()
 HEARTBEAT_INTERVAL = 30  # 服务端心跳间隔（秒）
 
 
+# ============== Monitor Event Helper ==============
+
+async def broadcast_monitor_event(session_id: str, task_id: str, event: dict, task_type: str = "chat"):
+    """
+    广播监控事件给所有客户端（用于全局监控面板）。
+    
+    Args:
+        session_id: 会话 ID
+        task_id: 任务 ID
+        event: 事件数据 (包含 type 字段)
+        task_type: 任务类型 ("chat" 或 "autonomous")
+    """
+    monitor_event = {
+        "type": "monitor_event",
+        "source_session": session_id,
+        "task_id": task_id,
+        "task_type": task_type,
+        "event": event,
+    }
+    event_type = event.get("type", "unknown")
+    logger.debug(f"Broadcasting monitor_event: type={event_type}, task_id={task_id}, task_type={task_type}")
+    await connection_manager.broadcast_all(monitor_event)
+
+
 # ============== Message Handlers ==============
 
-async def _cancel_orphan_tasks(session_id: str):
-    """当 session 内所有客户端都已断开时，取消该 session 的运行中任务"""
+async def _handle_client_disconnect(session_id: str):
+    """
+    客户端断开连接时的处理逻辑。
+    不立即取消任务，而是标记为暂停状态并启动超时计时器。
+    任务会继续后台执行，只有超时后才会被取消。
+    """
+    persistence = get_persistence_manager()
     tracker = get_task_tracker()
+    
+    # 标记客户端断开，启动孤儿任务超时计时器
+    await persistence.mark_client_disconnected(session_id)
+    
+    # autonomous 任务继续后台执行，不取消
+    tt = tracker.get_by_session(session_id)
+    if tt and tt.status == AutoTaskStatus.RUNNING:
+        logger.info(f"Client disconnected, autonomous task continues in background (session: {session_id}, task: {tt.task_id})")
+    
+    # chat 任务继续后台执行，不取消
+    chat_tt = tracker.get_by_session(session_id, task_type=TaskType.CHAT)
+    if chat_tt and chat_tt.status == AutoTaskStatus.RUNNING:
+        logger.info(f"Client disconnected, chat task continues in background (session: {session_id}, task: {chat_tt.task_id})")
+
+
+async def _cancel_orphan_tasks(session_id: str):
+    """
+    强制取消孤儿任务（仅在超时或显式调用时使用）。
+    正常断开连接应使用 _handle_client_disconnect。
+    """
+    tracker = get_task_tracker()
+    persistence = get_persistence_manager()
 
     # 取消 autonomous 任务
     tt = tracker.get_by_session(session_id)
@@ -60,6 +112,7 @@ async def _cancel_orphan_tasks(session_id: str):
         except asyncio.CancelledError:
             pass
         await tracker.finish(tt.task_id, AutoTaskStatus.STOPPED)
+        await persistence.update_task_status(tt.task_id, PersistentTaskStatus.ORPHAN_TIMEOUT)
         logger.info(f"Orphan autonomous task cancelled (session: {session_id}, task: {tt.task_id})")
 
     # 取消 chat 流任务
@@ -178,6 +231,13 @@ async def _handle_chat(
             task_type=TaskType.CHAT,
         )
 
+        # 广播任务开始事件
+        await broadcast_monitor_event(
+            _sid, chat_task_id,
+            {"type": "task_start", "task": _content[:200], "timestamp": datetime.now().isoformat()},
+            task_type="chat"
+        )
+
         chunk_count = 0
         has_error = False
         client_gone = False
@@ -209,6 +269,11 @@ async def _handle_chat(
                 if chunk_type == "stream_end":
                     total_usage = chunk.get("usage")
                     continue
+                
+                # 广播监控事件（重要事件类型）
+                if chunk_type in ("llm_request_start", "llm_request_end", "tool_call", "tool_result", "thinking", "content", "error"):
+                    await broadcast_monitor_event(_sid, chat_task_id, chunk, task_type="chat")
+                
                 if chunk_type == "tool_result":
                     data = chunk.pop("data", None)
                     to_send = {k: v for k, v in chunk.items()}
@@ -263,6 +328,12 @@ async def _handle_chat(
                     await connection_manager.broadcast_to_session(_sid, done_msg, exclude_client=_cid)
                 else:
                     await connection_manager.broadcast_to_session(_sid, done_msg)
+                # 广播任务完成事件
+                await broadcast_monitor_event(
+                    _sid, chat_task_id,
+                    {"type": "task_complete", "status": "completed", "timestamp": datetime.now().isoformat()},
+                    task_type="chat"
+                )
 
         except asyncio.CancelledError:
             final_status = AutoTaskStatus.STOPPED
@@ -270,6 +341,12 @@ async def _handle_chat(
             tracker.record_chunk(chat_task_id, stopped_msg)
             await safe_send_json(websocket, stopped_msg)
             await connection_manager.broadcast_to_session(_sid, stopped_msg, exclude_client=_cid)
+            # 广播任务停止事件
+            await broadcast_monitor_event(
+                _sid, chat_task_id,
+                {"type": "task_stopped", "reason": "cancelled", "timestamp": datetime.now().isoformat()},
+                task_type="chat"
+            )
             raise
         except WebSocketDisconnect:
             logger.info(f"Chat stream: WebSocket disconnected, task continues in background (task_id={chat_task_id})")
@@ -279,6 +356,8 @@ async def _handle_chat(
             err_msg = str(e)
             err_chunk = {"type": "error", "message": err_msg, "error": err_msg}
             tracker.record_chunk(chat_task_id, err_chunk)
+            # 广播错误事件
+            await broadcast_monitor_event(_sid, chat_task_id, err_chunk, task_type="chat")
             if not client_gone:
                 await safe_send_json(websocket, err_chunk)
             try:
@@ -341,6 +420,7 @@ async def _autonomous_task_worker(
     后台协程：执行自主任务，将输出 chunk 缓冲到 TaskTracker，
     同时广播给 session 内所有在线客户端。
     即使所有客户端断线，任务仍继续执行。
+    同时广播监控事件给所有连接的客户端（用于全局监控）。
     """
     tracker = get_task_tracker()
     autonomous_agent = get_autonomous_agent()
@@ -350,9 +430,11 @@ async def _autonomous_task_worker(
         async for chunk in autonomous_agent.run_autonomous(task, session_id=session_id):
             tracker.record_chunk(task_id, chunk)
             await connection_manager.broadcast_to_session(session_id, chunk)
+            
+            # 广播监控事件给所有客户端（用于全局监控面板）
+            await broadcast_monitor_event(session_id, task_id, chunk, task_type="autonomous")
 
             chunk_type = chunk.get("type")
-
             if chunk_type == "error":
                 err_msg = chunk.get("error") or chunk.get("message") or "未知错误"
                 try:
@@ -542,12 +624,18 @@ async def _handle_resume_task(message: dict, websocket: WebSocket, current_sessi
     """
     客户端重连后发送 resume_task，服务端回放缓冲的 chunks，
     如果任务仍在运行，后续输出会通过 session 广播自动送达。
+    支持从持久化检查点获取额外的任务执行历史。
     """
     session_id = message.get("session_id") or current_session_id
     tracker = get_task_tracker()
+    persistence = get_persistence_manager()
+    
     tt = tracker.get_by_session(session_id)
+    
+    # 尝试从持久化存储获取检查点
+    checkpoint = await persistence.load_checkpoint_by_session(session_id)
 
-    if not tt:
+    if not tt and not checkpoint:
         await safe_send_json(websocket, {
             "type": "resume_result",
             "session_id": session_id,
@@ -556,32 +644,63 @@ async def _handle_resume_task(message: dict, websocket: WebSocket, current_sessi
         })
         return
 
-    buffered = tracker.get_buffered_chunks(tt.task_id)
+    # 优先使用内存中的任务状态
+    if tt:
+        buffered = tracker.get_buffered_chunks(tt.task_id)
+        task_id = tt.task_id
+        task_description = tt.task_description
+        status = tt.status.value
+    else:
+        # 从持久化检查点恢复
+        buffered = []
+        task_id = checkpoint.task_id
+        task_description = checkpoint.task_description
+        status = checkpoint.status.value if hasattr(checkpoint.status, 'value') else checkpoint.status
+        
+        # 将检查点中的 action 历史转换为 chunks 格式
+        for action_cp in checkpoint.action_checkpoints:
+            buffered.append({
+                "type": "action_result",
+                "action_id": f"recovered_{action_cp.iteration}",
+                "success": action_cp.success,
+                "output": str(action_cp.output)[:500] if action_cp.output else None,
+                "error": action_cp.error,
+                "execution_time_ms": 0,
+                "recovered_from_checkpoint": True,
+            })
 
     await safe_send_json(websocket, {
         "type": "resume_result",
         "session_id": session_id,
         "found": True,
-        "task_id": tt.task_id,
-        "task_description": tt.task_description,
-        "status": tt.status.value,
+        "task_id": task_id,
+        "task_description": task_description,
+        "status": status,
         "buffered_count": len(buffered),
+        "has_checkpoint": checkpoint is not None,
+        "checkpoint_iteration": checkpoint.current_iteration if checkpoint else None,
     })
 
     for chunk in buffered:
         if not await safe_send_json(websocket, chunk):
             break
 
-    if tt.status == AutoTaskStatus.RUNNING:
+    if tt and tt.status == AutoTaskStatus.RUNNING:
         await safe_send_json(websocket, {
             "type": "resume_streaming",
-            "task_id": tt.task_id,
+            "task_id": task_id,
             "message": "任务仍在执行中，后续输出将实时推送",
+        })
+    elif checkpoint and checkpoint.status in [PersistentTaskStatus.RUNNING, PersistentTaskStatus.PAUSED]:
+        await safe_send_json(websocket, {
+            "type": "resume_streaming",
+            "task_id": task_id,
+            "message": "任务正在后台执行或已暂停，重连后将继续接收更新",
         })
 
     logger.info(
-        f"Task resumed for session {session_id}: task_id={tt.task_id}, "
-        f"status={tt.status.value}, replayed={len(buffered)} chunks"
+        f"Task resumed for session {session_id}: task_id={task_id}, "
+        f"status={status}, replayed={len(buffered)} chunks, has_checkpoint={checkpoint is not None}"
     )
 
 
@@ -589,12 +708,55 @@ async def _handle_resume_chat(message: dict, websocket: WebSocket, current_sessi
     """
     客户端重连后发送 resume_chat，服务端回放 chat 流缓冲的 chunks。
     如果 chat 任务仍在运行，后续输出会通过 session 广播自动送达。
+    如果 task_tracker 没有记录（后端重启），尝试从 context_manager 恢复最后的回复。
     """
     session_id = message.get("session_id") or current_session_id
     tracker = get_task_tracker()
     tt = tracker.get_by_session(session_id, task_type=TaskType.CHAT)
 
     if not tt:
+        # 尝试从 context_manager 恢复最后的 assistant 回复
+        try:
+            from agent.context_manager import context_manager
+            ctx = context_manager.get_or_create(session_id)
+            if ctx.recent_messages:
+                # 找到最后一条 assistant 消息
+                last_assistant_msg = None
+                for msg in reversed(ctx.recent_messages):
+                    if msg.get("role") == "assistant" and msg.get("content"):
+                        last_assistant_msg = msg
+                        break
+                
+                if last_assistant_msg:
+                    message_id = last_assistant_msg.get("id")
+                    # 构造一个虚拟的恢复结果
+                    await safe_send_json(websocket, {
+                        "type": "resume_chat_result",
+                        "session_id": session_id,
+                        "found": True,
+                        "task_id": f"recovered_{session_id}",
+                        "status": "completed",
+                        "buffered_count": 2,  # content + done
+                        "recovered_from_context": True,
+                        "last_message_id": message_id,  # 客户端可用于去重
+                    })
+                    # 发送内容（包含 message_id 用于客户端去重）
+                    await safe_send_json(websocket, {
+                        "type": "content",
+                        "content": last_assistant_msg["content"],
+                        "message_id": message_id,
+                    })
+                    # 发送 done
+                    await safe_send_json(websocket, {
+                        "type": "done",
+                        "model": None,
+                        "message_id": message_id,
+                    })
+                    logger.info(f"Chat recovered from context for session {session_id}, message_id={message_id}")
+                    return
+        except Exception as e:
+            logger.warning(f"Failed to recover chat from context: {e}")
+        
         await safe_send_json(websocket, {
             "type": "resume_chat_result",
             "session_id": session_id,
@@ -732,16 +894,37 @@ async def _handle_analyze_task(message: dict, websocket: WebSocket):
 # ============== Server-side Heartbeat ==============
 
 async def _heartbeat_loop(websocket: WebSocket, client_id: str):
-    """服务端定时发送心跳，检测连接是否存活"""
+    """服务端定时发送心跳，检测连接是否存活
+    
+    改进：基于上次发送完成时间计算下一次发送，避免心跳堆积
+    """
+    import time
+    
     try:
+        last_send_time = time.monotonic()
         while True:
-            await asyncio.sleep(HEARTBEAT_INTERVAL)
-            if not await safe_send_json(websocket, {
+            # 计算需要等待的时间（基于上次发送完成时间）
+            elapsed = time.monotonic() - last_send_time
+            wait_time = max(0, HEARTBEAT_INTERVAL - elapsed)
+            if wait_time > 0:
+                await asyncio.sleep(wait_time)
+            
+            # 发送心跳
+            send_start = time.monotonic()
+            success = await safe_send_json(websocket, {
                 "type": "server_ping",
                 "timestamp": datetime.now().isoformat(),
-            }):
+            })
+            last_send_time = time.monotonic()
+            
+            if not success:
                 logger.info(f"Heartbeat failed for {client_id}, connection likely dead")
                 break
+            
+            # 如果发送时间超过 5 秒，记录警告
+            send_duration = last_send_time - send_start
+            if send_duration > 5:
+                logger.warning(f"Heartbeat send took {send_duration:.1f}s for {client_id}, network may be slow")
     except asyncio.CancelledError:
         pass
     except Exception:
@@ -777,6 +960,10 @@ async def websocket_endpoint(
 
     logger.info(f"WebSocket connection established: {actual_client_id} ({actual_client_type.value})")
 
+    # 通知持久化管理器客户端已重连，取消孤儿任务超时计时器
+    persistence = get_persistence_manager()
+    await persistence.mark_client_reconnected(current_session_id)
+
     # 检查该 session 是否有正在运行的任务
     tracker = get_task_tracker()
     running_task = tracker.get_by_session(current_session_id)
@@ -784,6 +971,14 @@ async def websocket_endpoint(
 
     running_chat = tracker.get_by_session(current_session_id, task_type=TaskType.CHAT)
     has_running_chat = running_chat and running_chat.status == AutoTaskStatus.RUNNING
+    
+    # 检查是否有缓冲的 chat 消息（即使任务已完成）
+    has_buffered_chat = False
+    buffered_chat_count = 0
+    if running_chat:
+        buffered = tracker.get_buffered_chunks(running_chat.task_id)
+        buffered_chat_count = len(buffered)
+        has_buffered_chat = buffered_chat_count > 0
 
     unread_count = 0
     try:
@@ -801,6 +996,8 @@ async def websocket_endpoint(
         "running_task_id": running_task.task_id if has_running_task else None,
         "has_running_chat": has_running_chat,
         "running_chat_task_id": running_chat.task_id if has_running_chat else None,
+        "has_buffered_chat": has_buffered_chat,
+        "buffered_chat_count": buffered_chat_count,
     })
 
     if unread_count > 0:
@@ -876,6 +1073,21 @@ async def websocket_endpoint(
             elif msg_type == "analyze_task":
                 await _handle_analyze_task(message, websocket)
 
+            else:
+                # 未知消息类型，通知客户端
+                logger.warning(f"Unknown message type received: {msg_type}")
+                await safe_send_json(websocket, {
+                    "type": "error",
+                    "code": "unknown_message_type",
+                    "message": f"未知的消息类型: {msg_type}",
+                    "supported_types": [
+                        "stop", "chat", "ping", "pong", "new_session", "clear_session",
+                        "autonomous_task", "resume_task", "resume_chat", "get_episodes",
+                        "get_statistics", "get_system_messages", "mark_system_message_read",
+                        "mark_all_system_messages_read", "get_model_stats", "analyze_task"
+                    ]
+                })
+
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected: {actual_client_id}")
         await connection_manager.broadcast_to_session(
@@ -900,4 +1112,5 @@ async def websocket_endpoint(
 
         remaining = connection_manager.get_session_client_count(current_session_id)
         if remaining == 0:
-            await _cancel_orphan_tasks(current_session_id)
+            # 不立即取消任务，改为延迟取消策略
+            await _handle_client_disconnect(current_session_id)

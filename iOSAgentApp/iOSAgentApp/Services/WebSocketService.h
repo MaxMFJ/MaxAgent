@@ -23,6 +23,7 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(nullable NSString *)modelName tokenUsage:(nullable NSDictionary<NSString *, NSNumber *> *)tokenUsage;
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat;
+- (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat hasBufferedChat:(BOOL)hasBufferedChat bufferedChatCount:(NSInteger)bufferedChatCount;
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;
 - (void)webSocketServiceDidStop:(WebSocketService *)service;
 - (void)webSocketService:(WebSocketService *)service didReceiveWebAugmentation:(NSString *)augmentationType query:(NSString *)query;
@@ -33,12 +34,15 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didDetectRunningTask:(NSString *)taskId;
 - (void)webSocketService:(WebSocketService *)service didResumeTaskWithId:(NSString *)taskId description:(NSString *)taskDescription;
 - (void)webSocketService:(WebSocketService *)service taskResumeDidFail:(NSString *)message;
-- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId bufferedCount:(NSInteger)bufferedCount;
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId status:(NSString *)status bufferedCount:(NSInteger)bufferedCount;
+- (void)webSocketService:(WebSocketService *)service didResumeChatWithId:(NSString *)taskId status:(NSString *)status bufferedCount:(NSInteger)bufferedCount messageId:(nullable NSString *)messageId;
 
 /// 服务端下发朗读指令（如 notification(speak)）
 - (void)webSocketService:(WebSocketService *)service didReceiveSpeak:(NSString *)text;
 /// 自主任务流式 chunk（model_selected, task_start, action_plan, action_result, task_complete 等）
 - (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk;
+/// LLM 操作状态（llm_request_start, llm_request_end）- 用于显示 chat 进度
+- (void)webSocketService:(WebSocketService *)service didReceiveLLMStatus:(NSDictionary *)status;
 
 @end
 

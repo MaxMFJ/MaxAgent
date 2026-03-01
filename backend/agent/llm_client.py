@@ -19,6 +19,7 @@ except ImportError:
 
 from .llm_utils import extract_text_from_content
 from .usage_tracker import UsageTracker
+from .token_counter import count_messages_tokens, StreamTokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +192,34 @@ class LLMClient:
                 success=False,
                 error=str(e)[:200],
             )
+            
+            # 提供更友好的错误信息
+            error_str = str(e).lower()
+            if "401" in error_str or "unauthorized" in error_str or "invalid api key" in error_str:
+                friendly_error = (
+                    f"API 认证失败 (401): 请检查 API Key 配置。\n"
+                    f"• 如使用 DeepSeek: 设置环境变量 DEEPSEEK_API_KEY 或在 Mac App 设置中配置\n"
+                    f"• 如使用 OpenAI: 设置环境变量 OPENAI_API_KEY\n"
+                    f"• 如使用 New API: 检查 API Key 和 Base URL 是否正确\n"
+                    f"原始错误: {str(e)[:100]}"
+                )
+                logger.error(friendly_error)
+                raise RuntimeError(friendly_error) from e
+            elif "429" in error_str or "rate limit" in error_str:
+                friendly_error = (
+                    f"API 请求频率超限 (429): 请稍后重试或升级 API 配额。\n"
+                    f"原始错误: {str(e)[:100]}"
+                )
+                logger.error(friendly_error)
+                raise RuntimeError(friendly_error) from e
+            elif "quota" in error_str or "insufficient" in error_str:
+                friendly_error = (
+                    f"API 配额不足: 请检查账户余额或升级套餐。\n"
+                    f"原始错误: {str(e)[:100]}"
+                )
+                logger.error(friendly_error)
+                raise RuntimeError(friendly_error) from e
+            
             logger.error(f"LLM chat error: {e}")
             raise
     
@@ -232,6 +261,10 @@ class LLMClient:
                 content = msg.get('content', '')[:100] if msg.get('content') else 'None'
                 logger.debug(f"Message {len(messages)-3+i}: role={role}, content={content}...")
             
+            # 本地计算 prompt tokens（用于 API 不返回 usage 的情况）
+            local_prompt_tokens = count_messages_tokens(messages)
+            token_counter = StreamTokenCounter(prompt_tokens=local_prompt_tokens)
+            
             create_coro = self._client.chat.completions.create(**kwargs)
             if get_timeout_policy is not None:
                 stream = await get_timeout_policy().with_llm_timeout(create_coro)
@@ -245,100 +278,118 @@ class LLMClient:
             chunk_timeout = 90
 
             stream_iter = stream.__aiter__()
-            while True:
-                try:
-                    chunk = await asyncio.wait_for(stream_iter.__anext__(), timeout=chunk_timeout)
-                except StopAsyncIteration:
-                    break
-                except asyncio.TimeoutError:
-                    logger.error(
-                        f"LLM stream timeout (no chunk for {chunk_timeout}s). "
-                        f"provider={self.config.provider}, model={self.config.model}. "
-                        "可能原因: LM Studio 报错(如 Channel Error)未正确关闭连接，或模型负载过高。"
-                    )
-                    yield {
-                        "type": "error",
-                        "error": (
-                            "LLM 响应超时。可能原因：\n"
-                            "1. LM Studio 报错（如 Channel Error）未正确传递到客户端；\n"
-                            "2. 模型未加载或负载过高。请查看 LM Studio 日志并重试。"
-                        ),
-                    }
-                    return
+            try:
+                while True:
+                    try:
+                        chunk = await asyncio.wait_for(stream_iter.__anext__(), timeout=chunk_timeout)
+                    except StopAsyncIteration:
+                        break
+                    except asyncio.TimeoutError:
+                        logger.error(
+                            f"LLM stream timeout (no chunk for {chunk_timeout}s). "
+                            f"provider={self.config.provider}, model={self.config.model}. "
+                            "可能原因: LM Studio 报错(如 Channel Error)未正确关闭连接，或模型负载过高。"
+                        )
+                        yield {
+                            "type": "error",
+                            "error": (
+                                "LLM 响应超时。可能原因：\n"
+                                "1. LM Studio 报错（如 Channel Error）未正确传递到客户端；\n"
+                                "2. 模型未加载或负载过高。请查看 LM Studio 日志并重试。"
+                            ),
+                        }
+                        return
 
-                chunk_count += 1
+                    chunk_count += 1
 
-                # 检查是否有 usage 信息（DeepSeek 会在最后一个 chunk 中返回）
-                if hasattr(chunk, 'usage') and chunk.usage:
-                    usage_info = {
-                        "prompt_tokens": chunk.usage.prompt_tokens,
-                        "completion_tokens": chunk.usage.completion_tokens,
-                        "total_tokens": chunk.usage.total_tokens
-                    }
-                    logger.info(f"Got usage info: {usage_info}")
-                
-                delta = chunk.choices[0].delta if chunk.choices else None
-                
-                if not delta:
-                    continue
-                
-                if delta.content:
-                    chunk_text = extract_text_from_content(delta.content)
-                    if chunk_text:
-                        logger.debug(f"Content chunk: {chunk_text[:50] if len(chunk_text) > 50 else chunk_text}")
-                        yield {"type": "content", "content": chunk_text}
-                
-                if delta.tool_calls:
-                    for tc in delta.tool_calls:
-                        idx = tc.index
-                        if idx not in tool_calls_buffer:
-                            tool_calls_buffer[idx] = {
-                                "id": tc.id or "",
-                                "name": tc.function.name if tc.function and tc.function.name else "",
-                                "arguments": ""
-                            }
-                        
-                        if tc.id:
-                            tool_calls_buffer[idx]["id"] = tc.id
-                        if tc.function:
-                            if tc.function.name:
-                                tool_calls_buffer[idx]["name"] = tc.function.name
-                            if tc.function.arguments:
-                                tool_calls_buffer[idx]["arguments"] += tc.function.arguments
-                
-                if chunk.choices[0].finish_reason:
-                    finish_reason = chunk.choices[0].finish_reason
-                    logger.info(f"Stream finish_reason: {finish_reason}, processed {chunk_count} chunks")
-                    if tool_calls_buffer:
-                        truncated = (finish_reason == "length")
-                        if truncated:
-                            logger.warning(
-                                f"Output truncated (finish_reason=length) with {len(tool_calls_buffer)} pending tool calls. "
-                                f"Tool call arguments are likely incomplete."
-                            )
-                        logger.info(f"Yielding {len(tool_calls_buffer)} tool calls (truncated={truncated})")
-                        for idx in sorted(tool_calls_buffer.keys()):
-                            tc = tool_calls_buffer[idx]
-                            try:
-                                tc["arguments"] = json.loads(tc["arguments"])
-                                tc["_truncated"] = False
-                            except json.JSONDecodeError:
-                                logger.warning(f"Tool call '{tc['name']}' has invalid JSON arguments (truncated={truncated})")
-                                tc["arguments"] = {}
-                                tc["_truncated"] = True
-                            yield {"type": "tool_call", "tool_call": tc}
+                    # 检查是否有 usage 信息（DeepSeek 会在最后一个 chunk 中返回）
+                    if hasattr(chunk, 'usage') and chunk.usage:
+                        usage_info = {
+                            "prompt_tokens": chunk.usage.prompt_tokens,
+                            "completion_tokens": chunk.usage.completion_tokens,
+                            "total_tokens": chunk.usage.total_tokens
+                        }
+                        logger.info(f"Got usage info: {usage_info}")
                     
-                    yield {"type": "finish", "finish_reason": finish_reason, "usage": usage_info}
-                    # ── Track usage (stream) ──
-                    _u = usage_info or {}
-                    UsageTracker.shared().record_call(
-                        model=self.config.model,
-                        provider=self.config.provider,
-                        prompt_tokens=_u.get("prompt_tokens", 0),
-                        completion_tokens=_u.get("completion_tokens", 0),
-                        total_tokens=_u.get("total_tokens", 0),
-                        success=True,
-                    )
+                    delta = chunk.choices[0].delta if chunk.choices else None
+                    
+                    if not delta:
+                        continue
+                
+                    if delta.content:
+                        chunk_text = extract_text_from_content(delta.content)
+                        if chunk_text:
+                            logger.debug(f"Content chunk: {chunk_text[:50] if len(chunk_text) > 50 else chunk_text}")
+                            # 累加到本地 token 计数器
+                            token_counter.add_content(chunk_text)
+                            yield {"type": "content", "content": chunk_text}
+                
+                    if delta.tool_calls:
+                        for tc in delta.tool_calls:
+                            idx = tc.index
+                            if idx not in tool_calls_buffer:
+                                tool_calls_buffer[idx] = {
+                                    "id": tc.id or "",
+                                    "name": tc.function.name if tc.function and tc.function.name else "",
+                                    "arguments": ""
+                                }
+                        
+                            if tc.id:
+                                tool_calls_buffer[idx]["id"] = tc.id
+                            if tc.function:
+                                if tc.function.name:
+                                    tool_calls_buffer[idx]["name"] = tc.function.name
+                                if tc.function.arguments:
+                                    tool_calls_buffer[idx]["arguments"] += tc.function.arguments
+                
+                    if chunk.choices[0].finish_reason:
+                        finish_reason = chunk.choices[0].finish_reason
+                        logger.info(f"Stream finish_reason: {finish_reason}, processed {chunk_count} chunks")
+                        if tool_calls_buffer:
+                            truncated = (finish_reason == "length")
+                            if truncated:
+                                logger.warning(
+                                    f"Output truncated (finish_reason=length) with {len(tool_calls_buffer)} pending tool calls. "
+                                    f"Tool call arguments are likely incomplete."
+                                )
+                            logger.info(f"Yielding {len(tool_calls_buffer)} tool calls (truncated={truncated})")
+                            for idx in sorted(tool_calls_buffer.keys()):
+                                tc = tool_calls_buffer[idx]
+                                try:
+                                    tc["arguments"] = json.loads(tc["arguments"])
+                                    tc["_truncated"] = False
+                                except json.JSONDecodeError:
+                                    logger.warning(f"Tool call '{tc['name']}' has invalid JSON arguments (truncated={truncated})")
+                                    tc["arguments"] = {}
+                                    tc["_truncated"] = True
+                                yield {"type": "tool_call", "tool_call": tc}
+                    
+                        # 如果 API 没有返回 usage，使用本地计算的值
+                        final_usage = usage_info
+                        if not final_usage:
+                            final_usage = token_counter.finalize()
+                            logger.info(f"Using local token count: {final_usage}")
+                        
+                        yield {"type": "finish", "finish_reason": finish_reason, "usage": final_usage}
+                        # ── Track usage (stream) ──
+                        _u = final_usage or {}
+                        UsageTracker.shared().record_call(
+                            model=self.config.model,
+                            provider=self.config.provider,
+                            prompt_tokens=_u.get("prompt_tokens", 0),
+                            completion_tokens=_u.get("completion_tokens", 0),
+                            total_tokens=_u.get("total_tokens", 0),
+                            success=True,
+                        )
+            finally:
+                # 确保流被正确关闭，防止连接泄漏
+                try:
+                    if hasattr(stream, 'aclose'):
+                        await stream.aclose()
+                    elif hasattr(stream, 'close'):
+                        await stream.close()
+                except Exception:
+                    pass  # 忽略关闭时的错误
             
             if chunk_count == 0:
                 logger.warning(

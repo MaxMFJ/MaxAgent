@@ -57,9 +57,10 @@ class AgentAction:
     action_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     status: ActionStatus = ActionStatus.PENDING
     created_at: datetime = field(default_factory=datetime.now)
+    truncated: bool = False  # 标记此动作是从截断的 JSON 修复而来
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "action_id": self.action_id,
             "action_type": self.action_type.value,
             "params": self.params,
@@ -67,6 +68,9 @@ class AgentAction:
             "status": self.status.value,
             "created_at": self.created_at.isoformat()
         }
+        if self.truncated:
+            result["truncated"] = True
+        return result
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AgentAction":
@@ -146,7 +150,10 @@ class AgentAction:
 
     @classmethod
     def _parse_truncated_json_block(cls, raw: str) -> Optional["AgentAction"]:
-        """尝试修补 LM Studio 等返回的截断 JSON（流断开或 max_tokens 导致未闭合），再解析为动作。"""
+        """尝试修补 LM Studio 等返回的截断 JSON（流断开或 max_tokens 导致未闭合），再解析为动作。
+        
+        返回的动作会被标记为 truncated=True，让上层逻辑知道这是修复后的结果。
+        """
         if not raw.strip().startswith("{"):
             return None
         depth = 0
@@ -173,7 +180,10 @@ class AgentAction:
         if not action_type_str:
             data["action_type"] = "think"
             data["params"] = data.get("params") or {"thought": (data.get("reasoning") or "输出被截断，继续思考下一步。")[:200]}
-        return cls._dict_to_action(data)
+        action = cls._dict_to_action(data)
+        if action:
+            action.truncated = True  # 标记为截断修复
+        return action
 
     @staticmethod
     def _extract_brace_blocks(text: str) -> list[str]:
@@ -283,6 +293,8 @@ class TaskContext:
     completed_at: Optional[datetime] = None
     final_result: Optional[str] = None
     total_tokens: int = 0
+    # v3.2 关键产物追踪（文件路径、URL、资源标识符等）
+    key_artifacts: List[Dict[str, Any]] = field(default_factory=list)
     
     def add_action_log(self, action: AgentAction, result: ActionResult):
         self.action_logs.append(ActionLog(
@@ -290,6 +302,61 @@ class TaskContext:
             result=result,
             iteration=self.current_iteration
         ))
+        # 自动提取关键产物
+        self._extract_artifacts(action, result)
+    
+    def _extract_artifacts(self, action: AgentAction, result: ActionResult):
+        """从动作和结果中提取关键产物（文件路径、URL等）"""
+        import re
+        
+        # 1. 从动作参数中提取
+        if action.action_type == ActionType.WRITE_FILE:
+            path = action.params.get("path")
+            if path:
+                self._add_artifact("file_created", path, f"写入文件", action.reasoning)
+        
+        elif action.action_type == ActionType.CREATE_AND_RUN_SCRIPT:
+            filename = action.params.get("filename")
+            if filename:
+                self._add_artifact("script_created", filename, "创建脚本", action.reasoning)
+        
+        # 2. 从成功的结果输出中提取
+        if result.success and result.output:
+            output_str = str(result.output)
+            
+            # 提取文件路径（Unix 风格）
+            file_paths = re.findall(r'(?:创建|生成|写入|保存)[^\n]*?(/[^\s:,\'"<>]+\.\w+)', output_str)
+            for fp in file_paths[:3]:  # 最多提取 3 个
+                if len(fp) < 200:  # 避免误匹配长字符串
+                    self._add_artifact("file_path", fp, "提取的文件路径")
+            
+            # 提取 URL
+            urls = re.findall(r'(https?://[^\s<>"\']+)', output_str)
+            for url in urls[:3]:
+                if len(url) < 300:
+                    # 过滤常见的无意义 URL
+                    if not any(x in url for x in ['localhost:8', 'github.com/actions', 'cdn.']):
+                        self._add_artifact("url", url, "提取的 URL")
+            
+            # 提取端口映射信息
+            port_mappings = re.findall(r'(?:映射|转发|tunnel)[^\n]*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+)', output_str)
+            for pm in port_mappings[:2]:
+                self._add_artifact("port_mapping", pm, "端口映射")
+    
+    def _add_artifact(self, artifact_type: str, value: str, description: str, context: str = ""):
+        """添加关键产物，避免重复"""
+        # 检查是否已存在相同的产物
+        for artifact in self.key_artifacts:
+            if artifact["type"] == artifact_type and artifact["value"] == value:
+                return
+        
+        self.key_artifacts.append({
+            "type": artifact_type,
+            "value": value,
+            "description": description,
+            "context": context[:100] if context else "",
+            "step": self.current_iteration,
+        })
     
     def get_recent_logs(self, count: int = 5) -> List[ActionLog]:
         return self.action_logs[-count:]
@@ -332,16 +399,30 @@ class TaskContext:
         """Generate context string for LLM"""
         lines = [f"任务: {self.task_description}", ""]
         
+        # 首先输出关键产物（最重要的上下文信息）
+        if self.key_artifacts:
+            lines.append("【关键产物 - 已生成的文件和资源】")
+            for artifact in self.key_artifacts:
+                lines.append(f"  • [{artifact['type']}] 步骤{artifact['step']}: {artifact['value']}")
+                if artifact.get('description'):
+                    lines.append(f"    说明: {artifact['description']}")
+            lines.append("")
+        
         if self.action_logs:
             lines.append("已执行的动作:")
-            for log in self.action_logs[-10:]:
+            for log in self.action_logs[-15:]:  # 增加到最近 15 条
                 status = "✓" if log.result.success else "✗"
-                lines.append(f"  [{status}] {log.action.action_type.value}: {log.action.reasoning[:50]}")
+                lines.append(f"  [{status}] {log.action.action_type.value}: {log.action.reasoning[:80]}")
                 if log.result.output:
-                    output_str = str(log.result.output)[:200]
+                    output_str = str(log.result.output)
+                    # 包含路径或 URL 的输出保留更多字符
+                    if "/Users/" in output_str or "http" in output_str or "/" in output_str:
+                        output_str = output_str[:600]
+                    else:
+                        output_str = output_str[:300]
                     lines.append(f"      输出: {output_str}")
                 if log.result.error:
-                    lines.append(f"      错误: {log.result.error[:100]}")
+                    lines.append(f"      错误: {log.result.error[:200]}")
             lines.append("")
         
         # Show adaptive iteration info
@@ -375,37 +456,59 @@ class TaskContext:
 
     def summarize_history_for_llm(
         self,
-        max_recent: int = 5,
-        max_chars: int = 3500,
+        max_recent: int = 8,
+        max_chars: int = 5000,
     ) -> str:
         """
         在控制 token 的前提下生成给 LLM 的历史上下文。
         最近 max_recent 条完整保留，更早的每 5 步合并为一行摘要；总长度约 max_chars。
-        v3.1 可替代或与 get_context_for_llm 并存（FeatureFlag 切换）。
+        v3.1 增强：包含 key_artifacts，保留更多关键信息。
         """
         structured = self.get_structured_history()
+        lines = [f"任务: {self.task_description}", ""]
+        
+        # 首先输出关键产物（最重要的上下文）
+        if self.key_artifacts:
+            lines.append("【关键产物 - 已完成的成果，请勿重复执行】")
+            for artifact in self.key_artifacts:
+                lines.append(f"  • [{artifact['type']}] 步骤{artifact['step']}: {artifact['value']}")
+            lines.append("")
+        
         if not structured:
-            lines = [f"任务: {self.task_description}", "", f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}"]
+            lines.append(f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}")
             return "\n".join(lines)
 
-        lines = [f"任务: {self.task_description}", ""]
         n = len(structured)
-        # 较早部分：每 5 步合并一行
+        # 较早部分：每 5 步合并，但保留关键路径/URL信息
         if n > max_recent:
             older = structured[: n - max_recent]
+            lines.append("历史步骤摘要:")
             for i in range(0, len(older), 5):
                 chunk = older[i : i + 5]
                 successes = sum(1 for s in chunk if s["success"])
                 types = ", ".join(dict.fromkeys(s["action_type"] for s in chunk))
                 lines.append(f"  步骤 {chunk[0]['iteration']}–{chunk[-1]['iteration']}: {types}（成功 {successes}/{len(chunk)}）")
+                # 提取关键路径/URL信息
+                for s in chunk:
+                    obs = s.get("observation_summary", "")
+                    if "/Users/" in obs or "http" in obs.lower() or ":" in obs:
+                        # 保留包含路径或URL的关键信息
+                        key_info = obs[:200] if len(obs) > 200 else obs
+                        if key_info.strip():
+                            lines.append(f"    → {key_info}")
             lines.append("")
-        # 最近 max_recent 条完整
-        lines.append("最近步骤:")
+        # 最近 max_recent 条完整保留
+        lines.append("最近步骤详情:")
         for s in structured[-max_recent:]:
             status = "✓" if s["success"] else "✗"
-            lines.append(f"  [{status}] {s['action_type']}: {s['thought'][:60]}")
+            lines.append(f"  [{status}] {s['action_type']}: {s['thought'][:80]}")
             if s["observation_summary"]:
-                lines.append(f"      结果: {s['observation_summary'][:180]}")
+                # 对包含路径/URL的输出保留更多内容
+                obs = s["observation_summary"]
+                if "/Users/" in obs or "http" in obs.lower():
+                    lines.append(f"      结果: {obs[:400]}")
+                else:
+                    lines.append(f"      结果: {obs[:200]}")
         lines.append("")
         lines.append(f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}")
         if self.get_success_rate() < 0.5:

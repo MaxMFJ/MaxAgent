@@ -93,6 +93,16 @@ class ConnectionManager:
                     disconnected.append(client_id)
         for client_id in disconnected:
             await self.disconnect(client_id)
+        
+        # 检查 session 是否还有客户端，如果没有则触发孤儿任务处理
+        if disconnected and self.get_session_client_count(session_id) == 0:
+            try:
+                # 延迟导入避免循环依赖
+                from ws_handler import _handle_client_disconnect
+                await _handle_client_disconnect(session_id)
+                logger.info(f"Orphan task handling triggered for session {session_id} after broadcast failures")
+            except Exception as e:
+                logger.debug(f"Failed to trigger orphan handling: {e}")
 
     async def broadcast_all(self, message: dict, exclude_client: str = None):
         client_ids = list(self._connections.keys())
