@@ -1,6 +1,6 @@
 # Chow Duck - macOS AI 智能助手
 
-基于 SwiftUI + Python 后端的 macOS 本地 AI Agent（项目目录名 MacAgent）。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。
+基于 SwiftUI + Python 后端的 macOS 本地 AI Agent（项目目录名 MacAgent）。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。内置**监控仪表板**、**语音输入**、**TTS 朗读**、**权限管理**、**Cloudflare Tunnel** 等完整能力。
 
 ---
 
@@ -10,11 +10,21 @@
 - **流式对话（Chat）**：ReAct 循环，按需调用工具（文件、终端、应用、截图、邮件等），支持断线重连与输出恢复
 - **自主任务（Autonomous）**：长 horizon 多步执行，可选反思、模型选择（本地/云端）、自适应停止（任务完成/无进展/循环检测等）
 - **Prompt 与 Token 优化**：简单查询用 LITE system prompt，复杂任务用 FULL；上下文 token 上限 2000，工具 schema 按查询语义裁剪（最多 8 个），减少无效 token
+- **LangChain 兼容**：可选启用 LangChain 进行对话（需安装 `requirements-langchain.txt`），与原生引擎并存、可随时切换
 
 ### 基础与扩展工具
 - **基础**：文件操作、终端命令、应用控制、系统信息、剪贴板、脚本执行、截图、浏览器、邮件、日历、通知
 - **扩展**：Docker、网络诊断、数据库查询、开发工具、联网搜索（DuckDuckGo/维基）、动态工具生成、视觉、鼠标键盘模拟
+- **Generated 工具**：隧道监控、隧道管理、交互式邮件等（Self-Upgrade 产出 + 手写，动态加载）
 - **Agent 能力**：请求工具升级（Self-Upgrade）、EvoMap 技能（可选）、技能 Capsule（本地 + 开放技能源）
+
+### Mac 客户端能力
+- **监控仪表板**：执行时间线、系统状态、历史分析、实时日志流、用户平台统计（Token/RPM/TPM、模型分布）
+- **语音输入**：实时语音识别（中/英）、静音自动提交、无说话超时提交
+- **TTS 朗读**：流式按句朗读、支持中英文，可随时停止
+- **权限管理**：辅助功能、屏幕录制、自动化、cliclick、Quartz、osascript 状态检测与引导；**快捷入口**：工具栏齿轮 → 设置 → 权限
+- **Workspace 上下文**：上报当前工作目录、打开文件，供 prompt 注入
+- **终端会话增强**：记录 cwd/输出，供后续命令和 prompt 复用
 
 ### 架构与运维
 - **上下文与记忆**：BGE 向量检索（可关）、会话持久化、情景记忆与策略 DB、任务上下文（目标应用绑定）
@@ -23,6 +33,7 @@
 - **自愈**：诊断引擎、修复计划与执行，支持 HTTP 与 WebSocket 调用
 - **系统消息与日志**：统一系统通知、启动日志分析（错误模式匹配与用户提示）
 - **多客户端**：Mac/iOS 同时连接，按 session 同步；可选 Cloudflared 隧道 + Token 认证
+- **Tunnel 生命周期**：Cloudflared 隧道自动启停、局域网信息、自动启动配置
 
 ---
 
@@ -67,6 +78,8 @@ python main.py
 
 ### 4. 启动 Mac 应用
 
+启动后，工具栏可控制**后端**、**Ollama** 启停，打开**监控仪表板**（执行时间线、系统状态、历史分析、日志流、Token 统计），展开**工具面板**与**系统消息**。点击**齿轮**打开设置，可配置服务、远程隧道、模型、通用（含 LangChain 兼容）、邮件、工具、**权限**（快捷管理辅助功能、屏幕录制、自动化等）等。
+
 **Xcode**
 ```bash
 open MacAgent/MacAgentApp/MacAgentApp.xcworkspace   # 若使用 CocoaPods
@@ -106,6 +119,27 @@ xcodebuild -project MacAgentApp.xcodeproj -scheme MacAgentApp -configuration Deb
 
 ---
 
+## 权限管理（Mac App）
+
+权限配置在 **设置 → 权限** 中完成。**快捷入口**：点击工具栏齿轮图标 → 设置 → 权限。
+
+### 权限项与快捷操作
+
+| 权限 | 用途 | 快捷操作 |
+|------|------|----------|
+| App 辅助功能 | MacAgentApp 自身控制键鼠 | 「请求权限」弹窗 / 「打开系统设置」 |
+| Python 辅助功能 | 后端模拟键鼠（Agent 核心） | 「打开辅助功能设置」；路径可复制，⌘⇧G 前往文件夹 |
+| 屏幕录制 | 截图、视觉感知 | 「打开屏幕录制设置」 |
+| 自动化 (System Events) | AppleScript 控制其他应用 | 「打开自动化设置」 |
+
+### 快捷提示
+
+- **刷新状态**：授权后需重启后端（或重启电脑）才能生效，点击「刷新状态」或「重启后端并重新检测」验证
+- **Python 路径在 .app 包内**：系统文件选择器可能无法直接选中，使用 **⌘⇧G** 在「前往文件夹」中粘贴完整路径
+- **工具可用性**：页面底部显示 CGEvent、cliclick、osascript 状态；cliclick 未安装时执行 `brew install cliclick`
+
+---
+
 ## 打包与后台内置
 
 **后台已内置到 Mac App**：构建时通过 Build Phase 将 `backend/` 复制到 `MacAgentApp.app/Contents/Resources/backend/`，用户无需单独部署后端。
@@ -116,7 +150,7 @@ xcodebuild -project MacAgentApp.xcodeproj -scheme MacAgentApp -configuration Deb
 - **可写数据**：Bundle 内 `data/` 只读，配置持久化到 `~/Library/Application Support/com.macagent.app/backend_data/`
 - **路径**：`ProcessManager.getBackendPath()` 优先使用 Bundle 内 backend，开发时回退到项目 `backend/`
 
-详见 `docs/打包技术路线-后台集成.md`。
+详见 `docs/archive/打包技术路线-后台集成.md`。更多文档见 `docs/`（含后台功能清单、自愈测试指南等）。
 
 ---
 
@@ -128,10 +162,15 @@ MacAgent/
 │   └── MacAgentApp/
 │       ├── MacAgentApp.swift
 │       ├── ContentView.swift
-│       ├── ViewModels/AgentViewModel.swift
+│       ├── ViewModels/AgentViewModel.swift, MonitoringViewModel.swift
 │       ├── Services/BackendService.swift, ProcessManager.swift, TunnelManager.swift
+│       │         VoiceInputService.swift, TTSService.swift, PermissionManager.swift
 │       ├── Models/Message.swift
-│       └── Views/                 # ChatView, SettingsView, ToolPanelView, TunnelView...
+│       └── Views/
+│           ├── 聊天/              # ChatView, InputBar, MessageBubble, RichMarkdownView, ImageDisplayView...
+│           ├── Monitoring/        # MonitoringWindowView, ExecutionTimelineView, UsageStatisticsView...
+│           ├── SettingsView, ToolPanelView, SystemMessageView, TunnelView
+│           └── ServiceManagerView, PermissionSettingsView
 │
 ├── iOSAgentApp/                   # iOS 客户端（可选）
 │
@@ -140,15 +179,14 @@ MacAgent/
 │   ├── app_state.py               # 全局状态、TaskTracker、Feature Flags
 │   ├── auth.py                    # 隧道认证
 │   ├── connection_manager.py      # WebSocket 连接与按 session 广播
-│   ├── ws_handler.py              # /ws 消息分发（chat/stop/autonomous/resume/...）
-│   ├── llm_config.py              # LLM 配置持久化 (data/llm_config.json)
-│   ├── smtp_config.py, github_config.py
-│   ├── data/                      # llm_config, smtp, github, contexts/
+│   ├── ws_handler.py              # /ws 消息分发（chat/stop/autonomous/resume/monitor_event...）
+│   ├── config/                    # llm_config, smtp_config, github_config, agent_config
+│   ├── data/                      # llm_config, smtp, github, contexts/, episodes/
 │   │
 │   ├── routes/                    # HTTP 路由
 │   │   ├── health.py              # /health, /server-status, /connections
 │   │   ├── auth_routes.py         # /auth/status, generate-token, disable
-│   │   ├── config.py              # /config, /config/smtp, /config/github
+│   │   ├── config.py              # /config, /config/smtp, /config/github, /config/install-langchain
 │   │   ├── tools.py               # /tools, /tools/pending, approve, reload
 │   │   ├── upgrade.py             # /upgrade/self, trigger, restart
 │   │   ├── logs.py                # /logs, /system-messages
@@ -156,7 +194,12 @@ MacAgent/
 │   │   ├── self_healing.py        # /self-healing/*, /ws/self-healing
 │   │   ├── evomap.py              # /evomap/*（ENABLE_EVOMAP=true 时）
 │   │   ├── capsules.py            # /capsules, /capsules/find, execute
-│   │   └── chat.py                # POST /chat 非流式
+│   │   ├── chat.py                # POST /chat 非流式
+│   │   ├── monitor.py             # /monitor/episodes, /monitor/statistics
+│   │   ├── usage_stats.py         # /usage-stats/overview, /usage-stats/model-analysis
+│   │   ├── tunnel.py              # /tunnel/status, start, stop, restart, lan-info, auto-start
+│   │   ├── workspace.py           # POST /workspace（上报 cwd、open_files）
+│   │   └── permissions.py         # /permissions/status
 │   │
 │   ├── agent/                     # Agent 核心与周边
 │   │   ├── core.py                # AgentCore ReAct 循环
@@ -178,19 +221,23 @@ MacAgent/
 │   │   ├── evomap_*.py            # EvoMap 服务与升级钩子（可选）
 │   │   ├── stop_policy.py         # 自主任务自适应停止
 │   │   ├── resource_dispatcher.py # 升级任务沙箱执行
+│   │   ├── usage_tracker.py       # Token/RPM/TPM 统计
+│   │   ├── workspace_context.py   # 工作区 cwd、open_files
+│   │   ├── terminal_session.py   # 终端 cwd 与输出记录
 │   │   └── ...
 │   │
 │   ├── tools/                     # 工具实现
-│   │   ├── base.py, registry.py, router.py, schema_registry.py, validator.py
+│   │   ├── base.py, registry.py, router.py, schema_registry.py, validator.py, middleware.py
 │   │   ├── file_tool, terminal_tool, app_tool, system_tool, clipboard_tool
 │   │   ├── script_tool, screenshot_tool, browser_tool, mail_tool, calendar_tool
 │   │   ├── notification_tool, docker_tool, network_tool, database_tool
 │   │   ├── developer_tool, web_search_tool, dynamic_tool_generator, vision_tool
 │   │   ├── input_control_tool, request_tool_upgrade_tool, evomap_tool, capsule_tool
-│   │   └── generated/             # 动态加载（Self-Upgrade 产出 + 手写）
+│   │   └── generated/             # 动态加载（tunnel_monitor, tunnel_manager, interactive_mail 等）
 │   │
+│   ├── services/                  # tunnel_lifecycle 等
 │   ├── llm/                       # tool_parser_v2, json_repair
-│   └── runtime/                   # RuntimeAdapter, mac_adapter, linux/windows_adapter
+│   └── runtime/                   # RuntimeAdapter, mac_adapter, permission_checker, cg_event
 │
 └── docs/
     └── ...
@@ -243,17 +290,23 @@ def get_all_tools(runtime_adapter=None):
 | 类别 | 方法 | 路径 | 说明 |
 |------|------|------|------|
 | 健康 | GET | /health, /server-status, /connections | 健康与连接数 |
-| 配置 | GET/POST | /config, /config/smtp, /config/github | LLM / 邮件 / GitHub；GET 含 langchain_compat，POST 可传 langchain_compat 控制是否启用 LangChain 兼容 |
+| 配置 | GET/POST | /config, /config/smtp, /config/github | LLM / 邮件 / GitHub；GET 含 langchain_compat，POST 可传 langchain_compat |
+| 配置 | POST | /config/install-langchain | 安装 LangChain 可选依赖 |
 | 工具 | GET | /tools | 工具列表 |
 | 工具 | GET/POST | /tools/pending, /tools/approve, /tools/reload | 待审批、审批、重载 |
 | 对话 | POST | /chat | 非流式对话 |
-| 对话 | WebSocket | /ws | 流式 chat、autonomous、resume、stop 等 |
+| 对话 | WebSocket | /ws | 流式 chat、autonomous、resume、stop、monitor_event 等 |
 | 升级 | POST | /upgrade/self, /upgrade/trigger, /upgrade/restart | 自升级、触发升级、重启 |
 | 日志 | GET/DELETE | /logs | 日志 |
 | 系统消息 | GET/POST/DELETE | /system-messages, .../read, .../read-all | 列表、已读、删除 |
 | 记忆 | GET | /memory/status, /local-llm/status, /model-selector/status | 状态 |
 | 自愈 | GET/POST | /self-healing/status, /diagnose, /plan | 状态、诊断、计划 |
 | 自愈 | WebSocket | /ws/self-healing | 自愈对话与执行 |
+| 监控 | GET | /monitor/episodes, /monitor/statistics | 执行历史、统计摘要 |
+| 统计 | GET | /usage-stats/overview, /usage-stats/model-analysis | Token/RPM/TPM、模型分布 |
+| 隧道 | GET/POST | /tunnel/status, /tunnel/start, /tunnel/stop, /tunnel/restart, /tunnel/lan-info, /tunnel/auto-start | Cloudflare Tunnel 管理 |
+| 工作区 | POST/GET | /workspace, /workspace/{session_id} | 上报 cwd、open_files |
+| 权限 | GET | /permissions/status | 辅助功能、屏幕录制、自动化等状态 |
 | EvoMap | GET/POST | /evomap/status, register, search, resolve, publish, events, audit | 需 ENABLE_EVOMAP=true |
 | Capsule | GET/POST | /capsules, /capsules/find, /capsules/{id}, /capsules/{id}/execute | 技能胶囊 |
 
