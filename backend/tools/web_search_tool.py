@@ -553,8 +553,120 @@ class WebSearchTool(BaseTool):
         except Exception as e:
             return ToolResult(success=False, error=f"回答失败: {str(e)}")
     
+    # 中国主要城市的拼音映射（Open-Meteo geocoding 用拼音更准）
+    _CITY_PINYIN = {
+        "杭州": "Hangzhou", "北京": "Beijing", "上海": "Shanghai",
+        "广州": "Guangzhou", "深圳": "Shenzhen", "成都": "Chengdu",
+        "重庆": "Chongqing", "武汉": "Wuhan", "西安": "Xian",
+        "南京": "Nanjing", "天津": "Tianjin", "苏州": "Suzhou",
+        "长沙": "Changsha", "郑州": "Zhengzhou", "青岛": "Qingdao",
+        "大连": "Dalian", "厦门": "Xiamen", "济南": "Jinan",
+        "福州": "Fuzhou", "昆明": "Kunming", "合肥": "Hefei",
+        "沈阳": "Shenyang", "哈尔滨": "Harbin", "南宁": "Nanning",
+        "贵阳": "Guiyang", "太原": "Taiyuan", "石家庄": "Shijiazhuang",
+        "兰州": "Lanzhou", "南昌": "Nanchang", "长春": "Changchun",
+        "无锡": "Wuxi", "宁波": "Ningbo", "东莞": "Dongguan",
+        "佛山": "Foshan", "温州": "Wenzhou", "绍兴": "Shaoxing",
+        "珠海": "Zhuhai", "中山": "Zhongshan", "惠州": "Huizhou",
+        "汕头": "Shantou", "潮州": "Chaozhou", "湛江": "Zhanjiang",
+        "桂林": "Guilin", "海口": "Haikou", "三亚": "Sanya",
+        "拉萨": "Lhasa", "乌鲁木齐": "Urumqi", "呼和浩特": "Hohhot",
+        "银川": "Yinchuan", "西宁": "Xining",
+    }
+
+    # 天气代码转描述（WMO 标准，Open-Meteo 使用）
+    _WEATHER_CODES = {
+        0: "晴朗", 1: "晴间多云", 2: "多云", 3: "阴天",
+        45: "雾", 48: "雾凇", 51: "小毛毛雨", 53: "毛毛雨",
+        55: "大毛毛雨", 61: "小雨", 63: "中雨", 65: "大雨",
+        71: "小雪", 73: "中雪", 75: "大雪", 80: "阵雨",
+        81: "中阵雨", 82: "大阵雨", 95: "雷暴",
+    }
+
+    async def _get_weather_open_meteo(self, location: str, errors: list) -> Optional[ToolResult]:
+        """通过 Open-Meteo API 获取天气（国内访问快，~1-2s）"""
+        import httpx
+        try:
+            logger.info(f"Trying Open-Meteo API for '{location}'...")
+            search_name = self._CITY_PINYIN.get(location, location)
+            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(search_name)}&count=5&language=zh"
+
+            async with httpx.AsyncClient() as client:
+                geo_response = await client.get(geo_url, timeout=10)
+                geo_data = geo_response.json()
+                results = geo_data.get("results", [])
+
+                selected = None
+                for r in results:
+                    admin1 = r.get("admin1", "")
+                    name = r.get("name", "")
+                    if location in name or name in location:
+                        if location == "杭州" and "浙江" in admin1:
+                            selected = r
+                            break
+                        elif location != "杭州":
+                            selected = r
+                            break
+                if not selected and results:
+                    selected = results[0]
+
+                if not selected:
+                    errors.append(f"Open-Meteo: 未找到位置 '{location}'")
+                    return None
+
+                lat = selected["latitude"]
+                lon = selected["longitude"]
+                city_name = selected.get("name", location)
+                country = selected.get("country", "")
+                admin1 = selected.get("admin1", "")
+                logger.info(f"Open-Meteo location: {city_name}, {admin1}, {country} ({lat}, {lon})")
+
+                weather_url = (
+                    f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+                    f"&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+                    f"&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto"
+                )
+                weather_response = await client.get(weather_url, timeout=10)
+                weather_data = weather_response.json()
+
+                current = weather_data.get("current", {})
+                daily = weather_data.get("daily", {})
+                code = current.get("weather_code", 0)
+                desc = self._WEATHER_CODES.get(code, f"天气代码 {code}")
+
+                weather = {
+                    "location": city_name,
+                    "country": country,
+                    "temperature_c": str(current.get("temperature_2m", "")),
+                    "humidity": str(current.get("relative_humidity_2m", "")),
+                    "description": desc,
+                    "wind_speed_kmh": str(current.get("wind_speed_10m", "")),
+                    "source": "Open-Meteo",
+                }
+
+                forecast = []
+                dates = daily.get("time", [])
+                max_temps = daily.get("temperature_2m_max", [])
+                min_temps = daily.get("temperature_2m_min", [])
+                codes = daily.get("weather_code", [])
+                for i in range(min(3, len(dates))):
+                    forecast.append({
+                        "date": dates[i] if i < len(dates) else "",
+                        "max_temp_c": str(max_temps[i]) if i < len(max_temps) else "",
+                        "min_temp_c": str(min_temps[i]) if i < len(min_temps) else "",
+                        "description": self._WEATHER_CODES.get(codes[i], "") if i < len(codes) else "",
+                    })
+                weather["forecast"] = forecast
+                logger.info(f"Open-Meteo weather success: {city_name} {desc} {current.get('temperature_2m', '')}°C")
+                return ToolResult(success=True, data=weather)
+
+        except Exception as e:
+            errors.append(f"Open-Meteo: {str(e)}")
+            logger.warning(f"Open-Meteo failed: {e}")
+            return None
+
     async def _get_weather(self, location: str) -> ToolResult:
-        """获取天气信息"""
+        """获取天气信息（优先 Open-Meteo，因其更快更稳定）"""
         if not location:
             return ToolResult(success=False, error="需要位置")
         
@@ -562,10 +674,15 @@ class WebSearchTool(BaseTool):
         
         logger.info(f"Getting weather for location: {location}")
         
-        # 尝试多个天气 API
+        # 尝试多个天气 API（Open-Meteo 优先，国内访问更快更稳定）
         errors = []
         
-        # 方法1：wttr.in
+        # --- 方法1：Open-Meteo（优先，国内 ~1-2s） ---
+        open_meteo_result = await self._get_weather_open_meteo(location, errors)
+        if open_meteo_result and open_meteo_result.success:
+            return open_meteo_result
+        
+        # --- 方法2：wttr.in（国内 ~10-15s，容易超时） ---
         try:
             encoded_location = urllib.parse.quote(location)
             url = f"https://wttr.in/{encoded_location}?format=j1"
@@ -626,116 +743,6 @@ class WebSearchTool(BaseTool):
         except Exception as e:
             errors.append(f"wttr.in: {str(e)}")
             logger.warning(f"wttr.in failed: {e}")
-        
-        # 方法2：使用 Open-Meteo (免费，无需 API Key)
-        try:
-            logger.info("Trying Open-Meteo API...")
-            
-            # 中国主要城市的拼音映射（提高准确性）
-            city_pinyin = {
-                "杭州": "Hangzhou", "北京": "Beijing", "上海": "Shanghai",
-                "广州": "Guangzhou", "深圳": "Shenzhen", "成都": "Chengdu",
-                "重庆": "Chongqing", "武汉": "Wuhan", "西安": "Xian",
-                "南京": "Nanjing", "天津": "Tianjin", "苏州": "Suzhou",
-                "长沙": "Changsha", "郑州": "Zhengzhou", "青岛": "Qingdao",
-                "大连": "Dalian", "厦门": "Xiamen", "济南": "Jinan",
-                "福州": "Fuzhou", "昆明": "Kunming", "合肥": "Hefei",
-                "沈阳": "Shenyang", "哈尔滨": "Harbin", "南宁": "Nanning",
-                "贵阳": "Guiyang", "太原": "Taiyuan", "石家庄": "Shijiazhuang",
-                "兰州": "Lanzhou", "南昌": "Nanchang", "长春": "Changchun",
-                "无锡": "Wuxi", "宁波": "Ningbo", "东莞": "Dongguan",
-                "佛山": "Foshan", "温州": "Wenzhou", "绍兴": "Shaoxing",
-            }
-            
-            # 使用拼音搜索提高准确性
-            search_name = city_pinyin.get(location, location)
-            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(search_name)}&count=5&language=zh"
-            
-            async with httpx.AsyncClient() as client:
-                geo_response = await client.get(geo_url, timeout=10)
-                geo_data = geo_response.json()
-                logger.info(f"Open-Meteo geocoding response: {geo_data}")
-                
-                results = geo_data.get("results", [])
-                
-                # 优先选择匹配的城市（检查 admin1 是否包含期望的省份）
-                selected = None
-                for r in results:
-                    admin1 = r.get("admin1", "")
-                    name = r.get("name", "")
-                    # 如果是主要城市，选择匹配的那个
-                    if location in name or name in location:
-                        # 排除明显错误的匹配（如四川的杭州）
-                        if location == "杭州" and "浙江" in admin1:
-                            selected = r
-                            break
-                        elif location != "杭州":
-                            selected = r
-                            break
-                
-                # 如果没找到精确匹配，使用第一个结果
-                if not selected and results:
-                    selected = results[0]
-                
-                if selected:
-                    lat = selected["latitude"]
-                    lon = selected["longitude"]
-                    city_name = selected.get("name", location)
-                    country = selected.get("country", "")
-                    admin1 = selected.get("admin1", "")
-                    logger.info(f"Selected location: {city_name}, {admin1}, {country} ({lat}, {lon})")
-                    
-                    # 获取天气
-                    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto"
-                    
-                    weather_response = await client.get(weather_url, timeout=10)
-                    weather_data = weather_response.json()
-                    
-                    current = weather_data.get("current", {})
-                    daily = weather_data.get("daily", {})
-                    
-                    # 天气代码转描述
-                    weather_codes = {
-                        0: "晴朗", 1: "晴间多云", 2: "多云", 3: "阴天",
-                        45: "雾", 48: "雾凇", 51: "小毛毛雨", 53: "毛毛雨",
-                        55: "大毛毛雨", 61: "小雨", 63: "中雨", 65: "大雨",
-                        71: "小雪", 73: "中雪", 75: "大雪", 80: "阵雨",
-                        81: "中阵雨", 82: "大阵雨", 95: "雷暴"
-                    }
-                    
-                    code = current.get("weather_code", 0)
-                    desc = weather_codes.get(code, f"天气代码 {code}")
-                    
-                    weather = {
-                        "location": city_name,
-                        "country": country,
-                        "temperature_c": str(current.get("temperature_2m", "")),
-                        "humidity": str(current.get("relative_humidity_2m", "")),
-                        "description": desc,
-                        "wind_speed_kmh": str(current.get("wind_speed_10m", "")),
-                        "source": "Open-Meteo"
-                    }
-                    
-                    forecast = []
-                    dates = daily.get("time", [])
-                    max_temps = daily.get("temperature_2m_max", [])
-                    min_temps = daily.get("temperature_2m_min", [])
-                    codes = daily.get("weather_code", [])
-                    
-                    for i in range(min(3, len(dates))):
-                        forecast.append({
-                            "date": dates[i] if i < len(dates) else "",
-                            "max_temp_c": str(max_temps[i]) if i < len(max_temps) else "",
-                            "min_temp_c": str(min_temps[i]) if i < len(min_temps) else "",
-                            "description": weather_codes.get(codes[i], "") if i < len(codes) else ""
-                        })
-                    
-                    weather["forecast"] = forecast
-                    return ToolResult(success=True, data=weather)
-                    
-        except Exception as e:
-            errors.append(f"Open-Meteo: {str(e)}")
-            logger.warning(f"Open-Meteo failed: {e}")
         
         # 方法3：搜索天气信息
         try:

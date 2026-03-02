@@ -19,11 +19,24 @@ class TunnelManager: ObservableObject {
     @Published var connectedClients: [ConnectedClient] = []
     @Published var qrCodeImage: NSImage?
     
+    // ── 新增：后端 Tunnel 生命周期状态 ──
+    @Published var autoStartEnabled: Bool = false
+    @Published var isLanOnly: Bool = false
+    @Published var consecutiveFailures: Int = 0
+    @Published var totalRestarts: Int = 0
+    @Published var currentBackoffSeconds: Int = 0
+    @Published var backoffUntil: String? = nil  // ISO 格式
+    @Published var lanIP: String = ""
+    @Published var lanWSUrl: String = ""
+    @Published var lanHTTPUrl: String = ""
+    @Published var recentEvents: [[String: String]] = []
+    
     private var tunnelProcess: Process?
     private var outputPipe: Pipe?
     private var errorPipe: Pipe?
     private var checkConnectionTask: Task<Void, Never>?
     private var detectExternalTask: Task<Void, Never>?
+    private var backendStatusTask: Task<Void, Never>?
     /// 外部 tunnel 检测连续失败次数，用于 control stream 断开后及时显示「已停止」
     private var externalTunnelFailureCount = 0
     
@@ -47,6 +60,8 @@ class TunnelManager: ObservableObject {
     private init() {
         loadAuthToken()
         startExternalTunnelDetection()
+        startBackendStatusPolling()
+        loadAutoStartConfig()
     }
 
     // MARK: - 检测外部启动的 Tunnel（tunnel_monitor 脚本、Agent 等）
@@ -72,7 +87,8 @@ class TunnelManager: ObservableObject {
 
     private func detectExternallyRunningTunnel() async {
         do {
-            let url = URL(string: "http://127.0.0.1:\(Self.cloudflaredMetricsPort)/api/tunnels")!
+            // cloudflared 使用 Prometheus metrics（非 JSON API），从 /metrics 解析 URL
+            let url = URL(string: "http://127.0.0.1:\(Self.cloudflaredMetricsPort)/metrics")!
             var request = URLRequest(url: url)
             request.timeoutInterval = 2
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -80,34 +96,43 @@ class TunnelManager: ObservableObject {
                 await markExternalTunnelUnavailableIfRepeated()
                 return
             }
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tunnels = json["tunnels"] as? [[String: Any]] else {
+            guard let metricsText = String(data: data, encoding: .utf8) else {
                 await markExternalTunnelUnavailableIfRepeated()
                 return
             }
-            var found = false
-            for t in tunnels {
-                if let u = t["public_url"] as? String, u.contains("trycloudflare.com") {
-            await MainActor.run {
-                externalTunnelFailureCount = 0  // 检测到有效 tunnel 时重置失败计数
-                if !isTunnelRunning || tunnelURL != u {
-                            isTunnelRunning = true
-                            tunnelURL = u
-                            generateQRCode()
-                            startConnectionMonitoring()
-                        }
-                        loadExternalTunnelLogs()
+            // 解析: cloudflared_tunnel_user_hostnames_counts{userHostname="https://xxx.trycloudflare.com"} 1
+            if let tunnelUrl = Self.parseTunnelURLFromMetrics(metricsText) {
+                await MainActor.run {
+                    externalTunnelFailureCount = 0
+                    if !isTunnelRunning || tunnelURL != tunnelUrl {
+                        isTunnelRunning = true
+                        tunnelURL = tunnelUrl
+                        generateQRCode()
+                        startConnectionMonitoring()
                     }
-                    found = true
+                    loadExternalTunnelLogs()
+                }
+            } else {
+                // ha_connections > 0 表示 tunnel 连接存在但可能还没分配 hostname
+                if metricsText.contains("cloudflared_tunnel_ha_connections 1") {
+                    // tunnel 存在但 URL 尚未注册，不标记失败
                     return
                 }
-            }
-            if !found {
                 await markExternalTunnelUnavailableIfRepeated()
             }
         } catch {
             await markExternalTunnelUnavailableIfRepeated()
         }
+    }
+
+    /// 从 Prometheus metrics 文本中提取 trycloudflare.com URL
+    static func parseTunnelURLFromMetrics(_ text: String) -> String? {
+        // 匹配: cloudflared_tunnel_user_hostnames_counts{userHostname="https://xxx.trycloudflare.com"} 1
+        let pattern = #"cloudflared_tunnel_user_hostnames_counts\{userHostname="(https://[^"]*trycloudflare\.com[^"]*)"\}"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let range = Range(match.range(at: 1), in: text) else { return nil }
+        return String(text[range])
     }
 
     /// 外部 tunnel 连续检测失败时置为「已停止」，避免 control stream 断开后仍显示运行中
@@ -229,7 +254,7 @@ class TunnelManager: ObservableObject {
         let errorPipe = Pipe()
         
         process.executableURL = URL(fileURLWithPath: cloudflaredPath)
-        process.arguments = ["tunnel", "--url", "http://localhost:\(Self.backendPort)"]
+        process.arguments = ["tunnel", "--url", "http://localhost:\(Self.backendPort)", "--metrics", "127.0.0.1:\(Self.cloudflaredMetricsPort)"]
         process.standardOutput = outputPipe
         process.standardError = errorPipe
         
@@ -513,5 +538,163 @@ class TunnelManager: ObservableObject {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(jsonString, forType: .string)
         }
+    }
+    
+    // MARK: - 后端 Tunnel API 集成
+    
+    /// 从后端 /tunnel/status 拉取全生命周期状态
+    private func startBackendStatusPolling() {
+        backendStatusTask?.cancel()
+        backendStatusTask = Task {
+            while !Task.isCancelled {
+                await fetchBackendTunnelStatus()
+                try? await Task.sleep(nanoseconds: 8_000_000_000)  // 每 8 秒
+            }
+        }
+    }
+    
+    private func fetchBackendTunnelStatus() async {
+        do {
+            let url = URL(string: "http://127.0.0.1:\(Self.backendPort)/tunnel/status")!
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 3
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+            
+            await MainActor.run {
+                if let running = json["is_running"] as? Bool {
+                    // 同步后端状态到前端（后端管理的 tunnel 优先）
+                    if running != isTunnelRunning && tunnelProcess == nil {
+                        isTunnelRunning = running
+                    }
+                }
+                if let u = json["tunnel_url"] as? String, !u.isEmpty, tunnelProcess == nil {
+                    if tunnelURL != u {
+                        tunnelURL = u
+                        generateQRCode()
+                    }
+                }
+                isLanOnly = json["is_lan_only"] as? Bool ?? false
+                consecutiveFailures = json["consecutive_failures"] as? Int ?? 0
+                totalRestarts = json["total_restarts"] as? Int ?? 0
+                currentBackoffSeconds = json["current_backoff_seconds"] as? Int ?? 0
+                backoffUntil = json["backoff_until"] as? String
+                
+                if let lanInfo = json["lan_info"] as? [String: String] {
+                    lanIP = lanInfo["ip"] ?? ""
+                    lanWSUrl = lanInfo["ws_url"] ?? ""
+                    lanHTTPUrl = lanInfo["http_url"] ?? ""
+                }
+                
+                if let events = json["recent_events"] as? [[String: String]] {
+                    recentEvents = events
+                }
+                
+                if let autoStart = json["auto_start_enabled"] as? Bool {
+                    if autoStart != autoStartEnabled {
+                        autoStartEnabled = autoStart
+                    }
+                }
+            }
+        } catch {
+            // 后端未运行时静默跳过
+        }
+    }
+    
+    /// 通过后端 API 启动 Tunnel
+    func startTunnelViaBackend() {
+        Task {
+            do {
+                var request = URLRequest(url: URL(string: "http://127.0.0.1:\(Self.backendPort)/tunnel/start")!)
+                request.httpMethod = "POST"
+                request.timeoutInterval = 30
+                let (data, response) = try await URLSession.shared.data(for: request)
+                if let http = response as? HTTPURLResponse, http.statusCode == 200,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let url = json["url"] as? String, !url.isEmpty {
+                        await MainActor.run {
+                            tunnelURL = url
+                            isTunnelRunning = true
+                            generateQRCode()
+                            startConnectionMonitoring()
+                            addLog("通过后端启动 Tunnel: \(url)", level: .info)
+                        }
+                    } else {
+                        await MainActor.run {
+                            addLog("Tunnel 启动中，等待 URL 注册...", level: .info)
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    addLog("后端启动 Tunnel 失败: \(error.localizedDescription)", level: .error)
+                }
+            }
+        }
+    }
+    
+    /// 通过后端 API 停止 Tunnel
+    func stopTunnelViaBackend() {
+        Task {
+            do {
+                var request = URLRequest(url: URL(string: "http://127.0.0.1:\(Self.backendPort)/tunnel/stop")!)
+                request.httpMethod = "POST"
+                request.timeoutInterval = 10
+                let (_, _) = try await URLSession.shared.data(for: request)
+                await MainActor.run {
+                    isTunnelRunning = false
+                    tunnelURL = ""
+                    qrCodeImage = nil
+                    addLog("通过后端停止 Tunnel", level: .info)
+                }
+            } catch {
+                await MainActor.run {
+                    addLog("后端停止 Tunnel 失败: \(error.localizedDescription)", level: .warning)
+                }
+            }
+        }
+    }
+    
+    /// 设置自动启动
+    func setAutoStart(_ enabled: Bool) {
+        autoStartEnabled = enabled
+        saveAutoStartConfig()
+        Task {
+            do {
+                var request = URLRequest(url: URL(string: "http://127.0.0.1:\(Self.backendPort)/tunnel/auto-start")!)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try? JSONSerialization.data(withJSONObject: ["enabled": enabled])
+                request.timeoutInterval = 5
+                let (_, _) = try await URLSession.shared.data(for: request)
+            } catch {
+                // 后端未运行时部分配置保存在本地
+            }
+        }
+    }
+    
+    /// 复制局域网连接信息
+    func copyLanInfo() {
+        guard !lanWSUrl.isEmpty else { return }
+        var info: [String: String] = ["ws_url": lanWSUrl, "http_url": lanHTTPUrl, "ip": lanIP]
+        if isAuthEnabled && !authToken.isEmpty {
+            info["token"] = authToken
+        }
+        if let jsonData = try? JSONSerialization.data(withJSONObject: info, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(jsonString, forType: .string)
+        }
+    }
+    
+    // MARK: - Auto Start Config Persistence (本地)
+    
+    private func loadAutoStartConfig() {
+        autoStartEnabled = UserDefaults.standard.bool(forKey: "TunnelAutoStart")
+    }
+    
+    private func saveAutoStartConfig() {
+        UserDefaults.standard.set(autoStartEnabled, forKey: "TunnelAutoStart")
     }
 }

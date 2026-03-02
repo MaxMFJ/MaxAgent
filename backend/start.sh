@@ -6,6 +6,15 @@ set -e
 cd "$(dirname "$0")"
 BACKEND_ROOT="$(pwd)"
 
+# 确保 PATH 包含 Homebrew 和常用工具路径（从 App 启动时 PATH 可能非常有限）
+for _extra_path in /opt/homebrew/bin /opt/homebrew/sbin /usr/local/bin /usr/local/sbin; do
+    case ":$PATH:" in
+        *":$_extra_path:"*) ;;
+        *) [ -d "$_extra_path" ] && PATH="$_extra_path:$PATH" ;;
+    esac
+done
+export PATH
+
 # 单实例锁：同一 backend 目录只允许一个后端进程，避免重复启动冲突
 START_LOCK="$BACKEND_ROOT/.start.lock"
 START_LOCK_FD=200
@@ -87,20 +96,42 @@ fi
 MAJOR=$("$PY" -c "import sys; print(sys.version_info.major)" 2>/dev/null)
 MINOR=$("$PY" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
 
-# 优先使用打包时预装的 lib（无需 pip install，需 Python 版本匹配）
+# 优先使用 venv（环境完整、版本可控），其次 lib/
 USE_LIB=0
-if [ -d "lib" ] && [ -f "lib/.installed" ]; then
-    if [ -f "lib/.python_version" ]; then
-        NEED_VER=$(cat lib/.python_version)
-        CUR_VER=$("$PY" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
-        if [ "$CUR_VER" = "$NEED_VER" ]; then
-            export PYTHONPATH="$(pwd)/lib:$PYTHONPATH"
-            PY_RUN="$PY"
-            USE_LIB=1
+if [ -d "venv" ] && [ -x "venv/bin/python" ]; then
+    # venv 的 python 可能是软链接指向系统 python；验证存在且可执行
+    if "venv/bin/python" -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" 2>/dev/null; then
+        source venv/bin/activate
+        PY_RUN="python"
+        # 依赖健康检查：venv 存在但核心包缺失时自动重装，避免损坏/不完整
+        if ! $PY_RUN -c "import fastapi" 2>/dev/null; then
+            echo "[INFO] venv incomplete, reinstalling dependencies..."
+            "$PY_RUN" -m pip install --quiet --upgrade pip 2>/dev/null || true
+            "$PY_RUN" -m pip install --quiet -r requirements.txt
+            if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
+                "$PY_RUN" -m pip install --quiet sentence-transformers faiss-cpu numpy 2>/dev/null || true
+            fi
+        fi
+        USE_LIB=0
+        echo "[INFO] Using venv Python: $(which python) ($(python --version 2>&1))"
+    fi
+fi
+# 回退到打包时预装的 lib（无需 pip install，需 Python 版本匹配）
+if [ "$USE_LIB" = "0" ] && [ -z "$VIRTUAL_ENV" ]; then
+    if [ -d "lib" ] && [ -f "lib/.installed" ]; then
+        if [ -f "lib/.python_version" ]; then
+            NEED_VER=$(cat lib/.python_version)
+            CUR_VER=$("$PY" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+            if [ "$CUR_VER" = "$NEED_VER" ]; then
+                export PYTHONPATH="$(pwd)/lib:$PYTHONPATH"
+                PY_RUN="$PY"
+                USE_LIB=1
+                echo "[INFO] Using lib/ with $PY (version $CUR_VER)"
+            fi
         fi
     fi
 fi
-if [ "$USE_LIB" = "0" ]; then
+if [ "$USE_LIB" = "0" ] && [ -z "$VIRTUAL_ENV" ]; then
     if [ -d "venv" ]; then
         source venv/bin/activate
         PY_RUN="python"

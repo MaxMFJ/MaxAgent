@@ -15,5 +15,8 @@ duckduckgo_search>=4.0.0
 beautifulsoup4>=4.12.0
 # EvoMap 进化网络
 aiohttp>=3.9.0
+# macOS GUI 自动化 (Quartz CGEvent)
+pyobjc-framework-Quartz>=10.0; sys_platform=="darwin"
+pyobjc-framework-ApplicationServices>=10.0; sys_platform=="darwin"
 # vector_store 依赖（即使 RAG 关闭也需导入）
 numpy>=1.24.0

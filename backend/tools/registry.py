@@ -29,6 +29,7 @@ class ToolRegistry:
     
     def __init__(self):
         self._tools: Dict[str, BaseTool] = {}
+        self._generated_tool_names: set = set()  # 跟踪动态生成的工具名
     
     def register(self, tool: BaseTool) -> None:
         """Register a tool instance"""
@@ -102,12 +103,32 @@ class ToolRegistry:
         except Exception as e:
             logger.debug(f"Semantic tool pruning failed, using keyword fallback: {e}")
 
-        # 关键词回退
+        # 关键词回退（支持中文：逐字符/逐词双模式匹配）
         q_lower = query.lower()
         scored = []
         for t in candidates:
             desc = f"{t.name} {t.description}".lower()
-            score = sum(1 for word in q_lower.split() if word in desc)
+            score = 0
+            # 空格分词匹配（英文友好）
+            for word in q_lower.split():
+                if word and word in desc:
+                    score += 1
+            # 中文逐字符子串匹配（对中文查询关键）
+            for ch in q_lower:
+                if ch.strip() and ch in desc:
+                    score += 0.5
+            # 中文关键词 → 工具名映射（常见场景加分）
+            _CJK_TOOL_HINTS = {
+                "天气": ["web_search"], "搜索": ["web_search"], "翻译": ["web_search"],
+                "股票": ["web_search"], "新闻": ["web_search"], "网页": ["web_search", "browser"],
+                "截图": ["screenshot"], "截屏": ["screenshot"],
+                "邮件": ["mail"], "发送邮件": ["mail"],
+                "日历": ["calendar"], "数据库": ["database"],
+                "docker": ["docker"], "网络": ["network"],
+            }
+            for kw, tool_names in _CJK_TOOL_HINTS.items():
+                if kw in q_lower and t.name in tool_names:
+                    score += 5  # 强匹配加分
             scored.append((score, t))
         scored.sort(key=lambda x: x[0], reverse=True)
         selected = [t for _, t in scored[:remaining_slots]]
@@ -226,6 +247,7 @@ class ToolRegistry:
                                 logger.warning(f"Skipping {instance.name}: signature not verified")
                                 continue
                             self.register(instance)
+                            self._generated_tool_names.add(instance.name)
                             loaded.append(instance.name)
                             logger.info(f"Dynamic loaded tool: {instance.name} from {filename}")
                         except Exception as e:
@@ -235,6 +257,10 @@ class ToolRegistry:
         
         return loaded
     
+    def is_generated(self, name: str) -> bool:
+        """判断工具是否为动态生成的"""
+        return name in self._generated_tool_names
+
     def __len__(self) -> int:
         return len(self._tools)
     

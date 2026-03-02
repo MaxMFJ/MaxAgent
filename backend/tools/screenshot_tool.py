@@ -21,13 +21,14 @@ class ScreenshotTool(BaseTool):
     description = """截取屏幕截图。截图会自动显示在聊天窗口中，截图完成后无需做任何额外操作。
 
 使用方法：
-- 截取微信窗口：screenshot(action="capture", app_name="WeChat")
+- 截取微信窗口：screenshot(action="capture", app_name="WeChat") — 激活该应用后全屏截图，坐标可直接用于 mouse_click
 - 截取 Safari：screenshot(action="capture", app_name="Safari")
 - 截取全屏：screenshot(action="capture", area="full")
 
 【重要】
-1. 必须使用 app_name 参数指定应用名称，才能自动截取窗口
-2. 截图完成后立即结束任务，图片会自动显示，不需要做 OCR 或其他分析"""
+1. 传 app_name 会先激活该应用，然后截取全屏。截图坐标与 input_control.mouse_click 的屏幕坐标一致
+2. 截图完成后立即结束任务，图片会自动显示，不需要做 OCR 或其他分析
+3. GUI 操作前务必截图，根据截图中 UI 元素的位置确定 mouse_click 坐标"""
     category = ToolCategory.SYSTEM
     parameters = {
         "type": "object",
@@ -138,17 +139,35 @@ class ScreenshotTool(BaseTool):
         return await self._encode_and_return(save_path, area=area)
     
     async def _capture_app_window(self, app_name: str, save_path: str) -> ToolResult:
-        """自动截取指定应用的窗口（通过 adapter）"""
+        """
+        截取指定应用的截图。
+        策略：先激活应用窗口，然后截取全屏。
+        这样坐标系与 input_control.mouse_click 的屏幕坐标一致，
+        LLM 从截图中读取的坐标可以直接用于 mouse_click。
+        """
+        # 激活目标应用
         await self.runtime_adapter.activate_app(app_name)
-        await asyncio.sleep(0.3)
-        ok, err = await self.runtime_adapter.screenshot_window(app_name, save_path)
+        await asyncio.sleep(0.5)
+        
+        # 获取窗口位置信息（供 LLM 参考）
+        window_info = {}
+        try:
+            ok, info, err = await self.runtime_adapter.get_window_info(app_name)
+            if ok and info:
+                window_info = info
+        except Exception:
+            pass
+        
+        # 截取全屏（坐标与 mouse_click 一致）
+        ok, err = await self.runtime_adapter.screenshot_full(save_path)
         if ok and os.path.exists(save_path):
-            return await self._encode_and_return(save_path, area="window", app_name=app_name)
-        logger.warning(f"窗口截图失败，回退到全屏: {err}")
-        ok2, err2 = await self.runtime_adapter.screenshot_full(save_path)
-        if ok2 and os.path.exists(save_path):
-            return await self._encode_and_return(save_path, area="full")
-        return ToolResult(success=False, error=err2 or "全屏截图失败")
+            result = await self._encode_and_return(save_path, area="full", app_name=app_name)
+            if result.success and window_info:
+                result.data["window_info"] = window_info
+                result.data["note"] = f"已激活 {app_name} 窗口。这是全屏截图，坐标可直接用于 mouse_click。"
+            return result
+        
+        return ToolResult(success=False, error=err or "截图失败")
     
     async def _encode_and_return(
         self, save_path: str, area: str = "full", app_name: Optional[str] = None

@@ -15,6 +15,7 @@ from .base import (
     CAP_APP_CONTROL, CAP_CLIPBOARD, CAP_SCREENSHOT, CAP_GUI_INPUT,
     CAP_NOTIFICATION, CAP_SCRIPT, CAP_BROWSER, CAP_WINDOW_INFO,
 )
+from . import cg_event as _cg
 
 logger = logging.getLogger(__name__)
 
@@ -300,6 +301,12 @@ class MacRuntimeAdapter(RuntimeAdapter):
     # ---------- GUI 输入 ----------
     
     async def mouse_move(self, x: int, y: int) -> Tuple[bool, str]:
+        # 优先使用进程内 CGEvent（零延迟、最可靠）
+        ok, err = _cg.mouse_move(x, y)
+        if ok:
+            return True, ""
+        logger.debug("CGEvent mouse_move 失败(%s)，回退 cliclick", err)
+        # 回退: cliclick
         try:
             process = await asyncio.create_subprocess_exec(
                 "cliclick", f"m:{x},{y}",
@@ -307,62 +314,62 @@ class MacRuntimeAdapter(RuntimeAdapter):
                 stderr=asyncio.subprocess.PIPE
             )
             _, stderr = await process.communicate()
-            if process.returncode != 0:
-                script = f'''
-                do shell script "python3 -c \\"
-                import Quartz
-                e = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, ({x}, {y}), 0)
-                Quartz.CGEventPost(Quartz.kCGHIDEventTap, e)
-                \\""
-                '''
-                r = await self._run_applescript(script)
-                return r.success, r.error
-            return True, ""
+            if process.returncode == 0:
+                return True, ""
+            return False, stderr.decode().strip() or err
         except FileNotFoundError:
-            script = f'''
-            do shell script "python3 -c \\"
-            import Quartz
-            e = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, ({x}, {y}), 0)
-            Quartz.CGEventPost(Quartz.kCGHIDEventTap, e)
-            \\""
-            '''
-            r = await self._run_applescript(script)
-            return r.success, r.error
+            return False, err or "cliclick 未安装且 CGEvent 不可用"
     
     async def mouse_click(self, x: Optional[int] = None, y: Optional[int] = None) -> Tuple[bool, str]:
-        if x is not None and y is not None:
-            cmd = f"c:{x},{y}"
-        else:
-            cmd = "c:."
+        # 如果未提供坐标，获取当前鼠标位置
+        if x is None or y is None:
+            pos_ok, cx, cy, _ = _cg.get_mouse_position()
+            if pos_ok:
+                x, y = cx, cy
+            else:
+                return False, "无法获取鼠标位置，请提供坐标"
+        # 优先使用进程内 CGEvent
+        ok, err = _cg.mouse_click(x, y)
+        if ok:
+            return True, ""
+        logger.debug("CGEvent mouse_click 失败(%s)，回退 cliclick", err)
+        # 回退: cliclick
         try:
             process = await asyncio.create_subprocess_exec(
-                "cliclick", cmd,
+                "cliclick", f"c:{x},{y}",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             _, stderr = await process.communicate()
-            if process.returncode != 0:
-                return False, stderr.decode()
-            return True, ""
+            if process.returncode == 0:
+                return True, ""
+            return False, stderr.decode().strip() or err
         except FileNotFoundError:
-            if x is not None and y is not None:
-                script = f'''
-                tell application "System Events"
-                    click at {{{x}, {y}}}
-                end tell
-                '''
-            else:
-                return False, "cliclick 未安装且未提供坐标，请安装: brew install cliclick"
-            r = await self._run_applescript(script)
-            return r.success, r.error
+            return False, err or "cliclick 未安装且 CGEvent 不可用"
     
     async def type_text(self, text: str) -> Tuple[bool, str]:
-        escaped = text.replace('"', '\\"')
-        script = f'''
-        tell application "System Events"
-            keystroke "{escaped}"
-        end tell
-        '''
+        # 优先使用进程内 CGEvent（支持中文/Unicode）
+        ok, err = await _cg.type_text(text)
+        if ok:
+            return True, ""
+        logger.debug("CGEvent type_text 失败(%s)，回退 AppleScript", err)
+        # 回退: AppleScript（中文使用剪贴板粘贴）
+        escaped = text.replace('\\', '\\\\').replace('"', '\\"')
+        has_non_ascii = any(ord(c) > 127 for c in text)
+        if has_non_ascii:
+            script = f'''
+            set the clipboard to "{escaped}"
+            delay 0.1
+            tell application "System Events"
+                keystroke "v" using command down
+            end tell
+            '''
+        else:
+            script = f'''
+            tell application "System Events"
+                keystroke "{escaped}"
+            end tell
+            '''
         r = await self._run_applescript(script)
         return r.success, r.error
     

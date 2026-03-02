@@ -49,6 +49,8 @@ def get_cloudflared_restart_command() -> str:
             f'    <string>tunnel</string>\n'
             f'    <string>--url</string>\n'
             f'    <string>http://localhost:{BACKEND_PORT}</string>\n'
+            f'    <string>--metrics</string>\n'
+            f'    <string>127.0.0.1:{CLOUDFLARED_METRICS_PORT}</string>\n'
             f'  </array>\n'
             f'  <key>RunAtLoad</key><true/>\n'
             f'  <key>KeepAlive</key><true/>\n'
@@ -61,7 +63,7 @@ def get_cloudflared_restart_command() -> str:
             f'PLIST_END\n'
             f'launchctl unload "$plist" 2>/dev/null; launchctl load "$plist"'
         )
-    return "pkill -f cloudflared 2>/dev/null; sleep 2; nohup cloudflared tunnel --url http://localhost:8765 >> ~/cloudflared.log 2>&1 &"
+    return "pkill -f cloudflared 2>/dev/null; sleep 2; nohup cloudflared tunnel --url http://localhost:8765 --metrics 127.0.0.1:4040 >> ~/cloudflared.log 2>&1 &"
 
 
 # LaunchAgent 标识，供 tunnel_manager 使用

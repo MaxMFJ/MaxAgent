@@ -27,8 +27,11 @@ struct SettingsView: View {
                 SettingsTabButton(title: "工具", icon: "wrench.and.screwdriver", isSelected: selectedTab == 5) {
                     selectedTab = 5
                 }
-                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 6) {
+                SettingsTabButton(title: "权限", icon: "lock.shield", isSelected: selectedTab == 6) {
                     selectedTab = 6
+                }
+                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 7) {
+                    selectedTab = 7
                 }
             }
             .padding(.vertical, 16)
@@ -68,6 +71,10 @@ struct SettingsView: View {
                     }
                 case 6:
                     ScrollView {
+                        PermissionSettingsContent()
+                    }
+                case 7:
+                    ScrollView {
                         AboutContent()
                             .padding(20)
                     }
@@ -91,7 +98,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
             .background(CyberColor.bg1)
         }
-        .frame(width: 650, height: 550)
+        .frame(width: 720, height: 650)
         .background(CyberColor.bg0)
     }
     

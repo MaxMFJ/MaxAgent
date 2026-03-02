@@ -210,6 +210,25 @@ struct ToolDefinition: Codable, Identifiable {
     let name: String
     let description: String
     let parameters: [String: AnyCodable]
+    let category: String?
+    let source: String?  // "system" or "generated"
+    
+    var isGenerated: Bool {
+        source == "generated"
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case name, description, parameters, category, source
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        description = try c.decode(String.self, forKey: .description)
+        parameters = try c.decodeIfPresent([String: AnyCodable].self, forKey: .parameters) ?? [:]
+        category = try c.decodeIfPresent(String.self, forKey: .category)
+        source = try c.decodeIfPresent(String.self, forKey: .source)
+    }
 }
 
 /// 后端返回的已配置云端提供商，供“远程回退策略”下拉展示

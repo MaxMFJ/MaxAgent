@@ -32,7 +32,12 @@ async def list_tools():
     agent_core = get_agent_core()
     if not agent_core:
         raise HTTPException(status_code=500, detail="Agent not initialized")
-    return {"tools": [tool.to_function_schema() for tool in agent_core.tools]}
+    tools_list = []
+    for tool in agent_core.tools:
+        schema = tool.to_function_schema()
+        schema["source"] = "generated" if agent_core.registry.is_generated(tool.name) else "system"
+        tools_list.append(schema)
+    return {"tools": tools_list}
 
 
 @router.get("/tools/pending")

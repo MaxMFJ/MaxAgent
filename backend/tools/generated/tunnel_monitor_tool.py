@@ -56,7 +56,7 @@ class TunnelMonitorTool(BaseTool):
             },
             "get_tunnel_url_command": {
                 "type": "string",
-                "description": "获取隧道 URL 的命令，留空则 curl localhost:4040/api/tunnels",
+                "description": "获取隧道 URL 的命令，留空则 curl localhost:4040/metrics",
                 "default": ""
             },
             "smtp_server": {
@@ -170,7 +170,14 @@ class TunnelMonitorTool(BaseTool):
                 err_s = stderr.decode().strip()
 
                 if proc.returncode == 0 and out_s:
-                    # 尝试解析 cloudflared metrics API JSON
+                    # 尝试从 Prometheus metrics 解析 (cloudflared 使用 Prometheus 而非 JSON API)
+                    url_match = re.search(
+                        r'cloudflared_tunnel_user_hostnames_counts\{userHostname="(https://[^"]*trycloudflare\.com[^"]*)"\}',
+                        out_s,
+                    )
+                    if url_match:
+                        return url_match.group(1)
+                    # 回退：尝试 JSON 解析（兼容旧版本）
                     try:
                         data = json.loads(out_s)
                         if "tunnels" in data and data["tunnels"]:
@@ -178,7 +185,7 @@ class TunnelMonitorTool(BaseTool):
                                 if t.get("public_url"):
                                     return t["public_url"]
                     except json.JSONDecodeError:
-                        urls = re.findall(r"https?://[^\s\"]+", out_s)
+                        urls = re.findall(r"https?://[^\s\"]+trycloudflare\.com[^\s\"]*", out_s)
                         if urls:
                             return urls[0]
                     logger.warning("无法从输出中解析隧道 URL")
@@ -330,7 +337,7 @@ class TunnelMonitorTool(BaseTool):
             restart_command = kwargs.get("restart_command") or get_cloudflared_restart_command()
             get_tunnel_url_command = (
                 kwargs.get("get_tunnel_url_command")
-                or f"curl -s http://localhost:{CLOUDFLARED_METRICS_PORT}/api/tunnels"
+                or f"curl -s http://localhost:{CLOUDFLARED_METRICS_PORT}/metrics"
             )
             smtp_server = kwargs.get('smtp_server', 'smtp.qq.com')
             smtp_port = kwargs.get('smtp_port', 465)

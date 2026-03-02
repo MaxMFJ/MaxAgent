@@ -120,8 +120,8 @@ class AgentCore:
         if query:
             return self.registry.get_relevant_schemas(
                 query,
-                max_tools=8,
-                always_include=["terminal", "file_operations", "app_control", "capsule"],
+                max_tools=10,
+                always_include=["terminal", "file_operations", "app_control", "capsule", "web_search", "input_control", "screenshot"],
             )
         return self.registry.get_schemas()
     

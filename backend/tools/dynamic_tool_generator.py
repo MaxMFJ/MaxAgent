@@ -724,19 +724,41 @@ end tell
         if x is None or y is None:
             return ToolResult(success=False, error="需要提供 x 和 y 坐标")
         
-        # 使用 cliclick 或 AppleScript
+        ix, iy = int(x), int(y)
+
+        # 优先使用进程内 CGEvent
+        try:
+            from runtime import cg_event as _cg
+            if _cg.HAS_QUARTZ:
+                ok, err = _cg.mouse_click(ix, iy, button="left", clicks=1)
+                if ok:
+                    return ToolResult(success=True, data={"clicked_at": {"x": ix, "y": iy}})
+                logger.warning("CGEvent click_position 失败: %s", err)
+        except Exception:
+            pass
+
+        # 回退: cliclick
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "cliclick", f"c:{ix},{iy}",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await process.communicate()
+            if process.returncode == 0:
+                return ToolResult(success=True, data={"clicked_at": {"x": ix, "y": iy}})
+        except FileNotFoundError:
+            pass
+
+        # 最终回退: AppleScript（通过 cliclick 风格不可用时用 osascript 模拟）
         script = f'''
-tell application "System Events"
-    click at {{{int(x)}, {int(y)}}}
-end tell
+do shell script "cliclick c:{ix},{iy}" 
 '''
-        
         code, stdout, stderr = await self._run_applescript(script)
-        
-        if code != 0:
-            return ToolResult(success=False, error=f"点击失败: {stderr}")
-        
-        return ToolResult(success=True, data={"clicked_at": {"x": x, "y": y}})
+        if code == 0:
+            return ToolResult(success=True, data={"clicked_at": {"x": ix, "y": iy}})
+
+        return ToolResult(success=False, error=f"点击 ({ix}, {iy}) 失败：CGEvent 和 cliclick 均不可用。{stderr}")
     
     async def _type_text(self, app_name: str, text: str) -> ToolResult:
         """输入文本"""

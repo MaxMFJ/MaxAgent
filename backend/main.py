@@ -147,6 +147,30 @@ async def lifespan(app: FastAPI):
     core = AgentCore(llm, runtime_adapter=_adapter)
     set_agent_core(core)
 
+    # 启动时检查辅助功能/GUI 权限并记录日志
+    try:
+        from runtime.permission_checker import get_permission_status
+        perm_status = get_permission_status()
+        if perm_status.get("trusted"):
+            logger.info("辅助功能权限: 已授予 (process=%s)", perm_status.get("process_path", "?"))
+        else:
+            logger.warning("辅助功能权限: 未授予！键鼠模拟将失败。%s", perm_status.get("guidance", ""))
+    except Exception as e:
+        logger.warning(f"辅助功能权限检查跳过: {e}")
+    try:
+        from runtime import cg_event
+        if cg_event.HAS_QUARTZ:
+            logger.info("CGEvent (Quartz): 可用")
+        else:
+            logger.warning("CGEvent (Quartz): 不可用，将回退至 cliclick/AppleScript")
+    except Exception as e:
+        logger.warning(f"CGEvent 检查跳过: {e}")
+    import shutil
+    if shutil.which("cliclick"):
+        logger.info("cliclick: 可用 (%s)", shutil.which("cliclick"))
+    else:
+        logger.warning("cliclick: 未找到（PATH=%s）。如果 CGEvent 不可用，鼠标操作将失败。安装: brew install cliclick", os.environ.get("PATH", "")[:200])
+
     # 终端会话增强：记录 cwd/输出供后续命令和 prompt 注入
     try:
         from tools.middleware import register_post_hook
@@ -356,6 +380,16 @@ async def lifespan(app: FastAPI):
         logger.warning(f"SystemMessageService init failed: {e}")
 
     logger.info("Chow Duck backend started (ReAct + Autonomous modes with Model Selection)")
+
+    # Tunnel Lifecycle Service 初始化（异步启动 cloudflared，不阻塞后端）
+    try:
+        from services.tunnel_lifecycle import get_tunnel_lifecycle
+        tunnel_svc = get_tunnel_lifecycle()
+        await tunnel_svc.initialize()
+        logger.info("TunnelLifecycleService initialized")
+    except Exception as e:
+        logger.warning(f"TunnelLifecycleService init failed (non-blocking): {e}")
+
     try:
         from routes.config import _langchain_installed
         if _langchain_installed():
@@ -374,6 +408,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.debug("LangChain compat status not logged: %s", e)
     yield
+    # Tunnel lifecycle shutdown
+    try:
+        from services.tunnel_lifecycle import get_tunnel_lifecycle
+        await get_tunnel_lifecycle().shutdown()
+    except Exception:
+        pass
     logger.info("Chow Duck backend shutting down")
 
 

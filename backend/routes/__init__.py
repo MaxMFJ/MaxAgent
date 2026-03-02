@@ -16,6 +16,8 @@ from .chat import router as chat_router
 from .workspace import router as workspace_router
 from .monitor import router as monitor_router
 from .usage_stats import router as usage_stats_router
+from .tunnel import router as tunnel_router
+from .permissions import router as permissions_router
 
 all_routers = [
     health_router,
@@ -32,4 +34,6 @@ all_routers = [
     workspace_router,
     monitor_router,
     usage_stats_router,
+    tunnel_router,
+    permissions_router,
 ]

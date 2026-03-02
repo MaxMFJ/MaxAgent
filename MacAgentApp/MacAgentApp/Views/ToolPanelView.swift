@@ -79,6 +79,14 @@ struct ToolMatrixView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @State private var selectedTool: ToolDefinition? = nil
     
+    private var systemTools: [ToolDefinition] {
+        viewModel.availableTools.filter { !$0.isGenerated }
+    }
+    
+    private var generatedTools: [ToolDefinition] {
+        viewModel.availableTools.filter { $0.isGenerated }
+    }
+    
     var body: some View {
         if viewModel.availableTools.isEmpty {
             // Loading State
@@ -103,67 +111,121 @@ struct ToolMatrixView: View {
         } else {
             ScrollView {
                 VStack(spacing: 12) {
-                    // Matrix Header
-                    HStack {
-                        Image(systemName: "cpu")
-                            .font(.system(size: 10))
-                            .foregroundColor(CyberColor.cyan)
-                        Text("SYSTEM TOOLS")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundColor(CyberColor.cyan)
-                            .tracking(2)
-                        
-                        Spacer()
-                        
-                        Text("\(viewModel.availableTools.count) UNITS")
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundColor(CyberColor.textSecond)
-                    }
-                    .padding(.horizontal, 4)
+                    // ── SYSTEM TOOLS Section ──
+                    ToolSectionHeader(
+                        icon: "cpu",
+                        title: "SYSTEM TOOLS",
+                        count: systemTools.count,
+                        color: CyberColor.cyan
+                    )
                     
-                    // Tool Matrix Grid — 手动分行，点击 cell 后在该行下方展开详情
-                    let tools = viewModel.availableTools
-                    let colCount = 3
-                    let rowCount = (tools.count + colCount - 1) / colCount
+                    ToolMatrixGrid(
+                        tools: systemTools,
+                        selectedTool: $selectedTool,
+                        accentColor: CyberColor.cyan
+                    )
                     
-                    ForEach(0..<rowCount, id: \.self) { row in
-                        let startIdx = row * colCount
-                        let endIdx = min(startIdx + colCount, tools.count)
+                    // ── GENERATED TOOLS Section ──
+                    if !generatedTools.isEmpty {
+                        Rectangle()
+                            .fill(CyberColor.border)
+                            .frame(height: 0.5)
+                            .padding(.vertical, 4)
                         
-                        // 本行的 cells
-                        HStack(spacing: 8) {
-                            ForEach(startIdx..<endIdx, id: \.self) { idx in
-                                let tool = tools[idx]
-                                ToolMatrixCell(
-                                    tool: tool,
-                                    isSelected: selectedTool?.id == tool.id
-                                ) {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                        selectedTool = selectedTool?.id == tool.id ? nil : tool
-                                    }
-                                }
-                            }
-                            // 填充空位确保均匀宽度
-                            if endIdx - startIdx < colCount {
-                                ForEach(0..<(colCount - (endIdx - startIdx)), id: \.self) { _ in
-                                    Color.clear.frame(maxWidth: .infinity)
-                                }
-                            }
-                        }
+                        ToolSectionHeader(
+                            icon: "wand.and.stars",
+                            title: "GENERATED",
+                            count: generatedTools.count,
+                            color: CyberColor.orange
+                        )
                         
-                        // 如果选中的 tool 在当前行，紧跟在该行下方展开详情
-                        if let sel = selectedTool,
-                           let selIdx = tools.firstIndex(where: { $0.id == sel.id }),
-                           selIdx >= startIdx && selIdx < endIdx {
-                            ToolDetailPanel(tool: sel)
-                                .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.95).combined(with: .opacity),
-                                    removal: .opacity
-                                ))
-                        }
+                        ToolMatrixGrid(
+                            tools: generatedTools,
+                            selectedTool: $selectedTool,
+                            accentColor: CyberColor.orange
+                        )
                     }
                 }
                 .padding(12)
+            }
+        }
+    }
+}
+
+// MARK: - Tool Section Header
+
+private struct ToolSectionHeader: View {
+    let icon: String
+    let title: String
+    let count: Int
+    var color: Color = CyberColor.cyan
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundColor(color)
+            Text(title)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(color)
+                .tracking(2)
+            
+            Spacer()
+            
+            Text("\(count) UNITS")
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(CyberColor.textSecond)
+        }
+        .padding(.horizontal, 4)
+    }
+}
+
+// MARK: - Tool Matrix Grid (reusable for both sections)
+
+private struct ToolMatrixGrid: View {
+    let tools: [ToolDefinition]
+    @Binding var selectedTool: ToolDefinition?
+    var accentColor: Color = CyberColor.cyan
+    
+    var body: some View {
+        let colCount = 3
+        let rowCount = (tools.count + colCount - 1) / colCount
+        
+        ForEach(0..<rowCount, id: \.self) { row in
+            let startIdx = row * colCount
+            let endIdx = min(startIdx + colCount, tools.count)
+            
+            // 本行的 cells
+            HStack(spacing: 8) {
+                ForEach(startIdx..<endIdx, id: \.self) { idx in
+                    let tool = tools[idx]
+                    ToolMatrixCell(
+                        tool: tool,
+                        isSelected: selectedTool?.id == tool.id,
+                        accentColor: accentColor
+                    ) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedTool = selectedTool?.id == tool.id ? nil : tool
+                        }
+                    }
+                }
+                // 填充空位确保均匀宽度
+                if endIdx - startIdx < colCount {
+                    ForEach(0..<(colCount - (endIdx - startIdx)), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            
+            // 如果选中的 tool 在当前行，紧跟在该行下方展开详情
+            if let sel = selectedTool,
+               let selIdx = tools.firstIndex(where: { $0.id == sel.id }),
+               selIdx >= startIdx && selIdx < endIdx {
+                ToolDetailPanel(tool: sel, accentColor: accentColor)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95).combined(with: .opacity),
+                        removal: .opacity
+                    ))
             }
         }
     }
@@ -174,15 +236,16 @@ struct ToolMatrixView: View {
 private struct ToolMatrixCell: View {
     let tool: ToolDefinition
     let isSelected: Bool
+    var accentColor: Color = CyberColor.cyan
     let onTap: () -> Void
     @State private var isHovering = false
     
     private var borderColor: Color {
-        isSelected ? CyberColor.cyan : (isHovering ? CyberColor.cyanDim : CyberColor.border)
+        isSelected ? accentColor : (isHovering ? accentColor.opacity(0.6) : CyberColor.border)
     }
     
     private var bgColor: Color {
-        isSelected ? CyberColor.cyan.opacity(0.08) : (isHovering ? CyberColor.bgHighlight : CyberColor.bg2)
+        isSelected ? accentColor.opacity(0.08) : (isHovering ? CyberColor.bgHighlight : CyberColor.bg2)
     }
     
     var body: some View {
@@ -192,15 +255,15 @@ private struct ToolMatrixCell: View {
                 ZStack {
                     if isSelected || isHovering {
                         Circle()
-                            .fill(CyberColor.cyan.opacity(0.1))
+                            .fill(accentColor.opacity(0.1))
                             .frame(width: 36, height: 36)
                             .blur(radius: 4)
                     }
                     
                     Image(systemName: iconForTool(tool.name))
                         .font(.system(size: 20, weight: .light))
-                        .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.cyanDim)
-                        .shadow(color: isSelected ? CyberColor.cyan.opacity(0.5) : .clear, radius: 4)
+                        .foregroundColor(isSelected ? accentColor : accentColor.opacity(0.6))
+                        .shadow(color: isSelected ? accentColor.opacity(0.5) : .clear, radius: 4)
                 }
                 .frame(height: 32)
                 
@@ -231,7 +294,7 @@ private struct ToolMatrixCell: View {
                 }
             )
             .cornerRadius(6)
-            .shadow(color: isSelected ? CyberColor.cyan.opacity(0.12) : .clear, radius: 6)
+            .shadow(color: isSelected ? accentColor.opacity(0.12) : .clear, radius: 6)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -290,13 +353,14 @@ private struct CornerPads: View {
 
 private struct ToolDetailPanel: View {
     let tool: ToolDefinition
+    var accentColor: Color = CyberColor.cyan
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: iconForTool(tool.name))
                     .font(.system(size: 14))
-                    .foregroundColor(CyberColor.cyan)
+                    .foregroundColor(accentColor)
                 
                 Text(displayNameForTool(tool.name))
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
@@ -304,12 +368,12 @@ private struct ToolDetailPanel: View {
                 
                 Spacer()
                 
-                Text("ONLINE")
+                Text(tool.isGenerated ? "DYNAMIC" : "ONLINE")
                     .font(.system(size: 8, weight: .bold, design: .monospaced))
-                    .foregroundColor(CyberColor.green)
+                    .foregroundColor(tool.isGenerated ? CyberColor.orange : CyberColor.green)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(CyberColor.green.opacity(0.1))
+                    .background((tool.isGenerated ? CyberColor.orange : CyberColor.green).opacity(0.1))
                     .cornerRadius(3)
             }
             
@@ -342,7 +406,7 @@ private struct ToolDetailPanel: View {
         .background(CyberColor.bg2)
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(CyberColor.cyan.opacity(0.25), lineWidth: 0.5)
+                .stroke(accentColor.opacity(0.25), lineWidth: 0.5)
         )
         .cornerRadius(6)
     }

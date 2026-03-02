@@ -5,10 +5,19 @@ Input Control Tool - 鼠标和键盘控制工具
 
 import asyncio
 import logging
+import os
 from typing import Optional, List, Tuple
 from .base import BaseTool, ToolResult, ToolCategory
 
 logger = logging.getLogger(__name__)
+
+# 尝试导入进程内 CGEvent 模块
+try:
+    from runtime import cg_event as _cg
+    _HAS_CG = _cg.HAS_QUARTZ
+except Exception:
+    _cg = None
+    _HAS_CG = False
 
 
 class InputControlTool(BaseTool):
@@ -141,8 +150,11 @@ class InputControlTool(BaseTool):
         """执行 AppleScript（通过 RuntimeAdapter）"""
         adapter = self.runtime_adapter
         if not adapter:
-            return False, "当前平台不支持 GUI 输入"
+            logger.warning("input_control: runtime_adapter 为 None，无法执行 AppleScript")
+            return False, "当前平台不支持 GUI 输入（runtime_adapter 未注入）"
         r = await adapter.run_script(script, "applescript")
+        if not r.success:
+            logger.warning("AppleScript 执行失败: %s (script: %s)", r.error, script[:80])
         return r.success, r.error or r.output
     
     async def _mouse_move(self, kwargs: dict) -> ToolResult:
@@ -150,13 +162,21 @@ class InputControlTool(BaseTool):
         x, y = kwargs.get("x"), kwargs.get("y")
         if x is None or y is None:
             return ToolResult(success=False, error="需要提供 x 和 y 坐标")
+        ix, iy = int(x), int(y)
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, err = _cg.mouse_move(ix, iy)
+            if ok:
+                return ToolResult(success=True, data={"action": "mouse_move", "x": ix, "y": iy})
+            logger.debug("CGEvent mouse_move 失败: %s, 回退 adapter", err)
+        # 回退: adapter (cliclick/AppleScript)
         adapter = self.runtime_adapter
         if not adapter:
             return ToolResult(success=False, error="当前平台不支持 GUI 输入")
-        success, err = await adapter.mouse_move(int(x), int(y))
+        success, err = await adapter.mouse_move(ix, iy)
         if not success:
             return ToolResult(success=False, error=err or "鼠标移动失败")
-        return ToolResult(success=True, data={"action": "mouse_move", "x": x, "y": y})
+        return ToolResult(success=True, data={"action": "mouse_move", "x": ix, "y": iy})
     
     async def _run_swift_inline(self, code: str) -> bool:
         """运行内联 Swift 代码"""
@@ -177,69 +197,55 @@ class InputControlTool(BaseTool):
         y = kwargs.get("y")
         button = kwargs.get("button", "left")
         clicks = kwargs.get("clicks", 1)
-        
-        # 如果没有指定坐标，使用当前位置
+
+        # 如果没有指定坐标，获取当前位置
         if x is None or y is None:
-            pos_result = await self._get_mouse_position()
-            if pos_result.success:
-                x = pos_result.data.get("x", 0)
-                y = pos_result.data.get("y", 0)
-            else:
-                return ToolResult(success=False, error="无法获取鼠标位置，请提供 x 和 y 坐标")
-        
-        # 尝试使用 cliclick
+            if _HAS_CG:
+                pos_ok, cx, cy, _ = _cg.get_mouse_position()
+                if pos_ok:
+                    x, y = cx, cy
+            if x is None or y is None:
+                pos_result = await self._get_mouse_position()
+                if pos_result.success:
+                    x = pos_result.data.get("x", 0)
+                    y = pos_result.data.get("y", 0)
+                else:
+                    return ToolResult(success=False, error="无法获取鼠标位置，请提供 x 和 y 坐标")
+
+        ix, iy = int(x), int(y)
+
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, err = _cg.mouse_click(ix, iy, button=button, clicks=clicks)
+            if ok:
+                return ToolResult(
+                    success=True,
+                    data={"action": "mouse_click", "x": ix, "y": iy, "button": button, "clicks": clicks}
+                )
+            logger.debug("CGEvent mouse_click 失败: %s, 回退 cliclick", err)
+
+        # 回退: cliclick
         try:
             click_cmd = "c" if button == "left" else ("rc" if button == "right" else "c")
             if clicks == 2:
-                click_cmd = "dc"  # double click
-            
+                click_cmd = "dc"
             process = await asyncio.create_subprocess_exec(
-                "cliclick", f"{click_cmd}:{int(x)},{int(y)}",
+                "cliclick", f"{click_cmd}:{ix},{iy}",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
-            
             if process.returncode == 0:
                 return ToolResult(
                     success=True,
-                    data={"action": "mouse_click", "x": x, "y": y, "button": button, "clicks": clicks}
+                    data={"action": "mouse_click", "x": ix, "y": iy, "button": button, "clicks": clicks}
                 )
         except FileNotFoundError:
-            pass
-        
-        # 备用方案：AppleScript
-        button_code = 0 if button == "left" else (1 if button == "right" else 2)
-        
-        script = f'''
-do shell script "python3 -c \\"
-import Quartz
-import time
+            logger.warning("cliclick 未安装或不在 PATH 中（PATH=%s）", os.environ.get("PATH", "")[:120])
 
-point = ({x}, {y})
-# Move to position first
-move = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, point, 0)
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, move)
-time.sleep(0.05)
-
-# Click
-for i in range({clicks}):
-    down = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDown, point, 0)
-    up = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseUp, point, 0)
-    Quartz.CGEventPost(Quartz.kCGHIDEventTap, down)
-    Quartz.CGEventPost(Quartz.kCGHIDEventTap, up)
-    if i < {clicks} - 1:
-        time.sleep(0.1)
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
-        if not success:
-            return ToolResult(success=False, error=f"点击失败: {output}。请安装 cliclick: brew install cliclick")
-        
         return ToolResult(
-            success=True,
-            data={"action": "mouse_click", "x": x, "y": y, "button": button, "clicks": clicks}
+            success=False,
+            error="鼠标点击失败：CGEvent 和 cliclick 均失败。请确保已授予辅助功能权限，并安装 cliclick: brew install cliclick"
         )
     
     async def _mouse_drag(self, kwargs: dict) -> ToolResult:
@@ -248,88 +254,64 @@ for i in range({clicks}):
         y = kwargs.get("y")
         end_x = kwargs.get("end_x")
         end_y = kwargs.get("end_y")
-        
+
         if None in (x, y, end_x, end_y):
             return ToolResult(success=False, error="拖拽需要提供起始和结束坐标 (x, y, end_x, end_y)")
-        
-        # 使用 cliclick
+
+        ix, iy, iex, iey = int(x), int(y), int(end_x), int(end_y)
+
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, err = _cg.mouse_drag(ix, iy, iex, iey)
+            if ok:
+                return ToolResult(
+                    success=True,
+                    data={"action": "mouse_drag", "from": [ix, iy], "to": [iex, iey]}
+                )
+            logger.debug("CGEvent mouse_drag 失败: %s, 回退 cliclick", err)
+
+        # 回退: cliclick
         try:
             process = await asyncio.create_subprocess_exec(
-                "cliclick", f"dd:{int(x)},{int(y)}", f"du:{int(end_x)},{int(end_y)}",
+                "cliclick", f"dd:{ix},{iy}", f"du:{iex},{iey}",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
-            
             if process.returncode == 0:
                 return ToolResult(
                     success=True,
-                    data={"action": "mouse_drag", "from": [x, y], "to": [end_x, end_y]}
+                    data={"action": "mouse_drag", "from": [ix, iy], "to": [iex, iey]}
                 )
         except FileNotFoundError:
             pass
-        
-        # 备用方案
-        script = f'''
-do shell script "python3 -c \\"
-import Quartz
-import time
 
-start = ({x}, {y})
-end = ({end_x}, {end_y})
-
-# Move to start
-move = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, start, 0)
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, move)
-time.sleep(0.1)
-
-# Mouse down
-down = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDown, start, 0)
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, down)
-time.sleep(0.05)
-
-# Drag
-steps = 20
-for i in range(steps + 1):
-    t = i / steps
-    cx = start[0] + (end[0] - start[0]) * t
-    cy = start[1] + (end[1] - start[1]) * t
-    drag = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDragged, (cx, cy), 0)
-    Quartz.CGEventPost(Quartz.kCGHIDEventTap, drag)
-    time.sleep(0.01)
-
-# Mouse up
-up = Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseUp, end, 0)
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, up)
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
-        if not success:
-            return ToolResult(success=False, error=f"拖拽失败: {output}")
-        
-        return ToolResult(
-            success=True,
-            data={"action": "mouse_drag", "from": [x, y], "to": [end_x, end_y]}
-        )
+        return ToolResult(success=False, error="拖拽失败：请确保已授予辅助功能权限")
     
     async def _mouse_scroll(self, kwargs: dict) -> ToolResult:
         """鼠标滚动"""
         amount = kwargs.get("scroll_amount", -3)
         x = kwargs.get("x")
         y = kwargs.get("y")
-        
+
         # 如果指定了位置，先移动鼠标
         if x is not None and y is not None:
             await self._mouse_move({"x": x, "y": y})
             await asyncio.sleep(0.1)
-        
-        # 使用 cliclick 滚动
+
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            sx = int(x) if x is not None else None
+            sy = int(y) if y is not None else None
+            ok, err = _cg.mouse_scroll(int(amount), sx, sy)
+            if ok:
+                return ToolResult(success=True, data={"action": "mouse_scroll", "amount": amount})
+            logger.debug("CGEvent mouse_scroll 失败: %s, 回退 cliclick", err)
+
+        # 回退: cliclick
         try:
-            # cliclick 的滚动语法
             direction = "u" if amount > 0 else "d"
-            scroll_count = abs(amount)
-            
+            scroll_count = abs(int(amount))
             for _ in range(scroll_count):
                 process = await asyncio.create_subprocess_exec(
                     "cliclick", f"w:{direction}",
@@ -338,38 +320,29 @@ Quartz.CGEventPost(Quartz.kCGHIDEventTap, up)
                 )
                 await process.communicate()
                 await asyncio.sleep(0.05)
-            
-            return ToolResult(
-                success=True,
-                data={"action": "mouse_scroll", "amount": amount}
-            )
+            return ToolResult(success=True, data={"action": "mouse_scroll", "amount": amount})
         except FileNotFoundError:
             pass
-        
-        # 备用方案
-        script = f'''
-do shell script "python3 -c \\"
-import Quartz
 
-scroll = Quartz.CGEventCreateScrollWheelEvent(None, Quartz.kCGScrollEventUnitLine, 1, {amount})
-Quartz.CGEventPost(Quartz.kCGHIDEventTap, scroll)
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
-        if not success:
-            return ToolResult(success=False, error=f"滚动失败: {output}")
-        
-        return ToolResult(success=True, data={"action": "mouse_scroll", "amount": amount})
+        return ToolResult(success=False, error="滚动失败：请确保已授予辅助功能权限")
     
     async def _keyboard_type(self, kwargs: dict) -> ToolResult:
-        """键盘输入文字"""
+        """键盘输入文字（支持中文/Unicode）"""
         text = kwargs.get("text", "")
-        
+
         if not text:
             return ToolResult(success=False, error="需要提供要输入的文字")
-        
-        # 使用 cliclick
+
+        display = text[:50] + "..." if len(text) > 50 else text
+
+        # 优先使用进程内 CGEvent (支持中文通过剪贴板)
+        if _HAS_CG:
+            ok, err = await _cg.type_text(text)
+            if ok:
+                return ToolResult(success=True, data={"action": "keyboard_type", "text": display})
+            logger.debug("CGEvent type_text 失败: %s, 回退 cliclick", err)
+
+        # 回退: cliclick (仅 ASCII)
         try:
             process = await asyncio.create_subprocess_exec(
                 "cliclick", f"t:{text}",
@@ -377,63 +350,51 @@ Quartz.CGEventPost(Quartz.kCGHIDEventTap, scroll)
                 stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
-            
             if process.returncode == 0:
-                return ToolResult(
-                    success=True,
-                    data={"action": "keyboard_type", "text": text[:50] + "..." if len(text) > 50 else text}
-                )
+                return ToolResult(success=True, data={"action": "keyboard_type", "text": display})
         except FileNotFoundError:
             pass
-        
-        # 备用方案：AppleScript
+
+        # 最终回退: AppleScript
         escaped_text = text.replace("\\", "\\\\").replace('"', '\\"')
-        script = f'''
-tell application "System Events"
-    keystroke "{escaped_text}"
-end tell
-'''
+        # 检测是否包含非 ASCII（中文等），使用剪贴板粘贴
+        has_non_ascii = any(ord(c) > 127 for c in text)
+        if has_non_ascii:
+            script = (
+                f'set the clipboard to "{escaped_text}"\n'
+                f'delay 0.1\n'
+                f'tell application "System Events"\n'
+                f'    keystroke "v" using command down\n'
+                f'end tell'
+            )
+        else:
+            script = f'tell application "System Events"\n    keystroke "{escaped_text}"\nend tell'
         success, output = await self._run_applescript(script)
-        
         if not success:
             return ToolResult(success=False, error=f"输入失败: {output}")
-        
-        return ToolResult(
-            success=True,
-            data={"action": "keyboard_type", "text": text[:50] + "..." if len(text) > 50 else text}
-        )
+        return ToolResult(success=True, data={"action": "keyboard_type", "text": display})
     
     async def _keyboard_key(self, kwargs: dict) -> ToolResult:
         """按下特定按键"""
         key = kwargs.get("key", "")
         modifiers = kwargs.get("modifiers", [])
-        
+
         if not key:
             return ToolResult(success=False, error="需要提供按键名称")
-        
-        # 按键映射
-        key_codes = {
-            "return": 36, "enter": 36,
-            "tab": 48,
-            "space": 49,
-            "delete": 51, "backspace": 51,
-            "escape": 53, "esc": 53,
-            "up": 126,
-            "down": 125,
-            "left": 123,
-            "right": 124,
-            "home": 115,
-            "end": 119,
-            "pageup": 116,
-            "pagedown": 121,
-            "f1": 122, "f2": 120, "f3": 99, "f4": 118,
-            "f5": 96, "f6": 97, "f7": 98, "f8": 100,
-            "f9": 101, "f10": 109, "f11": 103, "f12": 111,
-        }
-        
+
         key_lower = key.lower()
-        
-        # 使用 cliclick
+
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, err = _cg.key_press(key_lower, modifiers)
+            if ok:
+                return ToolResult(
+                    success=True,
+                    data={"action": "keyboard_key", "key": key, "modifiers": modifiers}
+                )
+            logger.debug("CGEvent key_press 失败: %s, 回退 cliclick", err)
+
+        # 回退: cliclick
         try:
             cliclick_key = key_lower
             if key_lower in ["return", "enter"]:
@@ -442,31 +403,30 @@ end tell
                 cliclick_key = "esc"
             elif key_lower in ["delete", "backspace"]:
                 cliclick_key = "delete"
-            
+
             modifier_str = ""
             for mod in modifiers:
-                if mod.lower() in ["command", "cmd"]:
+                ml = mod.lower()
+                if ml in ("command", "cmd"):
                     modifier_str += "cmd,"
-                elif mod.lower() in ["control", "ctrl"]:
+                elif ml in ("control", "ctrl"):
                     modifier_str += "ctrl,"
-                elif mod.lower() in ["option", "alt"]:
+                elif ml in ("option", "alt"):
                     modifier_str += "alt,"
-                elif mod.lower() == "shift":
+                elif ml == "shift":
                     modifier_str += "shift,"
-            
+
             if modifier_str:
-                modifier_str = modifier_str.rstrip(",")
-                cmd = f"kp:{modifier_str}+{cliclick_key}"
+                cmd = f"kp:{modifier_str.rstrip(',')}+{cliclick_key}"
             else:
                 cmd = f"kp:{cliclick_key}"
-            
+
             process = await asyncio.create_subprocess_exec(
                 "cliclick", cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
-            
             if process.returncode == 0:
                 return ToolResult(
                     success=True,
@@ -474,41 +434,38 @@ end tell
                 )
         except FileNotFoundError:
             pass
-        
-        # 备用方案：AppleScript
+
+        # 最终回退: AppleScript key code
+        key_codes = {
+            "return": 36, "enter": 36, "tab": 48, "space": 49,
+            "delete": 51, "backspace": 51, "escape": 53, "esc": 53,
+            "up": 126, "down": 125, "left": 123, "right": 124,
+            "home": 115, "end": 119, "pageup": 116, "pagedown": 121,
+            "f1": 122, "f2": 120, "f3": 99, "f4": 118,
+            "f5": 96, "f6": 97, "f7": 98, "f8": 100,
+            "f9": 101, "f10": 109, "f11": 103, "f12": 111,
+        }
         modifier_using = []
         for mod in modifiers:
-            if mod.lower() in ["command", "cmd"]:
+            ml = mod.lower()
+            if ml in ("command", "cmd"):
                 modifier_using.append("command down")
-            elif mod.lower() in ["control", "ctrl"]:
+            elif ml in ("control", "ctrl"):
                 modifier_using.append("control down")
-            elif mod.lower() in ["option", "alt"]:
+            elif ml in ("option", "alt"):
                 modifier_using.append("option down")
-            elif mod.lower() == "shift":
+            elif ml == "shift":
                 modifier_using.append("shift down")
-        
-        using_clause = ""
-        if modifier_using:
-            using_clause = f" using {{{', '.join(modifier_using)}}}"
-        
+        using_clause = f" using {{{', '.join(modifier_using)}}}" if modifier_using else ""
+
         if key_lower in key_codes:
-            script = f'''
-tell application "System Events"
-    key code {key_codes[key_lower]}{using_clause}
-end tell
-'''
+            script = f'tell application "System Events"\n    key code {key_codes[key_lower]}{using_clause}\nend tell'
         else:
-            script = f'''
-tell application "System Events"
-    keystroke "{key}"{using_clause}
-end tell
-'''
-        
+            script = f'tell application "System Events"\n    keystroke "{key}"{using_clause}\nend tell'
+
         success, output = await self._run_applescript(script)
-        
         if not success:
             return ToolResult(success=False, error=f"按键失败: {output}")
-        
         return ToolResult(
             success=True,
             data={"action": "keyboard_key", "key": key, "modifiers": modifiers}
@@ -518,18 +475,36 @@ end tell
         """执行快捷键组合"""
         key = kwargs.get("key", "")
         modifiers = kwargs.get("modifiers", [])
-        
+
         if not key:
             return ToolResult(success=False, error="需要提供按键")
-        
+
+        # 安全保护：return/enter 不应该通过 keyboard_shortcut 发送
+        # LLM 可能误用 keyboard_shortcut(return) 导致 Cmd+Return（不是发送）
+        key_lower = key.lower()
+        if key_lower in ("return", "enter"):
+            logger.warning(
+                "keyboard_shortcut 被调用发送 return 键（modifiers=%s），"
+                "自动降级为纯 keyboard_key(return) — 发送消息应使用 keyboard_key",
+                modifiers
+            )
+            return await self._keyboard_key({"key": key, "modifiers": []})
+
         if not modifiers:
-            modifiers = ["command"]  # 默认使用 Command 键
-        
+            modifiers = ["command"]
+
+        # 直接复用 _keyboard_key（已内置 CGEvent 优先逻辑）
         return await self._keyboard_key({"key": key, "modifiers": modifiers})
     
     async def _get_mouse_position(self) -> ToolResult:
         """获取当前鼠标位置"""
-        # 使用 cliclick
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, mx, my, err = _cg.get_mouse_position()
+            if ok:
+                return ToolResult(success=True, data={"x": mx, "y": my})
+
+        # 回退: cliclick
         try:
             process = await asyncio.create_subprocess_exec(
                 "cliclick", "p",
@@ -537,61 +512,25 @@ end tell
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await process.communicate()
-            
             if process.returncode == 0:
                 output = stdout.decode().strip()
-                # 格式: x,y
                 parts = output.split(",")
                 if len(parts) == 2:
-                    return ToolResult(
-                        success=True,
-                        data={"x": int(parts[0]), "y": int(parts[1])}
-                    )
+                    return ToolResult(success=True, data={"x": int(parts[0]), "y": int(parts[1])})
         except FileNotFoundError:
             pass
-        
-        # 备用方案：Python
-        script = '''
-do shell script "python3 -c \\"
-import Quartz
-loc = Quartz.NSEvent.mouseLocation()
-screen_height = Quartz.CGDisplayPixelsHigh(Quartz.CGMainDisplayID())
-print(f\\\\\\"{int(loc.x)},{int(screen_height - loc.y)}\\\\\\")
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
-        if success and "," in output:
-            parts = output.split(",")
-            if len(parts) == 2:
-                return ToolResult(
-                    success=True,
-                    data={"x": int(parts[0]), "y": int(parts[1])}
-                )
-        
+
         return ToolResult(success=False, error="无法获取鼠标位置")
     
     async def _get_screen_size(self) -> ToolResult:
         """获取屏幕尺寸"""
-        script = '''
-do shell script "python3 -c \\"
-import Quartz
-w = Quartz.CGDisplayPixelsWide(Quartz.CGMainDisplayID())
-h = Quartz.CGDisplayPixelsHigh(Quartz.CGMainDisplayID())
-print(f\\\\\\"{w},{h}\\\\\\")
-\\""
-'''
-        success, output = await self._run_applescript(script)
-        
-        if success and "," in output:
-            parts = output.split(",")
-            if len(parts) == 2:
-                return ToolResult(
-                    success=True,
-                    data={"width": int(parts[0]), "height": int(parts[1])}
-                )
-        
-        # 备用方案：使用 system_profiler
+        # 优先使用进程内 CGEvent
+        if _HAS_CG:
+            ok, w, h, err = _cg.get_screen_size()
+            if ok:
+                return ToolResult(success=True, data={"width": w, "height": h})
+
+        # 回退: system_profiler
         try:
             process = await asyncio.create_subprocess_exec(
                 "system_profiler", "SPDisplaysDataType",
@@ -599,17 +538,14 @@ print(f\\\\\\"{w},{h}\\\\\\")
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await process.communicate()
-            output = stdout.decode()
-            
-            # 解析 Resolution 行
             import re
-            match = re.search(r"Resolution:\s*(\d+)\s*x\s*(\d+)", output)
+            match = re.search(r"Resolution:\s*(\d+)\s*x\s*(\d+)", stdout.decode())
             if match:
                 return ToolResult(
                     success=True,
                     data={"width": int(match.group(1)), "height": int(match.group(2))}
                 )
-        except:
+        except Exception:
             pass
-        
+
         return ToolResult(success=False, error="无法获取屏幕尺寸")

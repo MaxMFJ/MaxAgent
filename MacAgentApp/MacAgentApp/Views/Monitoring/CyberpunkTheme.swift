@@ -67,16 +67,17 @@ struct ScanLineBackground: View {
     var body: some View {
         ZStack {
             CyberColor.bg0
-            // subtle scanlines
-            GeometryReader { geo in
-                VStack(spacing: 0) {
-                    ForEach(0..<Int(geo.size.height / 4), id: \.self) { _ in
-                        Color.white.opacity(0.012)
-                            .frame(height: 2)
-                        Color.clear.frame(height: 2)
-                    }
+            // subtle scanlines — 用 Canvas 替代 ForEach 避免创建数百个子视图
+            Canvas { ctx, size in
+                let step: CGFloat = 4
+                var y: CGFloat = 0
+                while y < size.height {
+                    let rect = CGRect(x: 0, y: y, width: size.width, height: 2)
+                    ctx.fill(Path(rect), with: .color(.white.opacity(0.012)))
+                    y += step
                 }
             }
+            .drawingGroup()
         }
         .ignoresSafeArea()
     }
@@ -92,9 +93,8 @@ struct NeonDot: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(color.opacity(0.25))
+                .fill(color.opacity(glow ? 0.35 : 0.15))
                 .frame(width: size * 2.2, height: size * 2.2)
-                .blur(radius: glow ? 4 : 2)
                 .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: glow)
             Circle()
                 .fill(color)
@@ -209,27 +209,12 @@ struct CornerAccent: View {
     }
 }
 
-// MARK: - AI 思考中动画（神经网络节点闪烁）
+// MARK: - AI 思考中动画（轻量级脉冲圆点，无 TimelineView）
 
 struct AIThinkingBrain: View {
     var isActive: Bool = true
     var nodeCount: Int = 12
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 0.05)) { ctx in
-            AIThinkingBrainContent(isActive: isActive, nodeCount: nodeCount, time: ctx.date.timeIntervalSinceReferenceDate)
-        }
-    }
-}
-
-private struct AIThinkingBrainContent: View {
-    let isActive: Bool
-    let nodeCount: Int
-    let time: TimeInterval
-
-    private var phase: CGFloat {
-        CGFloat(time.truncatingRemainder(dividingBy: 4) / 4 * 2 * Double.pi)
-    }
+    @State private var pulse: Bool = false
 
     var body: some View {
         GeometryReader { geo in
@@ -237,35 +222,26 @@ private struct AIThinkingBrainContent: View {
             let radius = min(geo.size.width, geo.size.height) * 0.35
             ZStack {
                 ForEach(0..<nodeCount, id: \.self) { i in
-                    BrainNode(isActive: isActive, index: i, total: nodeCount, phase: phase, center: center, radius: radius)
+                    let angle = CGFloat(i) / CGFloat(nodeCount) * 2 * .pi - .pi / 2
+                    let x = center.x + radius * CGFloat(cos(Double(angle)))
+                    let y = center.y + radius * CGFloat(sin(Double(angle)))
+                    Circle()
+                        .fill(isActive ? CyberColor.cyan : CyberColor.cyan.opacity(0.3))
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(isActive && pulse ? (i.isMultiple(of: 2) ? 1.3 : 0.7) : 1.0)
+                        .opacity(isActive ? (pulse ? (i.isMultiple(of: 3) ? 0.5 : 1.0) : 0.7) : 0.4)
+                        .position(x: x, y: y)
+                        .animation(
+                            isActive
+                                ? .easeInOut(duration: 1.2 + Double(i % 3) * 0.3).repeatForever(autoreverses: true)
+                                : .default,
+                            value: pulse
+                        )
                 }
             }
         }
-    }
-}
-
-private struct BrainNode: View {
-    let isActive: Bool
-    let index: Int
-    let total: Int
-    let phase: CGFloat
-    let center: CGPoint
-    let radius: CGFloat
-
-    private var angle: CGFloat {
-        CGFloat(index) / CGFloat(total) * 2 * .pi - .pi / 2 + phase * 0.3
-    }
-
-    private var x: CGFloat { center.x + radius * CGFloat(cos(Double(angle))) }
-    private var y: CGFloat { center.y + radius * CGFloat(sin(Double(angle))) }
-
-    var body: some View {
-        Circle()
-            .fill(isActive ? CyberColor.cyan : CyberColor.cyan.opacity(0.3))
-            .frame(width: 6, height: 6)
-            .scaleEffect(isActive ? (0.8 + 0.4 * CGFloat(sin(Double(phase + CGFloat(index))))) : 1)
-            .position(x: x, y: y)
-            .opacity(isActive ? (0.6 + 0.4 * CGFloat(sin(Double(phase * 2 + CGFloat(index) * 0.5)))) : 0.4)
+        .onAppear { if isActive { pulse = true } }
+        .onChange(of: isActive) { _, active in pulse = active }
     }
 }
 
@@ -358,51 +334,36 @@ private struct SparkLinePath: View {
     }
 }
 
-// MARK: - 浮动粒子背景（空状态用）
+// MARK: - 浮动粒子背景（轻量级，使用隐式动画而非 TimelineView）
 
 struct FloatingParticlesView: View {
     var particleCount: Int = 20
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 0.08)) { ctx in
-            FloatingParticlesContent(particleCount: particleCount, time: ctx.date.timeIntervalSinceReferenceDate)
-        }
-    }
-}
-
-private struct FloatingParticlesContent: View {
-    let particleCount: Int
-    let time: TimeInterval
-
-    private var phase: CGFloat {
-        CGFloat(time.truncatingRemainder(dividingBy: 6) / 6 * 2 * Double.pi)
-    }
+    @State private var drift: Bool = false
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 ForEach(0..<particleCount, id: \.self) { i in
-                    FloatingParticle(phase: phase, index: i, size: geo.size, total: particleCount)
+                    Circle()
+                        .fill(CyberColor.cyan.opacity(0.12))
+                        .frame(width: 4, height: 4)
+                        .offset(
+                            x: drift ? CGFloat(((i * 7 + 3) % 11) - 5) * 8 : 0,
+                            y: drift ? CGFloat(((i * 5 + 2) % 9) - 4) * 6 : 0
+                        )
+                        .position(
+                            x: geo.size.width * (0.1 + 0.8 * CGFloat(i) / CGFloat(max(particleCount, 1))),
+                            y: geo.size.height * (0.2 + 0.6 * CGFloat((i * 37 % particleCount)) / CGFloat(max(particleCount, 1)))
+                        )
+                        .animation(
+                            .easeInOut(duration: 3.0 + Double(i % 4) * 0.8)
+                            .repeatForever(autoreverses: true),
+                            value: drift
+                        )
                 }
             }
         }
-    }
-}
-
-private struct FloatingParticle: View {
-    let phase: CGFloat
-    let index: Int
-    let size: CGSize
-    let total: Int
-
-    var body: some View {
-        Circle()
-            .fill(CyberColor.cyan.opacity(0.15))
-            .frame(width: 4, height: 4)
-            .offset(x: CGFloat(sin(Double(phase + CGFloat(index) * 0.7))) * 40,
-                    y: CGFloat(cos(Double(phase + CGFloat(index) * 0.5))) * 30 - CGFloat(index % 3) * 20)
-            .position(x: size.width * (0.2 + 0.6 * (CGFloat(index) / CGFloat(total))),
-                      y: size.height * (0.3 + 0.4 * CGFloat(sin(Double(index) * 0.3))))
+        .onAppear { drift = true }
     }
 }
 
@@ -469,5 +430,6 @@ struct HexGridPattern: View {
                 row += 1
             }
         }
+        .drawingGroup()
     }
 }

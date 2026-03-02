@@ -220,6 +220,15 @@ class ProcessManager: ObservableObject {
             env["MACAGENT_DATA_DIR"] = dataDir
         }
         
+        // 确保 PATH 包含 Homebrew 等常用路径，否则 cliclick/python3 等工具找不到
+        let extraPaths = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin"]
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        let pathComponents = Set(currentPath.components(separatedBy: ":"))
+        let missingPaths = extraPaths.filter { !pathComponents.contains($0) && FileManager.default.fileExists(atPath: $0) }
+        if !missingPaths.isEmpty {
+            env["PATH"] = (missingPaths + [currentPath]).joined(separator: ":")
+        }
+        
         let process = Process()
         let pipe = Pipe()
         let errorPipe = Pipe()
@@ -432,7 +441,15 @@ class ProcessManager: ObservableObject {
             return nil
         }
         
-        // Debug 模式：优先使用项目 backend（Copy Backend 仅 Archive 执行，Debug 不打包）
+        // 优先检查 App Bundle 内 Resources/backend（Debug 通过 symlink、Release 通过 copy）
+        if let resourcesPath = Bundle.main.resourcePath {
+            let bundledBackend = (resourcesPath as NSString).appendingPathComponent("backend")
+            if isValidBackendPath(bundledBackend) {
+                return bundledBackend
+            }
+        }
+        
+        // Debug 模式回退：Copy Backend 脚本可能未执行（首次构建等），尝试从源码位置查找
         if inDerivedData {
             // 1. 从当前工作目录向上查找
             let cwd = FileManager.default.currentDirectoryPath
@@ -445,25 +462,33 @@ class ProcessManager: ObservableObject {
                 return found
             }
             
-            // 3. 尝试一些常用位置作为兜底
+            // 3. 搜索 Desktop 下所有一级子目录中的 MacAgent/backend
             let home = FileManager.default.homeDirectoryForCurrentUser.path
-            let candidates = [
-                home + "/Documents/GitHub/MaxAgent/backend",
-                home + "/Projects/MaxAgent/backend",
-                home + "/Desktop/MacAgent/backend",
+            let desktopPath = home + "/Desktop"
+            if let desktopContents = try? FileManager.default.contentsOfDirectory(atPath: desktopPath) {
+                for item in desktopContents {
+                    let candidate = desktopPath + "/" + item + "/MacAgent/backend"
+                    if isValidBackendPath(candidate) {
+                        return candidate
+                    }
+                }
+                // 也检查 Desktop/MacAgent/backend（直接在桌面的情况）
+                let directCandidate = desktopPath + "/MacAgent/backend"
+                if isValidBackendPath(directCandidate) {
+                    return directCandidate
+                }
+            }
+            
+            // 4. 其他常用位置
+            let fallbackCandidates = [
+                home + "/Documents/GitHub/MacAgent/backend",
+                home + "/Projects/MacAgent/backend",
+                home + "/Developer/MacAgent/backend",
             ]
-            for path in candidates {
+            for path in fallbackCandidates {
                 if isValidBackendPath(path) {
                     return path
                 }
-            }
-        }
-        
-        // 打包后：App Bundle 内 Resources/backend
-        if let resourcesPath = Bundle.main.resourcePath {
-            let bundledBackend = (resourcesPath as NSString).appendingPathComponent("backend")
-            if isValidBackendPath(bundledBackend) {
-                return bundledBackend
             }
         }
         

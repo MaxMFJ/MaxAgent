@@ -293,6 +293,8 @@ class TaskContext:
     completed_at: Optional[datetime] = None
     final_result: Optional[str] = None
     total_tokens: int = 0
+    total_prompt_tokens: int = 0
+    total_completion_tokens: int = 0
     # v3.2 关键产物追踪（文件路径、URL、资源标识符等）
     key_artifacts: List[Dict[str, Any]] = field(default_factory=list)
     

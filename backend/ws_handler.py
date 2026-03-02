@@ -257,7 +257,7 @@ async def _handle_chat(
 
         try:
             try:
-                from agent.web_augmented_thinking import ThinkingAugmenter
+                from agent.web_augmented_thinking import ThinkingAugmenter, AugmentationType
                 aug = ThinkingAugmenter()
                 a = await aug.augment(_content)
                 if a and a.get("success"):
@@ -270,6 +270,18 @@ async def _handle_chat(
                                 _mark_client_gone()
                         if not client_gone:
                             await connection_manager.broadcast_to_session(_sid, web_chunk, exclude_client=_cid)
+                elif a and not a.get("success"):
+                    # Web 增强预取失败时，注入 fallback 提示让 LLM 知道可以用 web_search 工具自行获取
+                    aug_type = a.get("type", "")
+                    aug_query = a.get("query", "")
+                    if aug_type == AugmentationType.REALTIME_INFO.value or aug_type == "realtime_info":
+                        extra_system_prompt = (
+                            f"\n\n[系统提示：自动联网预取 '{aug_query}' 的实时信息失败。"
+                            f"但你仍然可以使用 web_search 工具获取实时数据（天气用 action=get_weather，"
+                            f"新闻用 action=news，通用搜索用 action=search）。请主动调用 web_search 工具来获取用户需要的信息，"
+                            f"不要直接告诉用户'找不到技能'或'无法获取'。]"
+                        )
+                        logger.info(f"Web augmentation failed for '{aug_query}', injected fallback hint")
             except Exception as e:
                 logger.warning(f"Web augmentation failed: {e}")
 

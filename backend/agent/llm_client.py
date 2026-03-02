@@ -19,7 +19,7 @@ except ImportError:
 
 from .llm_utils import extract_text_from_content
 from .usage_tracker import UsageTracker
-from .token_counter import count_messages_tokens, StreamTokenCounter
+from .token_counter import count_tokens, count_messages_tokens, StreamTokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +161,18 @@ class LLMClient:
                     "completion_tokens": getattr(response.usage, "completion_tokens", 0) or 0,
                     "total_tokens": getattr(response.usage, "total_tokens", 0) or 0,
                 }
+            
+            # 本地 token 计算回退：若 API 未返回 usage 或值全为 0，使用本地计算
+            api_usage = result.get("usage")
+            if not api_usage or api_usage.get("total_tokens", 0) == 0:
+                local_prompt = count_messages_tokens(messages)
+                local_completion = count_tokens(content or "")
+                result["usage"] = {
+                    "prompt_tokens": local_prompt,
+                    "completion_tokens": local_completion,
+                    "total_tokens": local_prompt + local_completion,
+                }
+                logger.info(f"Using local token count for chat: {result['usage']}")
             
             if message.tool_calls:
                 result["tool_calls"] = [
@@ -364,23 +376,35 @@ class LLMClient:
                                     tc["_truncated"] = True
                                 yield {"type": "tool_call", "tool_call": tc}
                     
-                        # 如果 API 没有返回 usage，使用本地计算的值
-                        final_usage = usage_info
-                        if not final_usage:
-                            final_usage = token_counter.finalize()
+                        # 不在这里 yield finish，继续循环以捕获 usage chunk
+                        # （DeepSeek/OpenAI 的 include_usage 模式会在 finish_reason 之后
+                        #  发送一个独立的 usage chunk，choices=[]）
+                        # finish 将在循环结束后 yield
+                # 循环结束后，yield finish 事件（此时 usage_info 已被最终 chunk 填充）
+                if finish_reason:
+                    final_usage = usage_info
+                    if not final_usage or (final_usage.get("total_tokens", 0) == 0):
+                        # API 未返回 usage 或值全为 0，使用本地计算
+                        local_usage = token_counter.finalize()
+                        if local_usage.get("total_tokens", 0) > 0:
+                            final_usage = local_usage
                             logger.info(f"Using local token count: {final_usage}")
-                        
-                        yield {"type": "finish", "finish_reason": finish_reason, "usage": final_usage}
-                        # ── Track usage (stream) ──
-                        _u = final_usage or {}
-                        UsageTracker.shared().record_call(
-                            model=self.config.model,
-                            provider=self.config.provider,
-                            prompt_tokens=_u.get("prompt_tokens", 0),
-                            completion_tokens=_u.get("completion_tokens", 0),
-                            total_tokens=_u.get("total_tokens", 0),
-                            success=True,
-                        )
+                        elif final_usage:
+                            logger.info(f"API returned usage: {final_usage}")
+                    else:
+                        logger.info(f"Using API usage info: {final_usage}")
+                    
+                    yield {"type": "finish", "finish_reason": finish_reason, "usage": final_usage}
+                    # ── Track usage (stream) ──
+                    _u = final_usage or {}
+                    UsageTracker.shared().record_call(
+                        model=self.config.model,
+                        provider=self.config.provider,
+                        prompt_tokens=_u.get("prompt_tokens", 0),
+                        completion_tokens=_u.get("completion_tokens", 0),
+                        total_tokens=_u.get("total_tokens", 0),
+                        success=True,
+                    )
             finally:
                 # 确保流被正确关闭，防止连接泄漏
                 try:

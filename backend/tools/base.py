@@ -157,7 +157,8 @@ class BaseTool(ABC):
         return {
             "name": self.name,
             "description": self.description,
-            "parameters": self.parameters
+            "parameters": self.parameters,
+            "category": self.category.value if hasattr(self.category, 'value') else str(self.category),
         }
     
     def validate_params(self, **kwargs) -> Optional[str]:

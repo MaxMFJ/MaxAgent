@@ -3,11 +3,19 @@ import SwiftUI
 struct TunnelView: View {
     @StateObject private var tunnelManager = TunnelManager.shared
     @State private var showInstallInstructions = false
+    @State private var showUserGuide = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 tunnelStatusSection
+                
+                // 退避/仅局域网 警告
+                if tunnelManager.isLanOnly {
+                    lanOnlyBanner
+                } else if tunnelManager.consecutiveFailures > 0 {
+                    backoffBanner
+                }
                 
                 if tunnelManager.isTunnelRunning && !tunnelManager.tunnelURL.isEmpty {
                     connectionInfoSection
@@ -15,7 +23,14 @@ struct TunnelView: View {
                     connectedClientsSection
                 }
                 
+                // 局域网连接面板（始终显示）
+                lanInfoSection
+                
                 authSection
+                
+                // 用户使用指南入口
+                userGuideSection
+                
                 logsSection
             }
             .padding(20)
@@ -33,10 +48,10 @@ struct TunnelView: View {
                 Spacer()
                 
                 Circle()
-                    .fill(tunnelManager.isTunnelRunning ? Color.green : Color.gray)
+                    .fill(statusColor)
                     .frame(width: 10, height: 10)
                 
-                Text(tunnelManager.isTunnelRunning ? "运行中" : "已停止")
+                Text(statusText)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -45,22 +60,48 @@ struct TunnelView: View {
                 if !tunnelManager.checkCloudflaredInstalled() {
                     installPrompt
                 } else {
+                    // 自动启动开关
+                    Toggle("随后端自动启动 Tunnel", isOn: Binding(
+                        get: { tunnelManager.autoStartEnabled },
+                        set: { tunnelManager.setAutoStart($0) }
+                    ))
+                    .toggleStyle(.switch)
+                    
+                    Text("开启后，后端服务启动时将自动启动 Cloudflare Tunnel（异步，不影响后端启动速度）")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Divider()
+                    
                     HStack(spacing: 12) {
                         if tunnelManager.isTunnelRunning {
-                            Button(action: { tunnelManager.stopTunnel() }) {
+                            Button(action: { tunnelManager.stopTunnelViaBackend() }) {
                                 Label("停止 Tunnel", systemImage: "stop.fill")
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
+                            
+                            Button(action: {
+                                Task { tunnelManager.startTunnelViaBackend() }
+                            }) {
+                                Label("重启", systemImage: "arrow.clockwise")
+                            }
+                            .buttonStyle(.bordered)
                         } else {
-                            Button(action: { tunnelManager.startTunnel() }) {
+                            Button(action: { tunnelManager.startTunnelViaBackend() }) {
                                 Label("启动 Tunnel", systemImage: "play.fill")
                             }
                             .buttonStyle(.borderedProminent)
                         }
                         
-                        Text("将本地服务暴露到公网，供 iOS 设备访问")
+                        Text("将本地服务暴露到公网，供 iOS 设备远程访问")
                             .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if tunnelManager.totalRestarts > 0 {
+                        Text("累计自动重启: \(tunnelManager.totalRestarts) 次")
+                            .font(.caption2)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -69,6 +110,19 @@ struct TunnelView: View {
             .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(8)
         }
+    }
+    
+    private var statusColor: Color {
+        if tunnelManager.isLanOnly { return .orange }
+        if tunnelManager.isTunnelRunning { return .green }
+        return .gray
+    }
+    
+    private var statusText: String {
+        if tunnelManager.isLanOnly { return "仅局域网" }
+        if tunnelManager.isTunnelRunning { return "运行中" }
+        if tunnelManager.consecutiveFailures > 0 { return "连接中断" }
+        return "已停止"
     }
     
     private var installPrompt: some View {
@@ -149,6 +203,173 @@ struct TunnelView: View {
         }
         .padding(20)
         .frame(width: 450, height: 300)
+    }
+    
+    // MARK: - Backoff / LAN-Only Banners
+    
+    private var lanOnlyBanner: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "wifi.exclamationmark")
+                    .foregroundColor(.orange)
+                    .font(.title3)
+                Text("已切换为仅局域网模式")
+                    .fontWeight(.medium)
+                    .foregroundColor(.orange)
+            }
+            
+            Text("Cloudflare Tunnel 连续 \(tunnelManager.consecutiveFailures) 次连接失败，可能因 IP 被暂时封禁或网络波动。系统将自动重试。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            if let backoffStr = tunnelManager.backoffUntil {
+                Text("下次重试: \(backoffStr)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Text("请使用局域网地址（见下方）连接，或等待自动恢复。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color.orange.opacity(0.1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
+        .cornerRadius(8)
+    }
+    
+    private var backoffBanner: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "arrow.clockwise.circle")
+                    .foregroundColor(.yellow)
+                Text("连接中断，尝试重连中...")
+                    .fontWeight(.medium)
+                    .font(.callout)
+            }
+            Text("连续失败 \(tunnelManager.consecutiveFailures) 次，退避 \(tunnelManager.currentBackoffSeconds)s 后重试")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color.yellow.opacity(0.08))
+        .cornerRadius(8)
+    }
+    
+    // MARK: - LAN Info
+    
+    private var lanInfoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("局域网连接")
+                    .font(.headline)
+                Spacer()
+                
+                if tunnelManager.isLanOnly {
+                    Text("当前模式")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.2))
+                        .cornerRadius(4)
+                } else {
+                    Text("备用")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 10) {
+                if !tunnelManager.lanIP.isEmpty {
+                    InfoRow(label: "IP 地址", value: tunnelManager.lanIP)
+                    InfoRow(label: "HTTP", value: tunnelManager.lanHTTPUrl)
+                    InfoRow(label: "WebSocket", value: tunnelManager.lanWSUrl)
+                    
+                    HStack {
+                        Button(action: { tunnelManager.copyLanInfo() }) {
+                            Label("复制局域网连接信息", systemImage: "doc.on.doc")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        
+                        Spacer()
+                    }
+                } else {
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("获取局域网信息中...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Text("同一 Wi-Fi 下的设备可直接使用局域网地址连接，无需公网隧道。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - User Guide
+    
+    private var userGuideSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("远程连接指南")
+                    .font(.headline)
+                Spacer()
+                Button(action: { showUserGuide.toggle() }) {
+                    Label(showUserGuide ? "收起" : "展开", systemImage: showUserGuide ? "chevron.up" : "chevron.down")
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.accentColor)
+            }
+            
+            if showUserGuide {
+                VStack(alignment: .leading, spacing: 16) {
+                    GuideStep(number: 1, title: "安装 cloudflared",
+                              desc: "Mac 上执行 brew install cloudflared，安装 Cloudflare Tunnel CLI 工具。")
+                    
+                    GuideStep(number: 2, title: "启动 Tunnel（或开启自动启动）",
+                              desc: "在本页点击「启动 Tunnel」，或开启上方的「随后端自动启动」开关。系统将异步启动隧道，不影响后端性能。")
+                    
+                    GuideStep(number: 3, title: "获取连接地址",
+                              desc: "Tunnel 启动后，上方会显示公网地址（xxx.trycloudflare.com）。每次重启会生成新地址。若配置了 SMTP 邮件，新地址会自动发送到邮箱。")
+                    
+                    GuideStep(number: 4, title: "iOS 端连接",
+                              desc: "打开 iOS App → 设置 → 输入公网地址，或扫描上方二维码自动配置。同一 Wi-Fi 下也可直接使用局域网地址。")
+                    
+                    GuideStep(number: 5, title: "自动重连与退避",
+                              desc: "后端会持续监控隧道健康状态。断线时自动重启并更新地址。若连续失败（如 IP 被封），系统会以指数退避策略重试（30s → 60s → 最大 30min），并切换为仅局域网模式。恢复后自动切回。")
+                    
+                    GuideStep(number: 6, title: "邮件通知（可选）",
+                              desc: "在「设置 → 邮件」中配置 SMTP 后，Tunnel 地址变更时会自动发送邮件通知，确保您始终知道最新地址。")
+                    
+                    Divider()
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("常见问题")
+                            .fontWeight(.medium)
+                        Text("• 地址变了？ — 每次 cloudflared 重启会获得新地址，开启邮件通知可自动接收。")
+                            .font(.caption)
+                        Text("• 连不上？ — 检查 Mac 是否在运行、后端是否启动、cloudflared 是否安装。")
+                            .font(.caption)
+                        Text("• IP 被封？ — 系统会自动退避重试，期间可用局域网连接。通常 10-30 分钟后恢复。")
+                            .font(.caption)
+                    }
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            }
+        }
     }
     
     // MARK: - Connection Info
@@ -409,7 +630,53 @@ struct TunnelView: View {
     }
 }
 
+// MARK: - Helper Views
+
+/// 信息行（标签 + 值）
+private struct InfoRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text("\(label):")
+                .foregroundColor(.secondary)
+                .frame(width: 80, alignment: .trailing)
+            Text(value)
+                .font(.system(.body, design: .monospaced))
+                .textSelection(.enabled)
+            Spacer()
+        }
+    }
+}
+
+/// 用户指南步骤
+private struct GuideStep: View {
+    let number: Int
+    let title: String
+    let desc: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(Color.accentColor))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .fontWeight(.medium)
+                Text(desc)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
 #Preview {
     TunnelView()
-        .frame(width: 600, height: 700)
+        .frame(width: 600, height: 900)
 }

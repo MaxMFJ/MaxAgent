@@ -4,11 +4,15 @@ Execute shell commands with timeout and output capture
 """
 
 import asyncio
+import logging
 import os
+import re
 import shlex
 from typing import Any, Dict, Optional
 
 from .base import BaseTool, ToolResult, ToolCategory
+
+logger = logging.getLogger(__name__)
 
 
 class TerminalTool(BaseTool):
@@ -83,6 +87,9 @@ class TerminalTool(BaseTool):
         
         if self._is_dangerous(command):
             return ToolResult(success=False, error=f"安全限制：拒绝执行危险命令: {command}")
+        
+        # 自动修复 AppleScript 中使用 keystroke 输入中文的问题
+        command = self._fix_chinese_keystroke(command)
         
         working_dir = os.path.expanduser(working_dir)
         if not os.path.exists(working_dir):
@@ -184,3 +191,43 @@ class TerminalTool(BaseTool):
             if pattern.lower() in command_lower:
                 return True
         return False
+
+    def _fix_chinese_keystroke(self, command: str) -> str:
+        """
+        修复 AppleScript 中使用 keystroke 输入中文的问题。
+        keystroke 只支持 ASCII 键码，中文/CJK 字符会变成乱码。
+        自动将 `keystroke "中文"` 替换为 `剪贴板粘贴` 方式。
+        """
+        # 仅处理包含 osascript 的命令
+        if "osascript" not in command:
+            return command
+        if "keystroke" not in command:
+            return command
+
+        # 匹配 keystroke "..." 模式（不带 using 修饰符的纯文本输入）
+        # 排除: keystroke "v" using command down (这是粘贴)
+        # 排除: keystroke return / keystroke tab 等无引号的
+        _KEYSTROKE_RE = re.compile(
+            r'(\s*)keystroke\s+"([^"]+)"(?!\s+using\b)',
+            re.MULTILINE
+        )
+
+        def _replace_match(m):
+            indent = m.group(1)
+            text = m.group(2)
+            # 检查是否包含非 ASCII 字符（中文、日文、emoji 等）
+            if all(ord(c) <= 127 for c in text):
+                return m.group(0)  # 纯 ASCII，不需要修复
+            # 替换为剪贴板粘贴方式
+            escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+            logger.info("⚡ 自动修复: keystroke 中文 → 剪贴板粘贴: %s", text[:30])
+            return (
+                f'{indent}set the clipboard to "{escaped}"\n'
+                f'{indent}delay 0.1\n'
+                f'{indent}keystroke "v" using command down'
+            )
+
+        fixed = _KEYSTROKE_RE.sub(_replace_match, command)
+        if fixed != command:
+            logger.info("Terminal tool: 已自动修复 osascript 中的中文 keystroke")
+        return fixed

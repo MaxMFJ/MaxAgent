@@ -102,8 +102,8 @@ class LocalLLMManager:
                         continue
             except Exception as e:
                 logger.debug(f"Ollama not available: {e}")
-                if attempt < len(self._502_BACKOFF):
-                    await asyncio.sleep(self._502_BACKOFF[attempt])
+                # 连接失败（服务未运行）时立即返回，不重试；只有 502 才重试
+                return configs
         return configs
 
     async def check_lm_studio(self, url: Optional[str] = None) -> list[LocalLLMConfig]:
@@ -154,8 +154,9 @@ class LocalLLMManager:
                 except Exception as e:
                     logger.debug(f"LM Studio not available at {path}: {e}")
                     continue
-            if attempt < len(self._502_BACKOFF):
-                await asyncio.sleep(self._502_BACKOFF[attempt])
+            # 所有 path 都连接失败（服务未运行）时立即返回，不重试；只有 502 才重试
+            # 检查本轮是否有 502 触发重试（通过 continue 到外层 for 实现）
+            return configs
         return configs
 
     @staticmethod
