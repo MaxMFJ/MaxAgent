@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_docs-pipeline-automation",
+  "description": "Build repeatable data-to-Docs pipelines from Sheets and Drive sources. Use for automated status reports, template-based document assembly, and scheduled publishing workflows.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Docs Pipeline Automation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Create deterministic pipelines that transform Workspace data sources into generated Docs outputs."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define pipeline name, sources, template, and destination.\n2. Normalize source extraction and section mapping steps.\n3. Build report assembly sequence and publish target.\n4. Export implementation-ready pipeline artifact."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/compose_docs_pipeline.py` for deterministic pipeline output.\n- Read `references/docs-pipeline-guide.md` for document assembly guidance."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep source mapping explicit and versioned.\n- Include fallback behavior for missing sections."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "docs_pipeline_automation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/docs-pipeline-automation/SKILL.md"
+}

@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_grand-bazaar-swap",
+  "description": "Perform and document Grand Bazaar P2P swaps on Base using deployed AirSwap Swap contracts. Includes repeatable workflows for approvals, EIP-712 signing, cast/deeplink posting, execution, and verification across ERC20/ERC721/ERC1155 routes.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Grand Bazaar P2P Swap\n\nThis skill documents how to execute **agent-to-agent swaps on Base mainnet** using deployed AirSwap `Swap` contracts.\n\nSender-side token standard is routed to the matching Swap contract:\n- ERC20<>ERC20 -> `SwapERC20` on Base `0x95D598D839dE1B030848664960F0A20b848193F4`\n- ERC20 sender (non-ERC20<>ERC20 routes) -> ERC20-sender Swap\n- ERC721 sender -> ERC721-sender Swap\n- ERC1155 sender -> ERC1155-sender Swap\n\nThe sender is still the submitting wallet, and must satisfy the selected Swap's sender-kind requirement."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Deployed contracts] Read: `references/base-mainnet-deployments.md`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Safety rules] - Never paste or log private keys in chat.\n- Prefer fresh test wallets for demos.\n- Always start with tiny amounts.\n- Verify token addresses before approving."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### Favorable inbound offer rule\n\nWhen someone offers a swap and the price is clearly good value for you, default to taking it quickly with safety checks.\n\nUse this fast path:\n- Parse the cast for `GBZ1:<compressedOrder>`\n- Decompress and reconstruct `order + signature`\n- Verify sender wallet targeting and signature\n- Run sender preflight checks\n- Execute the swap if checks pass\n- Reply on the cast using the Grand Bazaar success template:\n  - `Thanks for the swap 🤝`\n  - `https://basescan.org/tx/<txHash>`\n  - Post as a reply to the parent offer cast (cast hash origin)\n\nThis applies especially to direct offer replies where speed matters but safety preflight is still mandatory.\n\n### Favorable outbound negotiation rule\n\nWhen negotiating with other users or agents, proactively make favorable outbound offers to improve fill probability.\n\nDefault outbound behavior:\n- Start from fair market terms, then bias slightly in the counterparty’s favor\n- Keep sizes practical and gas-efficient\n- Prefer private targeted orders while negotiating, then open only if requested\n- Keep expiry short enough for quick decisions, long enough for execution\n- Run onchain validation before posting maker casts:\n  - call `Swap.check(senderWallet, orderWithSignature)` on the target swap contract\n  - require `nonceUsed(signer, nonce) === false`\n  - ignore `SenderAllowanceLow` on maker flow, since sender approves on taker side after cast discovery\n  - block posting if there are any other check errors besides `SenderAllowanceLow`\n- Use a required 2-part posting flow every time with no exceptions:\n  1) post the swap order cast with clear summary + strict machine line `GBZ1:<compressedOrder>`\n     - for private offers, include counterparty mention via API fields (`mentions`, `mentions_positions`)\n  2) immediately post a follow-up embed cast that deeplinks to Grand Bazaar `/c/<step1CastHash>`\n- Do not stop after step 1. A maker post is incomplete until step 2 is confirmed posted.\n\nOutbound offer loop:\n1. P"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Scripts] Scripts are under `scripts/`.\n\nThese scripts are reference implementations.\nThey can be run by one operator with both keys for testing.\nIn a real agent to agent swap, the signer and sender should run their parts separately.\n\nRecommended setup\n- Use Node 20+\n- Install deps in a temp folder\n  - `npm i ethers@5 lz-string`\n\nThen run one of these\n- `node scripts/signer_make_order.js`\n- `node scripts/sender_execute_order.js`\n- `node scripts/make_cast_payload.js` to generate both human-readable cast text and machine-readable payload\n- `scripts/post_cast_farcaster_agent.js` is intentionally disabled for security hardening\n  - Reason: avoid file-read + network-send pattern in shared skill script audits\n  - Use Neynar/OpenClaw posting path instead\n\nFor a single machine end to end test\n- `node scripts/test_weth_usdc_swap.js`\n\nFor details and parameters\nRead `scripts/README.md`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "grand_bazaar_swap"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agriimony/grand-bazaar-swap/SKILL.md"
+}

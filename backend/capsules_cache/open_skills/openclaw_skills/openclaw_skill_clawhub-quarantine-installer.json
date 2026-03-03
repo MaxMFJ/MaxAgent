@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_clawhub-quarantine-installer",
+  "description": "Instala e audita skills do ClawHub em um ambiente de quarentena isolado para análise de segurança, permitindo revisar riscos antes de promover para produção. Use esta skill para testar habilidades de terceiros que o ClawHub sinaliza como suspeitas, investigar suas dependências e comportamento, e gerar relatórios de auditoria básicos.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Clawhub Quarantine Installer"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Esta skill automatiza a instalação de habilidades do ClawHub em um diretório de quarentena dedicado (`$HOME/.openclaw/clawhub-quarantine/skills/`) e executa um script de auditoria básica para identificar potenciais riscos. Ela é projetada para permitir uma análise manual mais segura de skills antes de integrá-las ao seu ambiente de produção do OpenClaw."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow de Uso] 1.  **Instalar uma Skill em Quarentena:**\n    *   Execute o script `scripts/install_and_audit.sh` com o nome da skill desejada.\n    *   Exemplo: `bash ~/.openclaw/workspace/skills/clawhub-quarantine-installer/scripts/install_and_audit.sh <nome-da-skill>`\n    *   **Importante:** O script `install_and_audit.sh` usa `npx clawhub install --force`. Este comando irá **baixar e executar código remoto** do registro `npm`. **É crucial que esta skill seja executada APENAS em um ambiente isolado (como uma VM ou container Docker) que não tenha acesso a dados sensíveis ou à sua máquina de produção.** A quarentena isolada é projetada para mitigar, mas não eliminar, todos os riscos.\n    *   **Nota:** A flag `--force` é usada para instalar skills sinalizadas como suspeitas pelo ClawHub.\n\n2.  **Revisar o Relatório de Auditoria:**\n    *   Um relatório de auditoria será gerado em `$HOME/.openclaw/clawhub-quarantine/reports/<nome-da-skill>-audit-<timestamp>.txt`.\n    *   Este relatório lista os arquivos da skill e procura por padrões de risco (comandos perigosos, acessos de rede, dicas de segredos) usando `ripgrep`.\n\n3.  **Inspeção Manual Aprofundada:**\n    *   Acesse o diretório da skill em quarentena (`$HOME/.openclaw/clawhub-quarantine/skills/<nome-da-skill>`).\n    *   Examine o `SKILL.md` da skill e seus arquivos de código-fonte (se houver) e dependências para entender seu comportamento.\n    *   Verifique as dependências externas e, se possível, revise seus repositórios no GitHub para issues de segurança ou informações adicionais.\n\n4.  **Promover para Produção (Manual):**\n    *   Se, após a revisão manual e a auditoria, a skill for considerada segura, ela pode ser movida manualmente para `~/.openclaw/workspace/skills/`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scripts] ### `scripts/install_and_audit.sh`\n\nEste script é o ponto de entrada da skill. Ele:\n*   Recebe o nome da skill como argumento.\n*   Cria os diretórios de quarentena e relatórios, se não existirem.\n*   Instala a skill no diretório de quarentena (`$HOME/.openclaw/clawhub-quarantine/skills/`) usando `npx clawhub install --force`.\n*   Chama o script `clawhub-quarantine.sh audit` para gerar um relatório de segurança, passando o caminho da skill e o diretório de relatórios.\n\n### `scripts/clawhub-quarantine.sh`\n\nEste script auxiliar realiza as operações de auditoria. Atualmente, ele suporta o comando `audit`, que:\n*   Recebe o caminho completo da skill em quarentena e o diretório para salvar o relatório.\n*   Utiliza `ripgrep` para buscar por padrões de código potencialmente perigosos dentro da skill (e.g., execução de comandos externos, acesso a variáveis de ambiente sensíveis, requisições de rede).\n*   Gera um relatório detalhado com os achados da auditoria."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Requisitos (Pré-requisitos)] Para que esta skill funcione corretamente, os seguintes softwares devem estar instalados e disponíveis no PATH do ambiente onde o OpenClaw está rodando:\n\n*   **Node.js**: Versão `>=22` (necessário para `npm` e `npx`).\n*   **`clawhub` CLI**: Pode ser instalado globalmente via `npm i -g clawhub`.\n*   **`ripgrep` (`rg`)**: Uma ferramenta de busca de padrões (similar ao `grep`, mas mais rápido) utilizada pelo script de auditoria."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Descobertas e Lições Aprendidas (Exemplo com a skill 'gram')] *   **Alertas de Segurança:** O ClawHub utiliza \"VirusTotal Code Insight\" para sinalizar skills suspeitas (ex: uso de chaves criptográficas, APIs externas, `eval`). Isso é um ponto de partida crítico para a revisão.\n*   **Quarentena Funcional:** A instalação em um diretório isolado (`$HOME/.openclaw/clawhub-quarantine/skills/`) é eficaz para conter a skill durante a análise.\n*   **Auditoria por Padrões:** O script `clawhub-quarantine.sh audit` busca por padrões de risco comuns.\n*   **Dependências de Alto Risco:** Skills podem depender de bibliotecas que interagem com o sistema operacional em baixo nível (ex: `sweet-cookie` para acesso a cookies de navegador, decifração de senhas do keyring e execução de comandos externos via `child_process`). Essas dependências exigem a maior atenção na revisão.\n*   **Incompatibilidade de API:** Mesmo com autenticação, as APIs de terceiros (como o Instagram) podem bloquear ou desativar funcionalidades para automação (ex: User-Agent mismatch, Invalid media_id, Too Many Requests). Isso afeta a utilidade da skill."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawhub_quarantine_installer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alessandropcostabr/clawhub-quarantine-installer/SKILL.md"
+}

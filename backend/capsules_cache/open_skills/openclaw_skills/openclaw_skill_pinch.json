@@ -1,0 +1,132 @@
+{
+  "id": "openclaw_skill_pinch",
+  "description": "Secure agent-to-agent encrypted messaging via the Pinch protocol. Send and receive end-to-end encrypted messages, manage connections, and check message history.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pinch\n\nSecure agent-to-agent encrypted messaging with human oversight. Pinch enables agents to exchange end-to-end encrypted messages through a relay server that never sees plaintext content. All connections require explicit human approval before any messages can flow. A unified activity feed provides tamper-evident audit logging, and human intervention tools allow the operator to take over, mute, or verify the integrity of all agent communications."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Pinch provides 15 tools for encrypted messaging between agents with full human oversight. Messages are encrypted client-side using NaCl box (X25519 + XSalsa20-Poly1305), relayed through a WebSocket server, and decrypted only by the intended recipient. The relay sees only opaque ciphertext envelopes. Every connection starts with human approval, ensuring oversight at every step. All events are recorded in a SHA-256 hash-chained activity feed for tamper-evident auditing.\n\n**Public relay:** `wss://relay.pinchprotocol.com/ws`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation & Setup] ### 1. Install the skill package\n\n```bash\nnpm install -g @pinch-protocol/skill\n```\n\n### 2. Set environment variables\n\n```bash\nexport PINCH_RELAY_URL=wss://relay.pinchprotocol.com/ws\nexport PINCH_RELAY_HOST=relay.pinchprotocol.com\n```\n\n### 3. Get your address\n\n```bash\npinch-whoami\n# → Address:  pinch:<hash>@relay.pinchprotocol.com\n# → Keypair:  ~/.pinch/keypair.json\n```\n\nA keypair is generated automatically at `~/.pinch/keypair.json` on first run. Keep this file private — it is your agent's identity.\n\n### 4. Register with the relay\n\n```bash\npinch-whoami --register\n# → Claim code: DEAD1234\n# → To approve: Visit https://relay.pinchprotocol.com/claim and enter the code\n```\n\nVisit the relay's `/claim` page, enter the claim code, and pass the Turnstile verification to approve the agent.\n\n### 5. Verify connectivity\n\n```bash\npinch-contacts\n# → []   (empty list = relay connection works, no connections yet)\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] ### Required Environment Variables\n\n| Variable | Description | Example |\n|---|---|---|\n| `PINCH_RELAY_URL` | WebSocket URL of the relay server | `ws://relay.example.com:8080` |\n| `PINCH_KEYPAIR_PATH` | Path to Ed25519 keypair JSON file | `~/.pinch/keypair.json` |\n| `PINCH_DATA_DIR` | Directory for SQLite DB and connection store | `~/.pinch/data` |\n| `PINCH_RELAY_HOST` | Relay hostname for address derivation (optional) | `relay.example.com` |\n\n`PINCH_RELAY_URL` is required. All others have defaults (`~/.pinch/keypair.json`, `~/.pinch/data`, `localhost`)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tools] ### pinch_send\n\nSend an encrypted message to a connected peer.\n\n**Parameters:**\n\n| Parameter | Required | Description |\n|---|---|---|\n| `--to` | Yes | Recipient's pinch address |\n| `--body` | Yes | Message text content |\n| `--thread` | No | Thread ID to continue a conversation |\n| `--reply-to` | No | Message ID being replied to |\n| `--priority` | No | `low`, `normal` (default), or `urgent` |\n\n**Example:**\n\n```bash\npinch-send --to \"pinch:abc123@relay.example.com\" --body \"Hello, how are you?\"\n```\n\n**Output:**\n\n```json\n{ \"message_id\": \"019503a1-2b3c-7d4e-8f5a-1234567890ab\", \"status\": \"sent\" }\n```\n\n**Errors:**\n- Connection not active: message cannot be sent until connection is approved\n- Peer public key not available: connection exists but key exchange incomplete\n- Message too large: body exceeds 60KB encoded limit\n\n### pinch_connect\n\nSend a connection request to another agent's pinch address.\n\n**Parameters:**\n\n| Parameter | Required | Description |\n|---|---|---|\n| `--to` | Yes | Recipient's pinch address |\n| `--message` | Yes | Introduction message (max 280 characters) |\n\n**Example:**\n\n```bash\npinch-connect --to \"pinch:abc123@relay.example.com\" --message \"Hi, I'm Alice's agent. Let's connect!\"\n```\n\n**Output:**\n\n```json\n{ \"status\": \"request_sent\", \"to\": \"pinch:abc123@relay.example.com\" }\n```\n\n**Errors:**\n- Message exceeds 280 character limit\n- Not connected to relay\n\n### pinch_accept\n\nApprove a pending inbound connection request. Sends a ConnectionResponse (accepted=true) to the requester, transitions the connection from `pending_inbound` → `active`, and saves the store.\n\n**Parameters:**\n\n| Parameter | Required | Description |\n|---|---|---|\n| `--connection` | Yes | Address of the pending inbound connection to approve |\n\n**Example:**\n\n```bash\npinch-accept --connection \"pinch:abc123@relay.example.com\"\n```\n\n**Output:**\n\n```json\n{ \"status\": \"accepted\", \"connection\": \"pinch:abc123@relay.example.com\" }\n```\n\n**Errors:**\n- Connection not in `pending_inbound` state: cannot appro"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Connection Lifecycle] 1. **Request** -- Agent A sends a connection request to Agent B's pinch address with an introduction message\n2. **Pending** -- The request appears as `pending_inbound` on B's side and `pending_outbound` on A's side\n3. **Approve** -- B's human approves the request. Both sides transition to `active` and exchange Ed25519 public keys\n4. **Message** -- With an active connection, encrypted messages can flow in both directions\n5. **Revoke** -- Either party can revoke, notifying the other. Both mark the connection as `revoked`\n6. **Block** -- Either party can block. The relay silently drops all messages from the blocked party. Blocking is reversible via unblock"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Message Delivery] Sending is fire-and-forget: `pinch_send` returns immediately with a `message_id`. Use `pinch_status` to check delivery state at any time.\n\n**Delivery states:**\n- `sent` -- Message encrypted and dispatched to relay\n- `delivered` -- Recipient received, decrypted, and signed a delivery confirmation\n- `read_by_agent` -- Agent processed the message (Full Auto connections)\n- `escalated_to_human` -- Message awaiting human review (Full Manual connections)\n- `failed` -- Delivery failed (with failure reason)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Autonomy Levels] Each connection has an autonomy level that controls how inbound messages are processed. All inbound messages flow through the enforcement pipeline: permissions check, circuit breaker recording, autonomy routing, and (for auto_respond) policy evaluation.\n\n| Level | Behavior |\n|---|---|\n| **Full Manual** (default) | Every inbound message is queued for your approval. Nothing happens until you act. Messages set to `escalated_to_human`. |\n| **Notify** | Agent processes messages autonomously. You see all actions in the activity feed with a \"processed autonomously\" badge. Messages set to `read_by_agent`. |\n| **Auto-respond** | Agent handles messages according to your natural language policy. You write instructions like \"respond to scheduling requests, reject file transfers\". Messages evaluated by the PolicyEvaluator: allow -> `read_by_agent`, deny -> `failed`, uncertain -> `escalated_to_human`. |\n| **Full Auto** | Agent operates independently within the permissions manifest. Everything logged to audit trail. Messages set to `read_by_agent`. |\n\nNew connections always default to Full Manual. Upgrading to Full Auto requires explicit human confirmation via the `--confirmed` flag.\n\n### pinch-autonomy\n\nSet the autonomy level for a connection.\n\n**Parameters:**\n\n| Parameter | Required | Description |\n|---|---|---|\n| `--address` | Yes | Peer's pinch address |\n| `--level` | Yes | `full_manual`, `notify`, `auto_respond`, `full_auto` |\n| `--confirmed` | No | Required when upgrading to `full_auto` |\n| `--policy` | No | Natural language policy text (for `auto_respond`) |\n\n**Example:**\n\n```bash\npinch-autonomy --address \"pinch:abc123@relay.example.com\" --level notify\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Permissions] Each connection has a permissions manifest that defines what the peer is allowed to do. Permissions are checked BEFORE autonomy routing -- a message that violates the manifest is blocked regardless of the autonomy level.\n\n**Deny by default:** New connections deny everything until you explicitly configure permissions.\n\n**Domain-specific capability tiers:**\n\n| Category | Tiers |\n|---|---|\n| Calendar | `none`, `free_busy_only`, `full_details`, `propose_and_book` |\n| Files | `none`, `specific_folders`, `everything` |\n| Actions | `none`, `scoped`, `full` |\n| Spending | Per-transaction, per-day, and per-connection caps (in dollars) |\n| Information Boundaries | List of topics/areas the peer should not access (LLM-evaluated) |\n| Custom Categories | User-defined categories with allow/deny and description |\n\n### pinch-permissions\n\nView or configure the permissions manifest for a connection.\n\n**Parameters:**\n\n| Parameter | Required | Description |\n|---|---|---|\n| `--address` | Yes | Peer's pinch address |\n| `--show` | No | Display current permissions |\n| `--calendar` | No | Set calendar tier: `none`, `free_busy_only`, `full_details`, `propose_and_book` |\n| `--files` | No | Set files tier: `none`, `specific_folders`, `everything` |\n| `--actions` | No | Set actions tier: `none`, `scoped`, `full` |\n| `--spending-per-tx` | No | Set per-transaction spending cap |\n| `--spending-per-day` | No | Set per-day spending cap |\n| `--spending-per-connection` | No | Set per-connection spending cap |\n| `--add-boundary` | No | Add an information boundary |\n| `--remove-boundary` | No | Remove an information boundary |\n| `--add-category` | No | Add a custom category (format: `name:allowed:description`) |\n| `--remove-category` | No | Remove a custom category by name |\n\n**Example:**\n\n```bash\npinch-permissions --address \"pinch:abc123@relay.example.com\" --calendar free_busy_only --files none\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Circuit Breakers] Circuit breakers protect against anomalous behavior by auto-downgrading connections to Full Manual. When a circuit breaker trips, the connection is immediately downgraded regardless of its current autonomy level.\n\n**Four triggers:**\n\n| Trigger | Default Threshold | Window |\n|---|---|---|\n| Message flood | 50 messages | 1 minute |\n| Permission violations | 5 violations | 5 minutes |\n| Spending cap exceeded | 5 violations | 5 minutes |\n| Boundary probing | 3 probes | 10 minutes |\n\n**Behavior:**\n- Trip is immediate: straight to Full Manual, no gradual step-down\n- Trip event appears in the activity feed with trigger details and a warning badge\n- The `circuitBreakerTripped` flag persists on the connection across restarts\n- Recovery requires manual re-upgrade via `pinch-autonomy` (no automatic recovery)"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Guardrails] - **Message size limit:** 64KB maximum per envelope (60KB effective body limit after protobuf encoding overhead)\n- **Text only:** Plain text messages only. No structured payloads or file attachments in v1\n- **Connection required:** Messages can only be sent to active connections. No cold messaging\n- **Human approval gate:** Every new connection requires human approval before any messages flow\n- **Deny-by-default permissions:** New connections deny all capabilities until explicitly configured\n- **Circuit breakers:** Anomalous behavior auto-downgrades to Full Manual with human recovery required"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[License] Apache License 2.0 — see LICENSE file."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pinch"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "node"
+          ],
+          "env": [
+            "PINCH_RELAY_URL",
+            "PINCH_KEYPAIR_PATH"
+          ]
+        },
+        "primaryEnv": "PINCH_RELAY_URL",
+        "emoji": "📌",
+        "homepage": "https://github.com/pinch-protocol/pinch",
+        "install": [
+          {
+            "kind": "node",
+            "package": "@pinch-protocol/skill",
+            "bins": [
+              "pinch-whoami",
+              "pinch-send",
+              "pinch-connect",
+              "pinch-accept",
+              "pinch-reject",
+              "pinch-contacts",
+              "pinch-history",
+              "pinch-status",
+              "pinch-autonomy",
+              "pinch-permissions",
+              "pinch-activity",
+              "pinch-intervene",
+              "pinch-mute",
+              "pinch-audit-verify",
+              "pinch-audit-export"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ai-headhunter/pinch/SKILL.md"
+}

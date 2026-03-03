@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_openmm-exchange-setup",
+  "description": "Step-by-step guide to configure exchange API credentials for OpenMM.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenMM Exchange Setup\n\nInteractive guide for configuring exchange API credentials in OpenMM."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] Use this skill when:\n- Setting up OpenMM for the first time\n- Adding a new exchange\n- Troubleshooting connection issues"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Supported Exchanges] | Exchange | Min Order | Credentials Required |\n|----------|-----------|---------------------|\n| MEXC | 1 USDT | API key + Secret |\n| Gate.io | 1 USDT | API key + Secret |\n| Bitget | 1 USDT | API key + Secret + Passphrase |\n| Kraken | 5 EUR/USD | API key + Secret |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup Workflow] ### Step 1: Create API Keys\n\nGuide user to the exchange's API management page:\n\n```\nMEXC:    https://www.mexc.com/ucenter/api\nGate.io: https://www.gate.io/myaccount/apikeys\nKraken:  https://www.kraken.com/u/security/api\nBitget:  https://www.bitget.com/account/newapi\n```\n\n### Step 2: Configure Permissions\n\nRequired permissions for each exchange:\n\n**MEXC:**\n- Enable Spot Trading\n- Enable Reading\n- Disable Withdrawals (safety)\n- IP whitelist recommended\n\n**Gate.io:**\n- Spot Trade\n- Spot Read\n- No Withdraw permission\n- IP whitelist recommended\n\n**Kraken:**\n- Query Funds\n- Query Open Orders & Trades\n- Create & Modify Orders\n- No Withdraw permission\n\n**Bitget:**\n- Trade\n- Read Only\n- No Transfer permission\n- Note the Passphrase — it is set when creating the API key\n\n### Step 3: Set Environment Variables\n\nOpenMM uses environment variables for credentials. Add them to your `.env` file or export in your shell:\n\n```bash\n# MEXC\nexport MEXC_API_KEY=\"your_mexc_api_key\"\nexport MEXC_SECRET=\"your_mexc_secret_key\"\n\n# Gate.io\nexport GATEIO_API_KEY=\"your_gateio_api_key\"\nexport GATEIO_SECRET=\"your_gateio_secret_key\"\n\n# Bitget (requires passphrase)\nexport BITGET_API_KEY=\"your_bitget_api_key\"\nexport BITGET_SECRET=\"your_bitget_secret_key\"\nexport BITGET_PASSPHRASE=\"your_bitget_passphrase\"\n\n# Kraken\nexport KRAKEN_API_KEY=\"your_kraken_api_key\"\nexport KRAKEN_SECRET=\"your_kraken_secret_key\"\n```\n\nOr create a `.env` file in the project root:\n\n```env\nMEXC_API_KEY=your_mexc_api_key\nMEXC_SECRET=your_mexc_secret_key\nGATEIO_API_KEY=your_gateio_api_key\nGATEIO_SECRET=your_gateio_secret_key\nBITGET_API_KEY=your_bitget_api_key\nBITGET_SECRET=your_bitget_secret_key\nBITGET_PASSPHRASE=your_bitget_passphrase\nKRAKEN_API_KEY=your_kraken_api_key\nKRAKEN_SECRET=your_kraken_secret_key\n```\n\n### Step 4: Verify Connection\n\nTest that credentials work by checking balances:\n\n```bash\n# MEXC\nopenmm balance --exchange mexc\n\n# Gate.io\nopenmm balance --exchange gateio\n\n# Bitget\nopenmm balance --exchange bitget\n\n# Kraken\nopenmm"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[MCP Server Setup] To use OpenMM as an MCP server, add to your MCP client config:\n\n```json\n{\n  \"mcpServers\": {\n    \"openmm\": {\n      \"command\": \"npx\",\n      \"args\": [\"@qbtlabs/openmm-mcp\"],\n      \"env\": {\n        \"MEXC_API_KEY\": \"your_key\",\n        \"MEXC_SECRET\": \"your_secret\",\n        \"KRAKEN_API_KEY\": \"your_key\",\n        \"KRAKEN_SECRET\": \"your_secret\"\n      }\n    }\n  }\n}\n```\n\nOnly include env vars for exchanges you want to use."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### \"credentials not found\"\n- Verify environment variables are set: `echo $MEXC_API_KEY`\n- Check `.env` file is in the correct directory\n- Ensure variable names match exactly (e.g. `MEXC_SECRET` not `MEXC_SECRET_KEY`)\n\n### \"credentials validation failed\" (Bitget)\n- Verify all three vars: `BITGET_API_KEY`, `BITGET_SECRET`, `BITGET_PASSPHRASE`\n- The passphrase is set when creating the API key on Bitget\n\n### \"authentication failed\" (Kraken)\n- Verify `KRAKEN_API_KEY` and `KRAKEN_SECRET`\n- Check key permissions on Kraken API settings page\n\n### \"Timestamp Error\"\n- System clock may be out of sync\n- Run: `sudo ntpdate time.google.com`\n\n### \"Rate Limited\"\n- Reduce request frequency\n- Check exchange's rate limit docs"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Security Best Practices] 1. **Never enable withdrawals** — trading doesn't need it\n2. **Use IP whitelisting** — restrict to your server's IP\n3. **Never commit `.env` files** — add `.env` to `.gitignore`\n4. **Rotate keys periodically** — every 90 days recommended\n5. **Use separate keys for testing** — don't mix testnet/mainnet"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openmm_exchange_setup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔑",
+        "requires": {
+          "bins": [
+            "openmm"
+          ]
+        },
+        "install": [
+          {
+            "kind": "node",
+            "package": "@3rd-eye-labs/openmm",
+            "bins": [
+              "openmm"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adacapo21/openmm/skills/exchange-setup/SKILL.md"
+}

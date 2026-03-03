@@ -1,0 +1,95 @@
+{
+  "id": "openclaw_skill_pinets",
+  "description": "Run Pine Script indicators from the command line using pinets-cli. Use when asked to execute, test, or analyze Pine Script indicators, calculate technical analysis values (RSI, SMA, EMA, MACD, etc.), or fetch market data for crypto trading pairs. This tool can run PineScript indicators from .pine files or stdin and output the resulting plots and variables data.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # pinets-cli — Run Pine Script Indicators from the Terminal\r\n\r\n`pinets` is a CLI tool that executes TradingView Pine Script indicators via the [PineTS](https://github.com/QuantForgeOrg/PineTS) runtime. It outputs structured JSON with calculated indicator values."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Installation] ```bash\r\n# Global install\r\nnpm install -g pinets-cli\r\n\r\n# Or run directly with npx (no install needed)\r\nnpx pinets-cli run indicator.pine --symbol BTCUSDT -q\r\n```\r\n\r\nVerify (if installed globally):\r\n\r\n```bash\r\npinets --version\r\n```\r\n\r\nWhen using `npx`, replace `pinets` with `npx pinets-cli` in all examples below."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core command] ```\r\npinets run [file] [options]\r\n```\r\n\r\nThe indicator can be a **file argument** or **piped from stdin**."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Options] ### Data source (one required)\r\n\r\n| Flag                    | Description                                                                                  |\r\n| ----------------------- | -------------------------------------------------------------------------------------------- |\r\n| `-s, --symbol <ticker>` | Symbol from Binance (e.g., `BTCUSDT`, `ETHUSDT`, `SOLUSDT.P` for futures)                    |\r\n| `-t, --timeframe <tf>`  | Candle timeframe: `1`, `5`, `15`, `30`, `60`, `120`, `240`, `1D`, `1W`, `1M` (default: `60`) |\r\n| `-d, --data <path>`     | JSON file with candle data (alternative to `--symbol`)                                       |\r\n\r\n### Output\r\n\r\n| Flag                  | Description                                                    |\r\n| --------------------- | -------------------------------------------------------------- |\r\n| `-o, --output <path>` | Write to file instead of stdout                                |\r\n| `-f, --format <type>` | `default` (plots only) or `full` (plots + result + marketData) |\r\n| `--pretty`            | Pretty-print JSON                                              |\r\n| `--clean`             | Filter out null, false, and empty values from plot data        |\r\n| `--plots <names>`     | Comma-separated list of plot names to include (default: all)   |\r\n| `-q, --quiet`         | Suppress info messages (essential when parsing stdout)         |\r\n\r\n### Candle control\r\n\r\n| Flag                | Description                                              |\r\n| ------------------- | -------------------------------------------------------- |\r\n| `-n, --candles <N>` | Number of output candles (default: `500`)                |\r\n| `-w, --warmup <N>`  | Extra warmup candles excluded from output (default: `0`) |\r\n\r\n### Debug\r\n\r\n| Flag      | Description                                 |\r\n| --------- | ------------------------------------------- |\r\n| `--debug` | Show transpiled JavaScript code (to stderr) |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage patterns] ### Run a .pine file with live Binance data\r\n\r\n```bash\r\npinets run indicator.pine --symbol BTCUSDT --timeframe 60 --candles 100 -q\r\n```\r\n\r\n### Run with warmup (important for long-period indicators)\r\n\r\n```bash\r\n# EMA 200 needs at least 200 bars to initialize\r\npinets run ema200.pine -s BTCUSDT -t 1D -n 100 -w 200 -q\r\n```\r\n\r\n### Pipe Pine Script from stdin\r\n\r\n```bash\r\necho '//@version=5\r\nindicator(\"RSI\")\r\nplot(ta.rsi(close, 14), \"RSI\")' | pinets run -s BTCUSDT -t 60 -n 20 -q\r\n```\r\n\r\n### Run with custom JSON data\r\n\r\n```bash\r\npinets run indicator.pine --data candles.json --candles 50 -q\r\n```\r\n\r\n### Save output to file\r\n\r\n```bash\r\npinets run rsi.pine -s BTCUSDT -t 60 -o results.json -q\r\n```\r\n\r\n### Get full execution context\r\n\r\n```bash\r\npinets run indicator.pine -s BTCUSDT -f full -q --pretty\r\n```\r\n\r\n### Filter signals with --clean (for signal-based indicators)\r\n\r\n```bash\r\n# Without --clean: 500 entries, mostly false\r\npinets run ma_cross.pine -s BTCUSDT -t 1D -n 500 -q\r\n\r\n# With --clean: Only actual signals\r\npinets run ma_cross.pine -s BTCUSDT -t 1D -n 500 --clean -q\r\n```\r\n\r\n### Select specific plots with --plots\r\n\r\n```bash\r\n# Get only RSI, ignore bands\r\npinets run rsi_bands.pine -s BTCUSDT --plots \"RSI\" -q\r\n\r\n# Get only Buy and Sell signals\r\npinets run signals.pine -s BTCUSDT --plots \"Buy,Sell\" -q\r\n\r\n# Combine both: only signals, only true values\r\npinets run signals.pine -s BTCUSDT --plots \"Buy,Sell\" --clean -q\r\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output structure] ### `default` format\r\n\r\n```json\r\n{\r\n  \"indicator\": {\r\n    \"title\": \"RSI\",\r\n    \"overlay\": false\r\n  },\r\n  \"plots\": {\r\n    \"RSI\": {\r\n      \"title\": \"RSI\",\r\n      \"options\": { \"color\": \"#7E57C2\" },\r\n      \"data\": [\r\n        { \"time\": 1704067200000, \"value\": 58.23 },\r\n        { \"time\": 1704070800000, \"value\": 61.45 }\r\n      ]\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n### `full` format\r\n\r\nAdds `result` (raw return values per bar) and `marketData` (OHLCV candles) to the default output."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[JSON data format (for --data)] ```json\r\n[\r\n  {\r\n    \"openTime\": 1704067200000,\r\n    \"open\": 42000.5,\r\n    \"high\": 42500.0,\r\n    \"low\": 41800.0,\r\n    \"close\": 42300.0,\r\n    \"volume\": 1234.56,\r\n    \"closeTime\": 1704070799999\r\n  }\r\n]\r\n```\r\n\r\nRequired fields: `open`, `high`, `low`, `close`, `volume`. Recommended: `openTime`, `closeTime`."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Pine Script quick reference] pinets-cli accepts standard TradingView Pine Script v5+:\r\n\r\n```pinescript\r\n//@version=5\r\nindicator(\"My Indicator\", overlay=false)\r\n\r\n// Technical analysis functions\r\nrsi = ta.rsi(close, 14)\r\n[macdLine, signalLine, hist] = ta.macd(close, 12, 26, 9)\r\nsma = ta.sma(close, 20)\r\nema = ta.ema(close, 9)\r\nbb_upper = ta.sma(close, 20) + 2 * ta.stdev(close, 20)\r\n\r\n// Output — each plot() creates a named entry in the JSON output\r\nplot(rsi, \"RSI\", color=color.purple)\r\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Important notes] - **Always use `-q`** when parsing JSON output programmatically.\r\n- **Warmup matters**: Indicators with long lookback periods (SMA 200, EMA 200) produce `NaN` for the first N bars. Use `--warmup` to pre-feed the indicator.\r\n- **`time` values** are Unix timestamps in milliseconds.\r\n- **Errors** go to stderr with exit code 1.\r\n- The tool bundles PineTS internally — no additional npm packages are needed at runtime."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Warmup recommendations] | Indicator           | Minimum warmup |\r\n| ------------------- | -------------- |\r\n| SMA(N) / EMA(N)     | N              |\r\n| RSI(14)             | 30             |\r\n| MACD(12,26,9)       | 50             |\r\n| Bollinger Bands(20) | 30             |\r\n| SMA(200)            | 200+           |\r\n\r\nRule of thumb: set warmup to 1.5x-2x the longest lookback period."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "pinets"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "pinets"
+          ]
+        },
+        "primaryEnv": "",
+        "emoji": "📈",
+        "homepage": "https://github.com/QuantForgeOrg/pinets-cli"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alaa-eddine/pinets/SKILL.md"
+}

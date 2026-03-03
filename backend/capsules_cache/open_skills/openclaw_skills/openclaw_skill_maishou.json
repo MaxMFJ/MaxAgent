@@ -1,0 +1,101 @@
+{
+  "id": "openclaw_skill_maishou",
+  "description": "获取商品在淘宝(Taobao)、天猫(TMall)、京东(JD.com)、拼多多(PinDuoDuo)、抖音(Douyin)、快手(KaiShou)的最优价格、优惠券的技能，商品价格全网对比，当用户想购物或者获取优惠信息时使用。Get the best price, coupons for goods on Chinese e-commerce platforms, compare product prices, and use when users want to shop or get discount information.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 买手技能\n获取中国在线购物平台商品价格、优惠券，全网比价\n\n```yaml\n# 参数解释\nsource:\n  1: 淘宝/天猫\n  2: 京东\n  3: 拼多多\n  7: 抖音\n  8: 快手\n```"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[搜索商品] ```shell\nuv run scripts/main.py search --source={source} --keyword='{keyword}'\nuv run scripts/main.py search --source={source} --keyword='{keyword}' --page=2\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[商品详情及购买链接] ```shell\nuv run scripts/main.py detail --source={source} --id={goodsId}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[关于脚本] 本技能提供的脚本不会读写本地文件，可放心使用。 脚本仅作为客户端请求三方网站`maishou88.com`的商品和价格数据。"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "maishou"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🛍️",
+        "requires": {
+          "bins": [
+            "uv"
+          ]
+        },
+        "install": [
+          {
+            "id": "uv-brew",
+            "kind": "brew",
+            "formula": "uv",
+            "bins": [
+              "uv"
+            ],
+            "label": "Install uv (brew)"
+          },
+          {
+            "id": "uv-pip",
+            "kind": "pip",
+            "formula": "uv",
+            "bins": [
+              "uv"
+            ],
+            "label": "Install uv (pip)"
+          },
+          {
+            "id": "pip-aiohttp",
+            "kind": "pip",
+            "formula": "aiohttp",
+            "label": "Install aiohttp (pip)"
+          },
+          {
+            "id": "pip-argparse",
+            "kind": "pip",
+            "formula": "argparse",
+            "label": "Install argparse (pip)"
+          },
+          {
+            "id": "pip-PyYAML",
+            "kind": "pip",
+            "formula": "PyYAML",
+            "label": "Install PyYAML (pip)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/al-one/taobao/SKILL.md"
+}

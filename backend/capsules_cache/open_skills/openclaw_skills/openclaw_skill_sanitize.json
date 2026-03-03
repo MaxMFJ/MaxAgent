@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_sanitize",
+  "description": "Detect and redact PII from text files. Supports 15 categories including credit cards, SSNs, emails, API keys, addresses, and more — with zero dependencies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AgentWard Sanitize\n\nDetect and redact personally identifiable information (PII) from text files."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[IMPORTANT — PII Safety Rules] - Do NOT read the input file directly. It may contain sensitive PII.\n- ALWAYS use `--output FILE` to write sanitized output to a file.\n- Only read the OUTPUT file, never the raw input.\n- Only show the user the redacted output, never the raw input.\n- `--json` and `--preview` are safe — they do NOT print raw PII values to stdout.\n- The entity map (raw PII → placeholder mapping) is written to a separate sidecar file (`*.entity-map.json`) only when `--output` is used. Do NOT read the entity map file."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What it does] Scans files for PII — credit cards, SSNs, emails, phone numbers, API keys, IP addresses, mailing addresses, dates of birth, passport numbers, driver's license numbers, bank routing numbers, medical license numbers, and insurance member IDs — and replaces each instance with a numbered placeholder like `[CREDIT_CARD_1]`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### Sanitize a file (RECOMMENDED — always use --output)\n```bash\npython scripts/sanitize.py patient-notes.txt --output clean.txt\n```\n\n### Preview mode (detect PII categories/offsets without showing raw values)\n```bash\npython scripts/sanitize.py notes.md --preview\n```\n\n### JSON output (safe — no raw PII in stdout)\n```bash\npython scripts/sanitize.py report.txt --json --output clean.txt\n```\n\n### Filter to specific categories\n```bash\npython scripts/sanitize.py log.txt --categories ssn,credit_card,email --output clean.txt\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Supported PII categories] See `references/SUPPORTED_PII.md` for the full list with detection methods and false positive mitigation.\n\n| Category | Pattern type | Example |\n|---|---|---|\n| `credit_card` | Luhn-validated 13-19 digits | 4111 1111 1111 1111 |\n| `ssn` | 3-2-4 digit groups | 123-45-6789 |\n| `cvv` | Keyword-anchored 3-4 digits | CVV: 123 |\n| `expiry_date` | Keyword-anchored MM/YY | expiry 01/30 |\n| `api_key` | Provider prefix patterns | sk-abc..., ghp_..., AKIA... |\n| `email` | Standard email format | user@example.com |\n| `phone` | US/intl phone numbers | +1 (555) 123-4567 |\n| `ip_address` | IPv4 addresses | 192.168.1.100 |\n| `date_of_birth` | Keyword-anchored dates | DOB: 03/15/1985 |\n| `passport` | Keyword-anchored alphanumeric | Passport: AB1234567 |\n| `drivers_license` | Keyword-anchored alphanumeric | DL: D12345678 |\n| `bank_routing` | Keyword-anchored 9 digits | routing: 021000021 |\n| `address` | Street + city/state/zip | 742 Evergreen Terrace Dr, Springfield, IL 62704 |\n| `medical_license` | Keyword-anchored license ID | License: CA-MD-8827341 |\n| `insurance_id` | Keyword-anchored member/policy ID | Member ID: BCB-2847193 |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security and Privacy] - **All processing is local.** The script makes zero network calls. No data leaves your machine.\n- **Zero dependencies.** Uses only Python standard library — no third-party packages to audit.\n- **PII never reaches stdout.** The `--json` and `--preview` modes strip raw PII values from output. The entity map (containing raw PII to placeholder mappings) is only written to a sidecar file on disk when `--output` is used.\n- **Designed for agent safety.** The skill instructions above tell the agent to never read the raw input file or the entity map file — only the sanitized output."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Requirements] - Python 3.11+\n- No external dependencies (stdlib only)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[About] Built by [AgentWard](https://agentward.ai) — the open-source permission control plane for AI agents."
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sanitize"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        },
+        "emoji": "🛡",
+        "homepage": "https://github.com/agentward-ai/agentward"
+      },
+      "files": [
+        "scripts/sanitize.py"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agentward-ai/sanitize/SKILL.md"
+}

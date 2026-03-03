@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_clawpify",
+  "description": "Query and manage Shopify stores via GraphQL Admin API. Use for products, orders, customers, inventory, discounts, and all Shopify data operations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Shopify GraphQL Admin API\n\nA comprehensive skill for interacting with Shopify's GraphQL Admin API. This skill enables Claude to query and manage all aspects of Shopify store data."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when the user asks about:\n- Products (list, search, create, update, delete)\n- Orders (view, cancel, fulfill)\n- Customers (list, create, update)\n- Inventory (check levels, adjust quantities)\n- Discounts (create codes, manage promotions)\n- Any other Shopify store operations"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Critical Operations Requiring Permission] IMPORTANT: Before executing any of the following operations, you MUST ask for explicit user permission:\n\n- Refunds: Create refunds (permanent financial transactions)\n- Order Cancellations: Cancel orders (may trigger refunds)\n- Gift Card Deactivation: Permanently disable gift cards\n- Inventory Adjustments: Modify stock levels\n- Product Deletions: Permanently remove products\n- Discount Activations: Change pricing for customers\n\nAlways show what will be changed and wait for user confirmation."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How to Use] 1. Use the `shopify_graphql` tool to execute queries\n2. Check for `errors` (GraphQL issues) and `userErrors` (validation issues)\n3. Use pagination with `first`/`after` for large result sets\n4. Format all IDs as: `gid://shopify/Resource/123`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Available References] For detailed patterns and examples, refer to the reference documents:\n- products.md - Products and variants management\n- orders.md - Order operations\n- customers.md - Customer management\n- inventory.md - Inventory and locations\n- discounts.md - Discount codes and promotions\n- collections.md - Product collections\n- fulfillments.md - Order fulfillment and shipping\n- refunds.md - Process refunds\n- draft-orders.md - Draft order creation\n- gift-cards.md - Gift card management\n- webhooks.md - Event subscriptions\n- locations.md - Store locations\n- marketing.md - Marketing activities\n- markets.md - Multi-market setup\n- menus.md - Navigation menus\n- metafields.md - Custom data fields\n- pages.md - Store pages\n- blogs.md - Blog management\n- files.md - File uploads\n- shipping.md - Shipping configuration\n- shop.md - Store information\n- subscriptions.md - Subscription management\n- translations.md - Content translations\n- segments.md - Customer segments\n- bulk-operations.md - Bulk data operations"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick Examples] ### List Recent Orders\n```graphql\nquery {\n  orders(first: 10, sortKey: CREATED_AT, reverse: true) {\n    nodes {\n      id\n      name\n      totalPriceSet {\n        shopMoney { amount currencyCode }\n      }\n      customer { displayName }\n    }\n  }\n}\n```\n\n### Search Products\n```graphql\nquery {\n  products(first: 10, query: \"title:*shirt* AND status:ACTIVE\") {\n    nodes {\n      id\n      title\n      status\n    }\n  }\n}\n```\n\n### Check Inventory\n```graphql\nquery GetInventory($id: ID!) {\n  inventoryItem(id: $id) {\n    id\n    inventoryLevels(first: 5) {\n      nodes {\n        quantities(names: [\"available\"]) {\n          name\n          quantity\n        }\n        location { name }\n      }\n    }\n  }\n}\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Error Handling] Always check responses:\n- `errors` array = GraphQL syntax issues\n- `userErrors` in mutations = validation problems"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Best Practices] 1. Request only needed fields to optimize response size\n2. Use pagination for lists that may grow\n3. Check userErrors in all mutation responses\n4. Ask permission before dangerous operations\n5. Format results clearly for the user\n6. Use bulk operations for large data exports/imports\n7. Handle rate limits with exponential backoff"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawpify"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alhwyn/clawpify/SKILL.md"
+}

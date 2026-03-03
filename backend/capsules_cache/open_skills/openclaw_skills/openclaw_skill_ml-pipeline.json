@@ -1,0 +1,111 @@
+{
+  "id": "openclaw_skill_ml-pipeline",
+  "description": "Complete machine learning pipeline for trading: feature engineering, AutoML, deep learning, and financial RL. Use for automated parameter sweeps, feature creation, model training, and anti-leakage validation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ML Pipeline\n\nUnified skill for the complete ML pipeline within a quant trading research system.\nConsolidates eight prior skills into a single authoritative reference covering\nthe full lifecycle: data validation, feature creation, selection,\ntransformation, anti-leakage checks, pipeline automation, deep learning optimization, and deployment.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. When to Use] Activate this skill when the task involves any of the following:\n\n- Creating, selecting, or transforming features for an ML-driven strategy.\n- Auditing an existing feature pipeline for data leakage or overfitting risk.\n- Automating an end-to-end ML pipeline (data prep through model export).\n- Evaluating feature importance, scaling, encoding, or interaction effects.\n- Integrating features with a feature store (Feast, Tecton, custom Parquet store).\n- Explaining core ML concepts (bias-variance, cross-validation, regularisation)\n  in the context of feature engineering decisions.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Inputs to Gather] Before starting work, collect or confirm:\n\n| Input | Details |\n|-------|---------|\n| **Objective** | Target metric (Sharpe, accuracy, RMSE ...), constraints, time horizon. |\n| **Data** | Symbols / instruments, timeframe, bar type, sampling frequency, data sources. |\n| **Leakage risks** | Point-in-time concerns, survivorship bias, look-ahead in labels or features. |\n| **Compute budget** | CPU/GPU limits, wall-clock budget for AutoML search. |\n| **Latency** | Online vs. offline inference, acceptable prediction latency. |\n| **Interpretability** | Regulatory or research need for explainable features / models. |\n| **Deployment target** | Where the model will run (notebook, backtest harness, live engine). |\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[3. Feature Creation Patterns] ### 3.1 Numerical Features\n\n- **Interaction terms**: `price * volume`, `high / low`, `close - open`.\n- **Rolling statistics**: mean, std, skew, kurtosis over configurable windows.\n- **Polynomial / log transforms**: `log(volume + 1)`, `spread^2`.\n- **Binning / discretisation**: equal-width, quantile-based, or domain-driven bins.\n\n### 3.2 Categorical Features\n\n- **One-hot encoding**: for low-cardinality categoricals (sector, exchange).\n- **Target encoding**: mean-target per category with smoothing (careful of leakage -- use only in-fold means).\n- **Ordinal encoding**: when categories have a natural order (credit rating).\n\n### 3.3 Time-Series Specific\n\n- **Lag features**: `return_{t-1}`, `return_{t-5}`, etc.\n- **Calendar features**: day-of-week, month, quarter, options-expiry flag.\n- **Rolling z-score**: `(x - rolling_mean) / rolling_std` for stationarity.\n- **Fractional differentiation**: preserve memory while achieving stationarity (Lopez de Prado).\n\n### 3.4 Feature Selection Techniques\n\n- **Filter methods**: mutual information, variance threshold, correlation pruning.\n- **Wrapper methods**: recursive feature elimination (RFE), forward/backward selection.\n- **Embedded methods**: L1 regularisation, tree-based importance, SHAP values.\n- **Permutation importance**: model-agnostic; run on out-of-fold predictions.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[4. Anti-Leakage Checks] Data leakage is the single most common cause of inflated backtest results.\nApply these checks at every pipeline stage:\n\n### 4.1 Label Leakage\n\n- Labels must be computed from **future** returns relative to the feature\n  timestamp. Verify that the label window does not overlap the feature window.\n- Use purging and embargo when labels span multiple bars.\n\n### 4.2 Feature Leakage\n\n- No feature may use information from time `t+1` or later at prediction time `t`.\n- Rolling statistics must use a **closed** left window: `df['feat'].rolling(20).mean().shift(1)`.\n- Target-encoded categoricals must be computed on the **training fold only**.\n\n### 4.3 Cross-Validation Leakage\n\n- Use **purged k-fold** or **walk-forward** CV for time-series. Never use random\n  k-fold on ordered data.\n- Insert an **embargo gap** between train and test folds to prevent bleed-through\n  from autocorrelation.\n\n### 4.4 Survivorship & Selection Bias\n\n- Ensure the universe of instruments at time `t` reflects what was actually\n  tradable at that time (delisted stocks, halted symbols removed later).\n- Backfill from point-in-time databases where available.\n\n### 4.5 Validation Checklist\n\nRun before every backtest:\n\n```text\n[ ] Labels computed strictly from future returns (no overlap with features)\n[ ] All rolling features shifted by at least 1 bar\n[ ] Target encoding uses in-fold means only\n[ ] Walk-forward or purged CV used (no random shuffle on time-series)\n[ ] Embargo gap >= max(label_horizon, autocorrelation_lag)\n[ ] Universe is point-in-time (no survivorship bias)\n[ ] No global scaling fitted on full dataset (fit on train, transform test)\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[5. Pipeline Automation (AutoML)] ### 5.1 Prerequisites\n\n- Python environment with one or more AutoML libraries:\n  Auto-sklearn, TPOT, H2O AutoML, PyCaret, Optuna, or custom Optuna pipelines.\n- Training data in CSV / Parquet / database.\n- Problem type identified: classification, regression, or time-series forecasting.\n\n### 5.2 Pipeline Steps\n\n| Step | Action |\n|------|--------|\n| **1. Define requirements** | Problem type, evaluation metric, time/resource budget, interpretability needs. |\n| **2. Data infrastructure** | Load data, quality assessment, train/val/test split strategy, define feature transforms. |\n| **3. Configure AutoML** | Select framework, define algorithm search space, set preprocessing steps, choose tuning strategy (Bayesian, random, Hyperband). |\n| **4. Execute training** | Run automated feature engineering, model selection, hyperparameter optimisation, cross-validation. |\n| **5. Analyse & export** | Compare models, extract best config, feature importance, visualisations, export for deployment. |\n\n### 5.3 Pipeline Configuration Template\n\n```python\npipeline_config = {\n    \"task_type\": \"classification\",        # or \"regression\", \"time_series\"\n    \"time_budget_seconds\": 3600,\n    \"algorithms\": [\"rf\", \"xgboost\", \"catboost\", \"lightgbm\"],\n    \"preprocessing\": [\"scaling\", \"encoding\", \"imputation\"],\n    \"tuning_strategy\": \"bayesian\",        # or \"random\", \"hyperband\"\n    \"cv_folds\": 5,\n    \"cv_type\": \"purged_kfold\",            # or \"walk_forward\"\n    \"embargo_bars\": 10,\n    \"early_stopping_rounds\": 50,\n    \"metric\": \"sharpe_ratio\",             # domain-specific metric\n}\n```\n\n### 5.4 Output Artifacts\n\n- `automl_config.py` -- pipeline configuration.\n- `best_model.pkl` / `.joblib` / `.onnx` -- serialised model.\n- `feature_pipeline.pkl` -- fitted preprocessing + feature transforms.\n- `evaluation_report.json` -- metrics, confusion matrix / residuals, feature rankings.\n- `deployment/` -- prediction API code, input validation, requirements.txt.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[6. Core ML Fundamentals (Feature-Engineering Context)] ### 6.1 Bias-Variance Trade-off\n\n- More features increase model capacity (lower bias) but risk overfitting (higher variance).\n- Use regularisation (L1/L2), feature selection, or dimensionality reduction to manage.\n\n### 6.2 Evaluation Strategy\n\n- **Walk-forward validation**: the gold standard for time-series strategies.\n  Roll a fixed-width training window forward; test on the next out-of-sample period.\n- **Monte Carlo permutation tests**: shuffle labels and re-evaluate to estimate\n  the probability that observed performance is due to chance.\n- **Combinatorial purged CV (CPCV)**: generate many train/test combinations with\n  purging for more robust performance estimates.\n\n### 6.3 Feature Scaling\n\n- Fit scalers (StandardScaler, MinMaxScaler, RobustScaler) on the **training set only**.\n- Apply the same fitted scaler to validation and test sets.\n- RobustScaler is often preferred for financial data due to heavy tails.\n\n### 6.4 Handling Missing Data\n\n- Forward-fill then backward-fill for price data (be aware of leakage on backfill).\n- Indicator column for missingness can itself be informative.\n- Tree-based models can handle NaN natively; linear models cannot.\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[7. Workflow] For any feature engineering task, follow this sequence:\n\n1. **Restate** the task in measurable terms (metric, constraints, deadline).\n2. **Enumerate** required artifacts: datasets, feature definitions, configs, scripts, reports.\n3. **Propose** a default approach and 1-2 alternatives with trade-offs.\n4. **Implement** feature pipeline with anti-leakage checks built in.\n5. **Validate** with walk-forward CV, Monte Carlo, and the leakage checklist above.\n6. **Deliver** repo-ready code, documentation, and a run command.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[8. Deep Learning Optimization] ### 8.1 Optimizer Selection\n\n| Optimizer | Best For | Learning Rate |\n|-----------|----------|---------------|\n| Adam | Most cases, adaptive | 1e-3 to 1e-4 |\n| AdamW | Transformers, weight decay | 1e-4 to 1e-5 |\n| SGD + Momentum | Large batches, fine-tuning | 1e-2 to 1e-3 |\n| RAdam | Stability without warmup | 1e-3 |\n\n### 8.2 Learning Rate Scheduling\n\n- **OneCycleLR**: Best for short training, fast convergence\n- **CosineAnnealing**: Smooth decay, good generalization\n- **ReduceOnPlateau**: Adaptive when validation loss plateaus\n- **Warmup + Decay**: Standard for transformers\n\n### 8.3 Regularization Techniques\n\n- **Dropout**: 0.1-0.5 for fully connected layers\n- **L2 (Weight Decay)**: 1e-4 to 1e-2\n- **Batch Normalization**: Stabilizes training\n- **Early Stopping**: Monitor validation loss, patience 5-10 epochs\n\n### 8.4 PyTorch Lightning Integration\n\n```python\nimport pytorch_lightning as pl\n\nclass TradingModel(pl.LightningModule):\n    def configure_optimizers(self):\n        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)\n        scheduler = torch.optim.lr_scheduler.OneCycleLR(\n            optimizer, max_lr=1e-3, total_steps=self.trainer.estimated_stepping_batches\n        )\n        return [optimizer], [scheduler]\n```\n\n### 8.5 Financial Reinforcement Learning\n\n- **State**: Market features, portfolio state, position\n- **Action**: Buy/Sell/Hold, position sizing\n- **Reward**: Risk-adjusted returns (Sharpe, Sortino)\n- **Frameworks**: Stable-Baselines3, RLlib, FinRL\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[9. Error Handling] | Problem | Cause | Fix |\n|---------|-------|-----|\n| AutoML search finds no good model | Insufficient time budget or poor features | Increase budget, engineer better features, expand algorithm search space. |\n| Out of memory during training | Dataset too large for available RAM | Downsample, use incremental learning, simplify feature engineering. |\n| Model accuracy below threshold | Weak signal or overfitting | Collect more data, add domain-driven features, regularise, adjust metric. |\n| Feature transforms produce NaN/Inf | Division by zero, log of negative | Add guards: `np.where(denom != 0, ...)`, `np.log1p(np.abs(x))`. |\n| Optimiser fails to converge | Bad hyperparameter ranges | Tighten search bounds, increase iterations, exclude unstable algorithms. |\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[10. Bundled Scripts] All scripts live in `scripts/` within this skill directory.\n\n| Script | Purpose |\n|--------|---------|\n| `data_validation.py` | Validate input data quality before pipeline execution. |\n| `model_evaluation.py` | Evaluate trained model performance and generate reports. |\n| `pipeline_deployment.py` | Deploy a trained pipeline to a target environment with rollback support. |\n| `feature_engineering_pipeline.py` | End-to-end feature engineering: load, clean, transform, select, train. |\n| `feature_importance_analyzer.py` | Analyse feature importance (permutation, SHAP, tree-based). |\n| `data_visualizer.py` | Visualise feature distributions and relationships to target. |\n| `feature_store_integration.py` | Integrate with feature stores (Feast, Tecton) for online/offline serving. |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[11. Resources] ### Frameworks\n\n- **scikit-learn** -- preprocessing, feature selection, pipelines.\n- **Auto-sklearn / TPOT / H2O AutoML / PyCaret** -- automated pipeline search.\n- **Optuna** -- flexible hyperparameter optimisation.\n- **SHAP** -- model-agnostic feature importance.\n- **Feast / Tecton** -- feature store management.\n- **PyTorch Lightning** -- https://lightning.ai/docs/pytorch/stable/\n- **Stable-Baselines3** -- https://stable-baselines3.readthedocs.io/\n- **FinRL** -- https://github.com/AI4Finance-Foundation/FinRL\n\n### Key References\n\n- Lopez de Prado, *Advances in Financial Machine Learning* (2018) -- purged CV, fractional differentiation, meta-labelling.\n- Hastie, Tibshirani & Friedman, *The Elements of Statistical Learning* -- bias-variance, regularisation, model selection.\n- scikit-learn user guide: feature extraction, preprocessing, model selection.\n\n### Best Practices\n\n- Always start with a simple baseline before running AutoML.\n- Balance automation with domain knowledge -- blind search rarely beats informed priors.\n- Monitor resource consumption; set hard timeouts.\n- Validate on true out-of-sample holdout data, not just cross-validation.\n- Document every pipeline decision for reproducibility."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Read,",
+    "Write,",
+    "Edit,",
+    "Bash,",
+    "Glob,",
+    "Grep",
+    "agent-skill"
+  ],
+  "capability": [
+    "ml_pipeline"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "consolidates": [
+        "ml-feature-engineering",
+        "deep-learning-optimizer-5",
+        "pytorch-lightning-2",
+        "scikit-learn-ml-framework",
+        "automl-pipeline-builder-2",
+        "ml-feature-engineering-helper",
+        "ml-fundamentals",
+        "machine-learning-feature-engineering-toolkit"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahuserious/ml-pipeline/SKILL.md"
+}

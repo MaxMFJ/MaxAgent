@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_maccabi-pharm-search",
+  "description": "Search for medications and check real-time stock availability at Maccabi pharmacies in Israel. Use when searching for drugs like \"nurofen\", \"acamol/אקמול\", \"advil\", or finding nearby pharmacy branches with stock. Supports Hebrew and English drug names. מכבי פארם, תרופות, מלאי, בית מרקחת.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Maccabi Pharmacy Stock Check\n\nSearch medications and check **real-time stock availability** at Maccabi Pharm locations across Israel.\n\n> **Disclaimer**: This is an unofficial tool, not affiliated with or endorsed by Maccabi Healthcare Services. Stock information queries APIs that power the website and may not reflect actual availability. Always call the pharmacy to confirm stock before visiting. This tool is provided \"as is\" without warranty of any kind. Use at your own risk."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# 1. Search for medication (get the Largo code)\nnode {baseDir}/scripts/pharmacy-search.js search \"nurofen\"\n# Returns: Largo Code 58299 for NUROFEN LIQUID 20 CAP\n\n# 2. Check which pharmacies have it in stock\nnode {baseDir}/scripts/pharmacy-search.js stock 58299\n# Returns: Pharmacies with addresses, phones, stock status\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `search <query>` | Find medications, get Largo codes |\n| `stock <largo_code> [city]` | Check real-time inventory at pharmacies |\n| `branches maccabi [city]` | Get pharmacy locations |\n| `cities` | Show all 51 available city codes |\n| `test` | Quick functionality check |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Search Examples] ```bash\n# Hebrew searches\nnode {baseDir}/scripts/pharmacy-search.js search \"אקמול\"\nnode {baseDir}/scripts/pharmacy-search.js search \"נורופן\"\n\n# English searches\nnode {baseDir}/scripts/pharmacy-search.js search \"acamol\"\nnode {baseDir}/scripts/pharmacy-search.js search \"nurofen\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Stock Check by City] ```bash\n# Tel Aviv (default, city code 5000)\nnode {baseDir}/scripts/pharmacy-search.js stock 58299\n\n# Jerusalem (city code 3000)\nnode {baseDir}/scripts/pharmacy-search.js stock 58299 3000\n\n# Haifa (city code 4000)\nnode {baseDir}/scripts/pharmacy-search.js stock 58299 4000\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[City Codes] Common examples (51 cities supported):\n\n| City | Code |\n|------|------|\n| Tel Aviv | 5000 (default) |\n| Jerusalem | 3000 |\n| Haifa | 4000 |\n| Beer Sheva | 9000 |\n| Bat Yam | 6200 |\n| Netanya | 7400 |\n\nRun `cities` command to see all 51 available city codes."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Output Examples] **Search results:**\n```\nNUROFEN LIQUID 20 CAP\n  Largo Code: 58299 (use this for stock check)\n  Prescription: No\n```\n\n**Stock results:**\n```\n=== Stock Summary ===\n  In Stock: 6 pharmacies\n  Low Stock: 0 pharmacies\n  Out of Stock: 1 pharmacies\n\n=== Pharmacies with Stock ===\nמכבי פארם-ת\"א-בלפור 10\n   בלפור 10, תל אביב - יפו\n   03-9193013\n   Distance: 0.6 km\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - Stock information queries APIs that power the website\n- Only shows Maccabi Pharm locations (not other pharmacy chains)\n- Largo code from search is required for stock check\n- Data provided \"as is\" without warranty"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "maccabi_pharm_search"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💊",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexpolonsky/maccabi-pharm-search/SKILL.md"
+}

@@ -112,6 +112,12 @@
         },
         "tunables": [
           {
+            "env": "SIMMER_COPYTRADING_WALLETS",
+            "type": "string",
+            "default": "",
+            "label": "Whale wallet addresses (comma-separated)"
+          },
+          {
             "env": "SIMMER_COPYTRADING_MAX_USD",
             "type": "number",
             "default": 50,

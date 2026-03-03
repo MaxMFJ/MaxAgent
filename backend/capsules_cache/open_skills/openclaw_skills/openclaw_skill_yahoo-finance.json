@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_yahoo-finance",
+  "description": "Get stock prices, quotes, fundamentals, earnings, options, dividends, and analyst ratings using Yahoo Finance. Uses yfinance library - no API key required.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Yahoo Finance CLI\n\nA Python CLI for fetching comprehensive stock data from Yahoo Finance using yfinance."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] - Python 3.11+\n- uv (for inline script dependencies)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installing uv] The script requires `uv` - an extremely fast Python package manager. Check if it's installed:\n\n```bash\nuv --version\n```\n\nIf not installed, install it using one of these methods:\n\n### macOS / Linux\n```bash\ncurl -LsSf https://astral.sh/uv/install.sh | sh\n```\n\n### macOS (Homebrew)\n```bash\nbrew install uv\n```\n\n### Windows\n```powershell\npowershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"\n```\n\n### pip (any platform)\n```bash\npip install uv\n```\n\nAfter installation, restart your terminal or run:\n```bash\nsource ~/.bashrc  # or ~/.zshrc on macOS\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Installation] The `yf` script uses PEP 723 inline script metadata - dependencies are auto-installed on first run.\n\n```bash\n# Make executable\nchmod +x /path/to/skills/yahoo-finance/yf\n\n# Optionally symlink to PATH for global access\nln -sf /path/to/skills/yahoo-finance/yf /usr/local/bin/yf\n```\n\nFirst run will install dependencies (yfinance, rich) to uv's cache. Subsequent runs are instant."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Price (quick check)\n```bash\nyf AAPL              # shorthand for price\nyf price AAPL\n```\n\n### Quote (detailed)\n```bash\nyf quote MSFT\n```\n\n### Fundamentals\n```bash\nyf fundamentals NVDA\n```\nShows: PE ratios, EPS, market cap, margins, ROE/ROA, analyst targets.\n\n### Earnings\n```bash\nyf earnings TSLA\n```\nShows: Next earnings date, EPS estimates, earnings history with surprises.\n\n### Company Profile\n```bash\nyf profile GOOGL\n```\nShows: Sector, industry, employees, website, address, business description.\n\n### Dividends\n```bash\nyf dividends KO\n```\nShows: Dividend rate/yield, ex-date, payout ratio, recent dividend history.\n\n### Analyst Ratings\n```bash\nyf ratings AAPL\n```\nShows: Buy/hold/sell distribution, mean rating, recent upgrades/downgrades.\n\n### Options Chain\n```bash\nyf options SPY\n```\nShows: Near-the-money calls and puts with strike, bid/ask, volume, OI, IV.\n\n### History\n```bash\nyf history GOOGL 1mo     # 1 month history\nyf history TSLA 1y       # 1 year\nyf history BTC-USD 5d    # 5 days\n```\nRanges: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max\n\n### Compare\n```bash\nyf compare AAPL,MSFT,GOOGL\nyf compare RELIANCE.NS,TCS.NS,INFY.NS\n```\nSide-by-side comparison with price, change, 52W range, market cap.\n\n### Search\n```bash\nyf search \"reliance industries\"\nyf search \"bitcoin\"\nyf search \"s&p 500 etf\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Symbol Format] - **US stocks:** AAPL, MSFT, GOOGL, TSLA\n- **Indian NSE:** RELIANCE.NS, TCS.NS, INFY.NS\n- **Indian BSE:** RELIANCE.BO, TCS.BO\n- **Crypto:** BTC-USD, ETH-USD\n- **Forex:** EURUSD=X, GBPUSD=X\n- **ETFs:** SPY, QQQ, VOO"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Quick price check\nyf AAPL\n\n# Get valuation metrics\nyf fundamentals NVDA\n\n# Next earnings date + history\nyf earnings TSLA\n\n# Options chain for SPY\nyf options SPY\n\n# Compare tech giants\nyf compare AAPL,MSFT,GOOGL,META,AMZN\n\n# Find Indian stocks\nyf search \"infosys\"\n\n# Dividend info for Coca-Cola\nyf dividends KO\n\n# Analyst ratings for Apple\nyf ratings AAPL\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### \"command not found: uv\"\nInstall uv using the instructions above.\n\n### Rate limiting / connection errors\nYahoo Finance may rate limit excessive requests. Wait a few minutes and try again.\n\n### \"No data\" for a symbol\n- Verify the symbol exists: `yf search \"company name\"`\n- Some data (options, dividends) isn't available for all securities"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Technical Notes] - Uses PEP 723 inline script metadata for uv dependencies\n- Rich library provides colored, formatted tables\n- First run installs deps to uv cache (~5 seconds)\n- Subsequent runs are instant (cached environment)\n- Handles NaN/None values gracefully with fallbacks"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "yahoo_finance"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajanraj/yahoo-finance/SKILL.md"
+}

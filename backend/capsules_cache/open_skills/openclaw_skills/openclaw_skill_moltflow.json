@@ -1,0 +1,109 @@
+{
+  "id": "openclaw_skill_moltflow",
+  "description": "WhatsApp Business automation API for sessions, messaging, groups, labels, and webhooks. Use when: whatsapp, send message, create session, qr code, monitor group, label contacts, webhook.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **MoltFlow** -- WhatsApp Business automation for teams. Connect, monitor, and automate WhatsApp at scale.\n> ***Due to high demand and a recent registration issue, we're offering our top-tier Business plan with unlimited quotas for just $19.90/month on yearly billing — for a limited time only.*** [**Claim the deal**](https://buy.stripe.com/cNifZibX7gpQebJ0nsfnO00)\n> Free tier available. [Sign up](https://molt.waiflow.app/checkout?plan=free)\n\n# MoltFlow Core API\n\nManage WhatsApp sessions, send messages, monitor groups, organize with labels, and receive real-time events via webhooks."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Real-World Scenarios] **Dental clinic** — \"Send an appointment confirmation to each patient after they book, and a reminder 24 hours before their visit.\"\n\n**Property manager** — \"Monitor my tenant WhatsApp groups for maintenance keywords like 'leak', 'broken', and 'urgent', and flag them instantly.\"\n\n**E-commerce store** — \"When a customer messages my support number, auto-label them as 'New Inquiry' and route the chat to the right team.\"\n\n**Logistics company** — \"Set up a webhook so my dispatch system gets notified the moment a driver sends a delivery confirmation photo.\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - \"Connect WhatsApp\" or \"create a session\"\n- \"Send a WhatsApp message\" or \"send text to contact\"\n- \"Monitor a WhatsApp group\" or \"list groups\"\n- \"Label contacts\" or \"sync labels from WhatsApp\"\n- \"Set up a webhook\" or \"listen for WhatsApp events\"\n- \"Get QR code\" or \"start session\"\n- \"List chats\" or \"get conversations\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **MOLTFLOW_API_KEY** -- Generate from the [MoltFlow Dashboard](https://molt.waiflow.app) under Settings > API Keys\n2. All requests require authentication via `Authorization: Bearer <token>` or `X-API-Key: <key>`\n3. Base URL: `https://apiv2.waiflow.app/api/v2`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Required API Key Scopes] | Scope | Access |\n|-------|--------|\n| `sessions` | `read/manage` |\n| `messages` | `read/send` |\n| `groups` | `read/manage` |\n| `labels` | `read/manage` |\n| `webhooks` | `read/manage` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Authentication] Every request must include one of:\n\n```\nAuthorization: Bearer <jwt_token>\n```\n\nor\n\n```\nX-API-Key: <your_api_key>\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Sessions] Manage WhatsApp connections. Each session represents one WhatsApp account linked via QR code.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/sessions` | List all sessions |\n| POST | `/sessions` | Create a new session |\n| GET | `/sessions/{id}` | Get session details |\n| DELETE | `/sessions/{id}` | Delete a session |\n| POST | `/sessions/{id}/start` | Start session (triggers QR scan) |\n| POST | `/sessions/{id}/stop` | Stop a running session |\n| POST | `/sessions/{id}/restart` | Restart a session |\n| POST | `/sessions/{id}/logout` | Logout and clear auth state |\n| GET | `/sessions/{id}/qr` | Get QR code for pairing |\n| GET | `/sessions/{id}/events` | SSE stream of session events |\n\n### Session Status Values\n\nSessions progress through these states: `stopped` -> `starting` -> `qr_code` -> `working` -> `failed`\n\n### Create Session\n\n**POST** `/sessions`\n\n```json\n{\n  \"name\": \"My WhatsApp\"\n}\n```\n\n**Response** `201 Created`:\n\n```json\n{\n  \"id\": \"a1b2c3d4-...\",\n  \"name\": \"My WhatsApp\",\n  \"status\": \"stopped\",\n  \"phone_number\": null,\n  \"is_business\": false,\n  \"created_at\": \"2026-02-11T10:00:00Z\"\n}\n```\n\n### Start Session and Get QR\n\nAfter creating a session, start it and retrieve the QR code:\n\n1. `POST /sessions/{id}/start` -- begins the WAHA engine\n2. Wait for status to become `qr_code` (use SSE events or poll)\n3. `GET /sessions/{id}/qr` -- returns the QR code image\n\n### SSE Events\n\n`GET /sessions/{id}/events?token=<jwt>` returns a Server-Sent Events stream. Events include session status changes, incoming messages, and connection updates.\n\n### Session Settings\n\n**PATCH** `/sessions/{id}/settings`\n\nConfigure per-session behavior. Settings are stored in the session's `config` JSON field.\n\n```json\n// Request\n{\n  \"auto_transcribe\": true\n}\n\n// Response\n{\n  \"status\": \"ok\",\n  \"config\": {\n    \"auto_transcribe\": true\n  }\n}\n```\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `auto_transcribe` | boolean | Automatically transcribe incoming "
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Messages] Send and retrieve WhatsApp messages through connected sessions.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/messages/send` | Send a text message |\n| POST | `/messages/send/poll` | Send a poll message |\n| POST | `/messages/send/sticker` | Send a sticker |\n| POST | `/messages/send/gif` | Send a GIF |\n| GET | `/messages/chats/{session_id}` | List all chats for a session |\n| GET | `/messages/chat/{session_id}/{chat_id}` | Get chat messages |\n| GET | `/messages/{message_id}` | Get a single message |\n\n### Send Text Message\n\n**POST** `/messages/send`\n\n```json\n{\n  \"session_id\": \"a1b2c3d4-...\",\n  \"chat_id\": \"5511999999999@c.us\",\n  \"message\": \"Hello from MoltFlow!\"\n}\n```\n\n**Response** `201 Created`:\n\n```json\n{\n  \"id\": \"msg-uuid-...\",\n  \"chat_id\": \"chat-uuid-...\",\n  \"wa_message_id\": \"ABCD1234\",\n  \"direction\": \"outbound\",\n  \"message_type\": \"text\",\n  \"content_preview\": \"Hello from MoltFlow!\",\n  \"status\": \"sent\",\n  \"sent_at\": \"2026-02-11T10:05:00Z\",\n  \"created_at\": \"2026-02-11T10:05:00Z\"\n}\n```\n\n### Chat ID Format\n\n- Individual contacts: `<phone>@c.us` (e.g., `5511999999999@c.us`)\n- Groups: `<group_id>@g.us` (e.g., `120363012345678901@g.us`)\n\n### Send Poll\n\n**POST** `/messages/send/poll`\n\n```json\n{\n  \"session_id\": \"a1b2c3d4-...\",\n  \"chat_id\": \"5511999999999@c.us\",\n  \"title\": \"Preferred meeting time?\",\n  \"options\": [\"Morning\", \"Afternoon\", \"Evening\"],\n  \"allow_multiple\": false\n}\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Groups] Monitor WhatsApp groups for keywords, messages, and activity.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/groups` | List monitored groups |\n| GET | `/groups/available/{session_id}` | List available WA groups |\n| POST | `/groups` | Add group to monitoring |\n| GET | `/groups/{id}` | Get monitored group details |\n| PATCH | `/groups/{id}` | Update monitoring settings |\n| DELETE | `/groups/{id}` | Remove from monitoring |\n| POST | `/groups/create` | Create a new WA group |\n| POST | `/groups/{wa_group_id}/participants/add` | Add participants |\n| POST | `/groups/{wa_group_id}/participants/remove` | Remove participants |\n| POST | `/groups/{wa_group_id}/admin/promote` | Promote to admin |\n| POST | `/groups/{wa_group_id}/admin/demote` | Demote from admin |\n\n### Add Group to Monitoring\n\n**POST** `/groups`\n\n```json\n{\n  \"session_id\": \"a1b2c3d4-...\",\n  \"wa_group_id\": \"120363012345678901@g.us\",\n  \"monitor_mode\": \"keywords\",\n  \"monitor_keywords\": [\"urgent\", \"support\", \"help\"]\n}\n```\n\n### Monitor Modes\n\n- `all` -- Capture every message in the group\n- `keywords` -- Only capture messages matching specified keywords\n- `mentions` -- Only when your account is mentioned\n- `first_message` -- Only first messages from new users (default for new groups)\n- `ai_analysis` -- AI-powered intent classification and lead scoring (Pro+ only)\n\n### Group Messages (AI Intelligence)\n\n**GET** `/groups/{group_id}/messages`\n\nRetrieve paginated messages from a monitored group, including AI analysis results.\n\nQuery parameters: `limit` (default 50, max 100), `offset` (default 0)\n\n**Requires scope:** `groups:read`\n\n```json\n{\n  \"items\": [\n    {\n      \"id\": \"msg-uuid\",\n      \"sender_phone\": \"+15550123456\",\n      \"sender_name\": \"John D.\",\n      \"content_preview\": \"I'm interested in the 3BR property\",\n      \"wa_timestamp\": \"2026-02-20T14:30:00Z\",\n      \"ai_analysis\": {\n        \"intent\": \"buying_intent\",\n        \"lead_score\": 9,\n        \"confidence\": 0.92,\n        \"reason\": \"Expl"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Labels] Organize contacts and chats with color-coded labels. Supports sync with WhatsApp Business native labels.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/labels` | List all labels |\n| POST | `/labels` | Create a label |\n| GET | `/labels/{id}` | Get label details |\n| PATCH | `/labels/{id}` | Update a label |\n| DELETE | `/labels/{id}` | Delete a label |\n| POST | `/labels/{id}/sync` | Sync label to WhatsApp |\n| POST | `/labels/sync-from-whatsapp` | Import labels from WA |\n| GET | `/labels/business-check` | Check WA Business status |\n| GET | `/labels/{id}/chats` | List chats with this label |\n| GET | `/labels/chat/{chat_id}` | Get labels for a chat |\n| PUT | `/labels/chat/{chat_id}` | Set labels for a chat |\n\n### Create Label\n\n**POST** `/labels`\n\n```json\n{\n  \"name\": \"VIP Customer\",\n  \"color\": \"#FF6B35\",\n  \"description\": \"High-value accounts\"\n}\n```\n\n**Response** `201 Created`:\n\n```json\n{\n  \"id\": \"label-uuid-...\",\n  \"name\": \"VIP Customer\",\n  \"color\": \"#FF6B35\",\n  \"description\": \"High-value accounts\",\n  \"chat_count\": 0,\n  \"synced\": false,\n  \"created_at\": \"2026-02-11T10:00:00Z\"\n}\n```\n\n> **Note:** Syncing labels to WhatsApp requires a WhatsApp Business account. Use `GET /labels/business-check` to verify.\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Webhooks] Receive real-time notifications when events occur in your WhatsApp sessions.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/webhooks` | List all webhooks |\n| POST | `/webhooks` | Create a webhook |\n| GET | `/webhooks/{id}` | Get webhook details |\n| PATCH | `/webhooks/{id}` | Update a webhook |\n| DELETE | `/webhooks/{id}` | Delete a webhook |\n| POST | `/webhooks/{id}/test` | Send a test delivery |\n\n### Supported Events\n\n| Event | Description |\n|-------|-------------|\n| `message.received` | Inbound message received |\n| `message.sent` | Outbound message sent |\n| `session.connected` | Session connected to WhatsApp |\n| `session.disconnected` | Session disconnected |\n| `lead.detected` | New lead detected (includes `ai_analysis` when available) |\n| `group.message` | Message in a monitored group |\n| `group.message.analyzed` | AI analysis completed for a group message (Pro/Business only) |\n\n### Create Webhook\n\n**POST** `/webhooks`\n\n> **Security:** Webhook URLs are validated server-side — private IPs, cloud metadata endpoints, and non-HTTPS schemes are blocked. Only configure endpoints you control. Always set a `secret` for HMAC signature verification.\n\n```json\n{\n  \"name\": \"CRM Integration\",\n  \"url\": \"https://example.com/webhooks/moltflow\",\n  \"events\": [\"message.received\", \"lead.detected\"],\n  \"secret\": \"whsec_mysecretkey123\"\n}\n```\n\n**Response** `201 Created`:\n\n```json\n{\n  \"id\": \"wh-uuid-...\",\n  \"name\": \"CRM Integration\",\n  \"url\": \"https://example.com/webhooks/moltflow\",\n  \"events\": [\"message.received\", \"lead.detected\"],\n  \"is_active\": true,\n  \"created_at\": \"2026-02-11T10:00:00Z\"\n}\n```\n\n### Webhook Payload\n\nDeliveries include an HMAC-SHA256 signature in the `X-Webhook-Signature` header (if a secret is configured). Verify this to ensure authenticity.\n\n```json\n{\n  \"event\": \"message.received\",\n  \"timestamp\": \"2026-02-11T10:05:00Z\",\n  \"data\": {\n    \"session_id\": \"a1b2c3d4-...\",\n    \"chat_id\": \"5511999999999@c.us\",\n    \"message\": \"Hello!\",\n    \"d"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Examples] ### Full workflow: Create session and send first message\n\n```bash\n# 1. Create a session\ncurl -X POST https://apiv2.waiflow.app/api/v2/sessions \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\": \"Sales Team\"}'\n\n# 2. Start the session (triggers QR)\ncurl -X POST https://apiv2.waiflow.app/api/v2/sessions/{session_id}/start \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n\n# 3. Get QR code (scan with WhatsApp)\ncurl https://apiv2.waiflow.app/api/v2/sessions/{session_id}/qr \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n\n# 4. Send a message (after session status is \"working\")\ncurl -X POST https://apiv2.waiflow.app/api/v2/messages/send \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"session_id\": \"{session_id}\",\n    \"chat_id\": \"5511999999999@c.us\",\n    \"message\": \"Hello from MoltFlow!\"\n  }'\n```\n\n### Set up a webhook for incoming messages\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/webhooks \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Incoming Messages\",\n    \"url\": \"https://myapp.com/webhooks/whatsapp\",\n    \"events\": [\"message.received\", \"session.connected\"],\n    \"secret\": \"whsec_my_secret\"\n  }'\n```\n\n### Monitor a group for keywords\n\n```bash\n# List available groups from a connected session\ncurl https://apiv2.waiflow.app/api/v2/groups/available/{session_id} \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n\n# Add a group to monitoring\ncurl -X POST https://apiv2.waiflow.app/api/v2/groups \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"session_id\": \"{session_id}\",\n    \"wa_group_id\": \"120363012345678901@g.us\",\n    \"monitor_mode\": \"keywords\",\n    \"monitor_keywords\": [\"urgent\", \"support\"]\n  }'\n```\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Error Responses] All endpoints return standard error responses:\n\n```json\n{\n  \"detail\": \"Session not found\"\n}\n```\n\n| Status | Meaning |\n|--------|---------|\n| 400 | Bad request (invalid input) |\n| 401 | Unauthorized (missing or invalid auth) |\n| 403 | Forbidden (plan limit or permission) |\n| 404 | Resource not found |\n| 429 | Rate limited |\n| 500 | Internal server error |\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Rate Limits] API requests are rate-limited per tenant. Limits vary by plan:\n\n| Plan | Requests/min |\n|------|-------------|\n| Free | 10 |\n| Starter | 20 |\n| Pro | 40 |\n| Business | 60 |\n\nRate limit headers are included in every response: `X-RateLimit-Remaining`, `X-RateLimit-Reset`.\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Related Skills] - **moltflow-outreach** -- Bulk Send, Scheduled Messages, Custom Groups\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG knowledge base, style profiles\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltflow"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow/SKILL.md"
+}

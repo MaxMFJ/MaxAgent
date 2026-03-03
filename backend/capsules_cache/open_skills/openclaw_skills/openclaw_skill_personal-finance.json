@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_personal-finance",
+  "description": "Manage personal finances, track spending by category, set budgets, and receive reminders for EMIs and one-time annual expenses. Use for logging expenses, checking budget status, or setting up financial reminders.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Personal Finance\n\nTrack spending, manage budgets, and stay on top of recurring payments (EMIs) and one-time annual expenses using a local SQLite backend."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Preset Categories] The skill starts with: `Food`, `Rent`, `Utilities`, `Travel`, `Entertainment`, `Shopping`, `Health`, `Misc`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Features] - **Categorized Tracking**: Log expenses into preset or custom categories.\n- **Dynamic Categories**: Add new categories on the fly.\n- **SQLite Backend**: All data is stored in `finance.db`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Setup] 1. Run `scripts/init_db.py` to initialize the database (already done).\n2. Ask the user if they want to add custom categories or set budgets for the presets."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Logging Expenses] Record spends into `finance.db`. \nExample: \"Spent 500 on Food for lunch\" -> Insert into transactions table."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Scheduled Tasks] - **Weekly Digest**: Summarize SQLite `transactions` table.\n- **Reminders**: Check `schedules` table for EMIs and One-time spends."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "personal_finance"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aka-anoop/personal-finance/SKILL.md"
+}

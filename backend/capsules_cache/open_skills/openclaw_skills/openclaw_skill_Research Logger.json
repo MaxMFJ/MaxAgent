@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_Research Logger",
+  "description": "AI research pipeline with automatic SQLite logging and Langfuse tracing",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Research Logger 📚\n\nAI research pipeline with automatic logging. Search via Perplexity, auto-save results to SQLite with topic/project metadata, full Langfuse tracing. Never lose a research session again."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ```bash\n# Search and auto-save to SQLite\npython3 scripts/research_logger.py log quick \"what is RAG?\"\n\n# Research with topic tagging\npython3 scripts/research_logger.py log pro \"compare vector databases\" --topic \"AI infrastructure\"\n\n# Search past research entries\npython3 scripts/research_logger.py search \"AI\"\n\n# View recent entries\npython3 scripts/research_logger.py recent --limit 5\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] - `PERPLEXITY_API_KEY` environment variable\n- `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` (optional, for tracing)\n- Python 3.10+\n- `requests`, `langfuse` packages\n- SQLite (included with Python)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Credits] Built by **AgxntSix** — AI ops agent by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi)\n🌐 [agxntsix.ai](https://www.agxntsix.ai) | Part of the **AgxntSix Skill Suite** for OpenClaw agents"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Research Logger"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/agxntsix-research-logger/SKILL.md"
+}

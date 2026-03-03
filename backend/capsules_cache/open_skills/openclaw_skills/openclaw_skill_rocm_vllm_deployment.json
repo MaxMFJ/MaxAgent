@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_rocm_vllm_deployment",
+  "description": "Production-ready vLLM deployment on AMD ROCm GPUs. Combines environment auto-check, model parameter detection, Docker Compose deployment, health verification, and functional testing with comprehensive logging and security best practices.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ROCm vLLM Deployment Skill\n\nProduction-ready automation for deploying vLLM inference services on AMD ROCm GPUs using Docker Compose."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - Environment Auto-Check - Detects and repairs missing dependencies\n- Model Parameter Detection - Auto-reads config.json for optimal settings\n- VRAM Estimation - Calculates memory requirements before deployment\n- Secure Token Handling - Never writes tokens to compose files\n- **Structured Output** - All logs and test results saved per-model\n- **Deployment Reports** - Human-readable summary for each deployment\n- Health Verification - Automated health checks and functional tests\n- Troubleshooting Guide - Common issues and solutions"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Prerequisites] **Recommended (for production):** Add to `~/.bash_profile`:\n\n```bash\n# HuggingFace authentication token (required for gated models)\nexport HF_TOKEN=\"hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n\n# Model cache directory (optional)\nexport HF_HOME=\"$HOME/models\"\n\n# Apply changes\nsource ~/.bash_profile\n```\n\n**Not required for testing:** The skill will proceed without these set:\n- **HF_TOKEN**: Optional — public models work without it; gated models fail at download with clear error\n- **HF_HOME**: Optional — defaults to `/root/.cache/huggingface/hub`\n\n### Environment Variable Detection\n\n**Priority Order:**\n1. **Explicit parameter** (highest) — Provided in task/request (e.g., `hf_token: \"xxx\"`)\n2. **Environment variable** — Already set in shell or from parent process\n3. **~/.bash_profile** — Source to load variables\n4. **Default value** (lowest) — HF_HOME defaults to `/root/.cache/huggingface/hub`\n\n| Variable | Required | If Missing |\n|----------|----------|------------|\n| `HF_TOKEN` | **Conditional** | Continue without token (public models work; gated models fail at download with clear error) |\n| `HF_HOME` | No | **Warning + Default** — Use `/root/.cache/huggingface/hub` |\n\n**Philosophy:** Fail fast for configuration errors, fail at download time for authentication errors.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Helper Scripts] **Location:** `<skill-dir>/scripts/`\n\n### check-env.sh\n\nValidate and load environment variables before deployment.\n\n**Usage:**\n```bash\n# Basic check (HF_TOKEN optional, HF_HOME optional with default)\n./scripts/check-env.sh\n\n# Strict mode (HF_HOME required, fails if not set)\n./scripts/check-env.sh --strict\n\n# Quiet mode (minimal output, for automation)\n./scripts/check-env.sh --quiet\n\n# Test with environment variables\nHF_TOKEN=\"hf_xxx\" HF_HOME=\"/models\" ./scripts/check-env.sh\n```\n\n**Exit Codes:**\n| Code | Meaning |\n|------|---------|\n| 0 | Environment check completed (variables loaded or defaulted) |\n| 2 | Critical error (e.g., cannot source ~/.bash_profile) |\n\n**Note:** This script is optional. You can also directly run `source ~/.bash_profile`.\n\n---\n\n### generate-report.sh\n\nGenerate human-readable deployment report after successful deployment.\n\n**Usage:**\n```bash\n./scripts/generate-report.sh <model-id> <container-name> <port> <status> [model-load-time] [memory-used]\n\n# Example:\n./scripts/generate-report.sh \\\n  \"Qwen-Qwen3-0.6B\" \\\n  \"vllm-qwen3-0-6b\" \\\n  \"8001\" \\\n  \"✅ Success\" \\\n  \"3.6\" \\\n  \"1.2\"\n```\n\n**Parameters:**\n| Parameter | Required | Description |\n|-----------|----------|-------------|\n| `model-id` | Yes | Model ID (with `/` replaced by `-`) |\n| `container-name` | Yes | Docker container name |\n| `port` | Yes | Host port for API endpoint |\n| `status` | Yes | Deployment status (e.g., \"✅ Success\") |\n| `model-load-time` | No | Model loading time in seconds |\n| `memory-used` | No | Memory consumption in GiB |\n\n**Output:** `$HOME/vllm-compose/<model-id>/DEPLOYMENT_REPORT.md`\n\n**Exit Codes:**\n| Code | Meaning |\n|------|---------|\n| 0 | Report generated successfully |\n| 1 | Missing required parameters |\n| 2 | Output directory not found |\n\n**Integration:** This script is automatically called in **Phase 7** of the deployment workflow.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Input Schema] | Parameter | Type | Required | Default | Description |\n|-----------|------|----------|---------|-------------|\n| model_id | String | Yes | - | HuggingFace model ID |\n| docker_image | String | No | rocm/vllm-dev:nightly | vLLM Docker image |\n| tensor_parallel_size | Integer | No | 1 | Number of GPUs |\n| port | Integer | No | 9999 | API server port |\n| hf_home | String | No | `${HF_HOME}` or `/root/.cache/huggingface/hub` | Model cache directory |\n| hf_token | Secret | Conditional | `${HF_TOKEN}` | HuggingFace token (optional for public models, required for gated models) |\n| max_model_len | Integer | No | Auto-detect | Maximum sequence length |\n| gpu_memory_utilization | Float | No | 0.85 | GPU memory utilization |\n| auto_install | Boolean | No | true | Auto-install dependencies |\n| log_level | String | No | INFO | Logging verbosity |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Structure] **All deployment artifacts MUST be saved to:**\n```\n$HOME/vllm-compose/<model-id-slash-to-dash>/\n```\n\nConvert model ID to directory name by replacing `/` with `-`:\n- `openai/gpt-oss-20b` → `$HOME/vllm-compose/openai-gpt-oss-20b/`\n- `Qwen/Qwen3-Coder-Next-FP8` → `$HOME/vllm-compose/Qwen-Qwen3-Coder-Next-FP8/`\n\n**Per-model directory structure:**\n```\n$HOME/vllm-compose/<model-id>/\n├── deployment.log          # Full deployment logs (stdout + stderr)\n├── test-results.json       # Functional test results (JSON format)\n├── docker-compose.yml      # Generated Docker Compose file\n├── .env                    # HF_TOKEN environment (chmod 600, optional)\n└── DEPLOYMENT_REPORT.md    # Human-readable deployment summary\n```\n\n**File requirements:**\n- `deployment.log` — Capture ALL container logs during deployment\n- `test-results.json` — Save API response from functional test request\n- `DEPLOYMENT_REPORT.md` — Generated in Phase 7\n- All three files MUST exist before marking deployment as complete"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Execution Workflow] ### Phase 0: Environment Check & Auto-Repair\n\n**Step 0.1: Load Environment Variables**\n\n```bash\n# Source ~/.bash_profile to load HF_HOME and HF_TOKEN\nsource ~/.bash_profile\n\n# If HF_HOME is not defined, it defaults to /root/.cache/huggingface/hub\n```\n\nIf HF_HOME is not defined in ~/.bash_profile, it defaults to `/root/.cache/huggingface/hub`.\n\n**Step 0.2: Create Output Directory**\n- Create: `$HOME/vllm-compose/<model-id>/`\n\n**Step 0.3: Initialize Logging**\n- All output → `$HOME/vllm-compose/<model-id>/deployment.log`\n\n**Step 0.4: System Checks**\n- Detect OS and package manager\n- Check Python, pip, huggingface_hub\n- Check Docker, docker compose\n- Check ROCm tools (rocm-smi/amd-smi)\n- Check GPU access (/dev/kfd, /dev/dri)\n- Check disk space (20GB minimum)\n\n### Phase 1: Model Download\n\n**Use HF_HOME from Phase 0 (environment variable or default):**\n\n```bash\n# Download model to HF_HOME\nhuggingface-cli download <model_id> --local-dir \"$HF_HOME/hub/models--<org>--<model>\"\n\n# Or use snapshot_download via Python:\npython -c \"from huggingface_hub import snapshot_download; snapshot_download(repo_id='<model_id>', cache_dir='$HF_HOME')\"\n```\n\n**Authentication Handling:**\n\n| Scenario | Behavior |\n|----------|----------|\n| Public model + no token | ✅ Download succeeds |\n| Public model + token provided | ✅ Download succeeds |\n| Gated model + no token | ❌ Download fails with \"authentication required\" error |\n| Gated model + invalid token | ❌ Download fails with \"invalid token\" error |\n| Gated model + valid token | ✅ Download succeeds |\n\n**On Authentication Failure:**\n```bash\necho \"ERROR: Model download failed - authentication required\"\necho \"This model requires a valid HF_TOKEN.\"\necho \"\"\necho \"Please add to ~/.bash_profile:\"\necho \"  export HF_TOKEN=\\\"hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\"\"\necho \"Then run: source ~/.bash_profile\"\nexit 1\n```\n\n- Locate model path in HF cache: `$HF_HOME/hub/models--<org>--<model-name>/`\n- Log download progress to `deployment.log`\n\n### Phase 2: Model Paramet"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Security Best Practices] 1. **Never commit tokens to version control** — Add `.env` to `.gitignore`\n2. **Use .env files with chmod 600** — Restrict access to owner only\n3. **Mask tokens in logs** — Show only first 10 chars: `${TOKEN:0:10}...`\n4. **Pass tokens at runtime** — `HF_TOKEN=$HF_TOKEN docker compose up -d`\n5. **Store tokens in ~/.bash_profile** — For production environments, set `HF_TOKEN` in user's shell config\n6. **Set token for gated models** — HF_TOKEN is validated at download time; set in ~/.bash_profile for production"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Environment Variables\n\n| Issue | Solution |\n|-------|----------|\n| `HF_TOKEN not set` | Add `export HF_TOKEN=\"hf_xxx\"` to `~/.bash_profile`, then `source ~/.bash_profile`. Or provide via parameter. |\n| `HF_HOME not set` | defaults to `/root/.cache/huggingface/hub`. For production, add `export HF_HOME=\"/path\"` to `~/.bash_profile`. |\n| `~/.bash_profile not found` | Create `~/.bash_profile` and add environment variables. |\n| `Changes not taking effect` | Run `source ~/.bash_profile` or restart terminal. |\n| `HF_TOKEN provided but download still fails` | Token may be invalid or lack access to the model. Verify token at https://huggingface.co/settings/tokens |\n\n### Model Download\n\n| Issue | Solution |\n|-------|----------|\n| `Authentication required` (gated model) | Set `HF_TOKEN` in `~/.bash_profile` or provide via parameter. Ensure token has access to the model. |\n| `Model not found` | Verify model ID is correct (case-sensitive). Check model exists on HuggingFace. |\n| `Download timeout` | Check network connection. Large models may take time. |\n\n### Deployment\n\n| Issue | Solution |\n|-------|----------|\n| hf CLI not found | `pip install huggingface_hub` |\n| Docker Compose fails | Use `docker compose` (no hyphen) |\n| GPU access fails | Add user to `render` group: `sudo usermod -aG render $USER` |\n| Port in use | Change `port` parameter |\n| OOM | Reduce `gpu_memory_utilization` |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Cleanup] ```bash\ncd $HOME/vllm-compose/<model-id>\ndocker compose down\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Status Check] **Check deployment status and logs:**\n\n```bash\n# View deployment directory\nls -la $HOME/vllm-compose/<model-id>/\n\n# View live logs\ntail -f $HOME/vllm-compose/<model-id>/deployment.log\n\n# View test results\ncat $HOME/vllm-compose/<model-id>/test-results.json\n\n# Check container status\ndocker ps | grep <model-id>\n\n# Verify environment variables\necho \"HF_TOKEN: ${HF_TOKEN:0:10}...\"\necho \"HF_HOME: $HF_HOME\"\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Quick Start (Production)] **Step 1: Add environment variables to ~/.bash_profile**\n\n```bash\n# Required: HuggingFace token\nexport HF_TOKEN=\"hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n\n# Recommended: Custom model storage path (production)\nexport HF_HOME=\"/data/models/huggingface\"\n\n# Apply changes\nsource ~/.bash_profile\n```\n\n**Step 2: Verify environment is ready**\n\n```bash\n# Source ~/.bash_profile to load variables\nsource ~/.bash_profile\n\n# Expected output:\n# === Environment Ready ===\n# Summary:\n#   HF_TOKEN: hf_xxxxxx...\n#   HF_HOME:  /data/models/huggingface\n```\n\n**Step 3: Run deployment**\n\n```bash\n# The skill will automatically:\n# 1. Source ~/.bash_profile to load HF_HOME and HF_TOKEN\n# 2. Use HF_TOKEN and HF_HOME from environment (or ~/.bash_profile, or defaults)\n# 3. Proceed without token for public models\n# 4. Fail at download time with clear error if gated model requires token\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Version History] | Version | Changes |\n|---------|---------|\n| 1.0.0 | Initial release |"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "rocm_vllm_deployment"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexhegit/rocm-vllm-deployment/SKILL.md"
+}

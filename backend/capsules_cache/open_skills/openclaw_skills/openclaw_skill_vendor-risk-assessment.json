@@ -1,0 +1,109 @@
+{
+  "id": "openclaw_skill_vendor-risk-assessment",
+  "description": "Assess third-party vendor risk for AI and SaaS products. Evaluates security posture, data handling, compliance, financial stability, and operational resilience. Use when onboarding new vendors, conducting annual reviews, or building a vendor management program. Generates a scored risk report with mitigation recommendations. Built by AfrexAI.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Vendor Risk Assessment\n\nEvaluate any AI/SaaS vendor across 6 risk dimensions. Outputs a scored report with go/no-go recommendation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Onboarding a new SaaS or AI vendor\n- Annual vendor review cycle\n- Evaluating build-vs-buy decisions\n- Due diligence for partnerships or acquisitions\n- Compliance requirements (SOC2, ISO 27001, GDPR)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to Use] The user provides vendor details (name, product, website, any available documentation).\nThe agent researches and scores the vendor across 6 dimensions.\n\n### Input Format\n```\nVendor: [Company Name]\nProduct: [Product/Service Name]\nWebsite: [URL]\nUse Case: [What you'd use it for]\nData Sensitivity: [low/medium/high/critical]\nAdditional Context: [Any docs, certifications, or concerns]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Assessment Framework] ### 6 Risk Dimensions (each scored 1-10)\n\n#### 1. Security Posture\n- SOC2 Type II certification?\n- Penetration testing cadence\n- Encryption (at rest + in transit)\n- Access controls and authentication\n- Incident response plan\n- Bug bounty program\n\n#### 2. Data Handling & Privacy\n- Data residency and sovereignty\n- Data retention and deletion policies\n- Sub-processor transparency\n- GDPR/CCPA compliance\n- Data portability (can you get your data out?)\n- AI training opt-out policies\n\n#### 3. Compliance & Certifications\n- SOC2, ISO 27001, HIPAA, FedRAMP\n- Industry-specific (PCI-DSS, HITRUST, etc.)\n- AI-specific (EU AI Act readiness, NIST AI RMF)\n- Audit frequency and transparency\n- Regulatory track record\n\n#### 4. Financial Stability\n- Funding stage and runway\n- Revenue indicators (public or estimated)\n- Customer concentration risk\n- Acquisition risk\n- Pricing stability history\n\n#### 5. Operational Resilience\n- Uptime SLA and historical performance\n- Disaster recovery plan\n- Multi-region availability\n- Dependency on single cloud provider\n- Support responsiveness and escalation paths\n- Change management process\n\n#### 6. Contractual Terms\n- Termination and exit clauses\n- Liability caps and indemnification\n- IP ownership clarity\n- Auto-renewal traps\n- Price increase limitations\n- SLA breach remedies"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] ```markdown\n# Vendor Risk Assessment: [Vendor Name]\n**Date:** YYYY-MM-DD\n**Assessor:** AI Agent (AfrexAI)\n**Data Sensitivity Level:** [low/medium/high/critical]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Dimension Scores] | Dimension | Score | Risk Level | Key Finding |\n|-----------|-------|------------|-------------|\n| Security Posture | X/10 | LOW/MED/HIGH | ... |\n| Data Handling | X/10 | LOW/MED/HIGH | ... |\n| Compliance | X/10 | LOW/MED/HIGH | ... |\n| Financial Stability | X/10 | LOW/MED/HIGH | ... |\n| Operational Resilience | X/10 | LOW/MED/HIGH | ... |\n| Contractual Terms | X/10 | LOW/MED/HIGH | ... |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Critical Findings] - [Finding 1]\n- [Finding 2]"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Mitigation Requirements (if Approve with Conditions)] 1. [Requirement 1 — deadline]\n2. [Requirement 2 — deadline]"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Research Sources] - [Source 1]\n- [Source 2]\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Scoring Guide] - **9-10:** Excellent — minimal risk, enterprise-grade\n- **7-8:** Good — acceptable for most use cases\n- **5-6:** Moderate — proceed with caution, mitigations needed\n- **3-4:** Poor — significant concerns, conditional approval only\n- **1-2:** Critical — recommend rejection or major remediation"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Overall Risk Calculation] - Average of 6 dimensions, weighted by data sensitivity:\n  - Low sensitivity: equal weights\n  - Medium: Security 2x, Data 2x\n  - High: Security 3x, Data 3x, Compliance 2x\n  - Critical: Security 4x, Data 4x, Compliance 3x, Financial 2x"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Research Process] 1. Check vendor website for security/compliance pages\n2. Search for SOC2/ISO certifications and trust pages\n3. Check status pages for uptime history\n4. Search for breach history or security incidents\n5. Review pricing page for contract terms indicators\n6. Check Crunchbase/LinkedIn for financial stability signals\n7. Search for customer reviews mentioning reliability/support"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Pro Tips] - Request the vendor's SOC2 Type II report directly — if they hesitate, that's a signal\n- Check their status page history (statuspage.io, etc.) for real uptime data\n- For AI vendors specifically: ask about model training on your data, output ownership, and hallucination liability\n- Compare their security page to competitors — vague = red flag\n\n---\n\n*Need help managing vendor risk across your entire stack? AfrexAI builds autonomous AI agents that monitor vendors continuously — not just at onboarding. Visit [afrexai.com](https://afrexai.com) or book a call: [calendly.com/cbeckford-afrexai/30min](https://calendly.com/cbeckford-afrexai/30min)*"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "vendor_risk_assessment"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "version": "1.0.0",
+      "author": "AfrexAI",
+      "tags": [
+        "vendor-risk",
+        "security",
+        "compliance",
+        "procurement",
+        "enterprise"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/vendor-risk-assessment/SKILL.md"
+}

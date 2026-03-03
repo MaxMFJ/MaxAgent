@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_Model Intel",
+  "description": "Live LLM model intelligence and pricing from OpenRouter",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Model Intel 🧠\n\nLive LLM model intelligence from OpenRouter. Compare pricing, search models, find the best model for any task (code, reasoning, creative, fast, cheap, vision, long-context). Real-time data, not stale training knowledge."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ```bash\n# List top models by provider\npython3 scripts/model_intel.py list\n\n# Search by name\npython3 scripts/model_intel.py search \"claude\"\n\n# Side-by-side comparison\npython3 scripts/model_intel.py compare \"claude-opus\" \"gpt-4o\"\n\n# Best model for a use case\npython3 scripts/model_intel.py best fast\npython3 scripts/model_intel.py best code\npython3 scripts/model_intel.py best reasoning\npython3 scripts/model_intel.py best cheap\npython3 scripts/model_intel.py best vision\n\n# Pricing details\npython3 scripts/model_intel.py price \"gemini-flash\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] - `OPENROUTER_API_KEY` environment variable\n- Python 3.10+\n- `requests` package"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Credits] Built by **AgxntSix** — AI ops agent by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi)\n🌐 [agxntsix.ai](https://www.agxntsix.ai) | Part of the **AgxntSix Skill Suite** for OpenClaw agents"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Model Intel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/agxntsix-model-intel/SKILL.md"
+}

@@ -1,0 +1,114 @@
+{
+  "id": "openclaw_skill_marila-skill-publish",
+  "description": "马锐拉的 ClawHub 技能发布流程与经验总结。包含完整的技能发布步骤、元数据规范、常见问题解决方案。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawHub 技能发布流程\n\n本文档总结了从 0 到发布一个 ClawHub 技能的完整流程和经验。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[📋 前置要求] - Node.js >= 18\n- `clawhub` CLI (`npm install -g clawhub`)\n- Git\n- ClawHub 账号（已登录）"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🚀 完整流程] ### 1. 准备技能文件夹\n\n```bash\n# 创建技能目录\nmkdir -p ~/my-skill\ncd ~/my-skill\n\n# 初始化 Git\ngit init\n```\n\n### 2. 创建必需文件\n\n#### SKILL.md（必需）\n\n```markdown\n---\nname: my-skill\ndescription: 简短描述技能功能\nversion: 1.0.0\nmetadata:\n  openclaw:\n    requires:\n      env:\n        - MY_API_KEY\n      bins:\n        - curl\n    primaryEnv: MY_API_KEY\n    homepage: https://github.com/username/my-skill\n---\n\n# 技能说明文档"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[功能描述] ..."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[使用方法] ...\n```\n\n**⚠️ 关键：元数据必须准确声明**\n\nClawHub 安全分析会检查声明与实际代码是否一致：\n- `requires.env` - 代码中引用的所有环境变量\n- `requires.bins` - 代码中调用的所有 CLI 工具\n- `primaryEnv` - 主要凭证变量名\n\n#### package.json\n\n```json\n{\n  \"name\": \"my-skill\",\n  \"version\": \"1.0.0\",\n  \"description\": \"技能描述\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"https://github.com/username/my-skill.git\"\n  },\n  \"clawhub\": {\n    \"requiresBinaries\": [\"curl\"],\n    \"credentials\": [\n      {\n        \"name\": \"MY_API_KEY\",\n        \"description\": \"API 密钥说明\",\n        \"docs\": \"https://example.com/docs\"\n      }\n    ]\n  }\n}\n```\n\n#### README.md\n\n```markdown\n# my-skill\n\n简短介绍。"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[安装] ```bash\nclawhub install my-skill\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[配置] 1. 获取凭证...\n2. 配置环境变量..."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[使用] ...\n```\n\n#### CHANGELOG.md\n\n```markdown\n# Changelog"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[[1.0.0] - 2026-02-27] ### 新增\n- 初始版本\n```\n\n### 3. 推送到 GitHub\n\n```bash\ngit add -A\ngit commit -m \"Initial commit\"\ngit remote add origin https://github.com/username/my-skill.git\ngit push -u origin main\n```\n\n### 4. 发布到 ClawHub\n\n```bash\n# 方式一：直接发布\nclawhub publish . --slug my-skill --name \"My Skill\" --version 1.0.0 --changelog \"初始版本\"\n\n# 方式二：使用 sync（推荐）\nclawhub sync\n```\n\n### 5. 验证发布\n\n```bash\n# 检查技能信息\nclawhub inspect my-skill\n\n# 查看网页\nopen https://clawhub.ai/username/my-skill\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[⚠️ 常见问题与解决方案] ### 问题 1: `fetch failed` 错误\n\n**症状：**\n```\n✖ fetch failed\nError: fetch failed\n```\n\n**原因：** SSL 证书验证失败或网络问题\n\n**解决：**\n```bash\n# 临时方案\nexport NODE_TLS_REJECT_UNAUTHORIZED=0\n\n# 或检查网络连接\ncurl -I https://clawhub.ai\n```\n\n### 问题 2: `SKILL.md required` 错误\n\n**症状：**\n```\nError: SKILL.md required\n```\n\n**原因：**\n- 文件不存在\n- 文件名大小写错误（必须是 `SKILL.md` 或 `skill.md`）\n- 当前目录错误\n\n**解决：**\n```bash\nls -la SKILL.md\npwd\nclawhub publish /absolute/path/to/skill --slug my-skill ...\n```\n\n### 问题 3: 发布超时（Timeout）\n\n**症状：**\n```\n✖ Timeout\nError: Timeout\n```\n\n**原因：** 服务器响应慢或网络问题\n\n**解决：**\n```bash\n# 检查服务器状态\ncurl -I https://clawhub.ai\n\n# 重试发布\nclawhub publish . --slug my-skill ...\n\n# 或使用 sync\nclawhub sync\n```\n\n### 问题 4: 元数据不一致（审核失败）\n\n**症状：** 审核反馈 \"metadata mismatch\"\n\n**原因：** SKILL.md frontmatter 声明与实际代码不符\n\n**解决：** 确保 frontmatter 准确声明：\n\n```yaml\n---\nname: my-skill\nversion: 1.0.0\nmetadata:\n  openclaw:\n    requires:\n      env:\n        - ACTUAL_ENV_VAR_USED_IN_CODE\n      bins:\n        - actual_binary_used_in_code\n    primaryEnv: ACTUAL_ENV_VAR_USED_IN_CODE\n    homepage: https://github.com/username/repo\n---\n```\n\n### 问题 5: 登录失败\n\n**症状：**\n```\n- Verifying token\n✖ fetch failed\n```\n\n**解决：**\n```bash\n# 检查 token 文件\ncat ~/.clawhub/config.json\n\n# 重新登录\nclawhub login\n\n# 或手动设置 token\nclawhub auth login\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[📝 版本更新流程] ```bash\n# 1. 更新版本号\n# 修改 SKILL.md frontmatter 中的 version\n# 修改 package.json 中的 version\n\n# 2. 更新 CHANGELOG.md\n# 在顶部添加新版本记录\n\n# 3. 提交并推送\ngit add -A\ngit commit -m \"chore: bump version to 1.0.1\"\ngit push\n\n# 4. 发布新版本\nclawhub publish . --slug my-skill --version 1.0.1 --changelog \"修复 xxx\"\n\n# 或使用 sync\nclawhub sync\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[🔐 安全注意事项] 1. **凭证安全**\n   - 不要在代码中硬编码密钥\n   - 使用环境变量或 `mcporter config` 存储\n   - 在 `.gitignore` 中排除敏感文件\n\n2. **脚本审查**\n   - 如果包含脚本文件，建议在文档中说明需要审查\n   - 建议用户先在测试环境验证\n\n3. **元数据准确性**\n   - 准确声明所有依赖的环境变量和二进制文件\n   - 这有助于安全分析和用户理解"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[📚 参考资源] - ClawHub 文档：https://clawhub.ai/docs\n- 技能格式规范：https://github.com/openclaw/clawhub/blob/main/docs/skill-format.md\n- 安全规范：https://github.com/openclaw/clawhub/blob/main/docs/security.md\n- ClawHub 技能市场：https://clawhub.ai/skills"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[💡 最佳实践] 1. **小步迭代** - 每次发布只做一个主要改动\n2. **详细 Changelog** - 清晰记录每个版本的变更\n3. **测试先行** - 在发布前充分测试技能功能\n4. **文档完善** - 好的文档减少用户问题\n5. **语义化版本** - 遵循 semver (major.minor.patch)\n\n---\n\n*最后更新：2026-02-27*\n*作者：马锐拉 (@aliramw)*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "marila_skill_publish"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "clawhub",
+            "git"
+          ]
+        },
+        "homepage": "https://github.com/aliramw/dingtalk-ai-table"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aliramw/marila-skill-publish/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_prometheus",
+  "description": "Query Prometheus monitoring data to check server metrics, resource usage, and system health. Use when the user asks about server status, disk space, CPU/memory usage, network stats, or any metrics collected by Prometheus. Supports HTTP Basic Auth via environment variables.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Prometheus Skill\n\nQuery Prometheus monitoring data to get insights about your infrastructure."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Environment Variables] Set in `.env` file:\n- `PROMETHEUS_URL` - Prometheus server URL (e.g., `http://localhost:9090`)\n- `PROMETHEUS_USER` - HTTP Basic Auth username (optional)\n- `PROMETHEUS_PASSWORD` - HTTP Basic Auth password (optional)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Query Metrics\n\nUse the CLI to run PromQL queries:\n\n```bash\nsource .env && node scripts/cli.js query '<promql_query>'\n```\n\n### Common Examples\n\n**Disk space usage:**\n```bash\nnode scripts/cli.js query '100 - (node_filesystem_avail_bytes / node_filesystem_size_bytes * 100)'\n```\n\n**CPU usage:**\n```bash\nnode scripts/cli.js query '100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)'\n```\n\n**Memory usage:**\n```bash\nnode scripts/cli.js query '(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100'\n```\n\n**Load average:**\n```bash\nnode scripts/cli.js query 'node_load1'\n```\n\n### List Metrics\n\nFind available metrics matching a pattern:\n\n```bash\nnode scripts/cli.js metrics 'node_memory_*'\n```\n\n### Series Discovery\n\nFind time series by label selectors:\n\n```bash\nnode scripts/cli.js series '{__name__=~\"node_cpu_.*\", instance=~\".*:9100\"}'\n```\n\n### Get Labels\n\nList label names:\n\n```bash\nnode scripts/cli.js labels\n```\n\nList values for a specific label:\n\n```bash\nnode scripts/cli.js label-values instance\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON for easy parsing. Use `jq` for pretty printing:\n\n```bash\nnode scripts/cli.js query 'up' | jq .\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Queries Reference] | Metric | PromQL Query |\n|--------|--------------|\n| Disk free % | `node_filesystem_avail_bytes / node_filesystem_size_bytes * 100` |\n| Disk used % | `100 - (node_filesystem_avail_bytes / node_filesystem_size_bytes * 100)` |\n| CPU idle % | `avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100` |\n| Memory used % | `(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100` |\n| Network RX | `rate(node_network_receive_bytes_total[5m])` |\n| Network TX | `rate(node_network_transmit_bytes_total[5m])` |\n| Uptime | `node_time_seconds - node_boot_time_seconds` |\n| Service up | `up` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes] - Time range defaults to last 1 hour for instant queries\n- Use range queries `[5m]` for rate calculations\n- All queries return JSON with `data.result` containing the results\n- Instance labels typically show `host:port` format"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "prometheus"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akellacom/prometheus/SKILL.md"
+}

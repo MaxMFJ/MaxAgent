@@ -1,0 +1,151 @@
+{
+  "id": "openclaw_skill_Vibe Coding Mastery",
+  "description": "The complete operating system for building software with AI. From first prompt to production deployment — prompting frameworks, architecture patterns, testing strategies, debugging playbooks, and production graduation checklists. Works with Claude Code, Cursor, Windsurf, Copilot, and any AI coding tool.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Vibe Coding Mastery\n\nThe complete system for building software with AI — from zero to production. Not tips. Not theory. A full operating methodology.\n\n**What is vibe coding?** Programming where you describe what you want and let AI generate code. You evaluate by results, not by reading every line. Coined by Andrej Karpathy (Feb 2025).\n\n**Key distinction (Simon Willison):** If you review, test, and explain the code — that's AI-assisted software development. Vibe coding means accepting AI output without fully understanding every function. This skill covers both modes and the spectrum between them.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Phase 1: When to Vibe (Decision Matrix)] Before starting, classify your project:\n\n| Factor | Vibe ✅ | Don't Vibe ❌ |\n|--------|---------|---------------|\n| **Stakes** | Low (prototype, internal, learning) | High (payments, auth, compliance) |\n| **Timeline** | Hours to days | Months+ |\n| **Team size** | Solo or pair | Large team with standards |\n| **Domain knowledge** | You understand the domain | Unfamiliar territory |\n| **Reversibility** | Easy to rewrite | Hard to change later |\n| **Data sensitivity** | Public/test data | PII, financial, health |\n\n**Scoring:** Count ✅ checks.\n- 5-6: Full vibe mode. Ship fast.\n- 3-4: Vibe with guardrails. Review critical paths.\n- 1-2: AI-assisted development, not vibe coding. Review everything.\n- 0: Write it yourself or hire someone who understands the domain.\n\n### Vibe Coding Maturity Levels\n\n| Level | Description | Who |\n|-------|-------------|-----|\n| **L1 — Passenger** | Copy-paste AI output, hope it works | Beginners |\n| **L2 — Navigator** | Guide AI with context, catch obvious errors | Intermediate |\n| **L3 — Pilot** | Architecture decisions, AI implements, you review | Experienced devs |\n| **L4 — Conductor** | Orchestrate multiple AI sessions, parallel streams | Power users |\n\n**Target: L3 minimum for anything going to production.**\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Phase 2: Tool Selection] ### Primary Tools Matrix\n\n| Tool | Best For | Context Window | Multi-file | Terminal | Cost |\n|------|----------|---------------|------------|----------|------|\n| **Claude Code** | Full-stack, complex refactors, CLI | 200K | Excellent | Native | API usage |\n| **Cursor** | Editor-integrated, rapid iteration | 128K | Good | Via terminal | $20/mo + API |\n| **Windsurf** | Beginner-friendly, guided flows | 128K | Good | Limited | $10/mo + API |\n| **GitHub Copilot** | Inline completions, small edits | 8-32K | Limited | No | $10-19/mo |\n| **Aider** | Git-aware, open source, CLI | Varies | Good | Native | API only |\n| **Cline (VS Code)** | VS Code native, plan mode | Varies | Good | Via terminal | API only |\n\n### Multi-Tool Strategy\n\nUse tools in combination:\n1. **Architecture & planning** → Claude Code or Claude chat (largest context, best reasoning)\n2. **Implementation** → Cursor or Claude Code (fast iteration, multi-file edits)\n3. **Quick fixes & completions** → Copilot (inline, zero friction)\n4. **Code review** → Claude chat (paste diffs, get thorough review)\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Phase 3: Rules Files (Your Persistent Context)] Rules files teach AI your conventions once. Without them, every session starts from zero.\n\n### Universal Rules File Template\n\n```markdown\n# Project Rules"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Stack] - Language: [TypeScript/Python/Go/etc.]\n- Framework: [Next.js/FastAPI/etc.]\n- Database: [PostgreSQL/SQLite/etc.]\n- Styling: [Tailwind/CSS Modules/etc.]\n- Package manager: [pnpm/npm/poetry/etc.]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Code Style] - Max function length: 50 lines\n- Max file length: 300 lines\n- One export per file (prefer)\n- Use [const/let, never var] / [type hints always]\n- Error handling: [explicit try/catch, never swallow errors]\n- Naming: [camelCase functions, PascalCase components, UPPER_SNAKE constants]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Architecture] - File structure: [describe or reference]\n- API pattern: [REST/tRPC/GraphQL]\n- State management: [Zustand/Redux/signals/etc.]\n- Auth pattern: [JWT/session/OAuth provider]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Testing] - Framework: [Vitest/Jest/Pytest/etc.]\n- Minimum coverage: [80%/90%/etc.]\n- Test file location: [co-located/__tests__/tests/]\n- Run before committing: [command]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Do NOT] - Do not use `any` type in TypeScript\n- Do not install new dependencies without asking\n- Do not modify database schema without migration\n- Do not hardcode secrets, URLs, or config values\n- Do not remove existing tests"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[When Unsure] - Ask before making architectural decisions\n- Show the plan before implementing changes >100 lines\n- Flag security-adjacent code for manual review\n```\n\n### Where to Put It\n\n| Tool | File | Notes |\n|------|------|-------|\n| Claude Code | `CLAUDE.md` in repo root | Also reads .claude/ directory |\n| Cursor | `.cursor/rules/*.mdc` | Supports conditional rules with globs |\n| Windsurf | `.windsurfrules` in repo root | Single file |\n| Aider | `.aider.conf.yml` + conventions in chat | YAML config + initial prompt |\n| Generic | `AGENTS.md` or `CONVENTIONS.md` | Any tool can be told to read it |\n\n### Cursor Conditional Rules (.mdc)\n\n```markdown\n---\ndescription: React component standards\nglobs: src/components/**/*.tsx\nalwaysApply: false\n---\n\n# Component Rules\n- Functional components only (no class components)\n- Props interface above component, named [Component]Props\n- Use forwardRef for components that accept ref\n- Co-locate styles in [component].module.css\n- Co-locate tests in [component].test.tsx\n- Export component as named export, not default\n```\n\n### Rules File Quality Checklist\n\n- [ ] Stack and versions specified\n- [ ] File/function size limits defined\n- [ ] Naming conventions documented\n- [ ] \"Do NOT\" section with common AI mistakes\n- [ ] Testing expectations clear\n- [ ] Architecture patterns described or referenced\n- [ ] Security-sensitive areas flagged\n- [ ] Dependencies policy stated\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Phase 4: Prompt Engineering for Code] ### The 5-Level Prompt Quality Hierarchy\n\n**Level 1 — Wish (bad)**\n> \"Build a todo app\"\n\n**Level 2 — Request (okay)**\n> \"Build a todo app with React and Tailwind\"\n\n**Level 3 — Specification (good)**\n> \"Build a todo app: React 18, TypeScript, Tailwind. Features: add/edit/delete/toggle todos. Store in localStorage. Responsive. Under 200 lines total.\"\n\n**Level 4 — Brief (great)**\n> \"Build a todo app. Here's the spec:\n> - Stack: React 18 + TS + Tailwind + Vite\n> - Features: CRUD todos, toggle complete, filter (all/active/done), persist to localStorage\n> - Constraints: Single component file, under 200 lines, no external deps beyond stack\n> - Done when: All features work, page refresh preserves state, mobile responsive\n> - Start with the data types, then build up.\"\n\n**Level 5 — Contract (production-grade)**\n```yaml\ntask: Todo application\nstack:\n  runtime: React 18 + TypeScript strict\n  styling: Tailwind CSS 3.x\n  build: Vite 5\n  test: Vitest + Testing Library\nfeatures:\n  - CRUD operations on todos\n  - Toggle completion status\n  - Filter: all | active | completed\n  - Bulk actions: complete all, clear completed\n  - Persist to localStorage with versioned schema\nconstraints:\n  - Max 3 component files\n  - Max 200 lines per file\n  - No external state management library\n  - Keyboard accessible (tab, enter, escape)\n  - Mobile responsive (min 320px)\nacceptance:\n  - All features functional\n  - Page refresh preserves state\n  - 90%+ test coverage\n  - No TypeScript errors (strict mode)\n  - Lighthouse accessibility score > 90\napproach: Start with types/interfaces, then hooks, then components, then tests.\n```\n\n### 12 Proven Prompt Patterns\n\n1. **Scaffolding**: \"Create the project structure with empty files and type definitions. Don't implement yet.\"\n2. **Incremental**: \"Implement only [specific function]. Don't touch other files.\"\n3. **Explain-then-build**: \"Explain how you'd architect this, then implement after I approve.\"\n4. **Test-first**: \"Write the tests first based on these requir"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Phase 5: The RPIV Workflow] **Research → Plan → Implement → Validate**\n\n### Step 1: Research\n> \"Read [files/docs/codebase]. Explain how [feature/module] works. Don't modify anything.\"\n\nPurpose: Load context. Catch misunderstandings before they cascade. AI explains back to you — if the explanation is wrong, the implementation will be wrong too.\n\n### Step 2: Plan\n> \"Based on your understanding, write a plan:\n> 1. Which files you'll create/modify\n> 2. What changes in each file\n> 3. What order you'll implement\n> 4. What could go wrong\"\n\nPurpose: Review the approach before committing to it. 10x cheaper to fix a plan than debug cascading implementation errors.\n\n**Plan Review Checklist:**\n- [ ] Does it touch files it shouldn't?\n- [ ] Is the change order logical (types → utils → components → tests)?\n- [ ] Are there missing files or steps?\n- [ ] Does it respect existing patterns?\n- [ ] Did it flag risks/unknowns?\n\n### Step 3: Implement\n> \"Proceed with the plan. Implement step by step. Stop after each file for me to verify.\"\n\n**The 200-Line Rule:** If any single implementation step is >200 lines of changes, break it down further. Large changes = large bugs.\n\n**Checkpoint System:**\n- After each file: quick scan for obvious issues\n- After each feature: run tests\n- After each milestone: manual test + commit\n\n### Step 4: Validate\n> \"Run the tests. Show me the output. If anything fails, explain why and fix it.\"\n\nThen manually verify:\n- [ ] Feature works as specified\n- [ ] Edge cases handled (empty state, max length, special chars)\n- [ ] No console errors\n- [ ] Mobile responsive (if UI)\n- [ ] Existing features still work (regression check)\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Phase 6: Architecture for Vibe Coding] AI generates better code when your architecture is clear and consistent.\n\n### Recommended Project Structure\n\n```\nproject/\n├── CLAUDE.md (or .cursorrules)     # AI rules\n├── README.md                        # What this is\n├── src/\n│   ├── types/                       # Shared types (AI reads these first)\n│   │   ├── index.ts\n│   │   └── [domain].ts\n│   ├── lib/                         # Pure utilities (no side effects)\n│   │   ├── [utility].ts\n│   │   └── [utility].test.ts\n│   ├── services/                    # External integrations (DB, API, etc.)\n│   │   ├── [service].ts\n│   │   └── [service].test.ts\n│   ├── components/ (or routes/)     # UI or route handlers\n│   │   ├── [Component]/\n│   │   │   ├── index.tsx\n│   │   │   ├── [Component].test.tsx\n│   │   │   └── [Component].module.css\n│   └── app/                         # App entry, layout, config\n├── tests/                           # Integration/E2E tests\n├── scripts/                         # Build/deploy/utility scripts\n└── docs/                            # Architecture decisions, API docs\n```\n\n### Vibe-Friendly Patterns\n\n1. **Types first.** Define your data shapes before anything else. AI uses these as contracts.\n2. **Small files.** 300 lines max. AI handles small files better — fewer hallucinations, cleaner diffs.\n3. **Explicit imports.** No barrel exports (index.ts re-exports). AI gets confused by indirect imports.\n4. **Co-located tests.** `thing.ts` + `thing.test.ts` side by side. AI writes tests when they're right there.\n5. **Config in one place.** Environment, feature flags, constants — one file AI can reference.\n6. **Database schema as code.** Drizzle/Prisma schema file = single source of truth AI can read.\n\n### Schema-First Design\n\n```typescript\n// src/types/todo.ts — AI reads this and understands your domain\nexport interface Todo {\n  id: string;          // UUID v4\n  title: string;       // 1-200 chars, trimmed\n  completed: boolean;  // default false\n  createdAt: Date;\n  updatedAt: Date;\n}\n\nexport int"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Phase 7: Testing in Vibe Mode] ### The Vibe Testing Pyramid\n\n```\n         /  E2E  \\        ← 10% (critical user flows only)\n        / Integration \\    ← 30% (API endpoints, DB queries)\n       /    Unit Tests  \\  ← 60% (pure functions, utils, logic)\n```\n\n### Test-First Vibe Pattern\n\n```\nPrompt: \"Write tests for a function that validates email addresses.\nRequirements:\n- Returns true for valid emails\n- Returns false for empty string, missing @, missing domain\n- Handles edge cases: plus addressing, subdomains, international domains\nWrite ONLY the tests. I'll implement after.\"\n```\n\nThen: \"Now implement the function to make all tests pass.\"\n\nThis pattern produces better code because AI has clear acceptance criteria.\n\n### What to Test (Minimum Viable Testing)\n\n| Category | Test? | Why |\n|----------|-------|-----|\n| Pure functions | Always | Easy, high value, catches logic bugs |\n| Data transformations | Always | Wrong transforms corrupt data silently |\n| API endpoints | Always | Contract verification |\n| UI components | Sometimes | Test behavior, not implementation |\n| Database queries | Sometimes | Test complex queries, skip simple CRUD |\n| Config/env loading | Rarely | Test once, trust after |\n| Third-party wrappers | Rarely | Test integration, not their code |\n\n### When AI Tests Are Wrong\n\nSigns of bad AI tests:\n- Tests that test the implementation, not the behavior\n- Tests that pass with any input (always return true)\n- Tests that mock everything (testing mocks, not code)\n- Snapshot tests for everything (brittle, meaningless)\n\nFix: \"These tests mock too much. Write tests that exercise real behavior. Only mock external services (DB, API calls). Use in-memory alternatives where possible.\"\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Phase 8: Debugging with AI] ### The Error Paste Pattern\n\n**What Karpathy does:** Copy error, paste with no comment, AI usually fixes it.\n\n**When it works:** Clear error messages, stack traces, type errors, syntax errors.\n\n**When it doesn't (and what to do instead):**\n\n| Situation | Better Prompt |\n|-----------|--------------|\n| Vague runtime error | \"When I [action], [behavior] happens. Expected [expected]. Here's the relevant code: [paste]\" |\n| Silent failure | \"This function returns [wrong result] for input [input]. Expected [expected]. Walk me through the logic step by step.\" |\n| Intermittent bug | \"This works sometimes but fails with [condition]. I think it's a [race condition/state issue/timing problem]. Here's the code:\" |\n| Build/config error | Paste full error + your config files. \"Don't guess — check the config values against the docs.\" |\n| AI broke something while fixing | \"Stop. Let's go back. The original issue was [X]. You introduced a new bug: [Y]. Let's fix the original issue without changing [Z].\" |\n\n### The 3-Strike Rule\n\nIf AI can't fix something in 3 attempts:\n1. **Stop.** Don't keep asking the same thing.\n2. **Reframe.** Describe the behavior you want, not the error.\n3. **Simplify.** Create a minimal reproduction case.\n4. **Start fresh.** New session, clean context.\n5. **Manual.** Sometimes you need to read the code yourself.\n\n### Recovery Playbooks\n\n**Spaghetti Code (AI made a mess)**\n```\n1. git stash (save current mess)\n2. git checkout [last good commit]\n3. Start a NEW AI session\n4. Paste only the requirements, not the broken code\n5. \"Implement this from scratch following these patterns: [your conventions]\"\n```\n\n**Recurring Bug (Fix breaks something else)**\n```\n1. Write a failing test for the bug\n2. Write regression tests for the things that keep breaking\n3. \"Make ALL these tests pass. Don't modify the tests.\"\n```\n\n**Dependency Hell**\n```\n1. Check `package.json` / `requirements.txt` — AI sometimes adds conflicting deps\n2. \"List all dependencies you added and why each is n"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Phase 9: Production Graduation Checklist] Before ANY vibe-coded project goes to production:\n\n### P0 — Security (Must fix)\n- [ ] No hardcoded secrets (grep for API keys, passwords, tokens)\n- [ ] Input validation on all user inputs (XSS, SQL injection, path traversal)\n- [ ] Authentication checks on protected routes\n- [ ] Authorization: users can only access their own data\n- [ ] HTTPS enforced\n- [ ] Dependencies: `npm audit` / `pip audit` — zero critical/high\n- [ ] Rate limiting on public endpoints\n- [ ] CORS configured (not `*` in production)\n- [ ] Error messages don't leak internals (no stack traces to users)\n\n### P1 — Performance (Should fix)\n- [ ] Database queries have indexes for common filters\n- [ ] No N+1 queries (check ORM query logs)\n- [ ] Images optimized (WebP, lazy load)\n- [ ] Bundle size reasonable (<200KB initial JS)\n- [ ] Loading states for async operations\n- [ ] Pagination for list endpoints (no unbounded queries)\n\n### P2 — Reliability (Should fix)\n- [ ] Error handling: try/catch on all async operations\n- [ ] Graceful degradation when services are down\n- [ ] Health check endpoint\n- [ ] Logging (structured, not console.log)\n- [ ] Environment config via env vars (not hardcoded)\n- [ ] Database migrations (not raw SQL)\n- [ ] Backup strategy for data\n\n### P3 — Quality (Nice to have)\n- [ ] Test coverage >80%\n- [ ] TypeScript strict mode / type hints everywhere\n- [ ] Linter configured and clean\n- [ ] README with setup instructions\n- [ ] CI pipeline runs tests on push\n\n**AI-Assisted Hardening Prompt:**\n> \"Review this codebase for production readiness. Check against this list: [paste checklist]. For each item, tell me: pass/fail/not applicable, and what to fix if fail. Be specific — file names and line numbers.\"\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Phase 10: Advanced Patterns] ### Parallel AI Sessions\n\nRun multiple AI sessions simultaneously:\n- **Session A**: Implementing backend API\n- **Session B**: Building frontend components\n- **Session C**: Writing tests\n\n**Rules for parallel sessions:**\n- Define interfaces/types FIRST (shared contract)\n- Each session gets its own rules file section\n- Merge via git (commit each session's work to a branch)\n- Integration test after merging\n\n### Pair Programming Patterns\n\n**Navigator-Driver (you navigate, AI drives)**\n> You: \"We need to add pagination. The API should accept page and limit query params. Return items, total count, and hasNextPage.\"\n> AI: [implements]\n> You: \"Good. Now add cursor-based pagination as an alternative. The cursor should be the last item's ID.\"\n> AI: [implements]\n\n**Ping-Pong (alternate implementing)**\n> You: Write the test\n> AI: Write the implementation\n> You: Write the next test\n> AI: Write the next implementation\n> (TDD style — extremely effective)\n\n**Rubber Duck (AI explains, you catch issues)**\n> \"Walk me through this code line by line. Explain what each function does, what could go wrong, and what assumptions you're making.\"\n> (AI explains → you catch bad assumptions before they become bugs)\n\n### Context Window Management\n\n| Strategy | When | How |\n|----------|------|-----|\n| **Fresh start** | Every 15-20 turns | New session, reload rules + key files |\n| **Summarize** | Before complex task | \"Summarize what we've done. Then let's tackle [next thing].\" |\n| **File focus** | Large codebase | \"Only look at src/services/auth.ts. Ignore everything else.\" |\n| **Memory file** | Multi-session project | Keep PROGRESS.md with what's done/remaining |\n\n### Git Workflow for Vibe Coding\n\n```bash\n# Before starting\ngit checkout -b feature/[name]\ngit status  # clean working tree\n\n# During (commit often!)\ngit add -A && git commit -m \"feat: [what AI just implemented]\"\n# Every 2-3 AI turns, commit. Your safety net.\n\n# If things go wrong\ngit diff  # see what AI changed\ngit stash  # save mess\ng"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Phase 11: Common Mistakes & How to Avoid Them] | # | Mistake | Consequence | Prevention |\n|---|---------|-------------|------------|\n| 1 | No rules file | AI reinvents conventions each session | Write rules file before first prompt |\n| 2 | Prompting implementation before plan | Cascading wrong assumptions | Always: Research → Plan → Implement |\n| 3 | Never reading AI's code | Hidden bugs, security holes, debt | Review at least critical paths |\n| 4 | One giant prompt | AI loses focus, partial implementation | One task per prompt, sequential |\n| 5 | Not committing frequently | Can't rollback when AI breaks things | Commit every 2-3 turns |\n| 6 | Ignoring test failures | \"It works on my machine\" | Tests pass = done. Not before. |\n| 7 | Letting AI add dependencies freely | Bloated bundle, version conflicts | \"Don't add deps without asking\" in rules |\n| 8 | No production checklist | Ship security holes | Phase 9 checklist before deploy |\n| 9 | Marathon AI sessions | Context degrades, AI \"forgets\" | Fresh session every 15-20 turns |\n| 10 | Vibe coding auth/payments | Critical bugs in critical paths | Manual review for all security code |\n| 11 | No types/schema | AI guesses data shapes differently each time | Define types FIRST, always |\n| 12 | Trusting AI's \"it works\" | AI confidently ships broken code | Verify yourself. Run it. Test it. |\n| 13 | Same prompt after 3 failures | AI stuck in a loop | Reframe, simplify, or do it manually |\n| 14 | Mixing concerns in one session | Context pollution | One feature per session |\n| 15 | No architecture guidance | AI creates inconsistent patterns | Document patterns in rules file |\n\n---"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Phase 12: Weekly Effectiveness Tracking] Track your vibe coding quality over time:\n\n```yaml\nweek_of: \"YYYY-MM-DD\"\nsessions: [count]\nfeatures_shipped: [count]\nbugs_introduced: [count]  # found post-ship\nbugs_caught_in_review: [count]  # caught before ship\navg_prompts_per_feature: [count]\ntime_saved_estimate_hours: [number]\nfresh_session_restarts: [count]\n\n# Score yourself (1-5):\nprompt_quality: [1-5]      # Are you using Level 4+ prompts?\nreview_discipline: [1-5]   # Are you reviewing critical code?\ntesting_rigor: [1-5]       # Are you testing before shipping?\narchitecture: [1-5]        # Is the codebase staying clean?\ncommit_frequency: [1-5]    # Are you committing every 2-3 turns?\n\ntotal_score: [5-25]\n```\n\n| Score | Rating | Action |\n|-------|--------|--------|\n| 20-25 | Elite | You're a vibe coding conductor. Teach others. |\n| 15-19 | Solid | Good habits. Focus on weakest dimension. |\n| 10-14 | Learning | Review this guide weekly. Build the habits. |\n| 5-9 | Risky | Slow down. More planning, more testing, more review. |\n\n---"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[The 10 Commandments of Vibe Coding] 1. **Types first.** Define your data before writing logic.\n2. **Rules file always.** No rules = no consistency.\n3. **Plan before implement.** 5 minutes planning saves 5 hours debugging.\n4. **One task per prompt.** Focus = quality.\n5. **Commit after every win.** Git is your safety net.\n6. **Test the critical path.** At minimum: happy path + one edge case.\n7. **Fresh sessions.** Don't let context rot.\n8. **Review security code.** Auth, payments, data access — always manual review.\n9. **200-line rule.** If a change is bigger, break it down.\n10. **Know when to stop vibing.** If AI can't fix it in 3 tries, change approach.\n\n---"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Quick Reference Commands] ```\n\"Read [files] and explain the architecture. Don't change anything.\"\n\"Write a plan for [feature]. List files to create/modify and changes in each.\"\n\"Implement only [specific thing]. Don't touch other files.\"\n\"Write tests first for [requirements]. Then implement to pass them.\"\n\"Review this for [security/performance/readability]. Be specific.\"\n\"This error occurs when [action]. Expected [behavior]. Here's the code: [paste]\"\n\"Refactor [file] to [goal]. Same behavior. Don't add features.\"\n\"What dependencies did you add and why? Remove anything unnecessary.\"\n\"Walk me through this code. Explain assumptions and potential issues.\"\n\"Stop. The original issue was [X]. Let's start fresh with a minimal approach.\"\n\"Run all tests. If any fail, fix them without breaking other tests.\"\n\"Check this against the production checklist: [paste P0-P3 items].\"\n```\n\n---\n\n*Built by AfrexAI — the team that ships AI agents, not just AI prompts.*"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Vibe Coding Mastery"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎸",
+        "requires": {
+          "bins": []
+        },
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-vibe-coding/SKILL.md"
+}

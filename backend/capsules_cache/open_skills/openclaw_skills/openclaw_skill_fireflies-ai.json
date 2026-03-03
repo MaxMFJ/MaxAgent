@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_fireflies-ai",
+  "description": "Fireflies.ai meeting intelligence — search meetings, get transcripts, action items, summaries, attendee info, and contacts via GraphQL API. No data storage; queries Fireflies servers directly. Use for meeting search, transcript lookup, action item extraction, meeting summaries, attendee lookup, and AI meeting notes.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔥 Fireflies AI\n\nQuery your Fireflies.ai meeting data directly — transcripts, summaries, action items, contacts, and analytics. Zero storage: all data stays on Fireflies servers."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Search meetings** by keyword, date range, host, or participant\n- **Get full transcripts** with speaker-attributed sentences\n- **Extract action items** and meeting summaries\n- **Meeting analytics** — sentiment, speaker stats, talk time\n- **Contact lookup** — see who you've met with\n- **User info** — account details and team members"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `FIREFLIES_API_KEY` | ✅ | API key from [app.fireflies.ai/integrations](https://app.fireflies.ai/integrations/custom/fireflies) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List recent meetings\npython3 {baseDir}/scripts/fireflies.py meetings --limit 10\n\n# Search meetings by keyword (searches titles and spoken words)\npython3 {baseDir}/scripts/fireflies.py search \"quarterly review\"\n\n# Search within specific date range\npython3 {baseDir}/scripts/fireflies.py meetings --from 2026-01-01 --to 2026-02-01\n\n# Filter by participant email\npython3 {baseDir}/scripts/fireflies.py meetings --participant \"john@example.com\"\n\n# Filter by host email\npython3 {baseDir}/scripts/fireflies.py meetings --host \"jane@example.com\"\n\n# Get full transcript for a meeting\npython3 {baseDir}/scripts/fireflies.py transcript <meeting_id>\n\n# Get summary only\npython3 {baseDir}/scripts/fireflies.py summary <meeting_id>\n\n# Get action items only\npython3 {baseDir}/scripts/fireflies.py actions <meeting_id>\n\n# Get meeting analytics (sentiment, speaker stats)\npython3 {baseDir}/scripts/fireflies.py analytics <meeting_id>\n\n# Get attendee info for a meeting\npython3 {baseDir}/scripts/fireflies.py attendees <meeting_id>\n\n# List all contacts\npython3 {baseDir}/scripts/fireflies.py contacts\n\n# Get current user info\npython3 {baseDir}/scripts/fireflies.py user\n\n# Get team members\npython3 {baseDir}/scripts/fireflies.py users\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default. Add `--human` for readable formatted output.\n\n```bash\n# JSON (default, for programmatic use)\npython3 {baseDir}/scripts/fireflies.py meetings --limit 5\n\n# Human-readable\npython3 {baseDir}/scripts/fireflies.py meetings --limit 5 --human\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/fireflies.py` | Main CLI — all queries in one tool |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Data Policy] This skill **never stores meeting data locally**. Every query goes directly to the Fireflies GraphQL API (`https://api.fireflies.ai/graphql`) and results are returned to stdout. Your meeting data stays on Fireflies servers."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fireflies_ai"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔥",
+        "requires": {
+          "env": [
+            "FIREFLIES_API_KEY"
+          ]
+        },
+        "primaryEnv": "FIREFLIES_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/fireflies-ai/SKILL.md"
+}

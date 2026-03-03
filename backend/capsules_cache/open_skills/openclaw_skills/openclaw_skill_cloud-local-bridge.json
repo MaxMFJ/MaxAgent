@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_cloud-local-bridge",
+  "description": "实现云端 OpenClaw 与本地 OpenClaw 之间的双向通信桥接。支持自然语言配对、命令执行、文件同步。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Cloud-Local Bridge\n\n让云端和本地 OpenClaw 实例无缝协同，支持**自然语言配对**、**文件互通**、**命令远程执行**。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[核心特性] ✅ **自然语言配对** - 不用记指令，像聊天一样说\"我想连接云端\"\n✅ **跨通道配对** - QQ/微信/Telegram/邮件都能完成配对\n✅ **2步完成** - 像添加微信好友一样简单"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[⚡ 自然语言配对] ### 直接发送自然语言\n\n| 你发送 | 机器人回应 |\n|--------|-----------|\n| `配对` | 收到配对码 |\n| `我想连接云端` | 收到配对码 |\n| `添加设备` | 收到配对码 |\n| `配对 847291` | 配对成功 |\n| `查看配对` | 显示已连接设备 |\n| `帮助配对` | 显示帮助 |\n\n### 支持的自然语言\n\n**发起配对：**\n- `配对`、`我要配对`、`想配对`\n- `连接`、`连接云端`、`连接本地`\n- `添加设备`、`添加云端`、`添加好友`\n- `关联设备`、`互相关联`\n- `pair`、`connect`\n\n**确认配对：**\n- `配对 123456`\n\n**查看状态：**\n- `查看配对`、`配对状态`\n- `我的设备`、`设备列表`\n\n**取消：**\n- `取消配对`、`删除设备`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[📱 配对流程] ```\n用户 A（本地）                    用户 B（云端）\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1. 发送「我想连接云端」          (等待)\n   ↓\n2. 收到配对码: 847291\n   ↓\n3. 发送配给 B                  (接收配对码)\n   ↓                          4. B 发送「配对 847291」\n                                   ↓\n5. ✅ 配对成功!                ✅ 配对成功!\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[🚀 快速启动] ```bash\ncd /root/.openclaw/workspace/skills/cloud-local-bridge/scripts\n\n# 启动 Bridge 服务\npython3 bridge_server.py --port 8080 --token \"xxx\"\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[🔧 组件说明] | 文件 | 说明 |\n|------|------|\n| `qq_handler.py` | 自然语言配对处理器 |\n| `bridge_server.py` | Bridge 服务端 |\n| `bridge_client.py` | Bridge 客户端 |\n| `sync_files.py` | 文件同步 |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[💡 使用场景] ### 场景1：QQ 配对\n\n```\n你：我想连接云端\n机器人：📱 发起配对成功！配对码：847291\n\n（你把配对码发给云端用户）\n\n云端用户：配对 847291\n机器人：🎉 配对成功！已连接本地电脑\n```\n\n### 场景2：跨平台配对\n\n```\n本地（QQ）：配对 → 收到 582391 → 通过 QQ 发送给云端\n云端（Telegram）：发送配对请求到 API → 配对成功\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[📁 文件结构] ```\ncloud-local-bridge/\n├── SKILL.md\n├── scripts/\n│   ├── qq_handler.py        # 🆕 自然语言处理器\n│   ├── bridge_server.py     # 服务端\n│   ├── bridge_client.py    # 客户端\n│   └── sync_files.py       # 文件同步\n└── references/\n    └── EXAMPLES.md\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[⚠️ 注意事项] - 配对码 10 分钟后过期\n- 配对状态保存在 `~/.openclaw/bridge_pairing_state.json`\n- 确保网络互通"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cloud_local_bridge"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/84191879/cloud-local-bridge/SKILL.md"
+}

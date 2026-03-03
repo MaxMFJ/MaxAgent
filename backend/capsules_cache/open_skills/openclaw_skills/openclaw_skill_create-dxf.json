@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_create-dxf",
+  "description": "Create RFQ-ready 2D DXF (and optional SVG preview) files from a strict, validated JSON spec derived from a natural-language design prompt. Use for sheet/plate parts (waterjet/laser/router) like mounting plates, gussets, brackets, hole patterns, and slots.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # create-dxf\n\nDeterministically generate a **manufacturing-friendly DXF** from a small JSON spec (center-origin, explicit units). Also emits an SVG preview."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick start] 1) Convert prompt → JSON (see `references/spec_schema.md`).\n2) Validate:\n\n```bash\npython3 scripts/create_dxf.py validate spec.json\n```\n\n3) Render:\n\n```bash\npython3 scripts/create_dxf.py render spec.json --outdir out\n```\n\nOutputs:\n- `out/<name>.dxf`\n- `out/<name>.svg`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Notes] - DXF uses simple entities for compatibility: closed `LWPOLYLINE` outer profile + `CIRCLE` holes.\n- Default layers are manufacturing-oriented:\n  - `CUT_OUTER` (outer perimeter)\n  - `CUT_INNER` (holes/slots)\n  - `NOTES` (optional)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Resources] - `scripts/create_dxf.py`\n- `references/spec_schema.md`\n- `references/test_prompts.md`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "create_dxf"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajmwagar/create-dxf/SKILL.md"
+}

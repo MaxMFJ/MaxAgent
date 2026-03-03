@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_agentic-mcp-server-builder",
+  "description": "Scaffold MCP server projects and baseline tool contract checks. Use for defining tool schemas, generating starter server layouts, and validating MCP-ready structure.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agentic MCP Server Builder"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Create a minimal MCP server scaffold and contract summary from a structured tool list."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define server name and tool list with descriptions.\n2. Generate scaffold file map and tool contract summary.\n3. Optionally materialize starter files when not in dry-run mode.\n4. Review generated contract checks before adding business logic."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/scaffold_mcp_server.py` to generate starter artifacts.\n- Read `references/mcp-scaffold-guide.md` for file layout and contract checks."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep tool boundaries explicit and minimal.\n- Include deterministic outputs and clear input/output schemas."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agentic_mcp_server_builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/agentic-mcp-server-builder/SKILL.md"
+}

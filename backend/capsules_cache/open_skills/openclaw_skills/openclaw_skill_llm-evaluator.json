@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_llm-evaluator",
+  "description": "LLM-as-a-Judge evaluator via Langfuse. Scores traces on relevance, accuracy, hallucination, and helpfulness using GPT-5-nano as judge. Supports single trace scoring, batch backfill, and test mode. Integrates with Langfuse dashboard for observability. Triggers: evaluate trace, score quality, check accuracy, backfill scores, test evaluator, LLM judge.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LLM Evaluator ⚖️\n\nLLM-as-a-Judge evaluation system powered by Langfuse. Uses GPT-5-nano to score AI outputs."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Evaluating quality of search results or AI responses\n- Scoring traces for relevance, accuracy, hallucination detection\n- Batch scoring recent unscored traces\n- Quality assurance on agent outputs"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ```bash\n# Test with sample cases\npython3 {baseDir}/scripts/evaluator.py test\n\n# Score a specific Langfuse trace\npython3 {baseDir}/scripts/evaluator.py score <trace_id>\n\n# Score with specific evaluator only\npython3 {baseDir}/scripts/evaluator.py score <trace_id> --evaluators relevance\n\n# Backfill scores on recent unscored traces\npython3 {baseDir}/scripts/evaluator.py backfill --limit 20\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Evaluators] | Evaluator | Measures | Scale |\n|-----------|----------|-------|\n| relevance | Response relevance to query | 0–1 |\n| accuracy | Factual correctness | 0–1 |\n| hallucination | Made-up information detection | 0–1 |\n| helpfulness | Overall usefulness | 0–1 |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "llm_evaluator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": {
+      "openclaw": ">=0.10"
+    },
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3"
+          ],
+          "env": [
+            "OPENROUTER_API_KEY",
+            "LANGFUSE_PUBLIC_KEY",
+            "LANGFUSE_SECRET_KEY"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/llm-evaluator-pro/SKILL.md"
+}

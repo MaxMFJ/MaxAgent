@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_google-ads-manager",
+  "description": "Управление кампаниями Google Ads. Используйте этот навык, когда пользователь хочет просмотреть статистику, изменить бюджет, включить или выключить кампании в Google Рекламе. Этот навык позволяет выполнять действия через Google Ads API.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Google Ads Manager\n\nИнструмент для управления контекстной рекламой Google."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Возможности] 1. **Мониторинг**: Получение списка кампаний и их текущих метрик (показы, клики, CTR, затраты).\n2. **Управление**: Изменение статуса кампаний (ENABLE, PAUSED) и обновление дневных бюджетов.\n3. **Отчеты**: Генерация базовых отчетов за определенный период."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Настройка] Для работы требуются учетные данные в файле `google-ads.yaml` или переменные окружения.\nФайл конфигурации должен находиться по пути: `~/.google-ads.yaml` или в корне проекта."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Использование скриптов] Основной интерфейс взаимодействия реализован через Python-скрипт `scripts/google_ads_tool.py`.\n\n### Примеры команд\n- Список кампаний: `python3 scripts/google_ads_tool.py list`\n- Изменение бюджета: `python3 scripts/google_ads_tool.py update-budget --id <ID> --amount <VALUE>`\n- Остановка кампании: `python3 scripts/google_ads_tool.py update-status --id <ID> --status PAUSED`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Инструкции для агента] При получении запроса на работу с рекламой:\n1. Проверьте наличие конфигурационного файла.\n2. Используйте `google_ads_tool.py` для выполнения соответствующего действия.\n3. Всегда подтверждайте критические изменения (изменение бюджета, остановка кампаний) перед выполнением, если пользователь не указал иное."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "google_ads_manager"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/3824108-cell/claw-google-ads/SKILL.md"
+}

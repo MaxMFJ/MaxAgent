@@ -1,0 +1,112 @@
+{
+  "id": "openclaw_skill_voice-stt-tts",
+  "description": "Full voice message setup (STT + TTS) for OpenClaw using faster-whisper and Edge TTS",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Voice Messages (STT + TTS) for OpenClaw 🎙️\n\nComplete voice message setup using **faster-whisper** for transcription and **Edge TTS** for voice replies."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What we configure] - ✅ **STT** (Speech-to-Text) — transcribe voice messages via faster-whisper\n- ✅ **TTS** (Text-to-Speech) — voice replies via Edge TTS\n- 🎯 **Result:** voice → text → reply with voice\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation] ### 1. Create virtual environment (venv)\n\nFor Ubuntu create an isolated venv:\n\n```bash\npython3 -m venv ~/.openclaw/workspace/voice-messages\n```\n\n### 2. Install faster-whisper\n\nInstall packages in venv:\n\n```bash\n~/.openclaw/workspace/voice-messages/bin/pip install faster-whisper\n```\n\n**What gets installed:**\n- `faster-whisper` — Python library for transcription\n- Dependencies: `ctranslate2`, `onnxruntime`, `huggingface-hub`, `av`, `numpy`, and others.\n- Size: ~250 MB\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Transcription Script] ### Path and content\n\n**File:** `~/.openclaw/workspace/voice-messages/transcribe.py`\n\n```python\n#!/usr/bin/env python3\nimport argparse\nfrom faster_whisper import WhisperModel\n\n\ndef transcribe(audio_path: str, model_name: str = \"small\", lang: str = \"en\", device: str = \"cpu\") -> str:\n    model = WhisperModel(\n        model_name,\n        device=device,\n        compute_type=\"int8\" if device == \"cpu\" else \"float16\",\n    )\n    segments, _ = model.transcribe(audio_path, language=lang, vad_filter=True)\n    text = \" \".join(seg.text.strip() for seg in segments if seg.text and seg.text.strip()).strip()\n    return text\n\n\ndef main():\n    p = argparse.ArgumentParser()\n    p.add_argument(\"--audio\", required=True)\n    p.add_argument(\"--model\", default=\"small\")\n    p.add_argument(\"--lang\", default=\"en\")\n    p.add_argument(\"--device\", default=\"cpu\", choices=[\"cpu\", \"cuda\"])\n    args = p.parse_args()\n\n    text = transcribe(args.audio, args.model, args.lang, args.device)\n    print(text if text else \"\")\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n**What the script does:**\n1. Accepts audio file path (`--audio`)\n2. Loads Whisper model (`--model`): `small` by default\n3. Sets language (`--lang`): `en` for English\n4. Transcribes with VAD filter (Voice Activity Detection)\n5. Outputs clean text to stdout\n\n### Make file executable:\n\n```bash\nchmod +x ~/.openclaw/workspace/voice-messages/transcribe.py\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[OpenClaw Configuration] ### 1. Configure STT (`tools.media.audio`)\n\nAdd to `~/.openclaw/openclaw.json`:\n\n```json5\n{\n  \"tools\": {\n    \"media\": {\n      \"audio\": {\n        \"enabled\": true,\n        \"maxBytes\": 20971520,\n        \"models\": [\n          {\n            \"type\": \"cli\",\n            \"command\": \"~/.openclaw/workspace/voice-messages/bin/python\",\n            \"args\": [\n              \"~/.openclaw/workspace/voice-messages/transcribe.py\",\n              \"--audio\",\n              \"{{MediaPath}}\",\n              \"--lang\",\n              \"en\",\n              \"--model\",\n              \"small\"\n            ],\n            \"timeoutSeconds\": 120\n          }\n        ]\n      }\n    }\n  }\n}\n```\n\n**Parameters:**\n\n| Parameter | Value | Description |\n|-----------|----------|-----------|\n| `enabled` | `true` | Enable audio transcription |\n| `maxBytes` | `20971520` | Max file size (20 MB) |\n| `type` | `\"cli\"` | Model type: CLI command |\n| `command` | Python path | Path to python in venv |\n| `args` | argument array | Arguments for script |\n| `{{MediaPath}}` | placeholder | Replaced with audio file path |\n| `timeoutSeconds` | `120` | Transcription timeout (2 minutes) |\n\n### 2. Configure TTS (`messages.tts`)\n\nAdd to `~/.openclaw/openclaw.json`:\n\n```json5\n{\n  \"messages\": {\n    \"tts\": {\n      \"auto\": \"inbound\",\n      \"provider\": \"edge\",\n      \"edge\": {\n        \"voice\": \"en-US-JennyNeural\",\n        \"lang\": \"en-US\"\n      }\n    }\n  }\n}\n```\n\n**Parameters:**\n\n| Parameter | Value | Description |\n|-----------|----------|-----------|\n| `auto` | `\"inbound\"` | **Key mode!** — reply with voice only on incoming voice messages |\n| `provider` | `\"edge\"` | TTS provider (free, no API key) |\n| `voice` | `\"en-US-JennyNeural\"` | Voice (see available below) |\n| `lang` | `\"en-US\"` | Locale (en-US for US english) |\n\n### 3. Full configuration example\n\n```json5\n{\n  \"tools\": {\n    \"media\": {\n      \"audio\": {\n        \"enabled\": true,\n        \"maxBytes\": 20971520,\n        \"models\": [\n          {\n            \"type\": \"cli\",\n            \"command\": \"~/"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Apply Changes] ### Restart Gateway\n\n```bash\n# Method 1: via openclaw CLI\nopenclaw gateway restart\n\n# Method 2: via systemd\nsystemctl --user restart openclaw-gateway\n\n# Check status\nsystemctl --user status openclaw-gateway\n# Should show: active (running)\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Testing] ### Test STT (transcription)\n\n**Action:** Send a voice message to your Telegram bot\n\n**Expected result:**\n```\n[Audio] User text: [Telegram ...] <media:audio> Transcript: <transcribed text>\n```\n\n**Example response:**\n```\n[Audio] User text: [Telegram kd (@someuser) id:12345678 +5s ...] <media:audio> Transcript: Hello. How are you?\n```\n\n### Test TTS (voice replies)\n\n**Action:** After successful transcription, bot should send a voice reply\n\n**Expected result:**\n- Voice file arrives in Telegram\n- Voice note (round bubble)\n\n**Expected behavior:**\n- Incoming voice → bot replies with voice\n- Text messages → bot replies with text (this is normal!)\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Available Edge TTS Voices] ### Female voices\n\n| Voice | ID | Usage example |\n|--------|-----|------------------|\n| Jenny | `en-US-JennyNeural` | ← current |\n| Ana | `en-US-AnaNeural` | Softer |\n\n### Male voices\n\n| Voice | ID | Usage example |\n|--------|-----|------------------|\n| Dmitry | `en-US-RogerNeural` | More bass |\n\n**How to change voice:**\n```bash\ncat ~/.openclaw/openclaw.json | \\\n  jq '.messages.tts.edge.voice = \"en-US-MichelleNeural\"' > ~/.openclaw/openclaw.json.tmp\nmv ~/.openclaw/openclaw.json.tmp ~/.openclaw/openclaw.json\nsystemctl --user restart openclaw-gateway\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Additional Edge TTS Parameters] ### Adjusting speed, pitch, volume\n\n```json5\n{\n  \"messages\": {\n    \"tts\": {\n      \"edge\": {\n        \"voice\": \"en-US-JennyNeural\",\n        \"lang\": \"en-US\",\n        \"rate\": \"+10%\",      // Speed: -50% to +100%\n        \"pitch\": \"-5%\",     // Pitch: -50% to +50%\n        \"volume\": \"+5%\"     // Volume: -100% to +100%\n      }\n    }\n  }\n}\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Problem: Voice not transcribed\n\n**Logs show:**\n```\n[ERROR] Transcription failed\n```\n\n**Possible causes:**\n1. **File too large** — > 20 MB\n   ```bash\n   # Solution: Increase maxBytes in config\n   maxBytes: 52428800  # 50 MB\n   ```\n\n2. **Timeout** — transcription took > 2 minutes\n   ```bash\n   # Solution: Increase timeoutSeconds\n   timeoutSeconds: 180  # 3 minutes\n   ```\n\n3. **Model not downloaded** — first run\n   ```bash\n   # Solution: Wait while it downloads (1-2 minutes)\n   # Models are cached in ~/.cache/huggingface/\n   ```\n\n### Problem: No voice reply\n\n**Possible causes:**\n1. **Reply too short** (< 10 characters)\n   - TTS skips very short replies\n   - Solution: this is expected behavior\n\n2. **auto: \"inbound\"** but text message\n   - TTS in `inbound` mode replies with voice only on **voice messages**\n   - Text messages get text replies — this is correct!\n\n3. **Edge TTS unavailable**\n   ```bash\n   # Check\n   curl -s \"https://speech.platform.bing.com/consumer/api/v1/tts\" | head -c 100\n   # If error — temporarily unavailable\n   ```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Performance] ### Transcription time (Raspberry Pi 4/ARM)\n\n| Whisper Model | Est. time | Quality |\n|---------------|--------------|---------|\n| `tiny` | ~5-10 sec | Low |\n| `base` | ~10-20 sec | Medium |\n| `small` | ~20-40 sec | High ← current |\n| `medium` | ~40-80 sec | Very high |\n| `large` | ~80-160 sec | Maximum |\n\n**Recommendation:** For Raspberry Pi use `small` or `base`. `medium`/`large` will be very slow.\n\n### Where Whisper models are stored\n\n```bash\n~/.cache/huggingface/\n```\n\nModels download automatically on first run."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Done! 🎉] After completing these steps:\n\n1. ✅ faster-whisper installed in venv\n2. ✅ `transcribe.py` script created\n3. ✅ OpenClaw configured (STT + TTS)\n4. ✅ Gateway restarted\n5. ✅ Voice messages working\n\nNow your Telegram bot:\n- 🎙️ **Accepts voice** → transcribes via faster-whisper\n- 🎤 **Replies with voice** → generates via Edge TTS\n- 💬 **Accepts text** → replies with text (as usual)\n\n---\n\n**Useful links:**\n- OpenClaw docs: https://docs.openclaw.ai\n- TTS docs: https://docs.openclaw.ai/tts\n- Audio docs: https://docs.openclaw.ai/nodes/audio\n- Install skills: `npx clawhub search voice`\n\n---\n\n*Created: 2026-03-01 for OpenClaw 2026.2.26*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "voice_stt_tts"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎙️",
+        "install": [
+          {
+            "id": "faster-whisper-venv",
+            "kind": "bash",
+            "label": "Install faster-whisper in venv",
+            "command": "python3 -m venv ~/.openclaw/workspace/voice-messages && ~/.openclaw/workspace/voice-messages/bin/pip install faster-whisper"
+          },
+          {
+            "id": "transcribe-script",
+            "kind": "bash",
+            "label": "Create transcribe.py script",
+            "command": "cat > ~/.openclaw/workspace/voice-messages/transcribe.py << 'EOF'\n#!/usr/bin/env python3\nimport argparse\nfrom faster_whisper import WhisperModel\n\ndef transcribe(audio_path: str, model_name: str = \"small\", lang: str = \"en\", device: str = \"cpu\") -> str:\n    model = WhisperModel(\n        model_name,\n        device=device,\n        compute_type=\"int8\" if device == \"cpu\" else \"float16\",\n    )\n    segments, _ = model.transcribe(audio_path, language=lang, vad_filter=True)\n    text = \" \".join(seg.text.strip() for seg in segments if seg.text and seg.text.strip()).strip()\n    return text\n\ndef main():\n    p = argparse.ArgumentParser()\n    p.add_argument(\"--audio\", required=True)\n    p.add_argument(\"--model\", default=\"small\")\n    p.add_argument(\"--lang\", default=\"en\")\n    p.add_argument(\"--device\", default=\"cpu\", choices=[\"cpu\", \"cuda\"])\n    args = p.parse_args()\n    text = transcribe(args.audio, args.model, args.lang, args.device)\n    print(text if text else \"\")\nif __name__ == \"__main__\":\n    main()\nEOF"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aksenkin/voice-stt-tts/SKILL.md"
+}

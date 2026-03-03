@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_weeek-tasks",
+  "description": "Управление задачами WEEEK через Public API (Task Manager): получать список задач, создавать/обновлять/завершать задачи, перемещать между досками/колонками, получать список досок и колонок. Использовать при интеграции с WEEEK API и работе с задачами/досками/колонками.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # WEEEK задачи"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Быстрый старт] 1. Установить переменные окружения:\n   - `WEEEK_TOKEN` — токен авторизации\n   - `WEEEK_USER_ID` — ваш ID в WEEEK (опционально)\n2. Использовать `scripts/weeek_api.py` для операций.\n3. Для справки по эндпоинтам читать `references/api.md`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Скрипт] ### Получить задачи\n\n```bash\npython scripts/weeek_api.py list-tasks --day DD.MM.YYYY --board-id ID_доски --board-column-id ID_колонки\n```\n\n### Создать задачу\n\n```bash\npython scripts/weeek_api.py create-task --title \"Задача\" --day DD.MM.YYYY --no-locations\n```\n\nЕсли нужна привязка к проекту/доске — передать `project_id/board_id/board_column_id` или JSON:\n\n```bash\npython scripts/weeek_api.py create-task --title \"Задача\" --locations-json '[{\"boardId\":ID_доски,\"boardColumnId\":ID_колонки}]'\n```\n\n### Обновить задачу\n\n```bash\npython scripts/weeek_api.py update-task ID_задачи --title \"Новый заголовок\" --priority 2\n```\n\n### Завершить / вернуть\n\n```bash\npython scripts/weeek_api.py complete-task ID_задачи\npython scripts/weeek_api.py uncomplete-task ID_задачи\n```\n\n### Переместить\n\n```bash\npython scripts/weeek_api.py move-board ID_задачи --board-id ID_доски\npython scripts/weeek_api.py move-board-column ID_задачи --board-column-id ID_колонки\n```\n\n### Списки проектов/досок/колонок\n\n```bash\npython scripts/weeek_api.py list-projects\npython scripts/weeek_api.py list-boards --project-id ID_проекта\npython scripts/weeek_api.py list-board-columns --board-id ID_доски\n```\n\nID можно получить через `list-projects`, `list-boards`, `list-board-columns`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Ограничения и вопросы] - Формат `day` в docs указан как `string`; точный формат подтвердить у пользователя.\n- По умолчанию создаются «датные» задачи без привязки к проектам/доскам (`--no-locations`).\n- Если задан `WEEEK_USER_ID`, он автоматически ставится в `userId` и `assignees` при создании."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "weeek_tasks"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-indi/weeek-tasks/SKILL.md"
+}

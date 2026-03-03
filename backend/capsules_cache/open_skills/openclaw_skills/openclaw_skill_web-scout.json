@@ -1,0 +1,82 @@
+{
+  "id": "openclaw_skill_web-scout",
+  "description": "给 AI Agent 一键装上全网采集能力。基于 Agent Reach，支持 Twitter/X、Reddit、YouTube、B站、小红书、抖音、GitHub、LinkedIn、Boss直聘、RSS、全网搜索等平台。一条命令安装，零 API 费用。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Web Scout — AI Agent 全网采集工具箱\n\n基于 [Agent Reach](https://github.com/Panniantong/Agent-Reach) 封装，让你的 AI Agent 一键获得全网信息采集能力。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[支持平台] | 平台 | 工具 | 免费 | 需要配置 |\n|------|------|------|---------|\n| 🌐 网页 | Jina Reader | ✅ | 无 |\n| 📺 YouTube | yt-dlp | ✅ | 无 |\n| 📺 B站 | yt-dlp | ✅ | 服务器需代理 |\n| 📡 RSS | feedparser | ✅ | 无 |\n| 🔍 全网搜索 | Exa (MCP) | ✅ | 自动配置 |\n| 📦 GitHub | gh CLI | ✅ | 需登录 |\n| 🐦 Twitter/X | xreach (bird) | ✅ | 需 Cookie |\n| 📖 Reddit | JSON API + Exa | ✅ | 服务器需代理 |\n| 📕 小红书 | xiaohongshu-mcp | ✅ | 需 Docker + Cookie |\n| 🎵 抖音 | douyin-mcp-server | ✅ | 需 MCP 服务 |\n| 💼 LinkedIn | linkedin-mcp | ✅ | 需浏览器登录 |\n| 🏢 Boss直聘 | mcp-bosszp | ✅ | 需扫码登录 |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[安装] ### 第一步：安装 Agent Reach CLI\n\n```bash\npip install https://github.com/Panniantong/agent-reach/archive/main.zip\n```\n\n### 第二步：自动安装依赖\n\n默认模式（自动安装所有依赖）：\n```bash\nagent-reach install --env=auto\n```\n\n安全模式（只检查不安装，适合生产环境）：\n```bash\nagent-reach install --env=auto --safe\n```\n\n预览模式（只看会做什么）：\n```bash\nagent-reach install --env=auto --dry-run\n```\n\n### 第三步：检查状态\n\n```bash\nagent-reach doctor\n```\n\n### 第四步：按需配置平台\n\n需要 Cookie 的平台建议使用小号，避免封号风险。\n\nCookie 导出方法：浏览器登录平台 → 安装 [Cookie-Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) 插件 → Export → Header String → 发给 Agent。\n\n配置 Twitter：\n```bash\nagent-reach configure twitter-cookies \"COOKIE_STRING\"\n```\n\n配置代理（服务器访问 Reddit/B站）：\n```bash\nagent-reach configure proxy http://user:pass@ip:port\n```\n\n配置小红书（需要 Docker）：\n```bash\ndocker run -d --name xiaohongshu-mcp -p 18060:18060 xpzouying/xiaohongshu-mcp\nmcporter config add xiaohongshu http://localhost:18060/mcp\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[常用命令速查] ### 读网页\n```bash\ncurl -s \"https://r.jina.ai/URL\"\n```\n\n### 搜索 Twitter/X\n```bash\nxreach search \"关键词\" --json\n```\n\n### YouTube/B站 字幕提取\n```bash\nyt-dlp --dump-json \"VIDEO_URL\"           # 视频信息\nyt-dlp --write-sub --skip-download \"URL\"  # 提取字幕\n```\n\n### 全网搜索（Exa）\n```bash\nmcporter call 'exa.search(query: \"关键词\", numResults: 10)'\n```\n\n### GitHub\n```bash\ngh repo view owner/repo        # 查看仓库\ngh search repos \"关键词\"        # 搜索仓库\ngh issue list -R owner/repo    # 查看 Issue\n```\n\n### RSS\n```bash\npython3 -c \"import feedparser; f=feedparser.parse('RSS_URL'); [print(e.title) for e in f.entries[:10]]\"\n```\n\n### 小红书\n```bash\nmcporter call 'xiaohongshu.search_feeds(keyword: \"关键词\")'\nmcporter call 'xiaohongshu.get_feed_detail(note_id: \"ID\")'\n```\n\n### 抖音\n```bash\nmcporter call 'douyin.parse_douyin_video_info(share_link: \"分享链接\")'\n```\n\n### Reddit\n```bash\nmcporter call 'exa.search(query: \"site:reddit.com 关键词\")'\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[维护] 检查更新：\n```bash\nagent-reach check-update\n```\n\n升级：\n```bash\npip install --upgrade https://github.com/Panniantong/agent-reach/archive/main.zip\n```\n\n健康检查（适合定时任务）：\n```bash\nagent-reach watch\n```\n\n卸载：\n```bash\nagent-reach uninstall        # 完整卸载\nagent-reach uninstall --keep-config  # 保留配置\npip uninstall agent-reach    # 卸载 Python 包\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[安全说明] - Cookie 只存本地 `~/.agent-reach/config.yaml`，文件权限 600\n- 代码完全开源，可审查\n- 需要 Cookie 的平台（Twitter、小红书）建议用小号\n- 支持 `--safe` 和 `--dry-run` 模式"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[致谢] 基于 [Agent Reach](https://github.com/Panniantong/Agent-Reach) by Panniantong，MIT 协议。"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "web_scout"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "tools": [
+            "exec"
+          ]
+        },
+        "optional": {
+          "tools": [
+            "web_fetch"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aizain/web-scout/SKILL.md"
+}

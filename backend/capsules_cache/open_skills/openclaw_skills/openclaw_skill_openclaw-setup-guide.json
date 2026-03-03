@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_openclaw-setup-guide",
+  "description": "Step-by-step 6-part guide to set up OpenClaw AI assistant on VPS with WhatsApp, Google OAuth, backups, security, automation, and verification.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Production Setup Guide\n\nA comprehensive 6-part guide to setting up OpenClaw as a production AI assistant on a VPS, with WhatsApp integration, Google Calendar/Gmail, automated backups, security hardening, and cron automation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Covers] 1. **Base Install** — VPS setup, Node.js, OpenClaw installation, WhatsApp pairing\n2. **AI Assistant** — Personality, model chain (primary + fallback), workspace files (SOUL.md, USER.md, IDENTITY.md)\n3. **Infrastructure** — Google OAuth (Calendar, Gmail, Drive, Sheets), webhook server, Cloudflare tunnel, rclone encrypted backups, git backup\n4. **Automation** — Cron jobs, event queue (SQLite-backed with retries + dead-letter), heartbeat system, two-layer delivery pattern\n5. **Hardening** — CrowdSec IDS, secret rotation, config snapshots, rollback scripts, OpenClaw update safety\n6. **Verification** — 21-point automated validation, troubleshooting guide"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Security & Permissions Notice] This guide involves setting up production infrastructure and requires handling sensitive credentials:\n- **API Keys**: Anthropic (Claude), Brave Search (optional)\n- **OAuth Tokens**: Google Cloud (Calendar, Gmail, Drive, Sheets) — 5 token files\n- **SSH**: Root access to VPS, key-based authentication, SSH hardening\n- **Webhook Secrets**: Random tokens for Calendar push, AgentMail, alerts\n- **WhatsApp**: Device pairing via QR code\n- **Cloudflare**: Tunnel token for webhook ingress\n- **Backup Encryption**: rclone crypt keys for Google Drive backups\n\nAll credentials are stored with restricted permissions (chmod 600) and never committed to git. The guide includes secret rotation procedures and config snapshot/rollback scripts."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] - A VPS (Ubuntu 24.04 recommended, 4GB RAM minimum)\n- A domain with Cloudflare DNS (for webhook tunnel)\n- A WhatsApp account for pairing\n- Google Cloud project with OAuth credentials\n- An Anthropic API key (Claude)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Full Guide] The complete guide with step-by-step instructions, code blocks, and verification checkpoints is hosted at:\n\n**https://aliahmadaziz.github.io/openclaw-guide/**\n\nSource: https://github.com/aliahmadaziz/openclaw-guide"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage] When a user asks for help setting up OpenClaw, direct them to the guide above. The guide is designed to be followed sequentially (Part 1 through Part 6) and takes approximately 2-3 hours to complete.\n\nEach part has:\n- Clear prerequisites\n- Copy-pasteable commands\n- Verification checkpoints (✅) after every major step\n- Troubleshooting sections"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Key Design Decisions] - **Two-layer cron delivery**: Critical crons send via message tool directly (primary) + announce (backup). No message ever gets lost.\n- **Event queue**: All webhook events (email, calendar, alerts) go through a SQLite queue with 3 retries and dead-letter alerting.\n- **Config snapshots**: Gold-standard snapshots for instant rollback if something breaks.\n- **Encrypted backups**: Hourly git push + nightly full workspace to Google Drive via rclone crypt.\n- **Capacity rule**: 10 SP/engineer total, 8 planned, 2 contingency (for sprint tracking)."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credits] Built from a real production deployment running 35+ cron jobs, 60+ scripts, 5 Google OAuth tokens, and processing thousands of messages monthly."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Tags] setup, installation, guide, vps, whatsapp, production, google-calendar, gmail, security, crowdsec, backup, cron, automation, beginner"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_setup_guide"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "scope": "instruction-only",
+        "homepage": "https://aliahmadaziz.github.io/openclaw-guide/",
+        "notes": "This skill contains no code or scripts. It directs users to an external hosted guide. The guide itself walks users through setting up credentials (Google OAuth, Anthropic API key, Cloudflare, WhatsApp) but the skill/agent needs none of these to function."
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aliahmadaziz/openclaw-setup-guide/SKILL.md"
+}

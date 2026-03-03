@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_chrome-devtools-mcp",
+  "description": "Chrome DevTools MCP — Google's official browser automation and testing server. Control Chrome via Puppeteer through MCP protocol: click, fill forms, navigate, screenshot, performance traces, network inspection, console debugging. Use for browser testing, web automation, performance analysis, UI testing, form filling, and visual regression.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🌐 Chrome DevTools MCP\n\nGoogle's official Chrome DevTools MCP server — gives AI agents full control of a live Chrome browser via Puppeteer and the Chrome DevTools Protocol."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Input automation** — click, drag, fill forms, hover, press keys, upload files, handle dialogs\n- **Navigation** — open/close/switch pages, wait for elements/network idle\n- **Screenshots & snapshots** — capture page state visually and as DOM\n- **Performance traces** — record and analyze Chrome performance traces with insights\n- **Network inspection** — list/inspect network requests and responses\n- **Console debugging** — read console messages with source-mapped stack traces\n- **Device emulation** — emulate mobile devices, resize viewport\n- **Form automation** — fill multiple form fields at once"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] - Node.js v20.19+ (already available in OpenClaw)\n- Chrome/Chromium browser"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ### Install & verify\n\n```bash\nnpx -y chrome-devtools-mcp@latest --help\n```\n\n### Start the MCP server\n\n```bash\n# Standard (launches Chrome automatically)\nnpx -y chrome-devtools-mcp@latest\n\n# Headless mode (for servers)\nnpx -y chrome-devtools-mcp@latest --headless\n\n# Connect to existing Chrome (must be started with --remote-debugging-port=9222)\nnpx -y chrome-devtools-mcp@latest --browser-url=http://127.0.0.1:9222\n\n# Disable telemetry\nnpx -y chrome-devtools-mcp@latest --no-usage-statistics --no-performance-crux\n```\n\n### OpenClaw MCP Integration\n\nAdd to your `openclaw.json` under MCP servers:\n\n```json\n{\n  \"mcp\": {\n    \"servers\": {\n      \"chrome-devtools\": {\n        \"command\": \"npx\",\n        \"args\": [\"-y\", \"chrome-devtools-mcp@latest\", \"--headless\", \"--no-usage-statistics\"]\n      }\n    }\n  }\n}\n```\n\nOr use the setup script:\n\n```bash\npython3 {baseDir}/scripts/setup_chrome_mcp.py setup\npython3 {baseDir}/scripts/setup_chrome_mcp.py status\npython3 {baseDir}/scripts/setup_chrome_mcp.py test\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tool Reference] ### Input Automation (8 tools)\n\n| Tool | Description | Key Params |\n|------|-------------|------------|\n| `click` | Click an element | `uid` (required), `dblClick` |\n| `drag` | Drag element onto another | `from_uid`, `to_uid` |\n| `fill` | Type text into input/textarea/select | `uid`, `value` |\n| `fill_form` | Fill multiple form elements at once | `elements[]` |\n| `handle_dialog` | Accept/dismiss browser dialogs | `action` (accept/dismiss) |\n| `hover` | Hover over element | `uid` |\n| `press_key` | Press keyboard key | `key` |\n| `upload_file` | Upload file to input | `uid`, `paths[]` |\n\n### Navigation (6 tools)\n\n| Tool | Description | Key Params |\n|------|-------------|------------|\n| `navigate_page` | Go to URL | `url` |\n| `new_page` | Open new tab | `url` |\n| `close_page` | Close current tab | — |\n| `list_pages` | List all open tabs | — |\n| `select_page` | Switch to tab | `index` |\n| `wait_for` | Wait for element/network | `event`, `uid`, `timeout` |\n\n### Debugging (5 tools)\n\n| Tool | Description |\n|------|-------------|\n| `take_screenshot` | Capture page as image |\n| `take_snapshot` | Get DOM/accessibility snapshot |\n| `evaluate_script` | Run JavaScript in page |\n| `list_console_messages` | Get console log entries |\n| `get_console_message` | Get specific console message |\n\n### Performance (3 tools)\n\n| Tool | Description |\n|------|-------------|\n| `performance_start_trace` | Begin performance recording |\n| `performance_stop_trace` | Stop and get trace data |\n| `performance_analyze_insight` | AI analysis of trace |\n\n### Network (2 tools)\n\n| Tool | Description |\n|------|-------------|\n| `list_network_requests` | List all network requests |\n| `get_network_request` | Get request/response details |\n\n### Emulation (2 tools)\n\n| Tool | Description |\n|------|-------------|\n| `emulate` | Emulate device (mobile, tablet) |\n| `resize_page` | Change viewport size |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Common Workflows] ### Test a webpage\n1. `navigate_page` → URL\n2. `take_snapshot` → get element UIDs\n3. `click`/`fill` → interact with elements\n4. `take_screenshot` → capture result\n\n### Performance audit\n1. `navigate_page` → URL\n2. `performance_start_trace`\n3. Interact with page\n4. `performance_stop_trace`\n5. `performance_analyze_insight`\n\n### Form testing\n1. `navigate_page` → form URL\n2. `take_snapshot` → identify form fields\n3. `fill_form` → fill all fields at once\n4. `click` → submit button\n5. `take_screenshot` → verify result"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Privacy Notes] - Google collects usage statistics by default — disable with `--no-usage-statistics`\n- Performance tools may send trace URLs to Google CrUX API — disable with `--no-performance-crux`\n- Avoid sharing sensitive data in browser sessions"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "chrome_devtools_mcp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "Node.js v20.19+, Chrome/Chromium",
+    "extra": {
+      "openclaw": {
+        "emoji": "🌐",
+        "requires": {
+          "env": []
+        },
+        "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/chrome-devtools-mcp/SKILL.md"
+}

@@ -27,7 +27,7 @@
     {
       "id": "step_2",
       "type": "subtask",
-      "description": "[What's New in v1.2.0] - **Max Trades Per Run**: New `SIMMER_WEATHER_MAX_TRADES` config to limit trades per scan cycle (default: 5)\n\n### v1.1.1\n- **Status Script**: New `scripts/status.py` for quick balance and position checks\n- **API Reference**: Added Quick Commands section with API endpoints\n\n### v1.1.0\n- **Source Tagging**: All trades tagged with `sdk:weather` for portfolio tracking\n- **Smart Sizing**: Position sizing based on available balance (`--smart-sizing`)\n- **Context Safeguards**: Checks for flip-flop warnings, slippage, time decay\n- **Price Trend Detection**: Detects recent price drops for stronger signals"
+      "description": "[What's New in v1.11.0] - **Binary Only Mode**: New `SIMMER_WEATHER_BINARY_ONLY` config to skip range-bucket events (e.g., \"NYC 34-35°F\") and only trade binary yes/no weather markets\n\n### v1.2.0\n- **Max Trades Per Run**: New `SIMMER_WEATHER_MAX_TRADES` config to limit trades per scan cycle (default: 5)\n\n### v1.1.1\n- **Status Script**: New `scripts/status.py` for quick balance and position checks\n- **API Reference**: Added Quick Commands section with API endpoints\n\n### v1.1.0\n- **Source Tagging**: All trades tagged with `sdk:weather` for portfolio tracking\n- **Smart Sizing**: Position sizing based on available balance (`--smart-sizing`)\n- **Context Safeguards**: Checks for flip-flop warnings, slippage, time decay\n- **Price Trend Detection**: Detects recent price drops for stronger signals"
     },
     {
       "id": "step_3",
@@ -37,7 +37,7 @@
     {
       "id": "step_4",
       "type": "subtask",
-      "description": "[Configuration] | Setting | Environment Variable | Default | Description |\n|---------|---------------------|---------|-------------|\n| Entry threshold | `SIMMER_WEATHER_ENTRY` | 0.15 | Buy when price below this |\n| Exit threshold | `SIMMER_WEATHER_EXIT` | 0.45 | Sell when price above this |\n| Max position | `SIMMER_WEATHER_MAX_POSITION` | 2.00 | Maximum USD per trade |\n| Max trades/run | `SIMMER_WEATHER_MAX_TRADES` | 5 | Maximum trades per scan cycle |\n| Locations | `SIMMER_WEATHER_LOCATIONS` | NYC | Comma-separated cities |\n| Smart sizing % | `SIMMER_WEATHER_SIZING_PCT` | 0.05 | % of balance per trade |\n\n**Supported locations:** NYC, Chicago, Seattle, Atlanta, Dallas, Miami"
+      "description": "[Configuration] | Setting | Environment Variable | Default | Description |\n|---------|---------------------|---------|-------------|\n| Entry threshold | `SIMMER_WEATHER_ENTRY` | 0.15 | Buy when price below this |\n| Exit threshold | `SIMMER_WEATHER_EXIT` | 0.45 | Sell when price above this |\n| Max position | `SIMMER_WEATHER_MAX_POSITION` | 2.00 | Maximum USD per trade |\n| Max trades/run | `SIMMER_WEATHER_MAX_TRADES` | 5 | Maximum trades per scan cycle |\n| Binary only | `SIMMER_WEATHER_BINARY_ONLY` | false | Skip range-bucket events (e.g., \"34-35°F\"), only trade binary yes/no markets |\n| Locations | `SIMMER_WEATHER_LOCATIONS` | NYC | Comma-separated cities |\n| Smart sizing % | `SIMMER_WEATHER_SIZING_PCT` | 0.05 | % of balance per trade |\n\n**Supported locations:** NYC, Chicago, Seattle, Atlanta, Dallas, Miami"
     },
     {
       "id": "step_5",
@@ -109,7 +109,64 @@
         "automaton": {
           "managed": true,
           "entrypoint": "weather_trader.py"
-        }
+        },
+        "tunables": [
+          {
+            "env": "SIMMER_WEATHER_ENTRY_THRESHOLD",
+            "type": "number",
+            "default": 0.05,
+            "range": [
+              0.01,
+              0.3
+            ],
+            "step": 0.01,
+            "label": "Entry edge threshold"
+          },
+          {
+            "env": "SIMMER_WEATHER_EXIT_THRESHOLD",
+            "type": "number",
+            "default": 0.85,
+            "range": [
+              0.5,
+              0.99
+            ],
+            "step": 0.01,
+            "label": "Exit probability threshold"
+          },
+          {
+            "env": "SIMMER_WEATHER_MAX_POSITION_USD",
+            "type": "number",
+            "default": 50,
+            "range": [
+              1,
+              200
+            ],
+            "step": 5,
+            "label": "Max position size"
+          },
+          {
+            "env": "SIMMER_WEATHER_SIZING_PCT",
+            "type": "number",
+            "default": 0.1,
+            "range": [
+              0.01,
+              1.0
+            ],
+            "step": 0.01,
+            "label": "Position sizing percentage"
+          },
+          {
+            "env": "SIMMER_WEATHER_MAX_TRADES_PER_RUN",
+            "type": "number",
+            "default": 5,
+            "range": [
+              1,
+              20
+            ],
+            "step": 1,
+            "label": "Max trades per run"
+          }
+        ]
       }
     }
   },

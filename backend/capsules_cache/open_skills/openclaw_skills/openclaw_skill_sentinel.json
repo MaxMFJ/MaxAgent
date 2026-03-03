@@ -1,0 +1,83 @@
+{
+  "id": "openclaw_skill_sentinel",
+  "description": "Transform an Android phone with IP Webcam into an intelligent Edge AI security system with OpenClaw.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Security monitoring over IP Camera Android app\n\nUse the **Clawd Sentinel** pattern to turn any old Android smartphone into a sovereign, frugal, and intelligent motion detection system."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] 1. **Android Side**: Install \"IP Webcam\" (by Pavel Khlebovich) and start the server.\n2. **Connectivity**: Note the local IP (e.g., `192.168.1.100:8080`).\n3. **OpenClaw Workspace**:\n   - `bin/sentinel_ultra_frugal.sh`: The core logic for pixel comparison.\n   - `bin/sentinel_runner.sh`: The background loop runner."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Detailed API Interaction] The IP Webcam server provides a REST-like API for full remote control. Base URL: `http://<IP>:8080/`\n\n### Visual Captures\n- **Standard Snapshot**: `/shot.jpg` (Fastest, current frame)\n- **Autofocus Snapshot**: `/photoaf.jpg` (Triggers autofocus before capture, highest quality)\n- **Video Recording**:\n  - Start: `/startvideo?name=alert_123`\n  - Stop: `/stopvideo`\n  - List recordings: `/list_videos` (returns JSON/HTML)\n  - Download: `/v/<filename>.mp4`\n\n### Camera Control & Settings\n- **Focus Distance**: `/settings/focus_distance?set=<0.0-10.0>` (0.0 is often Infinity)\n- **Torch (Flash)**: `/enabletorch` | `/disabletorch`\n- **Focus Mode**: `/settings/focusmode?set=<on|off|macro|infinity|fixed>`\n- **Scene Mode**: `/settings/scenemode?set=<auto|night|action|party...>`\n- **White Balance**: `/settings/whitebalance?set=<auto|daylight|cloudy...>`\n\n### Device Telemetry\n- **Sensors Data**: `/sensors.json` (Battery, light level, proximity, accelerometer)\n- **System Status**: `/status.json` (Camera state, recording status, uptime)\n\n### Audio\n- **Audio Feed**: `/audio.wav` or `/audio.opus` (Live audio stream)\n\n### Integration Examples (curl)\n```bash\n# Get battery level via jq\ncurl -s http://<IP>:8080/sensors.json | jq '.battery_level[0][1][0]'\n\n# Toggle flash remotely\ncurl http://<IP>:8080/enabletorch\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Recommended Thresholds] - **Daytime (Haze/Clouds)**: 2500\n- **Nighttime (ISO noise)**: 1500"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Notes] - **Frugality**: No tokens are consumed unless the pixel differential exceeds the threshold.\n- **Privacy**: Raw frames remain local. Only alert-triggered frames are sent to the AI.\n- **Maintenance**: Periodically check phone battery and Wi-Fi stability.\n- **Lens flare**: Long rainbow flares in night mode usually indicate static lights, not vehicles."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sentinel"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🛡️",
+        "requires": {
+          "bins": [
+            "compare",
+            "curl",
+            "awk"
+          ]
+        },
+        "install": [
+          {
+            "id": "apt",
+            "kind": "apt",
+            "packages": [
+              "imagemagick"
+            ],
+            "bins": [
+              "compare"
+            ],
+            "label": "Install ImageMagick (apt)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alihmaou/ipwebcam/SKILL.md"
+}

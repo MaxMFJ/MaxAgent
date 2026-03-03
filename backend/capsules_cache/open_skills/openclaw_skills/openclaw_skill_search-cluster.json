@@ -1,6 +1,6 @@
 {
   "id": "openclaw_skill_search-cluster",
-  "description": "Unified search aggregator for Google, Wikipedia, Reddit, NewsAPI, and RSS feeds with optional Redis caching. Supports parallel querying and structured JSON output.",
+  "description": "Aggregated search aggregator using Google CSE, GNews RSS, Wikipedia, Reddit, and Scrapling.",
   "inputs": {
     "task": {
       "type": "string",
@@ -17,32 +17,37 @@
     {
       "id": "step_0",
       "type": "subtask",
-      "description": "[overview] # Search Cluster\n\nUnified search system for multi-source information gathering."
+      "description": "[overview] # Search Cluster (Industrial Standard v3.1)\n\nA multi-provider search aggregator designed for high-availability and security."
     },
     {
       "id": "step_1",
       "type": "subtask",
-      "description": "[Prerequisites] - **Binary**: `python3` must be installed.\n- **Google Search**: Requires `GOOGLE_CSE_KEY` and `GOOGLE_CSE_ID`.\n- **NewsAPI**: Requires `NEWSAPI_KEY`.\n- **Cache (Optional)**: Active Redis instance (defaults to localhost:6379)."
+      "description": "[Installation] The scrapling provider requires a dedicated virtual environment.\n1. Create a venv: python3 -m venv venv/scrapling\n2. Install scrapling: venv/scrapling/bin/pip install scrapling\n3. Provide the path to the venv binary in SCRAPLING_PYTHON_PATH."
     },
     {
       "id": "step_2",
       "type": "subtask",
-      "description": "[Setup] 1. Define API keys in your environment or a local `.env` file.\n2. Install optional Redis client: `pip install redis`."
+      "description": "[Security Posture] - Subprocess Isolation: Query inputs are passed as arguments to stealth_fetch.py.\n- Strict TLS: Mandatory SSL verification on all providers.\n- Sanitization: Integrated native internal scrubber (Path Neutral)."
     },
     {
       "id": "step_3",
       "type": "subtask",
-      "description": "[Core Workflows] ### 1. Single Source Search\nQuery a specific engine for targeted results.\n- **Usage**: `python3 $WORKSPACE/skills/search-cluster/scripts/search-cluster.py <source> \"<query>\"`\n- **Sources**: `google`, `wiki`, `reddit`, `newsapi`.\n\n### 2. Aggregated Search\nQuery all supported engines in parallel and aggregate results.\n- **Usage**: `python3 $WORKSPACE/skills/search-cluster/scripts/search-cluster.py all \"<query>\"`\n\n### 3. RSS/Feed Fetching\nRetrieve and parse standard RSS or Atom feeds.\n- **Usage**: `python3 $WORKSPACE/skills/search-cluster/scripts/search-cluster.py rss \"<url>\"`"
+      "description": "[Requirements and Environment] Declare these variables in your environment or vault:\n\n| Variable | Requirement | Description |\n|---|---|---|\n| GOOGLE_API_KEY | Optional | API Key for Google Custom Search. |\n| GOOGLE_CSE_ID | Optional | Search Engine ID for Google CSE. |\n| SCRAPLING_PYTHON_PATH | Optional | Path to the scrapling venv python binary. |\n| REDIS_HOST | Optional | Host for result caching. |\n| REDIS_PORT | Optional | Port for result caching (Default: 6379). |\n| SEARCH_USER_AGENT | Optional | Custom User-Agent string. |"
     },
     {
       "id": "step_4",
       "type": "subtask",
-      "description": "[Reliability & Security] - **Secure Networking**: Enforces strict SSL/TLS verification for all API and feed requests. No unverified fallback is permitted.\n- **Namespace Isolation**: Cache keys are prefixed with `search:` to avoid collisions.\n- **Local Preference**: Redis connectivity defaults to `localhost`. Users must explicitly set `REDIS_HOST` for remote instances.\n- **User Agent**: Uses a standardized `SearchClusterBot` agent to comply with site policies."
+      "description": "[Providers] - google: Official Google Custom Search.\n- wiki: Wikipedia OpenSearch API.\n- reddit: Reddit JSON search API.\n- gnews: Google News RSS aggregator.\n- scrapling: Headless stealth scraping (via DuckDuckGo)."
     },
     {
       "id": "step_5",
       "type": "subtask",
-      "description": "[Reference] - **API Setup**: See [references/search-apis.md](references/search-apis.md)."
+      "description": "[Included Scripts] - scripts/search-cluster.py: Main entry point.\n- scripts/stealth_fetch.py: Scrapling fetcher (REQUIRED for scrapling provider)."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Workflow] 1. Execute: scripts/search-cluster.py all \"<query>\"\n2. Output is structured JSON with source, title, link, and sanitized snippet."
     }
   ],
   "task_type": "search",
@@ -58,27 +63,7 @@
     "original_format": "openclaw_skill",
     "license": "",
     "compatibility": "",
-    "extra": {
-      "openclaw": {
-        "requires": {
-          "bins": [
-            "python3"
-          ],
-          "env": [
-            "GOOGLE_CSE_KEY",
-            "GOOGLE_CSE_ID",
-            "NEWSAPI_KEY"
-          ]
-        },
-        "install": [
-          {
-            "id": "pip-deps",
-            "kind": "exec",
-            "command": "pip install redis"
-          }
-        ]
-      }
-    }
+    "extra": {}
   },
   "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/search-cluster/SKILL.md"
 }

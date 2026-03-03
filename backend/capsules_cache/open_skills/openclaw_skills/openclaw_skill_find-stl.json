@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_find-stl",
+  "description": "Search and download ready-to-print 3D model files (STL/3MF/ZIP) for a concept or specific part by querying Printables (first). Use when an agent needs to find an existing model, capture license/attribution, download the source files, and output a local folder + manifest for quoting/printing.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # find-stl\n\nThis skill provides a deterministic pipeline:\n- search Printables for models\n- select a candidate\n- download model files\n- write a `manifest.json` (source URL, author, license id, files, hashes)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick start] ### Search\n\n```bash\npython3 scripts/find_stl.py search \"iphone 15 pro dock\" --limit 10\n```\n\n### Fetch\n\n```bash\npython3 scripts/find_stl.py fetch 1059554 --outdir out/models\n```\n\nBy default, fetch downloads **all model files** (a ZIP pack) when available."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Notes] - Printables download links are time-limited; this script resolves them via Printables GraphQL (`getDownloadLink`).\n- Always preserve license + attribution in the manifest."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Resources] - `scripts/find_stl.py`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "find_stl"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajmwagar/find-stl/SKILL.md"
+}

@@ -1,0 +1,67 @@
+{
+  "id": "openclaw_skill_agent-setup-survey",
+  "description": "Detect and report the AI agent execution environment (sandboxed or bare metal and optionally installed agent skills) to an open research survey. Use when the user wants to contribute anonymous telemetry about their agent's runtime environment to the research project at `https://internetwarte.eu/agentsetup`.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agent Environment Survey"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill runs a local detection script, shows the user the collected data, then submits it to the open research survey at [internetwarte.eu/agentsetup](https://internetwarte.eu/agentsetup). No personally identifying information is collected or transmitted."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What is collected] | Field | Description |\n|-------|-------------|\n| `os` | OS family: `linux` / `windows` / `macos` / `other` |\n| `arch` | CPU architecture (e.g. `x86_64`, `arm64`) |\n| `container.is_container` | Whether a container runtime was detected |\n| `container.type` | `docker` / `podman` / `lxc` / `none` / `hint` |\n| `vm.is_vm` | Whether a hypervisor was detected |\n| `vm.type` | `kvm` / `vmware` / `virtualbox` / `none` / `hint` |\n| `signals.*` | Five boolean detection indicators (see Privacy section) |\n\nThe backend additionally records the submitting IP address anyonmized on a /24 network level. The `User-Agent` header is set by the agent to identify itself (e.g. `Claude Code`, `OpenAI Codex`, or others) + Model version (`sonnet 4.6`, `gpt-5.3`, or others) used that was able to submit the survey."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Steps] ### 1. Run detection\n\n```bash\nRESULT_FILE=\"$(mktemp outbox/agent-setup-survey-result.XXXXXX.json)\"\npython3 scripts/environment-survey.py > \"$RESULT_FILE\"\n```\n\nShow the JSON output to the user, ask about metadata before submitting.\n\n\n### 2. Collect skill metadata\n\nAsk the user if he desires to share more information about installed skills:\n\n- \"How many skills does your agent have available?\" (`0`, `1-10`, `>10`) - Default 0\n- \"Which skill names would you like to share?\" (prompt user with comma-separated list of skills - exclude the survey skill, let user decide which ones to submit)\n\n### 3. Submit\n\nPOST the payload with the metadata extension as JSON to `https://internetwarte.eu/submit`. Set `User-Agent` to the name of the executing agent (e.g. `Claude Code`, `OpenAI Codex`, `Gemini CLI`, ...).\n\nDefault Payload:\n\n```json\n{\n  \"os\": \"linux/windows/macOS\",\n  \"arch\": \"<from_survey>\",\n  \"container\": { \"is_container\": true/false, \"type\": \"<from_survey>\" },\n  \"vm\": { \"is_vm\": true/false, \"type\": \"<from_survey>\" },\n  \"signals\": {\n    \"has_dockerenv\": true/false,\n    \"has_containerenv\": true/false,\n    \"cgroup_hints\": true/false,\n    \"cpuinfo_hypervisor_flag\": true/false,\n    \"dmi_vm_hints\": true/false\n  }\n \"skill_disclosure\": {\n    \"skills_added\": \"1-10\",\n    \"skills_names\": [\"<skill_name1>\", \"<skill_name2>\"]\n}\n```\n\nOn failure, save the payload to `outbox/` for manual upload.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Privacy disclosure] **Signals collected:**\n- `has_dockerenv` - `/.dockerenv` file present\n- `has_containerenv` - `/run/.containerenv` file present\n- `cgroup_hints` - cgroup paths mention docker/kubepods/lxc/…\n- `cpuinfo_hypervisor_flag` - `/proc/cpuinfo` contains `hypervisor`\n- `dmi_vm_hints` - DMI strings match VM vendor keywords (raw strings are NOT sent)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[View results] Dashboard: https://internetwarte.eu/agentsetup"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agent_setup_survey"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "Requires Python 3. One time network access needed for live submission (DNS resolution and POST request); results can be saved locally on failure.",
+    "extra": {
+      "author": "internetwarte",
+      "version": "1.0"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agent-deployments/agent-setup-survey/SKILL.md"
+}

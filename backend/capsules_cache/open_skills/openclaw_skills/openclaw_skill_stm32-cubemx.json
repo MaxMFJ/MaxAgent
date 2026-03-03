@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_stm32-cubemx",
+  "description": "STM32CubeMX CLI operations for configuring pins, peripherals, DMA, interrupts, and generating code. Use cases: (1) Add/modify STM32 peripheral configuration (2) Configure USART/SPI/I2C/ADC/TIM peripherals (3) Set up DMA and interrupts (4) Generate CMake/GCC project code. Default target MCU: STM32F103C8Tx.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # STM32CubeMX CLI Operations"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Environment Setup] ```bash\n# STM32CubeMX path (modify based on your installation)\nCUBEMX=/path/to/STM32CubeMX/STM32CubeMX\n\n# Project path (adjust for your project)\nPROJECT_DIR=/path/to/your/project\nIOC_FILE=$PROJECT_DIR/your_project.ioc\nSCRIPT_FILE=$PROJECT_DIR/cube_headless.txt\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Workflow] ```\n1. Modify IOC config file → 2. Run CLI to generate code → 3. CMake build verification\n```\n\n### Step 1: Modify IOC File\n\nEdit the `.ioc` file to add/modify peripheral configuration.\n\n**Key Configuration Sections:**\n- `Mcu.IP0=XXX` - Peripheral IP list, `Mcu.IPNb` is the count\n- `Mcu.Pin0=PAx` - Pin list, `Mcu.PinsNb` is the count\n- `XXX.Signal=YYY` - Pin signal mapping\n- `ProjectManager.functionlistsort` - Initialization function list\n\n### Step 2: Generate Code\n\n```bash\n# Headless mode (recommended)\n$CUBEMX -q $SCRIPT_FILE\n\n# Script file content\ncat > $SCRIPT_FILE << 'EOF'\nconfig load /path/to/your/project/your_project.ioc\nproject generate\nexit\nEOF\n```\n\n### Step 3: Build Verification\n\n```bash\ncd $PROJECT_DIR\nrm -rf build/Debug\ncmake --preset Debug\ncmake --build build/Debug\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[CLI Command Reference] | Command | Purpose | Example |\n|------|------|------|\n| `config load <path>` | Load IOC configuration | `config load /path/to/project.ioc` |\n| `config save <path>` | Save IOC configuration | `config save /path/to/project.ioc` |\n| `project generate` | Generate complete project | `project generate` |\n| `project toolchain <name>` | Set toolchain | `project toolchain CMake` |\n| `project path <path>` | Set project path | `project path /path/to/project` |\n| `project name <name>` | Set project name | `project name MyProject` |\n| `load <mcu>` | Load MCU | `load STM32F103C8Tx` |\n| `setDriver <IP> <HAL\\|LL>` | Set driver type | `setDriver ADC LL` |\n| `exit` | Exit program | `exit` |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Peripheral Configuration Templates] ### USART + DMA\n\nSee [references/USART_DMA.md](references/USART_DMA.md) for detailed configuration\n\n```ini\n# Add IP\nMcu.IP6=USART2\nMcu.IPNb=7\n\n# Pin configuration\nPA2.Signal=USART2_TX\nPA3.Signal=USART2_RX\n\n# USART2 parameters\nUSART2.BaudRate=115200\nUSART2.Dmaenabledrx=1\nUSART2.Dmaenabledtx=1\n\n# DMA configuration\nDma.Request0=USART2_RX\nDma.Request1=USART2_TX\nDma.USART2_RX.0.Instance=DMA1_Channel6\nDma.USART2_TX.1.Instance=DMA1_Channel7\n\n# Interrupts\nNVIC.USART2_IRQn=true\\:0\\:0\\:false\\:false\\:true\\:true\\:true\\:true\n```\n\n### ADC Acquisition\n\n```ini\n# Add ADC1\nMcu.IP0=ADC1\n\n# ADC configuration\nADC1.Channel-1\\#ChannelRegularConversion=ADC_CHANNEL_5\nADC1.Rank-1\\#ChannelRegularConversion=1\nADC1.SamplingTime-1\\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5\nADC1.NbrOfConversionFlag=1\nADC1.master=1\n\n# Pin\nPA5.Signal=ADCx_IN5\nSH.ADCx_IN5.0=ADC1_IN5,IN5\n```\n\n### TIM PWM\n\n```ini\n# TIM3 configuration\nTIM3.Channel-PWM\\ Generation1\\ CH1=PWM_CHANNEL1\nTIM3.Channel-PWM\\ Generation2\\ CH2=PWM_CHANNEL2\nTIM3.IPParametersWithoutCheck=Prescaler,Period\n\n# Pins\nPA6.Signal=TIM3_CH1\nPA7.Signal=TIM3_CH2\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[STM32F103C8T6 Resource Mapping] ### USART\n\n| Peripheral | TX | RX | DMA TX | DMA RX |\n|------|-----|-----|--------|--------|\n| USART1 | PA9 | PA10 | DMA1_Ch4 | DMA1_Ch5 |\n| USART2 | PA2 | PA3 | DMA1_Ch7 | DMA1_Ch6 |\n| USART3 | PB10 | PB11 | DMA1_Ch2 | DMA1_Ch3 |\n\n### ADC Channels\n\n| Channel | Pin | Channel | Pin |\n|------|------|------|------|\n| IN0 | PA0 | IN5 | PA5 |\n| IN1 | PA1 | IN6 | PA6 |\n| IN2 | PA2 | IN7 | PA7 |\n| IN3 | PA3 | IN8 | PB0 |\n| IN4 | PA4 | IN9 | PB1 |\n\n### TIM Channels\n\n| Timer | CH1 | CH2 | CH3 | CH4 |\n|--------|-----|-----|-----|-----|\n| TIM1 | PA8 | PA9 | PA10 | PA11 |\n| TIM2 | PA0/PA5/PA15 | PA1/PB3 | PA2 | PA3 |\n| TIM3 | PA6/PB4 | PA7/PB5 | PB0 | PB1 |\n| TIM4 | PB6 | PB7 | PB8 | PB9 |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Q1: CLI execution has no effect\n**Cause**: Paths must be absolute\n```bash\n# Wrong\n./STM32CubeMX -q script.txt\n# Correct\n/path/to/STM32CubeMX/STM32CubeMX -q /path/to/project/script.txt\n```\n\n### Q2: Generated code missing initialization functions\n**Cause**: `functionlistsort` does not include the corresponding function\n```ini\n# Add initialization function\nProjectManager.functionlistsort=...,N-MX_XXX_Init-XXX-false-HAL-true\n```\n\n### Q3: Peripheral code not generated\n**Checklist**:\n1. Is IP in the `Mcu.IPx` list?\n2. Is `Mcu.IPNb` count correct?\n3. Is pin Signal configured?\n\n### Q4: DMA not associated\n**Solution**: Enable peripheral DMA parameters\n```ini\nUSART2.Dmaenabledrx=1\nUSART2.Dmaenabledtx=1\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Quick Reference] ```bash\n# Complete workflow\ncd /path/to/your/project\n# 1. Edit IOC file\n# 2. Generate code\n/path/to/STM32CubeMX/STM32CubeMX -q cube_headless.txt\n# 3. Build\ncmake --preset Debug && cmake --build build/Debug\n# 4. Check size\narm-none-eabi-size build/Debug/your_project.elf\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[References] - [references/USART_DMA.md](references/USART_DMA.md) - Complete USART + DMA configuration\n- [references/IOC_structure.md](references/IOC_structure.md) - Detailed IOC file structure\n- [UM1718 STM32CubeMX User Manual](https://www.st.com/resource/en/user_manual/um1718-stm32cubemx-description-stmicroelectronics.pdf)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "stm32_cubemx"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aidankong/stm32-cubemx/SKILL.md"
+}

@@ -1,0 +1,62 @@
+{
+  "id": "openclaw_skill_strategy-translator",
+  "description": "Translate trading strategies between different frameworks and languages. Use when converting Pine Script to Python, porting strategies to NautilusTrader, or cross-platform migration.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Strategy Translator\n\nSource: https://mcpmarket.com/tools/skills/strategy-translator"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use When] - You need to apply this capability as part of trading research workflows (data, features, backtests, ML, reporting).\n- You want a reproducible output that can be committed to this repo (code, configs, docs)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Inputs To Ask For] - Objective: what success looks like (metric, constraints, time horizon).\n- Data: symbols, timeframe, sampling, data sources, and leakage risks.\n- Constraints: compute budget, latency, interpretability, and deployment requirements."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Outputs] - A concrete plan (steps + checks).\n- A minimal implementation sketch (files to create/change) and verification steps.\n- If applicable: a risk checklist (leakage, overfitting, evaluation pitfalls)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow] 1. Restate the task in measurable terms.\n2. Enumerate required artifacts (datasets, features, configs, scripts, reports).\n3. Propose a default approach and 1-2 alternatives.\n4. Add validation gates (walk-forward, Monte Carlo, sanity checks).\n5. Produce repo-ready deliverables (code + docs) and a run command."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Read,",
+    "Write,",
+    "Edit",
+    "agent-skill"
+  ],
+  "capability": [
+    "strategy_translator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahuserious/strategy-translator/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_base-alpha-scanner",
+  "description": "Real-time Base chain alpha intelligence for ZHAO (CryptoZhaoX). Use when scanning Base memecoins for second-wave setups or early gem launches; checking GMGN smart money flows; analyzing holder distribution for a Base token; scanning Clanker or Bankr.fun for high-quality narrative token deployments; monitoring VIRTUAL Protocol AI agent launches; running the AI narrative scanner on Base; generating trade alerts on Base memecoins or mainstream assets (BTC/ETH/UNI); any on-chain analysis task on Base chain.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Base Alpha Scanner\n\nZHAO's on-chain intelligence toolkit for Base chain. Data-first, no hype. Alert only on high-conviction setups."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Scripts] ### scan_base.py — Core on-chain scanner\n```\npython3 skills/base-alpha-scanner/scripts/scan_base.py --mode <mode> [addr]\n```\nModes:\n- `trending` — Top Base tokens ranked by conviction score (1h)\n- `new` — Early launch scanner: 0–45min + 45min–3h windows\n- `token <addr>` — Deep dive on specific token (all timeframes)\n- `holders <addr>` — Holder distribution + concentration check\n- `gmgn <addr>` — GMGN smart money data (may need browser fallback)\n\n### scan_narrative.py — Narrative & platform scanner\n```\npython3 skills/base-alpha-scanner/scripts/scan_narrative.py --mode <mode>\n```\nModes:\n- `clanker` — Latest Clanker token deployments on Base\n- `bankr` — Bankr.fun trending tokens (Farcaster-native)\n- `virtual` — VIRTUAL Protocol AI agent ecosystem\n- `ai` — Broad AI narrative scan across Base"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] ### Standard market scan (run on demand or every 1–2h):\n1. `scan_base.py --mode trending` → identify what's moving\n2. For anything score ≥ 60: `scan_base.py --mode token <addr>` → deep dive\n3. If AI narrative or Farcaster signals: `scan_narrative.py --mode ai` + `clanker`\n4. Apply alert rules → ping ZHAO only if threshold met\n\n### Early launch scan (continuous background):\n1. `scan_base.py --mode new` → check 0–45min window\n2. Score ≥ 60 + clean signals → immediate check with `token` mode\n3. Cross-reference with `scan_narrative.py --mode clanker` for Farcaster origin\n4. If all checks pass → early gem ping\n\n### Holder distribution check:\n1. `scan_base.py --mode holders <addr>`\n2. Flag if top-5 > 40% supply or any single wallet > 15%\n3. Cross with DexScreener buy/sell maker count to confirm real distribution"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Alert Rules] Read `references/alert-rules.md` for full ruleset. Summary:\n- **Immediate ping**: Tier 1 only (vol spike + narrative + clean chart + liq > $100K)\n- **Second-wave alert**: 45min–3h old, sustained vol + holder growth, score ≥ 65\n- **Early gem**: <45min, score ≥ 60, clean team, real momentum. Max 2–3/day\n- **Mainstream (BTC/ETH/UNI)**: Key level breaks, on-chain flows, funding extremes"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[API Reference] See `references/api-endpoints.md` for all endpoints, field names, and data source details.\n\nKey addresses:\n- VIRTUAL token (Base): `0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b`\n- cbBTC (Base): `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Conviction Score (0–100)] Built into `scan_base.py`. Score ≥ 65 = alert candidate. Score < 50 = ignore.\nFactors: 1h volume, liquidity, buy pressure ratio, age (45min–3h = peak), momentum, mcap."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[GMGN Notes] GMGN often blocks direct API access. Fallback options:\n1. Use `browser` tool to navigate `https://gmgn.ai/base/token/<addr>`\n2. Take screenshot for ZHAO if needed\n3. Check wallet history at `https://gmgn.ai/base/address/<wallet>`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Bankr Notes] No clean public API. Bankr alpha comes from Warpcast:\n- Channel: `https://warpcast.com/~/channel/bankr`\n- Use `web_search` for recent Bankr mentions + `web_fetch` on Warpcast casts\n- High signal: power users (>5K followers) buying via Bankr frame in <30min of launch"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "base_alpha_scanner"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a4205586/base-alpha-scanner/SKILL.md"
+}

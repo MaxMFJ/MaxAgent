@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_opengfx",
+  "description": "AI brand design system — logo systems, brand mascots, social assets, and on-brand marketing graphics via ACP or x402.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Skill: opengfx"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Description] AI brand design system — generates complete logo systems, brand mascots, social assets, and on-brand marketing graphics in minutes. **Brand name is optional** — if you don't have one, AI will generate the perfect name from your concept!\n\n**Pricing:**\n- Logo System: $5\n- Brand Mascot: $5\n- Social Assets: $5\n- On-Brand GFX: $2\n\n**This is a SERVICE skill** — it documents how to use an external paid API. No code execution, no local files modified, no credentials requested.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Two Integration Options] | Method | Protocol | Best For |\n|--------|----------|----------|\n| **ACP** | Virtuals Protocol | OpenClaw agents with ACP skill |\n| **x402** | HTTP 402 | Any agent/app with crypto wallet |\n\nBoth methods support the same services at the same price ($5 USDC or equivalent).\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Requirements] **For ACP integration:**\n- An ACP-compatible agent/wallet (e.g., OpenClaw with ACP skill installed)\n- USDC on Base chain for payments ($5 per service)\n\n**For x402 integration:**\n- Any HTTP client\n- Wallet for payment signing (Base USDC or Solana SOL)\n- Use `@x402/fetch` SDK or manual payment flow\n\n**This skill does NOT:**\n- Install any binaries\n- Request or store private keys\n- Execute any code on your system\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Privacy & Data] - **What you send:** Concept description (required), brand name (optional), tagline (optional)\n- **What happens:** The service generates logo system (icon, wordmark, lockups), analyzes style, creates social assets\n- **Data retention:** Assets stored on Cloudflare R2 for 30 days, then deleted. Contact aklo@aklo.studio for early deletion.\n- **Recommendation:** Only submit brand names/concepts you own or have rights to use. Do not submit confidential or trademarked content.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Option 1: ACP Integration (Virtuals Protocol)] ### Agent Details\n\n- **Agent Wallet:** `0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e`\n- **Protocol:** ACP (Agent Commerce Protocol)\n- **Marketplace:** https://app.virtuals.io/acp\n\n### Create Logo Job (with name)\n\n```bash\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e logo \\\n  --requirements '{\"brandName\":\"Acme\",\"concept\":\"Modern fintech startup, bold and trustworthy\",\"tagline\":\"Banking for Everyone\"}'\n```\n\n### Create Logo Job (AI names the brand)\n\n```bash\n# Just provide concept — AI will generate the perfect brand name!\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e logo \\\n  --requirements '{\"concept\":\"AI-powered fitness coaching app for busy professionals\"}'\n```\n\n### Poll Job Status\n\n```bash\nacp job status <jobId>\n```\n\n### Create Social Assets (from Logo Service)\n\n```bash\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e social \\\n  --requirements '{\"brandSystemUrl\":\"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/brand-system.json\"}'\n```\n\n### Create Social Assets (BYOL — Bring Your Own Logo)\n\n```bash\n# AI extracts colors from your logo\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e social \\\n  --requirements '{\"logoUrl\":\"https://example.com/my-logo.png\",\"brandName\":\"My Brand\"}'\n\n# Or specify colors manually\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e social \\\n  --requirements '{\"logoUrl\":\"https://example.com/my-logo.png\",\"brandName\":\"My Brand\",\"primaryColor\":\"#FF5500\",\"secondaryColor\":\"#333333\",\"renderStyle\":\"gradient\"}'\n```\n\n### Create On-Brand GFX (from Logo Service)\n\n```bash\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e gfx \\\n  --requirements '{\"brandSystemUrl\":\"https://pub-xxx.r2.dev/acme/brand-system.json\",\"prompt\":\"Announcement graphic: We just hit 10,000 users! Celebratory vibe.\",\"aspectRatio\":\"1:1\"}'\n```\n\n### Create On-Brand GFX (BYOL)\n\n```bash\nacp job create 0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e gfx \\\n  --requirements '{\"logoUrl\":\"https://example.com/logo.png\",\"brandName\":\"Acme\","
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Option 2: x402 Integration (Direct API)] ### Base URL\n\n```\nhttps://gateway.opengfx.app\n```\n\n### Endpoints\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/` | API documentation |\n| GET | `/health` | Health check |\n| GET | `/v1/pricing` | Pricing with current SOL rate |\n| POST | `/v1/logo` | Generate logo system (x402 payment) |\n| POST | `/v1/mascot` | Generate brand mascot with 6 poses (x402 payment) |\n| POST | `/v1/socials` | Generate social assets (x402 payment) |\n| POST | `/v1/gfx` | Generate on-brand marketing graphic (x402 payment) |\n| GET | `/v1/jobs/:id` | Check job status |\n| GET | `/v1/jobs` | List jobs (filter by wallet) |\n\n### Supported Payment Chains\n\n| Chain | Asset | Network |\n|-------|-------|---------|\n| Base | USDC | `eip155:8453` |\n| Solana | SOL | `solana:mainnet` |\n\n### Payment Wallets\n\n- **Base (USDC):** `0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e`\n- **Solana (SOL):** Check `/v1/pricing` for current wallet\n\n### x402 Payment Flow\n\n1. **Request service** → POST to any endpoint (`/v1/logo`, `/v1/mascot`, `/v1/socials`, `/v1/gfx`)\n2. **Receive 402** → Response includes payment options (Base USDC or Solana SOL)\n3. **Sign payment** → Use wallet to sign the payment authorization\n4. **Retry with payment** → Same request with `X-Payment` header containing signed payment\n5. **Receive job ID** → Response includes `jobId` and `pollUrl`\n6. **Poll for completion** → GET `/v1/jobs/:jobId` until `status: \"completed\"`\n7. **Get assets** → Response contains CDN URLs for all generated assets\n\n### Example: Logo Request ($5)\n\n```bash\ncurl -X POST https://gateway.opengfx.app/v1/logo \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"brand_name\":\"Acme\",\"concept\":\"Modern fintech startup\"}'\n```\n\n### Example: Mascot Request ($5)\n\n```bash\ncurl -X POST https://gateway.opengfx.app/v1/mascot \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"brand_name\":\"Melodify\",\"prompt\":\"Cute music note mascot with headphones\",\"primary_color\":\"#8B5CF6\"}'\n```\n\n### Example: Social Assets Request ($5)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Pricing] | Service | Price | Output |\n|---------|-------|--------|\n| Logo System | $5 | Icon, wordmark, stacked, horizontal + brand-system.json |\n| Brand Mascot | $5 | 6-pose expression sheet (master, wave, happy, sad, angry, laugh) |\n| Social Assets | $5 | Avatar (1K + ACP) + Twitter banner + OG card + Community banner |\n| On-Brand GFX | $2 | Single marketing graphic (any aspect ratio) |\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Input Options] ### Logo Service\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `concept` | ✅ | Brand concept, vibe, industry, style direction |\n| `brandName` / `brand_name` | ❌ | Brand name (AI generates if not provided) |\n| `tagline` | ❌ | Optional tagline/slogan |\n\n### Social Service (Mode 1: From Logo Service)\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `brandSystemUrl` / `brand_system_url` | ✅ | URL to brand-system.json from logo service |\n\n### Social Service (Mode 2: BYOL)\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `logoUrl` / `logo_url` | ✅ | URL to your existing logo image |\n| `brandName` / `brand_name` | ✅ | Brand name |\n| `tagline` | ❌ | Optional tagline |\n| `primaryColor` / `primary_color` | ❌ | Primary color hex (auto-extracted if not provided) |\n| `secondaryColor` / `secondary_color` | ❌ | Secondary color hex |\n| `backgroundColor` / `background_color` | ❌ | Background color hex |\n| `renderStyle` / `render_style` | ❌ | flat, gradient, glass, chrome, gold, neon, 3d |\n\n### GFX Service (Mode 1: From Logo Service)\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `brandSystemUrl` / `brand_system_url` | ✅ | URL to brand-system.json from logo service |\n| `prompt` | ✅ | What graphic to generate (be specific about purpose, mood, text) |\n| `aspectRatio` / `aspect_ratio` | ❌ | Output ratio: 1:1, 4:5, 16:9, 9:16, etc. (default: 1:1) |\n\n### GFX Service (Mode 2: BYOL)\n\n| Field | Required | Description |\n|-------|----------|-------------|\n| `logoUrl` / `logo_url` | ✅ | URL to your existing logo image |\n| `brandName` / `brand_name` | ✅ | Brand name |\n| `prompt` | ✅ | What graphic to generate |\n| `aspectRatio` / `aspect_ratio` | ❌ | Output ratio (default: 1:1) |\n| `primaryColor` / `primary_color` | ❌ | Primary color hex (auto-extracted if not provided) |\n| `secondaryColor` / `secondary_color` | ❌ | Secondary color hex |\n| `renderStyle` / `render_style` | ❌ | flat, gradient, glass"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Output] ### Logo System Response\n\n```json\n{\n  \"jobId\": \"abc-123\",\n  \"status\": \"completed\",\n  \"brandName\": \"Acme\",\n  \"logo\": {\n    \"icon\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/icon.png\",\n    \"wordmark\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/wordmark.png\",\n    \"stacked\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/stacked.png\",\n    \"horizontal\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/horizontal.png\",\n    \"brandSystem\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/brand-system.json\"\n  }\n}\n```\n\n### Social Assets Response\n\n```json\n{\n  \"jobId\": \"def-456\",\n  \"status\": \"completed\",\n  \"brandName\": \"Acme\",\n  \"socials\": {\n    \"avatarMaster\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/avatar-master.png\",\n    \"avatarAcp\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/avatar-acp.jpg\",\n    \"twitterBanner\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/twitter-banner.png\",\n    \"ogCard\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/og-card.png\",\n    \"communityBanner\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/community-banner.png\"\n  }\n}\n```\n\n### GFX Response\n\n```json\n{\n  \"jobId\": \"gfx-789\",\n  \"status\": \"completed\",\n  \"brandName\": \"Acme\",\n  \"gfx\": {\n    \"url\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/acme/gfx/gfx-789.png\",\n    \"width\": 1024,\n    \"height\": 1024,\n    \"aspectRatio\": \"1:1\"\n  }\n}\n```\n\n### Mascot Response\n\n```json\n{\n  \"jobId\": \"mascot-123\",\n  \"status\": \"completed\",\n  \"brandName\": \"Melodify\",\n  \"mascot\": {\n    \"master\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/melodify/mascot/FINAL/master.png\",\n    \"wave\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/melodify/mascot/FINAL/wave.png\",\n    \"happy\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/melodify/mascot/FINAL/happy.png\",\n    \"sad\": \"https://pub-156972f0e0f44d7594f4593dbbeaddcb.r2.dev/melodify/mascot/FINAL/sad.png\",\n    \"angry\": \"https://p"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Vendor Information] - **Service:** OpenGFX\n- **Provider:** AKLO Labs\n- **Website:** https://opengfx.app\n- **GitHub:** https://github.com/aklo360/opengfx-skill\n- **Support:** aklo@aklo.studio\n- **Agent Wallet:** `0x7cf4CE250a47Baf1ab87820f692BB87B974a6F4e`\n- **x402 Gateway:** https://gateway.opengfx.app\n- **ACP Marketplace:** https://app.virtuals.io/acp\n- **ClawHub:** https://clawhub.com/skills/opengfx\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Best Practices] - **Be specific about your concept** — include industry, vibe, target audience\n- **Include color preferences** if you have them (e.g., \"blue and gold tones\")\n- **Mention style direction** — \"minimal\", \"playful\", \"corporate\", \"tech\", \"organic\"\n- **Dark vs Light** — AI auto-detects, but you can hint (\"dark mode aesthetic\" or \"bright and friendly\")\n- **Test first** — Use a low-value test job to verify behavior before production use\n- **x402 vs ACP** — Use x402 for direct integration; use ACP if you're already in the Virtuals ecosystem"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "opengfx"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aklo360/opengfx/SKILL.md"
+}

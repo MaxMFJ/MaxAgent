@@ -1,0 +1,114 @@
+{
+  "id": "openclaw_skill_content-remix-studio",
+  "description": "Transform one piece of content into platform-optimized versions for YouTube, TikTok, Twitter/X, LinkedIn, Instagram, newsletters, and blogs. Adapts tone, format, length, and style for each platform's algorithm and audience expectations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Content Remix Studio"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Description] Content Remix Studio is the ultimate content repurposing engine for creators, marketers, and brands. Take one piece of content (video script, blog post, podcast transcript, presentation) and intelligently transform it into platform-optimized versions for YouTube, TikTok, Instagram, Twitter/X, LinkedIn, blogs, and newsletters—each with the right tone, format, length, and hook for maximum engagement.\n\nStop recreating content from scratch. Start remixing strategically."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[The Problem This Solves] Content creators face a brutal dilemma:\n- **Creating for one platform** = Limited reach, wasted potential\n- **Recreating for every platform** = Exhausting, time-consuming, expensive\n- **Copy-pasting everywhere** = Poor performance, algorithm penalties, low engagement\n\nThe answer? **Strategic remixing** with platform intelligence."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Capabilities] ### 1. Multi-Platform Transformation\nTake one source content and generate:\n- **YouTube** (long-form): Title, description, timestamps, chapters, pinned comment\n- **TikTok/Reels/Shorts** (15-60s): Hook-first script, visual cues, trending sounds\n- **Twitter/X Thread**: 8-15 tweet thread, quote-tweets, engagement prompts\n- **LinkedIn Article**: Professional tone, industry insights, call-to-action\n- **Instagram Carousel**: 10-slide story arc, visual text, swipe prompts\n- **Blog Post**: SEO-optimized article, meta description, headers\n- **Newsletter**: Email-friendly format, personal tone, clickable structure\n- **Podcast Script**: Conversational flow, intro/outro, ad break placements\n\n### 2. Platform-Specific Optimization\n\n**YouTube Strategy:**\n- Title psychology (curiosity gaps, numbers, power words)\n- Description optimization (first 3 lines, keywords, timestamps)\n- Thumbnail concepts (contrast, faces, text overlay)\n- Engagement hooks (ask to subscribe at X:XX)\n- Retention tactics (pattern interrupts, callbacks)\n\n**TikTok/Short-Form Strategy:**\n- Hook in first 3 seconds (scroll-stopping opening)\n- Visual storytelling cues (text overlays, transitions)\n- Trending sound integration suggestions\n- Call-to-action timing (7-second rule)\n- Loop-ability for algorithm boost\n\n**Twitter/X Strategy:**\n- Thread structure (numbered tweets, emotional arc)\n- Engagement bait (questions, polls, hot takes)\n- Quote-tweetable moments\n- Reply-seeding strategy\n- Viral mechanics (controversy, relatability, data)\n\n**LinkedIn Strategy:**\n- Professional hook (industry insight, data-driven)\n- Story structure (challenge → insight → lesson)\n- Authority building (credentials, experience)\n- Engagement prompts (agree/disagree, share experience)\n- Hashtag strategy (3-5 relevant tags)\n\n**Instagram Strategy:**\n- Carousel storytelling (problem → steps → result)\n- Visual hierarchy (text size, color, whitespace)\n- Swipe prompts (\"See next slide for...\")\n- Story highlights tie-in\n- Saveable/shareable formats\n\n#"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Usage Examples] ### Example 1: YouTube Video → Multi-Platform Remix\n\n**User**: \"I just recorded a 15-minute YouTube video about '5 Productivity Hacks for Remote Workers.' Help me repurpose it.\"\n\n**Assistant Response**:\n\n**YouTube (Main Content):**\n- Title: \"5 Productivity Hacks That Actually Work for Remote Workers (No BS)\"\n- Hook Script: \"If you're working from home and feel like you're drowning in distractions...\"\n- Timestamps: 0:00 Intro | 1:23 Hack #1: The 52-17 Rule | 4:10 Hack #2...\n- Pinned Comment: \"Which hack are you trying first? Drop a number 1-5 below 👇\"\n\n**TikTok/Shorts (5x 60-second clips):**\nClip 1: \"The 52-17 Rule\"\n- Hook: \"This productivity hack is backed by science and I use it every single day...\"\n- Visual cues: [Text overlay: \"52 min work\"] [Timer animation] [Text: \"17 min break\"]\n- CTA: \"Follow for more productivity tips that actually work\"\n\n**Twitter Thread (12 tweets):**\n1/ I just tested 5 productivity hacks for 30 days while working remotely.\n\nOnly 3 actually worked. Here's what I learned 🧵\n\n2/ First, the problem: Working from home = endless distractions...\n\n[Continues with insights, data, and takeaways]\n\n12/ Which one resonates most with you? Reply and let me know!\n\nAnd if this thread helped you, RT the first tweet so others can see it 🙏\n\n**LinkedIn Article:**\nTitle: \"5 Evidence-Based Productivity Strategies for Remote Teams\"\nOpening: \"In Q4 2025, I conducted a personal experiment testing popular productivity methodologies...\"\n[Professional tone, industry statistics, leadership insights]\nCTA: \"What productivity systems have worked for your remote team? Share in comments.\"\n\n**Instagram Carousel (10 slides):**\nSlide 1: \"5 Productivity Hacks for Remote Work ➡️\"\nSlide 2-6: [Each hack with icon, 1-2 sentences, visual design]\nSlide 7: \"My Results After 30 Days\"\nSlide 8-9: [Data visualization, key metrics]\nSlide 10: \"Save this for later! Which will you try? Drop a 🔥 in comments\"\n\n**Blog Post (SEO Version):**\nTitle: \"5 Productivity Hacks for Remote Workers (2026 Gu"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Platform Specifications & Best Practices] ### YouTube\n- **Title**: 60-70 characters, front-load keywords\n- **Description**: First 150 characters are critical, 3-5 timestamps minimum\n- **Thumbnail**: High contrast, 1-2 words max, face (if applicable)\n- **Length**: 8-15 min (sweet spot for retention + ads)\n- **Engagement**: Ask question at 30%, remind to subscribe at 70%\n\n### TikTok/Shorts/Reels\n- **Hook**: First 1-3 seconds must stop scroll\n- **Length**: 15-45 seconds (sweet spot), up to 60s\n- **Captions**: Always add (80% watch without sound)\n- **Text overlays**: Large, bold, yellow or white text\n- **CTA**: 3-5 seconds before end\n- **Loop-ability**: Last frame → first frame for algorithm\n\n### Twitter/X\n- **Thread length**: 8-15 tweets (optimal engagement)\n- **Tweet 1**: Hook with promise (\"Here's how...\" \"X lessons...\")\n- **Formatting**: Use line breaks, emojis sparingly, number tweets\n- **Engagement**: Question in last tweet, RT request\n- **Timing**: Post 8-10 AM or 5-7 PM EST\n\n### LinkedIn\n- **First line**: Make them click \"see more\" (hook)\n- **Length**: 1,300-2,000 characters (sweet spot)\n- **Formatting**: Short paragraphs, line breaks, bold for emphasis\n- **CTA**: Ask for engagement (thoughts? agree? experience?)\n- **Hashtags**: 3-5 relevant, not spammy\n\n### Instagram\n- **Carousel**: 6-10 slides (completion rate matters)\n- **First slide**: Hook + promise (\"Swipe to learn...\")\n- **Design**: High contrast, readable from thumbnail\n- **Caption**: First line is critical (before \"...more\")\n- **CTA**: \"Save this,\" \"Share with someone who needs this\"\n\n### Blog/SEO\n- **Title**: Include primary keyword, under 60 characters\n- **Meta description**: 150-160 characters, include keyword + CTA\n- **Headers**: H2 every 300 words, H3 for subsections\n- **Length**: 1,500-2,500 words (sweet spot for ranking)\n- **Internal links**: 3-5 to related content\n- **Images**: Alt text, compress for speed\n\n### Newsletter\n- **Subject line**: Under 50 characters, create curiosity or urgency\n- **Preview text**: First 50 characters of emai"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Content Remix Frameworks] ### The Pillar → Cluster Method\n1. Create one pillar content (long-form: video, blog, podcast)\n2. Extract 20-50 micro-content pieces (quotes, tips, frameworks)\n3. Distribute micro-content across platforms\n4. Link back to pillar for depth\n\n### The Atomization Strategy\nTake one 15-minute video and create:\n- 1 YouTube video (pillar)\n- 10 TikTok/Shorts (clips)\n- 5 Instagram Reels (clips)\n- 3 Twitter threads (insights)\n- 2 LinkedIn posts (professional takes)\n- 1 blog post (SEO version)\n- 15 quote graphics (Instagram/LinkedIn)\n- 1 newsletter (synthesis)\n\nTotal: 38 pieces of content from 1 source\n\n### The Multi-Angle Approach\nSame topic, different angles for different platforms:\n- **YouTube**: Deep educational content\n- **TikTok**: Entertaining, relatable take\n- **LinkedIn**: Professional insight with data\n- **Twitter**: Contrarian or hot take\n- **Instagram**: Visual transformation story\n- **Blog**: Comprehensive guide"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Hook Psychology] ### YouTube Hooks\n- **Pattern Interrupt**: \"Forget everything you know about X...\"\n- **Curiosity Gap**: \"The one thing nobody tells you about...\"\n- **Results First**: \"Here's how I made $50k in 30 days...\"\n- **Relatability**: \"If you're struggling with X, this will change everything...\"\n- **Controversy**: \"Everyone's doing X wrong. Here's why...\"\n\n### TikTok Hooks\n- **Direct Address**: \"If you're a creator who wants more views...\"\n- **Negative Hook**: \"Stop doing X. It's killing your content...\"\n- **Numbers**: \"3 things I wish I knew before starting...\"\n- **Personal Story**: \"I tried X for 30 days and here's what happened...\"\n- **POV Style**: \"POV: You just learned the secret to...\"\n\n### Twitter Hooks\n- **Bold Claim**: \"X is dead. Here's what's replacing it...\"\n- **Numbered Thread**: \"10 lessons from X that changed my life 🧵\"\n- **Contrarian**: \"Unpopular opinion: X is overrated. Here's why...\"\n- **Data-Driven**: \"I analyzed 1000 tweets. Here's what works...\"\n- **Personal**: \"I made $X doing Y. Here's exactly how...\"\n\n### LinkedIn Hooks\n- **Industry Insight**: \"The biggest shift happening in X industry right now...\"\n- **Lessons Learned**: \"After 10 years in X, here's what I've learned...\"\n- **Challenge/Solution**: \"The X problem is getting worse. Here's how to fix it...\"\n- **Counterintuitive**: \"Everyone says to do X. I did the opposite...\"\n- **Data Story**: \"Our team analyzed X and found something surprising...\""
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Content Calendar Strategy] ### Weekly Publishing Schedule\n- **Monday**: LinkedIn article (professional mindset)\n- **Tuesday-Thursday**: Daily TikTok/Shorts (algorithm momentum)\n- **Wednesday**: Twitter thread (mid-week engagement peak)\n- **Thursday**: YouTube video (prime discovery day)\n- **Friday**: Instagram carousel (weekend save/share behavior)\n- **Weekend**: Newsletter (time to read)\n\n### Content Batching\n- **Batch 1 pillar** → Create 30-50 pieces\n- Publish over 4-6 weeks\n- Maintain consistent presence without daily creation\n- Repurpose evergreen content quarterly"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use Content Remix Studio when:\n- You've created content and want to maximize reach across platforms\n- You're repurposing old content for new audiences\n- You need platform-specific optimizations (hooks, formats, tone)\n- You're planning a content calendar and need strategic distribution\n- You want to scale content production without creating from scratch\n- You're analyzing which platforms to prioritize for a topic\n- You need help adapting your brand voice for different audiences\n- You're launching a product/service and need omnichannel content"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Strategic Principles] ### The 1→10→100 Rule\n- 1 hour creating pillar content\n- 10 minutes per micro-content piece (10 pieces = 100 minutes)\n- 100+ hours of value delivered to audience\n\n### Platform-First Thinking\nDon't create once and copy everywhere. Think:\n1. What's the goal? (Awareness vs. engagement vs. conversion)\n2. Where is my audience? (Platform demographics)\n3. What format works there? (Video vs. text vs. carousel)\n4. What's the platform algorithm rewarding? (Retention, shares, saves)\n\n### The Content Staircase\n- **Entry Point**: TikTok/Shorts (awareness, quick value)\n- **Mid-Funnel**: Instagram/Twitter (community, engagement)\n- **Deep Dive**: YouTube/Blog (authority, education)\n- **Conversion**: Newsletter (relationship, sales)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Important Notes] - Every platform has a different \"content language\" - respect it\n- Don't just copy-paste; transform with intention\n- Test and iterate - platforms evolve constantly\n- Quality > quantity, but smart repurposing = both\n- Cite sources, give credit, be authentic\n- Platform algorithms change - stay adaptable\n- Your audience overlap varies by platform - treat them uniquely\n\n---\n\n*Remember: The best content isn't created once—it's remixed intelligently across every platform where your audience lives.*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "content_remix_studio"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎬",
+        "version": "1.0.0",
+        "author": "AM",
+        "tags": [
+          "content-creation",
+          "social-media",
+          "repurposing",
+          "marketing",
+          "video",
+          "writing",
+          "creator-economy"
+        ],
+        "requires": {
+          "bins": [],
+          "env": [],
+          "config": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akhmittra/content-remix-studio/SKILL.md"
+}

@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_dl-transformer-finetune",
+  "description": "Build transformer fine-tuning run plans with task settings, hyperparameters, and model-card outputs. Use for repeatable Hugging Face or PyTorch finetuning workflows.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # DL Transformer Finetune"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Generate reproducible fine-tuning run plans for transformer models and downstream tasks."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define base model, task type, and dataset.\n2. Set training hyperparameters and evaluation cadence.\n3. Produce run plan plus model card skeleton.\n4. Export configuration-ready artifacts for training pipelines."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/build_finetune_plan.py` for deterministic plan output.\n- Read `references/finetune-guide.md` for hyperparameter baseline guidance."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep run plans reproducible with explicit seeds and output directories.\n- Include evaluation and rollback criteria."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "dl_transformer_finetune"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/dl-transformer-finetune/SKILL.md"
+}

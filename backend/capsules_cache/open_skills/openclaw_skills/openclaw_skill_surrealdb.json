@@ -94,9 +94,9 @@
     "license": "MIT",
     "compatibility": "",
     "extra": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": "24601",
-      "snapshot_date": "2026-02-24",
+      "snapshot_date": "2026-02-26",
       "repository": "https://github.com/24601/surreal-skills"
     }
   },

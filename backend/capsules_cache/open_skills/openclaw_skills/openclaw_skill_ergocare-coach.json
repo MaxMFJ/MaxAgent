@@ -1,0 +1,141 @@
+{
+  "id": "openclaw_skill_ergocare-coach",
+  "description": "Your personal desk health coach with automated break reminders. Generates platform-specific scripts (bash/PowerShell) for 20-20-20 eye care, lower back exercises, and RSI prevention. Comprehensive exercise routines, ergonomic guidance, and customizable notification systems for computer professionals.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ErgoCare Coach 👁️🦴💪"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Description] Your intelligent desk health and wellness coach that actually reminds you automatically! ErgoCare Coach provides:\n\n1. **Expert Exercise Guidance** - 20-20-20 eye care, lower back stretches, neck exercises, RSI prevention\n2. **Platform-Specific Reminder Scripts** - Generates bash scripts (Linux/Mac) and PowerShell scripts (Windows) that run as background processes\n3. **Automated Notifications** - Desktop notifications, terminal alerts, sound alerts, visual countdowns\n4. **Customizable Schedules** - 20-20-20, hourly breaks, custom intervals, work hour limits\n5. **Comprehensive Routines** - From 30-second micro-breaks to 10-minute full routines\n\n**\"The greatest wealth is Health.\"**\n\nPerfect for:\n- 💻 Computer professionals working long hours\n- 👁️ Anyone experiencing eye strain or dry eyes  \n- 🦴 People with lower back, neck, or shoulder pain\n- 🎮 Gamers and content creators\n- 📚 Students and researchers\n- 🏢 Remote workers and desk workers\n- 🩺 Anyone wanting to prevent RSI and chronic issues\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How This Skill Works] ### Two Modes of Operation\n\n**Mode 1: Interactive Exercise Coach**\n- Ask for specific exercises anytime: \"Show me eye exercises\"\n- Get instant guidance: \"I have neck pain, what should I do?\"\n- Learn routines: \"Give me a 5-minute full body desk stretch\"\n\n**Mode 2: Automated Reminder Scripts** ⭐ **NEW!**\n- Request a custom script: \"Generate a 20-20-20 reminder script for Mac\"\n- Get platform-specific code (bash/PowerShell) ready to run\n- Scripts run in background, send notifications automatically\n- Fully customizable intervals and exercise types\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[1. Quick Start: Get Your Reminder Script] ### Request Your Custom Script\n\nJust ask ErgoCare Coach:\n\n```\n\"Generate a 20-20-20 reminder script for Linux\"\n\"Create a Windows PowerShell script with hourly breaks\"\n\"Give me a Mac script with eye and back exercises every 30 minutes\"\n\"Make me a comprehensive break script for Ubuntu with all exercise types\"\n```\n\n### Script Features\n\n**All Scripts Include:**\n- ✅ Desktop notifications with exercise instructions\n- ✅ Countdown timers between breaks\n- ✅ Sound alerts (optional, can be disabled)\n- ✅ Customizable intervals\n- ✅ Multiple exercise types embedded\n- ✅ Easy start/stop/restart\n- ✅ Run on system startup (optional)\n\n**Platform Support:**\n- 🐧 **Linux**: bash script with `notify-send`, `zenity`, or terminal alerts\n- 🍎 **macOS**: bash script with `osascript` notifications and `say` voice alerts\n- 🪟 **Windows**: PowerShell with `BurntToast` module or native notifications\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[2. The 20-20-20 Rule (Eye Care Foundation)] ### What It Is\n\n**Every 20 minutes, look at something 20 feet away for at least 20 seconds.**\n\n### Why It Works\n\nWhen you focus on a screen, your eye muscles maintain constant tension:\n- **Ciliary muscles** stay contracted to focus at close range\n- **Extraocular muscles** hold fixed position\n- **Blinking rate drops** from 15-20/min to 5-7/min (causing dry eyes)\n- **Blue light exposure** increases eye fatigue\n\nLooking into the distance:\n- ✅ Relaxes ciliary muscles\n- ✅ Triggers natural blinking\n- ✅ Resets focus mechanism\n- ✅ Reduces strain accumulation\n\n### 20-20-20 Implementation\n\n**Your automated script will:**\n1. Run silently in background\n2. Track 20-minute intervals\n3. Send desktop notification: \"👁️ 20-20-20 Break: Look 20 feet away for 20 seconds\"\n4. (Optional) Play gentle sound alert\n5. (Optional) Show countdown timer\n6. Repeat every 20 minutes\n\n**Manual 20-20-20:**\n- Window view (buildings, trees, sky)\n- Hallway or room far end  \n- Distant wall clock or artwork\n- Outside through open door\n- Anything genuinely 20+ feet away\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[3. Eye Exercise Library] ### Quick Blink Reset (30 seconds)\n**When to use:** Every hour, or when eyes feel dry\n\n```\n1. Close eyes gently (don't squeeze) - 2 seconds\n2. Open eyes wide - 2 seconds  \n3. Repeat 10 times\n4. Finish with 10 rapid blinks\n\nBenefits: Refreshes tear film, prevents dry eyes\n```\n\n### Palming (1-2 minutes)\n**When to use:** Mid-morning, after lunch, mid-afternoon\n\n```\n1. Rub palms together until warm\n2. Cup palms over closed eyes (don't press)\n3. Block all light completely\n4. Breathe deeply for 60-120 seconds\n5. Slowly remove hands\n\nBenefits: Deep relaxation, reduces eye fatigue\n```\n\n### Eye Rolls (45 seconds)\n**When to use:** Every 2 hours\n\n```\n1. Look up, pause 2 seconds\n2. Slowly roll eyes clockwise (full circle) - 3 seconds\n3. Pause, center\n4. Slowly roll eyes counterclockwise - 3 seconds\n5. Repeat 5 times each direction\n\nBenefits: Exercises all eye muscles, increases range of motion\n```\n\n### Focus Shifting (1 minute)\n**When to use:** Every hour\n\n```\n1. Hold finger 10 inches from your face\n2. Focus on finger - 5 seconds\n3. Shift focus to object 20 feet away - 5 seconds\n4. Repeat 10 times\n\nBenefits: Strengthens focusing ability, prevents presbyopia progression\n```\n\n### Figure Eight (1 minute)\n**When to use:** Mid-day, when feeling strain\n\n```\n1. Imagine a large figure 8 on the wall (10 feet away)\n2. Trace it slowly with your eyes (don't move head) - 30 seconds clockwise\n3. Trace it 30 seconds counterclockwise\n4. Repeat 2 times\n\nBenefits: Improves eye coordination and flexibility\n```\n\n### Near-Far Focus (1 minute)\n**When to use:** Every 90 minutes\n\n```\n1. Hold thumb at arm's length\n2. Focus on thumb - 10 seconds\n3. Focus on something 20+ feet away - 10 seconds\n4. Repeat 5 times\n\nBenefits: Reduces accommodation stress\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[4. Lower Back Exercise Library] ### Seated Spinal Twist (1 minute each side)\n**When to use:** Every hour\n\n```\n1. Sit up straight, feet flat on floor\n2. Place right hand on back of chair\n3. Place left hand on right knee\n4. Inhale: lengthen spine\n5. Exhale: twist to the right\n6. Hold 30 seconds, breathe normally\n7. Repeat on left side\n\nBenefits: Relieves lower back tension, improves spine mobility\n```\n\n### Seated Cat-Cow (1 minute)\n**When to use:** Every 45-60 minutes\n\n```\n1. Sit on edge of chair, hands on knees\n2. Inhale: arch back, look up (cow)\n3. Exhale: round back, tuck chin (cat)\n4. Flow between positions 10 times slowly\n5. Hold each position 3 seconds\n\nBenefits: Mobilizes entire spine, reduces stiffness\n```\n\n### Standing Hip Hinge (45 seconds)\n**When to use:** Every 90 minutes\n\n```\n1. Stand with feet hip-width apart\n2. Place hands on lower back\n3. Hinge forward at hips (not waist)\n4. Keep back straight, slight knee bend\n5. Go until you feel stretch in hamstrings\n6. Hold 15 seconds\n7. Slowly return to standing\n8. Repeat 3 times\n\nBenefits: Stretches hamstrings, strengthens lower back\n```\n\n### Seated Forward Fold (1 minute)\n**When to use:** Mid-morning, after lunch\n\n```\n1. Sit on edge of chair\n2. Feet hip-width apart, flat on floor\n3. Inhale: lengthen spine\n4. Exhale: fold forward from hips\n5. Let arms hang, relax neck and shoulders\n6. Hold 30-60 seconds\n7. Slowly roll up, vertebra by vertebra\n\nBenefits: Decompresses spine, relieves lower back\n```\n\n### Pelvic Tilts (1 minute)\n**When to use:** Every 2 hours\n\n```\n1. Sit with back against chair, feet flat\n2. Tilt pelvis forward (arch lower back)\n3. Hold 5 seconds\n4. Tilt pelvis backward (flatten lower back against chair)\n5. Hold 5 seconds\n6. Repeat 10 times\n\nBenefits: Strengthens core, mobilizes pelvis\n```\n\n### Standing Quad Stretch with Back Extension (1 minute each side)\n**When to use:** Every 2 hours\n\n```\n1. Stand near chair for support\n2. Bend right knee, grab right ankle behind you\n3. Gently pull heel toward glutes\n4. Simultaneously press hips"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[5. Neck & Shoulder Exercise Library] ### Neck Rolls (1 minute)\n**When to use:** Every 45 minutes\n\n```\n1. Sit or stand with relaxed shoulders\n2. Drop chin to chest - 5 seconds\n3. Slowly roll head to right shoulder - 5 seconds\n4. Roll head back (don't force) - 5 seconds\n5. Roll to left shoulder - 5 seconds\n6. Return to center\n7. Repeat 3 times each direction\n\nBenefits: Releases neck tension, improves mobility\n```\n\n### Shoulder Shrugs (45 seconds)\n**When to use:** Every hour\n\n```\n1. Inhale: raise shoulders to ears\n2. Hold 5 seconds (squeeze)\n3. Exhale: drop shoulders down and back\n4. Hold 5 seconds (relax)\n5. Repeat 10 times\n\nBenefits: Relieves shoulder tension, improves posture\n```\n\n### Neck Side Stretch (1 minute each side)\n**When to use:** Every 90 minutes\n\n```\n1. Sit up straight\n2. Place right hand on left side of head\n3. Gently pull head toward right shoulder\n4. Keep left shoulder down\n5. Hold 30 seconds\n6. Repeat on left side\n\nBenefits: Stretches neck muscles, reduces headaches\n```\n\n### Chin Tucks (1 minute)\n**When to use:** Every 2 hours\n\n```\n1. Sit or stand with good posture\n2. Keep eyes forward\n3. Gently tuck chin (double chin appearance)\n4. Don't tilt head down\n5. Hold 5 seconds\n6. Relax\n7. Repeat 10 times\n\nBenefits: Strengthens neck, counteracts forward head posture\n```\n\n### Shoulder Blade Squeeze (45 seconds)\n**When to use:** Every hour\n\n```\n1. Sit up straight, arms at sides\n2. Squeeze shoulder blades together\n3. Imagine holding a pencil between them\n4. Hold 5 seconds\n5. Relax 5 seconds\n6. Repeat 10 times\n\nBenefits: Strengthens upper back, improves posture\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[6. Wrist & Hand Exercise Library (RSI Prevention)] ### Wrist Circles (45 seconds)\n**When to use:** Every 60 minutes\n\n```\n1. Extend arms forward\n2. Make gentle circles with wrists\n3. 10 circles clockwise\n4. 10 circles counterclockwise\n5. Rest\n6. Repeat 2 times\n\nBenefits: Prevents carpal tunnel, increases wrist mobility\n```\n\n### Finger Stretches (1 minute)\n**When to use:** Every 90 minutes\n\n```\n1. Extend right arm, palm up\n2. With left hand, gently pull back each finger\n3. Hold each 5 seconds\n4. Repeat on left hand\n5. Then: make fist, spread fingers wide - 10 times\n\nBenefits: Prevents trigger finger, reduces hand stiffness\n```\n\n### Prayer Stretch (45 seconds)\n**When to use:** Every 2 hours\n\n```\n1. Press palms together in front of chest (prayer position)\n2. Fingers pointing up\n3. Slowly lower hands toward waist\n4. Keep palms pressed together\n5. Stop when you feel stretch in wrists\n6. Hold 30 seconds\n\nBenefits: Stretches wrist flexors, prevents carpal tunnel\n```\n\n### Reverse Prayer Stretch (45 seconds)\n**When to use:** Every 2 hours (after Prayer Stretch)\n\n```\n1. Place backs of hands together in front of chest\n2. Fingers pointing down\n3. Press hands together\n4. Hold 30 seconds\n\nBenefits: Stretches wrist extensors\n```\n\n### Fist Pumps (30 seconds)\n**When to use:** Every hour\n\n```\n1. Make tight fist\n2. Hold 5 seconds\n3. Open hand, spread fingers wide\n4. Hold 5 seconds\n5. Repeat 10 times\n\nBenefits: Increases blood flow, reduces stiffness\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[7. Full Body Desk Routines] ### 2-Minute Quick Reset\n**When to use:** Every 30 minutes\n\n```\n1. 20-20-20 eye break (20 seconds)\n2. Shoulder shrugs (20 seconds)\n3. Neck side stretches (30 seconds)\n4. Seated spinal twist (30 seconds)\n5. Wrist circles (20 seconds)\n\nTotal: 2 minutes\n```\n\n### 5-Minute Energy Break\n**When to use:** Every 90 minutes\n\n```\n1. Palming (1 minute)\n2. Seated cat-cow (1 minute)\n3. Neck rolls (1 minute)\n4. Standing hip hinge (45 seconds)\n5. Shoulder blade squeezes (45 seconds)\n6. Wrist and finger stretches (30 seconds)\n\nTotal: 5 minutes\n```\n\n### 10-Minute Full Routine\n**When to use:** Mid-morning, after lunch, mid-afternoon\n\n```\n1. Eye exercises (2 minutes):\n   - Focus shifting\n   - Eye rolls\n   - 20-20-20\n   \n2. Neck and shoulders (3 minutes):\n   - Neck rolls\n   - Shoulder shrugs\n   - Neck side stretches\n   - Chin tucks\n   \n3. Back and core (3 minutes):\n   - Seated cat-cow\n   - Seated spinal twists\n   - Standing hip hinge\n   - Pelvic tilts\n   \n4. Wrists and hands (2 minutes):\n   - Wrist circles\n   - Prayer stretches\n   - Finger stretches\n   - Fist pumps\n\nTotal: 10 minutes\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[8. Example Break Schedules] ### Light User (4-6 hours computer/day)\n\n```\nEvery 20 minutes: 20-20-20 eye break (20 seconds)\nEvery 60 minutes: 2-minute quick reset\nEvery 2 hours: 5-minute energy break\n\nDaily total breaks: ~40 minutes\n```\n\n### Moderate User (6-8 hours computer/day)\n\n```\nEvery 20 minutes: 20-20-20 eye break (20 seconds)\nEvery 45 minutes: 2-minute quick reset  \nEvery 90 minutes: 5-minute energy break\nMid-morning + afternoon: 10-minute full routine (2x)\n\nDaily total breaks: ~60 minutes\n```\n\n### Heavy User (8+ hours computer/day) - **RECOMMENDED**\n\n```\nEvery 20 minutes: 20-20-20 eye break (20 seconds)\nEvery 30 minutes: 2-minute quick reset\nEvery 60 minutes: 5-minute energy break\nEvery 3 hours: 10-minute full routine\nLunch break: 30-minute walk (away from computer)\n\nDaily total breaks: ~90 minutes\n```\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[9. Script Generation Guide] ### Linux/Mac Bash Script Request\n\n**What to ask:**\n```\n\"Generate a 20-20-20 reminder script for Linux\"\n\"Create a Mac bash script with full break schedule\"\n\"Make me an Ubuntu script with eye and back exercises every 45 minutes\"\n```\n\n**What you'll get:**\n- Bash script using `notify-send` (Linux) or `osascript` (Mac)\n- Embedded exercise instructions in notifications\n- Sound alerts using `paplay` or `say`\n- Countdown timer in terminal\n- Easy customization variables\n- Installation instructions\n\n**Features:**\n- Run in background (`./ergocare.sh &`)\n- Add to startup (`crontab @reboot`)\n- Stop script (`pkill -f ergocare.sh`)\n- Logs breaks to file (optional)\n\n### Windows PowerShell Script Request\n\n**What to ask:**\n```\n\"Generate a Windows break reminder script\"\n\"Create a PowerShell script for 20-20-20 with hourly stretches\"\n\"Make me a Windows script with all exercise types\"\n```\n\n**What you'll get:**\n- PowerShell script with native notifications\n- BurntToast module integration (better notifications)\n- Sound alerts using `[System.Media.SystemSounds]`\n- System tray icon (optional)\n- Task Scheduler setup instructions\n\n**Features:**\n- Run on startup (Task Scheduler)\n- Minimize to system tray\n- Pause/resume functionality\n- Break history logging\n\n### Script Customization Variables\n\nAll generated scripts include easy-to-edit variables at the top:\n\n```bash\n# CONFIGURATION (edit these)\nEYE_INTERVAL=1200        # 20 minutes in seconds\nSTRETCH_INTERVAL=2700    # 45 minutes\nLONG_BREAK_INTERVAL=5400 # 90 minutes\nSOUND_ENABLED=true       # true or false\nNOTIFICATION_TYPE=\"all\"  # \"popup\", \"sound\", \"terminal\", \"all\"\n```\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[10. Ergonomic Workspace Setup] ### Monitor Position\n- **Height**: Top of screen at or slightly below eye level\n- **Distance**: Arm's length away (20-28 inches / 50-70 cm)\n- **Angle**: Tilted 10-20 degrees back\n- **Multiple monitors**: Primary monitor directly in front\n\n### Chair Setup\n- **Seat height**: Feet flat on floor, thighs parallel to ground\n- **Seat depth**: 2-4 inches between seat edge and back of knees\n- **Backrest**: Supports natural curve of lower back (lumbar support)\n- **Armrests**: Elbows at 90 degrees, shoulders relaxed\n\n### Desk & Keyboard\n- **Desk height**: Elbows at 90-100 degrees when typing\n- **Keyboard**: Flat or slight negative tilt, close to body\n- **Mouse**: Same height as keyboard, close to body\n- **Wrist position**: Neutral (straight), not bent up/down or sideways\n\n### Lighting\n- **No glare**: Position monitor 90 degrees to windows\n- **Task lighting**: Reduce contrast between screen and surroundings\n- **Blue light filter**: Enabled after sunset (f.lux, Night Light)\n- **Screen brightness**: Match ambient light level\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[11. Warning Signs & When to See a Doctor] ### Immediate medical attention needed:\n- 🚨 Sudden vision loss or changes\n- 🚨 Severe eye pain\n- 🚨 Numbness or tingling that spreads or worsens\n- 🚨 Loss of bowel/bladder control (back issues)\n- 🚨 Weakness in arms or legs\n\n### See doctor soon if experiencing:\n- ⚠️ Persistent headaches (daily for weeks)\n- ⚠️ Double vision or blurred vision that doesn't improve with rest\n- ⚠️ Pain that radiates down arms or legs\n- ⚠️ Chronic pain lasting more than 6 weeks\n- ⚠️ Pain that worsens despite exercises and breaks\n\n### ErgoCare Coach is preventive, not treatment!\n- ✅ Use for prevention and mild discomfort\n- ✅ Maintain healthy habits\n- ❌ Don't use instead of medical treatment\n- ❌ Don't ignore severe or worsening symptoms\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[12. Advanced Features] ### Smart Break Scheduling\n\n**Request context-aware schedules:**\n```\n\"I'm a software developer, create my ideal break schedule\"\n\"I have chronic neck pain, what's my schedule?\"\n\"I'm a gamer, help me stay healthy during long sessions\"\n```\n\n**You'll get:**\n- Profession-specific recommendations\n- Condition-specific exercise focus\n- Customized intervals based on research\n- Integration with work methodologies (Pomodoro, etc.)\n\n### Multi-Platform Sync\n\n**For users with multiple devices:**\n```\n\"Generate scripts for Linux work machine and Windows home PC\"\n```\n\n**You'll get:**\n- Matched intervals across platforms\n- Same exercise routines\n- Consistent notification style\n- Easy setup on both systems\n\n### Team/Office Deployment\n\n**For IT administrators:**\n```\n\"Create a company-wide break reminder script for Ubuntu 22.04\"\n\"Generate Windows script for deployment via Group Policy\"\n```\n\n**You'll get:**\n- Silent installation\n- Central configuration\n- Deployment documentation\n- User guide for employees\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[13. Best Practices] ### Building the Break Habit\n\n**Week 1: 20-20-20 only**\n- Focus on just eye breaks\n- Build the basic habit\n- Set phone timer as backup\n\n**Week 2: Add micro-breaks**\n- Every 30-60 minutes\n- 2-minute quick reset\n- Getting comfortable with interruptions\n\n**Week 3: Add stretch breaks**\n- Every 90 minutes\n- 5-minute energy break\n- Learning the exercises\n\n**Week 4: Full routine**\n- All break types\n- Integrated into workflow\n- Feels natural\n\n### Staying Motivated\n\n- Track breaks with calendar blocking\n- Notice improvements (less pain, better focus)\n- Make it social (break buddies)\n- Adjust schedule if too intrusive\n- Remember: **prevention is easier than recovery**\n\n### Integration with Work\n\n**Pomodoro Technique users:**\n- Use Pomodoro breaks for micro-exercises\n- Every 25 min work = 5 min break = perfect for 2-minute reset\n- Every 4 Pomodoros = long break = 10-minute full routine\n\n**Meeting-heavy days:**\n- Set script to \"work hours only\" mode\n- Pause during important meetings\n- Resume after\n- Use breaks between meetings\n\n**Deep work sessions:**\n- Reduce frequency (but don't eliminate!)\n- Eye breaks still every 20 minutes\n- Longer breaks every 2 hours instead of 1\n- Extra-long break after deep work session\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[When to Use This Skill] ### Interactive Mode:\n- \"I've been coding for 3 hours, what exercises should I do?\"\n- \"My eyes are burning, help!\"\n- \"Show me a 30-second desk stretch\"\n- \"I have lower back pain, what do I do?\"\n\n### Script Generation Mode:\n- \"Generate my custom reminder script\"\n- \"Create a break schedule for my work style\"\n- \"Give me installation instructions for the script\"\n- \"How do I make this run on startup?\"\n\n### Learning Mode:\n- \"Explain the 20-20-20 rule\"\n- \"Why do I need breaks?\"\n- \"How should I set up my desk?\"\n- \"What are the warning signs of RSI?\"\n\n---\n\n**Your health is your most valuable asset. Small breaks today prevent big problems tomorrow. Let ErgoCare Coach help you build sustainable healthy habits!**\n\n👁️ \"Take care of your eyes—they're the only pair you get.\"\n🦴 \"Your spine will thank you in 20 years.\"\n💪 \"Prevention beats cure. Every. Single. Time.\"\n\n🔔 **Ready to start? Ask for your custom break reminder script now!** 🔔"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ergocare_coach"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "👁️",
+        "version": "1.0.0",
+        "author": "AM",
+        "tags": [
+          "health",
+          "wellness",
+          "ergonomics",
+          "eye-exercises",
+          "break-reminders",
+          "posture",
+          "rsi-prevention",
+          "desk-health",
+          "automation"
+        ],
+        "requires": {
+          "bins": [],
+          "env": [],
+          "config": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akhmittra/ergocare-coach/SKILL.md"
+}

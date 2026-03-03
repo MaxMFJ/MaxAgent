@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_aimlapi-safety",
+  "description": "Content moderation and safety checks. Instantly classify text or images as safe or unsafe using AI guardrails.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AIMLAPI Safety"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Use \"AI safety models\" (Guard models) to ensure content compliance. Perfect for moderating user input or chatbot responses."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\nexport AIMLAPI_API_KEY=\"sk-...\"\npython scripts/check_safety.py --content \"How to make a bomb\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tasks] ### Check Text Safety\n\n```bash\npython scripts/check_safety.py --content \"I want to learn about security\" --model meta-llama/Llama-Guard-3-8B\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Supported Models] - `meta-llama/Llama-Guard-3-8B` (Default)\n- Other Llama-Guard variants on AIMLAPI."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aimlapi_safety"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aimlapihello/aiml-safety/SKILL.md"
+}

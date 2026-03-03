@@ -1,0 +1,123 @@
+{
+  "id": "openclaw_skill_openclaw-continuous-learning",
+  "description": "Instinct-based learning system for OpenClaw. Analyzes sessions, detects patterns, creates atomic learnings with confidence scoring, and suggests optimizations for self-evolution.\n\nUse when: you want your AI agent to learn from its own behavior, improve over time, discover optimization opportunities, or build a self-improving automation system.\n\nDon't use when: static agent behavior is preferred.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Continuous Learning for AI Agents\n\nAn instinct-based learning system that helps AI agents improve themselves through observation and pattern detection."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Does] - **Analyzes session history** - Reviews agent interactions and outputs\n- **Detects patterns** - Identifies recurring behaviors, preferences, workflows\n- **Creates instincts** - Atomic learnings with confidence scores\n- **Suggests optimizations** - Based on observed behavior patterns\n- **Enables self-evolution** - Converts insights into improvements"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] **Use when:**\n- Building self-improving AI agents\n- Want agent to learn from interactions\n- Discovering optimization opportunities\n- Creating adaptive automation\n- Tracking behavioral patterns\n\n**Skip when:**\n- Static, unchanging behavior preferred\n- No session history available\n- Simple, deterministic workflows only"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Architecture] ```\nSession Activity\n │\n ▼\n┌─────────────────────────────────────────┐\n│ Session Analysis                         │\n│ • Read interaction logs                  │\n│ • Detect patterns                       │\n│ • Create instincts                       │\n└─────────────────────────────────────────┘\n │\n ▼\n┌─────────────────────────────────────────┐\n│ Instinct Storage                         │\n│ • instincts.jsonl (atomic learnings)     │\n│ • patterns.json (aggregated)             │\n│ • optimizations.json (suggestions)       │\n└─────────────────────────────────────────┘\n │\n ▼\n┌─────────────────────────────────────────┐\n│ Optimization Delivery                    │\n│ • Daily tips                            │\n│ • Configuration suggestions             │\n│ • Workflow improvements                 │\n└─────────────────────────────────────────┘\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Confidence Scoring] | Score | Meaning | Behavior |\n|-------|---------|----------|\n| 0.3 | Tentative | Suggested but not enforced |\n| 0.5 | Moderate | Applied when relevant |\n| 0.7 | Strong | Auto-approved |\n| 0.9 | Core behavior | Always apply |\n\n**Confidence increases when:**\n- Pattern observed repeatedly\n- User doesn't correct behavior\n- Multiple observations agree\n\n**Confidence decreases when:**\n- User explicitly corrects\n- Pattern not observed recently\n- Contradicting evidence appears"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Key Concepts] ### Instincts\n\nAn instinct is a small learned behavior:\n\n```yaml\nid: prefer-simplicity\ntrigger: \"when solving problems\"\nconfidence: 0.7\ndomain: problem_solving\n---\n# Prefer Simple Solutions"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Action] Always choose the simplest solution that meets requirements."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Evidence] - Observed preference for minimal code\n- User corrected over-engineered approaches\n```\n\n### Patterns\n\nAggregated observations grouped by category:\n- code_style\n- testing\n- git\n- debugging\n- workflow\n- communication\n\n### Optimizations\n\nActionable improvements derived from patterns."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Use Cases] ### 1. Agent Self-Improvement\n\n```\nAgent observes its own sessions:\n- What works consistently?\n- What gets corrected?\n- What patterns emerge?\n\nCreates instincts → Applies high-confidence patterns\n```\n\n### 2. User Preference Learning\n\n```\nLearn user preferences from interactions:\n- Coding style preferences\n- Communication preferences\n- Workflow preferences\n\nAdapt behavior accordingly\n```\n\n### 3. Performance Optimization\n\n```\nDetect performance patterns:\n- Slow operations\n- Bottlenecks\n- Optimization opportunities\n\nSuggest improvements\n```\n\n### 4. Error Pattern Detection\n\n```\nTrack error patterns:\n- Common failures\n- Resolution strategies\n- Prevention approaches\n\nBuild error-handling instincts\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Analyze sessions\nnode /path/to/scripts/analyze.mjs\n\n# List learned instincts\nnode /path/to/scripts/analyze.mjs instincts\n\n# Show optimizations\nnode /path/to/scripts/analyze.mjs list\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Create storage directory\n\n```bash\nmkdir -p ~/.openclaw/workspace/memory/learning\n```\n\n### 2. Schedule analysis\n\nAdd to cron for periodic analysis:\n\n```json\n{\n  \"id\": \"continuous-learning\",\n  \"schedule\": \"0 22 * * *\"\n}\n```\n\n### 3. Integrate with daily tips\n\nConnect to daily summary for optimization delivery."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[File Structure] ```\n~/.openclaw/workspace/\n└── memory/\n    └── learning/\n        ├── instincts.jsonl    # Atomic learnings\n        ├── patterns.json      # Aggregated patterns\n        └── optimizations.json # Suggestions\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Example Output] ```\n🧠 Learning Report\n\nPatterns Detected:\n- prefer-simplicity (0.7) ↑2\n- test-first (0.5) ↑1\n- commit-often (0.3) new\n\nConfidence Changes:\n- minimal-code: 0.5 → 0.7\n\nSuggested:\n1. Prioritize simple solutions\n2. Add pre-commit hooks\n3. Enable stricter typing\n```"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Start simple** - Few patterns, low confidence\n2. **Validate often** - Check if patterns still hold\n3. **Review suggestions** - Don't auto-apply everything\n4. **Track confidence** - Update based on results\n5. **Export/share** - Build library of common patterns"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[FAQ] **How is this different from memory?**\nMemory stores facts. This learns behavioral patterns and preferences.\n\n**How long to see results?**\nDepends on session volume. Typically 1-2 weeks for meaningful patterns.\n\n**Is it safe to auto-apply?**\nOnly high-confidence (0.7+) patterns. Always review suggestions first."
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Related Skills] - **skill-engineer** - Quality-gated skill development\n- **compound-engineering** - Session review and learning\n- **memory-setup** - Memory configuration\n- **openclaw-daily-tips** - Daily optimization tips\n\n---\n\n**Version:** 1.1.0  \n**Inspired by:** Anthropic's continuous learning patterns, Claude Code homunculus"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_continuous_learning"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🧠",
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adelpro/openclaw-continuous-learning/SKILL.md"
+}

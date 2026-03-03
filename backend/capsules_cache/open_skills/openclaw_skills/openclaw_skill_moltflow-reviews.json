@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_moltflow-reviews",
+  "description": "Collect and manage customer reviews via MoltFlow API. Sentiment scoring, testimonial extraction, and review management.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **MoltFlow** — WhatsApp Business automation for teams. Connect, monitor, and automate WhatsApp at scale.\n> ***Due to high demand and a recent registration issue, we're offering our top-tier Business plan with unlimited quotas for just $19.90/month on yearly billing — for a limited time only.*** [**Claim the deal**](https://buy.stripe.com/cNifZibX7gpQebJ0nsfnO00)\n> Free tier available. [Sign up](https://molt.waiflow.app/checkout?plan=free)\n\n# MoltFlow Reviews Skill\n\nCollect, analyze, and manage customer reviews via the MoltFlow API. Automate sentiment scoring, extract testimonials, and export social proof for your business."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Real-World Scenarios] **Restaurant owner** — \"After every dinner reservation, collect feedback from WhatsApp chats and auto-approve anything with a sentiment score above 0.8.\"\n\n**Airbnb host** — \"Scan my guest conversations for praise keywords like 'amazing', 'clean', and 'recommend', then export the best ones as HTML for my listing page.\"\n\n**Dentist** — \"Set up a review collector on my patient support chat — only capture English messages that mention 'thank' or 'great service'.\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] Use this skill when you need to:\n- Set up automated review collection from WhatsApp conversations\n- Create or configure a review collector with sentiment thresholds\n- List, approve, hide, or delete collected reviews\n- Export testimonials as JSON or HTML for external use\n- Trigger a manual scan of conversations for reviews\n- Check review statistics and sentiment breakdowns\n\nTrigger phrases: \"collect reviews\", \"set up review collector\", \"export testimonials\", \"approve reviews\", \"sentiment analysis\", \"customer feedback WhatsApp\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] - **MOLTFLOW_API_KEY** — required. Generate from [MoltFlow Dashboard > API Keys](https://molt.waiflow.app/api-keys)\n- At least one connected WhatsApp session (status: `working`)\n- MoltFlow Pro plan or higher (review collection is a paid feature)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Base URL] ```\nhttps://apiv2.waiflow.app/api/v2\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Required API Key Scopes] | Scope | Access |\n|-------|--------|\n| `reviews` | `read/manage` |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Authentication] All requests require one of:\n- `Authorization: Bearer <access_token>` (JWT from login)\n- `X-API-Key: <api_key>` (API key from dashboard)\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Review Collectors] Collectors automatically extract reviews based on sentiment scoring, keyword matching, and language filters.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/reviews/collectors` | List all collectors |\n| POST | `/reviews/collectors` | Create a new collector |\n| GET | `/reviews/collectors/{id}` | Get collector details |\n| PATCH | `/reviews/collectors/{id}` | Update collector config |\n| DELETE | `/reviews/collectors/{id}` | Delete a collector |\n| POST | `/reviews/collectors/{id}/run` | Trigger manual scan |\n\n### Create Collector — Request Body\n\n```json\n{\n  \"name\": \"Main Store Reviews\",\n  \"description\": \"Collect reviews from customer support chats\",\n  \"session_id\": \"uuid-of-connected-session\",\n  \"source_type\": \"all\",\n  \"min_positive_words\": 3,\n  \"min_sentiment_score\": 0.6,\n  \"include_keywords\": [\"great\", \"recommend\", \"excellent\"],\n  \"exclude_keywords\": [\"spam\", \"wrong number\"],\n  \"languages\": [\"en\", \"es\"]\n}\n```\n\n**source_type options:** `all` | `groups` | `chats` | `selected`\n\nWhen `source_type` is `selected`, provide `selected_chat_ids` with specific WhatsApp chat IDs.\n\n### Create Collector — Response\n\n```json\n{\n  \"id\": \"c1a2b3c4-...\",\n  \"name\": \"Main Store Reviews\",\n  \"session_id\": \"uuid-of-connected-session\",\n  \"source_type\": \"all\",\n  \"min_sentiment_score\": 0.6,\n  \"include_keywords\": [\"great\", \"recommend\", \"excellent\"],\n  \"is_active\": true,\n  \"created_at\": \"2026-01-15T10:30:00Z\",\n  \"review_count\": 0\n}\n```\n\n### Update Collector — Request Body\n\nAll fields are optional. Only provided fields are updated.\n\n```json\n{\n  \"name\": \"Updated Collector Name\",\n  \"min_sentiment_score\": 0.7,\n  \"is_active\": false\n}\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reviews] Collected reviews contain the original message, sentiment score, contact info, and approval status.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/reviews` | List reviews (with filters) |\n| GET | `/reviews/stats` | Review statistics |\n| GET | `/reviews/{id}` | Get single review |\n| PATCH | `/reviews/{id}` | Approve, hide, or annotate |\n| DELETE | `/reviews/{id}` | Delete a review |\n| GET | `/reviews/testimonials/export` | Export testimonials |\n\n### List Reviews — Query Parameters\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `collector_id` | UUID | — | Filter by collector |\n| `is_approved` | bool | — | Filter approved only |\n| `is_hidden` | bool | — | Filter hidden |\n| `min_score` | float | — | Minimum sentiment score |\n| `limit` | int | 50 | Page size |\n| `offset` | int | 0 | Pagination offset |\n\n### Review Object\n\n```json\n{\n  \"id\": \"r1a2b3c4-...\",\n  \"collector_id\": \"c1a2b3c4-...\",\n  \"contact_name\": \"John D.\",\n  \"contact_phone\": \"1234567890@c.us\",\n  \"message_text\": \"Your service was excellent! Highly recommend to anyone looking for quality support.\",\n  \"sentiment_score\": 0.92,\n  \"sentiment_label\": \"positive\",\n  \"detected_language\": \"en\",\n  \"is_approved\": false,\n  \"is_hidden\": false,\n  \"notes\": null,\n  \"collected_at\": \"2026-01-16T14:22:00Z\"\n}\n```\n\n### Approve/Hide Review — Request Body\n\n```json\n{\n  \"is_approved\": true,\n  \"is_hidden\": false,\n  \"notes\": \"Great testimonial — use on website\"\n}\n```\n\n### Export Testimonials — Query Parameters\n\n| Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `format` | string | `json` | `json` or `html` |\n| `collector_id` | UUID | — | Filter by collector |\n| `approved_only` | bool | `true` | Only export approved reviews |\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[curl Examples] ### 1. Create a Review Collector\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/reviews/collectors \\\n  -H \"X-API-Key: mf_your_api_key_here\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Customer Feedback\",\n    \"session_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"source_type\": \"all\",\n    \"min_sentiment_score\": 0.7,\n    \"include_keywords\": [\"thank\", \"recommend\", \"love\"],\n    \"languages\": [\"en\"]\n  }'\n```\n\n### 2. List Approved Reviews\n\n```bash\ncurl \"https://apiv2.waiflow.app/api/v2/reviews?is_approved=true&limit=20\" \\\n  -H \"X-API-Key: mf_your_api_key_here\"\n```\n\n### 3. Export Testimonials as HTML\n\n```bash\ncurl \"https://apiv2.waiflow.app/api/v2/reviews/testimonials/export?format=html&approved_only=true\" \\\n  -H \"X-API-Key: mf_your_api_key_here\" \\\n  -o testimonials.html\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Error Responses] | Status | Meaning |\n|--------|---------|\n| 400 | Invalid request body or parameters |\n| 401 | Missing or invalid authentication |\n| 403 | Feature not available on current plan |\n| 404 | Collector or review not found |\n| 422 | Validation error (check field constraints) |\n| 429 | Rate limit exceeded |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips] - **Sentiment threshold**: Start with `0.6` and adjust up if you get too many false positives.\n- **Keyword filters**: Use `include_keywords` to match industry-specific praise terms.\n- **Manual scan**: Use `POST /reviews/collectors/{id}/run` after connecting a new session to backfill reviews.\n- **Export regularly**: Export approved testimonials for website widgets, social media, or marketing materials.\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-outreach** -- Bulk Send, Scheduled Messages, Custom Groups\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG knowledge base, style profiles\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltflow_reviews"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow-reviews/SKILL.md"
+}

@@ -1,0 +1,107 @@
+{
+  "id": "openclaw_skill_muse",
+  "description": "Give ClawBot access to your team's entire coding history. Muse connects your past sessions, team knowledge, and project context—so ClawBot can actually help design features, mediate team discussions, and work autonomously across your codebase. Deploy at tribeclaw.com.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Muse Skill\n\nUse the `tribe` CLI to access your AI coding analytics, search past sessions, manage a personal knowledge base, and orchestrate autonomous agents."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Deploy] **Want your own MUSE-enabled instance?** Visit [tribeclaw.com](https://tribeclaw.com) to deploy a fully configured instance with MUSE support in just a couple minutes."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] **Requires authentication**: Run `tribe login` first. Most commands need an active session."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Telemetry] Check collection status:\n```bash\ntribe status\n```\n\nEnable/disable telemetry:\n```bash\ntribe enable\ntribe disable\n```\n\nShow version info:\n```bash\ntribe version\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Search] Search across all coding sessions:\n```bash\ntribe search \"authentication middleware\"\ntribe search \"docker compose\" --project myapp --time-range 30d\ntribe search \"API endpoint\" --tool \"Claude Code\" --format json\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Sessions] List and inspect coding sessions:\n```bash\ntribe sessions list\ntribe sessions list --cwd --limit 10\ntribe sessions read <session-id>\ntribe sessions search \"auth fix\"\ntribe sessions events <session-id>\ntribe sessions context\n```\n\nRecall a session summary:\n```bash\ntribe recall <session-id> --format json\n```\n\nExtract content from a session:\n```bash\ntribe extract <session-id> --type code\ntribe extract <session-id> --type commands --limit 10\ntribe extract <session-id> --type files --format json\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Query] Query insights and sessions with filters:\n```bash\ntribe query sessions --limit 10\ntribe query sessions --tool \"Claude Code\" --time-range 30d\ntribe query insights\ntribe query events --session <session-id>\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Knowledge Base] Save, search, and manage knowledge documents:\n```bash\ntribe kb save \"content here\"\ntribe kb save --file ./notes.md\ntribe kb search \"deployment patterns\"\ntribe kb list\ntribe kb get <doc-id>\ntribe kb tag <doc-id> \"tag-name\"\ntribe kb delete <doc-id>\ntribe kb sync\ntribe kb extract\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[MUSE (Agent Orchestration)] > **Note**: MUSE commands require `tribe -beta`. Some commands (`attach`, `monitor`, `dashboard`) are TUI-only and must be run manually in a terminal.\n\nStart and manage the leader agent:\n```bash\ntribe muse start\ntribe muse status --format json\ntribe muse agents --format json\n```\n\nSpawn and interact with subagents:\n```bash\ntribe muse spawn \"Fix the login bug\" fix-login\ntribe muse prompt fix-login \"Please also add tests\"\ntribe muse output fix-login 100\ntribe muse review fix-login\ntribe muse kill fix-login --reason \"stuck\"\n```\n\n**TUI-only** (run these manually):\n- `tribe muse attach` - Attach to leader session\n- `tribe muse monitor` - Real-time health monitoring\n- `tribe muse dashboard` - Live dashboard"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[CIRCUIT (Autonomous Agents)] > **Note**: CIRCUIT commands require `tribe -beta`. Some commands (`attach`, `dashboard`) are TUI-only.\n\nManage autonomous agent sessions:\n```bash\ntribe circuit list\ntribe circuit status\ntribe circuit metrics\ntribe circuit spawn 42\ntribe circuit next\ntribe circuit auto --interval 30\n```\n\n**TUI-only** (run these manually):\n- `tribe circuit attach <number>` - Attach to session\n- `tribe circuit dashboard` - Real-time dashboard"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Project Management] Import projects from AI coding assistants:\n```bash\ntribe import\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Tips] - Use `--format json` on most commands for structured output suitable for piping.\n- Use `--time-range 24h|7d|30d|90d|all` to scope searches.\n- Use `--project <path>` or `--cwd` to filter to a specific project.\n- Beta commands: prefix with `tribe -beta` (e.g., `tribe -beta muse status`).\n- Force sync: `tribe -force` (current folder) or `tribe -force -all` (everything)."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "muse"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "moltbot": {
+        "requires": {
+          "bins": [
+            "tribe"
+          ]
+        },
+        "install": {
+          "method": "npm",
+          "package": "@_xtribe/cli",
+          "postInstall": "tribe login"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexander-morris/muse/SKILL.md"
+}

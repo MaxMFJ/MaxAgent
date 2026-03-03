@@ -1,0 +1,88 @@
+{
+  "id": "openclaw_skill_research-tool",
+  "description": "Search the web using LLMs via OpenRouter. Use for current web data, API docs, market research, news, fact-checking, or any question that benefits from live internet access and reasoning.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Research Tool\n\nWeb search for OpenClaw agents, powered by OpenRouter. Ask questions in natural language, get accurate answers with cited sources. Defaults to GPT-5.2 which excels at documentation lookups and citation-heavy research.\n\n> **Note:** Even low-effort queries may take **1 minute or more** to complete. High/xhigh reasoning can take **10+ minutes** depending on complexity. This is normal — the model is searching the web, reading pages, and synthesizing an answer.\n>\n> **Recommended:** Run research-tool in a **sub-agent** so your main session stays responsive:\n> ```\n> sessions_spawn task:\"research-tool 'your query here'\"\n> ```\n>\n> **⚠️ Never set a timeout on exec when running research-tool.** Queries routinely take 1-10+ minutes. Use `yieldMs` to background it, then poll — but do NOT set `timeout` or the process will be killed mid-search.\n\nThe `:online` model suffix gives any model **live web access** — it searches the web, reads pages, cites URLs, and synthesizes an answer."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Install] ```bash\ncargo install openclaw-search-tool\n```\n\nRequires `OPENROUTER_API_KEY` env var. Get a key at https://openrouter.ai/keys"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\nresearch-tool \"What are the x.com API rate limits?\"\nresearch-tool \"How do I set reasoning effort parameters on OpenRouter?\"\n```\n\n### From an OpenClaw agent\n\n```python\n# Best: run in a sub-agent (main session stays responsive)\nsessions_spawn task:\"research-tool 'your query here'\"\n\n# Or via exec — NEVER set timeout, use yieldMs to background:\nexec command:\"research-tool 'your query'\" yieldMs:5000\n# then poll the session until complete\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Flags] ### `--effort`, `-e` (default: `low`)\n\nControls how much the model reasons before answering. Higher effort means better analysis but slower and more tokens.\n\n```bash\nresearch-tool --effort low \"What year was Rust 1.0 released?\"\nresearch-tool --effort medium \"Explain how OpenRouter routes requests to different model providers\"\nresearch-tool --effort high \"Compare tradeoffs between Opus 4.6 and gpt-5.3-codex for programming\"\nresearch-tool --effort xhigh \"Deep analysis of React Server Components vs traditional SSR approaches\"\n```\n\n| Level | Speed | When to use |\n|-------|-------|-------------|\n| `low` | ~1-3 min | Quick fact lookups, simple questions |\n| `medium` | ~2-5 min | Standard research, moderate analysis |\n| `high` | ~3-10 min | Deep analysis with careful reasoning |\n| `xhigh` | ~5-20+ min | Maximum reasoning, complex multi-source synthesis |\n\nCan also be set via env var `RESEARCH_EFFORT`.\n\n### `--model`, `-m` (default: `openai/gpt-5.2:online`)\n\nWhich model to use. Defaults to GPT-5.2 with the `:online` suffix because it excels at questions where citations and accurate documentation lookups matter. The `:online` suffix enables live web search and works with **any model on OpenRouter**.\n\n```bash\n# Default: GPT-5.2 with web search (great for docs and cited answers)\nresearch-tool \"current weather in San Francisco\"\n\n# Claude with web search\nresearch-tool -m \"anthropic/claude-sonnet-4-20250514:online\" \"Summarize recent changes to the OpenAI API\"\n\n# GPT-5.2 without web search (training data only)\nresearch-tool -m \"openai/gpt-5.2\" \"Explain the React Server Components architecture\"\n\n# Any OpenRouter model\nresearch-tool -m \"google/gemini-2.5-pro:online\" \"Compare React vs Svelte in 2026\"\n```\n\nCan also be set via env var `RESEARCH_MODEL`.\n\n### `--system`, `-s`\n\nOverride the system prompt to give the model a specific persona or instructions.\n\n```bash\nresearch-tool -s \"You are a senior infrastructure engineer\" \"Best practices for zero-downtime Kubernetes deployments\"\nresear"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output format] - **stdout**: Response text only (markdown with citations) — pipe-friendly\n- **stderr**: Progress status, reasoning traces, and token usage\n\n```\n🔍 Researching with openai/gpt-5.2:online (effort: high)...\n✅ Connected — waiting for response...\n\n[response text on stdout]\n\n📊 Tokens: 4470 prompt + 184 completion = 4654 total | ⏱ 5s\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Status indicators] - `🔍 Researching...` — request sent to OpenRouter\n- `✅ Connected — waiting for response...` — server accepted the request, model is searching/thinking\n- `⏳ 15s... ⏳ 30s...` — elapsed time ticks (only in interactive terminals, not in agent exec)\n- `❌ Connection to OpenRouter failed` — couldn't reach OpenRouter (network issue)\n- `❌ Connection to OpenRouter lost` — connection dropped while waiting. Retry?"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Tips for better results] - **Write in natural language.** \"What are the best practices for Rust error handling and when should you use anyhow vs thiserror?\" works better than keyword-style queries.\n- **Provide maximum context.** The model starts from zero. Include background, what you already know, and all related sub-questions. Detailed prompts massively outperform vague ones.\n- **Use effort levels appropriately.** `low` for quick facts, `high` for real research, `xhigh` only for complex multi-source analysis.\n- **Use `-s` for domain expertise.** A specific persona produces noticeably better domain-specific answers."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Cost] ~$0.01–0.05 per query. Token usage is printed to stderr after each query."
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "research_tool"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔍",
+        "requires": {
+          "bins": [
+            "research-tool"
+          ],
+          "env": [
+            "OPENROUTER_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENROUTER_API_KEY",
+        "homepage": "https://github.com/aaronn/openclaw-search-tool"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aaronn/openclaw-search-tool/SKILL.md"
+}

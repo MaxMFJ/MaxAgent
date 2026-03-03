@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_camoufox-tools",
+  "description": "Simplified CLI tools for camoufox anti-detection browser automation. Provides fox-open, fox-scrape, fox-eval, fox-close, and fox-bilibili-stats commands for easy web scraping and data extraction.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # camoufox-tools\n\n🦊 封装 camoufox + agent-browser 的最佳实践，提供简化的命令行工具用于反检测浏览器自动化和数据抓取。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[为什么需要这个 Skill？] - **反检测**: camoufox 是基于 Firefox 的防指纹浏览器，能绕过 Bilibili 等网站的风控\n- **简化命令**: 隐藏复杂的 `--executable-path` 和 `--headed` 参数\n- **最佳实践**: 自动处理 `close` 规范，避免资源泄漏\n- **即装即用**: 一键安装，无需记忆长路径"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[安装] ```bash\n# 运行安装脚本，将工具添加到 PATH\ncd ~/.openclaw/workspace/skills/camoufox-tools\n./install.sh\n\n# 或者手动添加到 PATH\nexport PATH=\"$HOME/.openclaw/workspace/skills/camoufox-tools/bin:$PATH\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[环境变量] ```bash\n# 可选：自定义 camoufox 路径（默认: ~/.local/share/camoufox/camoufox）\nexport CAMOUFOX_PATH=/path/to/camoufox\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[工具列表] ### 1. fox-open - 有头模式打开网页\n\n使用 camoufox 有头模式打开指定网页。\n\n```bash\nfox-open \"https://example.com\"\nfox-open \"https://bilibili.com\"\n```\n\n**特性:**\n- 自动关闭之前的 browser 实例\n- 自动使用 `--headed` 模式\n- 自动填充 camoufox 路径\n\n---\n\n### 2. fox-scrape - 抓取页面内容\n\n抓取网页内容，支持等待时间和 CSS 选择器。\n\n```bash\n# 基本用法\nfox-scrape \"https://example.com\"\n\n# 等待 5 秒后抓取\nfox-scrape \"https://example.com\" --wait 5000\n\n# 抓取特定元素\nfox-scrape \"https://example.com\" --selector \".article-content\"\n\n# 短选项\nfox-scrape \"https://example.com\" -w 5000 -s \".content\"\n```\n\n**选项:**\n- `-w, --wait <ms>` - 等待时间（毫秒，默认 3000）\n- `-s, --selector <sel>` - CSS 选择器，提取特定元素\n\n**特性:**\n- 自动启动 browser（如未运行）\n- 任务完成后自动关闭 browser\n\n---\n\n### 3. fox-eval - 执行 JavaScript\n\n在当前页面执行 JavaScript 代码。\n\n```bash\n# 获取页面标题\nfox-eval \"document.title\"\n\n# 获取元素文本\nfox-eval \"document.querySelector('.like-btn').textContent\"\n\n# 获取多个元素\nfox-eval \"[...document.querySelectorAll('.stat')].map(e => e.textContent)\"\n```\n\n**注意:** 需要先使用 `fox-open` 打开网页。\n\n---\n\n### 4. fox-close - 规范关闭\n\n关闭所有 browser 实例，释放资源。\n\n```bash\nfox-close\n```\n\n**建议:** 在每个任务完成后执行，避免资源占用。\n\n---\n\n### 5. fox-bilibili-stats - 获取 B 站视频数据\n\n获取 Bilibili 视频的统计数据。\n\n```bash\nfox-bilibili-stats \"BV1NGZtBwELa\"\nfox-bilibili-stats \"BV1xx411c7mD\"\n```\n\n**输出:**\n- 📺 视频标题\n- ▶️  播放量\n- 👍 点赞数\n- 🪙 投币数\n- ⭐ 收藏数\n- 📤 分享数\n- 💬 弹幕数\n\n**特性:**\n- 自动处理 BV 号格式\n- 自动启动和关闭 browser\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[典型工作流] ### 工作流 1: 快速查看网页\n```bash\nfox-open \"https://example.com\"\n# 查看完成后\nfox-close\n```\n\n### 工作流 2: 抓取动态内容\n```bash\nfox-scrape \"https://example.com\" --wait 5000 --selector \".dynamic-content\"\n```\n\n### 工作流 3: 交互式数据提取\n```bash\n# 打开页面\nfox-open \"https://example.com\"\n\n# 执行一些操作后提取数据\nfox-eval \"document.querySelector('.data').textContent\"\n\n# 关闭\nfox-close\n```\n\n### 工作流 4: B 站视频数据分析\n```bash\nfox-bilibili-stats \"BV1NGZtBwELa\"\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[故障排除] ### Browser 无法启动\n- 检查 camoufox 是否已安装: `ls ~/.local/share/camoufox/camoufox`\n- 设置正确的路径: `export CAMOUFOX_PATH=/path/to/camoufox`\n\n### 页面加载超时\n- 增加等待时间: `fox-scrape --wait 10000`\n- 检查网络连接\n\n### 选择器找不到元素\n- 使用 `fox-open` 打开页面后手动检查元素\n- 使用 `fox-eval` 测试选择器: `fox-eval \"document.querySelector('.your-selector')\"`\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[依赖] - openclaw CLI\n- camoufox (headless Firefox)\n- agent-browser 扩展\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[许可证] MIT"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "camoufox_tools"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adastraabyssoque/camoufox-tools/SKILL.md"
+}

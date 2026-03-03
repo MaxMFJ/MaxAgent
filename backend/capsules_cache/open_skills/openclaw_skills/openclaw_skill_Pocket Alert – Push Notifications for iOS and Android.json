@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_Pocket Alert – Push Notifications for iOS and Android",
+  "description": "The Pocket Alert (pocketalert.app) skill for OpenClaw enables OpenClaw agents and workflows to send push notifications to iOS and Android devices. It is used to deliver alerts and updates from automated tasks, workflows, and background processes.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Pocket Alert\n\nThis skill enables interaction with the [Pocket Alert](https://pocketalert.app) service through its CLI tool."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] The `pocketalert` CLI must be installed and authenticated:\n\n```bash\n# Install (if not already installed)\n# Download from https://info.pocketalert.app/cli.html and extract to /usr/local/bin/\n\n# Authenticate with your API key\npocketalert auth <your-api-key>\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Reference] ### Send Push Notifications\n\n```bash\n# Basic notification\npocketalert send -t \"Title\" -m \"Message\"\n\n# Full form\npocketalert messages send --title \"Alert\" --message \"Server is down!\"\n\n# To specific application\npocketalert messages send -t \"Deploy\" -m \"Build completed\" -a <app-tid>\n\n# To specific device\npocketalert messages send -t \"Alert\" -m \"Check server\" -d <device-tid>\n\n# To all devices\npocketalert messages send -t \"Alert\" -m \"System update\" -d all\n```\n\n### List Resources\n\n```bash\n# List last messages\npocketalert messages list\npocketalert messages list --limit 50\npocketalert messages list --device <device-tid>\n\n# List applications\npocketalert apps list\n\n# List devices\npocketalert devices list\n\n# List webhooks\npocketalert webhooks list\n\n# List API keys\npocketalert apikeys list\n```\n\n### Manage Applications\n\n```bash\n# Create application\npocketalert apps create --name \"My App\"\npocketalert apps create -n \"Production\" -c \"#FF5733\"\n\n# Get application details\npocketalert apps get <tid>\n\n# Delete application\npocketalert apps delete <tid>\n```\n\n### Manage Devices\n\n```bash\n# List devices\npocketalert devices list\n\n# Get device details\npocketalert devices get <tid>\n\n# Delete device\npocketalert devices delete <tid>\n```\n\n### Manage Webhooks\n\n```bash\n# Create webhook\npocketalert webhooks create --name \"GitHub Webhook\" --message \"*\"\npocketalert webhooks create -n \"Deploy Hook\" -m \"Deployed %repository.name% by %sender.login%\"\npocketalert webhooks create -n \"CI/CD\" -m \"*\" -a <app-tid> -d all\n\n# List webhooks\npocketalert webhooks list\n\n# Get webhook details\npocketalert webhooks get <tid>\n\n# Delete webhook\npocketalert webhooks delete <tid>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Message Template Variables] When creating webhooks, you can use template variables from the incoming payload:\n\n```bash\npocketalert webhooks create \\\n  --name \"GitHub Push\" \\\n  --message \"Push to %repository.name%: %head_commit.message%\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuration] View or modify configuration:\n\n```bash\n# View config\npocketalert config\n\n# Set API key\npocketalert config set api_key <new-api-key>\n\n# Set custom base URL (for self-hosted)\npocketalert config set base_url https://your-api.example.com\n```\n\nConfiguration is stored at `~/.pocketalert/config.json`."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[CI/CD Integration Examples] ```bash\n# GitHub Actions / GitLab CI\npocketalert send -t \"Build Complete\" -m \"Version $VERSION deployed\"\n\n# Server monitoring with cron\n*/5 * * * * /usr/local/bin/pocketalert send -t \"Server Health\" -m \"$(uptime)\"\n\n# Service check script\nif ! systemctl is-active --quiet nginx; then\n  pocketalert send -t \"NGINX Down\" -m \"NGINX is not running on $(hostname)\"\nfi\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Error Handling] The CLI returns appropriate exit codes:\n- `0` - Success\n- `1` - Authentication or API error\n- `2` - Invalid arguments\n\nAlways check command output for error details."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Pocket Alert – Push Notifications for iOS and Android"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akellacom/pocketalert/SKILL.md"
+}

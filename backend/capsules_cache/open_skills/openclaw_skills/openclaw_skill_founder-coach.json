@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_founder-coach",
+  "description": "AI founder coaching system — daily decision journal, accountability tracking, weekly strategy reviews, and AI-era specific questions on moat, commoditization risk, and outcome-based pricing. Not generic startup advice. Use for founder productivity, decision tracking, and strategic reflection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Founder Coach 🎯\n\n**Your AI-powered founder accountability system.**\n\nA structured coaching framework for AI-era founders. Daily check-ins, decision journaling, weekly strategy reviews, and accountability tracking — all stored in your agent's memory."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Morning check-in\npython3 {baseDir}/scripts/founder_checkin.py morning\n\n# Evening reflection\npython3 {baseDir}/scripts/founder_checkin.py evening\n\n# Weekly review\npython3 {baseDir}/scripts/founder_checkin.py weekly\n\n# View stats\npython3 {baseDir}/scripts/founder_checkin.py stats\n\n# View recent entries\npython3 {baseDir}/scripts/founder_checkin.py history --days 7\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🌅 Morning Brief Template] Use this every morning to set your day:\n\n### 1. Yesterday Recap\n- What did I commit to yesterday?\n- What actually got done? (completion rate)\n- What carried over and why?\n\n### 2. Today's Top 3 Priorities\n| # | Priority | Why it matters | Time block |\n|---|----------|---------------|------------|\n| 1 | | | |\n| 2 | | | |\n| 3 | | | |\n\n**Rule:** If you can only do ONE thing today, which is it? That's #1.\n\n### 3. AI Founder Question of the Day\nPick one to reflect on:\n- \"What manual process am I doing that AI could handle?\"\n- \"Where is my moat — data, workflow, distribution, or brand?\"\n- \"What's my cost-per-serve and how do I halve it?\"\n- \"Am I building a product or a feature that GPT will add next quarter?\"\n- \"What would a 10-person AI-native company do differently?\"\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🌙 Evening Reflection Template] ### Wins\n- What went well today?\n- What am I proud of?\n\n### Losses\n- What didn't happen? Why?\n- What would I do differently?\n\n### Tomorrow\n- Top 3 priorities for tomorrow\n- One thing to stop doing\n- One thing to start doing\n\n### Energy Check\nRate 1-5: Energy [ ] Focus [ ] Motivation [ ]\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[📊 Weekly Strategy Review] Run every Sunday or Monday. Takes 30-60 minutes.\n\n### Performance\n- Commitments made this week: ___\n- Commitments kept: ___ (___%)\n- Trend vs last week: ↑ / → / ↓\n\n### Key Metrics\n| Metric | Last Week | This Week | Target |\n|--------|-----------|-----------|--------|\n| Revenue | | | |\n| Users/Customers | | | |\n| Key Feature Progress | | | |\n| Cost-per-serve | | | |\n\n### Strategic Questions\n\n#### Moat Analysis\n- **Data moat:** Are we accumulating proprietary data? What data do we have that others don't?\n- **Workflow moat:** Are we embedded in customer workflows? Switching cost?\n- **Distribution moat:** Do we own a channel? Community? Brand?\n- **Speed moat:** Are we shipping faster than anyone else?\n\n#### Commoditization Risk\n- Which parts of our stack are becoming commoditized?\n- What happens when GPT-5 / Claude 4 / Gemini 3 drops?\n- Are we building on top of APIs that could become competitors?\n\n#### AI-Era Economics\n- **Cost-per-serve:** What does it cost to serve one customer?\n- **Outcome-based pricing:** Can we charge for outcomes, not seats?\n- **Marginal cost:** Does our 1000th customer cost the same as the 1st?\n- **AI leverage:** Where does AI give us 10x leverage vs humans?\n\n### Decisions Made This Week\n| Decision | Context | Options Considered | Chosen | Reversible? |\n|----------|---------|-------------------|--------|-------------|\n| | | | | |\n\n### Next Week\n- #1 priority (must happen):\n- #2 priority (should happen):\n- #3 priority (nice to have):\n- One bet/experiment to run:\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[📓 Decision Journal Format] For important decisions, use this format:\n\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Decision: [Title]] Date: YYYY-MM-DD\nStakes: Low / Medium / High / Critical\n\n### Context\nWhat's the situation? Why does this decision need to be made now?\n\n### Options\n1. **Option A:** [description]\n   - Pro: ...\n   - Con: ...\n   - Cost: ...\n\n2. **Option B:** [description]\n   - Pro: ...\n   - Con: ...\n   - Cost: ...\n\n### Decision\nChose: [Option X]\nReasoning: [Why]\nReversible: Yes/No\nReview date: [When to check if this was right]\n\n### Outcome (fill in later)\nDate reviewed:\nResult:\nLesson:\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[📈 Accountability System] ### How It Works\n1. **Morning:** Set 3 commitments\n2. **Evening:** Mark complete/incomplete with notes\n3. **Weekly:** Review completion rate and patterns\n4. **Monthly:** Identify systemic issues\n\n### Scoring\n- **90-100%** completion: You're either crushing it or setting easy goals\n- **70-89%**: Healthy stretch zone\n- **50-69%**: Overcommitting or execution issues\n- **Below 50%**: Stop. Fewer commitments. Execute on 1-2 things.\n\n### Patterns to Watch\n- **Always incomplete #3:** You're overcommitting — do 2 things well\n- **Same item carrying over:** It's either not important (cut it) or you're avoiding it (why?)\n- **High completion but no progress:** You're busy, not productive — wrong priorities\n- **Energy always low:** Burnout risk — take a break before it takes you\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[🤖 AI-Era Founder Questions Bank] Rotate through these in morning briefs:\n\n### Product & Moat\n1. What would this business look like if AI could do 80% of the work?\n2. Are we a thin wrapper around an API? How do we add defensible value?\n3. What proprietary data or feedback loops do we create?\n4. If OpenAI built our feature tomorrow, what would still be ours?\n\n### Economics\n5. What's our cost-per-serve and trajectory?\n6. Can we charge for outcomes instead of access?\n7. Where do margins come from when AI costs drop 10x yearly?\n8. What's our unit economics at 10x scale?\n\n### Competition\n9. What can a 3-person AI-native startup build in 3 months that competes with us?\n10. Where do we have distribution that new entrants don't?\n11. What switching costs have we built?\n\n### Personal\n12. Am I building a company or a project?\n13. What am I uniquely positioned to build that AI can't easily replicate?\n14. Am I spending time on $10/hr tasks or $1000/hr tasks?\n15. What would I do if I had 10x the resources? What about 1/10th?\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Storage] All entries are stored in `memory/founder-journal/`:\n```\nmemory/founder-journal/\n├── 2026-02-15.md       # Daily entries\n├── 2026-02-16.md\n├── weekly/\n│   └── 2026-W07.md     # Weekly reviews\n└── decisions/\n    └── 2026-02-15-decision-name.md\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "founder_coach"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "OpenClaw agent with cron jobs",
+    "extra": {
+      "openclaw": {
+        "emoji": "??",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/founder-coach-ai/SKILL.md"
+}

@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_agentic-workflow-automation",
+  "description": "Generate reusable multi-step agent workflow blueprints. Use for trigger/action orchestration, deterministic workflow definitions, and automation handoff artifacts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agentic Workflow Automation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Build workflow blueprints that can be translated into automation platforms such as n8n or internal orchestrators."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define workflow name, trigger, and ordered steps.\n2. Normalize each step into a simple execution contract.\n3. Build a blueprint with dependencies and execution order.\n4. Export JSON/markdown artifacts for implementation."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/generate_workflow_blueprint.py` for deterministic workflow output.\n- Read `references/workflow-blueprint-guide.md` for step design guidance."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep each step single-purpose.\n- Include clear fallback behavior for failed steps."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agentic_workflow_automation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/agentic-workflow-automation/SKILL.md"
+}

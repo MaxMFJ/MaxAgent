@@ -1,0 +1,90 @@
+{
+  "id": "openclaw_skill_anthropic",
+  "description": "Anthropic Claude API integration — chat completions, streaming, vision, tool use, and batch processing via the Anthropic Messages API. Generate text with Claude Opus, Sonnet, and Haiku models, process images, use tool calling, and manage conversations. Built for AI agents — Python stdlib only, zero dependencies. Use for AI text generation, multimodal analysis, tool-augmented AI, batch processing, and Claude model interaction.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔮 Anthropic\n\nAnthropic Claude API integration — chat completions, streaming, vision, tool use, and batch processing via the Anthropic Messages API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Messages API** — Claude Opus, Sonnet, Haiku completions\n- **Streaming** — real-time token streaming responses\n- **Vision** — image analysis and understanding\n- **Tool use** — function calling with structured output\n- **System prompts** — custom system instructions\n- **Multi-turn conversations** — context management\n- **Batch API** — bulk message processing\n- **Token counting** — estimate usage before sending\n- **Extended thinking** — deep reasoning mode\n- **Model listing** — available models and capabilities"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `ANTHROPIC_API_KEY` | ✅ | API key/token for Anthropic |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Send a message to Claude\npython3 {baseDir}/scripts/anthropic.py chat \"What is the meaning of life?\" --model claude-sonnet-4-20250514\n```\n\n```bash\n# Chat with system prompt\npython3 {baseDir}/scripts/anthropic.py chat-system --system \"You are a financial analyst\" \"Analyze AAPL stock\"\n```\n\n```bash\n# Analyze an image\npython3 {baseDir}/scripts/anthropic.py chat-image --image photo.jpg 'What do you see in this image?'\n```\n\n```bash\n# Stream a response\npython3 {baseDir}/scripts/anthropic.py stream \"Write a short story about a robot\" --model claude-sonnet-4-20250514\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### `chat`\nSend a message to Claude.\n```bash\npython3 {baseDir}/scripts/anthropic.py chat \"What is the meaning of life?\" --model claude-sonnet-4-20250514\n```\n\n### `chat-system`\nChat with system prompt.\n```bash\npython3 {baseDir}/scripts/anthropic.py chat-system --system \"You are a financial analyst\" \"Analyze AAPL stock\"\n```\n\n### `chat-image`\nAnalyze an image.\n```bash\npython3 {baseDir}/scripts/anthropic.py chat-image --image photo.jpg 'What do you see in this image?'\n```\n\n### `stream`\nStream a response.\n```bash\npython3 {baseDir}/scripts/anthropic.py stream \"Write a short story about a robot\" --model claude-sonnet-4-20250514\n```\n\n### `batch-create`\nCreate a batch request.\n```bash\npython3 {baseDir}/scripts/anthropic.py batch-create requests.jsonl\n```\n\n### `batch-list`\nList batch jobs.\n```bash\npython3 {baseDir}/scripts/anthropic.py batch-list\n```\n\n### `batch-get`\nGet batch status.\n```bash\npython3 {baseDir}/scripts/anthropic.py batch-get batch_abc123\n```\n\n### `batch-results`\nGet batch results.\n```bash\npython3 {baseDir}/scripts/anthropic.py batch-results batch_abc123\n```\n\n### `count-tokens`\nCount tokens in a message.\n```bash\npython3 {baseDir}/scripts/anthropic.py count-tokens \"How many tokens is this message?\"\n```\n\n### `models`\nList available models.\n```bash\npython3 {baseDir}/scripts/anthropic.py models\n```\n\n### `tools`\nChat with tool use.\n```bash\npython3 {baseDir}/scripts/anthropic.py tools --tools '[{\"name\":\"get_weather\",\"description\":\"Get weather\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\"}}}}]' \"What is the weather in NYC?\"\n```\n\n### `thinking`\nExtended thinking mode.\n```bash\npython3 {baseDir}/scripts/anthropic.py thinking \"Solve this math problem step by step: what is 123 * 456?\" --budget 10000\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default. Add `--human` for readable formatted output.\n\n```bash\n# JSON (default, for programmatic use)\npython3 {baseDir}/scripts/anthropic.py chat --limit 5\n\n# Human-readable\npython3 {baseDir}/scripts/anthropic.py chat --limit 5 --human\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/anthropic.py` | Main CLI — all Anthropic operations |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Data Policy] This skill **never stores data locally**. All requests go directly to the Anthropic API and results are returned to stdout. Your data stays on Anthropic servers."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Credits] ---\nBuilt by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "anthropic"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔮",
+        "requires": {
+          "env": [
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "primaryEnv": "ANTHROPIC_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/anthropic/SKILL.md"
+}

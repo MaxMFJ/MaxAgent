@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_skill-auditor",
+  "description": "Security scanner for OpenClaw skills. Detects malicious code, obfuscated payloads, prompt injection, social engineering, typosquatting, and data exfiltration before installation. Features 0-100 numeric risk scoring, MITRE ATT&CK mappings, base64/hex deobfuscation, IoC database, whitelist system, and SHA256 file inventory. Use before installing any third-party skill. Triggers: audit skill, check security, scan skill, is this skill safe, security review, quarantine.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Skill Auditor v2.0 🔍🛡️\n\nComprehensive security scanner for OpenClaw/ClawHub skills. Merges static analysis, deobfuscation, and threat intelligence into a single Python tool."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - Before installing **any** third-party skill from ClawHub\n- When reviewing skill updates for security regressions\n- To audit your own skills before publishing\n- When someone asks: \"is this skill safe?\", \"audit this\", \"check security\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Audit a local skill directory\n```bash\npython3 {baseDir}/scripts/audit_skill.py /path/to/skill --human\n```\n\n### Audit a ClawHub skill by slug\n```bash\npython3 {baseDir}/scripts/audit_skill.py --slug skill-name --human\n```\n\n### Quarantine workflow (audit + prompt to install)\n```bash\nbash {baseDir}/scripts/quarantine.sh /path/to/skill\nbash {baseDir}/scripts/quarantine.sh --slug skill-name\n```\n\n### JSON output for programmatic use\n```bash\npython3 {baseDir}/scripts/audit_skill.py /path/to/skill --json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scoring System] | Score | Level | Action |\n|-------|-------|--------|\n| 0–20 | ✅ SAFE | Auto-install OK |\n| 21–40 | 🟢 LOW RISK | Proceed with caution |\n| 41–60 | 🟡 MEDIUM RISK | Manual review required |\n| 61–80 | 🟠 HIGH RISK | Expert review needed |\n| 81–100 | 🔴 CRITICAL | Do NOT install |\n\nExit codes: `0` = safe (≤20), `1` = review (21–60), `2` = dangerous (>60)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Detection Layers] ### Layer 1: Static Pattern Analysis\n- 10+ scan categories with regex patterns\n- Shell execution, network calls, env access, filesystem escape\n- Prompt injection, data exfiltration, crypto wallet access\n- Dynamic imports, browser credential theft, fake prerequisites\n\n### Layer 2: Deobfuscation\n- Base64 string extraction and decode → re-scan decoded content\n- Hex escape sequence decode → re-scan\n- Detects hidden commands, C2 IPs in encoded payloads\n\n### Layer 3: Threat Intelligence\n- IoC database: known malicious IPs, domains\n- Social engineering detection: urgency, false authority, fear tactics\n- MITRE ATT&CK ID mapping on every finding\n- Whitelist system reduces score for safe binaries/domains\n\n### Additional Checks\n- SHA256 file inventory for integrity verification\n- Typosquat detection (Levenshtein distance on package names)\n- Zero-width character detection in SKILL.md\n- Comment-context severity reduction (findings in comments scored lower)\n- Permission scope analysis (what tools does the skill request?)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[IoC Database] Structured threat data in `references/ioc-database.json`. Update when new threats emerge. The scanner auto-loads this file at runtime."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[References] - `references/ioc-database.json` — Structured IoC data (IPs, domains, patterns)\n- `references/known-patterns.md` — Human-readable threat documentation\n- `references/prompt-injection-patterns.md` — Prompt injection pattern reference"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)\n\nFork of [skill-auditor-pro](https://clawhub.ai/skills/skill-auditor-pro) by sypsyp97, merged with [skill-security-auditor](https://clawhub.ai/skills/skill-security-auditor) by akm626."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "skill_auditor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": {
+      "openclaw": ">=0.10"
+    },
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/skill-auditor-v2/SKILL.md"
+}

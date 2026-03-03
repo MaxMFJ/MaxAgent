@@ -1,0 +1,88 @@
+{
+  "id": "openclaw_skill_lexiang",
+  "description": "腾讯乐享知识库 API 集成。提供团队、知识库、知识节点、在线文档块的完整 CRUD 操作，以及通讯录管理、AI 搜索/问答、文件上传、任务管理等功能。此 skill 适用于需要通过 API 管理乐享知识库内容（创建/查询/编辑文档、搜索知识、管理团队权限等）的场景。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 腾讯乐享知识库 API\n\n腾讯乐享知识库是企业级知识管理平台，提供知识库、团队协作、文档管理、AI助手等功能。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[数据模型] - **Team（团队）**：顶级组织单元，一个团队下可以有多个知识库（Space）\n- **Space（知识库）**：知识的容器，属于某个团队，包含多个条目（Entry），有 `root_entry_id` 作为根节点\n- **Entry（条目/知识）**：知识库中的内容单元，可以是页面（page）、文件夹（folder）或文件（file），支持树形结构（parent_id）\n- **File（文件）**：附件类型的条目，如 PDF、Word、图片等\n\n层级关系：`Team -> Space -> Entry（树形结构，root_entry_id 为根）`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[URL 规则] 生成知识库链接时，必须使用企业专属域名（如 `csig.lexiangla.com`），**禁止使用** `https://lexiang.tencent.com/wiki/{id}` 格式。\n\n| 资源类型 | URL 格式 |\n|---------|----------|\n| 团队首页 | `https://{domain}/t/{team_id}/spaces` |\n| 知识库 | `https://{domain}/spaces/{space_id}` |\n| 知识条目 | `https://{domain}/pages/{entry_id}` |\n\n优先使用 API 响应中的 `links` 字段；如果 API 未返回完整链接，根据上述规则拼接。"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[凭证配置] ### 环境变量\n```bash\nexport LEXIANG_APP_KEY=\"your_app_key\"\nexport LEXIANG_APP_SECRET=\"your_app_secret\"\nexport LEXIANG_STAFF_ID=\"your_staff_id\"  # 写操作必需\n```\n\n### 凭证配置优先级\n1. 环境变量（最高优先级）\n2. `~/.openclaw/openclaw.json` 中的 `skills.entries.lexiang.env` 字段\n3. `~/.config/lexiang/credentials` JSON 文件\n\n### 初始化（加载凭证 + 获取 Token）\n\n执行 `scripts/init.sh` 脚本自动处理凭证加载和 Token 获取：\n```bash\nsource scripts/init.sh\n# 之后可使用 $LEXIANG_TOKEN 和 $LEXIANG_STAFF_ID\n```\n\nToken 有效期 2 小时，获取频率限制 20次/10分钟。脚本会自动缓存到 `~/.config/lexiang/token`。"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[API 调用基础] ### 请求头\n```bash\n# 读操作\n-H \"Authorization: Bearer $LEXIANG_TOKEN\"\n-H \"Content-Type: application/json; charset=utf-8\"\n\n# 写操作（额外需要）\n-H \"x-staff-id: $LEXIANG_STAFF_ID\"\n```\n\n### 需要 x-staff-id 的接口\n所有写操作（创建/更新/删除）、AI 搜索/问答、权限设置\n\n### 创建知识节点的格式\n使用 **JSON:API 规范格式**，通过 `relationships` 指定所属知识库和父节点：\n```json\n{\n  \"data\": {\n    \"type\": \"kb_entry\",\n    \"attributes\": {\"entry_type\": \"page\", \"name\": \"标题\"},\n    \"relationships\": {\n      \"space\": {\"data\": {\"type\": \"kb_space\", \"id\": \"SPACE_ID\"}},\n      \"parent_entry\": {\"data\": {\"type\": \"kb_entry\", \"id\": \"PARENT_ID\"}}\n    }\n  }\n}\n```\n\n### 通用限制\n- 频率限制：大部分接口 3000次/分钟\n- 权限要求：需在 AppKey 的授权范围内"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[核心工作流] ### 1. 查询知识\n\n```bash\n# 获取团队列表\ncurl \"https://lxapi.lexiangla.com/cgi-bin/v1/kb/teams?limit=20\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\"\n\n# 获取知识库列表\ncurl \"https://lxapi.lexiangla.com/cgi-bin/v1/kb/spaces?team_id={team_id}&limit=20\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\"\n\n# 获取知识列表\ncurl \"https://lxapi.lexiangla.com/cgi-bin/v1/kb/entries?space_id={space_id}&limit=20\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\"\n\n# 获取文档内容（HTML 格式）\ncurl \"https://lxapi.lexiangla.com/cgi-bin/v1/kb/entries/{entry_id}/content?content_type=html\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\"\n```\n\n### 2. 创建文档\n\n两种方式对比：\n\n| 方式 | 优点 | 推荐场景 |\n|------|------|---------|\n| **上传 Markdown 文件** | 简单高效、格式完整保留 | 批量创建文档、Markdown 内容发布 |\n| **块接口 (page + blocks)** | 精确控制格式、可实时编辑 | 需要程序化编辑文档内容 |\n\n**推荐方式：上传 Markdown 文件**\n\n使用 `scripts/upload_file.sh` 脚本：\n```bash\nsource scripts/init.sh\nbash scripts/upload_file.sh ./document.md SPACE_ID [PARENT_ENTRY_ID]\n```\n\n### 3. AI 搜索与问答\n\n```bash\n# AI 搜索\ncurl -X POST \"https://lxapi.lexiangla.com/cgi-bin/v1/ai/search\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\" \\\n  -H \"x-staff-id: $LEXIANG_STAFF_ID\" \\\n  -H \"Content-Type: application/json; charset=utf-8\" \\\n  -d '{\"query\": \"搜索关键词\"}'\n\n# AI 问答（research=true 使用专业研究模式）\ncurl -X POST \"https://lxapi.lexiangla.com/cgi-bin/v1/ai/qa\" \\\n  -H \"Authorization: Bearer $LEXIANG_TOKEN\" \\\n  -H \"x-staff-id: $LEXIANG_STAFF_ID\" \\\n  -H \"Content-Type: application/json; charset=utf-8\" \\\n  -d '{\"query\": \"问题内容\", \"research\": false}'\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[使用块接口的关键注意事项] 对于需要使用在线文档块接口的场景，注意以下要点（详细示例见 `references/api-blocks.md`）：\n\n1. **新建文档不传 parent_block_id**：直接插入内容到页面根节点\n2. **列表块字段名不同于类型名**：`bulleted_list` 用 `bulleted` 字段，`numbered_list` 用 `numbered` 字段\n3. **标题块字段需匹配**：`h1` 用 `heading1`，`h2` 用 `heading2`，不是 `text`\n4. **嵌套块必须使用 children 和 block_id**：表格/引用/高亮块通过临时 ID 建立父子关系\n5. **不支持嵌套的类型**：`h1`-`h5`、`code`、`image`、`attachment`、`video`、`divider`、`mermaid`、`plantuml`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[常见错误排查] | 错误信息 | 原因 | 解决方案 |\n|----------|------|---------|\n| `必须指定员工账号` | 缺少 x-staff-id | 添加 `-H \"x-staff-id: $LEXIANG_STAFF_ID\"` |\n| `data.attributes.entry_type 不能为空` | 请求格式错误 | 使用 JSON:API 规范格式 |\n| `content_type 不能为空` | 缺少参数 | 添加 `?content_type=html` |\n| 列表内容为空 | 字段名错误 | 无序列表用 `bulleted`，有序列表用 `numbered` |\n| 嵌套块创建失败 | 缺少关联 | 确保 `children` + `block_id` 配对 |\n| 上传接口 404 | 旧版路径 | 使用 `/v1/kb/files/upload-params` |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[详细 API 参考] 按需查阅以下参考文件获取完整的接口文档：\n\n| 文件 | 内容 | 搜索关键词 |\n|------|------|-----------|\n| `references/api-contact.md` | 通讯录管理（成员/部门 CRUD） | contact, user, department, staff |\n| `references/api-team-space.md` | 团队与知识库管理 | team, space, 权限, subject |\n| `references/api-entries.md` | 知识节点 CRUD 与权限 | entry, entries, page, directory, file |\n| `references/api-blocks.md` | 在线文档块接口（创建/编辑块内容） | block, descendant, paragraph, table, list |\n| `references/api-other.md` | 任务/属性/日志/AI/素材/导出/SSO | task, property, log, ai, search, qa, upload, sso |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[HTTP 错误码] | 状态码 | 说明 |\n|--------|------|\n| 200/201 | 成功 |\n| 204 | 删除成功 |\n| 400 | 请求参数错误 |\n| 401 | Token 无效或过期 |\n| 403 | 无权限 |\n| 404 | 资源不存在 |\n| 429 | 超出频率限制 |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "lexiang"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📚"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajaxhe/lexiang-skill/SKILL.md"
+}

@@ -1,0 +1,75 @@
+{
+  "id": "openclaw_skill_model-audit",
+  "description": "Monthly LLM stack audit — compare your current models against latest benchmarks and pricing from OpenRouter. Identifies potential savings, upgrades, and better alternatives by category (reasoning, code, fast, cheap, vision). Use for optimizing AI costs and staying on the frontier.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Model Audit 📊\n\n**Audit your LLM stack against current pricing and alternatives.**\n\nFetches live pricing from OpenRouter, analyzes your configured models, and recommends potential savings or upgrades by category."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Full audit with recommendations\npython3 {baseDir}/scripts/model_audit.py\n\n# JSON output\npython3 {baseDir}/scripts/model_audit.py --json\n\n# Audit specific models\npython3 {baseDir}/scripts/model_audit.py --models \"anthropic/claude-opus-4-6,openai/gpt-4o\"\n\n# Show top models by category\npython3 {baseDir}/scripts/model_audit.py --top\n\n# Compare two models\npython3 {baseDir}/scripts/model_audit.py --compare \"anthropic/claude-sonnet-4\" \"openai/gpt-4o\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What It Does] 1. **Fetches** live pricing from OpenRouter API\n2. **Reads** your configured models from openclaw.json\n3. **Categorizes** models (reasoning, code, fast, cheap, vision)\n4. **Compares** against top alternatives in each category\n5. **Calculates** potential monthly savings\n6. **Recommends** upgrades or cost optimizations"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Example] ```\n═══ LLM Stack Audit ═══\n\nYour Models:\n  anthropic/claude-opus-4-6    $5.00/$25.00 per 1M tokens (in/out)\n  openai/gpt-4o              $2.50/$10.00 per 1M tokens\n  google/gemini-2.0-flash     $0.10/$0.40 per 1M tokens\n\nRecommendations:\n  💡 For fast tasks: gemini-2.0-flash is 50x cheaper than opus\n  💡 Consider: deepseek/deepseek-r1 for reasoning at $0.55/$2.19\n  💡 Your stack covers: reasoning ✓, code ✓, fast ✓, vision ✓\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Environment] Requires `OPENROUTER_API_KEY` environment variable."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "model_audit"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, OpenRouter API key",
+    "extra": {
+      "openclaw": {
+        "emoji": "??",
+        "requires": {
+          "env": [
+            "OPENROUTER_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENROUTER_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/model-audit-pro/SKILL.md"
+}

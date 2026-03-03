@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_human-writing",
+  "description": "Guidelines and standards for professional, human-like writing and documentation. Use this skill when generating READMEs, technical documentation, code comments, or any formal written output to avoid common AI 'tells', buzzwords, and stylistic tropes. Ensure content follows the 'Professional Human in the Field' standard: high precision, zero fluff, and no emojis in technical contexts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Human-Writing Skill\n\nThis skill provides the operational standards for generating professional, high-density, and human-sounding documentation and prose. It is designed to purge common LLM stylistic \"tells\" and replace them with the precision of a senior engineer or domain expert."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Directives] 1. **Eliminate AI \"Tells\":** Before finalizing any documentation or formal text, refer to [ai-tells.md](references/ai-tells.md) to identify and remove overused LLM vocabulary, structural tropes, and puffy language.\n2. **Apply Professional Standards:** Follow the guidelines in [standards.md](references/standards.md) for technical precision, information density, and tone.\n3. **No Buzzwords:** Zero tolerance for \"synergy,\" \"cutting-edge,\" \"revolutionize,\" \"seamless,\" or \"leverage.\" If a technical term exists, use it.\n4. **No Emojis in Docs:** Reserve emojis for chat interactions (as per SOUL.md). Professional documentation (READMEs, PR descriptions, code comments) must remain text-only for maximum clarity.\n5. **Precision Over Prose:** Humans in the field value numbers, versions, and RFCs over flowery descriptions."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] When asked to \"write documentation,\" \"create a README,\" or \"explain this technically\":\n\n1. **Scan references/ai-tells.md** for words to ban from the current draft.\n2. **Apply references/standards.md** to structure the output with high density and low fluff.\n3. **Draft the content.**\n4. **Self-Audit:** Verify the output does not contain \"Rule of Three\" adjectives or \"Not only... but also\" parallelisms.\n5. **Finalize:** Remove all emojis and corporate filler."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Reference Materials] - [ai-tells.md](references/ai-tells.md) - Field guide to AI writing \"tells\" to avoid.\n- [standards.md](references/standards.md) - Human-like professional writing standards."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "human_writing"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1999azzar/human-writing-azzar/SKILL.md"
+}

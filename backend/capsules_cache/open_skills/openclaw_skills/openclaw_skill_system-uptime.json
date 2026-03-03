@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_system-uptime",
+  "description": "Get the current system uptime using the native 'uptime' command. Use when: user asks about system uptime, system status, or how long the system has been running.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # System Uptime Skill\n\nGet the current system uptime using the built-in `uptime` command."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] ✅ **USE this skill when:**\n\n- \"What's the system uptime?\"\n- \"How long has the system been running?\"\n- \"Show system status\"\n- \"When was the last reboot?\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When NOT to Use] ❌ **DON'T use this skill when:**\n\n- Need detailed system metrics → use monitoring tools\n- Remote system uptime → use SSH or remote monitoring\n- Historical uptime data → check system logs"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ### Get System Uptime\n\n```bash\n# Basic uptime\nuptime\n\n# Using the skill CLI\nnode uptime-cli.js\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Example Output] ```\n11:30:45 up 2 days, 4:23, 2 users, load average: 1.23, 1.15, 1.08\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Notes] - Uses the standard Unix `uptime` command\n- Works on macOS, Linux, and other Unix-like systems\n- No additional dependencies required"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "system_uptime"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "⏱️",
+        "requires": {
+          "bins": [
+            "uptime"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alamby/system-uptime/SKILL.md"
+}

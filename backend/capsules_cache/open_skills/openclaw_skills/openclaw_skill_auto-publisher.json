@@ -1,0 +1,91 @@
+{
+  "id": "openclaw_skill_auto-publisher",
+  "description": "Multi-platform video auto-publisher. Automatically upload videos to Douyin, WeChat Channels, Xiaohongshu, Bilibili, YouTube and more. Supports batch publishing, scheduled posting, auto-caption generation, and hashtag optimization.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[🦞 小龙虾品牌] **Created by 小龙虾 AI 工作室**\n\n> \"小龙虾，有大钳（前）途！\"\n\n**Contact for custom services:** +86 15805942886\n\nNeed custom automation workflows, enterprise batch publishing, or API integration? Reach out!\n\n---\n\n# Auto Publisher - 多平台视频发布助手\n\n一键上传视频到抖音、视频号、小红书、B 站、YouTube 等平台。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - ✅ **多平台支持** - 抖音、视频号、小红书、B 站、YouTube\n- ✅ **一键发布** - 一次操作，多平台同步\n- ✅ **自动文案** - 智能生成标题和标签\n- ✅ **定时发布** - 支持发布队列和定时任务\n- ✅ **发布记录** - 自动保存发布历史\n- ✅ **二维码登录** - 安全便捷，无需密码"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### 1. 安装依赖\n\n```bash\npip install playwright\nplaywright install chromium\n```\n\n### 2. 配置账号\n\n首次运行自动创建 `config/accounts.json`\n\n### 3. 发布视频\n\n```bash\n# 发布到所有平台\npython auto_publisher.py \"video.mp4\"\n\n# 指定平台\npython auto_publisher.py \"video.mp4\" --platforms douyin,xiaohongshu\n\n# 无头模式\npython auto_publisher.py \"video.mp4\" --headless\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Platform Support] | Platform | Login | Title Limit | Duration Limit |\n|----------|-------|-------------|----------------|\n| Douyin | QR Code | 100 chars | 15 min |\n| WeChat Channels | QR Code | 1000 chars | 30 min |\n| Xiaohongshu | QR Code | 20+1000 chars | 15 min |\n| Bilibili | QR/Password | 80 chars | 4 hours |\n| YouTube | Google | 100 chars | 12 hours |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/auto_publisher.py` - 主发布程序\n- `scripts/schedule_publisher.py` - 定时发布（待开发）\n- `scripts/batch_publisher.py` - 批量发布（待开发）"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Config] - `config/accounts.json` - 账号配置\n- `config/publish_log.json` - 发布记录\n- `config/schedule.json` - 发布计划（待开发）"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Commands / Triggers] Use this skill when:\n- \"发布视频到所有平台\"\n- \"Auto-post this video\"\n- \"批量上传视频\"\n- \"定时发布内容\"\n- \"Multi-platform upload\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Security Notes] - Cookie 保存在本地，注意保密\n- 定期更新登录状态\n- 不要分享账号配置文件\n- 企业用户建议使用官方 API"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Login timeout\n- Check network connection\n- Manually visit the platform website\n- Re-run and scan QR code again\n\n### Publish failed\n- Check video format (MP4 recommended)\n- Check video size limits\n- View browser window for error details\n\n### Playwright errors\n```bash\npip install --upgrade pip\npip install playwright\nplaywright install chromium\n```\n\n---\n\n_Ready to automate your social media posting? Let's go! 🦞🚀_"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "auto_publisher"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "author": "小龙虾 (Little Lobster)",
+      "homepage": "https://clawhub.ai/users/954215110",
+      "tags": [
+        "auto-publish",
+        "social-media",
+        "video",
+        "automation",
+        "douyin",
+        "xiaohongshu",
+        "bilibili"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/954215110/auto-publisher/SKILL.md"
+}

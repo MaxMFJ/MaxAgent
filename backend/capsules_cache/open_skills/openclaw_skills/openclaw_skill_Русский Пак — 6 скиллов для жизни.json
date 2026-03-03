@@ -1,0 +1,61 @@
+{
+  "id": "openclaw_skill_Русский Пак — 6 скиллов для жизни",
+  "description": "Шесть скиллов для русскоязычных пользователей — договоры, ЖКХ, анализы, претензии, госдокументы и налоги ИП.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[Что входит в пак] | Скилл | Что делает |\n|-------|-----------|\n| 📄 dogovor-ru | Объясняет договоры аренды, трудовые, кредитные, ипотечные |\n| 🏠 zhkh-ru | Расшифровывает квитанции ЖКХ, считает итог, выявляет ошибки |\n| 🩺 analizy-ru | Переводит медицинские анализы с врачебного на человеческий |\n| ✍️ pretenziya-ru | Составляет претензии и жалобы в банки, магазины, госорганы |\n| 🔤 chinovnik-ru | Переводит официальные письма и постановления на простой язык |\n| 🧮 nalog-ru | Считает налог УСН 6% и НПД для ИП и самозанятых |"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Как использовать] Просто напиши что тебе нужно — пак сам определит нужный скилл:\n\n- \"объясни этот договор аренды\"\n- \"расшифруй квитанцию ЖКХ\"\n- \"что значат мои анализы\"\n- \"помоги написать претензию в магазин\"\n- \"что значит это письмо из налоговой\"\n- \"я ИП на УСН, заработал 200 000 за квартал\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Для кого] Для всех кто живёт в России и СНГ и хочет разбираться в документах, коммуналке, медицине и налогах — без юристов, бухгалтеров и часов в гугле."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Русский Пак — 6 скиллов для жизни"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🇷🇺",
+        "requires": {
+          "bins": []
+        },
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aggel008/ru-pack/SKILL.md"
+}

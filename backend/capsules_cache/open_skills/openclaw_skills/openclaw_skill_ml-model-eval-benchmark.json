@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_ml-model-eval-benchmark",
+  "description": "Compare model candidates using weighted metrics and deterministic ranking outputs. Use for benchmark leaderboards and model promotion decisions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ML Model Eval Benchmark"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Produce consistent model ranking outputs from metric-weighted evaluation inputs."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define metric weights and accepted metric ranges.\n2. Ingest model metrics for each candidate.\n3. Compute weighted score and ranking.\n4. Export leaderboard and promotion recommendation."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/benchmark_models.py` to generate benchmark outputs.\n- Read `references/benchmarking-guide.md` for weighting and tie-break guidance."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep metric names and scales consistent across candidates.\n- Record weighting assumptions in the output."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ml_model_eval_benchmark"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/ml-model-eval-benchmark/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_zai-usage",
+  "description": "Monitor Z.AI GLM Coding Plan usage and quota limits. Track token consumption, view reset times, and check subscription status.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Z.AI Usage Monitor\n\nTrack your Z.AI GLM Coding Plan usage in real-time."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Check usage\n~/.openclaw/skills/zai-usage/scripts/usage-summary.sh\n\n# Quick status\n~/.openclaw/skills/zai-usage/scripts/quick-check.sh\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] 1. Get your JWT token from https://z.ai/manage-apikey/subscription\n   - Open DevTools (F12)\n   - Application → Local Storage → `z-ai-open-platform-token-production`\n\n2. Store in `~/.openclaw/secrets/zai.env`:\n   ```\n   ZAI_JWT_TOKEN=eyJhbGci...\n   ```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[What You See] - **5-Hour Quota** - Rolling token usage with reset countdown\n- **Monthly Quota** - Monthly token allocation\n- **Web Tools** - Search/reader/zread call limits\n- **Plan Level** - Lite/Pro subscription status"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Status Icons] | Icon | Usage |\n|------|-------|\n| ✅ | < 50% |\n| ⚠️ | 50-80% |\n| 🔴 | > 80% |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Commands] Ask me:\n- \"How's our Z.AI usage?\"\n- \"Check credit usage\"\n- \"Are we running low on credits?\""
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Requirements] - `curl` - HTTP requests\n- `jq` - JSON parsing\n- `bc` - Number formatting (optional)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Sources] - https://github.com/zereraz/tokensight\n- https://www.reddit.com/r/ZaiGLM/comments/1pmb7fj/how_to_check_zai_coding_usage/"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "zai_usage"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1vecera/zai-usage/SKILL.md"
+}

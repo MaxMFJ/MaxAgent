@@ -47,6 +47,23 @@ from tools.router import execute_tool, set_router_registry
 logger = logging.getLogger(__name__)
 
 
+def _is_json_probe_task(query: str) -> bool:
+    """
+    检测 JSON consistency / probe 类任务：
+    这类任务需要较大的上下文窗口以保留完整的请求-响应链，避免 session 污染。
+    """
+    q = (query or "").strip().lower()
+    indicators = [
+        "json", "prime_", "hash", "logic", "consistency",
+        "probe", "model_test", "benchmark", "verify",
+        '{"', "返回json", "返回 json", "输出json", "输出 json",
+    ]
+    # 高置信度：查询本身就是 JSON 或包含 JSON 关键词
+    if q.startswith("{") or q.startswith("["):
+        return True
+    return sum(1 for ind in indicators if ind in q) >= 2
+
+
 def _record_created_files(context, tool_call: Dict[str, Any], result: ToolResult) -> None:
     """将工具执行产生的文件路径记录到 context，供后续追问时 LLM 能告知用户位置"""
     if not result.success or not isinstance(result.data, dict):
@@ -151,6 +168,16 @@ class AgentCore:
             {"role": "system", "content": get_system_prompt_for_query(user_message, session_id)},
             *context_messages
         ]
+        
+        # 防污染安全网：确保当前 user message 一定在 messages 列表中
+        if messages and messages[-1].get("role") != "user":
+            has_current_query = any(
+                m.get("role") == "user" and m.get("content", "").strip() == user_message.strip()
+                for m in messages[-3:]
+            )
+            if not has_current_query:
+                logger.warning(f"Safety net: current user message missing from context, appending")
+                messages.append({"role": "user", "content": user_message})
         
         logger.info(f"Context: {len(context_messages)} messages for query")
         
@@ -265,6 +292,14 @@ class AgentCore:
         
         # 企业级：Query 分级 + 分层 Prompt（intent 注入）
         intent_result = classify(enhanced_message, session_id=session_id)
+        
+        # 根据任务层级动态设置 context token 上限
+        tier_name = intent_result.tier.value  # "simple" or "complex"
+        # 检测 JSON consistency / probe 类任务
+        if _is_json_probe_task(enhanced_message):
+            tier_name = "json_probe"
+        context.set_task_tier(tier_name)
+        
         base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message, session_id)
         combined_extra = "\n\n".join(p for p in [extra_system_prompt, evomap_context] if p)
         system_prompt = f"{base_prompt}\n\n{combined_extra}" if combined_extra else base_prompt
@@ -273,6 +308,17 @@ class AgentCore:
             {"role": "system", "content": system_prompt},
             *context_messages
         ]
+        
+        # 防污染安全网：确保当前 user message 一定在 messages 列表中
+        # （context_messages 可能因 token 截断丢失最新消息）
+        if messages and messages[-1].get("role") != "user":
+            has_current_query = any(
+                m.get("role") == "user" and m.get("content", "").strip() == user_message.strip()
+                for m in messages[-3:]  # 最多检查最后 3 条
+            )
+            if not has_current_query:
+                logger.warning(f"Safety net: current user message missing from context, appending")
+                messages.append({"role": "user", "content": user_message})
         
         logger.info(f"Context: {len(context_messages)} messages for query, local_mode={use_local_mode}, provider={provider}, model={model_name}")
         

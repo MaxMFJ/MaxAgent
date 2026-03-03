@@ -1,0 +1,97 @@
+{
+  "id": "openclaw_skill_llmfit-advisor",
+  "description": "Detect local hardware (RAM, CPU, GPU/VRAM) and recommend the best-fit local LLM models with optimal quantization, speed estimates, and fit scoring.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # llmfit-advisor\n\nHardware-aware local LLM advisor. Detects your system specs (RAM, CPU, GPU/VRAM) and recommends models that actually fit, with optimal quantization and speed estimates."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to use (trigger phrases)] Use this skill immediately when the user asks any of:\n\n- \"what local models can I run?\"\n- \"which LLMs fit my hardware?\"\n- \"recommend a local model\"\n- \"what's the best model for my GPU?\"\n- \"can I run Llama 70B locally?\"\n- \"configure local models\"\n- \"set up Ollama models\"\n- \"what models fit my VRAM?\"\n- \"help me pick a local model for coding\"\n\nAlso use this skill when:\n\n- The user wants to configure `models.providers.ollama` or `models.providers.lmstudio`\n- The user mentions running models locally and you need to know what fits\n- A model recommendation is needed and the user has local inference capability (Ollama, vLLM, LM Studio)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ### Detect hardware\n\n```bash\nllmfit --json system\n```\n\nReturns JSON with CPU, RAM, GPU name, VRAM, multi-GPU info, and whether memory is unified (Apple Silicon).\n\n### Get top recommendations\n\n```bash\nllmfit recommend --json --limit 5\n```\n\nReturns the top 5 models ranked by a composite score (quality, speed, fit, context) with optimal quantization for the detected hardware.\n\n### Filter by use case\n\n```bash\nllmfit recommend --json --use-case coding --limit 3\nllmfit recommend --json --use-case reasoning --limit 3\nllmfit recommend --json --use-case chat --limit 3\n```\n\nValid use cases: `general`, `coding`, `reasoning`, `chat`, `multimodal`, `embedding`.\n\n### Filter by minimum fit level\n\n```bash\nllmfit recommend --json --min-fit good --limit 10\n```\n\nValid fit levels (best to worst): `perfect`, `good`, `marginal`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Understanding the output] ### System JSON\n\n```json\n{\n  \"system\": {\n    \"cpu_name\": \"Apple M2 Max\",\n    \"cpu_cores\": 12,\n    \"total_ram_gb\": 32.0,\n    \"available_ram_gb\": 24.5,\n    \"has_gpu\": true,\n    \"gpu_name\": \"Apple M2 Max\",\n    \"gpu_vram_gb\": 32.0,\n    \"gpu_count\": 1,\n    \"backend\": \"Metal\",\n    \"unified_memory\": true\n  }\n}\n```\n\n### Recommendation JSON\n\nEach model in the `models` array includes:\n\n| Field | Meaning |\n|---|---|\n| `name` | HuggingFace model ID (e.g. `meta-llama/Llama-3.1-8B-Instruct`) |\n| `provider` | Model provider (Meta, Alibaba, Google, etc.) |\n| `params_b` | Parameter count in billions |\n| `score` | Composite score 0–100 (higher is better) |\n| `score_components` | Breakdown: `quality`, `speed`, `fit`, `context` (each 0–100) |\n| `fit_level` | `Perfect`, `Good`, `Marginal`, or `TooTight` |\n| `run_mode` | `GPU`, `CPU+GPU Offload`, or `CPU Only` |\n| `best_quant` | Optimal quantization for the hardware (e.g. `Q5_K_M`, `Q4_K_M`) |\n| `estimated_tps` | Estimated tokens per second |\n| `memory_required_gb` | VRAM/RAM needed at this quantization |\n| `memory_available_gb` | Available VRAM/RAM detected |\n| `utilization_pct` | How much of available memory the model uses |\n| `use_case` | What the model is designed for |\n| `context_length` | Maximum context window |\n\n### Fit levels explained\n\n- **Perfect**: Model fits comfortably with room to spare. Ideal choice.\n- **Good**: Model fits but uses most available memory. Will work well.\n- **Marginal**: Model barely fits. May work but expect slower performance or reduced context.\n- **TooTight**: Model does not fit. Do not recommend.\n\n### Run modes explained\n\n- **GPU**: Full GPU inference. Fastest. Model weights loaded entirely into VRAM.\n- **CPU+GPU Offload**: Some layers on GPU, rest in system RAM. Slower than pure GPU.\n- **CPU Only**: All inference on CPU using system RAM. Slowest but works without GPU."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuring OpenClaw with results] After getting recommendations, configure the user's local model provider.\n\n### For Ollama\n\nMap the HuggingFace model name to its Ollama tag. Common mappings:\n\n| llmfit name | Ollama tag |\n|---|---|\n| `meta-llama/Llama-3.1-8B-Instruct` | `llama3.1:8b` |\n| `meta-llama/Llama-3.3-70B-Instruct` | `llama3.3:70b` |\n| `Qwen/Qwen2.5-Coder-7B-Instruct` | `qwen2.5-coder:7b` |\n| `Qwen/Qwen2.5-72B-Instruct` | `qwen2.5:72b` |\n| `deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct` | `deepseek-coder-v2:16b` |\n| `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` | `deepseek-r1:32b` |\n| `google/gemma-2-9b-it` | `gemma2:9b` |\n| `mistralai/Mistral-7B-Instruct-v0.3` | `mistral:7b` |\n| `microsoft/Phi-3-mini-4k-instruct` | `phi3:mini` |\n| `microsoft/Phi-4-mini-instruct` | `phi4-mini` |\n\nThen update `openclaw.json`:\n\n```json\n{\n  \"models\": {\n    \"providers\": {\n      \"ollama\": {\n        \"models\": [\"ollama/<ollama-tag>\"]\n      }\n    }\n  }\n}\n```\n\nAnd optionally set as default:\n\n```json\n{\n  \"agents\": {\n    \"defaults\": {\n      \"model\": {\n        \"primary\": \"ollama/<ollama-tag>\"\n      }\n    }\n  }\n}\n```\n\n### For vLLM / LM Studio\n\nUse the HuggingFace model name directly as the model identifier with the appropriate provider prefix (`vllm/` or `lmstudio/`)."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workflow example] When a user asks \"what local models can I run?\":\n\n1. Run `llmfit --json system` to show hardware summary\n2. Run `llmfit recommend --json --limit 5` to get top picks\n3. Present the recommendations with scores and fit levels\n4. If the user wants to configure one, map it to the appropriate Ollama/vLLM/LM Studio tag\n5. Offer to update `openclaw.json` with the chosen model\n\nWhen a user asks for a specific use case like \"recommend a coding model\":\n\n1. Run `llmfit recommend --json --use-case coding --limit 3`\n2. Present the coding-specific recommendations\n3. Offer to pull via Ollama and configure"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Notes] - llmfit detects NVIDIA GPUs (via nvidia-smi), AMD GPUs (via rocm-smi), and Apple Silicon (unified memory).\n- Multi-GPU setups aggregate VRAM across cards automatically.\n- The `best_quant` field tells you the optimal quantization — higher quant (Q6_K, Q8_0) means better quality if VRAM allows.\n- Speed estimates (`estimated_tps`) are approximate and vary by hardware and quantization.\n- Models with `fit_level: \"TooTight\"` should never be recommended to users."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "llmfit_advisor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🧠",
+        "requires": {
+          "bins": [
+            "llmfit"
+          ]
+        },
+        "install": [
+          {
+            "id": "brew",
+            "kind": "brew",
+            "formula": "AlexsJones/llmfit",
+            "bins": [
+              "llmfit"
+            ],
+            "label": "Install llmfit (brew tap AlexsJones/llmfit && brew install llmfit)"
+          },
+          {
+            "id": "cargo",
+            "kind": "node",
+            "bins": [
+              "llmfit"
+            ],
+            "label": "Install llmfit (cargo install llmfit)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexsjones/llmfit/SKILL.md"
+}

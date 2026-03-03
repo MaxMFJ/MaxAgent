@@ -1,0 +1,78 @@
+{
+  "id": "openclaw_skill_AI CFO",
+  "description": "Full AI Chief Financial Officer — connects Mercury Banking + Stripe into real-time business intelligence. Daily cash position, automated P&L, revenue tracking, expense categorization, cash flow forecasting, burn rate alerts, and weekly financial reports.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 📊 AI CFO\n\n**Full AI Chief Financial Officer for Agent6ix LLC**\n\nConnects Mercury Banking + Stripe into real-time business intelligence. Daily cash position, automated P&L, revenue tracking, expense categorization, cash flow forecasting, burn rate alerts, and weekly financial reports."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `dashboard` | Full financial dashboard — balances, MRR, burn rate, runway |\n| `transactions` | Recent transactions with AI categorization |\n| `pnl` | P&L statement for any date range |\n| `cashflow` | Cash flow analysis with 30/60/90 day forecast |\n| `revenue` | Stripe revenue breakdown — MRR, new vs recurring, churn |\n| `expenses` | Categorized expenses with trends and anomaly detection |\n| `report` | Weekly/monthly executive financial report |\n| `budget` | Set and track budgets by category |\n| `runway` | Burn rate and runway calculation |\n| `invoice` | Outstanding Stripe invoices and aging |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Required | Description |\n|----------|----------|-------------|\n| `MERCURY_API_TOKEN` | Yes | Mercury Banking API token (read-only) |\n| `STRIPE_API_KEY` | Yes | Stripe secret key (restricted, read-only) |\n| `OPENROUTER_API_KEY` | Yes | For AI transaction categorization |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ```bash\npython3 scripts/ai_cfo.py dashboard\npython3 scripts/ai_cfo.py transactions --days 30\npython3 scripts/ai_cfo.py pnl --start 2026-01-01 --end 2026-01-31\npython3 scripts/ai_cfo.py cashflow\npython3 scripts/ai_cfo.py revenue\npython3 scripts/ai_cfo.py expenses --days 30\npython3 scripts/ai_cfo.py report --period weekly\npython3 scripts/ai_cfo.py budget --set Marketing 5000\npython3 scripts/ai_cfo.py runway\npython3 scripts/ai_cfo.py invoice\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Daily Automation] ```bash\n# Add to cron for daily 8 AM brief\npython3 scripts/cfo_cron.py\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Data Storage] All data stored in `.data/sqlite/cfo.db`:\n- Categorized transactions\n- Budget allocations\n- Daily snapshots\n- Monthly P&L snapshots"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need an AI CFO for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "AI CFO"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": ">=0.9.0",
+    "extra": {
+      "emoji": "📊",
+      "requires": [
+        "MERCURY_API_TOKEN",
+        "STRIPE_API_KEY",
+        "OPENROUTER_API_KEY"
+      ],
+      "primaryEnv": "MERCURY_API_TOKEN",
+      "homepage": "https://agxntsix.ai"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/ai-cfo/SKILL.md"
+}

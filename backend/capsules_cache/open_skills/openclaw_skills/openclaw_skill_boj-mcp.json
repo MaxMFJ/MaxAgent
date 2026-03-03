@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_boj-mcp",
+  "description": "Access Bank of Japan (BOJ/日本銀行) statistical data — price indices (CGPI, SPPI), flow of funds, balance of payments, BIS statistics, interest rates, money supply, exchange rates. Japan central bank monetary policy data. No API key required.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # BOJ: Bank of Japan Statistical Data\n\nAccess Bank of Japan time-series statistics from the official flat file download service. Covers price indices (CGPI, SPPI), flow of funds, balance of payments, international investment position, BIS statistics, and TANKAN survey data."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use Cases] - Look up Corporate Goods Price Index (CGPI/企業物価指数) trends\n- Analyze Services Producer Price Index (SPPI/企業向けサービス価格指数)\n- Retrieve Flow of Funds data (資金循環統計)\n- Access Balance of Payments statistics (国際収支統計)\n- Review BIS international statistics\n- Explore TANKAN survey results (短観)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### List available datasets\n```bash\n# Show all available BOJ flat file datasets\nboj-mcp datasets\n```\n\n### Download and display data\n```bash\n# Display dataset in table format\nboj-mcp data cgpi_m_en\n\n# JSON output with more rows\nboj-mcp data sppi_m_en --format json --rows 50\n```\n\n### Search for series\n```bash\n# Search within a specific dataset\nboj-mcp search \"electricity\" --dataset cgpi_m_en\n\n# Search across datasets by name\nboj-mcp search \"price\"\n```\n\n### Test connectivity\n```bash\nboj-mcp test\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Available Dataset Categories] | Category | Prefix | Description |\n|---|---|---|\n| **Prices** | cgpi, sppi, cspi, rop | Corporate/Services price indices |\n| **Surveys** | co | TANKAN (Short-term Economic Survey) |\n| **Flow of Funds** | fof | Financial assets & liabilities |\n| **Balance of Payments** | bp | International transactions |\n| **International Investment** | qiip | International investment position |\n| **BIS Statistics** | bis | BIS international banking/debt |\n| **Money Stock** | md | Money stock statistics |\n| **Interest Rates** | ir | Various interest rates |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow] 1. `boj-mcp datasets` -> browse available datasets\n2. `boj-mcp search <keyword>` -> find relevant series\n3. `boj-mcp data <dataset_name>` -> retrieve data"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Important] - No API key required — BOJ flat files are publicly available\n- Data is cached locally after first download for faster subsequent access\n- Files are in Shift_JIS encoding (handled automatically)\n- Data source: Bank of Japan (https://www.stat-search.boj.or.jp/)\n- Python package: `pip install boj-mcp` or `uv tool install boj-mcp`"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "boj_mcp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🏦",
+        "requires": {
+          "bins": [
+            "boj-mcp"
+          ]
+        },
+        "install": [
+          {
+            "id": "uv",
+            "kind": "uv",
+            "package": "boj-mcp",
+            "bins": [
+              "boj-mcp"
+            ],
+            "label": "Install boj-mcp (uv)"
+          }
+        ],
+        "tags": [
+          "japan",
+          "boj",
+          "central-bank",
+          "monetary-policy",
+          "mcp",
+          "statistics",
+          "interest-rates",
+          "finance"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajtgjmdjp/boj-mcp/SKILL.md"
+}

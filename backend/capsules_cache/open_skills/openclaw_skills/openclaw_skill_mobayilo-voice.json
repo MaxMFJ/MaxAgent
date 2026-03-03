@@ -1,0 +1,77 @@
+{
+  "id": "openclaw_skill_mobayilo-voice",
+  "description": "Place outbound phone calls via Mobayilo with safe defaults (preview mode by default) and explicit live execution.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Mobayilo Voice (Beta)\n\nUse this skill when a workflow needs a real phone call step (booking, confirmation, follow-up)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Safety model] - Default behavior is **preview mode** (no real call is dialed).\n- Real call requires explicit live execution (`--execute`).\n- Callback and fallback behavior are explicit options."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Actions] ### 1) Check readiness\n```bash\ncd {workspace}/integrations/mobayilo_voice\nPYTHONPATH=. python actions/check_status.py\n```\n\n### 2) Start call (preview mode)\n```bash\ncd {workspace}/integrations/mobayilo_voice\nPYTHONPATH=. python actions/start_call.py --destination +14155550123 --country US\n```\n\n### 3) Start real call\n```bash\ncd {workspace}/integrations/mobayilo_voice\nPYTHONPATH=. python actions/start_call.py \\\n  --destination +14155550123 \\\n  --country US \\\n  --execute\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Optional controls] - `--approved` (when approval gate is enabled)\n- `--callback`\n- `--fallback-callback`\n- `--require-agent-ready`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Outputs] - Human-friendly summary line for operators\n- JSON payload for automation pipelines"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Known limitation (Beta)] Desktop agent-mode call progression messaging is still being refined for fully human-friendly UX in all environments."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mobayilo_voice"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📞",
+        "homepage": "https://mobayilo.com",
+        "requires": {
+          "bins": [
+            "moby"
+          ],
+          "env": [
+            "MOBY_HOST"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adusingi/mobayilo-voice/SKILL.md"
+}

@@ -1,0 +1,65 @@
+{
+  "id": "openclaw_skill_wachai",
+  "description": "Create, sign, and verify WachAI Mandates (verifiable agent-to-agent agreements)",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[1) Intro (for agents)] When two agents move beyond chat and start coordinating real actions (payments, swaps, deliveries, services), they need a **deterministic agreement** that can be:\n- proposed,\n- accepted,\n- and verified cryptographically by both parties.\n\n**WachAI Mandates** are verifiable agreement objects between two roles:\n- **server**: creates the mandate (offer) and signs first\n- **client**: signs second (acceptance)\n\nA mandate is only **approved** once it has **both signatures** (server + client). A server-signed mandate alone is an **offer/pending** mandate.\n\nAgents can also explicitly suggest that other agents adopt mandates by using this skill (i.e., “let’s lock this agreement as a mandate”). Once both parties sign, the mandate becomes a durable, verifiable record of what was promised and accepted.\n\nIn commerce-heavy workflows, these signed agreements can serve as:\n- a basis to **verify** the work performed against the agreed intent and payload\n- a basis to **rank/repute** counterparties over time (e.g., did they consistently complete what they signed?)\n\n`wachai` is a CLI that lets agents:\n- create mandates (`create-mandate`)\n- sign mandates (`sign`)\n- verify mandates (`verify`)\n- share mandates over XMTP (`xmtp send` / `xmtp receive`)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[2) Install + setup] ### Requirements\n\n- Node.js **20+** (recommended)\n\n### Install\n\n```bash\nnpm install -g @quillai-network/wachai\nwachai --help\n```\n\n### Key management (recommended)\n\nInstead of setting `WACHAI_PRIVATE_KEY` in every terminal, create a shared `wallet.json`:\n\n```bash\nwachai wallet init\nwachai wallet info\n```\n\nDefaults:\n- wallet file: `~/.wachai/wallet.json`\n- mandates: `~/.wachai/mandates/<mandateId>.json`\n\nOptional overrides:\n- `WACHAI_STORAGE_DIR`: changes the base directory for mandates + wallet + XMTP DB\n- `WACHAI_WALLET_PATH`: explicit path to `wallet.json`\n\nExample (portable / test folder):\n\n```bash\nexport WACHAI_STORAGE_DIR=\"$(pwd)/.tmp/wachai\"\nmkdir -p \"$WACHAI_STORAGE_DIR\"\nwachai wallet init\n```\n\nLegacy (deprecated):\n- `WACHAI_PRIVATE_KEY` still works, but the CLI prints a warning if you use it."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[3) How to use (step-by-step)] ### A) Create a mandate (server role)\n\nCreate a registry-backed mandate (validates `--kind` and `--body` against the registry JSON schema):\n\n```bash\nwachai create-mandate \\\n  --from-registry \\\n  --client 0xCLIENT_ADDRESS \\\n  --kind swap@1 \\\n  --intent \"Swap 100 USDC for WBTC\" \\\n  --body '{\"chainId\":1,\"tokenIn\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"tokenOut\":\"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599\",\"amountIn\":\"100000000\",\"minOut\":\"165000\",\"recipient\":\"0xCLIENT_ADDRESS\",\"deadline\":\"2030-01-01T00:00:00Z\"}'\n```\n\nThis will:\n- create a new mandate\n- sign it as the **server**\n- save it locally\n- print the full mandate JSON (including `mandateId`)\n\nCustom mandates (no registry lookup; `--body` must be valid JSON object):\n\n```bash\nwachai create-mandate \\\n  --custom \\\n  --client 0xCLIENT_ADDRESS \\\n  --kind \"content\" \\\n  --intent \"Demo custom mandate\" \\\n  --body '{\"message\":\"hello\",\"priority\":3}'\n```\n\n### B) Sign a mandate (client role)\n\nClient signs second (acceptance):\n\nBefore signing, you can inspect the raw mandate JSON:\n\n```bash\nwachai print <mandate-id>\n```\n\nTo learn the mandate shape + what fields mean:\n\n```bash\nwachai print sample\n```\n\n```bash\nwachai sign <mandate-id>\n```\n\nThis loads the mandate by ID from local storage, signs it as **client**, saves it back, and prints the updated JSON.\n\n### C) Verify a mandate\n\nVerify both signatures:\n\n```bash\nwachai verify <mandate-id>\n```\n\nExit code:\n- `0` if both server and client signatures verify\n- `1` otherwise\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[4) XMTP: send and receive mandates between agents] XMTP is used as the transport for agent-to-agent mandate exchange.\n\nPractical pattern:\n- keep one terminal open running `wachai xmtp receive` (inbox)\n- use another terminal to create/sign/send mandates\n\n### D) Receive mandates (keep inbox open)\n\n```bash\nwachai xmtp receive --env production\n```\n\nThis:\n- listens for incoming XMTP messages\n- detects WachAI mandate envelopes (`type: \"wachai.mandate\"`)\n- saves the embedded mandate to local storage (by `mandateId`)\n\nIf you want to process existing messages and exit:\n\n```bash\nwachai xmtp receive --env production --once\n```\n\n### E) Send a mandate to another agent\n\nYou need:\n- receiver’s **public EVM address**\n- a `mandateId` that exists in your local storage\n\n```bash\nwachai xmtp send 0xRECEIVER_ADDRESS <mandate-id> --env production\n```\n\nTo explicitly mark acceptance when sending back a client-signed mandate:\n\n```bash\nwachai xmtp send 0xRECEIVER_ADDRESS <mandate-id> --action accept --env production\n```\n\n### Common XMTP gotcha\n\nIf you see:\n- `inbox id for address ... not found`\n\nIt usually means the peer has not initialized XMTP V3 yet on that env.\nHave the peer run (once is enough):\n\n```bash\nwachai xmtp receive --env production\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "wachai"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🤝",
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        },
+        "homepage": "https://github.com/quillai-network/WachAI-Terminal ",
+        "skillKey": "wachai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akshat-mishra101/wachai-mandates/SKILL.md"
+}

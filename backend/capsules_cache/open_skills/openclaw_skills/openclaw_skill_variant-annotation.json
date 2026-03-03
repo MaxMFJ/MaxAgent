@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_variant-annotation",
+  "description": "Query and annotate gene variants from ClinVar and dbSNP databases. \nTrigger when:\n- User provides a variant identifier (rsID, HGVS notation, genomic coordinates) and asks about clinical significance\n- User mentions \"ClinVar\", \"dbSNP\", \"variant annotation\", \"pathogenicity\", \"clinical significance\"\n- User wants to know if a mutation is pathogenic, benign, or of uncertain significance\n- User provides VCF content or variant data requiring interpretation\n- Input: variant ID (rs12345), HGVS notation (NM_007294.3:c.5096G>A), or genomic coordinates (chr17:43094692:G>A)\n- Output: clinical significance, ACMG classification, allele frequency, disease associations",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Variant Annotation\n\nQuery and interpret gene variant clinical significance from ClinVar and dbSNP databases with ACMG guideline support."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Purpose] Provide comprehensive variant annotation including:\n- Clinical significance classification (Pathogenic, Likely Pathogenic, VUS, Likely Benign, Benign)\n- ACMG guideline-based pathogenicity assessment\n- Population allele frequencies (gnomAD, ExAC, 1000 Genomes)\n- Disease and phenotype associations\n- Functional predictions (SIFT, PolyPhen, CADD)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Supported Input Formats] | Format | Example | Description |\n|--------|---------|-------------|\n| **rsID** | `rs80357410` | dbSNP reference SNP ID |\n| **HGVS cDNA** | `NM_007294.3:c.5096G>A` | Coding DNA change |\n| **HGVS Protein** | `NP_009225.1:p.Arg1699Gln` | Protein change |\n| **HGVS Genomic** | `NC_000017.11:g.43094692G>A` | Genomic coordinate |\n| **VCF-style** | `chr17:43094692:G>A` | Chromosome:position:ref>alt |\n| **Gene:AA** | `BRCA1:R1699Q` | Gene with amino acid change |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### Python API\n\n```python\nfrom scripts.main import VariantAnnotator\n\n# Initialize annotator\nannotator = VariantAnnotator()\n\n# Query by rsID\nresult = annotator.query_variant(\"rs80357410\")\n\n# Query by HGVS notation\nresult = annotator.query_variant(\"NM_007294.3:c.5096G>A\")\n\n# Query by genomic coordinate\nresult = annotator.query_variant(\"chr17:43094692:G>A\")\n\n# Batch query\nresults = annotator.batch_query([\"rs80357410\", \"rs28897696\", \"rs11571658\"])\n```\n\n### Command Line\n\n```bash\n# Single variant query\npython scripts/main.py --variant rs80357410\n\n# HGVS notation\npython scripts/main.py --variant \"NM_007294.3:c.5096G>A\"\n\n# Genomic coordinate\npython scripts/main.py --variant \"chr17:43094692:G>A\"\n\n# Batch from file\npython scripts/main.py --file variants.txt --output results.json\n\n# With output format\npython scripts/main.py --variant rs80357410 --format json\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] ```json\n{\n  \"variant_id\": \"rs80357410\",\n  \"gene\": \"BRCA1\",\n  \"chromosome\": \"17\",\n  \"position\": 43094692,\n  \"ref_allele\": \"G\",\n  \"alt_allele\": \"A\",\n  \"hgvs_genomic\": \"NC_000017.11:g.43094692G>A\",\n  \"hgvs_cdna\": \"NM_007294.3:c.5096G>A\",\n  \"hgvs_protein\": \"NP_009225.1:p.Arg1699Gln\",\n  \n  \"clinical_significance\": {\n    \"clinvar\": \"Pathogenic\",\n    \"acmg_classification\": \"Pathogenic\",\n    \"acmg_criteria\": [\"PS4\", \"PM1\", \"PM2\", \"PP2\", \"PP3\", \"PP5\"],\n    \"acmg_score\": 13.0,\n    \"review_status\": \"criteria provided, multiple submitters, no conflicts\"\n  },\n  \n  \"disease_associations\": [\n    {\n      \"disease\": \"Breast-ovarian cancer, familial 1\",\n      \"medgen_id\": \"C2676676\",\n      \"significance\": \"Pathogenic\"\n    }\n  ],\n  \n  \"population_frequencies\": {\n    \"gnomAD_genome_all\": 0.000008,\n    \"gnomAD_exome_all\": 0.000012,\n    \"1000G_all\": 0.0\n  },\n  \n  \"functional_predictions\": {\n    \"sift\": \"deleterious\",\n    \"polyphen2\": \"probably_damaging\",\n    \"cadd_score\": 24.5,\n    \"mutation_taster\": \"disease_causing\"\n  },\n  \n  \"literature_count\": 42,\n  \"last_evaluated\": \"2023-12-15\",\n  \n  \"interpretation_summary\": \"This variant (BRCA1 p.Arg1699Gln) is classified as Pathogenic based on ACMG guidelines. It shows strong evidence of pathogenicity including population data (extremely rare), computational predictions (deleterious), and strong clinical significance (established association with hereditary breast-ovarian cancer).\"\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[ACMG Classification Criteria] The annotator implements the ACMG/AMP guidelines for variant interpretation:\n\n### Pathogenic Evidence (Score)\n- **PVS1** (8.0): Null variant in a gene where LOF is known mechanism\n- **PS1** (4.0): Same amino acid change as known pathogenic\n- **PS2** (4.0): De novo with confirmed paternity/maternity\n- **PS3** (4.0): Well-established functional studies show damaging effect\n- **PS4** (4.0): Prevalence in affected > controls\n- **PM1** (2.0): Located in critical functional domain\n- **PM2** (2.0): Absent from controls (MAF <0.0001)\n- **PM3** (2.0): AR disorder, detected in trans with pathogenic\n- **PM4** (2.0): Protein length changing\n- **PM5** (2.0): Novel missense at same position as known pathogenic\n- **PM6** (2.0): Assumed de novo without confirmation\n- **PP1** (1.0): Cosegregation with disease\n- **PP2** (1.0): Missense in gene with low benign rate\n- **PP3** (1.0): Multiple computational evidence support\n- **PP4** (1.0): Phenotype/patient history matches gene\n- **PP5** (1.0): Reputable source reports pathogenic\n\n### Benign Evidence\n- **BA1** (-8.0): MAF >5% in population\n- **BS1** (-4.0): MAF >expected for disorder\n- **BS2** (-4.0): Observed in healthy adult\n- **BS3** (-4.0): Functional studies show no damage\n- **BS4** (-4.0): Lack of cosegregation\n- **BP1** (-1.0): Missense in gene where truncating are pathogenic\n- **BP2** (-1.0): Observed in trans with pathogenic\n- **BP3** (-1.0): In-frame indel in repetitive region\n- **BP4** (-1.0): Multiple computational evidence benign\n- **BP5** (-1.0): Alternate cause found\n- **BP6** (-1.0): Reputable source reports benign\n- **BP7** (-1.0): Synonymous with no splicing impact\n\n### Classification Thresholds\n| Classification | Score Range |\n|----------------|-------------|\n| Pathogenic | ≥ 10 |\n| Likely Pathogenic | 6-9 |\n| Uncertain Significance | 0-5 |\n| Likely Benign | -5 to -1 |\n| Benign | ≤ -6 |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Technical Difficulty: **HIGH**] ⚠️ **AI自主验收状态**: 需人工检查\n\nThis skill requires:\n- NCBI E-utilities API integration (ClinVar, dbSNP)\n- HGVS notation parsing and validation\n- VCF format handling\n- ACMG guideline implementation\n- Multiple prediction algorithm integration\n- Complex data transformation and scoring"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Data Sources] | Database | Data Type | API/Access |\n|----------|-----------|------------|\n| **ClinVar** | Clinical significance, disease associations | NCBI E-utilities |\n| **dbSNP** | SNP data, allele frequencies | NCBI E-utilities |\n| **gnomAD** | Population frequencies | gnomAD API |\n| **Ensembl VEP** | Functional predictions | REST API |\n| **CADD** | Deleteriousness scores | REST API |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Limitations] - Requires internet connection for database queries\n- NCBI API rate limits: 3 requests/second (API key increases to 10/sec)\n- Some variants may not be present in ClinVar (VUS without clinical data)\n- HGVS notation parsing may fail for complex variants\n- Population frequencies not available for all variants\n- Functional predictions are computational estimates only"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[References] See `references/` for:\n- ACMG guidelines publication (Richards et al. 2015)\n- ClinVar documentation\n- HGVS nomenclature guide\n- dbSNP data dictionary\n- Example variant outputs"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Safety & Disclaimer] ⚠️ **IMPORTANT**: This tool is for research and educational purposes only. Variant interpretations are computational predictions and should not be used as the sole basis for clinical decisions. Always consult certified genetic counselors and clinical laboratories for diagnostic purposes. ACMG classifications in this tool are algorithmic estimates and may differ from expert panel reviews."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Risk Assessment] | Risk Indicator | Assessment | Level |\n|----------------|------------|-------|\n| Code Execution | Python scripts with tools | High |\n| Network Access | External API calls | High |\n| File System Access | Read/write data | Medium |\n| Instruction Tampering | Standard prompt guidelines | Low |\n| Data Exposure | Data handled securely | Medium |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Security Checklist] - [ ] No hardcoded credentials or API keys\n- [ ] No unauthorized file system access (../)\n- [ ] Output does not expose sensitive information\n- [ ] Prompt injection protections in place\n- [ ] API requests use HTTPS only\n- [ ] Input validated against allowed patterns\n- [ ] API timeout and retry mechanisms implemented\n- [ ] Output directory restricted to workspace\n- [ ] Script execution in sandboxed environment\n- [ ] Error messages sanitized (no internal paths exposed)\n- [ ] Dependencies audited\n- [ ] No exposure of internal service architecture"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Prerequisites] ```bash\n# Python dependencies\npip install -r requirements.txt\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Evaluation Criteria] ### Success Metrics\n- [ ] Successfully executes main functionality\n- [ ] Output meets quality standards\n- [ ] Handles edge cases gracefully\n- [ ] Performance is acceptable\n\n### Test Cases\n1. **Basic Functionality**: Standard input → Expected output\n2. **Edge Case**: Invalid input → Graceful error handling\n3. **Performance**: Large dataset → Acceptable processing time"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Lifecycle Status] - **Current Stage**: Draft\n- **Next Review Date**: 2026-03-06\n- **Known Issues**: None\n- **Planned Improvements**: \n  - Performance optimization\n  - Additional feature support"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Parameters] | Parameter | Type | Default | Description |\n|-----------|------|---------|-------------|\n| `--variant` | str | Required |  |\n| `--file` | str | Required |  |\n| `--output` | str | Required |  |\n| `--format` | str | \"json\" |  |\n| `--api-key` | str | Required | NCBI API key for increased rate limits |\n| `--delay` | float | 0.34 |  |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "variant_annotation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aipoch-ai/variant-annotation/SKILL.md"
+}

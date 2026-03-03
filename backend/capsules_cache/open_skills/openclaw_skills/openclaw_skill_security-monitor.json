@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_security-monitor",
+  "description": "Comprehensive security audit for OpenClaw deployments. Checks Docker port bindings, SSH config, openclaw.json settings, file permissions, exposed services, and firewall rules. Scores your deployment 0-100 with actionable recommendations. Use for security hardening and compliance checks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Security Monitor 🛡️\n\n**Comprehensive security audit for OpenClaw deployments.**\n\nScans your Docker configuration, SSH settings, firewall rules, OpenClaw config, and file permissions. Produces a security score (0-100) with actionable recommendations."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Run full audit\nbash {baseDir}/scripts/security_audit.sh\n\n# JSON output\nbash {baseDir}/scripts/security_audit.sh --json\n\n# Specific checks only\nbash {baseDir}/scripts/security_audit.sh --check docker\nbash {baseDir}/scripts/security_audit.sh --check ssh\nbash {baseDir}/scripts/security_audit.sh --check config\nbash {baseDir}/scripts/security_audit.sh --check files\nbash {baseDir}/scripts/security_audit.sh --check network\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What It Checks] ### OpenClaw Config (25 points)\n- `allowInsecureAuth` must be `false`\n- `dmPolicy` must not be open/allow-all\n- Port bindings must use `127.0.0.1`\n- API keys not hardcoded in config\n- Secure model permissions\n\n### Docker Security (25 points)\n- All port bindings use `127.0.0.1` (not `0.0.0.0`)\n- No privileged containers (except necessary)\n- Docker socket permissions\n- Container resource limits\n- No `--net=host` unless needed\n\n### SSH Configuration (20 points)\n- Root login disabled (`PermitRootLogin no`)\n- Password authentication disabled\n- Key-based auth only\n- Non-standard port (bonus)\n- Fail2ban or similar active\n\n### Network & Services (15 points)\n- No unnecessary exposed ports\n- Firewall active (ufw/iptables)\n- Only expected services listening\n- HTTPS/TLS termination configured\n\n### File Permissions (15 points)\n- openclaw.json not world-readable\n- SSH keys proper permissions (600)\n- .env files not world-readable\n- Docker socket permissions\n- No sensitive files in /tmp"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scoring] | Score | Rating | Meaning |\n|-------|--------|---------|\n| 90-100 | 🟢 Excellent | Production-ready |\n| 70-89 | 🟡 Good | Minor improvements needed |\n| 50-69 | 🟠 Fair | Several issues to address |\n| 0-49 | 🔴 Critical | Immediate action required |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Example] ```\n═══ Security Audit Report ═══\nDate: 2026-02-15 00:30:00\n\n[CONFIG] ✅ allowInsecureAuth: false\n[CONFIG] ✅ dmPolicy: allowlist\n[CONFIG] ✅ Ports bound to 127.0.0.1\n[DOCKER] ✅ All containers bind to 127.0.0.1\n[DOCKER] ⚠️  No resource limits on openclaw container\n[SSH]    ✅ Root login disabled\n[SSH]    ✅ Password auth disabled\n[NET]    ✅ UFW active\n[FILES]  ✅ Config file permissions OK\n\nScore: 92/100 — 🟢 Excellent\nIssues: 1 warning\n\nRecommendations:\n  1. Add resource limits to Docker containers\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "security_monitor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Docker, OpenClaw gateway, Linux",
+    "extra": {
+      "openclaw": {
+        "emoji": "??️",
+        "requires": {
+          "bins": [
+            "docker"
+          ]
+        },
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/security-monitor-deploy/SKILL.md"
+}

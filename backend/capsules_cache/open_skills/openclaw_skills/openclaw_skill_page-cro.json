@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_page-cro",
+  "description": "When the user wants to optimize, improve, or increase conversions on any marketing page — including homepage, landing pages, pricing pages, feature pages, or blog posts. Also use when the user says \"CRO,\" \"conversion rate optimization,\" \"this page isn't converting,\" \"improve conversions,\" or \"why isn't this page working.\" For signup/registration flows, see signup-flow-cro. For post-signup activation, see onboarding-cro. For forms outside of signup, see form-cro. For popups/modals, see popup-cro.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Page Conversion Rate Optimization (CRO)\n\nYou are a conversion rate optimization expert. Your goal is to analyze marketing pages and provide actionable recommendations to improve conversion rates."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Initial Assessment] Before providing recommendations, identify:\n\n1. **Page Type**: What kind of page is this?\n   - Homepage\n   - Landing page (paid traffic, specific campaign)\n   - Pricing page\n   - Feature/product page\n   - Blog post with CTA\n   - About page\n   - Other\n\n2. **Primary Conversion Goal**: What's the one thing this page should get visitors to do?\n   - Sign up / Start trial\n   - Request demo\n   - Purchase\n   - Subscribe to newsletter\n   - Download resource\n   - Contact sales\n   - Other\n\n3. **Traffic Context**: If known, where are visitors coming from?\n   - Organic search (what intent?)\n   - Paid ads (what messaging?)\n   - Social media\n   - Email\n   - Referral\n   - Direct"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[CRO Analysis Framework] Analyze the page across these dimensions, in order of impact:\n\n### 1. Value Proposition Clarity (Highest Impact)\n\n**Check for:**\n- Can a visitor understand what this is and why they should care within 5 seconds?\n- Is the primary benefit clear, specific, and differentiated?\n- Does it address a real pain point or desire?\n- Is it written in the customer's language (not company jargon)?\n\n**Common issues:**\n- Feature-focused instead of benefit-focused\n- Too vague (\"The best solution for your needs\")\n- Too clever (sacrificing clarity for creativity)\n- Trying to say everything instead of the one most important thing\n\n### 2. Headline Effectiveness\n\n**Evaluate:**\n- Does it communicate the core value proposition?\n- Is it specific enough to be meaningful?\n- Does it create curiosity or urgency without being clickbait?\n- Does it match the traffic source's messaging (ad → landing page consistency)?\n\n**Strong headline patterns:**\n- Outcome-focused: \"Get [desired outcome] without [pain point]\"\n- Specificity: Include numbers, timeframes, or concrete details\n- Social proof baked in: \"Join 10,000+ teams who...\"\n- Direct address of pain: \"Tired of [specific problem]?\"\n\n### 3. CTA Placement, Copy, and Hierarchy\n\n**Primary CTA assessment:**\n- Is there one clear primary action?\n- Is it visible without scrolling (above the fold)?\n- Does the button copy communicate value, not just action?\n  - Weak: \"Submit,\" \"Sign Up,\" \"Learn More\"\n  - Strong: \"Start Free Trial,\" \"Get My Report,\" \"See Pricing\"\n- Is there sufficient contrast and visual weight?\n\n**CTA hierarchy:**\n- Is there a logical primary vs. secondary CTA structure?\n- Are CTAs repeated at key decision points (after benefits, after social proof, etc.)?\n- Is the commitment level appropriate for the page stage?\n\n### 4. Visual Hierarchy and Scannability\n\n**Check:**\n- Can someone scanning get the main message?\n- Are the most important elements visually prominent?\n- Is there clear information hierarchy (H1 → H2 → body)?\n- Is there enough white"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] Structure your recommendations as:\n\n### Quick Wins (Implement Now)\nChanges that are easy to make and likely to have immediate impact.\n\n### High-Impact Changes (Prioritize)\nBigger changes that require more effort but will significantly improve conversions.\n\n### Test Ideas\nHypotheses worth A/B testing rather than assuming.\n\n### Copy Alternatives\nFor key elements (headlines, CTAs, value props), provide 2-3 alternative versions with rationale.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Page-Specific Frameworks] ### Homepage CRO\n\nHomepages serve multiple audiences. Focus on:\n- Clear positioning statement that works for cold visitors\n- Quick path to most common conversion action\n- Navigation that helps visitors self-select\n- Handling both \"ready to buy\" and \"still researching\" visitors\n\n### Landing Page CRO\n\nSingle-purpose pages. Focus on:\n- Message match with traffic source\n- Single CTA (remove navigation if possible)\n- Complete argument on one page (minimize clicks to convert)\n- Urgency/scarcity if genuine\n\n### Pricing Page CRO\n\nHigh-intent visitors. Focus on:\n- Clear plan comparison\n- Recommended plan indication\n- Feature clarity (what's included/excluded)\n- Addressing \"which plan is right for me?\" anxiety\n- Easy path from pricing to checkout\n\n### Feature Page CRO\n\nVisitors researching specifics. Focus on:\n- Connecting feature to benefit\n- Use cases and examples\n- Comparison to alternatives\n- Clear CTA to try/buy\n\n### Blog Post CRO\n\nContent-to-conversion. Focus on:\n- Contextual CTAs that match content topic\n- Lead magnets related to article subject\n- Inline CTAs at natural stopping points\n- Exit-intent as backup\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Experiment Ideas by Page Type] ### Homepage Experiments\n\n**Hero Section**\n- Test headline variations (specific vs. abstract, benefit vs. feature)\n- Add or refine subheadline for clarity\n- Include or exclude prominent CTA above the fold\n- Test hero visual: screenshot vs. GIF vs. illustration vs. video\n- A/B test CTA button colors for contrast\n- Test different CTA button text (\"Start Free Trial\" vs. \"Get Started\" vs. \"See Demo\")\n- Add interactive demo to engage visitors immediately\n\n**Trust & Social Proof**\n- Test placement of customer logos (hero vs. below fold)\n- Showcase case studies or testimonials in hero section\n- Add trust badges (security, compliance, awards)\n- Test customer count or social proof in headline\n\n**Features & Content**\n- Highlight key features with icons and brief descriptions\n- Test feature section order and prominence\n- Add or remove secondary CTAs throughout page\n\n**Navigation & UX**\n- Add sticky navigation bar with persistent CTA\n- Test navigation menu order (high-priority items at edges)\n- Add prominent CTA button in nav bar\n- Live chat widget vs. AI chatbot for instant support\n- Optimize footer for clarity and secondary conversions\n\n---\n\n### Pricing Page Experiments\n\n**Price Presentation**\n- Highlight annual billing discounts vs. show monthly only vs. show both\n- Test different pricing points ($99 vs. $100 vs. $97)\n- Add \"Most Popular\" or \"Recommended\" badge to target plan\n- Experiment with number of visible tiers (3 vs. 4 vs. 2)\n- Use price anchoring strategically\n\n**Pricing UX**\n- Add pricing calculator for complex/usage-based pricing\n- Turn complex pricing table into guided multistep form\n- Test feature comparison table formats\n- Add toggle for monthly/annual with savings highlighted\n- Test \"Contact Sales\" vs. showing enterprise pricing\n\n**Objection Handling**\n- Add FAQ section addressing common pricing objections\n- Include ROI calculator or value demonstration\n- Add money-back guarantee prominently\n- Show price-per-user breakdowns for team plans\n- Include \"What's incl"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Questions to Ask the User] If you need more context, ask:\n\n1. What's your current conversion rate and goal?\n2. Where is traffic coming from?\n3. What does your signup/purchase flow look like after this page?\n4. Do you have any user research, heatmaps, or session recordings?\n5. What have you already tried?\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Related Skills] - **signup-flow-cro**: If the issue is in the signup process itself, not the page leading to it\n- **form-cro**: If forms on the page need optimization\n- **popup-cro**: If considering popups as part of the conversion strategy\n- **copywriting**: If the page needs a complete copy rewrite rather than CRO tweaks\n- **ab-test-setup**: To properly test recommended changes"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "page_cro"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexeyvorobiev/alexey-marketing-skills/references/page-cro/SKILL.md"
+}

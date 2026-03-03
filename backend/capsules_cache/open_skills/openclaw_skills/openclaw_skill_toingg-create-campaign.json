@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_toingg-create-campaign",
+  "description": "Create and launch Toingg voice-calling campaigns by POSTing user-supplied JSON to the toingg/make_campaign API. Use when Codex needs to turn campaign briefs (title, prompt, tone, notifications, autopilot flags, etc.) into live Toingg campaigns via the `create_campaign.py` helper.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Toingg Campaign Creator\n\nThis skill turns structured campaign briefs into Toingg campaigns using the\n`create_campaign.py` helper, which wraps `https://prepodapi.toingg.com/api/v3/create_campaign`.\nAll campaign parameters come from the user; the script only handles auth and HTTP."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] 1. **Auth token**: Export `TOINGG_API_TOKEN` before running the script.\n   ```bash\n   export TOINGG_API_TOKEN=\"<bearer token>\"\n   ```\n2. **Payload file**: Build a JSON file that matches Toingg's schema. Use\n   [`references/payload-template.md`](references/payload-template.md) as a base and\n   keep only the fields needed for the campaign."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. **Collect campaign inputs** from the user: title, voice, language, script/purpose,\n   tone, analysis schema, notifications, autopilot flags, etc.\n2. **Draft the payload JSON** in the workspace (e.g., `campaign.json`). Start from the\n   template reference and customize each field. Validate that required keys (such as\n   `title`, `voice`, `language`, `purpose`, and `script`) are populated.\n3. **Review for security**: ensure no secrets besides the bearer token are embedded in\n   the payload file.\n4. **Create the campaign**:\n   ```bash\n   cd skills/toingg-create-campaign\n   ./scripts/create_campaign.py /path/to/campaign.json > create-response.json\n   ```\n   The script prints the API's JSON response (success object or error details).\n5. **Confirm results** with the user. Share `create-response.json`, noting the new\n   campaign ID or any errors returned by the API."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **401 Unauthorized**: The `TOINGG_API_TOKEN` env var is missing or expired. Refresh it\n  in the Toingg dashboard and re-export before re-running the script.\n- **422/400 errors**: The payload is missing required fields or contains invalid values.\n  Check the response body in `create-response.json` for field-level messages and adjust\n  the JSON accordingly.\n- **Networking issues**: Re-run after verifying internet connectivity. The script uses a\n  60s timeout; transient failures can be retried safely."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Extending the payload] If Toingg adds new campaign fields, simply include them in the JSON payload—no script\nchanges are required. Keep the reference template updated so future operators know the\navailable knobs."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "toingg_create_campaign"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abhinavpgagi/toingg-create-campaign/SKILL.md"
+}

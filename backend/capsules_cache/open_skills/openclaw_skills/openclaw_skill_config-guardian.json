@@ -1,6 +1,6 @@
 {
   "id": "openclaw_skill_config-guardian",
-  "description": "Validate and safeguard OpenClaw config updates (openclaw.json or openclaw config set/apply). Use this skill whenever changing gateway config, models, channels, agents, tools, sessions, or routing. Enforces backup, schema validation, and safe rollback before restarts.",
+  "description": "Safe OpenClaw config updates with automatic backup, validation, and rollback. For agent use - prevents invalid config updates.",
   "inputs": {
     "task": {
       "type": "string",
@@ -22,30 +22,30 @@
     {
       "id": "step_1",
       "type": "subtask",
-      "description": "[Overview] Use this workflow whenever editing `~/.openclaw/openclaw.json` or running `openclaw config set/apply`. It prevents invalid config, creates backups, validates against schema, and enables rollback."
+      "description": "[Overview] **For Agent use only.** Safe config updates with automatic backup, validation, and rollback. Prevents the agent from updating non-existent keys or invalid values."
     },
     {
       "id": "step_2",
       "type": "subtask",
-      "description": "[Workflow (use every time)] 1. **Preflight**\n   - Confirm the requested change and scope.\n   - Check for sensitive keys (tokens, credentials).\n\n2. **Backup**\n   - Run `scripts/backup_config.sh` to create a timestamped snapshot.\n\n3. **Validate (before change)**\n   - Run `scripts/validate_config.sh`.\n   - If validation fails, stop and report.\n\n4. **Apply change**\n   - Prefer `openclaw config set <path> <value>` for small changes.\n   - For complex edits, edit the file directly and keep diffs minimal.\n\n5. **Validate (after change)**\n   - Run `scripts/validate_config.sh` again.\n   - If it fails, restore from backup with `scripts/restore_config.sh`.\n\n6. **Restart (only with explicit approval)**\n   - If change requires restart, ask for approval first.\n   - Use `openclaw gateway restart`."
+      "description": "[When to Use] Use this skill **every time** you need to update `openclaw.json`. Prevents:\n- Updating non-existent config keys\n- Using invalid values\n- Breaking the gateway with bad config"
     },
     {
       "id": "step_3",
       "type": "subtask",
-      "description": "[Guardrails] - **Never** restart or apply config without explicit user approval.\n- **Never** remove keys or reorder blocks unless requested.\n- **Always** keep a backup before edits.\n- If unsure about schema: run `openclaw doctor --non-interactive` and stop on errors."
+      "description": "[Workflow: Atomic Apply (Default)] For all config changes - handles everything in one command:\n\n```bash\n./scripts/atomic_apply.sh <config_path> <new_value>\n# Example: ./scripts/atomic_apply.sh \"agents.defaults.model.primary\" \"minimax-portal/MiniMax-M2.5\"\n```\n\n**What it does:**\n1. Creates timestamped backup automatically\n2. Applies change via `openclaw config set <path> <value>`\n3. Validates with `openclaw doctor --non-interactive`\n4. **Auto-rollback** if validation fails\n5. Trap ensures rollback even on crash\n\n**Backup location:**\n```\n~/.openclaw/config-guardian-backups/\n```"
     },
     {
       "id": "step_4",
       "type": "subtask",
-      "description": "[Scripts] - `scripts/backup_config.sh` — create timestamped backup\n- `scripts/validate_config.sh` — validate config via OpenClaw doctor\n- `scripts/diff_config.sh` — diff current config vs backup\n- `scripts/restore_config.sh` — restore backup"
+      "description": "[Guardrails] - **Never** restart or apply config without explicit user approval\n- **Always** use `atomic_apply.sh`\n- If validation fails -> config auto-rolled back, don't force it"
     },
     {
       "id": "step_5",
       "type": "subtask",
-      "description": "[Validation] - Use `openclaw doctor --non-interactive` for schema validation\n- This checks against the actual schema that the gateway uses\n- Warns about unknown keys, invalid types, and security issues"
+      "description": "[Scripts] | Script | Purpose |\n|--------|---------|\n| `atomic_apply.sh` | Default - all-in-one safe apply |\n| `validate_config.sh` | Validate via OpenClaw doctor |\n| `restore_config.sh` | Manual restore from backup |"
     }
   ],
-  "task_type": "creative",
+  "task_type": "general",
   "tags": [
     "agent-skill"
   ],

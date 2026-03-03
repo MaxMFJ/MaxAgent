@@ -1,0 +1,68 @@
+{
+  "id": "openclaw_skill_edge-tts-uvx",
+  "description": "Text-to-speech conversion using `uvx edge-tts` for generating audio from text.\nUse when:\n  (1) User requests audio/voice output with the \"tts\" trigger or keyword.\n  (2) Content needs to be spoken rather than read (multitasking, accessibility, driving, cooking).\n  (3) User wants a specific voice, speed, pitch, or format for TTS output.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Edge-TTS Skill\n\nGenerate high-quality text-to-speech audio using Microsoft Edge's neural TTS service via the node-edge-tts npm package.\nSupports multiple languages, voices, adjustable speed/pitch, and subtitle generation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ```shell\nuvx edge-tts --text \"{msg}\" --write-media {tempdir}/{filename}.mp3\n\n# With subtitles\nuvx edge-tts --text \"{msg}\" --write-media {tempdir}/{filename}.mp3 --write-subtitles -\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Changing rate(speed), volume and pitch] ```shell\nuvx edge-tts --text \"{msg}\" --write-media {tempdir}/{filename}.mp3 --rate=+50%\nuvx edge-tts --text \"{msg}\" --write-media {tempdir}/{filename}.mp3 --volume=+50% --pitch=-50Hz\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Changing the voice] ```shell\nuvx edge-tts --text \"{msg}\" --write-media {tempdir}/{filename}.mp3 --voice=zh-CN-XiaoxiaoNeural\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Available voices] ```\nName                               Gender    ContentCategories      VoicePersonalities\nen-GB-LibbyNeural                  Female    General                Friendly, Positive\nen-GB-RyanNeural                   Male      General                Friendly, Positive\nen-GB-SoniaNeural                  Female    General                Friendly, Positive\nen-GB-ThomasNeural                 Male      General                Friendly, Positive\nen-HK-SamNeural                    Male      General                Friendly, Positive\nen-HK-YanNeural                    Female    General                Friendly, Positive\nen-US-AnaNeural                    Female    Cartoon, Conversation  Cute\nen-US-AndrewMultilingualNeural     Male      Conversation, Copilot  Warm, Confident, Authentic, Honest\nen-US-AndrewNeural                 Male      Conversation, Copilot  Warm, Confident, Authentic, Honest\nen-US-AriaNeural                   Female    News, Novel            Positive, Confident\nen-US-AvaMultilingualNeural        Female    Conversation, Copilot  Expressive, Caring, Pleasant, Friendly\nen-US-AvaNeural                    Female    Conversation, Copilot  Expressive, Caring, Pleasant, Friendly\nen-US-BrianMultilingualNeural      Male      Conversation, Copilot  Approachable, Casual, Sincere\nen-US-BrianNeural                  Male      Conversation, Copilot  Approachable, Casual, Sincere\nen-US-ChristopherNeural            Male      News, Novel            Reliable, Authority\nen-US-EmmaMultilingualNeural       Female    Conversation, Copilot  Cheerful, Clear, Conversational\nen-US-EmmaNeural                   Female    Conversation, Copilot  Cheerful, Clear, Conversational\nen-US-EricNeural                   Male      News, Novel            Rational\nen-US-GuyNeural                    Male      News, Novel            Passion\nen-US-JennyNeural                  Female    General                Friendly, Considerate, Comfort\nen-US-MichelleNeural               Female    News, Novel            Fr"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "edge_tts_uvx"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🗣️",
+        "requires": {
+          "bins": [
+            "uvx"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/al-one/edge-tts-uvx/SKILL.md"
+}

@@ -31,11 +31,31 @@ class ConversationContext:
     # 配置
     max_recent_messages: int = 10  # 内存中保留最近的消息数
     use_vector_search: bool = True  # 启用向量搜索
-    max_context_tokens: int = 2000  # 发送给 LLM 的上下文最大 token 数（从 3000 降低）
+    max_context_tokens: int = 8000  # 发送给 LLM 的上下文最大 token 数（默认聊天/轻量问答）
+    
+    # 任务类型到 max_context_tokens 的映射（由外部通过 set_task_tier 设置）
+    _TIER_TOKEN_MAP = {
+        "simple": 8000,       # 聊天/轻量问答
+        "complex": 32000,     # 默认 Agent 任务
+        "json_probe": 60000,  # JSON consistency / probe
+        "long_doc": 80000,    # 超长文档生成
+    }
     
     def __post_init__(self):
         self._vector_store: Optional[VectorMemoryStore] = None
         self._vector_store_synced: bool = False  # 标记是否已从 recent_messages 同步到 vector_store
+        self._current_task_tier: str = "simple"  # 当前任务层级
+    
+    def set_task_tier(self, tier: str) -> None:
+        """
+        根据任务类型动态调整 max_context_tokens。
+        tier: 'simple' | 'complex' | 'json_probe' | 'long_doc'
+        """
+        self._current_task_tier = tier
+        new_limit = self._TIER_TOKEN_MAP.get(tier, 8000)
+        if new_limit != self.max_context_tokens:
+            self.max_context_tokens = new_limit
+            logger.info(f"Session {self.session_id}: max_context_tokens set to {new_limit} for tier '{tier}'")
     
     def _sync_recent_to_vector_store(self) -> None:
         """
@@ -123,6 +143,10 @@ class ConversationContext:
         Get optimized context messages for LLM.
         Uses BGE 向量检索 + 最近消息，保证「纯追问」能看到完整历史，减少误判执行。
         企业级：与 query_classifier(intent=information) + execution_guard 配合使用。
+
+        **防污染保护**：
+        1. 向量检索采用 newest-first 策略，确保当前查询永远不被截断丢弃
+        2. 末尾兜底检查：如果最后一条消息不是当前 user 消息，强制追加
         """
         logger.debug(f"get_context_messages called with {len(self.recent_messages)} recent messages, use_vector_search={self.use_vector_search}")
         
@@ -130,12 +154,12 @@ class ConversationContext:
             if self.use_vector_search and current_query and len(self.recent_messages) > 3:
                 # 从磁盘加载的会话：vector_store 为空，需先将 recent_messages 同步进去
                 self._sync_recent_to_vector_store()
-                # recent_count=4: 保留最近 4 条消息（2 轮对话）维持连贯性
+                # recent_count=6: 保留最近 6 条消息（3 轮对话）维持连贯性
                 # semantic_count=3: 通过 BGE 语义检索补充最相关的历史片段
                 context_messages = self.vector_store.get_context_messages(
                     current_query=current_query,
                     max_tokens=self.max_context_tokens,
-                    recent_count=4,
+                    recent_count=6,
                     semantic_count=3
                 )
                 
@@ -149,6 +173,8 @@ class ConversationContext:
                             "content": "[以下是与当前问题相关的历史对话上下文]"
                         })
                     result.extend(context_messages)
+                    # 防污染：确保当前 user 查询一定在最后
+                    result = self._ensure_current_query_present(result, current_query)
                     logger.info(f"Returning {len(result)} messages from vector search")
                     return result
                 elif context_messages:
@@ -165,8 +191,43 @@ class ConversationContext:
             for msg in self.recent_messages
             if msg.get("content")
         ]
+        # 防污染：确保当前 user 查询一定在最后
+        fallback_messages = self._ensure_current_query_present(fallback_messages, current_query)
         logger.info(f"Returning {len(fallback_messages)} messages from recent_messages fallback")
         return fallback_messages
+    
+    def _ensure_current_query_present(
+        self, messages: List[Dict[str, Any]], current_query: str
+    ) -> List[Dict[str, Any]]:
+        """
+        防污染兜底：确保消息列表的最后一条是当前 user 查询。
+        如果因为 token 预算截断导致当前查询被丢弃，这里会强制追加。
+        """
+        if not current_query or not current_query.strip():
+            return messages
+        
+        # 检查最后一条 user 消息是否就是当前查询
+        last_user_idx = -1
+        for i in range(len(messages) - 1, -1, -1):
+            if messages[i].get("role") == "user":
+                last_user_idx = i
+                break
+        
+        if last_user_idx >= 0:
+            last_user_content = messages[last_user_idx].get("content", "")
+            # 如果最后一条 user 消息就是当前查询（或其截断版本），无需追加
+            if current_query.strip().startswith(last_user_content[:50].strip()):
+                return messages
+            if last_user_content.strip().startswith(current_query[:50].strip()):
+                return messages
+        
+        # 当前查询不在末尾或完全缺失，强制追加
+        logger.warning(
+            f"Session {self.session_id}: current user query was missing from context, "
+            f"force-appending to prevent stale response"
+        )
+        messages.append({"role": "user", "content": current_query})
+        return messages
     
     def clear(self):
         """Clear conversation history"""
@@ -280,6 +341,14 @@ class ContextManager:
         """Clear a specific session"""
         if session_id in self.sessions:
             self.sessions[session_id].clear()
+    
+    def set_session_task_tier(self, session_id: str, tier: str) -> None:
+        """
+        设置会话的任务层级，动态调整 max_context_tokens。
+        tier: 'simple' | 'complex' | 'json_probe' | 'long_doc'
+        """
+        ctx = self.get_or_create(session_id)
+        ctx.set_task_tier(tier)
     
     def delete_session(self, session_id: str):
         """Delete a session entirely"""

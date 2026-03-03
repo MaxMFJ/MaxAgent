@@ -1,0 +1,114 @@
+{
+  "id": "openclaw_skill_peer-review-response-drafter",
+  "description": "Assist in drafting professional peer review response letters. Trigger when user mentions \"reviewer comments\", \"response letter\", \"peer review\", \"revise and resubmit\", \"R&R\", \"reviewer feedback\", or needs help responding to academic journal reviewers.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Peer Review Response Drafter\n\nAssist researchers in crafting professional, polite, and effective responses to peer reviewer comments for academic journal submissions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill parses reviewer comments, drafts structured responses, and adjusts tone to ensure:\n- Professional and courteous language\n- Clear point-by-point addressing of concerns\n- Constructive framing of disagreements\n- Consistent academic writing style"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - Responding to peer reviewer comments after paper revision\n- Preparing author response letters for journal resubmission\n- Addressing major/minor revision requirements\n- Drafting rebuttal letters for conference submissions\n- Converting informal notes into formal response language"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: Parse Input\nCollect and structure the following:\n- **Reviewer comments**: Original text from reviewers (often numbered/sectioned)\n- **Manuscript context**: Title, journal name, revision round (if applicable)\n- **Author changes**: Brief notes on what was modified in response to each comment\n- **Tone preference**: Formal academic / diplomatic / assertive (default: diplomatic)\n\n### Step 2: Structure Response Letter\nStandard academic response letter format:\n\n```\nDear Editor and Reviewers,\n\nThank you for your constructive feedback on our manuscript titled \n\"[Title]\" submitted to [Journal]. We have carefully addressed all \ncomments and revised the manuscript accordingly. Below is our \npoint-by-point response to each reviewer's comments.\n\nReviewer #1:\n[Numbered responses]\n\nReviewer #2:\n[Numbered responses]\n\n...\n\nSincerely,\n[Authors]\n```\n\n### Step 3: Draft Individual Responses\n\nFor each reviewer comment, generate a response containing:\n\n1. **Acknowledgment**: Thank the reviewer for the observation\n2. **Action taken**: Describe the change made (if applicable)\n3. **Location indicator**: Page/line number where change appears\n4. **Optional rationale**: Brief explanation if no change was made\n\n#### Response Templates\n\n**Accepting a suggestion:**\n```\nComment: The methodology section lacks detail on data preprocessing.\n\nResponse: We thank the reviewer for this important observation. \nWe have expanded the methodology section to include detailed \ndescriptions of data preprocessing steps, including normalization, \noutlier removal, and feature selection procedures (Page 5, Lines 120-135).\n```\n\n**Partial acceptance with modification:**\n```\nComment: The authors should use Method X instead of Method Y.\n\nResponse: We appreciate the reviewer's suggestion. While Method X \nis indeed widely used, we found that Method Y is more appropriate \nfor our specific dataset due to [brief rationale]. However, we have \nadded a comparative discussion of both methods in the revised \nmanuscript "
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Input Format] Accept multiple input formats:\n- Copy-pasted reviewer comments\n- PDF extracted text\n- Structured JSON with comment IDs\n- Markdown with sections"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format] Returns a complete response letter with:\n- Proper salutation and closing\n- Numbered responses matching reviewer comments\n- Inline citations to manuscript locations\n- Professional academic tone throughout"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Usage Example] ```\nUser: Help me draft a response to these reviewer comments:\n\nReviewer 1:\n1. The introduction should better motivate the problem\n2. Figure 2 is unclear\n3. Have you considered Smith et al. 2023?\n\nMy changes:\n1. Added motivation paragraph\n2. Redrew Figure 2 with clearer labels\n3. Added citation and discussion\n\nJournal: Nature Communications\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Parameters] | Parameter | Type | Required | Default | Description |\n|-----------|------|----------|---------|-------------|\n| `--interactive` | flag | No | - | **Interactive mode**: Guided wizard with prompts (uses `input()`). Recommended for first-time users or complex responses |\n| `--input-file` | str | No | - | Path to reviewer comments file (automation mode) |\n| `--output` | str | No | - | Output file path for response letter |\n| `--tone` | str | No | \"diplomatic\" | Response tone: \"diplomatic\", \"formal\", or \"assertive\" |\n| `--format` | str | No | \"markdown\" | Output format: \"markdown\", \"plain_text\", or \"latex\" |\n| `--include-diff` | bool | No | true | Whether to summarize changes made |\n\n**Usage Modes:**\n- **Interactive Mode**: Use `--interactive` for guided setup with prompts (recommended for first-time users)\n- **File Mode (Recommended for automation)**: Use `--input-file` with pre-prepared reviewer comments"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Technical Notes] - **Difficulty**: High - Requires understanding of academic norms, context-aware tone adjustment, and nuanced handling of criticism\n- **Limitations**: Does not verify factual accuracy of responses; human review required for technical content\n- **Safety**: No external API calls; processes text locally"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[References] - `references/response_templates.md` - Common response patterns\n- `references/tone_guide.md` - Academic tone guidelines\n- `references/examples/` - Sample response letters"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Quality Checklist] Before finalizing, verify:\n- [ ] Every reviewer comment has a corresponding response\n- [ ] Responses are numbered/lettered consistently with comments\n- [ ] All changes are referenced with page/line numbers\n- [ ] Disagreements are framed constructively\n- [ ] No defensive or confrontational language\n- [ ] Professional tone maintained throughout"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Risk Assessment] | Risk Indicator | Assessment | Level |\n|----------------|------------|-------|\n| Code Execution | Python/R scripts executed locally | Medium |\n| Network Access | No external API calls | Low |\n| File System Access | Read input files, write output files | Medium |\n| Instruction Tampering | Standard prompt guidelines | Low |\n| Data Exposure | Output files saved to workspace | Low |"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Security Checklist] - [ ] No hardcoded credentials or API keys\n- [ ] No unauthorized file system access (../)\n- [ ] Output does not expose sensitive information\n- [ ] Prompt injection protections in place\n- [ ] Input file paths validated (no ../ traversal)\n- [ ] Output directory restricted to workspace\n- [ ] Script execution in sandboxed environment\n- [ ] Error messages sanitized (no stack traces exposed)\n- [ ] Dependencies audited"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Prerequisites] ```bash\n# Python dependencies\npip install -r requirements.txt\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Evaluation Criteria] ### Success Metrics\n- [ ] Successfully executes main functionality\n- [ ] Output meets quality standards\n- [ ] Handles edge cases gracefully\n- [ ] Performance is acceptable\n\n### Test Cases\n1. **Basic Functionality**: Standard input → Expected output\n2. **Edge Case**: Invalid input → Graceful error handling\n3. **Performance**: Large dataset → Acceptable processing time"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Lifecycle Status] - **Current Stage**: Draft\n- **Next Review Date**: 2026-03-06\n- **Known Issues**: None\n- **Planned Improvements**: \n  - Performance optimization\n  - Additional feature support"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "peer_review_response_drafter"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aipoch-ai/peer-review-response-drafter/SKILL.md"
+}

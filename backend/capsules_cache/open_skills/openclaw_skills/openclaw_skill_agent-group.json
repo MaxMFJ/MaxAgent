@@ -1,0 +1,39 @@
+{
+  "id": "openclaw_skill_agent-group",
+  "description": "极简多Agent群组 - 像微信拉群一样简单",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agent Group\n\n- 建群 - 创建群组\n- 拉xxx进群 - 添加Agent\n- 群列表 - 查看成员\n- 退群 - 解散"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agent_group"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/84191879/agent-group/SKILL.md"
+}

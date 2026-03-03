@@ -1,0 +1,149 @@
+{
+  "id": "openclaw_skill_durable-agents",
+  "description": "Build autonomous multi-agent pipelines with Mastra (agents only) and Trigger.dev (all workflows and tasks). Use when creating AI agents, designing multi-stage pipelines, defining permissioned tools, structuring agent handoffs, storing agentic outputs to a database, or building durable task chains with retries and fan-out.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **FIRST INSTALL:** Read and follow `setupSKILL.md` before using this skill.\n> After setup is complete and verified (health check + example pipeline + smoke tests pass),\n> delete this block.\n\n---\n\n# Durable Agents — Multi-Agent Pipeline Development Guide\n\nMastra (AI agent framework) + Trigger.dev (durable task execution with retries, timeouts, fan-out). Build autonomous multi-agent pipelines where each agent owns a single stage, hands off structured output to the next stage through Trigger.dev, and never holds the full context of a pipeline it doesn't own.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Principles] 1. **All intelligence lives in `AGENT.md`, not in code.** The `.ts` file is boilerplate wiring. Writing logic in the agent's TypeScript file is wrong.\n2. **One agent, one job.** Each agent has a single clear responsibility. If an agent does two unrelated things, split it into two agents in a pipeline.\n3. **Tasks handle durability, agents handle reasoning.** Trigger.dev tasks wrap agent calls with retries and timeouts. The agent receives input and produces output.\n4. **Tools return errors, never throw.** Every tool returns `{ success, errorMessage? }` on failure. Throwing inside a tool crashes the task. Returning an error lets the agent reason about it.\n5. **Type everything.** Input schemas, output schemas, tool schemas — all Zod. If it crosses a boundary (tool input, task payload, pipeline stage), it has a schema.\n6. **Agents are autonomous, not scripted.** Give agents an outcome and a quality bar. Don't wire their steps in code.\n7. **Pipelines break context, not logic.** Split a pipeline at the point where a different capability is needed — not to artificially divide one agent's work.\n8. **All agentic I/O persists to the database.** Agent inputs, outputs, and intermediate results are stored as records. The database is the source of truth, not in-memory state.\n9. **Every tool that touches a real system is permission-gated.** If a tool can post, publish, delete, charge, or trigger anything external, it must confirm intent before executing.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How to Create an Agent] ### 1. Create the directory\n\n```\nsrc/agents/{name}/\n  AGENT.md\n  {name}.ts\n```\n\n### 2. Write the `AGENT.md`\n\n```markdown\n# AGENT: {Name}"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Role] Who this agent is. One sentence."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tools] What tools it has and when to use each one. Be explicit — \"Use `sqlQuery` to\ncheck if a table exists before referencing it\" not just \"Has sqlQuery tool.\""
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Inputs] What payload it receives. Describe the shape and what each field means."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Goal] What it must achieve. Describe the outcome, not the steps. The agent decides\nhow to get there. \"Produce a deployment plan for the given architecture\" not\n\"First read the architecture, then list the services, then...\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Output Contract] Exact shape it must return. If structured output is needed, specify the JSON\nschema here. Example:\n  { \"plan\": string, \"steps\": string[], \"risks\": string[] }"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Quality Standards] What makes output good vs bad. Be specific. \"Each step must be independently\nexecutable\" not \"Steps should be good.\""
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Guardrails] What it must NOT do. \"Never modify database schema directly.\" \"Never assume\nthe API is authenticated unless payload says so.\""
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Self-Validation] Checklist the agent must verify before returning:\n- Does output match the Output Contract?\n- Are all required fields present?\n- Does it satisfy the Quality Standards?\n```\n\n### 3. Create the agent `.ts` file\n\nPure boilerplate. No logic here.\n\n```ts\nimport fs from \"fs\";\nimport path from \"path\";\nimport { fileURLToPath } from \"url\";\nimport { Agent } from \"@mastra/core/agent\";\nimport { model } from \"../../config/model.js\";\n\nconst __dirname = path.dirname(fileURLToPath(import.meta.url));\nconst instructions = fs.readFileSync(path.join(__dirname, \"AGENT.md\"), \"utf8\");\n\nexport const myAgent = new Agent({\n    id: \"my-agent\",\n    name: \"My Agent\",\n    instructions,\n    model,\n});\n```\n\nTo give the agent tools:\n\n```ts\nimport { myTool } from \"../../tools/myTool.js\";\n\nexport const myAgent = new Agent({\n    id: \"my-agent\",\n    name: \"My Agent\",\n    instructions,\n    model,\n    tools: { myTool },\n});\n```\n\n### 4. Register the agent\n\nIn `src/mastra/index.ts`:\n\n```ts\nimport { myAgent } from \"../agents/my-agent/my-agent.js\";\n\nexport const mastra = new Mastra({\n    agents: { plannerAgent, reviewerAgent, myAgent },\n});\n```\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[How to Create a Tool] ### Structure\n\n```ts\nimport { createTool } from \"@mastra/core/tools\";\nimport { z } from \"zod\";\n\nexport const myTool = createTool({\n    id: \"my-tool\",\n    description: \"What it does and WHEN to use it\",\n    inputSchema: z.object({\n        query: z.string().describe(\"The search query\"),\n    }),\n    outputSchema: z.object({\n        success: z.boolean(),\n        data: z.any().optional(),\n        errorMessage: z.string().optional(),\n    }),\n    execute: async ({ query }) => {\n        try {\n            const result = await doSomething(query);\n            return { success: true, data: result };\n        } catch (error: any) {\n            return { success: false, errorMessage: error.message };\n        }\n    },\n});\n```\n\n### Tool Rules\n\n- **Always define `outputSchema`.** The agent uses it to understand what the tool returns.\n- **Never throw from `execute`.** Return `{ success: false, errorMessage }` instead. Throwing crashes the Trigger.dev task.\n- **Description is for the agent.** Write it as instructions: \"Use this to check if a database table exists. Pass the table name. Returns true/false.\"\n- **One tool does one thing.** \"Query the database\" not \"Query the database and format the results and send an email.\"\n- **Use `.describe()` on Zod fields** to tell the agent what to pass.\n- **No side effects unless necessary.** If a tool writes, document it clearly in the description and in the agent's `AGENT.md` guardrails.\n\n### Where to put tools\n\n- Shared tools: `src/tools/{name}.ts`\n- Agent-specific tools: `src/agents/{agentName}/tools/{name}.ts`\n\nRegister shared tools in `src/mastra/index.ts`. Agent-specific tools import directly in the agent file.\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Permissioned Tools for Destructive or External Actions] Any tool that touches a real system — posting to an API, publishing content, sending a message, charging a user, deleting data, triggering a webhook — must be permission-gated. Agents must not be able to fire these actions without explicit intent confirmation.\n\n**Before building a tool that has real-world side effects, ask the user:**\n- What exact action does this tool take?\n- Should the agent be able to trigger this autonomously, or does a human need to approve it first?\n- What are the consequences of it misfiring?\n- Should this be rate-limited or scoped to specific records?\n\nBuild the answer into the tool's permission layer, not just the agent's `AGENT.md` guardrails. Guardrails are instructions; permission layers are enforcement.\n\n### Pattern: Confirm Before Execute\n\nFor any action that can't be undone or that has cost/visibility consequences, the tool must receive an explicit `confirmed: true` in its input before it proceeds. The agent must call a read/preview tool first, then call the action tool only when it has verified the result and received `confirmed: true` from the calling context.\n\n```ts\nexport const publishPostTool = createTool({\n    id: \"publish-post\",\n    description: \"Publishes a post to the platform. Only call this after previewing with `previewPostTool` and receiving confirmed: true from the task payload.\",\n    inputSchema: z.object({\n        postId: z.string().describe(\"ID of the post record to publish\"),\n        confirmed: z.boolean().describe(\"Must be true. Do not set this yourself — it must come from the task payload.\"),\n    }),\n    outputSchema: z.object({\n        success: z.boolean(),\n        publishedUrl: z.string().optional(),\n        errorMessage: z.string().optional(),\n    }),\n    execute: async ({ postId, confirmed }) => {\n        if (!confirmed) {\n            return { success: false, errorMessage: \"Publish requires confirmed: true in payload.\" };\n        }\n        try {\n            const url = await publishPost(postId);\n            ret"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[How to Create a Pipeline] Pipelines chain Trigger.dev tasks. Each task calls one agent and passes its output to the next. No single agent holds the full pipeline context — each stage receives only what it needs.\n\n### 1. Create task files in `src/pipelines/tasks/`\n\n```ts\nimport { task, logger } from \"@trigger.dev/sdk/v3\";\nimport { mastra } from \"../../mastra/index.js\";\n\nexport const planTask = task({\n    id: \"plan-task\",\n    retry: { maxAttempts: 3, minTimeoutInMs: 1000, factor: 2 },\n    run: async (payload: { prompt: string }) => {\n        logger.info(\"Running planner\", { promptLength: payload.prompt.length });\n        const agent = mastra.getAgent(\"plannerAgent\");\n        const response = await agent.generate(JSON.stringify(payload));\n        return response.text;\n    },\n});\n```\n\n### 2. Create the pipeline orchestrator\n\nIn `src/pipelines/{name}.ts`, chain tasks using `triggerAndWait`:\n\n```ts\nimport { planTask } from \"./tasks/plan-task.js\";\nimport { reviewTask } from \"./tasks/review-task.js\";\n\nexport async function runMyPipeline(input: string) {\n    const planResult = await planTask.triggerAndWait({ prompt: input });\n    if (!planResult.ok) throw new Error(\"Plan task failed\");\n\n    const reviewResult = await reviewTask.triggerAndWait({ plan: planResult.output });\n    if (!reviewResult.ok) throw new Error(\"Review task failed\");\n\n    return { plan: planResult.output, review: reviewResult.output };\n}\n```\n\n### 3. Export tasks for the worker\n\nIn `src/trigger/index.ts`:\n\n```ts\nexport * from \"../pipelines/tasks/plan-task.js\";\nexport * from \"../pipelines/tasks/review-task.js\";\n```\n\nEvery task must be exported here or the Trigger.dev worker won't discover it.\n\n### 4. Add an API endpoint\n\nIn `src/app/index.ts`:\n\n```ts\napp.post(\"/my-pipeline\", async (req, res) => {\n    const { input } = req.body;\n    const result = await runMyPipeline(input);\n    res.json({ success: true, ...result });\n});\n```\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Pipeline Design: Agents vs Scripts] Not every pipeline stage needs an agent. Use agents where judgment is required. Use scripts (plain TypeScript functions or Trigger.dev tasks with no agent) where the action is deterministic.\n\n### Example: Content Production Pipeline\n\n```\n[Director Agent]         — generates ideas, writes scripts, validates against criteria\n        ↓\n[Media Selector Agent]   — selects or processes media assets based on the script\n        ↓\n[Overlay Task]           — no agent; deterministic script that composites text onto video and stores result\n```\n\nThe overlay stage has no reasoning to do. It receives exact inputs, executes a fixed operation, and stores the output. Putting an agent here adds latency and cost for no benefit.\n\n### When to use an agent in a pipeline stage\n\nUse an agent when the stage requires:\n- Judgment or evaluation (does this meet a quality bar?)\n- Selection from ambiguous options (which asset fits this script best?)\n- Generation from a goal (write a script for this topic)\n- Iterative refinement based on feedback\n\nUse a plain task (no agent) when the stage is:\n- A deterministic transformation (resize, encode, composite)\n- A storage write (save output to DB or file system)\n- A notification or webhook trigger\n- A lookup with no interpretation needed\n\n### Splitting pipeline stages\n\nSplit at the boundary where a different capability is needed — not to artificially divide one agent's work. A director agent that generates ideas, writes a script, and validates it against criteria is doing one coherent job. That's one agent, one task. The media selection is a different capability — that's the split.\n\n---"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Pipeline Patterns] ### Fan-Out (Parallel Sub-tasks)\n\n```ts\nimport { tasks } from \"@trigger.dev/sdk/v3\";\n\nconst handles = await tasks.batchTrigger(\"process-item\",\n    items.map(item => ({ payload: { item } }))\n);\n```\n\nEach sub-task runs independently with its own retries.\n\n### Review Checkpoint\n\nInsert a review stage between pipeline steps. Three modes:\n\n| Mode | Behavior |\n|---|---|\n| `\"none\"` | Auto-approve. Trigger next stage immediately. |\n| `\"agent\"` | Call a reviewer agent. If approved, continue. If rejected, feed feedback back to the previous stage for revision. |\n| `\"human\"` | Set a status in the DB to `pending`. Return. A human reviews externally. Resume the pipeline via an API callback. |\n\n### Retry Configuration\n\nEvery task must have explicit retry config. LLM calls are flaky — the default (no retries) means one transient API error kills the pipeline.\n\n```ts\nretry: {\n    maxAttempts: 3,\n    minTimeoutInMs: 1000,\n    factor: 2,\n}\n```\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Database as the Agentic Record Layer] Every agent input, output, and intermediate result must be persisted to the database before the next stage runs. This is not optional. Agents operate on DB records — they do not pass raw data through in-memory pipelines.\n\n### Why\n\n- **Deduplication.** Check if an equivalent job has already run before triggering a new one. Compare by content hash, source ID, or a natural key.\n- **Verification.** The next stage reads from the DB, not from the previous task's return value. If a record isn't in the DB, the stage doesn't proceed.\n- **Record keeping.** Every generated asset, decision, and status transition is a row. You can audit, replay, and debug any run.\n- **Resume on failure.** If a task retries, it checks the DB first. If the output already exists, it skips regeneration and continues.\n\n### Pattern: Write Before Passing\n\nEvery task writes its output to the DB and returns the record ID. The next task receives the ID, reads from the DB, and operates on the record.\n\n```ts\n// Stage 1: director agent writes its output\nexport const scriptTask = task({\n    id: \"script-task\",\n    retry: { maxAttempts: 3, minTimeoutInMs: 1000, factor: 2 },\n    run: async (payload: { projectId: string }) => {\n        const existing = await db.script.findFirst({ where: { projectId: payload.projectId } });\n        if (existing) return { scriptId: existing.id }; // already done, skip\n\n        const agent = mastra.getAgent(\"directorAgent\");\n        const response = await agent.generate(JSON.stringify(payload));\n        const output = ScriptOutputSchema.parse(JSON.parse(response.text));\n\n        const record = await db.script.create({\n            data: { projectId: payload.projectId, content: output.script, status: \"draft\" },\n        });\n        return { scriptId: record.id };\n    },\n});\n\n// Stage 2: next agent reads by ID\nexport const mediaTask = task({\n    id: \"media-task\",\n    retry: { maxAttempts: 3, minTimeoutInMs: 1000, factor: 2 },\n    run: async (payload: { scriptId: string }) => {\n        c"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Keeping Agents Autonomous] Define the destination and the quality bar. Don't specify how to get there.\n\n**Wrong — micromanaging the agent:**\n```\n1. Read the input\n2. Extract the requirements\n3. For each requirement, write a task\n4. Format the tasks as a numbered list\n5. Return the list\n```\n\n**Right — defining the outcome:**\n```"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Goal] Produce a technical implementation plan for the given objective."
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Output Contract] { \"tasks\": [{ \"title\": string, \"description\": string, \"dependencies\": string[] }] }"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Quality Standards] - Each task must be independently executable by a developer\n- Dependencies must reference other tasks by title\n- No task should take more than 4 hours of work\n```\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Type Enforcement] ### Task Payloads\n\nAlways type the `run` function parameter:\n\n```ts\nrun: async (payload: { prompt: string; maxTokens?: number }) => {\n```\n\n### Structured Output from Agents\n\nDefine the exact schema in the `AGENT.md` Output Contract section, then validate with Zod on receipt:\n\n```ts\nconst OutputSchema = z.object({\n    tasks: z.array(z.object({\n        title: z.string(),\n        description: z.string(),\n        dependencies: z.array(z.string()),\n    })),\n});\n\nconst response = await agent.generate(JSON.stringify(payload));\nconst parsed = OutputSchema.parse(JSON.parse(response.text));\n```\n\nIf parsing fails, the task throws, Trigger.dev retries with the same input, and the agent produces output again.\n\n### Tool Schemas\n\nAlways define both `inputSchema` and `outputSchema` on tools. The agent uses these to understand what arguments to pass and what it will receive back.\n\n---"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Key Rules] 1. All intelligence lives in `AGENT.md`, not in code\n2. Agent `.ts` files are boilerplate wiring only — no logic\n3. Tools return `{ success, errorMessage }` on failure — never throw\n4. Task wrappers handle durability, agents handle reasoning\n5. Self-validation checklist in `AGENT.md` is mandatory for structured output agents\n6. Every Trigger.dev task has explicit `retry` config\n7. Every task is exported from `src/trigger/index.ts`\n8. One model config for all agents — `src/config/model.ts`\n9. Pipeline stages use `triggerAndWait` for sequential, `batchTrigger` for parallel\n10. Check `result.ok` after every `triggerAndWait` — don't assume success\n11. Every agent output is written to the DB before the next stage runs — never pass raw data between tasks\n12. Tasks that would duplicate work must check the DB first and skip if already done\n13. Every tool that takes a real-world action requires `confirmed: true` in the input and must verify it before executing\n14. Not every pipeline stage needs an agent — use plain tasks for deterministic operations"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "durable_agents"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ainakwalamonk/durable-agents/SKILL.md"
+}

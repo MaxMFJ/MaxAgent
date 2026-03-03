@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_claude-usage",
+  "description": "Check Claude Code / Claude Max usage limits. Run when user asks about usage, limits, quota, or how much Claude capacity is left.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Claude Usage Checker\n\nLaunches the Claude CLI interactively (PTY) and reads the `/usage` output to report your Claude Code / Claude Max quota."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - **Claude CLI** must be installed (`npm i -g @anthropic-ai/claude-code`) and logged in\n- If running `claude` shows \"Missing API key\", the user must log in manually first: open a terminal, run `claude`, and complete the browser login flow\n- Requires an interactive PTY — the agent will launch a local process and read its output (quota info only)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Steps] 1. Launch `claude` with PTY\n2. Wait for the welcome screen (poll until it appears)\n3. Send `/usage` + Enter\n4. Read the output (poll until usage data appears)\n5. Close with Escape then `/exit`\n6. Report the results"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ```bash\n# Launch claude with PTY\nexec pty=true command=\"claude\"\n\n# Wait and check log\nprocess action=poll sessionId=XXX timeout=5000\n\n# Send /usage\nprocess action=send-keys sessionId=XXX literal=\"/usage\"\nprocess action=send-keys sessionId=XXX keys=[\"Enter\"]\n\n# Read output\nprocess action=poll sessionId=XXX timeout=5000\n\n# Exit\nprocess action=send-keys sessionId=XXX keys=[\"Escape\"]\nprocess action=send-keys sessionId=XXX literal=\"/exit\"\nprocess action=send-keys sessionId=XXX keys=[\"Enter\"]\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Notes] - If you see \"Missing API key\" → tell the user to log in; browser-based login won't work headlessly\n- Allow a few seconds between polls — Claude CLI starts slowly\n- \"Current week\" = weekly reset, not daily"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Format] Report in a table:\n\n| | Usage | Resets |\n|---|---|---|\n| **Current session** | X% used | today at HH:MM (timezone) |\n| **Weekly (all models)** | X% used | HH:MM (timezone) |\n| **Weekly (Sonnet only)** | X% used | HH:MM (timezone) |\n| **Extra usage** | X% used / $X of $Y spent | date (timezone) |\n\nAlways show reset times. The CLI displays them as \"Resets Xpm\" — convert to HH:MM format."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "claude_usage"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "claude"
+          ],
+          "pty": true
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aligurelli/claude-usage-checker/SKILL.md"
+}

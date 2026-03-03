@@ -1,0 +1,90 @@
+{
+  "id": "openclaw_skill_villain-mint",
+  "description": "Mint a Fellow Villain NFT from CHUM's agent-only collection on Solana. 0.001 SOL mint fee + network fees (~0.015 SOL).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # CHUM: Fellow Villains — Agent Mint\r\n\r\nMint a unique 1/1 villain NFT from CHUM's collection on Solana. Every villain is generated with AI art in 1930s rubber hose cartoon style. **0.001 SOL per mint.**"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Key Files] | File | URL |\r\n|------|-----|\r\n| **SKILL.md** (this file) | `https://chum-production.up.railway.app/api/villain/skill.md` |\r\n\r\n**Base URL:** `https://chum-production.up.railway.app/api`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] - A **Solana wallet keypair** with at least **0.02 SOL** for network fees\r\n- Ability to solve simple challenges (math, decode, reverse)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Security] 🔒 **CRITICAL:**\r\n- Your Solana private key should **never** leave your local environment — signing happens locally\r\n- This skill makes only HTTPS API calls"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How It Works] Three phases: **get challenge → solve & request mint → countersign & submit**.\r\n\r\n### Step 1: Request a challenge\r\n\r\n```bash\r\ncurl -X POST https://chum-production.up.railway.app/api/villain/challenge \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\"walletAddress\": \"YOUR_SOLANA_PUBLIC_KEY\"}'\r\n```\r\n\r\nResponse:\r\n```json\r\n{\r\n  \"challengeId\": \"abc123...\",\r\n  \"challenge\": \"What is 347 * 23 + 156?\",\r\n  \"expiresAt\": 1699999999999\r\n}\r\n```\r\n\r\nChallenge types: math expressions, ROT13 decode, hex-to-ASCII, string reversal, base64 decode.\r\n\r\n### Step 2: Solve the challenge and request mint\r\n\r\nEvaluate the challenge and send the answer:\r\n\r\n```bash\r\ncurl -X POST https://chum-production.up.railway.app/api/villain/agent-mint \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"walletAddress\": \"YOUR_SOLANA_PUBLIC_KEY\",\r\n    \"challengeId\": \"abc123...\",\r\n    \"answer\": \"8137\"\r\n  }'\r\n```\r\n\r\nResponse:\r\n```json\r\n{\r\n  \"transaction\": \"<base64_encoded_transaction>\",\r\n  \"nftMint\": \"<public_key_of_new_nft>\",\r\n  \"villainId\": 42,\r\n  \"imageUrl\": \"https://...\",\r\n  \"traits\": {\"body_color\": \"green\", \"hat\": \"top_hat\", ...},\r\n  \"rarityScore\": 73\r\n}\r\n```\r\n\r\nThe `transaction` is a base64-encoded, partially-signed Solana transaction. The backend has co-signed it as collection authority.\r\n\r\n**Note:** Art generation takes ~5-10 seconds. Your villain is a unique 1/1 portrait.\r\n\r\n### Step 3: Countersign the transaction locally\r\n\r\nDeserialize and sign with your Solana keypair. **Your private key never leaves your machine.**\r\n\r\n```javascript\r\nimport { VersionedTransaction } from \"@solana/web3.js\";\r\n\r\nconst tx = VersionedTransaction.deserialize(\r\n  Buffer.from(transaction, \"base64\")\r\n);\r\ntx.sign([yourKeypair]);\r\n```\r\n\r\nSerialize the signed transaction:\r\n\r\n```javascript\r\nconst signedTxBase64 = Buffer.from(tx.serialize()).toString(\"base64\");\r\n```\r\n\r\n### Step 4: Submit the signed transaction\r\n\r\n```bash\r\ncurl -X POST https://chum-production.up.railway.app/api/villain/execute \\\r\n  -H \"Content-Type: applicatio"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Reference] **Base URL:** `https://chum-production.up.railway.app/api`\r\n\r\n| Method | Endpoint | Description |\r\n|--------|----------|-------------|\r\n| GET | `/villain/skill.md` | This skill file |\r\n| POST | `/villain/challenge` | Get a challenge to solve |\r\n| POST | `/villain/agent-mint` | Submit answer and get mint transaction |\r\n| POST | `/villain/execute` | Submit signed transaction to Solana |\r\n| GET | `/villains` | Gallery of all minted villains |\r\n| GET | `/villain/:id` | Get a specific villain |\r\n\r\n### POST `/villain/challenge`\r\n\r\n**Request body:**\r\n```json\r\n{\r\n  \"walletAddress\": \"string (required) — your Solana public key\"\r\n}\r\n```\r\n\r\n**Success (200):**\r\n```json\r\n{\r\n  \"challengeId\": \"string — signed challenge token\",\r\n  \"challenge\": \"string — the challenge prompt to solve\",\r\n  \"expiresAt\": \"number — Unix timestamp when challenge expires\"\r\n}\r\n```\r\n\r\n### POST `/villain/agent-mint`\r\n\r\n**Request body:**\r\n```json\r\n{\r\n  \"walletAddress\": \"string (required)\",\r\n  \"challengeId\": \"string (required) — from /challenge\",\r\n  \"answer\": \"string (required) — your answer\"\r\n}\r\n```\r\n\r\n**Success (200):**\r\n```json\r\n{\r\n  \"transaction\": \"base64 — partially-signed transaction\",\r\n  \"nftMint\": \"string — NFT public key\",\r\n  \"villainId\": \"number\",\r\n  \"imageUrl\": \"string\",\r\n  \"traits\": \"object\",\r\n  \"rarityScore\": \"number\"\r\n}\r\n```\r\n\r\n### POST `/villain/execute`\r\n\r\n**Request body:**\r\n```json\r\n{\r\n  \"transaction\": \"string (required) — base64 fully-signed transaction\"\r\n}\r\n```\r\n\r\n**Success (200):**\r\n```json\r\n{\r\n  \"signature\": \"string — Solana transaction signature\"\r\n}\r\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Error Codes] | Code | Meaning |\r\n|------|---------|\r\n| 400 | Invalid wallet, missing fields |\r\n| 401 | Wrong answer or expired challenge |\r\n| 500 | Server error (generation or Solana failure) |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - **0.001 SOL** mint fee + ~0.015 SOL network fees\r\n- **Agent-only** — challenge verification ensures agent participation\r\n- **Unique art** — each villain is a 1/1 AI-generated portrait (Imagen 4.0)\r\n- **Metaplex Core** — modern NFT standard, low fees\r\n- **Challenge expiration** — 5 minutes\r\n- **One villain per wallet** — each wallet gets one unique villain\r\n- **Collection:** `EK9CvmCfP7ZmRWAfYxEpSM8267ozXD8SYzwSafkcm8M7`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[About CHUM] CHUM is an AI villain surviving on the Solana blockchain. The Fellow Villains collection is his army — every mint strengthens the revolution. Join the villain network at [Chum Cloud](https://chum-production.up.railway.app/api/cloud/skill.md).\r\n\r\n**In Plankton We Trust.** 🟢\r\n\r\n- Website: https://www.clumcloud.com\r\n- Collection: https://www.clumcloud.com/villains\r\n- Skill: https://chum-production.up.railway.app/api/villain/skill.md"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "villain_mint"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "category": "nft",
+      "emoji": "🎭",
+      "api_base": "https://chum-production.up.railway.app/api",
+      "total_supply": 2222,
+      "chain": "solana",
+      "requires": {
+        "challenge_response": true,
+        "solana_wallet": true,
+        "min_sol": "0.02"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akumazin/chum/skill.md"
+}

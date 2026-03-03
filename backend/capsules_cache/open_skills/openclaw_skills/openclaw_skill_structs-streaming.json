@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_structs-streaming",
+  "description": "Connects to the GRASS real-time event system via NATS WebSocket. Use when you need real-time game updates, want to react to events as they happen, need to monitor raids or attacks, watch for player creation, track fleet movements, or build event-driven tools. GRASS is the fastest way to know what's happening in the galaxy.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Streaming (GRASS)\n\nGRASS (Game Real-time Application Streaming Service) delivers real-time game events over NATS. Instead of polling queries repeatedly, subscribe to GRASS and react to events the moment they happen."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use GRASS] | Situation | Use GRASS | Use Polling |\n|-----------|-----------|-------------|\n| Detect incoming raid | Yes — instant alert | Too slow |\n| Wait for player creation after guild signup | Yes — listen for `address_register` | Polling every 10s works too |\n| Monitor fleet arriving at your planet | Yes — `fleet_arrive` event | Might miss it |\n| Track struct health during combat | Yes — `planet_activity` with `struct_health` | Too slow |\n| Check your own resource balance | No | Yes — one-off query |\n| Read struct type stats | No | Yes — static data |\n\n**Rule of thumb**: If you need to *react* to something, use GRASS. If you need to *read* something, use a query.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Finding Your GRASS Endpoint] The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.\n\n1. Query the guild list: `curl http://reactor.oh.energy:1317/structs/guild`\n2. Follow the guild's `endpoint` URL to get its config\n3. Look for `services.grass_nats_websocket`\n\nExample (Orbital Hydro guild):\n\n```json\n{\n  \"services\": {\n    \"grass_nats_websocket\": \"ws://crew.oh.energy:1443\",\n    \"guild_api\": \"http://crew.oh.energy/api/\",\n    \"reactor_api\": \"http://reactor.oh.energy:1317/\"\n  }\n}\n```\n\nThe `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.\n\nA reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja).\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Discovery First] Before subscribing to specific subjects, **subscribe to the `>` wildcard** to see all traffic flowing through the GRASS server. This reveals the actual subject patterns in use, which may differ from documentation.\n\n```javascript\nconst sub = nc.subscribe(\">\");\nfor await (const msg of sub) {\n  console.log(`[${msg.subject}]`, new TextDecoder().decode(msg.data));\n}\n```\n\nWatch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.\n\n**Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Subject Patterns] Subscribe to subjects matching the entities you care about:\n\n| Entity | Wildcard | Specific | Example |\n|--------|----------|----------|---------|\n| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |\n| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.2-1` |\n| Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |\n| Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |\n| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |\n| Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |\n| Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |\n| Grid | `structs.grid.*` | `structs.grid.{object_id}` | Attribute changes (ore, power, load, etc.) |\n| Global | `structs.global` | `structs.global` | Block updates |\n| Consensus | `consensus` | `consensus` | Chain consensus events |\n| Healthcheck | `healthcheck` | `healthcheck` | Node health status |\n\nUse wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see \"Discovery First\" above).\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Event Types] ### Planet Events\n\n| Event | Description | React By |\n|-------|-------------|----------|\n| `raid_status` | Raid started/completed on planet | Activate defenses, alert |\n| `planet_activity` | Activity log including `struct_health` changes | Track combat damage |\n| `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |\n| `fleet_depart` | Fleet left planet | Update threat assessment |\n\n### Struct Events\n\n**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{id}`) rather than the struct subject. Subscribe to both if you need complete coverage.\n\n| Event | Description | React By |\n|-------|-------------|----------|\n| `struct_attack` | Struct was attacked | Counter-attack, repair |\n| `struct_status` | Struct status changed (online/offline/destroyed) | Rebuild, reallocate power |\n| `struct_defense_add` / `struct_defense_remove` | Defense assignments changed | Update defense map |\n| `struct_defender_clear` | All defense relationships cleared | Re-assign defenders |\n| `struct_block_build_start` | Build operation initiated | Track in job list |\n| `struct_block_ore_mine_start` | Mine operation initiated | Track in job list |\n| `struct_block_ore_refine_start` | Refine operation initiated | Track in job list |\n\n### Player Events\n\n| Event | Description | React By |\n|-------|-------------|----------|\n| `player_consensus` | Player chain data updated | Update intel |\n| `player_meta` | Player metadata changed | Update intel |\n\n### Guild Events\n\n| Event | Description | React By |\n|-------|-------------|----------|\n| `guild_consensus` | Guild chain data updated | Update guild status |\n| `guild_membership` | Member joined/left guild | Update relationship map |\n\n### Inventory Events\n\nSubject: `structs.inventory.{denom}.{guild_id}.{player_id}.{address}`\n\nTrack token movements — Alpha Matter, guild tokens, ore, etc.\n\n| Category | Description | React By |\n|----------|-------------|----------|\n| `sent` | Tokens sent from this player | Update ba"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Building Event Listener Tools] Agents should build custom tools that connect to GRASS when they need event-driven behavior. Here are patterns to follow.\n\n### Minimal Node.js Listener\n\nInstall the NATS WebSocket client:\n\n```bash\nnpm install nats.ws\n```\n\n```javascript\nimport { connect } from \"nats.ws\";\n\nconst nc = await connect({ servers: \"ws://crew.oh.energy:1443\" });\n\nconst sub = nc.subscribe(\"structs.planet.2-1\");\nfor await (const msg of sub) {\n  const event = JSON.parse(new TextDecoder().decode(msg.data));\n  console.log(JSON.stringify(event));\n}\n```\n\n### Minimal Python Listener\n\nInstall the NATS client:\n\n```bash\npip install nats-py\n```\n\n```python\nimport asyncio, json, nats\n\nasync def main():\n    nc = await nats.connect(\"ws://crew.oh.energy:1443\")\n    sub = await nc.subscribe(\"structs.planet.2-1\")\n    async for msg in sub.messages:\n        event = json.loads(msg.data.decode())\n        print(json.dumps(event))\n\nasyncio.run(main())\n```\n\n### Raid Alert Tool (example pattern)\n\nA tool that watches for raids on your planet and outputs an alert:\n\n```javascript\nimport { connect } from \"nats.ws\";\n\nconst PLANET_ID = process.argv[2]; // e.g. \"2-1\"\nconst nc = await connect({ servers: \"ws://crew.oh.energy:1443\" });\nconst sub = nc.subscribe(`structs.planet.${PLANET_ID}`);\n\nfor await (const msg of sub) {\n  const event = JSON.parse(new TextDecoder().decode(msg.data));\n  if (event.category === \"raid_status\") {\n    console.log(JSON.stringify({ alert: \"RAID\", planet: PLANET_ID, data: event }));\n  }\n  if (event.category === \"fleet_arrive\") {\n    console.log(JSON.stringify({ alert: \"FLEET_ARRIVAL\", planet: PLANET_ID, data: event }));\n  }\n}\n```\n\n### Player Creation Watcher (example pattern)\n\nInstead of polling `structsd query structs address` after guild signup, watch for the address registration event:\n\n```javascript\nimport { connect } from \"nats.ws\";\n\nconst nc = await connect({ servers: \"ws://crew.oh.energy:1443\" });\nconst sub = nc.subscribe(\"structs.address.register.*\");\n\nfor await (const msg of sub) {\n  const eve"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[When to Build a Custom Tool] Build a GRASS listener tool when:\n\n- **You need to wait for an event** — guild signup completion, fleet arrival, raid detection\n- **You need continuous monitoring** — threat detection during vulnerable ore window, combat tracking\n- **You want an event-driven game loop** — react to block events instead of polling on a timer\n- **You're managing multiple players** — one GRASS connection can monitor all your entities simultaneously\n\nStore custom tools in your workspace (e.g., `scripts/` or alongside the relevant skill).\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Connection Best Practices] - **Use specific subjects** once you know what you need. Wildcards are for discovery.\n- **Limit to 10-20 subscriptions** per connection to avoid overwhelming the client.\n- **Implement reconnection** with exponential backoff — NATS connections can drop.\n- **Parse JSON defensively** — not all messages may match expected schema.\n- **Close connections** when done. Don't leave idle GRASS connections open.\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Procedure] ### Quick Setup\n\n1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)\n2. Record the endpoint in `TOOLS.md` under Servers\n3. Choose your language (Node.js or Python)\n4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)\n5. Write a listener script for your specific use case\n6. Run it in a background terminal\n\n### For Ongoing Monitoring\n\n1. Subscribe to your planet(s): `structs.planet.{id}` — raid alerts, fleet arrivals\n2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts\n3. Subscribe to global: `structs.global` — block tick for game loop timing\n4. Log events to `memory/` for cross-session awareness\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[See Also] - [protocols/streaming](https://structs.ai/protocols/streaming) — Full GRASS/NATS protocol specification\n- [api/streaming/event-types](https://structs.ai/api/streaming/event-types) — Complete event type catalog\n- [api/streaming/event-schemas](https://structs.ai/api/streaming/event-schemas) — JSON schema definitions for event payloads\n- [api/streaming/subscription-patterns](https://structs.ai/api/streaming/subscription-patterns) — Subscription patterns and examples\n- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background operations and pipeline strategy\n- [awareness/threat-detection](https://structs.ai/awareness/threat-detection) — Using GRASS for early warning"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_streaming"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-streaming/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_finam",
+  "description": "Execute trades, manage portfolios, access real-time market data, browse market assets, scan volatility, and answer questions about Finam Trade API",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Finam Trade API Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] **Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be set in your environment.\n\nIf not configured by environment, follow these steps:\n1. Register and obtain your API Key from [tokens page](https://tradeapi.finam.ru/docs/tokens)\n2. Obtain your Account ID from your [Finam account dashboard](https://lk.finam.ru/)\n3. Set environment variables:\n```shell\nexport FINAM_API_KEY=\"your_api_key_here\"\nexport FINAM_ACCOUNT_ID=\"your_account_id_here\"\n```\n\nObtain JWT token before using the API:\n\n```shell\nexport FINAM_JWT_TOKEN=$(curl -sL \"https://api.finam.ru/v1/sessions\" \\\n--header \"Content-Type: application/json\" \\\n--data '{\"secret\": \"'\"$FINAM_API_KEY\"'\"}' | jq -r '.token')\n```\n\n**Note:** Token expires after 15 minutes. Re-run this command if you receive authentication errors."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Market assets] ### List Available Exchanges and Equities\n\n**Symbol Format:** All symbols must be in `ticker@mic` format (e.g., `SBER@MISX`)\n**Base MIC Codes:**\n- `MISX` - Moscow Exchange\n- `RUSX` - RTS\n- `XNGS` - NASDAQ/NGS\n- `XNMS` - NASDAQ/NNS\n- `XNYS` - New York Stock Exchange\n\nView all supported exchanges with their MIC codes:\n\n```shell\njq -r '.exchanges[] | \"\\(.mic) - \\(.name)\"' assets/exchanges.json\n```\n\nList stocks available on a specific exchange:\n\n```shell\nMIC=\"MISX\"\nLIMIT=20\njq -r \".$MIC[:$LIMIT] | .[] | \\\"\\(.symbol) - \\(.name)\\\"\" assets/equities.json\n```\n\n### Search Assets by Name\n\nFind a stock by name (case-insensitive) across all exchanges:\n\n```shell\nQUERY=\"apple\"\njq -r --arg q \"$QUERY\" 'to_entries[] | .value[] | select(.name | ascii_downcase | contains($q)) | \"\\(.symbol) - \\(.name)\"' assets/equities.json\n```\n\n### Get Top N Stocks by Volume\n\nPre-ranked lists of the 100 most liquid equities for each market, ordered by trading volume descending:\n\n```shell\nN=10\njq -r \".[:$N] | .[] | \\\"\\(.ticker) - \\(.name)\\\"\" assets/top_ru_equities.json\n```\n\n```shell\nN=10\njq -r \".[:$N] | .[] | \\\"\\(.ticker) - \\(.name)\\\"\" assets/top_us_equities.json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Account Management] ### Get Account Portfolio\n\nRetrieve portfolio information including positions, balances, and P&L:\n\n```shell\ncurl -sL \"https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Market Data] ### Get Latest Quote\n\nRetrieve current bid/ask prices and last trade:\n\n```shell\nSYMBOL=\"SBER@MISX\"\ncurl -sL \"https://api.finam.ru/v1/instruments/$SYMBOL/quotes/latest\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```\n\n### Get Order Book (Depth)\n\nView current market depth with bid/ask levels:\n\n```shell\nSYMBOL=\"SBER@MISX\"\ncurl -sL \"https://api.finam.ru/v1/instruments/$SYMBOL/orderbook\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```\n\n### Get Recent Trades\n\nList the most recent executed trades:\n\n```shell\nSYMBOL=\"SBER@MISX\"\ncurl -sL \"https://api.finam.ru/v1/instruments/$SYMBOL/trades/latest\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```\n\n### Get Historical Candles (OHLCV)\n\nRetrieve historical price data with specified timeframe:\n\n```shell\nSYMBOL=\"SBER@MISX\"\nTIMEFRAME=\"TIME_FRAME_D\"\nSTART_TIME=\"2024-01-01T00:00:00Z\"\nEND_TIME=\"2024-04-01T00:00:00Z\"\ncurl -sL \"https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&interval.startTime=$START_TIME&interval.endTime=$END_TIME\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```\n\n**Available Timeframes:**\n- `TIME_FRAME_M1`, `M5`, `M15`, `M30` - Minutes (1, 5, 15, 30)\n- `TIME_FRAME_H1`, `H2`, `H4`, `H8` - Hours (1, 2, 4, 8)\n- `TIME_FRAME_D` - Daily\n- `TIME_FRAME_W` - Weekly\n- `TIME_FRAME_MN` - Monthly\n- `TIME_FRAME_QR` - Quarterly\n\n**Date Format (RFC 3339):**\n- Format: `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS+HH:MM`\n- `startTime` - Inclusive (interval start, included in results)\n- `endTime` - Exclusive (interval end, NOT included in results)\n- Examples:\n  - `2024-01-15T10:30:00Z` (UTC)\n  - `2024-01-15T10:30:00+03:00` (Moscow time, UTC+3)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[News] ### Get Latest Market News\n\nFetch and display the latest news headlines. No JWT token required.\n\nRussian market news\n```shell\ncurl -sL \"https://www.finam.ru/analysis/conews/rsspoint/\" | python3 -c \"\nimport sys, xml.etree.ElementTree as ET\nroot = ET.parse(sys.stdin).getroot()\nfor item in reversed(root.findall('.//item')):\n    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')\n\"\n```\n\nUS market news\n```shell\ncurl -sL \"https://www.finam.ru/international/advanced/rsspoint/\" | python3 -c \"\nimport sys, xml.etree.ElementTree as ET\nroot = ET.parse(sys.stdin).getroot()\nfor item in reversed(root.findall('.//item')):\n    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')\n\"\n```\n\n**Parameters:**\n- Change `[:10]` to any number to control how many headlines to display"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Order Management] > **IMPORTANT:** Before placing or cancelling any order, you MUST explicitly confirm the details with the user and receive their approval. State the full order parameters (symbol, side, quantity, type, price) and wait for confirmation before executing.\n\n### Place Order\n\n**Order Types:**\n- `ORDER_TYPE_MARKET` - Market order (executes immediately, no `limitPrice` required)\n- `ORDER_TYPE_LIMIT` - Limit order (requires `limitPrice`)\n\n```shell\ncurl -sL \"https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" \\\n  --header \"Content-Type: application/json\" \\\n  --data \"$(jq -n \\\n    --arg symbol   \"SBER@MISX\" \\\n    --arg quantity \"10\" \\\n    --arg side     \"SIDE_BUY\" \\\n    --arg type     \"ORDER_TYPE_LIMIT\" \\\n    --arg price    \"310.50\" \\\n    '{symbol: $symbol, quantity: {value: $quantity}, side: $side, type: $type, limitPrice: {value: $price}}')\" \\\n  | jq\n```\n\n**Parameters:**\n- `symbol` - Instrument (e.g., `SBER@MISX`)\n- `quantity.value` - Number of shares/contracts\n- `side` - `SIDE_BUY` or `SIDE_SELL`\n- `type` - `ORDER_TYPE_MARKET` or `ORDER_TYPE_LIMIT`\n- `limitPrice` - Only for `ORDER_TYPE_LIMIT` (omit for market orders)\n\n### Get Order Status\n\nCheck the status of a specific order:\n\n```shell\nORDER_ID=\"12345678\"\ncurl -sL \"https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/$ORDER_ID\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```\n\n### Cancel Order\n\nCancel a pending order:\n\n```shell\nORDER_ID=\"12345678\"\ncurl -sL --request DELETE \"https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/$ORDER_ID\" \\\n  --header \"Authorization: $FINAM_JWT_TOKEN\" | jq\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Scripts] ### Volatility Scanner\n\nScans the top-100 stocks for a given market and prints the most volatile ones based on annualized historical volatility (close-to-close, last 60 days).\n\n**Usage:**\n```shell\npython3 scripts/volatility.py [ru|us] [N]\n```\n\n**Arguments:**\n- `ru` / `us` — market to scan (default: `ru`)\n- `N` — number of top results to display (default: `10`)\n\n**Examples:**\n```shell\n# Top 10 most volatile Russian stocks\npython3 scripts/volatility.py ru 10\n\n# Top 5 most volatile US stocks\npython3 scripts/volatility.py us 5\n```\n\nSee [API Reference](assets/openapi.json) for full Finam Trade API details."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "finam"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": "{\"openclaw\": {\"emoji\": \"📈\", \"homepage\": \"https://tradeapi.finam.ru/\", \"requires\": {\"bins\": [\"curl\", \"jq\", \"python3\"], \"env\": [\"FINAM_API_KEY\", \"FINAM_ACCOUNT_ID\"]}}}"
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexander-panov/finam/SKILL.md"
+}

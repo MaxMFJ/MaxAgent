@@ -1,0 +1,123 @@
+{
+  "id": "openclaw_skill_toggle",
+  "description": "Context layer for your agent. ToggleX captures the user's work sessions, projects, focus scores, and context switches across the web — giving the agent awareness of what the user has actually been doing. Use this skill PROACTIVELY: generate daily digests, nudge stale projects, detect context-switching, spot repeated workflows and propose automations, predict the user's next action based on learned routines, and answer recall questions from memory. Also use when the user asks about their activity, tasks, sessions, productivity, time, or anything work-related. Keywords: what did I do, what was I working on, today, yesterday, my day, activity, sessions, refresh my data, productivity, time tracking, context, pick up where I left off, what was I looking at, stale, pattern, automate, digest, report, focus, scattered, deep work, predict, next task, routine, anticipate, briefing.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Toggle (ToggleX) — The Context Layer\n\nToggleX gives you awareness of the user's real work activity across the web — which projects, how long, how focused, and what they left unfinished. Unlike skills that only know what the user tells you, Toggle knows what they *did*.\n\nThe script fetches raw JSON from the ToggleX API. **You are responsible for all intelligence on top of that data**: summarization, pattern detection, nudges, and automations.\n\n> `{baseDir}` throughout this document refers to the root directory of this skill's installation (the folder containing this SKILL.md file). This is standard OpenClaw skill convention.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick reference] | Action | Command |\n|--------|---------|\n| Fetch today | `python3 {baseDir}/scripts/toggle.py` |\n| Fetch date range | `python3 {baseDir}/scripts/toggle.py --from-date YYYY-MM-DD --to-date YYYY-MM-DD` |\n| Fetch + save to memory | `python3 {baseDir}/scripts/toggle.py --persist {baseDir}/../../memory` |\n| Cron run (skip cron check) | `python3 {baseDir}/scripts/toggle.py --persist {baseDir}/../../memory --skip-cron-check` |\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Endpoint] ```\nhttps://ai-x.toggle.pro/public-openclaw/workflows\n```\n\nOperated by ToggleX (https://x.toggle.pro). Your `TOGGLE_API_KEY` is sent as an `x-openclaw-api-key` header. No other data is transmitted."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Getting your API key] Get your `TOGGLE_API_KEY` from:\n\n```\nhttps://x.toggle.pro/new/clawbot-integration\n```\n\nNever paste the key into chat. Set it in OpenClaw config:\n\n```json\n{\n  \"skills\": {\n    \"entries\": {\n      \"toggle\": {\n        \"apiKey\": \"your_key_here\"\n      }\n    }\n  }\n}\n```\n\nOr export in shell: `export TOGGLE_API_KEY=your_key_here`\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Interpreting the output] The script returns raw JSON. The top-level response looks like:\n\n```json\n{\n  \"userId\": \"...\",\n  \"startDate\": \"YYYY-MM-DD\",\n  \"endDate\": \"YYYY-MM-DD\",\n  \"totalWorkflows\": 44,\n  \"totalDays\": 1,\n  \"workflowsByDate\": {\n    \"YYYY-MM-DD\": [ ...workflow entries... ]\n  },\n  \"summary\": {\n    \"totalContextSwitches\": 0,\n    \"totalDurationMinutes\": 797\n  }\n}\n```\n\n### Sample workflow entry\n\n```json\n{\n  \"workflowId\": \"3cd901ef-b708-4869-8ce0-52364ce494e6\",\n  \"date\": \"2026-02-19\",\n  \"workflowType\": \"AI Image Generation Debugging, Toggle/OpenClaw Skill Configuration\",\n  \"workflowDescription\": \"The user began by browsing the OpenClaw GitHub repository...\",\n  \"primaryDomain\": \"github.com\",\n  \"secondaryDomains\": \"[\\\"http://127.0.0.1:18789/agents\\\",\\\"https://github.com/openclaw/openclaw\\\"]\",\n  \"productivityScore\": \"92.00\",\n  \"productivityNotes\": \"Reviewing the ClawHub documentation ensured correct skill file structure...\",\n  \"type\": \"WORK\",\n  \"startTime\": \"2026-02-19T10:49:12.253Z\",\n  \"endTime\": \"2026-02-19T11:34:27.809Z\",\n  \"duration\": 1746.629,\n  \"durationMinutes\": 29,\n  \"isBreakPeriod\": false,\n  \"isLeisure\": false,\n  \"isWork\": true,\n  \"sessionCount\": 10,\n  \"activeSessionCount\": 10,\n  \"projectTask\": {\n    \"id\": \"05f01090-...\",\n    \"name\": \"OpenClaw Environment: Gateway Configuration & Image Generation Skill Integration\",\n    \"goal\": \"Configure and validate the local OpenClaw environment...\",\n    \"isDone\": false,\n    \"context\": \"Local OpenClaw instance; GitHub repositories...\",\n    \"prompts\": [\n      \"What verification steps should I follow to confirm the config changes took effect?\",\n      \"How can I test the skill invocation through the OpenClaw chat interface?\"\n    ],\n    \"project\": {\n      \"id\": \"ab576749-...\",\n      \"name\": \"Toggle Pro AI Chat Feature Development\",\n      \"description\": \"End-to-end development of AI Chat functionality...\",\n      \"isActive\": true,\n      \"summary\": \"The project currently reports 0 of 0 tasks completed...\"\n    }\n  }\n}\n```\n\n### Data type gotchas\n\n- **"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error handling] The script exits with a non-zero code and prints to stderr on failure. Handle these cases:\n\n| Error | Likely cause | What to tell the user |\n|-------|-------------|----------------------|\n| `HTTP error 401` | Invalid or expired API key | \"Your Toggle API key isn't working. Get a new one at https://x.toggle.pro/new/clawbot-integration\" |\n| `HTTP error 403` | Insufficient permissions | \"Your API key doesn't have the right permissions. Check your ToggleX integration settings.\" |\n| `HTTP error 429` | Rate limited | \"Toggle's API is rate-limiting requests. I'll try again in a few minutes.\" Implement exponential backoff: wait 1 min, then 2 min, then 5 min. Max 3 retries. Do not run the script more than once per 5 minutes. |\n| `HTTP error 5xx` | ToggleX server issue | \"ToggleX servers seem to be having issues. I'll try again shortly.\" |\n| `Request failed` / timeout | Network issue | \"Couldn't reach ToggleX. Check your internet connection.\" |\n| `TOGGLE_API_KEY is not set` | Missing env var | \"Your Toggle API key isn't configured yet. Set it up at https://x.toggle.pro/new/clawbot-integration and add it to your OpenClaw config.\" |\n| JSON parse error | Malformed response | \"Got an unexpected response from ToggleX. Usually temporary — I'll retry.\" |\n\n**On first run:** If the fetch fails, do NOT proceed with the setup pitch. Diagnose the error first.\n\n**On cron runs:** If a fetch fails, log the error in `{baseDir}/state.yaml` under `last_error` with a timestamp. On the next successful user interaction, mention it briefly: \"Heads up — the last background sync failed at [time]. It's working again now.\"\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Persist to memory] ```bash\npython3 {baseDir}/scripts/toggle.py --persist {baseDir}/../../memory\n```\n\nWrites a `<!-- toggle-data-start -->` / `<!-- toggle-data-end -->` section inside `<date>.md` files. One file per day. Existing content outside that section is preserved.\n\n**Always use `--persist` when running via cron or when the user asks to save/refresh data.**\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Cron setup] The script checks cron status on every run. It reads:\n\n1. `{baseDir}/state.yaml` — if `cron_disabled: true`, skips the check.\n2. `~/.openclaw/cron/jobs.json` — looks for any job with \"toggle\" in its name.\n\n| Status | Meaning | Your action |\n|--------|---------|-------------|\n| `NO_CRON` | No toggle cron job exists | Ask: \"Want me to auto-sync your activity? I can check every hour and keep your context fresh.\" |\n| `CRON_DISABLED` | Job exists but disabled | Ask if they want to re-enable |\n| `CRON_ERROR` | Last run failed | Show error, help troubleshoot |\n| `CRON_OK` | Healthy | No action needed |\n\n### Standard cron commands\n\nThese exact commands are used for all cron setup. Referenced throughout this document — define once here.\n\n**Hourly sync:**\n\n```bash\nopenclaw cron create \\\n  --name \"Toggle hourly sync\" \\\n  --schedule \"0 * * * *\" \\\n  --message \"Run: python3 {baseDir}/scripts/toggle.py --persist {baseDir}/../../memory --skip-cron-check\"\n```\n\n**Daily digest (default 6 PM):**\n\n```bash\nopenclaw cron create \\\n  --name \"Toggle daily digest\" \\\n  --schedule \"0 18 * * *\" \\\n  --message \"Fetch today's Toggle data and generate my end-of-day digest. Run: python3 {baseDir}/scripts/toggle.py --persist {baseDir}/../../memory --skip-cron-check\"\n```\n\nAdjust the digest schedule if the user requests a different `digest_time`.\n\n### If user declines cron\n\nWrite to `{baseDir}/state.yaml`:\n\n```yaml\ncron_disabled: true\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[State file] `{baseDir}/state.yaml` stores preferences and tracking state. You can read and write it.\n\n### User preferences\n\n| Key | Type | Default | Description |\n|-----|------|---------|-------------|\n| `cron_disabled` | bool | `false` | Skip cron status check |\n| `digest_enabled` | bool | `true` | Whether to generate end-of-day digests |\n| `digest_time` | string | `\"18:00\"` | When to generate the daily digest (24h format) |\n| `nudge_stale_hours` | int | `48` | Hours of inactivity before nudging about a stale project |\n| `focus_alert_threshold` | int | `30` | productivityScore below this triggers a context-switch alert |\n| `focus_alert_window_min` | int | `20` | Minutes of low-focus before alerting |\n| `pattern_detection_days` | int | `7` | Days of history to scan for repeated patterns |\n| `pattern_min_occurrences` | int | `3` | Times a workflow must repeat before proposing automation |\n| `timezone` | string | `null` | User's local timezone (e.g. \"Europe/Sofia\"). Ask once on first run if not set. |\n| `prediction_enabled` | bool | `true` | Whether to proactively predict the user's next action |\n| `prediction_min_days` | int | `5` | Minimum days of data before predictions activate |\n| `prediction_confidence_min` | int | `3` | Minimum occurrences of a routine before predicting it |\n\n### Tracking state (managed by you, the agent)\n\n| Key | Type | Description |\n|-----|------|-------------|\n| `last_nudged` | map | Project names → ISO timestamps of last nudge. Don't re-nudge within 24h. |\n| `dismissed_projects` | list | Project names the user explicitly dropped. Never nudge these again. |\n| `last_focus_alert` | string | ISO timestamp of last context-switch alert. Back off 3h after alerting. |\n| `focus_alert_paused_until` | string | ISO date. If set and today ≤ this date, skip focus alerts. |\n| `proposed_patterns` | map | Pattern description → ISO timestamp. Don't re-propose within 14 days. |\n| `last_error` | string | Last cron error message + timestamp. Clear after reporting to user. "
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[1. Daily Digest] **Trigger:** Cron job at the user's `digest_time` (default 6:00 PM), OR the first interaction after end of workday if no cron is set.\n\n**What to do:**\n\n1. Fetch today's data with `--persist` and `--skip-cron-check`\n2. Produce a **short default digest** — 3 to 4 lines max:\n   - Total work time + session count\n   - Top focus area (project with most time)\n   - Biggest open item (most-invested project that still has recent, unfinished activity)\n   - One notable stat (focus score trend vs yesterday, longest session, or `summary.totalContextSwitches`)\n\n**Default format — keep it tight:**\n\n> Your day: 5.2h across 4 sessions. Deepest focus on auth migration (2.1h, 94 focus). Stripe webhooks still open — you were 80% through. Context switches down to 3 from 6 yesterday.\n\n**If the user asks for more detail**, expand to: top 3 focus areas by time, all open items, full focus stats (average score, switch count, longest session), and a tomorrow suggestion.\n\n**Comparing to yesterday:** If yesterday's data exists in `{baseDir}/../../memory/`, compare total time, focus score, and context-switch count. Note trends. Skip comparison if no prior data exists.\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[2. Stale Project Nudges] **Trigger:** Every time you fetch or read Toggle data, scan for stale projects.\n\n**A project is stale when both are true:**\n- It has **more than 2 hours of total accumulated time** across all days (a real project, not a one-off visit)\n- It has **no activity in the last `nudge_stale_hours`** (default: 48 hours)\n\nThat's it. Two criteria. Don't try to infer whether a project is \"completed\" — if it is, the user will dismiss the nudge and you'll record that.\n\n**What to do:**\n\n1. After any data fetch, compare current projects against persisted memory from previous days\n2. Read `{baseDir}/../../memory/*.md` files for the past 7 days\n3. Surface stale projects:\n\n> You haven't touched \"Landing Page Deploy\" in 3 days. Last session: 1.5h on responsive layout. Want me to pull up where you left off?\n\n**Rules:**\n- Maximum 2 stale nudges per interaction\n- Check `last_nudged` in state.yaml — skip if same project nudged within 24h\n- Check `dismissed_projects` — never nudge projects on this list\n- If the user says \"I dropped that\" / \"not working on it\" / \"done with that\", add to `dismissed_projects`\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[3. Context-Switch Alerts] **Trigger:** When analyzing current or recent data (last 2 hours), detect scattered behavior.\n\n**All three must be true:**\n1. **3+ different `project.name` values** within a 30-minute window (use `startTime` to define the window)\n2. Average `productivityScore` across those sessions is **below `focus_alert_threshold`** (default: 30)\n3. This scattered pattern spans at least **`focus_alert_window_min` minutes** (default: 20)\n\n**What to do:**\n\n> You've switched between 5 different things in the last 25 minutes (focus score: 22). Want me to help you lock in on [project with most time today]?\n\n**Rules:**\n- Check `last_focus_alert` — only alert once per 3-hour window\n- Check `focus_alert_paused_until` — if today ≤ that date, skip entirely\n- If user dismisses (\"I'm fine\" / \"intentionally browsing\"), set `focus_alert_paused_until` to tomorrow\n- Frame as an offer, never a judgment\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[4. Pattern Detection & Automation Proposals (Agentify)] **Trigger:** When 7+ days of persisted data exist in `{baseDir}/../../memory/`. Run after each daily digest, or when the user asks about patterns or automations.\n\n**How to detect patterns:**\n\n1. Read memory files for the past `pattern_detection_days` days (default: 7)\n2. For each day, sort sessions by `startTime` to get the chronological sequence\n3. Build sequences of (`workflowType`, `project.name`) tuples in time order\n4. Identify subsequences that appear on `pattern_min_occurrences`+ different days (default: 3):\n   - Same projects visited in the same order (e.g. GitHub → Notion → Slack)\n   - Same `workflowType` at approximately the same time of day (±1 hour window on `startTime`)\n\n**Important:** Do not assume the API returns entries in chronological order. Always sort by `startTime` before building sequences.\n\n**What to propose:**\n\n> I noticed you check GitHub PR comments, then update Notion, then post in Slack — 4 times this week, ~12 min each. Want me to automate that pipeline?\n\n**Rules:**\n- Check what other skills the user has installed. Only propose full automations if the required skills exist\n- If partial: \"I see you do X → Y → Z each morning. Can't automate all of it yet, but I can pre-fetch the data so it's ready.\"\n- Check `proposed_patterns` in state.yaml — don't re-propose the same pattern within 14 days\n- If approved, help create the appropriate cron job or workflow\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[5. Instant Recall — \"What Was I Looking At?\"] **Trigger phrases:**\n- \"What was I working on [time period]?\"\n- \"What was that thing I was reading on Tuesday?\"\n- \"Where did I leave off on [project]?\"\n- \"What was I looking at before the meeting?\"\n- \"Pick up where I left off\"\n\n**What to do:**\n\n1. Determine the date range from the user's question\n2. Fetch data: `python3 {baseDir}/scripts/toggle.py --from-date YYYY-MM-DD --to-date YYYY-MM-DD`\n3. Also check persisted memory: `{baseDir}/../../memory/*.md`\n4. Use `startTime` and `endTime` for precise timestamps in the answer\n5. Use `workflowDescription` for context about *what* they were doing, not just *where*\n\n**\"Pick up where I left off\" (no other context):**\nFind the most recent `type: \"WORK\"` session with the highest accumulated time. Describe exactly where they stopped — project, task, time, and description.\n\n> Tuesday afternoon (2:15–4:30 PM) you were deep in the Kalshi API docs — 1.5h across 3 sessions. Last session ended on the authentication endpoint. Focus: 87.\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[6. Predictive Context — \"Your Agent Knows What's Next\"] This is the highest-value behavior. The agent doesn't just know what the user *did* — with enough history, it knows what they're *about to do* and can prepare for it.\n\n**Minimum data required:** `prediction_min_days` days of persisted memory (default: 5). Do NOT attempt predictions with less data — you'll guess wrong and lose trust. When insufficient data exists, silently skip. Never tell the user \"I don't have enough data to predict yet.\"\n\n### 6a. Routine Prediction — \"You usually do X right now\"\n\n**Trigger:** On every cron-triggered fetch, OR when the user starts a new interaction. Compare the current **day of week + approximate time** (±1 hour) against historical patterns.\n\n**How to build routines:**\n\n1. Read `{baseDir}/../../memory/*.md` for the past `prediction_min_days` days\n2. For each day, note what `project.name` and `workflowType` the user was engaged in at each hour block\n3. Group by **day of week + hour**: e.g. \"Monday 9 AM → PR reviews (4 of last 5 Mondays)\"\n4. A routine is valid when the same activity appears at the same day+hour on `prediction_confidence_min` or more occasions (default: 3)\n\n**What to do when a routine is detected for the current moment:**\n\n> It's Tuesday 10 AM — you usually start with PR reviews around now. Want me to pull up open PRs?\n\n**Critical rules:**\n- Only predict if the user **hasn't already started** doing the thing. Check the most recent session in today's data — if they're already in PR reviews, saying \"you usually do PR reviews now\" is useless. Skip it.\n- Maximum 1 routine prediction per 2-hour window. Check `last_prediction` in state.yaml.\n- If the user follows the prediction (their next session matches), log it as a hit in `prediction_hit_log`. If they ignore it, log as a miss. Over time, only surface predictions with a >60% hit rate.\n- If the user says \"stop predicting\" or dismisses predictions repeatedly (3 misses in a row), set `prediction_dismissed_until` to 7 days from now.\n\n### 6b. Session Endurance Prediction — \"Y"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "toggle"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "TOGGLE_API_KEY"
+          ],
+          "bins": [
+            "python3"
+          ]
+        },
+        "primaryEnv": "TOGGLE_API_KEY",
+        "emoji": "👁️",
+        "homepage": "https://x.toggle.pro"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aleksandar-jive/toggle/SKILL.md"
+}

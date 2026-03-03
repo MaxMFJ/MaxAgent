@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_dingtalk-ai-table",
+  "description": "钉钉 AI 表格（多维表）操作技能。使用 mcporter CLI 连接钉钉 MCP server 执行表格创建、数据表管理、字段操作、记录增删改查。需要配置 DINGTALK_MCP_URL 凭证。使用场景：创建 AI 表格、管理数据表结构、批量导入导出数据、自动化库存/项目管理等表格操作任务。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 钉钉 AI 表格操作\n\n通过 MCP 协议连接钉钉 AI 表格 API，执行表格和数据操作。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[⚠️ 安全须知] **安装前请阅读：**\n\n1. **本技能需要外部 CLI 工具** - 需安装 `mcporter` (npm/bun 全局安装)\n2. **需要配置认证凭证** - Streamable HTTP URL 包含访问令牌，请妥善保管\n3. **脚本审查建议** - `scripts/` 目录包含 Python 辅助脚本，建议先审查再运行\n4. **测试环境优先** - 首次使用建议在测试表格中验证，确认无误后再操作生产数据\n\n### 🔒 安全加固措施（v0.3.4+）\n\n脚本已实施以下安全保护：\n\n| 保护措施 | 说明 |\n|----------|------|\n| **路径沙箱** | `resolve_safe_path()` 防止目录遍历攻击，限制文件访问在 `OPENCLAW_WORKSPACE` 内 |\n| **UUID 验证** | 严格验证 dentryUuid 格式，防止无效输入 |\n| **文件扩展名白名单** | 仅允许 `.json` / `.csv` 文件 |\n| **文件大小限制** | JSON 最大 10MB，CSV 最大 50MB，防止 DoS |\n| **字段类型白名单** | 仅允许预定义的字段类型 |\n| **命令超时** | mcporter 命令超时限制（60-120 秒） |\n| **输入清理** | 自动去除空白、验证空值 |\n\n**配置建议：**\n```bash\n# 设置工作目录限制（推荐）\nexport OPENCLAW_WORKSPACE=/Users/marila/.openclaw/workspace\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[前置要求] ### 安装 mcporter CLI\n\n本技能依赖 `mcporter` 工具。安装前请确认来源可信：\n\n- **官方仓库**: https://github.com/mcporter/mcporter (请验证)\n- **npm 包**: `npm install -g mcporter`\n\n```bash\n# 使用 npm 安装\nnpm install -g mcporter\n\n# 或使用 bun 安装\nbun install -g mcporter\n```\n\n验证安装：\n```bash\nmcporter --version\n```\n\n> **注意**: 全局安装的 CLI 工具具有用户级执行权限，请确保从可信来源安装。\n\n### 配置 MCP Server\n\n**获取 Streamable HTTP URL：**\n\n1. 访问钉钉 MCP 广场：https://mcp.dingtalk.com/#/detail?mcpId=1060&detailType=marketMcpDetail\n2. 在页面**右侧**点击“获取 MCP Server 配置”按钮，然后找到 `Streamable HTTP URL`\n3. 复制该 URL 并用于下方配置\n\n**方式一：使用 mcporter config（推荐）**\n\n```bash\n# 添加钉钉 AI 表格服务器配置（持久化存储）\nmcporter config add dingtalk-ai-table --url \"<Streamable_HTTP_URL>\"\n```\n\n**方式二：使用环境变量**\n\n```bash\n# 临时设置（当前终端会话有效）\nexport DINGTALK_MCP_URL=\"<Streamable_HTTP_URL>\"\n```\n\n将 `<Streamable_HTTP_URL>` 替换为实际获取的完整 URL。\n\n> **⚠️ 凭证安全**: Streamable HTTP URL 包含访问令牌，等同于密码：\n> - 不要提交到版本控制系统\n> - 不要分享给他人\n> - 推荐使用 `mcporter config` 持久化存储，避免在命令历史中暴露\n\n### 基本命令模式\n\n所有操作通过 `mcporter call dingtalk-ai-table <tool>` 执行：\n\n```bash\n# 获取文档根节点\nmcporter call dingtalk-ai-table get_root_node_of_my_document --output json\n\n# 创建 AI 表格\nmcporter call dingtalk-ai-table create_base_app filename=\"表格名\" target=\"<rootDentryUuid>\" --output json\n\n# 搜索可访问的表格\nmcporter call dingtalk-ai-table search_accessible_ai_tables keyword=\"关键词\" --output json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[核心工作流] ### 创建表格并初始化\n\n```bash\n# 1. 获取根节点\nROOT_UUID=$(mcporter call dingtalk-ai-table get_root_node_of_my_document --output json | jq -r '.rootDentryUuid')\n\n# 2. 创建表格\nmcporter call dingtalk-ai-table create_base_app filename=\"我的表格\" target=\"$ROOT_UUID\" --output json\n\n# 3. 记录返回的 dentryUuid 用于后续操作\n```\n\n### 数据表操作\n\n```bash\n# 创建数据表（可带初始字段）\nmcporter call dingtalk-ai-table add_base_table \\\n  --args '{\"dentryUuid\":\"<表格 UUID>\",\"name\":\"新数据表\",\"fields\":[{\"name\":\"字段 1\",\"type\":\"text\"},{\"name\":\"字段 2\",\"type\":\"number\"}]}' \\\n  --output json\n\n# 列出所有数据表\nmcporter call dingtalk-ai-table list_base_tables dentry-uuid=\"<表格 UUID>\" --output json\n\n# 重命名数据表\nmcporter call dingtalk-ai-table update_base_tables \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"oldSheetIdOrName\":\"原表名\",\"newName\":\"新表名\"}' \\\n  --output json\n\n# 删除数据表\nmcporter call dingtalk-ai-table delete_base_table \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\"}' \\\n  --output json\n```\n\n### 字段操作\n\n```bash\n# 查看字段列表\nmcporter call dingtalk-ai-table list_base_field \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\"}' \\\n  --output json\n\n# 添加字段（支持类型：text, number, singleSelect, multipleSelect, date, user, attachment）\nmcporter call dingtalk-ai-table add_base_field \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\",\"addField\":{\"name\":\"字段名\",\"type\":\"text\"}}' \\\n  --output json\n\n# 删除字段\nmcporter call dingtalk-ai-table delete_base_field \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\",\"fieldIdOrName\":\"字段名\"}' \\\n  --output json\n```\n\n### 记录操作\n\n```bash\n# 查询记录\nmcporter call dingtalk-ai-table search_base_record \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\"}' \\\n  --output json\n\n# 添加记录\nmcporter call dingtalk-ai-table add_base_record \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\",\"records\":[{\"fields\":{\"字段 1\":\"值 1\",\"字段 2\":100}}]}' \\\n  --output json\n\n# 更新记录\nmcporter call dingtalk-ai-table update_records \\\n  --args '{\"dentryUuid\":\"<UUID>\",\"sheetIdOrName\":\"表名\",\"records\":[{\"id\":\"记录 ID\",\"fields\":{\"字段\":\"新值\"}}]}' \\\n  --output json\n\n# 删除记录\nmcporter ca"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[支持的字段类型] | 类型 | 说明 | 示例 |\n|------|------|------|\n| `text` | 文本 | `{\"name\":\"姓名\",\"type\":\"text\"}` |\n| `number` | 数字 | `{\"name\":\"数量\",\"type\":\"number\"}` |\n| `singleSelect` | 单选 | `{\"name\":\"状态\",\"type\":\"singleSelect\"}` |\n| `multipleSelect` | 多选 | `{\"name\":\"标签\",\"type\":\"multipleSelect\"}` |\n| `date` | 日期 | `{\"name\":\"日期\",\"type\":\"date\"}` |\n| `user` | 人员 | `{\"name\":\"负责人\",\"type\":\"user\"}` |\n| `attachment` | 附件 | `{\"name\":\"文件\",\"type\":\"attachment\"}` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[使用脚本] 对于批量操作，使用 `scripts/` 目录中的工具脚本：\n\n```bash\n# 批量添加字段\npython scripts/bulk_add_fields.py <dentryUuid> <sheetName> fields.json\n\n# 批量导入记录（支持 CSV 和 JSON）\npython scripts/import_records.py <dentryUuid> <sheetName> data.csv\npython scripts/import_records.py <dentryUuid> <sheetName> data.json [batch_size]\n```\n\n> **🔒 脚本安全特性**:\n> - ✅ 路径沙箱：防止目录遍历攻击（`../etc/passwd` 等）\n> - ✅ UUID 格式验证：严格校验输入格式\n> - ✅ 文件扩展名白名单：仅允许 `.json` / `.csv`\n> - ✅ 文件大小限制：JSON 10MB / CSV 50MB\n> - ✅ 字段类型白名单：防止无效类型注入\n> - ✅ 命令超时保护：60-120 秒自动终止\n>\n> **测试验证**: 运行 `python3 tests/test_security.py` 执行 25 项安全测试\n>\n> **⚠️ 注意事项**: \n> - 脚本仅调用 `mcporter` 命令和处理本地文件，无网络请求\n> - 首次运行前建议审查脚本源码\n> - 处理敏感数据时请在受控环境中执行"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[参考文档] - **API 详情**: 见 [references/api-reference.md](references/api-reference.md)\n- **错误码说明**: 见 [references/error-codes.md](references/error-codes.md)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[注意事项] 1. **dentryUuid 识别**: 创建表格后返回多个 ID，使用 `uuid` 字段作为 `dentryUuid` 参数\n2. **表名匹配**: 默认创建的表名为\"数据表\"，操作前需确认实际表名\n3. **字段值格式**: 单选/多选字段返回对象格式 `{\"name\":\"选项\",\"id\":\"xxx\"}`\n4. **日期格式**: 日期字段使用 Unix 时间戳（毫秒）或 `YYYY-MM-DD` 格式\n5. **批量操作**: 添加/删除记录支持批量，单次最多 1000 条"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "dingtalk_ai_table"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "DINGTALK_MCP_URL"
+          ],
+          "bins": [
+            "mcporter"
+          ]
+        },
+        "primaryEnv": "DINGTALK_MCP_URL",
+        "homepage": "https://github.com/aliramw/dingtalk-ai-table"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aliramw/dingtalk-ai-table/SKILL.md"
+}

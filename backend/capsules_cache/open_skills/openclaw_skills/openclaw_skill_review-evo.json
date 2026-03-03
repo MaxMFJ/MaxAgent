@@ -1,0 +1,88 @@
+{
+  "id": "openclaw_skill_review-evo",
+  "description": "Self-improving code reviewer that learns your codebase over time. Analyzes git history, spots patterns, identifies risk — and gets smarter every run.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ReviewEvo\n\nA self-improving code reviewer. It analyzes your git history, identifies risk hotspots, learns your team's conventions, and builds a persistent knowledge base that sharpens every review.\n\n**No external services. No API keys. No dependencies.** It uses git and the agent's built-in tools — nothing else.\n\n**Follow these steps in order.** Complete each step fully before moving to the next."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Verify git is available:\n\n- Run `git --version` and confirm output\n\nThe user must be inside a git repository with at least 20 commits of history. Run `git rev-list --count HEAD` to confirm. If fewer than 20 commits, warn the user that analysis will be limited but can still proceed."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Step 1 — Detect Project and Load Prior Learnings] Check if this project has been reviewed before:\n\n```\nls .review-evo/learnings.md 2>/dev/null\n```\n\n**If the file exists:** Read `.review-evo/learnings.md` in full. This contains findings from prior runs. Reference these throughout the review — confirm resolved issues, track recurring patterns, and build on previous analysis. Tell the user: \"I found learnings from a previous review. I'll build on those.\"\n\n**If the file does not exist:** This is a first run. Tell the user you'll create the knowledge base after analysis.\n\nThen detect the project setup by checking for these files in the repo root:\n\n- `tsconfig.json` → TypeScript\n- `package.json` → Node.js (read `scripts` for build/test/lint commands)\n- `requirements.txt` or `pyproject.toml` → Python\n- `go.mod` → Go\n- `Cargo.toml` → Rust\n- `pom.xml` or `build.gradle` → Java\n\nReport what you found and confirm with the user."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 2 — Analyze Git History] Run each of these commands and capture the output. Do not summarize prematurely — collect all data before drawing conclusions.\n\n**Recent activity (last 50 commits):**\n```\ngit log --oneline -50\n```\n\n**Contributor breakdown:**\n```\ngit log --since=\"6 months ago\" --format=\"%an\" | sort | uniq -c | sort -rn\n```\n\n**High-churn files (most frequently modified):**\n```\ngit log --since=\"3 months ago\" --diff-filter=M --name-only --pretty=format: | sort | uniq -c | sort -rn | head -25\n```\n\n**Large recent diffs (potential complexity bombs):**\n```\ngit log --since=\"1 month ago\" --pretty=format:\"%h %s\" --shortstat | head -60\n```\n\n**Files with the most authors (knowledge-spread risk):**\n```\ngit log --since=\"6 months ago\" --pretty=format:\"%an\" --name-only | awk '/^$/{next} !author{author=$0;next} {files[author][$0]++; allfiles[$0]++} END{for(f in allfiles) {n=0; for(a in files) if(f in files[a]) n++; if(n>1) print n,f}}' | sort -rn | head -15\n```\n\nIf the awk command fails on the platform, fall back to:\n```\ngit log --since=\"6 months ago\" --format=\"%an\" --name-only | head -200\n```\nand manually count distinct authors per file from the output."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 3 — Build Review Profile] Using the data from Step 2, analyze and report on each of these dimensions:\n\n### Churn Hotspots\nFiles modified more than 5 times in 3 months are hotspots. For each one:\n- Read the file\n- Assess complexity (function count, nesting depth, line count)\n- Flag if it lacks corresponding test coverage (look for matching `*.test.*`, `*.spec.*`, or `test_*` files)\n\n### Convention Patterns\nFrom the recent commits and file contents, identify:\n- Naming conventions (camelCase, snake_case, kebab-case for files)\n- Import patterns (relative vs absolute, barrel files)\n- Error handling patterns (try/catch, Result types, error callbacks)\n- Comment density and style\n\n### Risk Indicators\nFlag any of these:\n- Files over 400 lines with no tests\n- Functions over 50 lines\n- TODOs or FIXMEs older than 30 days (check `git log -1 --format=%cr` on lines containing them)\n- Dependencies with known issues (check lock file age)\n- Single-author files in critical paths (bus factor risk)\n\n### Strengths\nAlso identify what the codebase does well:\n- Consistent patterns\n- Good test coverage areas\n- Clean separation of concerns\n- Recent improvements visible in git history"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 4 — Deliver the Review] Ask the user what they want reviewed:\n\n> What would you like me to focus on?\n> **(a)** Full codebase health report\n> **(b)** A specific branch or PR diff (provide branch name)\n> **(c)** Current working changes (`git diff`)\n> **(d)** A specific file or directory\n\n### For option (a) — Full Health Report\nCompile all findings from Step 3 into a structured report with sections: Hotspots, Risks, Conventions, Strengths, and Recommendations. Rank findings by severity (critical, warning, info).\n\n### For option (b) — Branch/PR Review\nRun `git diff main...{branch}` (or the appropriate target branch). Analyze the diff through the lens of the patterns found in Step 3. Flag deviations from conventions, new risk introductions, and missing test coverage for changed code.\n\n### For option (c) — Working Changes\nRun `git diff` and `git diff --cached`. Apply the same analysis as option (b).\n\n### For option (d) — Targeted Review\nRead the specified files. Analyze against the patterns and conventions discovered. Provide focused, actionable feedback.\n\nFor all options, structure each finding as:\n- **What:** The specific issue or observation\n- **Where:** File and line range\n- **Why it matters:** Impact on maintainability, reliability, or security\n- **Suggestion:** Concrete fix or improvement"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 5 — Store Learnings] After delivering the review, persist findings for future runs.\n\nCreate the directory if it doesn't exist:\n```\nmkdir -p .review-evo\n```\n\nWrite (or append to) `.review-evo/learnings.md` with the following structure:\n\n```markdown"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Review — {YYYY-MM-DD}] ### Project Profile\n- Language: {detected}\n- Key patterns: {conventions found}\n- Active contributors: {count}\n\n### Hotspots\n{list of high-churn files with context}\n\n### Recurring Patterns\n{patterns that appeared in this and prior reviews}\n\n### Resolved\n{items from prior reviews that are no longer flagged}\n\n### Open Risks\n{current findings ranked by severity}\n```\n\nIf the file already exists, append the new review section. Do not overwrite prior entries — the history is the value.\n\nTell the user: \"Learnings saved. Next time I review this project, I'll build on these findings.\"\n\nAlso recommend adding `.review-evo/` to the project's `.gitignore` if it's not already there — these are local analysis artifacts, not source code."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **\"Not a git repository\"** — Run the skill from inside a git repo, or provide the path to one.\n- **awk command fails** — Some platforms have limited awk. The skill includes fallback commands for each analysis step.\n- **Very large repos (10K+ commits)** — The `--since` flags keep queries bounded. If commands are still slow, narrow the date range.\n- **Monorepo** — Ask the user which subdirectory to focus on and scope all git commands with `-- {path}`."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "review_evo"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔍",
+        "requires": {
+          "bins": [
+            "git"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/8co/review-evo/SKILL.md"
+}

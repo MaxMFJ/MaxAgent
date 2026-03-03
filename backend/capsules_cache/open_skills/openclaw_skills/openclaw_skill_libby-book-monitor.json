@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_libby-book-monitor",
+  "description": "Track book availability on Libby/OverDrive libraries. Search library catalogues, manage a watchlist, and get notified when books are added. Use for \"libby\", \"check libby\", \"libby watchlist\", \"is book on libby\", \"book available\", \"overdrive\", \"library catalogue\", \"ספרייה\", \"ספרים\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Libby/OverDrive Book Monitor\n\nTrack book availability on Libby/OverDrive libraries. Search catalogues, manage a watchlist, and get notified when books are added to your library's collection.\n\n> **Disclaimer**: This is an unofficial tool, not affiliated with or endorsed by OverDrive/Libby. Catalogue data queries APIs that power the website and may not reflect actual availability. This tool does NOT borrow books or place holds. Provided \"as is\" without warranty of any kind."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Search a library catalogue\npython3 {baseDir}/scripts/libby-book-monitor.py search telaviv \"Project Hail Mary\"\n\n# Add a book to your watchlist\npython3 {baseDir}/scripts/libby-book-monitor.py watch \"Kafka on the Shore\" --author \"Haruki Murakami\"\n\n# Check your watchlist against the API\npython3 {baseDir}/scripts/libby-book-monitor.py check\n\n# Show your watchlist\npython3 {baseDir}/scripts/libby-book-monitor.py list\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `search <library> <query>` | Search a library catalogue by title/author |\n| `watch <title>` | Add a book to the watchlist |\n| `unwatch <title>` | Remove a book from the watchlist |\n| `list` | Show the watchlist with status |\n| `check` | Check all watchlist books against the API |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Options] | Option | Commands | Description |\n|--------|----------|-------------|\n| `--profile <name>` | all | Separate watchlist per user |\n| `--author <name>` | watch | Specify book author |\n| `--library <code>` | watch | Library code (default: from config) |\n| `--notify` | check | Only print newly found books (for cron) |\n| `--data-dir <path>` | all | Custom data directory |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Profiles] Use `--profile` to maintain separate watchlists for different people:\n\n```bash\npython3 {baseDir}/scripts/libby-book-monitor.py --profile jane watch \"Dune\"\npython3 {baseDir}/scripts/libby-book-monitor.py --profile bob check --notify\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration] Default library is `telaviv` Israel Digital. Edit `~/.libby-book-monitor/config.json` to change:\n\n```json\n{\n  \"default_library\": \"nypl\",\n  \"libraries\": {\n    \"nypl\": \"New York Public Library\"\n  }\n}\n```\n\nThe library code is the subdomain from your library's OverDrive site (e.g., `nypl.overdrive.com` -> `nypl`)."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Cron Integration] Run a daily check that only outputs when books are newly found:\n\n```bash\npython3 {baseDir}/scripts/libby-book-monitor.py --profile jane check --notify\n```\n\nIf any new books are found, send the results to the user."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - Works with non-Latin scripts (Hebrew, Arabic, CJK, etc.)\n- Books are considered \"found\" when `isOwned: true` in the API response\n- 1-second delay between API calls when checking multiple books\n- No external dependencies (Python stdlib only)\n- Data stored in `~/.libby-book-monitor/` (configurable via `--data-dir` or `$LIBBY_BOOK_MONITOR_DATA`)"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "libby_book_monitor"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📚",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexpolonsky/libby-book-monitor/SKILL.md"
+}

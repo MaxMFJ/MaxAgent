@@ -1,0 +1,72 @@
+{
+  "id": "openclaw_skill_aimlapi-music",
+  "description": "Generate high-quality music/songs via AIMLAPI. Supports Suno, Udio, Minimax, and ElevenLabs music models. Use when the user asks for music, songs, or soundtracks with specific lyrics or styles.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AIMLAPI Music Generation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Generate music tracks using state-of-the-art AI models (Suno, Udio, Minimax, ElevenLabs)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\n# General music (instrumental)\npython {baseDir}/scripts/gen_music.py \\\n  --prompt \"cyberpunk synthwave with heavy bass and retro synths\" \\\n  --model \"minimax/music-2.0\"\n\n# Song with lyrics\npython {baseDir}/scripts/gen_music.py \\\n  --prompt \"A happy pop song about a robot learning to feel\" \\\n  --lyrics \"[Verse 1]\\nWires and gears, clicking in time...\" \\\n  --model \"minimax/music-2.0\"\n\n# Short clip (ElevenLabs)\npython {baseDir}/scripts/gen_music.py \\\n  --prompt \"lo-fi pop hip-hop ambient\" \\\n  --model \"elevenlabs/eleven_music\" \\\n  --length 20000\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Arguments] - `--prompt`: (Required) Style or context for the music.\n- `--lyrics`: Optional lyrics for vocal tracks.\n- `--model`: Model choice (default: `minimax/music-2.0`).\n- `--length`: Length in milliseconds (primarily for ElevenLabs).\n- `--out-dir`: Directory to save the final MP3."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Workflow] The script uses a two-step process:\n1. `POST /v2/generate/audio`: Creates the generation task.\n2. `GET /v2/generate/audio?generation_id=...`: Polls for the result until `completed` or `failed`."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aimlapi_music"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎵",
+        "requires": {
+          "bins": [
+            "python"
+          ],
+          "env": [
+            "AIMLAPI_API_KEY"
+          ]
+        },
+        "primaryEnv": "AIMLAPI_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aimlapihello/aiml-music-generator/SKILL.md"
+}

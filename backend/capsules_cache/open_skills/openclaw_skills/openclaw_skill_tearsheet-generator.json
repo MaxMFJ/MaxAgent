@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_tearsheet-generator",
+  "description": "Generate professional tearsheets with custom SVG visualizations using the QuantStats library. Creates performance reports with MAE analysis, leverage recommendations, and trade lists. Use when analyzing strategy performance or generating visual reports.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Tearsheet Generator Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[About] This skill generates custom tearsheets using the [QuantStats library](https://github.com/ranaroussi/quantstats) - a Python library for portfolio analytics.\n\n**Key Features:**\n- Custom SVG visualizations (returns, drawdowns, monthly heatmaps)\n- Professional HTML tearsheets\n- MAE (Maximum Adverse Excursion) analysis\n- Leverage recommendations based on risk metrics\n- Copyable strategy configurations\n\nGenerate comprehensive trading strategy tearsheets with:\n- IBM Plex Mono font styling (QuantStats format)\n- MAE (Max Adverse Excursion) percentile analysis (p90-p99)\n- Optimal leverage recommendations with stop-loss levels\n- Fixed Position (Static) vs Full Position (Dynamic) analysis\n- 10%, 20%, 30% liquidation buffer calculations\n- Full trade list with entry/exit details and MAE stats\n- Copyable strategy config text boxes\n- Multiple leverage scenario comparisons (1x, 10x, 15x, 20x)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Generate tearsheet from trades CSV\n/generate-tearsheet SOL_MTF_EMA_001 --trades ./trades.csv --capital 10000\n\n# Verify backtest with Nautilus Trader\n/verify-backtest SOL_MTF_EMA_001 --trades ./trades.csv\n\n# Test optimal leverage configuration\n/verify-mae-lev SOL_MTF_EMA_001 --leverage p95\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Commands] ### /generate-tearsheet\nGenerate a complete tearsheet with all analysis sections.\n\n### /verify-backtest\nVerify tearsheet results against Nautilus Trader for accuracy validation.\n\n### /verify-mae-lev\nRun backtest with optimal leverage config derived from MAE analysis."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Files] Each tearsheet generation produces:\n- `{strategy}_comparison.html` - Full HTML tearsheet\n- `{strategy}_comparison_metrics.json` - JSON metrics for programmatic access"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Key Sections] ### 1. Key Performance Metrics\n- B&H, Fix1x, Dyn1x, Fix10x, Dyn10x columns\n- Cumulative Return, CAGR, Sharpe, Sortino, Max DD, Calmar\n- Intratrade risk metrics with liquidation distance\n\n### 2. MAE Analysis & Optimal Leverage\n- MAE distribution table (min, mean, p50, p75, p90-p99, max)\n- Safe leverage recommendations per percentile\n- Stop loss table with % PRICE movement (not position cost)\n\n### 3. Fixed Position (Static) Analysis\n- Leverage table: 5x, 10x, 15x, 20x, 25x, 30x\n- Columns: Liq @ %Price, Rec. SL, Max Loss, +10% Buffer, +20% Buffer, Risk Level\n\n### 4. Full Position (Dynamic) Analysis\n- Warning about compounding risk\n- Leverage table: 1x, 2x, 3x, 5x, 10x\n- Recommendation per leverage level\n\n### 5. Buffer Analysis Summary\n- +10%, +20%, +30% buffers above worst MAE\n- Safety check for 10x, 15x, 20x leverage\n\n### 6. Full Trade List\n- All trades with entry/exit times, prices, side, PnL, MAE, MFE, duration\n- Scrollable table with sticky headers\n- Summary row with averages\n\n### 7. Strategy Configuration\n- Original config text box (copyable JSON)\n- MAE-optimized config text box (copyable JSON)\n- Backtest methodology description"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Dependencies] - Python 3.10+\n- pandas, numpy, matplotlib\n- StrategyComparisonTearsheet from backtesting.tearsheets"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Installation] The skill uses the tearsheet generator at:\n`/Users/DanBot/Desktop/dev/Backtests/backtesting/tearsheets/strategy_comparison_tearsheet.py`\n\nEnsure this path is accessible or update the script paths accordingly."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Read,",
+    "Write,",
+    "Edit,",
+    "Bash,",
+    "Glob",
+    "agent-skill"
+  ],
+  "capability": [
+    "tearsheet_generator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahuserious/tearsheet-generator/SKILL.md"
+}

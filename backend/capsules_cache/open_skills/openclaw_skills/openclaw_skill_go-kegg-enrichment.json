@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_go-kegg-enrichment",
+  "description": "Performs GO (Gene Ontology) and KEGG pathway enrichment analysis on gene lists.\nTrigger when: \n- User provides a list of genes (symbols or IDs) and asks for enrichment analysis\n- User mentions \"GO enrichment\", \"KEGG enrichment\", \"pathway analysis\"\n- User wants to understand biological functions of gene sets\n- User provides differentially expressed genes (DEGs) and asks for interpretation\n- Input: gene list (file or inline), organism (human/mouse/rat), background gene set (optional)\n- Output: enriched terms, statistics, visualizations (barplot, dotplot, enrichment map)",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # GO/KEGG Enrichment Analysis\n\nAutomated pipeline for Gene Ontology and KEGG pathway enrichment analysis with result interpretation and visualization."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **GO Enrichment**: Biological Process (BP), Molecular Function (MF), Cellular Component (CC)\n- **KEGG Pathway**: Pathway enrichment with organism-specific mapping\n- **Multiple ID Support**: Gene symbols, Entrez IDs, Ensembl IDs, RefSeq\n- **Statistical Methods**: Hypergeometric test, Fisher's exact test, GSEA support\n- **Visualizations**: Bar plots, dot plots, enrichment maps, cnet plots\n- **Result Interpretation**: Automatic biological significance summary"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Supported Organisms] | Common Name | Scientific Name | KEGG Code | OrgDB Package |\n|-------------|-----------------|-----------|---------------|\n| Human | Homo sapiens | hsa | org.Hs.eg.db |\n| Mouse | Mus musculus | mmu | org.Mm.eg.db |\n| Rat | Rattus norvegicus | rno | org.Rn.eg.db |\n| Zebrafish | Danio rerio | dre | org.Dr.eg.db |\n| Fly | Drosophila melanogaster | dme | org.Dm.eg.db |\n| Yeast | Saccharomyces cerevisiae | sce | org.Sc.sgd.db |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage] ### Basic Usage\n\n```python\n# Run enrichment analysis with gene list\npython scripts/main.py --genes gene_list.txt --organism human --output results/\n```\n\n### Parameters\n\n| Parameter | Description | Default | Required |\n|-----------|-------------|---------|----------|\n| `--genes` | Path to gene list file (one gene per line) | - | Yes |\n| `--organism` | Organism code (human/mouse/rat/zebrafish/fly/yeast) | human | No |\n| `--id-type` | Gene ID type (symbol/entrez/ensembl/refseq) | symbol | No |\n| `--background` | Background gene list file | all genes | No |\n| `--pvalue-cutoff` | P-value cutoff for significance | 0.05 | No |\n| `--qvalue-cutoff` | Adjusted p-value (q-value) cutoff | 0.2 | No |\n| `--analysis` | Analysis type (go/kegg/all) | all | No |\n| `--output` | Output directory | ./enrichment_results | No |\n| `--format` | Output format (csv/tsv/excel/all) | all | No |\n\n### Advanced Usage\n\n```python\n# GO enrichment only with specific ontology\npython scripts/main.py \\\n    --genes deg_upregulated.txt \\\n    --organism mouse \\\n    --analysis go \\\n    --go-ontologies BP,MF \\\n    --pvalue-cutoff 0.01 \\\n    --output go_results/\n\n# KEGG enrichment with custom background\npython scripts/main.py \\\n    --genes treatment_genes.txt \\\n    --background all_expressed_genes.txt \\\n    --organism human \\\n    --analysis kegg \\\n    --qvalue-cutoff 0.05 \\\n    --output kegg_results/\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Input Format] ### Gene List File\n```\nTP53\nBRCA1\nEGFR\nMYC\nKRAS\nPTEN\n```\n\n### With Expression Values (for GSEA)\n```\ngene,log2FoldChange\nTP53,2.5\nBRCA1,-1.8\nEGFR,3.2\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output Files] ```\noutput/\n├── go_enrichment/\n│   ├── GO_BP_results.csv       # Biological Process results\n│   ├── GO_MF_results.csv       # Molecular Function results\n│   ├── GO_CC_results.csv       # Cellular Component results\n│   ├── GO_BP_barplot.pdf       # Visualization\n│   ├── GO_MF_dotplot.pdf\n│   └── GO_summary.txt          # Interpretation summary\n├── kegg_enrichment/\n│   ├── KEGG_results.csv        # Pathway results\n│   ├── KEGG_barplot.pdf\n│   ├── KEGG_dotplot.pdf\n│   └── KEGG_pathview/          # Pathway diagrams\n└── combined_report.html        # Interactive report\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Result Interpretation] The tool automatically generates biological interpretation including:\n\n1. **Top Enriched Terms**: Significant GO terms/pathways ranked by enrichment ratio\n2. **Functional Themes**: Clustered biological themes from enriched terms\n3. **Key Genes**: Core genes driving enrichment in significant terms\n4. **Network Relationships**: Gene-term relationship visualization\n5. **Clinical Relevance**: Disease associations (for human genes)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Technical Difficulty: **HIGH**] ⚠️ **AI自主验收状态**: 需人工检查\n\nThis skill requires:\n- R/Bioconductor environment with clusterProfiler\n- Multiple annotation databases (org.*.eg.db)\n- KEGG REST API access\n- Complex visualization dependencies"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Dependencies] ### Required R Packages\n```r\ninstall.packages(c(\"BiocManager\", \"ggplot2\", \"dplyr\", \"readr\"))\nBiocManager::install(c(\n    \"clusterProfiler\", \n    \"org.Hs.eg.db\", \"org.Mm.eg.db\", \"org.Rn.eg.db\",\n    \"enrichplot\", \"pathview\", \"DOSE\"\n))\n```\n\n### Python Dependencies\n```bash\npip install pandas numpy matplotlib seaborn rpy2\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Example Workflow] 1. **Prepare Input**: Create gene list from DEG analysis\n2. **Run Analysis**: Execute main.py with appropriate parameters\n3. **Review Results**: Check generated CSV files and visualizations\n4. **Interpret**: Read auto-generated summary for biological insights"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[References] See `references/` for:\n- clusterProfiler documentation\n- KEGG API guide\n- Statistical methods explanation\n- Visualization examples"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Limitations] - Requires internet connection for KEGG database queries\n- Large gene lists (>5000) may require increased memory\n- Some pathways may not be available for all organisms\n- KEGG API has rate limits (max 3 requests/second)"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Risk Assessment] | Risk Indicator | Assessment | Level |\n|----------------|------------|-------|\n| Code Execution | Python/R scripts executed locally | Medium |\n| Network Access | No external API calls | Low |\n| File System Access | Read input files, write output files | Medium |\n| Instruction Tampering | Standard prompt guidelines | Low |\n| Data Exposure | Output files saved to workspace | Low |"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Security Checklist] - [ ] No hardcoded credentials or API keys\n- [ ] No unauthorized file system access (../)\n- [ ] Output does not expose sensitive information\n- [ ] Prompt injection protections in place\n- [ ] Input file paths validated (no ../ traversal)\n- [ ] Output directory restricted to workspace\n- [ ] Script execution in sandboxed environment\n- [ ] Error messages sanitized (no stack traces exposed)\n- [ ] Dependencies audited"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Prerequisites] ```bash\n# Python dependencies\npip install -r requirements.txt\n```"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Evaluation Criteria] ### Success Metrics\n- [ ] Successfully executes main functionality\n- [ ] Output meets quality standards\n- [ ] Handles edge cases gracefully\n- [ ] Performance is acceptable\n\n### Test Cases\n1. **Basic Functionality**: Standard input → Expected output\n2. **Edge Case**: Invalid input → Graceful error handling\n3. **Performance**: Large dataset → Acceptable processing time"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Lifecycle Status] - **Current Stage**: Draft\n- **Next Review Date**: 2026-03-06\n- **Known Issues**: None\n- **Planned Improvements**: \n  - Performance optimization\n  - Additional feature support"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "go_kegg_enrichment"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aipoch-ai/go-kegg-enrichment/SKILL.md"
+}

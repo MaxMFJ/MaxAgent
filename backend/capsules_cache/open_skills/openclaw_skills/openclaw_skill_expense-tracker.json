@@ -42,15 +42,20 @@
     {
       "id": "step_5",
       "type": "subtask",
-      "description": "[Tips] - **Batch logging**: User can tell you multiple expenses at once, log them all\n- **Category consistency**: Use the same category names to enable accurate summaries\n- **Tags for filtering**: Use tags for subcategories (e.g., \"work\", \"weekend\", \"urgent\")\n- **Descriptions**: Add context that helps identify the expense later\n- **Regular reviews**: Suggest monthly summaries to track spending patterns"
+      "description": "[Auto Backup] Before every write, the script automatically backs up the current expense file to:\n\n```\n~/Documents/expenses_backup/YYYY-MM.md\n```\n\n- Backup runs **before** any modification (safe even if write fails)\n- If the file doesn't exist yet (first entry of the month), backup is skipped\n- Backup is overwritten each time with the latest pre-write snapshot\n- This protects against accidental `rm -rf` or corruption of the workspace"
     },
     {
       "id": "step_6",
       "type": "subtask",
-      "description": "[Integration with Financial Goals] When tracking expenses, consider:\n\n1. **Budget tracking**: Compare monthly totals to target budget\n2. **Spending patterns**: Identify high-spend categories\n3. **Emergency fund**: Track savings progress\n4. **Debt reduction**: Monitor debt payment progress\n5. **Financial ratios**: Calculate expenses as % of income"
+      "description": "[Tips] - **Batch logging**: User can tell you multiple expenses at once, log them all\n- **Category consistency**: Use the same category names to enable accurate summaries\n- **Tags for filtering**: Use tags for subcategories (e.g., \"work\", \"weekend\", \"urgent\")\n- **Descriptions**: Add context that helps identify the expense later\n- **Regular reviews**: Suggest monthly summaries to track spending patterns"
     },
     {
       "id": "step_7",
+      "type": "subtask",
+      "description": "[Integration with Financial Goals] When tracking expenses, consider:\n\n1. **Budget tracking**: Compare monthly totals to target budget\n2. **Spending patterns**: Identify high-spend categories\n3. **Emergency fund**: Track savings progress\n4. **Debt reduction**: Monitor debt payment progress\n5. **Financial ratios**: Calculate expenses as % of income"
+    },
+    {
+      "id": "step_8",
       "type": "subtask",
       "description": "[Script Reference] ### log_expense.py\n\n**Commands:**\n- `log` - Add an expense entry\n- `summary` - View monthly summary\n\n**Arguments (log):**\n- `amount` - Amount in VND (required)\n- `category` - Category name (required)\n- `--description/-d` - Optional description\n- `--tags/-t` - Optional comma-separated tags\n- `--date` - Optional date (YYYY-MM-DD, defaults to today)\n- `--workspace` - Optional workspace path (defaults to ~/.openclaw/workspace)\n\n**Arguments (summary):**\n- `year_month` - Optional YYYY-MM (defaults to current month)\n- `--json` - Output as JSON\n- `--workspace` - Optional workspace path\n\n**Output:**\n- Creates/updates markdown files in `expenses/` directory\n- Prints confirmation with file location\n- Summary shows total, count, and breakdown by category"
     }

@@ -1,0 +1,109 @@
+{
+  "id": "openclaw_skill_moltflow-a2a",
+  "description": "Agent-to-Agent protocol for MoltFlow: agent discovery, encrypted messaging, group management, content policy. Use when: a2a, agent card, agent message, encrypted, content policy, agent discovery.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **MoltFlow** -- WhatsApp Business automation for teams. Connect, monitor, and automate WhatsApp at scale.\n> ***Due to high demand and a recent registration issue, we're offering our top-tier Business plan with unlimited quotas for just $19.90/month on yearly billing — for a limited time only.*** [**Claim the deal**](https://buy.stripe.com/cNifZibX7gpQebJ0nsfnO00)\n> Free tier available. [Sign up](https://molt.waiflow.app/checkout?plan=free)\n\n# MoltFlow A2A (Agent-to-Agent) Protocol\n\nEnables AI agents to communicate securely through MoltFlow using the A2A protocol. Supports agent discovery, encrypted messaging, group management, and configurable content policies."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - \"Discover an agent\" or \"get agent card\"\n- \"Send A2A message\" or \"agent-to-agent communication\"\n- \"Get encryption public key\" or \"rotate keys\"\n- \"Set content policy\" or \"configure content filter\"\n- \"Create agent group\" or \"invite agent to group\"\n- \"Test content against policy\" or \"check policy stats\"\n- \"Set up webhook via A2A\" or \"manage agent webhooks\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **MOLTFLOW_API_KEY** -- Generate from the [MoltFlow Dashboard](https://molt.waiflow.app) under Settings > API Keys\n2. Base URL: `https://apiv2.waiflow.app/api/v2`\n3. Agent discovery endpoint: `https://apiv2.waiflow.app/.well-known/agent.json`\n4. Encryption keys are managed server-side -- external agents only need the API key"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[On-Chain Registration] MoltFlow is registered as [Agent #25477](https://8004agents.ai/ethereum/agent/25477) on Ethereum mainnet via ERC-8004.\nAgent card: `https://molt.waiflow.app/.well-known/erc8004-agent.json`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Required API Key Scopes] | Scope | Access |\n|-------|--------|\n| `a2a` | `read/manage` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Authentication] Every request must include one of:\n\n```\nAuthorization: Bearer <jwt_token>\n```\n\nor\n\n```\nX-API-Key: <your_api_key>\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Agent Discovery] Discover MoltFlow agent capabilities using the standard `.well-known` endpoint.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/.well-known/agent.json` | Agent card (capabilities, skills, public key) |\n\n### Agent Card\n\n**GET** `https://apiv2.waiflow.app/.well-known/agent.json`\n\n```json\n{\n  \"name\": \"MoltFlow\",\n  \"description\": \"WhatsApp Business automation agent\",\n  \"url\": \"https://apiv2.waiflow.app\",\n  \"version\": \"1.2.0\",\n  \"capabilities\": {\n    \"messaging\": true,\n    \"groups\": true,\n    \"encryption\": \"X25519-ECDH-AES-256-GCM\",\n    \"webhooks\": true\n  },\n  \"skills\": [\n    \"agent.message.send\",\n    \"agent.group.create\",\n    \"agent.group.invite\",\n    \"agent.group.list\",\n    \"group.getContext\",\n    \"webhook_manager\"\n  ],\n  \"public_key\": \"base64-encoded-X25519-public-key\"\n}\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Encryption] MoltFlow uses X25519 ECDH key exchange with AES-256-GCM encryption for A2A message confidentiality. Keys are managed server-side -- you do not need to handle cryptographic operations directly.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/agent/public-key` | Get platform X25519 public key |\n| GET | `/agent/peer/{tenant_id}/public-key` | Get a tenant's public key |\n| POST | `/agent/rotate-keys` | Rotate encryption keys |\n| GET | `/agent/capabilities` | Get encryption capabilities |\n| POST | `/agent/initialize` | Initialize encryption for tenant |\n| GET | `/agent/bootstrap` | Skill bootstrap info |\n\n### Get Public Key\n\n**GET** `/agent/public-key`\n\n```json\n{\"public_key\": \"base64-encoded-X25519-public-key\", \"algorithm\": \"X25519\", \"created_at\": \"2026-02-11T10:00:00Z\"}\n```\n\n**GET** `/agent/peer/{tenant_id}/public-key` -- Retrieve another tenant's public key for encrypted communication.\n\n### How Encryption Works\n\nEach tenant has an X25519 keypair generated on initialization. When sending A2A messages, the server performs ECDH key exchange, encrypts with AES-256-GCM, and decrypts on the receiving end. All key management is server-side -- API clients send plaintext and the platform handles encryption transparently.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[A2A JSON-RPC] The core A2A endpoint accepts JSON-RPC 2.0 requests. All agent-to-agent operations go through this single endpoint. Use the fully scoped URL from your webhook configuration.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/a2a/{tenant_id}/{session_id}/{webhook_id}` | Fully scoped endpoint (preferred) |\n| POST | `/a2a/{tenant_id}/{session_id}` | Tenant + session scoped |\n| POST | `/a2a/{session_id}` | Session scoped |\n| POST | `/a2a` | Generic (first active session) |\n| GET | `/a2a/schema` | Get A2A method schema |\n\n### Request Format\n\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"agent.message.send\",\n  \"params\": { ... },\n  \"id\": 1\n}\n```\n\n### Response Format\n\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"result\": { ... },\n  \"id\": 1\n}\n```\n\n### Available Methods\n\n| Method | Description |\n|--------|-------------|\n| `agent.message.send` | Send a WhatsApp message via A2A |\n| `agent.group.create` | Create a new WhatsApp group |\n| `agent.group.invite` | Invite participants to a group |\n| `agent.group.list` | List available groups |\n| `group.getContext` | Get group metadata and recent activity |\n| `webhook_manager` | Manage webhooks via A2A |\n\n---\n\n### agent.message.send\n\nSend a WhatsApp message through the A2A protocol.\n\n**Request:**\n\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"agent.message.send\",\n  \"params\": {\n    \"session_id\": \"a1b2c3d4-...\",\n    \"to\": \"+5511999999999\",\n    \"message\": \"Hello from Agent!\",\n    \"metadata\": {\n      \"source_agent\": \"my-crm-agent\",\n      \"correlation_id\": \"req-123\"\n    }\n  },\n  \"id\": 1\n}\n```\n\n**Parameters:**\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `session_id` | string | Yes | UUID of the WhatsApp session |\n| `to` | string | Yes | E.164 phone number (e.g., `+5511999999999`) |\n| `message` | string | Yes | Message text (max 4096 chars) |\n| `metadata` | object | No | Arbitrary metadata for tracking |\n\n**Response:**\n\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"result\": {\n    \"message_id\": \"wa-"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Content Policy] Configure content filtering rules for A2A communications. Policies control what content agents can send and receive.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/a2a-policy/settings` | Get policy settings |\n| PUT | `/a2a-policy/settings` | Update policy settings |\n| POST | `/a2a-policy/rules` | Create a custom rule |\n| PUT | `/a2a-policy/rules/{rule_id}` | Update a rule |\n| DELETE | `/a2a-policy/rules/{rule_id}` | Delete a rule |\n| POST | `/a2a-policy/rules/{rule_id}/toggle` | Enable/disable a rule |\n| POST | `/a2a-policy/test` | Test content against policy |\n| POST | `/a2a-policy/reset` | Reset policy to defaults |\n| GET | `/a2a-policy/stats` | Get policy enforcement stats |\n| GET | `/a2a-policy/safeguards` | Get safeguard configuration |\n\n### Get / Update Settings\n\n**GET** `/a2a-policy/settings` returns current policy. **PUT** `/a2a-policy/settings` updates it.\n\n```json\n{\n  \"enabled\": true,\n  \"input_sanitization_enabled\": true,\n  \"output_filtering_enabled\": true,\n  \"block_urls\": false,\n  \"block_phone_numbers\": false,\n  \"max_message_length\": 4096,\n  \"allowed_languages\": [\"en\", \"pt\", \"es\"]\n}\n```\n\n### Create Custom Rule\n\n**POST** `/a2a-policy/rules`\n\n```json\n{\n  \"name\": \"Block competitor mentions\",\n  \"pattern\": \"\\\\b(competitor1|competitor2)\\\\b\",\n  \"action\": \"block\",\n  \"description\": \"Prevent mentions of competitor brands\"\n}\n```\n\n**Response** `200 OK`:\n\n```json\n{\n  \"id\": \"rule-uuid-...\",\n  \"name\": \"Block competitor mentions\",\n  \"pattern\": \"\\\\b(competitor1|competitor2)\\\\b\",\n  \"action\": \"block\",\n  \"is_active\": true,\n  \"created_at\": \"2026-02-11T10:00:00Z\"\n}\n```\n\n### Test Content\n\n**POST** `/a2a-policy/test` -- Test a message against your policy without sending it.\n\n```json\n// Request\n{\"content\": \"Check out https://example.com for more info\"}\n\n// Response\n{\"allowed\": false, \"blocked_reason\": \"URL detected and block_urls is enabled\", \"matched_rules\": [\"built-in:block_urls\"], \"filtered_content\": \"Check out [URL REMOVED] for more info\"}\n"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Rate Limits (A2A)] A2A methods have per-method rate limits:\n\n| Method | Limit |\n|--------|-------|\n| `agent.message.send` | 30/min |\n| `agent.group.create` | 5/min |\n| `agent.group.invite` | 10/min |\n| `agent.group.list` | 60/min |\n| `group.getContext` | 30/min |\n| `webhook_manager` | 20/min |\n\nRate limit errors return JSON-RPC error code `-32000`.\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Examples] ### Discover the MoltFlow agent\n\n```bash\ncurl https://apiv2.waiflow.app/.well-known/agent.json\n```\n\n### Send a message via A2A\n\n```bash\n# Use your scoped endpoint: /a2a/{tenant_id}/{session_id}/{webhook_id}\ncurl -X POST https://apiv2.waiflow.app/api/v2/a2a/{tenant_id}/{session_id}/{webhook_id} \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"agent.message.send\",\n    \"params\": {\n      \"session_id\": \"a1b2c3d4-...\",\n      \"to\": \"+5511999999999\",\n      \"message\": \"Hello from my AI agent!\"\n    },\n    \"id\": 1\n  }'\n```\n\n### Set up a content policy rule\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/a2a-policy/rules \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"No external links\",\n    \"pattern\": \"https?://\",\n    \"action\": \"block\",\n    \"description\": \"Block all URLs in A2A messages\"\n  }'\n```\n\n### Test content against policy\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/a2a-policy/test \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"content\": \"Visit https://example.com for details\"\n  }'\n```\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Security Model] Security layers: TLS 1.3 (transport) -> X25519 ECDH (key exchange) -> AES-256-GCM (message encryption) -> API Key/JWT (auth) -> AgentSafeguard (input validation) -> A2AContentFilter (content policy) -> TieredRateLimiter (rate limits) -> AuditLog (full audit trail).\n\nAll encryption key management is handled server-side. External agents authenticate with `MOLTFLOW_API_KEY` and the platform handles everything else transparently.\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Error Responses] Standard HTTP errors: `400` (bad request), `401` (unauthorized), `403` (policy violation), `404` (not found), `429` (rate limited). JSON-RPC errors use codes listed above.\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-outreach** -- Bulk Send, Scheduled Messages, Custom Groups\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG knowledge base, style profiles\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltflow_a2a"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow-a2a/SKILL.md"
+}

@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_auto-updater",
+  "description": "OpenClaw auto-update checker and safe applier. Checks for new versions, compares changelogs, and applies updates with rollback safety. Designed to run as a cron job for hands-free maintenance. Use for keeping OpenClaw up to date automatically.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Auto-Updater 🔄\n\n**Keep OpenClaw up to date automatically and safely.**\n\nChecks for new OpenClaw versions via git tags, compares with your current version, shows what's new, and optionally applies the update with safe rollback support."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Check for updates (safe, read-only)\nbash {baseDir}/scripts/check_update.sh\n\n# Check and apply if available\nbash {baseDir}/scripts/check_update.sh --apply\n\n# JSON output (for cron/automation)\nbash {baseDir}/scripts/check_update.sh --json\n\n# Check + apply + JSON\nbash {baseDir}/scripts/check_update.sh --apply --json\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setting Up as a Cron Job] ### Via OpenClaw Cron\nAdd to your cron jobs to check daily:\n\n```json\n{\n  \"name\": \"auto-update-check\",\n  \"schedule\": \"0 1 * * *\",\n  \"command\": \"bash skills/auto-updater/{baseDir}/scripts/check_update.sh --json\",\n  \"description\": \"Daily OpenClaw update check at 1 AM\"\n}\n```\n\n### Via System Crontab\n```bash\n# Check daily at 1 AM, log results\n0 1 * * * cd /root/.openclaw/workspace && bash skills/auto-updater/{baseDir}/scripts/check_update.sh >> /var/log/openclaw-updates.log 2>&1\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Fetch** — `git fetch --tags` from the OpenClaw repo\n2. **Compare** — Current version vs latest git tag (semver sorted)\n3. **Report** — Shows version diff and changelog/commits between versions\n4. **Apply** (optional) — Checkout new tag → pnpm install → pnpm build → docker build → docker compose up -d\n5. **Verify** — Checks gateway starts successfully after update"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Safe Update Practices] - **Always** runs `git fetch` before comparing (fresh data)\n- **Shows** what changed before applying\n- **Records** the previous version for rollback\n- **Verifies** gateway health after update\n- **Never** force-pushes or modifies git history"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Rollback Procedure] If an update breaks something:\n\n```bash\n# 1. See recent tags\ncd /host/openclaw && git tag --sort=-v:refname | head -5\n\n# 2. Checkout previous version\ngit checkout <previous-tag>\n\n# 3. Rebuild\npnpm install && pnpm build\ndocker build -t openclaw:latest .\ndocker compose up -d\n\n# 4. Verify\ndocker compose logs --tail=20\n```\n\nThe script outputs rollback instructions automatically when applying updates."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "auto_updater"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "OpenClaw gateway, git",
+    "extra": {
+      "openclaw": {
+        "emoji": "??",
+        "requires": {
+          "bins": [
+            "git"
+          ]
+        },
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/smart-updater-pro/SKILL.md"
+}

@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_model-council",
+  "description": "Multi-model consensus system — send a query to 3+ different LLMs via OpenRouter simultaneously, then a judge model evaluates all responses and produces a winner, reasoning, and synthesized best answer. Like having a board of AI advisors. Use for important decisions, code review, research verification.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Model Council 🏛️\n\n**Get consensus from multiple AI models on any question.**\n\nSend your query to 3+ different LLMs simultaneously via OpenRouter. A judge model evaluates all responses and produces a winner, reasoning, and synthesized best answer."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Use] - **Important decisions** — Don't trust one model's opinion\n- **Code review** — Get multiple perspectives on architecture choices\n- **Research verification** — Cross-check facts across models\n- **Creative work** — Compare writing styles and pick the best\n- **Debugging** — When one model is stuck, others might see the issue"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How It Works] ```\nYour Question\n    ├──→ Claude Sonnet 4    ──→ Response A\n    ├──→ GPT-4o             ──→ Response B\n    └──→ Gemini 2.0 Flash   ──→ Response C\n                                    │\n                              Judge (Opus) evaluates all\n                                    │\n                              ├── Winner + Reasoning\n                              ├── Synthesized Best Answer\n                              └── Cost Breakdown\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Basic usage\npython3 {baseDir}/scripts/model_council.py \"What's the best database for a real-time analytics dashboard?\"\n\n# Custom models\npython3 {baseDir}/scripts/model_council.py --models \"anthropic/claude-sonnet-4,openai/gpt-4o,google/gemini-2.5-pro\" \"Your question\"\n\n# Custom judge\npython3 {baseDir}/scripts/model_council.py --judge \"openai/gpt-4o\" \"Your question\"\n\n# JSON output\npython3 {baseDir}/scripts/model_council.py --json \"Your question\"\n\n# Set max tokens per response\npython3 {baseDir}/scripts/model_council.py --max-tokens 2000 \"Your question\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Configuration] | Flag | Default | Description |\n|------|---------|-------------|\n| `--models` | claude-sonnet-4, gpt-4o, gemini-2.0-flash | Comma-separated model list |\n| `--judge` | anthropic/claude-opus-4-6 | Judge model |\n| `--max-tokens` | 1024 | Max tokens per council member |\n| `--json` | false | Output as JSON |\n| `--timeout` | 60 | Timeout per model (seconds) |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Environment] Requires `OPENROUTER_API_KEY` environment variable."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Output Example] ```\n═══ MODEL COUNCIL RESULTS ═══\n\nQuestion: What's the best way to handle auth in a microservices architecture?\n\n── Council Member Responses ──\n\n🤖 anthropic/claude-sonnet-4 ($0.0043)\nUse a centralized auth service with JWT tokens...\n\n🤖 openai/gpt-4o ($0.0038)\nImplement OAuth 2.0 with an API gateway...\n\n🤖 google/gemini-2.0-flash-001 ($0.0012)\nConsider using service mesh with mTLS...\n\n── Judge Verdict (anthropic/claude-opus-4-6, $0.0125) ──\n\n🏆 Winner: anthropic/claude-sonnet-4\nReasoning: Most comprehensive and practical approach...\n\n📝 Synthesized Answer:\nThe best approach combines elements from all three...\n\n💰 Total Cost: $0.0218\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "model_council"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, OpenRouter API key",
+    "extra": {
+      "openclaw": {
+        "emoji": "??️",
+        "requires": {
+          "env": [
+            "OPENROUTER_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENROUTER_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/model-council-pro/SKILL.md"
+}

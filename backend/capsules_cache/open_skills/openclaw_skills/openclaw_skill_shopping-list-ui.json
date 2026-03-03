@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_shopping-list-ui",
+  "description": "Web UI for the shopping-list skill. Adds a /shopping page to Second Brain with full CRUD — view, add, edit, check off, and delete items. Requires the shopping-list skill to be installed (shares the same data files).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Shopping List UI\n\nWeb interface for managing the shopping list. Adds a `/shopping` page to the\nSecond Brain portal with categorized list view and inline editing."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - Second Brain portal running (Next.js)\n- `shopping-list` skill installed (`clawhub install shopping-list`)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Files] This skill adds the following files to the Second Brain app:\n\n| File | Purpose |\n|------|---------|\n| `second-brain/src/lib/shopping.ts` | Data layer — reads/writes shopping-list skill JSON files |\n| `second-brain/src/app/api/shopping/route.ts` | GET list + POST add item |\n| `second-brain/src/app/api/shopping/[id]/route.ts` | PUT edit, DELETE remove, PATCH check-off |\n| `second-brain/src/app/shopping/page.tsx` | Shopping list page with CRUD UI |\n\nAlso modifies:\n- `second-brain/src/components/Sidebar.tsx` — adds Shopping nav entry\n- `second-brain/src/components/SFIcon.tsx` — adds cart.fill icon"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Data] Reads and writes `skills/shopping-list/data/active.json` — the same file used\nby the conversational shopping-list CLI skill. Changes made in the web UI are\nimmediately visible in chat, and vice versa.\n\nUser identity for `addedBy` is read from `skills/shopping-list/data/config.json`.\nIf not set, defaults to \"web\"."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "shopping_list_ui"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajeenkya/shopping-list-ui/SKILL.md"
+}

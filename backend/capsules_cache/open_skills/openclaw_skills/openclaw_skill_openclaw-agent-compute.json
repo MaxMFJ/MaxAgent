@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_openclaw-agent-compute",
+  "description": "Public HTTP client skill exposing compute.* tools by calling a private Compute Gateway over HTTPS. Includes a starter kit to run OpenClaw preconfigured.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # openclaw-agent-compute\n\nPublic, agent-friendly skill that exposes `compute.*` tools by calling a **private** Compute Gateway over **HTTPS**."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Environment] - `MCP_COMPUTE_URL` (e.g. `https://compute.example.com`)\n- `MCP_COMPUTE_API_KEY`\n\nCopy `skills/openclaw-agent-compute/.env.example`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Tools / API expectation] This client expects the private gateway to implement:\n- `POST /v1/sessions` (create)\n- `POST /v1/exec` (run command)\n- `GET /v1/usage/{session_id}` (usage/cost)\n- `DELETE /v1/sessions/{session_id}` (destroy)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Scripts] - HTTP client: `skills/openclaw-agent-compute/scripts/client.js`\n- Example: `skills/openclaw-agent-compute/scripts/example_exec.js`\n\n### Local smoke test\n\n```bash\ncp skills/openclaw-agent-compute/.env.example .env\n# edit .env\nnpm i\nnpm run example:exec\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Starter kit] See `skills/openclaw-agent-compute/starter-kit/`.\n\nIt keeps the OpenClaw image overrideable via `OPENCLAW_IMAGE` until an official image/tag is confirmed."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_agent_compute"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aleksandrkrivolap/openclaw-agent-compute/SKILL.md"
+}

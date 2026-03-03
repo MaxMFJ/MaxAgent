@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_ghl-crm",
+  "description": "GoHighLevel CRM integration — manage contacts, pipelines, conversations (SMS/email/WhatsApp), calendars, appointments, and workflows through the GHL API v2. The definitive GHL skill for OpenClaw. Use when managing leads, booking appointments, sending follow-ups, or automating your CRM.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # GHL CRM — GoHighLevel Integration for OpenClaw\n\nComplete GoHighLevel CRM integration. Manage contacts, pipelines, conversations, appointments, and workflows through the GHL API v2."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nexport GHL_API_KEY=\"your-private-integration-token\"\nexport GHL_LOCATION_ID=\"your-location-id\"\npython3 {baseDir}/scripts/ghl_api.py contacts search \"john@example.com\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Authentication] GHL uses **Private Integration Tokens** (API v2). Get yours from:\n1. Go to **Settings → Integrations → Private Integrations** in your GHL sub-account\n2. Create a new integration, enable the scopes you need\n3. Copy the API key — this is your `GHL_API_KEY`\n\nThe `GHL_LOCATION_ID` is your sub-account/location ID (found in Settings → Business Info or the URL).\n\n**Base URL:** `https://services.leadconnectorhq.com`\n\n**Auth header:** `Authorization: Bearer <GHL_API_KEY>` + `Version: 2021-07-28`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Available Commands] ### Contact Management\n```bash\n# Search contacts by email, phone, or name\npython3 {baseDir}/scripts/ghl_api.py contacts search \"query\"\n\n# Get contact by ID\npython3 {baseDir}/scripts/ghl_api.py contacts get <contactId>\n\n# Create a new contact\npython3 {baseDir}/scripts/ghl_api.py contacts create '{\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john@example.com\",\"phone\":\"+15551234567\"}'\n\n# Update contact\npython3 {baseDir}/scripts/ghl_api.py contacts update <contactId> '{\"tags\":[\"vip\",\"hot-lead\"]}'\n\n# Delete contact\npython3 {baseDir}/scripts/ghl_api.py contacts delete <contactId>\n\n# List contacts (with optional limit)\npython3 {baseDir}/scripts/ghl_api.py contacts list --limit 20\n```\n\n### Pipeline & Opportunity Management\n```bash\n# List all pipelines\npython3 {baseDir}/scripts/ghl_api.py pipelines list\n\n# List opportunities in a pipeline\npython3 {baseDir}/scripts/ghl_api.py opportunities list <pipelineId>\n\n# Get opportunity details\npython3 {baseDir}/scripts/ghl_api.py opportunities get <opportunityId>\n\n# Create opportunity\npython3 {baseDir}/scripts/ghl_api.py opportunities create '{\"pipelineId\":\"...\",\"stageId\":\"...\",\"contactId\":\"...\",\"name\":\"Deal Name\",\"monetaryValue\":5000}'\n\n# Update opportunity (move stage, update value)\npython3 {baseDir}/scripts/ghl_api.py opportunities update <opportunityId> '{\"stageId\":\"new-stage-id\",\"status\":\"won\"}'\n\n# Delete opportunity\npython3 {baseDir}/scripts/ghl_api.py opportunities delete <opportunityId>\n```\n\n### Conversations (SMS, Email, WhatsApp)\n```bash\n# List recent conversations\npython3 {baseDir}/scripts/ghl_api.py conversations list\n\n# Get conversation messages\npython3 {baseDir}/scripts/ghl_api.py conversations get <conversationId>\n\n# Send SMS\npython3 {baseDir}/scripts/ghl_api.py conversations send-sms <contactId> \"Hello! Following up on our call.\"\n\n# Send email\npython3 {baseDir}/scripts/ghl_api.py conversations send-email <contactId> '{\"subject\":\"Follow Up\",\"body\":\"<p>Hi there!</p>\",\"emailFrom\":\"you@domain.com\"}'\n```\n\n### Calendar & Appo"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Key API Endpoints Reference] | Resource | Method | Endpoint |\n|----------|--------|----------|\n| Search contacts | GET | `/contacts/search?query=...&locationId=...` |\n| Get contact | GET | `/contacts/{id}` |\n| Create contact | POST | `/contacts/` |\n| Update contact | PUT | `/contacts/{id}` |\n| List pipelines | GET | `/opportunities/pipelines?locationId=...` |\n| List opportunities | GET | `/opportunities/search?location_id=...&pipeline_id=...` |\n| Create opportunity | POST | `/opportunities/` |\n| List conversations | GET | `/conversations/search?locationId=...` |\n| Send message | POST | `/conversations/messages` |\n| List calendars | GET | `/calendars/?locationId=...` |\n| Get free slots | GET | `/calendars/{id}/free-slots?startDate=...&endDate=...` |\n| Create appointment | POST | `/calendars/events/appointments` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Rate Limits] GHL API v2 enforces rate limits:\n- **General:** 100 requests/10 seconds per location\n- **Bulk operations:** 10 requests/10 seconds\n- The script auto-retries on 429 with exponential backoff (up to 3 retries)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Integration Patterns] ### Lead Capture → CRM Pipeline\n1. Capture lead via form/chatbot\n2. `contacts create` with lead data\n3. `opportunities create` to add to pipeline\n4. `workflows add-contact` to trigger nurture sequence\n\n### Appointment Booking Flow\n1. `calendars list` to find the right calendar\n2. `calendars slots` to get availability\n3. `appointments create` to book the slot\n4. GHL auto-sends confirmation via configured workflow\n\n### Follow-Up Automation\n1. `conversations list` to find unresponded conversations\n2. `contacts get` for context\n3. Generate follow-up with AI\n4. `conversations send-sms` or `send-email`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ghl_crm"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, GoHighLevel account with API v2 access",
+    "extra": {
+      "openclaw": {
+        "emoji": "??",
+        "requires": {
+          "env": [
+            "GHL_API_KEY"
+          ]
+        },
+        "primaryEnv": "GHL_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/ghl-crm-pro/SKILL.md"
+}

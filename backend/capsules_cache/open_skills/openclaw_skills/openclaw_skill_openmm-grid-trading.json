@@ -1,0 +1,123 @@
+{
+  "id": "openclaw_skill_openmm-grid-trading",
+  "description": "Create and manage grid trading strategies with OpenMM. Automated buy/sell around center price.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenMM Grid Trading\n\nCreate automated grid trading strategies that profit from market volatility."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What is Grid Trading?] Grid trading places multiple buy and sell orders at preset price intervals around the current center price. As price oscillates, the bot automatically:\n- **Buys low** — places buy orders below the center price\n- **Sells high** — places sell orders above the center price\n- **Profits from volatility** — each complete cycle captures the spread\n\nThe grid uses **levels per side** and **spacing** to distribute orders. With 5 levels and 2% spacing (linear), orders are placed at 2%, 4%, 6%, 8%, 10% from center on both sides (10 total orders)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] **Good for:**\n- Sideways/ranging markets\n- High volatility pairs\n- Passive income generation\n- 24/7 automated trading\n\n**Avoid when:**\n- Strong trending markets (risk of holding losing positions)\n- Low liquidity pairs\n- High fee environments"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ### 1. Dry Run First (Always!)\n\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT --dry-run\n```\n\n### 2. Start Grid with Defaults\n\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT\n```\n\n### 3. Custom Configuration\n\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT \\\n  --levels 5 \\\n  --spacing 0.02 \\\n  --size 50 \\\n  --max-position 0.6 \\\n  --safety-reserve 0.3\n```\n\n### 4. Stop the Strategy\n\nPress `Ctrl+C` to gracefully stop. The system will:\n1. Cancel all open orders\n2. Disconnect from exchange\n3. Display final status"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Command Options] ### Required Parameters\n- `--strategy grid` — Specifies grid trading strategy\n- `--exchange <exchange>` — Exchange to trade on (mexc, bitget, gateio, kraken)\n- `--symbol <symbol>` — Trading pair (e.g., INDY/USDT, SNEK/USDT, ADA/EUR)\n\n### Grid Parameters\n| Parameter | Description | Default |\n|-----------|-------------|---------|\n| `--levels <number>` | Grid levels each side (max: 10, total = levels x 2) | 5 |\n| `--spacing <decimal>` | Base price spacing between levels (0.02 = 2%) | 0.02 |\n| `--size <number>` | Base order size in quote currency | 50 |\n| `--confidence <decimal>` | Minimum price confidence to trade | 0.6 |\n| `--deviation <decimal>` | Price deviation to trigger grid recreation | 0.015 |\n| `--debounce <ms>` | Delay between grid adjustments | 2000 |\n| `--max-position <decimal>` | Max position size as % of balance | 0.8 |\n| `--safety-reserve <decimal>` | Safety reserve as % of balance | 0.2 |\n| `--dry-run` | Simulate without placing real orders | — |\n\n### Dynamic Grid Parameters\n| Parameter | Description | Default |\n|-----------|-------------|---------|\n| `--spacing-model <model>` | linear, geometric, or custom | linear |\n| `--spacing-factor <number>` | Geometric spacing multiplier per level | 1.3 |\n| `--size-model <model>` | flat, pyramidal, or custom | flat |\n| `--grid-profile <path>` | Load grid config from a JSON profile file | — |\n\n### Volatility Parameters\n| Parameter | Description | Default |\n|-----------|-------------|---------|\n| `--volatility` | Enable volatility-based spread adjustment | off |\n| `--volatility-low <decimal>` | Low volatility threshold | 0.02 |\n| `--volatility-high <decimal>` | High volatility threshold | 0.05 |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Spacing Models] **Linear (default):** Equal spacing between all levels.\n```\nWith --spacing 0.02 and 5 levels:\nLevel 1:  2% from center\nLevel 2:  4% from center\nLevel 3:  6% from center\nLevel 4:  8% from center\nLevel 5: 10% from center\n```\n\n**Geometric:** Tighter spacing near center, wider gaps at outer levels.\n```bash\nopenmm trade --strategy grid --exchange kraken --symbol BTC/USD \\\n  --levels 5 --spacing 0.005 --spacing-model geometric --spacing-factor 1.5\n```\n```\nLevel 1: 0.50% from center\nLevel 2: 1.25% from center\nLevel 3: 2.38% from center\nLevel 4: 4.06% from center\nLevel 5: 6.59% from center\n```\n\n**Custom:** Define exact spacing offsets per level using a grid profile JSON file."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Size Models] **Flat (default):** All levels get equal order sizes.\n\n**Pyramidal:** Larger orders near center price where fills are more likely, tapering at outer levels.\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT \\\n  --levels 5 --size 50 --size-model pyramidal\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Grid Profiles] JSON files for complete grid configuration:\n\n```json\n{\n  \"name\": \"balanced-geometric\",\n  \"description\": \"Geometric spacing with pyramidal sizing\",\n  \"levels\": 10,\n  \"spacingModel\": \"geometric\",\n  \"baseSpacing\": 0.005,\n  \"spacingFactor\": 1.3,\n  \"sizeModel\": \"pyramidal\",\n  \"baseSize\": 50\n}\n```\n\n```bash\nopenmm trade --strategy grid --exchange gateio --symbol SNEK/USDT \\\n  --grid-profile ./profiles/balanced-geometric.json\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Volatility-Based Spread Adjustment] When enabled, the grid automatically widens during volatile conditions and tightens when the market calms. Tracks price changes over a 5-minute rolling window.\n\n- Below low threshold (default 2%): Normal spacing (1.0x)\n- Between thresholds: Elevated spacing (1.5x)\n- Above high threshold (default 5%): Wide spacing (2.0x)\n\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT \\\n  --levels 10 \\\n  --spacing 0.005 \\\n  --spacing-model geometric \\\n  --spacing-factor 1.3 \\\n  --size-model pyramidal \\\n  --size 5 \\\n  --volatility\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Trading Examples] ### Conservative\n```bash\nopenmm trade --strategy grid --exchange bitget --symbol SNEK/USDT \\\n  --levels 2 \\\n  --spacing 0.02 \\\n  --size 20\n```\n\n### Active\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol BTC/USDT \\\n  --levels 7 \\\n  --spacing 0.005 \\\n  --size 25\n```\n\n### Dynamic (Geometric + Pyramidal)\n```bash\nopenmm trade --strategy grid --exchange kraken --symbol SNEK/EUR \\\n  --levels 10 \\\n  --spacing 0.005 \\\n  --spacing-model geometric \\\n  --spacing-factor 1.5 \\\n  --size-model pyramidal \\\n  --size 5\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Risk Management] - `--max-position` — Maximum % of balance used for trading (default: 80%)\n- `--safety-reserve` — % of balance kept as reserve (default: 20%)\n- `--confidence` — Minimum price confidence required (default: 60%)\n- Grid is automatically recreated when orders are filled\n- Adjusts to significant price movements (configurable via `--deviation`)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Exchange-Specific Notes] **MEXC/Gate.io:** Minimum order value 1 USDT per order\n**Bitget:** Minimum 1 USDT. Requires API key, secret, and passphrase. 6 decimal price precision for SNEK/NIGHT pairs.\n**Kraken:** Minimum 5 EUR/USD per order. Supports major fiat pairs (EUR, USD, GBP)."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Tips for Agents] 1. **Always dry-run first** — show user the plan before executing\n2. **Check balance** — verify sufficient funds with `openmm balance --exchange <ex>`\n3. **Check current price** — use `openmm ticker --exchange <ex> --symbol <sym>`\n4. **Respect minimum order values** — ensure `--size` divided by `--levels` meets exchange minimums\n5. **Use Ctrl+C to stop** — graceful shutdown cancels all open orders"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openmm_grid_trading"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📊",
+        "requires": {
+          "bins": [
+            "openmm"
+          ],
+          "env": [
+            "MEXC_API_KEY",
+            "GATEIO_API_KEY",
+            "BITGET_API_KEY",
+            "KRAKEN_API_KEY"
+          ]
+        },
+        "install": [
+          {
+            "kind": "node",
+            "package": "@3rd-eye-labs/openmm",
+            "bins": [
+              "openmm"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adacapo21/openmm/skills/grid-trading/SKILL.md"
+}

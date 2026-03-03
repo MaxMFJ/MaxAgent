@@ -1,0 +1,76 @@
+{
+  "id": "openclaw_skill_bandwidth",
+  "description": "Bandwidth — messaging, voice calls, phone numbers, and 911 services.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 📡 Bandwidth\n\nBandwidth — messaging, voice calls, phone numbers, and 911 services."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `BANDWIDTH_API_TOKEN` | ✅ | Bandwidth API token |\n| `BANDWIDTH_ACCOUNT_ID` | ✅ | Account ID |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Send SMS/MMS\npython3 {{baseDir}}/scripts/bandwidth.py send-message --from <value> --to <value> --text <value> --application-id <value>\n\n# List messages\npython3 {{baseDir}}/scripts/bandwidth.py list-messages --from <value> --to <value>\n\n# Create outbound call\npython3 {{baseDir}}/scripts/bandwidth.py create-call --from <value> --to <value> --answer-url <value> --application-id <value>\n\n# Get call details\npython3 {{baseDir}}/scripts/bandwidth.py get-call <id>\n\n# List phone numbers\npython3 {{baseDir}}/scripts/bandwidth.py list-numbers\n\n# Search available numbers\npython3 {{baseDir}}/scripts/bandwidth.py search-numbers --area-code <value> --quantity \"10\"\n\n# Order phone number\npython3 {{baseDir}}/scripts/bandwidth.py order-number --numbers \"comma-separated\"\n\n# List applications\npython3 {{baseDir}}/scripts/bandwidth.py list-applications\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/bandwidth.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "bandwidth"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "📡",
+        "requires": {
+          "env": [
+            "BANDWIDTH_API_TOKEN",
+            "BANDWIDTH_ACCOUNT_ID"
+          ]
+        },
+        "primaryEnv": "BANDWIDTH_API_TOKEN",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/bandwidth/SKILL.md"
+}

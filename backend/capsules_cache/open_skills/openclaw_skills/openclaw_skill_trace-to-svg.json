@@ -1,0 +1,80 @@
+{
+  "id": "openclaw_skill_trace-to-svg",
+  "description": "Trace bitmap images (PNG/JPG/WebP) into clean SVG paths using potrace/mkbitmap. Use to convert logos/silhouettes into vectors for downstream CAD workflows (e.g., create-dxf etch_svg_path) and for turning reference images into manufacturable outlines.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # trace-to-svg\n\nConvert a bitmap into a vector SVG using `mkbitmap` + `potrace`."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\n# 1) Produce a silhouette-friendly SVG\nbash scripts/trace_to_svg.sh input.png --out out.svg\n\n# 2) Higher contrast + less noise\nbash scripts/trace_to_svg.sh input.png --out out.svg --threshold 0.6 --turdsize 20\n\n# 3) Feed into create-dxf (example)\n# - set create-dxf drawing.etch_svg_paths[].d to the SVG path `d` you want, or\n# - store the traced SVG and reference it in your pipeline.\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Notes] - This is best for **logos, silhouettes, high-contrast shapes**.\n- For photos or complex shading, results depend heavily on thresholding.\n- Output is usually one or more `<path>` elements."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "trace_to_svg"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "potrace",
+            "mkbitmap"
+          ]
+        },
+        "install": [
+          {
+            "id": "apt",
+            "kind": "apt",
+            "package": "potrace",
+            "bins": [
+              "potrace",
+              "mkbitmap"
+            ],
+            "label": "Install potrace + mkbitmap (apt)"
+          },
+          {
+            "id": "brew",
+            "kind": "brew",
+            "formula": "potrace",
+            "bins": [
+              "potrace",
+              "mkbitmap"
+            ],
+            "label": "Install potrace + mkbitmap (brew)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajmwagar/trace-to-svg/SKILL.md"
+}

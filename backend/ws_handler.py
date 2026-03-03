@@ -212,6 +212,14 @@ async def _handle_chat(
                 pass
         session_stream_tasks.pop(session_id, None)
 
+    # 防污染：新 chat 请求到达时，清空同 session 旧 chat 任务的缓冲 chunks，
+    # 避免断线重连后 resume_chat 回放旧响应被误认为新请求的响应。
+    tracker = get_task_tracker()
+    old_chat_tt = tracker.get_by_session(session_id, task_type=TaskType.CHAT)
+    if old_chat_tt:
+        tracker.clear_chunks(old_chat_tt.task_id)
+        logger.debug(f"Cleared old chat chunks for session {session_id} (old task: {old_chat_tt.task_id})")
+
     _sid = session_id
     _cid = actual_client_id
     _content = content
@@ -763,19 +771,22 @@ async def _handle_resume_chat(message: dict, websocket: WebSocket, current_sessi
                         "status": "completed",
                         "buffered_count": 2,  # content + done
                         "recovered_from_context": True,
+                        "is_resume": True,  # 标记为恢复性数据
                         "last_message_id": message_id,  # 客户端可用于去重
                     })
-                    # 发送内容（包含 message_id 用于客户端去重）
+                    # 发送内容（包含 message_id + is_resume 用于客户端去重/区分）
                     await safe_send_json(websocket, {
                         "type": "content",
                         "content": last_assistant_msg["content"],
                         "message_id": message_id,
+                        "is_resume": True,
                     })
                     # 发送 done
                     await safe_send_json(websocket, {
                         "type": "done",
                         "model": None,
                         "message_id": message_id,
+                        "is_resume": True,
                     })
                     logger.info(f"Chat recovered from context for session {session_id}, message_id={message_id}")
                     return
@@ -803,10 +814,13 @@ async def _handle_resume_chat(message: dict, websocket: WebSocket, current_sessi
         "task_id": tt.task_id,
         "status": tt.status.value,
         "buffered_count": len(chunks_to_replay),
+        "is_resume": True,  # 标记为恢复性回放，客户端据此区分新任务 vs 旧任务
     })
 
     for chunk in chunks_to_replay:
-        if not await safe_send_json(websocket, chunk):
+        # 为每个回放 chunk 添加 is_resume 标志，方便客户端区分
+        replay_chunk = {**chunk, "is_resume": True}
+        if not await safe_send_json(websocket, replay_chunk):
             break
 
     if tt.status == AutoTaskStatus.RUNNING:

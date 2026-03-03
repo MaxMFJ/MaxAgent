@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_polygon-pos-dev",
+  "description": "Comprehensive guide for Polygon PoS blockchain development. Use when deploying smart contracts to Polygon, testing on Amoy testnet, getting test tokens from faucets, or verifying contracts on Polygonscan. Supports Foundry framework with deployment scripts and testing strategies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Polygon PoS Development\n\nEnd-to-end guide for developing and deploying smart contracts on Polygon PoS blockchain using Foundry."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Polygon PoS is an EVM-compatible Proof-of-Stake sidechain for Ethereum with:\n- Low transaction costs (fraction of a cent)\n- Fast block times (~2 seconds)\n- High throughput (65,000+ TPS theoretical)\n- Full Ethereum tooling compatibility\n- POL token for gas fees\n\n**Default Network**: Amoy Testnet (Chain ID: 80002) - Use for all testing before mainnet.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[🚀 Quick Navigation] **For Agents/Fast Deployment**: Jump to [Quick Start Path](#quick-start-path) (5-10 min)\n\n**For Production/Thorough Testing**: Jump to [Complete Development Path](#complete-development-path) (30-60 min)\n\n**For Reference**: See sections below for [Network Configuration](#network-configuration), [Faucets](#getting-testnet-tokens), [Troubleshooting](#troubleshooting)\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Two Development Paths] Choose based on your needs:\n\n| Aspect | Quick Start Path | Complete Development Path |\n|--------|------------------|---------------------------|\n| **Time** | 5-10 minutes | 30-60 minutes |\n| **Best for** | Prototypes, demos, simple contracts | Production, complex systems, mainnet |\n| **Testing** | Basic compilation check | Unit tests, integration tests, fork tests |\n| **Scripts Used** | None (direct forge commands) | Direct forge commands with all options |\n| **Documentation** | Minimal | Full reference guides |\n| **Verification** | Automatic during deploy | Multiple methods with troubleshooting |\n| **Agent-Friendly** | ✅ Optimized for speed | ⚠️ Comprehensive but slower |\n\n### Path 1: Quick Start (Minimal Time - Agent-Friendly)\n**Best for**: Fast deployment, simple contracts, prototyping\n**Time**: 5-10 minutes\n**What you get**: Contract deployed and verified on testnet\n\nSkip to [Quick Start Path](#quick-start-path) below.\n\n### Path 2: Complete Guide (Full Development Workflow)\n**Best for**: Production contracts, complex systems, thorough testing\n**Time**: 30-60 minutes\n**What you get**: Fully tested, optimized, and production-ready deployment\n\nSkip to [Complete Development Path](#complete-development-path) below.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Quick Start Path] **Goal**: Deploy a contract to Polygon Amoy testnet in minimal steps.\n\n### Prerequisites\n\n- Foundry installed: `curl -L https://foundry.paradigm.xyz | bash && foundryup`\n- Wallet with private key\n- Polygonscan API key (get from https://polygonscan.com/myapikey)\n\n### Step 1: Create Project (30 seconds)\n\n```bash\nforge init my-polygon-project\ncd my-polygon-project\n```\n\n### Step 2: Configure Environment (1 minute)\n\nCreate `.env` file:\n```bash\nPRIVATE_KEY=your_private_key_without_0x_prefix\n```\n\n### Step 3: Get Testnet Tokens (2 minutes)\n\nVisit: https://www.alchemy.com/faucets/polygon-amoy\n- Paste your wallet address\n- Claim 0.2-0.5 POL (no signup needed)\n\n### Step 4: Deploy (1 minute)\n\n```bash\n# Deploy to Amoy testnet\nforge script script/Counter.s.sol:CounterScript \\\n    --rpc-url https://rpc-amoy.polygon.technology \\\n    --private-key $PRIVATE_KEY \\\n    --broadcast\n```\n\n**Done!** Your contract is deployed and verified on Amoy testnet.\n\nView at: `https://amoy.polygonscan.com/address/YOUR_CONTRACT_ADDRESS`\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Complete Development Path] **Goal**: Production-ready deployment with comprehensive testing and optimization.\n\n### Phase 1: Setup (5 minutes)\n\n1. **Install Foundry**:\n```bash\ncurl -L https://foundry.paradigm.xyz | bash\nfoundryup\n```\n\n2. **Initialize Project**:\n```bash\nforge init my-polygon-project\ncd my-polygon-project\n```\n\n3. **Configure for Polygon**:\n\nUpdate `foundry.toml` with Polygon settings:\n```toml\n[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\nsolc_version = \"0.8.24\"\noptimizer = true\noptimizer_runs = 200\n\n[rpc_endpoints]\namoy = \"https://rpc-amoy.polygon.technology\"\npolygon = \"https://polygon-rpc.com\"\n\n[etherscan]\namoy = { key = \"${POLYGONSCAN_API_KEY}\", url = \"https://api-amoy.polygonscan.com/api\" }\npolygon = { key = \"${POLYGONSCAN_API_KEY}\", url = \"https://api.polygonscan.com/api\" }\n```\n\n4. **Setup Environment**:\n\nCreate `.env` file:\n```bash\nPRIVATE_KEY=your_private_key\nWALLET_ADDRESS=0xYourAddress\nPOLYGONSCAN_API_KEY=your_api_key\n```\n\n### Phase 2: Write & Test Contracts (10-20 minutes)\n\n1. **Write Contract** (or use `assets/sample-contracts/HelloWorld.sol` as template)\n\n2. **Write Tests**:\n```solidity\n// test/MyContract.t.sol\nimport \"forge-std/Test.sol\";\nimport \"../src/MyContract.sol\";\n\ncontract MyContractTest is Test {\n    MyContract public myContract;\n    \n    function setUp() public {\n        myContract = new MyContract();\n    }\n    \n    function testDeployment() public {\n        assertEq(myContract.owner(), address(this));\n    }\n}\n```\n\n3. **Run Tests**:\n```bash\nforge test -vvv                    # Run tests\nforge test --gas-report            # Check gas usage\nforge coverage                     # Check coverage\n```\n\n4. **Fork Testing** (optional):\n```bash\n# Test against real Polygon state\nforge test --fork-url https://polygon-rpc.com\n```\n\nSee `references/testing-strategies.md` for comprehensive testing patterns.\n\n### Phase 3: Get Testnet Tokens (2-5 minutes)\n\nVisit one of these faucets:\n\n**Alchemy** (recommended - no auth): https://www.alchemy.com/faucets/polygon-amoy\n"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Network Configuration] ### Amoy Testnet (Recommended for Testing)\n\n| Property | Value |\n|----------|-------|\n| Network Name | Polygon Amoy |\n| Chain ID | 80002 |\n| Currency | POL |\n| RPC URL | https://rpc-amoy.polygon.technology |\n| WebSocket | wss://polygon-amoy.drpc.org |\n| Explorer | https://amoy.polygonscan.com |\n| Faucets | Multiple (see below) |\n\n### Polygon Mainnet\n\n| Property | Value |\n|----------|-------|\n| Network Name | Polygon |\n| Chain ID | 137 |\n| Currency | POL |\n| RPC URL | https://polygon-rpc.com |\n| WebSocket | wss://polygon.drpc.org |\n| Explorer | https://polygonscan.com |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Getting Testnet Tokens] Multiple faucets available for Amoy testnet POL tokens.\n\n### Quick Access\n\nRun the faucet helper script:\n```bash\n./scripts/get-testnet-tokens.sh\n```\n\n### Available Faucets\n\n**Alchemy Faucet** (Recommended - No auth required)\n- URL: https://www.alchemy.com/faucets/polygon-amoy\n- Amount: 0.5 POL/day (with account), 0.2 POL/day (without)\n- Requirements: None\n\n**QuickNode Faucet**\n- URL: https://faucet.quicknode.com/polygon/amoy\n- Amount: 0.1 POL/day (2x with tweet)\n- Requirements: Connect wallet\n\n**GetBlock Faucet**\n- URL: https://getblock.io/faucet/matic-amoy/\n- Amount: 0.1 POL/day\n- Requirements: Login\n\n**Chainlink Faucet**\n- URL: https://faucets.chain.link/polygon-amoy\n- Amount: 0.1 POL/day\n- Requirements: GitHub auth\n\n**LearnWeb3 Faucet**\n- URL: https://learnweb3.io/faucets/polygon_amoy/\n- Amount: 0.1 POL/day\n- Requirements: GitHub auth\n\n**Tips:**\n- Most faucets limit to 1 request per 24 hours\n- If rate-limited, try a different faucet\n- Some offer bonus tokens for tweeting"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Deployment Workflow] ### Environment Setup\n\nCreate `.env` file (see `assets/sample-contracts/.env.example`):\n```bash\nPRIVATE_KEY=your_private_key_here\nWALLET_ADDRESS=0xYourAddress\nPOLYGONSCAN_API_KEY=your_api_key_here\n```\n\nAdd to `.gitignore`:\n```\n.env\nbroadcast/\ndeployments/\n```\n\n### Deploy to Testnet\n\n**Option 1: Use helper script** (recommended)\n```bash\n./scripts/deploy-foundry.sh\n```\n\n**Option 2: Manual deployment**\n```bash\nforge script script/Deploy.s.sol \\\n    --rpc-url amoy \\\n    --private-key $PRIVATE_KEY \\\n    --broadcast \\\n    --verify\n```\n\n**Option 3: Deploy without verification**\n```bash\nforge script script/Deploy.s.sol \\\n    --rpc-url amoy \\\n    --private-key $PRIVATE_KEY \\\n    --broadcast\n```\n\n### Deploy to Mainnet\n\n**⚠️ IMPORTANT: Test thoroughly on Amoy first!**\n\n```bash\n# Use deployment script and select mainnet option\n./scripts/deploy-foundry.sh\n```\n\nFor detailed deployment patterns, see `references/foundry-deployment.md`."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Testing Strategies] ### Local Testing\n\nWrite tests in `test/` directory:\n```solidity\n// test/MyContract.t.sol\nimport \"forge-std/Test.sol\";\nimport \"../src/MyContract.sol\";\n\ncontract MyContractTest is Test {\n    MyContract public myContract;\n    \n    function setUp() public {\n        myContract = new MyContract();\n    }\n    \n    function testFunction() public {\n        // Test logic\n    }\n}\n```\n\nRun tests:\n```bash\nforge test              # Run all tests\nforge test -vvv         # Verbose output\nforge test --gas-report # Show gas usage\n```\n\n### Fork Testing\n\nTest against real Polygon state:\n```bash\nforge test --fork-url https://polygon-rpc.com\n```\n\n### Testnet Testing\n\nDeploy to Amoy and test with real transactions. See `references/testing-strategies.md` for comprehensive testing patterns."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Contract Verification] Verification makes your contract code public and trustworthy.\n\n### During Deployment (Recommended)\n\n```bash\nforge script script/Deploy.s.sol \\\n    --rpc-url amoy \\\n    --private-key $PRIVATE_KEY \\\n    --broadcast \\\n    --verify \\\n    --etherscan-api-key $POLYGONSCAN_API_KEY\n```\n\n### After Deployment\n\n**Option 1: Use helper script**\n```bash\n./scripts/verify-contract.sh\n```\n\n**Option 2: Manual verification**\n```bash\nforge verify-contract \\\n    CONTRACT_ADDRESS \\\n    src/MyContract.sol:MyContract \\\n    --chain-id 80002 \\\n    --etherscan-api-key $POLYGONSCAN_API_KEY \\\n    --verifier-url https://api-amoy.polygonscan.com/api\n```\n\n### With Constructor Arguments\n\n```bash\nforge verify-contract \\\n    CONTRACT_ADDRESS \\\n    src/MyContract.sol:MyContract \\\n    --chain-id 80002 \\\n    --etherscan-api-key $POLYGONSCAN_API_KEY \\\n    --constructor-args $(cast abi-encode \"constructor(address,uint256)\" 0x123... 1000)\n```\n\nFor troubleshooting verification issues, see `references/contract-verification.md`."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Common Workflows] ### Which Path Should I Use?\n\n**Use Quick Start Path when**:\n- You need fast deployment (prototyping, demos)\n- Contract is simple and low-risk\n- You're an AI agent with limited time\n- Testing is minimal or done elsewhere\n\n**Use Complete Development Path when**:\n- Deploying to mainnet\n- Contract handles real value\n- Complex logic requiring thorough testing\n- Team collaboration and code review needed\n- Security is critical\n\n### Mainnet Deployment Checklist\n\nBefore deploying to mainnet:\n- [ ] All tests passing (`forge test`)\n- [ ] Deployed and tested on Amoy testnet\n- [ ] Contract verified on Amoy\n- [ ] Security review completed\n- [ ] Gas optimization done\n- [ ] Documentation complete\n- [ ] Constructor arguments double-checked\n- [ ] Sufficient POL in wallet for gas\n- [ ] Deployment script tested\n- [ ] Team notified of deployment"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Sample Contract Pattern] Example smart contract structure for Polygon:\n\n```solidity\n// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ncontract HelloWorld {\n    address public owner;\n    string public message;\n    uint256 public updateCount;\n    \n    event MessageUpdated(address indexed updater, string newMessage);\n    \n    error NotOwner();\n    error EmptyMessage();\n    \n    constructor(string memory initialMessage) {\n        owner = msg.sender;\n        message = initialMessage;\n    }\n    \n    modifier onlyOwner() {\n        if (msg.sender != owner) revert NotOwner();\n        _;\n    }\n    \n    function setMessage(string calldata newMessage) external {\n        if (bytes(newMessage).length == 0) revert EmptyMessage();\n        message = newMessage;\n        updateCount++;\n        emit MessageUpdated(msg.sender, newMessage);\n    }\n}\n```\n\n**Key patterns:**\n- Use custom errors instead of require strings (gas-efficient)\n- Emit events for important state changes\n- Use modifiers for access control\n- Optimize for Polygon's low gas costs"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Safety Rules] 1. **Test First**: Always test on Amoy before mainnet\n2. **Never Commit Keys**: Add .env to .gitignore\n3. **Verify Contracts**: Always verify for transparency\n4. **Check Network**: Double-check chain ID before deployment\n5. **Sufficient Balance**: Ensure enough POL for gas\n6. **Save Addresses**: Document deployed contract addresses\n7. **Audit Code**: Security review before mainnet\n8. **Use Scripts**: Automate deployments to reduce errors\n9. **Backup Keys**: Securely backup private keys\n10. **Test Verification**: Verify contracts on testnet first"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Insufficient Funds for Gas\n\n**Error**: `insufficient funds for gas * price + value`\n\n**Solution**: Get testnet POL from faucets (run `./scripts/get-testnet-tokens.sh`)\n\n### Contract Not Found\n\n**Error**: `src/MyContract.sol:MyContract not found`\n\n**Solution**: Check file path and contract name match exactly\n\n### RPC Connection Issues\n\n**Error**: `failed to get chain id`\n\n**Solution**: \n- Check internet connection\n- Try alternative RPC URL\n- Use dedicated RPC provider (Alchemy, QuickNode)\n\n### Verification Failed\n\n**Error**: `bytecode does not match`\n\n**Solution**:\n- Wait 1-2 minutes for contract to be indexed\n- Check constructor arguments are correct\n- Verify compiler settings match deployment\n\n### Gas Estimation Failed\n\n**Error**: `gas estimation failed`\n\n**Solution**:\n- Check contract logic for reverts\n- Ensure sufficient balance\n- Check function parameters"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Resources] **Foundry Documentation**\n- Book: https://book.getfoundry.sh/\n- GitHub: https://github.com/foundry-rs/foundry\n\n**Polygon Documentation**\n- Docs: https://docs.polygon.technology/\n- Gas Station: https://gasstation.polygon.technology/\n- Faucets: https://faucet.polygon.technology/\n\n**Block Explorers**\n- Amoy: https://amoy.polygonscan.com\n- Mainnet: https://polygonscan.com\n\n**RPC Providers**\n- Alchemy: https://www.alchemy.com/\n- QuickNode: https://www.quicknode.com/\n- Infura: https://infura.io/\n\n**Community**\n- Discord: https://discord.com/invite/0xPolygonCommunity\n- Telegram: https://t.me/polygonhq"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Reference Files] For detailed information:\n- `references/foundry-deployment.md` - Complete deployment guide\n- `references/testing-strategies.md` - Testing best practices\n- `references/contract-verification.md` - Verification troubleshooting"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "polygon_pos_dev"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akshatgada/polygon-pos-dev/SKILL.md"
+}

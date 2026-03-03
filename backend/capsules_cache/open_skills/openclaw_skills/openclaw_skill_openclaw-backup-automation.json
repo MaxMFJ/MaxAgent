@@ -1,0 +1,96 @@
+{
+  "id": "openclaw_skill_openclaw-backup-automation",
+  "description": "Automated backup for OpenClaw instances. Backs up agents, skills, cron jobs, and memory. Supports local tar archives. Credentials, periodic scheduling, and git sync are OPT-IN only.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Backup Automation\n\nAutomated backup system for OpenClaw instances."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What It Does (Default)] - ✅ Agents (all isolated agents)\n- ✅ Skills (all installed skills)\n- ✅ Cron job configurations\n- ✅ Memory files and MEMORY.md\n- ✅ Core configuration files\n\n**OPT-IN (must enable explicitly):**\n- Periodic automatic backups (daily/weekly)\n- Git sync (auto-push to remote)\n- Credentials (tokens, API keys)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### Run Backup\n\n```bash\nnode skills/backup-automation/scripts/backup.js\n```\n\n### List Backups\n\n```bash\nnode skills/backup-automation/scripts/backup.js list\n```\n\n### Restore\n\n```bash\nnode skills/backup-automation/scripts/backup.js restore <backup-name>\n```\n\n### Check Status\n\n```bash\nnode skills/backup-automation/scripts/backup.js status\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[First Use Suggestion] When user mentions for the first time:\n- \"backup\"\n- \"save my config\"\n- \"disaster recovery\"\n- \"export my setup\"\n\n**Suggest:**\n> \"I can set up automatic backups for your instance. Would you like me to enable daily backups to local storage? I can also enable git sync and credentials backup - but those are optional.\"\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[OPT-IN Features] ### Enable Credentials Backup\n\nCredentials (tokens, API keys) are NOT backed up by default. To enable:\n\n```bash\nnode skills/backup-automation/scripts/backup.js credentials-enable\n```\n\nTo disable:\n```bash\nnode skills/backup-automation/scripts/backup.js credentials-disable\n```\n\n### Enable Periodic Backup (Daily)\n\nTo automatically run backups daily at 2 AM:\n\n```bash\n# Add to crontab\ncrontab -e\n# Add this line:\n0 2 * * * cd ~/.openclaw/workspace && node skills/backup-automation/scripts/backup.js >> ~/.logs/openclaw-backup.log 2>&1\n```\n\n### Enable Git Sync\n\nTo auto-push backups to git remote:\n\n```bash\n# In your workspace\ngit remote add origin <your-repo-url>\n# Or enable in script (edit CONFIG.gitSync = true)\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[When to Suggest] | Context | Suggest |\n|---------|---------|\n| First time user mentions backup | \"Enable daily backups?\" |\n| After major changes | \"Want to backup before this change?\" |\n| Weekly check-in | \"Backups running smoothly\" |\n| Before risky operation | \"Should I backup first?\" |\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[What Gets Backed Up] | Component | Default | Opt-In |\n|----------|---------|--------|\n| Agents | ✅ | - |\n| Skills | ✅ | - |\n| Cron configs | ✅ | - |\n| Memory | ✅ | - |\n| Core configs | ✅ | - |\n| **Credentials** | ❌ | ✅ |\n| **Periodic backup** | ❌ | ✅ |\n| **Git sync** | ❌ | ✅ |\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Restore Guide] ### Full Restore\n\n```bash\n# Extract backup\ntar -xzf ~/backups/<backup-name>.tar.gz -C ~/\n\n# Restart gateway\nopenclaw gateway restart\n```\n\n### Agent Only Restore\n\n```bash\n# Remove agent\nopenclaw agents delete <agent-name>\n\n# Restore\ntar -xzf ~/backups/<backup-name>.tar.gz -C ~/ --overwrite\n\n# Restart\nopenclaw gateway restart\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Configuration] To customize, edit the script:\n\n```javascript\nconst CONFIG = {\n  backupDir: \"~/backups\",    // Where to store backups\n  keepDays: 7,               // How many backups to keep\n  gitSync: false,            // Auto-push to git (OPT-IN)\n  credentials: false          // Include credentials (OPT-IN)\n};\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Requirements] - Node.js\n- Bash\n- Tar\n- Git (optional for sync)\n- Crontab (optional for auto backup)"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_backup_automation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {},
+        "install": [],
+        "triggers": [
+          "backup",
+          "restore",
+          "disaster recovery",
+          "save",
+          "export"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adelpro/openclaw-backup-automation/SKILL.md"
+}

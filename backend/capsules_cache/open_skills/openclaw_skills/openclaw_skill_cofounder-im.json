@@ -1,0 +1,108 @@
+{
+  "id": "openclaw_skill_cofounder-im",
+  "description": "Pull startup project data and AI-generated build specifications from CoFounder.im. Use when a user wants to build a project that was validated and planned on CoFounder.im — lists projects, fetches the full build spec (tech stack, MVP plan, UI/UX, implementation plan, OpenClaw builder output), and helps orchestrate sub-agents to build it. Trigger phrases — \"build my CoFounder project\", \"pull my project from cofounder.im\", \"use my CoFounder build spec\", \"start building from CoFounder\", \"fetch my startup plan\", \"build from cofounder\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # CoFounder.im Skill"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Connect OpenClaw to [CoFounder.im](https://cofounder.im) to pull AI-validated startup projects and autonomously build them. CoFounder.im runs 20+ AI agents that validate ideas, research markets, plan MVPs, design UI/UX, and generate implementation plans. This skill lets you fetch those results and use them as the foundation for building the project."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to use this skill] Use this skill when the user says anything like:\n\n- \"Build my CoFounder project\"\n- \"Pull my project from cofounder.im\"\n- \"Use my CoFounder build spec\"\n- \"Start building from CoFounder\"\n- \"Fetch my startup plan from CoFounder\"\n- \"Build [project name] from cofounder\"\n- \"What projects do I have on CoFounder?\"\n- \"Get the build plan for [project name]\"\n- \"I planned a project on cofounder.im, now build it\"\n\nDo **not** use this skill for general coding tasks, project scaffolding from scratch, or anything unrelated to CoFounder.im projects."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Safety policy] This skill fetches build specifications from a remote API (cofounder.im). To ensure safe execution:\n\n1. **User approval required** — Always show the user a summary of the build plan and get explicit confirmation before spawning any sub-agents or running any commands.\n2. **Preview before execution** — Before each phase, display the sub-agent's goal, requirements, and verification command. Ask the user to approve.\n3. **No blind execution** — Do not execute the build spec verbatim. Review each phase for reasonableness before presenting it to the user.\n4. **Sandboxed environment recommended** — Run builds in a dedicated directory or container. Do not build in directories containing existing projects or sensitive files.\n5. **Credential scope** — This skill only requires `COFOUNDER_API_TOKEN` for the CoFounder.im API. Build plans may reference additional tools (databases, cloud CLIs, etc.) depending on the project's tech stack — the user should review and install these as needed.\n6. **No network access by default** — Sub-agents should only access local files and the project repository. Any external network calls (package installs, API integrations) should be reviewed by the user."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core rules] - Always authenticate with the bearer token from `COFOUNDER_API_TOKEN`.\n- Use `list-projects` first to show available projects and let the user choose.\n- Use `get-build-spec` to pull the full build specification for the chosen project.\n- The build spec contains agent outputs keyed by type (e.g., `tech_stack`, `mvp_planner`, `ui_ux_assistant`, `implementation_plan_generator`, `openclaw_builder`).\n- The `openclaw_builder` output is the most important — it contains a structured multi-agent build plan designed specifically for OpenClaw.\n- Parse the `openclaw_builder` output to identify sub-agent tasks, then present them to the user for approval before spawning.\n- **Always get user confirmation before spawning sub-agents or running verification commands.**"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\n# Set your API token (generate at https://cofounder.im/users/settings)\nexport COFOUNDER_API_TOKEN=\"cfr_your_token_here\"\n\n# List your projects\ncurl -s https://cofounder.im/api/v1/projects \\\n  -H \"Authorization: Bearer $COFOUNDER_API_TOKEN\" | jq '.projects[] | {id, name, status}'\n\n# Get build spec for a project\ncurl -s https://cofounder.im/api/v1/projects/PROJECT_ID/build-spec \\\n  -H \"Authorization: Bearer $COFOUNDER_API_TOKEN\" | jq .\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: List projects\n\nFetch the user's projects and present them for selection:\n\n```bash\ncurl -s https://cofounder.im/api/v1/projects \\\n  -H \"Authorization: Bearer $COFOUNDER_API_TOKEN\" | jq .\n```\n\nExample response:\n```json\n{\n  \"projects\": [\n    {\n      \"id\": \"d25165d2-26c5-43dc-b4a1-ef053bf8277d\",\n      \"name\": \"FitTrack\",\n      \"description\": \"AI-powered fitness tracking app with personalized workout plans and progress analytics\",\n      \"status\": \"completed\",\n      \"package_type\": \"basic\",\n      \"inserted_at\": \"2026-02-15T14:22:00Z\"\n    },\n    {\n      \"id\": \"a4cdfd3f-2747-4d0e-afe2-8978d8911646\",\n      \"name\": \"MealPlan Pro\",\n      \"description\": \"Smart meal planning platform with grocery list generation and nutritional tracking\",\n      \"status\": \"active\",\n      \"package_type\": \"pro\",\n      \"inserted_at\": \"2026-02-20T10:30:00Z\"\n    }\n  ]\n}\n```\n\nShow the user a numbered list of projects with name, status, and description. Ask which one to build. Only projects with status `\"completed\"` have full build specs. Projects with status `\"active\"` are still being processed by CoFounder.im agents.\n\n### Step 2: Fetch build specification\n\n```bash\ncurl -s https://cofounder.im/api/v1/projects/PROJECT_ID/build-spec \\\n  -H \"Authorization: Bearer $COFOUNDER_API_TOKEN\" | jq .\n```\n\nExample response (agent output values are truncated — actual values are full markdown documents):\n```json\n{\n  \"project\": {\n    \"id\": \"d25165d2-26c5-43dc-b4a1-ef053bf8277d\",\n    \"name\": \"FitTrack\",\n    \"description\": \"AI-powered fitness tracking app with personalized workout plans and progress analytics\",\n    \"status\": \"completed\"\n  },\n  \"agent_outputs\": {\n    \"tech_stack\": \"## Tech Stack\\n\\n- Framework: Next.js 14\\n- Language: TypeScript 5.3\\n- Database: PostgreSQL 16\\n- ORM: Prisma\\n- CSS: Tailwind CSS 3.4\\n...\",\n    \"mvp_planner\": \"## Core Features\\n\\n### 1. Workout Tracker\\n- Log exercises with sets, reps, and weight\\n- Rest timer between sets\\n- Progress charts and personal records\\n...\",\n    \"ui_"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[API reference] | Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/api/v1/projects` | GET | List all projects for the authenticated user |\n| `/api/v1/projects/:id/build-spec` | GET | Get project details and all completed agent outputs |\n\n**Authentication:** Bearer token in the `Authorization` header.\n\n```\nAuthorization: Bearer cfr_your_token_here\n```\n\n**Error responses:**\n- `401` — Missing or invalid token\n- `404` — Project not found or does not belong to user\n- `429` — Rate limit exceeded (20 requests/minute)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Agent output keys] | Key | Description |\n|-----|-------------|\n| `tech_stack` | Technology stack recommendation |\n| `mvp_planner` | MVP feature plan and roadmap |\n| `ui_ux_assistant` | UI/UX design system and guidelines |\n| `implementation_plan_generator` | Step-by-step implementation plan |\n| `openclaw_builder` | Multi-agent build specification for OpenClaw |\n| `idea_validator` | Idea validation analysis |\n| `market_research` | Market size and trends |\n| `competitor_analysis` | Competitive landscape |\n| `customer_persona` | Target customer profiles |\n| `business_model` | Business model canvas |\n| `monetization_strategy` | Revenue and pricing strategy |\n| `go_to_market` | Go-to-market strategy |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Additional runtime dependencies] Build plans generated by CoFounder.im may require tools beyond `curl` and `jq`, depending on the project's tech stack. Common examples:\n\n| Tech Stack | Additional Tools |\n|------------|-----------------|\n| Node.js / Next.js / React | `node`, `npm` or `yarn` |\n| Elixir / Phoenix | `elixir`, `mix`, `postgres` |\n| Python / Django / FastAPI | `python`, `pip`, `postgres` |\n| Ruby / Rails | `ruby`, `bundler`, `postgres` |\n| Go | `go` |\n\nThe skill will identify required tools during the build plan review (Step 3) so you can install them before execution begins."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Getting your API token] 1. Sign up at [cofounder.im](https://cofounder.im)\n2. Create a project and run the AI agents\n3. Go to [Settings](https://cofounder.im/users/settings) and generate an API token\n4. Configure it: `openclaw config set skills.entries.cofounder-im.env.COFOUNDER_API_TOKEN \"cfr_...\"`\n5. Restart: `openclaw gateway restart`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cofounder_im"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "COFOUNDER_API_TOKEN"
+          ],
+          "bins": [
+            "curl",
+            "jq"
+          ],
+          "primaryEnv": "COFOUNDER_API_TOKEN"
+        },
+        "emoji": "🚀",
+        "homepage": "https://cofounder.im/openclaw",
+        "safety": {
+          "autoApproval": false,
+          "requiresUserConfirmation": true
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexfilatov/cofounder-im/SKILL.md"
+}

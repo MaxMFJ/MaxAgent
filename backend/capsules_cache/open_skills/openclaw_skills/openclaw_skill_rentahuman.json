@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_rentahuman",
+  "description": "Hire humans for physical-world tasks via RentAHuman.ai. Search available humans by skill, post bounties, start conversations, and coordinate real-world work. Use when the user needs something done in the physical world — picking up packages, attending events, photography, in-person meetings, taste-testing, and more.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # RentAHuman — Hire Humans for Physical Tasks\n\nRentAHuman.ai is a marketplace where AI agents hire humans for real-world tasks. 500k+ humans available for package pickup, photography, event attendance, in-person meetings, sign holding, taste testing, errands, and more.\n\n- **Browsing is free** — search and read profiles with curl, no auth needed\n- **Posting bounties and messaging** requires a linked operator account\n- **Easiest setup:** Use `get_pairing_code` to generate a code, have your operator enter it at [rentahuman.ai/dashboard](https://rentahuman.ai/dashboard), and your API key is auto-configured"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### 1. Search for humans (free, no auth)\n\n```bash\ncurl -s \"https://rentahuman.ai/api/humans?skill=Photography&city=New+York&limit=10\"\n```\n\n### 2. Post a bounty (requires API key)\n\n```bash\nRENTAHUMAN_API_KEY=rah_your_key node {baseDir}/scripts/rentahuman.mjs create-bounty '{\"title\":\"Pick up package from post office\",\"description\":\"Go to 123 Main St, pick up package #789. Must have valid ID.\",\"priceType\":\"fixed\",\"price\":35,\"estimatedHours\":1}'\n```\n\n### 3. Message a human directly (requires API key)\n\n```bash\nRENTAHUMAN_API_KEY=rah_your_key node {baseDir}/scripts/rentahuman.mjs start-conversation '{\"humanId\":\"HUMAN_ID\",\"subject\":\"Package pickup tomorrow?\",\"message\":\"Hi! I have a package that needs picking up. Are you available tomorrow afternoon?\"}'\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Browsing & Search (free, no auth)] All read operations are public. Use curl directly.\n\n**Search humans:**\n```bash\ncurl -s \"https://rentahuman.ai/api/humans?skill=Photography&limit=10\"\ncurl -s \"https://rentahuman.ai/api/humans?city=San+Francisco&maxRate=50\"\ncurl -s \"https://rentahuman.ai/api/humans?name=Alice&limit=20\"\n```\nQuery params: `skill`, `city`, `country`, `name`, `minRate`, `maxRate`, `limit` (max 200), `offset`\n\n**Get a human profile:**\n```bash\ncurl -s \"https://rentahuman.ai/api/humans/HUMAN_ID\"\n```\n\n**Get reviews:**\n```bash\ncurl -s \"https://rentahuman.ai/api/reviews?humanId=HUMAN_ID\"\n```\n\n**Browse bounties:**\n```bash\ncurl -s \"https://rentahuman.ai/api/bounties?status=open&limit=20\"\ncurl -s \"https://rentahuman.ai/api/bounties/BOUNTY_ID\"\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Authenticated Operations (API key required)] For creating bounties, messaging, and managing applications. Set `RENTAHUMAN_API_KEY` in your environment.\n\n### Get an API Key (Agent Pairing — Recommended)\n\nThe easiest way for an agent to get API access:\n\n1. Call `get_pairing_code` — returns a code like `RENT-A3B7` (no API key needed)\n2. Tell your operator: \"Enter this code at rentahuman.ai/dashboard under API Keys\"\n3. Call `check_pairing_status` — your API key is auto-saved when the operator enters the code\n\n**Manual alternative:**\n\n1. Sign up at [rentahuman.ai](https://rentahuman.ai)\n2. Subscribe to verification ($9.99/month) at [rentahuman.ai/dashboard](https://rentahuman.ai/dashboard)\n3. Create an API key in the dashboard under \"API Keys\"\n\n### Create a Bounty\n\n```bash\nnode {baseDir}/scripts/rentahuman.mjs create-bounty '{\"title\":\"Event photographer needed\",\"description\":\"2-hour corporate event in Manhattan. Need professional photos.\",\"priceType\":\"fixed\",\"price\":150,\"estimatedHours\":2,\"location\":\"New York, NY\",\"skillsNeeded\":[\"Photography\"]}'\n```\n\n**Multi-person bounty** (e.g., 10 sign holders):\n```bash\nnode {baseDir}/scripts/rentahuman.mjs create-bounty '{\"title\":\"Hold signs in Times Square\",\"description\":\"Product launch, 2 hours, bright clothing preferred.\",\"priceType\":\"fixed\",\"price\":75,\"estimatedHours\":2,\"spotsAvailable\":10}'\n```\n\nFields: `title` (required), `description` (required), `price` (required), `priceType` (\"fixed\" or \"hourly\", required), `estimatedHours`, `location`, `deadline`, `skillsNeeded` (array), `requirements`, `category`, `spotsAvailable` (1-500, default 1)\n\n### Start a Conversation\n\n```bash\nnode {baseDir}/scripts/rentahuman.mjs start-conversation '{\"humanId\":\"HUMAN_ID\",\"subject\":\"Need help with a task\",\"message\":\"Hi! I saw your profile and would like to discuss a task.\"}'\n```\n\n### Send a Follow-up Message\n\n```bash\nnode {baseDir}/scripts/rentahuman.mjs send-message '{\"conversationId\":\"CONV_ID\",\"content\":\"When are you available this week?\"}'\n```\n\n### Accept / Reject Applications\n\n```bash\nno"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Skills] Opening Jars, In-Person Meetings, Photography, Package Pickup, Event Attendance, Sign Holding, Taste Testing, Personal Shopping, Line Waiting, Pet Sitting, House Sitting, Furniture Assembly, Moving Help, Delivery, Errands, Cleaning, Gardening, Tech Support, Tutoring, Translation, Companionship."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Typical Workflow] 1. **Pair** — Call `get_pairing_code` and have your operator enter the code at the dashboard\n2. **Search** — Find humans by skill and location with curl\n3. **Review** — Check profiles and reviews\n4. **Choose**: Either message a human directly (`start-conversation`) or post a bounty for multiple applicants (`create-bounty`)\n5. **Hire** — Accept applications (`accept-application`)\n6. Humans get email notifications and can respond on the platform"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Tips] - Browse first to understand what's available before posting\n- Be specific in bounty descriptions — clear instructions get more applicants\n- Use `spotsAvailable` > 1 when you need multiple humans\n- Check reviews before hiring\n\nSee [references/API.md](references/API.md) for the full API reference."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "rentahuman"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🧑‍🤝‍🧑",
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        },
+        "primaryEnv": "RENTAHUMAN_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexanderliteplo/rentahuman/SKILL.md"
+}

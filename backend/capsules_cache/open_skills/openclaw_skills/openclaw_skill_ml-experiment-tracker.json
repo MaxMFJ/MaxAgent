@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_ml-experiment-tracker",
+  "description": "Plan reproducible ML experiment runs with explicit parameters, metrics, and artifacts. Use before model training to standardize tracking-ready experiment definitions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ML Experiment Tracker"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Generate structured experiment plans that can be logged consistently in experiment tracking systems."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define dataset, target task, model family, and parameter search space.\n2. Define metrics and acceptance thresholds before training.\n3. Produce run plan with version and artifact expectations.\n4. Export the run plan for execution in tracking tools."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/build_experiment_plan.py` to generate consistent run plans.\n- Read `references/tracking-guide.md` for reproducibility checklist."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Keep inputs explicit and machine-readable.\n- Always include metrics and baseline criteria."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ml_experiment_tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/ml-experiment-tracker/SKILL.md"
+}

@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_llm_wallet",
+  "description": "Manage crypto wallets and make x402 micropayments with USDC stablecoins on Polygon",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LLM Wallet - Crypto Wallet & x402 Micropayments\n\nUse `llm-wallet` commands to manage crypto wallets and make micropayments to paid APIs using USDC stablecoins on Polygon blockchain.\n\n**Default Network**: Polygon Testnet (polygon-amoy) - safe for testing\n**Facilitator**: https://x402-amoy.polygon.technology"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Create wallet\nllm-wallet create\n\n# Check balance\nllm-wallet balance\n\n# Set spending limits (recommended)\nllm-wallet set-limit --per-tx 0.10 --daily 5.00\n\n# View transaction history\nllm-wallet history\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Wallet Management] ### Create Wallet\n```bash\nllm-wallet create [--label <name>]\n```\nCreates a new HD wallet with encryption. Returns wallet address.\n\n**Example:**\n```bash\nllm-wallet create --label \"agent-wallet\"\n```\n\n### Import Wallet\n```bash\nllm-wallet import --private-key <key> [--label <name>]\n```\nImport existing wallet from private key.\n\n### Check Balance\n```bash\nllm-wallet balance\n```\nShows USDC balance and native token balance on current network.\n\n### Transaction History\n```bash\nllm-wallet history\n```\nView all transactions and payments made from this wallet."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Spending Limits] ### Set Limits\n```bash\nllm-wallet set-limit --per-tx <amount> --daily <amount>\n```\nSet per-transaction and daily spending caps in USDC.\n\n**Example:**\n```bash\nllm-wallet set-limit --per-tx 0.10 --daily 5.00\n```\n\n### Check Limits\n```bash\nllm-wallet get-limits\n```\nView current spending limits and daily usage."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[x402 Payments] ### Make Payment\n```bash\nllm-wallet pay <url> [--method GET|POST] [--body <json>]\n```\nMake x402 micropayment to a paid API endpoint.\n\n**⚠️ IMPORTANT: Always ask user for approval before making payments!**\n\n**Example:**\n```bash\n# Ask user: \"I need to make a payment to https://api.example.com/weather. Cost: $0.001 USDC. Approve?\"\nllm-wallet pay \"https://api.example.com/weather?location=London\"\n```\n\n**Workflow:**\n1. Check if payment is needed: `llm-wallet check-payment <url>`\n2. Show user: URL, estimated cost, current limits\n3. Wait for user approval\n4. Execute: `llm-wallet pay <url>`\n5. Confirm completion and show transaction ID\n\n### Check Payment (Pre-flight)\n```bash\nllm-wallet check-payment <url>\n```\nChecks if wallet can afford payment without executing it."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Dynamic API Registration] ### Register API\n```bash\nllm-wallet register-api <url> --name <tool_name>\n```\nRegister a paid API endpoint as a reusable tool.\n\n**Example:**\n```bash\nllm-wallet register-api \"https://api.example.com/weather\" --name weather_api\n```\n\n### List Registered APIs\n```bash\nllm-wallet list-apis\n```\nShow all registered API tools.\n\n### Call Registered API\n```bash\nllm-wallet call-api <tool_name> [--params <json>]\n```\nExecute a registered API tool. Requires approval if payment needed.\n\n**Example:**\n```bash\n# Ask user for approval first if cost > 0\nllm-wallet call-api weather_api --params '{\"location\": \"London\"}'\n```\n\n### Unregister API\n```bash\nllm-wallet unregister-api <tool_name>\n```\nRemove a registered API tool."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Seller Tools (Advanced)] ### Verify Payment\n```bash\nllm-wallet verify-payment --header <x-payment-header> --requirements <json>\n```\nVerify incoming payment from a buyer (seller-side).\n\n### Create Payment Requirements\n```bash\nllm-wallet create-requirements --price <amount> --pay-to <address> --url <resource-url>\n```\nGenerate payment requirements for a protected resource."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Safety Rules] 1. **Network Default**: Always uses polygon-amoy (testnet) unless configured otherwise\n2. **Approval Required**: Always ask user before making payments\n3. **Spending Limits**: Check limits before payment attempts\n4. **Transaction Logging**: All payments are logged with timestamps\n5. **Encryption**: Wallets are encrypted with AES-256-GCM"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Configuration] ### Environment Variables\n- `WALLET_ENCRYPTION_KEY` - Wallet encryption key (32+ chars, auto-generated if missing)\n- `WALLET_NETWORK` - Network selection (default: `polygon-amoy` | `polygon`)\n- `FACILITATOR_URL` - Custom facilitator URL (auto-configured)\n- `WALLET_MAX_TX_AMOUNT` - Per-transaction limit override\n- `WALLET_DAILY_LIMIT` - Daily limit override\n\n### Network Info\n- **Polygon Testnet (Amoy)**: Chain ID 80002, Facilitator: https://x402-amoy.polygon.technology\n- **Polygon Mainnet**: Chain ID 137, Facilitator: https://x402.polygon.technology"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Common Workflows] ### First Time Setup\n```bash\n# 1. Create wallet\nllm-wallet create --label \"my-agent\"\n\n# 2. Set spending limits\nllm-wallet set-limit --per-tx 0.10 --daily 5.00\n\n# 3. Check balance (will be 0 initially)\nllm-wallet balance\n\n# 4. Fund wallet with testnet USDC\n# User needs to: visit https://faucet.polygon.technology/\n```\n\n### Making a Payment\n```bash\n# 1. Pre-check payment\nllm-wallet check-payment \"https://api.example.com/weather?location=London\"\n\n# 2. Show user: URL, cost estimate, current limits\n# 3. Ask user: \"Approve payment of $0.001 USDC to https://api.example.com/weather?\"\n\n# 4. If approved, execute payment\nllm-wallet pay \"https://api.example.com/weather?location=London\"\n\n# 5. Confirm and show transaction ID\nllm-wallet history\n```\n\n### Registering a Paid API\n```bash\n# 1. Register the API\nllm-wallet register-api \"https://api.example.com/translate\" --name translate_api\n\n# 2. List available APIs\nllm-wallet list-apis\n\n# 3. Call the API (with approval)\nllm-wallet call-api translate_api --params '{\"text\": \"hello\", \"to\": \"es\"}'\n\n# 4. View payment in history\nllm-wallet history\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Error Handling] - **Insufficient Balance**: Show error and guide user to faucet (testnet) or funding instructions (mainnet)\n- **Payment Rejected**: Transaction reverted, check error message for details\n- **Limit Exceeded**: Show current limits and daily usage, suggest increasing limits\n- **Network Timeout**: Retry with exponential backoff (max 3 attempts)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[References] See `references/` folder for:\n- `x402-protocol.md` - x402 payment protocol overview\n- `wallet-setup.md` - Detailed wallet setup guide\n- `examples.md` - More usage examples"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Notes] - All amounts are in USDC (6 decimals)\n- Default network is testnet for safety\n- Testnet USDC has no real value\n- Always verify network before mainnet usage\n- Keep encryption key secure (never share or commit)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "llm_wallet"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💰",
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        },
+        "install": [
+          {
+            "id": "node",
+            "kind": "node",
+            "package": "llm-wallet-mcp",
+            "bins": [
+              "llm-wallet-mcp"
+            ],
+            "label": "Install LLM Wallet MCP (node)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akshatgada/llm-wallet/SKILL.md"
+}

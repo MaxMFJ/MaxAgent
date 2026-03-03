@@ -1,0 +1,80 @@
+{
+  "id": "openclaw_skill_circleci",
+  "description": "CircleCI CI/CD — manage pipelines, workflows, jobs, and insights via REST API",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔄 CircleCI\n\nCircleCI CI/CD — manage pipelines, workflows, jobs, and insights via REST API"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `CIRCLECI_TOKEN` | ✅ | Personal API token from circleci.com |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Get current user\npython3 {{baseDir}}/scripts/circleci.py me\n\n# List pipelines\npython3 {{baseDir}}/scripts/circleci.py pipelines slug <value> --branch <value>\n\n# Get pipeline\npython3 {{baseDir}}/scripts/circleci.py pipeline-get id <value>\n\n# Trigger pipeline\npython3 {{baseDir}}/scripts/circleci.py pipeline-trigger slug <value> --branch <value> --parameters <value>\n\n# Get pipeline config\npython3 {{baseDir}}/scripts/circleci.py pipeline-config id <value>\n\n# List workflows\npython3 {{baseDir}}/scripts/circleci.py workflows id <value>\n\n# Get workflow\npython3 {{baseDir}}/scripts/circleci.py workflow-get id <value>\n\n# Cancel workflow\npython3 {{baseDir}}/scripts/circleci.py workflow-cancel id <value>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[All Commands] | Command | Description |\n|---------|-------------|\n| `me` | Get current user |\n| `pipelines` | List pipelines |\n| `pipeline-get` | Get pipeline |\n| `pipeline-trigger` | Trigger pipeline |\n| `pipeline-config` | Get pipeline config |\n| `workflows` | List workflows |\n| `workflow-get` | Get workflow |\n| `workflow-cancel` | Cancel workflow |\n| `workflow-rerun` | Rerun workflow |\n| `jobs` | List workflow jobs |\n| `job-get` | Get job details |\n| `job-cancel` | Cancel job |\n| `job-artifacts` | List job artifacts |\n| `insights-workflows` | Workflow insights |\n| `contexts` | List contexts |\n| `envvars` | List project env vars |\n| `envvar-set` | Set env var |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default. Add `--human` for readable formatted output.\n\n```bash\npython3 {{baseDir}}/scripts/circleci.py <command> --human\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{{baseDir}}/scripts/circleci.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "circleci"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔄",
+        "requires": {
+          "env": [
+            "CIRCLECI_TOKEN"
+          ]
+        },
+        "primaryEnv": "CIRCLECI_TOKEN",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/circleci/SKILL.md"
+}

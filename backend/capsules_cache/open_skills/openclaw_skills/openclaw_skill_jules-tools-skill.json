@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_jules-tools-skill",
+  "description": "Interface with Google's Jules Tools CLI to manage AI coding sessions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Jules Tools Skill\n\nThis skill allows the AI agent to interface with the **Jules Tools CLI** to manage Google's Jules AI coding sessions. With this skill, the agent can start new coding sessions, list active sessions, and retrieve results directly from the terminal."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Before using any Jules commands, ensure the `jules` CLI is installed and authenticated.\n\n### 1. Installation\n\nCheck if `jules` is installed by running:\n\n```bash\njules --version\n```\n\nIf the command is not found, install it using `npm`:\n\n```bash\nnpm install -g @google/jules\n```\n\n> **Note:** Installation might require `sudo` permissions depending on the system configuration. If `npm install -g` fails due to permissions, try `sudo npm install -g @google/jules` or ask the user for assistance.\n\n### 2. Authentication\n\nThe agent must be authenticated to interact with Jules. To authenticate, run:\n\n```bash\njules login\n```\n\nThis command will open a browser window for the user to sign in with their Google account. If the agent is running in a headless environment, guide the user to perform this step on their local machine or provide alternative authentication methods if available (refer to `jules login --help`).\n\nTo verify authentication or log out, use:\n\n```bash\njules logout\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] The primary command for interacting with Jules is `jules remote`.\n\n### List Sessions\n\nTo see all active or past coding sessions:\n\n```bash\njules remote list --session\n```\n\nTo list connected repositories:\n\n```bash\njules remote list --repo\n```\n\n### Start a New Session\n\nTo start a new coding session (task) for Jules:\n\n```bash\njules remote new --repo <repo_name> --session \"<task_description>\"\n```\n\n- `<repo_name>`: The repository name (e.g., `torvalds/linux`) or `.` for the current directory's repo.\n- `<task_description>`: A clear description of what Jules should do (e.g., \"Fix the bug in the login handler\").\n\n**Example:**\n\n```bash\njules remote new --repo . --session \"Add a new test case for the user profile component\"\n```\n\nYou can also start multiple parallel sessions:\n\n```bash\njules remote new --repo . --session \"Refactor the database schema\" --parallel 2\n```\n\n### Retrieve Session Results\n\nOnce a session is complete, you can pull the results (code changes):\n\n```bash\njules remote pull --session <session_id>\n```\n\n- `<session_id>`: The ID of the session you want to pull (obtained from `jules remote list`).\n\n### General Help\n\nFor more information on any command:\n\n```bash\njules --help\njules remote --help\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **Command not found**: Ensure `jules` is in the system PATH after installation. You may need to restart the shell or source the profile.\n- **Authentication errors**: Try running `jules logout` and then `jules login` again.\n- **Network issues**: Ensure the agent has internet access to reach Google's servers."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "jules_tools_skill"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexdavidswift/google-jules-cli/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_tarot-content",
+  "description": "Generate tarot × astrology content for social media — weekly horoscope scripts, tarot spreads, video scripts, and cover art. Use when asked to \"create tarot content\", \"weekly horoscope\", \"tarot reading script\", \"zodiac video\", \"astrology content calendar\", \"tarot spread design\", or \"horoscope video script\". Supports 12-sign weekly readings, event-driven specials (retrogrades, eclipses, conjunctions), and multi-platform formatting (YouTube Shorts, TikTok, Instagram, blog).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Tarot Content Generator\n\nCreate professional tarot × astrology content for social media at scale."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Capabilities] 1. **Weekly 12-Sign Readings** — Scripted horoscope videos with tarot card pulls\n2. **Event-Driven Specials** — Content for major transits (retrogrades, eclipses, conjunctions)\n3. **Tarot Spreads** — Custom spread designs with interpretation frameworks\n4. **Video Scripts** — TTS-ready scripts with screen text cues\n5. **Cover Art** — Pillow-generated thumbnails optimized for mobile\n6. **Content Calendar** — Automated scheduling based on astrological events"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Weekly 12-Sign Reading\n\n```\nGenerate a weekly tarot reading for all 12 signs.\nDate range: {start} to {end}\nStyle: conversational, no jargon\nFormat: video script with screen text cues\n```\n\nThe agent will:\n1. Pull real ephemeris data (planetary positions, aspects)\n2. Map transits to each sign's house system\n3. Pull tarot cards (Challenge / Guidance / Blessing spread)\n4. Write scripts in a natural, engaging voice\n\n### Event-Driven Special\n\n```\nCreate a special video about {transit/event}.\nExample: Saturn conjunct Neptune in Aries\nInclude: what it means, historical context, 12-sign breakdown\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Content Framework] ### The 3-Card Spread (Challenge / Guidance / Blessing)\n\nA proven framework for weekly readings:\n\n| Position | Meaning | Tone |\n|----------|---------|------|\n| Challenge | What to watch out for | Honest, not scary |\n| Guidance | What to focus on | Actionable advice |\n| Blessing | What's coming | Hopeful, encouraging |\n\n### Script Structure (per sign, 60-90 seconds)\n\n```\n1. Opening hook (5s) — \"Hey {Sign}, this week is about...\"\n2. Transit context (10s) — What planets are doing in their house\n3. Card 1: Challenge (15s) — The obstacle + real-life scenario\n4. Card 2: Guidance (15s) — Practical advice\n5. Card 3: Blessing (10s) — The reward / positive outcome\n6. CTA (5s) — \"Follow for your sign's weekly reading\"\n```\n\n### Writing Style Guidelines\n\n- **Say it like a friend, not a fortune teller** — \"You might feel stuck\" not \"The cards reveal stagnation\"\n- **Use scenarios** — \"That coworker drama? Time to set boundaries\" not \"Conflict in relationships\"\n- **Numbers in words** — \"twenty twenty-six\" not \"2026\" (TTS-friendly)\n- **Avoid fear-mongering** — Even tough cards get a constructive spin\n- **No clichés** — Ban \"the universe has a plan\", \"trust the process\", \"everything happens for a reason\""
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Ephemeris Data] ### Using pyswisseph (recommended)\n\n```python\nimport swisseph as swe\nfrom datetime import datetime\n\ndef get_planet_position(planet_id, dt):\n    \"\"\"Get planet longitude in zodiac.\"\"\"\n    jd = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60)\n    pos = swe.calc_ut(jd, planet_id)[0]\n    longitude = pos[0]\n    sign_num = int(longitude / 30)\n    degree = longitude % 30\n    signs = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',\n             'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']\n    return signs[sign_num], degree\n\n# Planet IDs: SUN=0, MOON=1, MERCURY=2, VENUS=3, MARS=4,\n#             JUPITER=5, SATURN=6, URANUS=7, NEPTUNE=8, PLUTO=9\n```\n\n### Install\n```bash\npip install pyswisseph\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Cover Art Generation] ### Pillow-based covers (no AI text artifacts)\n\n```python\nfrom PIL import Image, ImageDraw, ImageFont\nimport os\n\ndef generate_cover(sign, hook_text, date_range, colors, output_path):\n    \"\"\"Generate a 1080x1920 Shorts cover.\"\"\"\n    W, H = 1080, 1920\n    img = Image.new('RGB', (W, H))\n    draw = ImageDraw.Draw(img)\n\n    # Gradient background\n    for y in range(H):\n        r = int(colors[0][0] + (colors[1][0]-colors[0][0]) * y/H)\n        g = int(colors[0][1] + (colors[1][1]-colors[0][1]) * y/H)\n        b = int(colors[0][2] + (colors[1][2]-colors[0][2]) * y/H)\n        draw.line([(0,y),(W,y)], fill=(r,g,b))\n\n    # Load fonts (adjust paths for your system)\n    font_lg = ImageFont.truetype(\"/System/Library/Fonts/Helvetica.ttc\", 120)\n    font_md = ImageFont.truetype(\"/System/Library/Fonts/Helvetica.ttc\", 56)\n    font_sm = ImageFont.truetype(\"/System/Library/Fonts/Helvetica.ttc\", 40)\n\n    # Sign name (large, centered)\n    draw.text((W//2, H*0.35), sign.upper(), font=font_lg, fill='white', anchor='mm')\n\n    # Date range\n    draw.text((W//2, H*0.48), date_range, font=font_md, fill=(255,215,0), anchor='mm')\n\n    # Hook text\n    draw.text((W//2, H*0.62), hook_text, font=font_md, fill='white', anchor='mm')\n\n    # Brand\n    draw.text((W//2, H*0.78), \"WEEKLY TAROT\", font=font_sm, fill=(200,200,200), anchor='mm')\n\n    img.save(output_path, quality=95)\n\n# Color schemes per sign\nSIGN_COLORS = {\n    'aries':       [(220,50,30),  (120,20,60)],\n    'taurus':      [(30,120,50),  (15,60,30)],\n    'gemini':      [(230,200,40), (180,120,20)],\n    'cancer':      [(150,180,220),(60,80,140)],\n    'leo':         [(240,170,30), (200,100,10)],\n    'virgo':       [(80,140,80),  (40,80,50)],\n    'libra':       [(200,160,200),(120,80,150)],\n    'scorpio':     [(140,20,40),  (60,10,40)],\n    'sagittarius': [(160,80,180), (100,40,120)],\n    'capricorn':   [(80,60,50),   (30,25,20)],\n    'aquarius':    [(40,100,220), (20,50,140)],\n    'pisces':      [(160,130,200),(80,60,130)],\n}\n```\n\n### Cover Rules\n-"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Content Calendar] ### Weekly Cycle\n| Day | Content | Platform |\n|-----|---------|----------|\n| Mon | 12 sign readings (video) | YouTube Shorts, TikTok |\n| Wed | Mid-week energy check | Instagram Reel |\n| Fri | Weekend tarot pull | TikTok, Shorts |\n\n### Event-Driven (auto-detect from ephemeris)\n- Mercury Retrograde → \"Survival guide\" series\n- Full/New Moon → Moon ritual + tarot spread\n- Eclipse season → \"Eclipse portal\" specials\n- Major conjunctions → Deep-dive explainer + 12-sign impact"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Sensitive Content Notes] Platform content policies vary. Avoid:\n- Health/medical claims (\"this card says you'll recover\")\n- Financial advice (\"invest now, Jupiter says so\")\n- Fear-inducing predictions (\"danger ahead\", \"death card means...\")\n- Always frame readings as reflection tools, not predictions"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "tarot_content"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexyuui/tarot-content/SKILL.md"
+}

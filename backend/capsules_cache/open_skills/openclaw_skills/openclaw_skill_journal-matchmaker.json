@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_journal-matchmaker",
+  "description": "Recommend suitable high-impact factor or domain-specific journals for manuscript submission based on abstract content. Trigger when user provides paper abstract and asks for journal recommendations, impact factor matching, or scope alignment suggestions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Journal Matchmaker\n\nAnalyzes academic paper abstracts to recommend optimal journals for submission, considering impact factors, scope alignment, and domain expertise."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use Cases] - Find the best-fit journal for a new manuscript\n- Identify high-impact factor journals in specific research areas\n- Compare journal scopes against paper content\n- Discover domain-specific publication venues"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ```bash\npython scripts/main.py --abstract \"Your paper abstract text here\" [--field \"field_name\"] [--min-if 5.0] [--count 5]\n```\n\n### Parameters\n\n| Parameter | Type | Required | Default | Description |\n|-----------|------|----------|---------|-------------|\n| `--abstract` | str | Yes | - | Paper abstract text to analyze |\n| `--field` | str | No | Auto-detect | Research field (e.g., \"computer_science\", \"biology\") |\n| `--min-if` | float | No | 0.0 | Minimum impact factor threshold |\n| `--max-if` | float | No | None | Maximum impact factor (optional) |\n| `--count` | int | No | 5 | Number of recommendations to return |\n| `--format` | str | No | table | Output format: table, json, markdown |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Basic usage\npython scripts/main.py --abstract \"This paper presents a novel deep learning approach...\"\n\n# Specify field and minimum impact factor\npython scripts/main.py --abstract \"abstract.txt\" --field \"ai\" --min-if 10.0 --count 10\n\n# Output as JSON for integration\npython scripts/main.py --abstract \"...\" --format json\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How It Works] 1. **Abstract Analysis**: Extracts key terms, methodology, and research focus\n2. **Field Classification**: Identifies the primary research domain\n3. **Journal Matching**: Compares content against journal scopes and aims\n4. **Impact Factor Filtering**: Applies IF constraints if specified\n5. **Ranking**: Scores and ranks journals by relevance and impact"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Technical Details] - **Difficulty**: Medium\n- **Approach**: Keyword extraction + journal database matching\n- **Data Source**: Journal metadata from references/journals.json\n- **Algorithm**: TF-IDF + cosine similarity for scope matching"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[References] - `references/journals.json` - Journal database with impact factors and scopes\n- `references/fields.json` - Research field classifications\n- `references/scoring_weights.json` - Algorithm tuning parameters"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - Journal database should be updated periodically (quarterly recommended)\n- Impact factor data sourced from Journal Citation Reports (JCR)\n- Scope descriptions parsed from official journal websites\n- For emerging fields, manual curation may be needed"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Risk Assessment] | Risk Indicator | Assessment | Level |\n|----------------|------------|-------|\n| Code Execution | Python/R scripts executed locally | Medium |\n| Network Access | No external API calls | Low |\n| File System Access | Read input files, write output files | Medium |\n| Instruction Tampering | Standard prompt guidelines | Low |\n| Data Exposure | Output files saved to workspace | Low |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Security Checklist] - [ ] No hardcoded credentials or API keys\n- [ ] No unauthorized file system access (../)\n- [ ] Output does not expose sensitive information\n- [ ] Prompt injection protections in place\n- [ ] Input file paths validated (no ../ traversal)\n- [ ] Output directory restricted to workspace\n- [ ] Script execution in sandboxed environment\n- [ ] Error messages sanitized (no stack traces exposed)\n- [ ] Dependencies audited"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Prerequisites] ```bash\n# Python dependencies\npip install -r requirements.txt\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Evaluation Criteria] ### Success Metrics\n- [ ] Successfully executes main functionality\n- [ ] Output meets quality standards\n- [ ] Handles edge cases gracefully\n- [ ] Performance is acceptable\n\n### Test Cases\n1. **Basic Functionality**: Standard input → Expected output\n2. **Edge Case**: Invalid input → Graceful error handling\n3. **Performance**: Large dataset → Acceptable processing time"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Lifecycle Status] - **Current Stage**: Draft\n- **Next Review Date**: 2026-03-06\n- **Known Issues**: None\n- **Planned Improvements**: \n  - Performance optimization\n  - Additional feature support"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "journal_matchmaker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aipoch-ai/journal-matchmaker/SKILL.md"
+}

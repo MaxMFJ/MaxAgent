@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_aws-solution-architect",
+  "description": "Design AWS architectures for startups using serverless patterns and IaC templates. Use when asked to design serverless architecture, create CloudFormation templates, optimize AWS costs, set up CI/CD pipelines, or migrate to AWS. Covers Lambda, API Gateway, DynamoDB, ECS, Aurora, and cost optimization.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AWS Solution Architect\n\nDesign scalable, cost-effective AWS architectures for startups with infrastructure-as-code templates.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Table of Contents] - [Trigger Terms](#trigger-terms)\n- [Workflow](#workflow)\n- [Tools](#tools)\n- [Quick Start](#quick-start)\n- [Input Requirements](#input-requirements)\n- [Output Formats](#output-formats)\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Trigger Terms] Use this skill when you encounter:\n\n| Category | Terms |\n|----------|-------|\n| **Architecture Design** | serverless architecture, AWS architecture, cloud design, microservices, three-tier |\n| **IaC Generation** | CloudFormation, CDK, Terraform, infrastructure as code, deploy template |\n| **Serverless** | Lambda, API Gateway, DynamoDB, Step Functions, EventBridge, AppSync |\n| **Containers** | ECS, Fargate, EKS, container orchestration, Docker on AWS |\n| **Cost Optimization** | reduce AWS costs, optimize spending, right-sizing, Savings Plans |\n| **Database** | Aurora, RDS, DynamoDB design, database migration, data modeling |\n| **Security** | IAM policies, VPC design, encryption, Cognito, WAF |\n| **CI/CD** | CodePipeline, CodeBuild, CodeDeploy, GitHub Actions AWS |\n| **Monitoring** | CloudWatch, X-Ray, observability, alarms, dashboards |\n| **Migration** | migrate to AWS, lift and shift, replatform, DMS |\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1: Gather Requirements\n\nCollect application specifications:\n\n```\n- Application type (web app, mobile backend, data pipeline, SaaS)\n- Expected users and requests per second\n- Budget constraints (monthly spend limit)\n- Team size and AWS experience level\n- Compliance requirements (GDPR, HIPAA, SOC 2)\n- Availability requirements (SLA, RPO/RTO)\n```\n\n### Step 2: Design Architecture\n\nRun the architecture designer to get pattern recommendations:\n\n```bash\npython scripts/architecture_designer.py --input requirements.json\n```\n\nSelect from recommended patterns:\n- **Serverless Web**: S3 + CloudFront + API Gateway + Lambda + DynamoDB\n- **Event-Driven Microservices**: EventBridge + Lambda + SQS + Step Functions\n- **Three-Tier**: ALB + ECS Fargate + Aurora + ElastiCache\n- **GraphQL Backend**: AppSync + Lambda + DynamoDB + Cognito\n\nSee `references/architecture_patterns.md` for detailed pattern specifications.\n\n### Step 3: Generate IaC Templates\n\nCreate infrastructure-as-code for the selected pattern:\n\n```bash\n# Serverless stack (CloudFormation)\npython scripts/serverless_stack.py --app-name my-app --region us-east-1\n\n# Output: CloudFormation YAML template ready to deploy\n```\n\n### Step 4: Review Costs\n\nAnalyze estimated costs and optimization opportunities:\n\n```bash\npython scripts/cost_optimizer.py --resources current_setup.json --monthly-spend 2000\n```\n\nOutput includes:\n- Monthly cost breakdown by service\n- Right-sizing recommendations\n- Savings Plans opportunities\n- Potential monthly savings\n\n### Step 5: Deploy\n\nDeploy the generated infrastructure:\n\n```bash\n# CloudFormation\naws cloudformation create-stack \\\n  --stack-name my-app-stack \\\n  --template-body file://template.yaml \\\n  --capabilities CAPABILITY_IAM\n\n# CDK\ncdk deploy\n\n# Terraform\nterraform init && terraform apply\n```\n\n### Step 6: Validate\n\nVerify deployment and set up monitoring:\n\n```bash\n# Check stack status\naws cloudformation describe-stacks --stack-name my-app-stack\n\n# Set up CloudWatch alarms\naws cloudwatch put"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Tools] ### architecture_designer.py\n\nGenerates architecture patterns based on requirements.\n\n```bash\npython scripts/architecture_designer.py --input requirements.json --output design.json\n```\n\n**Input:** JSON with app type, scale, budget, compliance needs\n**Output:** Recommended pattern, service stack, cost estimate, pros/cons\n\n### serverless_stack.py\n\nCreates serverless CloudFormation templates.\n\n```bash\npython scripts/serverless_stack.py --app-name my-app --region us-east-1\n```\n\n**Output:** Production-ready CloudFormation YAML with:\n- API Gateway + Lambda\n- DynamoDB table\n- Cognito user pool\n- IAM roles with least privilege\n- CloudWatch logging\n\n### cost_optimizer.py\n\nAnalyzes costs and recommends optimizations.\n\n```bash\npython scripts/cost_optimizer.py --resources inventory.json --monthly-spend 5000\n```\n\n**Output:** Recommendations for:\n- Idle resource removal\n- Instance right-sizing\n- Reserved capacity purchases\n- Storage tier transitions\n- NAT Gateway alternatives\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick Start] ### MVP Architecture (< $100/month)\n\n```\nAsk: \"Design a serverless MVP backend for a mobile app with 1000 users\"\n\nResult:\n- Lambda + API Gateway for API\n- DynamoDB pay-per-request for data\n- Cognito for authentication\n- S3 + CloudFront for static assets\n- Estimated: $20-50/month\n```\n\n### Scaling Architecture ($500-2000/month)\n\n```\nAsk: \"Design a scalable architecture for a SaaS platform with 50k users\"\n\nResult:\n- ECS Fargate for containerized API\n- Aurora Serverless for relational data\n- ElastiCache for session caching\n- CloudFront for CDN\n- CodePipeline for CI/CD\n- Multi-AZ deployment\n```\n\n### Cost Optimization\n\n```\nAsk: \"Optimize my AWS setup to reduce costs by 30%. Current spend: $3000/month\"\n\nProvide: Current resource inventory (EC2, RDS, S3, etc.)\n\nResult:\n- Idle resource identification\n- Right-sizing recommendations\n- Savings Plans analysis\n- Storage lifecycle policies\n- Target savings: $900/month\n```\n\n### IaC Generation\n\n```\nAsk: \"Generate CloudFormation for a three-tier web app with auto-scaling\"\n\nResult:\n- VPC with public/private subnets\n- ALB with HTTPS\n- ECS Fargate with auto-scaling\n- Aurora with read replicas\n- Security groups and IAM roles\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Input Requirements] Provide these details for architecture design:\n\n| Requirement | Description | Example |\n|-------------|-------------|---------|\n| Application type | What you're building | SaaS platform, mobile backend |\n| Expected scale | Users, requests/sec | 10k users, 100 RPS |\n| Budget | Monthly AWS limit | $500/month max |\n| Team context | Size, AWS experience | 3 devs, intermediate |\n| Compliance | Regulatory needs | HIPAA, GDPR, SOC 2 |\n| Availability | Uptime requirements | 99.9% SLA, 1hr RPO |\n\n**JSON Format:**\n\n```json\n{\n  \"application_type\": \"saas_platform\",\n  \"expected_users\": 10000,\n  \"requests_per_second\": 100,\n  \"budget_monthly_usd\": 500,\n  \"team_size\": 3,\n  \"aws_experience\": \"intermediate\",\n  \"compliance\": [\"SOC2\"],\n  \"availability_sla\": \"99.9%\"\n}\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Output Formats] ### Architecture Design\n\n- Pattern recommendation with rationale\n- Service stack diagram (ASCII)\n- Configuration specifications\n- Monthly cost estimate\n- Scaling characteristics\n- Trade-offs and limitations\n\n### IaC Templates\n\n- **CloudFormation YAML**: Production-ready SAM/CFN templates\n- **CDK TypeScript**: Type-safe infrastructure code\n- **Terraform HCL**: Multi-cloud compatible configs\n\n### Cost Analysis\n\n- Current spend breakdown\n- Optimization recommendations with savings\n- Priority action list (high/medium/low)\n- Implementation checklist\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reference Documentation] | Document | Contents |\n|----------|----------|\n| `references/architecture_patterns.md` | 6 patterns: serverless, microservices, three-tier, data processing, GraphQL, multi-region |\n| `references/service_selection.md` | Decision matrices for compute, database, storage, messaging |\n| `references/best_practices.md` | Serverless design, cost optimization, security hardening, scalability |\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Limitations] - Lambda: 15-minute execution, 10GB memory max\n- API Gateway: 29-second timeout, 10MB payload\n- DynamoDB: 400KB item size, eventually consistent by default\n- Regional availability varies by service\n- Some services have AWS-specific lock-in"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aws_solution_architect"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alirezarezvani/aws-solution-architect/SKILL.md"
+}

@@ -1,0 +1,97 @@
+{
+  "id": "openclaw_skill_edinet-mcp",
+  "description": "Analyze Japanese public company financial statements (BS/PL/CF/財務諸表) from EDINET (FSA/金融庁) — search by company name or stock code, screen companies, compare periods (xbrl-diff). XBRL data, J-GAAP/IFRS/US-GAAP. Japan securities filings.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # EDINET: Japanese Financial Statement Analysis\n\nSearch Japanese public companies and analyze their financial statements via EDINET (金融庁 電子開示システム). Supports income statements (PL/損益計算書), balance sheets (BS/貸借対照表), and cash flow statements (CF/キャッシュ・フロー計算書) with 161 normalized labels across J-GAAP, IFRS, and US-GAAP."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Use Cases] - Look up any Japanese public company by name or stock code (証券コード)\n- Retrieve and compare income statements across companies\n- Analyze balance sheet composition and trends\n- Review cash flow patterns (operating, investing, financing)\n- Compare financials across different accounting standards (J-GAAP/IFRS/US-GAAP)\n- Screen multiple companies by ROE, profit margins, and other metrics"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] ### Search companies\n```bash\n# Search by company name (Japanese or English)\nedinet-mcp search トヨタ\nedinet-mcp search ソニー\n\n# Search by stock code\nedinet-mcp search 7203 --limit 5 --json-output\n```\n\n### Financial statements\n```bash\n# Income statement for Toyota (E02144), filed in 2024\nedinet-mcp statements -c E02144 -p 2024 -s income_statement --format json\n\n# Balance sheet\nedinet-mcp statements -c E02144 -p 2024 -s balance_sheet --format json\n\n# Cash flow statement\nedinet-mcp statements -c E02144 -p 2024 -s cash_flow_statement --format json\n\n# All statements as CSV\nedinet-mcp statements -c E02144 -p 2024 --format csv\n```\n\n### Screen companies (compare metrics)\n```bash\n# Compare Toyota, Sony, Honda by financial metrics\nedinet-mcp screen E02144 E01777 E02529\n\n# Sort by ROE\nedinet-mcp screen E02144 E01777 E02529 --sort-by ROE\n\n# JSON output\nedinet-mcp screen E02144 E01777 --format json\n```\n\n### Test connectivity\n```bash\nedinet-mcp test\n```\n\n### Statement types\n\n| Type | Japanese | Key items |\n|---|---|---|\n| `income_statement` | 損益計算書 (PL) | 売上高, 営業利益, 純利益 |\n| `balance_sheet` | 貸借対照表 (BS) | 総資産, 純資産, 負債 |\n| `cash_flow_statement` | CF計算書 | 営業CF, 投資CF, 財務CF |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] 1. `edinet-mcp search <company>` → find EDINET code\n2. `edinet-mcp statements -c <code> -p <year>` → view financial data\n3. `edinet-mcp screen <code1> <code2> ...` → compare multiple companies"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Important] - The `-p` (period) parameter is the **filing year**, not the fiscal year. March-end companies file in June of the next year: FY2023 data → `-p 2024`.\n- 161 normalized labels across J-GAAP / IFRS / US-GAAP.\n- Results include 当期 (current) and 前期 (prior) periods.\n- Rate-limited to 0.5 req/sec by default. Screening 10 companies takes ~1-2 minutes.\n- Maximum 20 companies per screen request."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Setup] - Requires `EDINET_API_KEY` environment variable\n- Free API key: https://disclosure2dl.edinet-fsa.go.jp/\n- Python package: `pip install edinet-mcp` or `uv tool install edinet-mcp`"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "edinet_mcp"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📊",
+        "requires": {
+          "bins": [
+            "edinet-mcp"
+          ],
+          "env": [
+            "EDINET_API_KEY"
+          ]
+        },
+        "install": [
+          {
+            "id": "uv",
+            "kind": "uv",
+            "package": "edinet-mcp",
+            "bins": [
+              "edinet-mcp"
+            ],
+            "label": "Install edinet-mcp (uv)"
+          }
+        ],
+        "tags": [
+          "japan",
+          "finance",
+          "edinet",
+          "xbrl",
+          "financial-statements",
+          "mcp",
+          "securities",
+          "disclosure"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajtgjmdjp/edinet-mcp/SKILL.md"
+}

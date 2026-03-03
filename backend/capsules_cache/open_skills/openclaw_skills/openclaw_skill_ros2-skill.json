@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_ros2-skill",
+  "description": "Controls ROS 2 robots directly via rclpy CLI. Use when the user asks about ROS 2 topics, services, nodes, parameters, actions, robot movement, sensor data, or any ROS 2 robot interaction.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ROS 2 Skill\n\nControls and monitors ROS 2 robots directly via rclpy.\n\n**Architecture:** Agent → `ros2_cli.py` → rclpy → ROS 2\n\nAll commands output JSON. Errors contain `{\"error\": \"...\"}`.\n\nFor full command reference with arguments, options, and output examples, see [references/COMMANDS.md](references/COMMANDS.md).\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Source ROS 2 environment\n\n```bash\nsource /opt/ros/${ROS_DISTRO}/setup.bash\n```\n\n### 2. Install dependencies\n\n```bash\npip install rclpy rosidl-runtime-py\n```\n\n### 3. Run on ROS 2 robot\n\nThe CLI must run on a machine with ROS 2 installed and sourced.\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Important: Check ROS 2 First] Before any operation, verify ROS 2 is available:\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py version\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Command Quick Reference] | Category | Command | Description |\n|----------|---------|-------------|\n| Connection | `version` | Detect ROS 2 distro |\n| Safety | `estop` | Emergency stop for mobile robots |\n| Topics | `topics list` | List all active topics with types |\n| Topics | `topics type <topic>` | Get message type of a topic |\n| Topics | `topics details <topic>` | Get topic publishers/subscribers |\n| Topics | `topics message <msg_type>` | Get message field structure |\n| Topics | `topics subscribe <topic>` | Subscribe and receive messages |\n| Topics | `topics publish <topic> <json>` | Publish a message to a topic |\n| Topics | `topics publish-sequence <topic> <msgs> <durs>` | Publish message sequence |\n| Services | `services list` | List all available services |\n| Services | `services type <service>` | Get service type |\n| Services | `services details <service>` | Get service request/response fields |\n| Services | `services call <service> <json>` | Call a service |\n| Nodes | `nodes list` | List all active nodes |\n| Nodes | `nodes details <node>` | Get node topics/services |\n| Params | `params list <node>` | List node parameters |\n| Params | `params get <node:param>` | Get parameter value |\n| Params | `params set <node:param> <value>` | Set parameter value |\n| Actions | `actions list` | List action servers |\n| Actions | `actions details <action>` | Get action goal/result/feedback fields |\n| Actions | `actions send <action> <json>` | Send action goal |\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Key Commands] ### version\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py version\n```\n\n### topics list / type / details / message\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py topics list\npython3 {baseDir}/scripts/ros2_cli.py topics type /turtle1/cmd_vel\npython3 {baseDir}/scripts/ros2_cli.py topics details /turtle1/cmd_vel\npython3 {baseDir}/scripts/ros2_cli.py topics message geometry_msgs/Twist\n```\n\n### topics subscribe\n\nWithout `--duration`: returns first message. With `--duration`: collects multiple messages.\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py topics subscribe /turtle1/pose\npython3 {baseDir}/scripts/ros2_cli.py topics subscribe /odom --duration 10 --max-messages 50\n```\n\n### topics publish\n\nWithout `--duration`: single-shot. With `--duration`: publishes repeatedly at `--rate` Hz. **Use `--duration` for velocity commands** — most robot controllers stop if they don't receive continuous `cmd_vel` messages.\n\n```bash\n# Single-shot\npython3 {baseDir}/scripts/ros2_cli.py topics publish /trigger '{\"data\": \"\"}'\n\n# Move forward 3 seconds (velocity — use --duration)\npython3 {baseDir}/scripts/ros2_cli.py topics publish /cmd_vel \\\n  '{\"linear\":{\"x\":1.0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}' --duration 3\n\n# Stop\npython3 {baseDir}/scripts/ros2_cli.py topics publish /cmd_vel \\\n  '{\"linear\":{\"x\":0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}'\n```\n\nOptions: `--duration SECONDS`, `--rate HZ` (default 10)\n\n### topics publish-sequence\n\nPublish a sequence of messages, each repeated at `--rate` Hz for its corresponding duration. Arrays must have the same length.\n\n```bash\n# Forward 3s then stop\npython3 {baseDir}/scripts/ros2_cli.py topics publish-sequence /cmd_vel \\\n  '[{\"linear\":{\"x\":1.0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}},{\"linear\":{\"x\":0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}]' \\\n  '[3.0, 0.5]'\n\n# Draw a square (turtlesim)\npython3 {baseDir}/scripts/ros2_cli.py topics publish-sequence /turtle1/cmd_vel \\\n  '[{\"linear\":{\"x\":2},\"angular\":{\"z\":0}},{\"linear\":{\"x\":0},\"angular\":"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Workflow Examples] ### 1. Explore a Robot System\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py version\npython3 {baseDir}/scripts/ros2_cli.py topics list\npython3 {baseDir}/scripts/ros2_cli.py nodes list\npython3 {baseDir}/scripts/ros2_cli.py services list\npython3 {baseDir}/scripts/ros2_cli.py topics type /cmd_vel\npython3 {baseDir}/scripts/ros2_cli.py topics message geometry_msgs/Twist\npython3 {baseDir}/scripts/ros2_cli.py actions list\npython3 {baseDir}/scripts/ros2_cli.py params list /robot_node\n```\n\n### 2. Move a Robot\n\nAlways check the message structure first, then publish movement, and always stop after.\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py topics message geometry_msgs/Twist\npython3 {baseDir}/scripts/ros2_cli.py topics publish-sequence /cmd_vel \\\n  '[{\"linear\":{\"x\":1.0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}},{\"linear\":{\"x\":0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}]' \\\n  '[2.0, 0.5]'\n```\n\n### 3. Read Sensor Data\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py topics type /scan\npython3 {baseDir}/scripts/ros2_cli.py topics message sensor_msgs/LaserScan\npython3 {baseDir}/scripts/ros2_cli.py topics subscribe /scan --duration 3\npython3 {baseDir}/scripts/ros2_cli.py topics subscribe /odom --duration 10 --max-messages 50\n```\n\n### 4. Use Services\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py services list\npython3 {baseDir}/scripts/ros2_cli.py services details /spawn\npython3 {baseDir}/scripts/ros2_cli.py services call /spawn \\\n  '{\"x\":3.0,\"y\":3.0,\"theta\":0.0,\"name\":\"turtle2\"}'\n```\n\n### 5. Actions\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py actions list\npython3 {baseDir}/scripts/ros2_cli.py actions details /turtle1/rotate_absolute\npython3 {baseDir}/scripts/ros2_cli.py actions send /turtle1/rotate_absolute \\\n  '{\"theta\":1.57}'\n```\n\n### 6. Change Parameters\n\n```bash\npython3 {baseDir}/scripts/ros2_cli.py params list /turtlesim\npython3 {baseDir}/scripts/ros2_cli.py params get /turtlesim:background_r\npython3 {baseDir}/scripts/ros2_cli.py params set /turtlesim:background_r 255\np"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Safety Notes] **Destructive commands** (can move the robot or change state):\n- `topics publish` / `topics publish-sequence` — sends movement or control commands\n- `services call` — can reset, spawn, kill, or change robot state\n- `params set` — modifies runtime parameters\n- `actions send` — triggers robot actions (rotation, navigation, etc.)\n\n**Always stop the robot after movement.** The last message in any `publish-sequence` should be all zeros:\n```json\n{\"linear\":{\"x\":0,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}\n```\n\n**Always check JSON output for errors before proceeding.**\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] | Problem | Cause | Solution |\n|---------|-------|----------|\n| rclpy not installed | Missing Python packages | Run: `pip install rclpy rosidl-runtime-py` |\n| ROS 2 not sourced | Environment not set up | Run: `source /opt/ros/${ROS_DISTRO}/setup.bash` |\n| No topics found | ROS nodes not running | Ensure nodes are launched and workspace is sourced |\n| Service not found | Service not available | Use `services list` to see available services |\n| Parameter commands fail | Node doesn't have parameters | Some nodes don't expose parameters |\n| Action commands fail | Action server not available | Use `actions list` to see available actions |\n| Invalid JSON error | Malformed message | Validate JSON before passing (watch for single vs double quotes) |\n| Subscribe timeout | No publisher on topic | Check `topics details` to verify publishers exist |\n| publish-sequence length error | Array mismatch | `messages` and `durations` arrays must have the same length |"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ros2_skill"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "Apache-2.0",
+    "compatibility": "Requires python3, rclpy, and ROS 2 environment sourced",
+    "extra": {
+      "openclaw": {
+        "emoji": "🤖",
+        "requires": {
+          "bins": [
+            "python3",
+            "ros2"
+          ],
+          "pip": [
+            "rclpy",
+            "rosidl-runtime-py"
+          ]
+        },
+        "category": "robotics",
+        "tags": [
+          "ros2",
+          "robotics",
+          "rclpy"
+        ]
+      },
+      "author": [
+        "adityakamath",
+        "lpigeon"
+      ],
+      "version": "3.0.0"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adityakamath/ros2-skill/SKILL.md"
+}

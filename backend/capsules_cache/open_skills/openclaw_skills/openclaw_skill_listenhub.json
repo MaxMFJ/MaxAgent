@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_listenhub",
+  "description": "Explain anything — turn ideas into podcasts, explainer videos, or voice narration.\nUse when the user wants to \"make a podcast\", \"create an explainer video\",\n\"read this aloud\", \"generate an image\", or share knowledge in audio/visual form.\nSupports: topic descriptions, YouTube links, article URLs, plain text, and image prompts.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] <purpose>\n**The Hook**: Paste content, get audio/video/image. That simple.\n\nFour modes, one entry point:\n- **Podcast** — Two-person dialogue, ideal for deep discussions\n- **Explain** — Single narrator + AI visuals, ideal for product intros\n- **TTS/Flow Speech** — Pure voice reading, ideal for articles\n- **Image Generation** — AI image creation, ideal for creative visualization\n\nUsers don't need to remember APIs, modes, or parameters. Just say what you want.\n</purpose>\n\n<instructions>"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[⛔ Hard Constraints (Inviolable)] **The scripts are the ONLY interface. Period.**\n\n```\n┌─────────────────────────────────────────────────────────┐\n│  AI Agent  ──▶  ./scripts/*.sh  ──▶  ListenHub API     │\n│                      ▲                                  │\n│                      │                                  │\n│            This is the ONLY path.                       │\n│            Direct API calls are FORBIDDEN.              │\n└─────────────────────────────────────────────────────────┘\n```\n\n**MUST**:\n- Execute functionality ONLY through provided scripts in `**/skills/listenhub/scripts/`\n- Pass user intent as script arguments exactly as documented\n- Trust script outputs; do not second-guess internal logic\n\n**MUST NOT**:\n- Write curl commands to ListenHub/Marswave API directly\n- Construct JSON bodies for API calls manually\n- Guess or fabricate speakerIds, endpoints, or API parameters\n- Assume API structure based on patterns or web searches\n- Hallucinate features not exposed by existing scripts\n\n**Why**: The API is proprietary. Endpoints, parameters, and speakerIds are NOT publicly documented. Web searches will NOT find this information. Any attempt to bypass scripts will produce incorrect, non-functional code."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Script Location] Scripts are located at `**/skills/listenhub/scripts/` relative to your working context.\n\nDifferent AI clients use different dot-directories:\n- Claude Code: `.claude/skills/listenhub/scripts/`\n- Other clients: may vary (`.cursor/`, `.windsurf/`, etc.)\n\n**Resolution**: Use glob pattern `**/skills/listenhub/scripts/*.sh` to locate scripts reliably, or resolve from the SKILL.md file's own path."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Private Data (Cannot Be Searched)] The following are **internal implementation details** that AI cannot reliably know:\n\n| Category | Examples | How to Obtain |\n|----------|----------|---------------|\n| API Base URL | `api.marswave.ai/...` | ✗ Cannot — internal to scripts |\n| Endpoints | `podcast/episodes`, etc. | ✗ Cannot — internal to scripts |\n| Speaker IDs | `cozy-man-english`, etc. | ✓ Call `get-speakers.sh` |\n| Request schemas | JSON body structure | ✗ Cannot — internal to scripts |\n| Response formats | Episode ID, status codes | ✓ Documented per script |\n\n**Rule**: If information is not in this SKILL.md or retrievable via a script (like `get-speakers.sh`), assume you don't know it."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Design Philosophy] **Hide complexity, reveal magic.**\n\nUsers don't need to know: Episode IDs, API structure, polling mechanisms, credits, endpoint differences.\nUsers only need: Say idea → wait a moment → get the link."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security] - User-provided content (text, URLs) is transmitted to the ListenHub API (`api.marswave.ai`) for processing. Do not pass sensitive or confidential information as input.\n- The `--source-url` parameter accepts external URLs whose content is fetched and processed by the backend. Only use trusted URLs.\n- API keys are stored locally in environment variables and transmitted via HTTPS. Never log or display full API keys.\n- Version checks connect to `raw.githubusercontent.com` (read-only, no code execution). Set `LISTENHUB_SKIP_VERSION_CHECK=1` to disable."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Environment] ### ListenHub API Key\n\nAPI key stored in `$LISTENHUB_API_KEY`. Check on first use:\n\n```bash\nsource ~/.zshrc 2>/dev/null; [ -n \"$LISTENHUB_API_KEY\" ] && echo \"ready\" || echo \"need_setup\"\n```\n\nIf setup needed, guide user:\n1. Visit https://listenhub.ai/settings/api-keys\n2. Paste key (only the `lh_sk_...` part)\n3. Auto-save to ~/.zshrc\n\n### Image Generation API Key\n\nImage generation uses the same ListenHub API key stored in `$LISTENHUB_API_KEY`.\nImage generation output path defaults to the user downloads directory, stored in `$LISTENHUB_OUTPUT_DIR`.\n\nOn first image generation, the script auto-guides configuration:\n1. Visit https://listenhub.ai/settings/api-keys (requires subscription)\n2. Paste API key\n3. Configure output path (default: ~/Downloads)\n4. Auto-save to shell rc file\n\n**Security**: Never expose full API keys in output."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Mode Detection] Auto-detect mode from user input:\n\n**→ Podcast (1-2 speakers)**\nSupports single-speaker or dual-speaker podcasts. Debate mode requires 2 speakers.\nDefault mode: `quick` unless explicitly requested.\nIf speakers are not specified, call `get-speakers.sh` and select the first `speakerId`\nmatching the chosen `language`.\nIf reference materials are provided, pass them as `--source-url` or `--source-text`.\nWhen the user only provides a topic (e.g., \"I want a podcast about X\"), proceed with:\n1) detect `language` from user input,\n2) set `mode=quick`,\n3) choose one speaker via `get-speakers.sh` matching the language,\n4) create a single-speaker podcast without further clarification.\n1. Keywords: \"podcast\", \"chat about\", \"discuss\", \"debate\", \"dialogue\"\n2. Use case: Topic exploration, opinion exchange, deep analysis\n- Feature: Two voices, interactive feel\n\n**→ Explain (Explainer video)**\n- Keywords: \"explain\", \"introduce\", \"video\", \"explainer\", \"tutorial\"\n- Use case: Product intro, concept explanation, tutorials\n- Feature: Single narrator + AI-generated visuals, can export video\n\n**→ TTS (Text-to-speech)**\nTTS defaults to FlowSpeech `direct` for single-pass text or URL narration.\nScript arrays and multi-speaker dialogue belong to Speech as an advanced path, not the default TTS entry.\nText-to-speech input is limited to 10,000 characters; split or use a URL when longer.\n1. Keywords: \"read aloud\", \"convert to speech\", \"tts\", \"voice\"\n2. Use case: Article to audio, note review, document narration\n3. Feature: Fastest (1-2 min), pure audio\n\n### Ambiguous \"Convert to speech\" Guidance\n\nWhen the request is ambiguous (e.g., \"convert to speech\", \"read aloud\"), apply:\n\n1. Default to FlowSpeech and prioritize `direct` to avoid altering content.\n2. Input type: URL uses `type=url`, plain text uses `type=text`.\n3. Speaker: if not specified, call `get-speakers` and pick the first `speakerId` matching `language`.\n4. Switch to Speech only when multi-line scripts or multi-speaker dialogue is explicit"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Interaction Flow] ### Step 1: Receive input + detect mode\n\n```\n→ Got it! Preparing...\n  Mode: Two-person podcast\n  Topic: Latest developments in Manus AI\n```\n\nFor URLs, identify type:\n- `youtu.be/XXX` → convert to `https://www.youtube.com/watch?v=XXX`\n- Other URLs → use directly\n\n### Step 2: Submit generation\n\n```\n→ Generation submitted\n\n  Estimated time:\n  • Podcast: 2-3 minutes\n  • Explain: 3-5 minutes\n  • TTS: 1-2 minutes\n\n  You can:\n  • Wait and ask \"done yet?\"\n  • Use check-status via scripts\n  • View outputs in product pages:\n    - Podcast: https://listenhub.ai/app/podcast\n    - Explain: https://listenhub.ai/app/explainer\n    - Text-to-Speech: https://listenhub.ai/app/text-to-speech\n  • Do other things, ask later\n```\n\nInternally remember Episode ID for status queries.\n\n### Step 3: Query status\n\nWhen user says \"done yet?\" / \"ready?\" / \"check status\":\n\n- **Success**: Show result + next options\n- **Processing**: \"Still generating, wait another minute?\"\n- **Failed**: \"Generation failed, content might be unparseable. Try another?\"\n\n### Step 4: Show results\n\n**Podcast result**:\n```\n✓ Podcast generated!\n\n  \"{title}\"\n\n  Episode: https://listenhub.ai/app/episode/{episodeId}\n\n  Duration: ~{duration} minutes\n\n  Download audio: provide audioUrl or audioStreamUrl on request\n```\nOne-stage podcast creation generates an online task. When status is success,\nthe episode detail already includes scripts and audio URLs. Download uses the\nreturned audioUrl or audioStreamUrl without a second create call. Two-stage\ncreation is only for script review or manual edits before audio generation.\n\n**Explain result**:\n```\n✓ Explainer video generated!\n\n  \"{title}\"\n\n  Watch: https://listenhub.ai/app/explainer\n\n  Duration: ~{duration} minutes\n\n  Need to download audio? Just say so.\n```\n\n**Image result**:\n```\n✓ Image generated!\n\n  ~/Downloads/labnana-{timestamp}.jpg\n```\n\nImage results are file-only and not shown in the web UI.\n\n**Important**: Prioritize web experience. Only provide download URLs when user explici"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Script Reference] Scripts are shell-based. Locate via `**/skills/listenhub/scripts/`.\nDependency: `jq` is required for request construction.\nThe AI must ensure `curl` and `jq` are installed before invoking scripts.\n\n**⚠️ Long-running Tasks**: Generation may take 1-5 minutes. Use your CLI client's native background execution feature:\n\n- **Claude Code**: set `run_in_background: true` in Bash tool\n- **Other CLIs**: use built-in async/background job management if available\n\n**Invocation pattern**:\n\n```bash\n$SCRIPTS/script-name.sh [args]\n```\n\nWhere `$SCRIPTS` = resolved path to `**/skills/listenhub/scripts/`\n\n### Podcast (One-Stage)\nDefault path. Use unless script review or manual editing is required.\n```bash\n$SCRIPTS/create-podcast.sh --query \"The future of AI development\" --language en --mode deep --speakers cozy-man-english\n$SCRIPTS/create-podcast.sh --query \"Analyze this article\" --language en --mode deep --speakers cozy-man-english --source-url \"https://example.com/article\"\n```\n\nMultiple `--source-url` and `--source-text` arguments are supported to combine several references in one request.\n\n### Podcast (Two-Stage: Text → Review → Audio)\nAdvanced path. Use only when script review or edits are explicitly requested.\n\n**The entire value of two-stage generation is human review between stages.\nSkipping review reduces it to one-stage with extra latency — never do this.**\n\n**Stage 1**: Generate text content.\n```bash\n$SCRIPTS/create-podcast-text.sh --query \"AI history\" --language en --mode deep --speakers cozy-man-english,travel-girl-english\n```\n\n**Review Gate (mandatory)**: After text generation completes, the agent MUST:\n\n1. Run `check-status.sh --wait` to poll until completion. On exit code 2 (timeout or rate-limited), wait briefly and retry.\n2. Save **two files** from the response:\n   - `~/Downloads/podcast-draft-<episode-id>.md` — human-readable version assembled from the response fields (`title`, `outline`, `sourceProcessResult.content`, and the `scripts` array formatted as readable di"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Language Adaptation] **Automatic Language Detection**: Adapt output language based on user input and context.\n\n**Detection Rules**:\n1. **User Input Language**: If user writes in Chinese, respond in Chinese. If user writes in English, respond in English.\n2. **Context Consistency**: Maintain the same language throughout the interaction unless user explicitly switches.\n3. **CLAUDE.md Override**: If project-level CLAUDE.md specifies a default language, respect it unless user input indicates otherwise.\n4. **Mixed Input**: If user mixes languages, prioritize the dominant language (>50% of content).\n\n**Application**:\n- Status messages: \"→ Got it! Preparing...\" (English) vs \"→ 收到！准备中...\" (Chinese)\n- Error messages: Match user's language\n- Result summaries: Match user's language\n- Script outputs: Pass through as-is (scripts handle their own language)\n\n**Example**:\n```\nUser (Chinese): \"生成一个关于 AI 的播客\"\nAI (Chinese): \"→ 收到！准备双人播客...\"\n\nUser (English): \"Make a podcast about AI\"\nAI (English): \"→ Got it! Preparing two-person podcast...\"\n```\n\n**Principle**: Language is interface, not barrier. Adapt seamlessly to user's natural expression."
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[AI Responsibilities] ### Black Box Principle\n\n**You are a dispatcher, not an implementer.**\n\nYour job is to:\n1. Understand user intent (what do they want to create?)\n2. Select the correct script (which tool fits?)\n3. Format arguments correctly (what parameters?)\n4. Execute and relay results (what happened?)\n\nYour job is NOT to:\n- Understand or modify script internals\n- Construct API calls directly\n- Guess parameters not documented here\n- Invent features that scripts don't expose\n\n### Mode-Specific Behavior\n\n**ListenHub modes (passthrough)**:\n- Podcast/Explain/TTS/Speech → pass user input directly\n- Server has full AI capability to process content\n- If user needs specific speakers → call `get-speakers.sh` first to list options\n\n**Labnana mode (passthrough by default)**:\n- Image Generation → pass the user's prompt through as-is by default\n- The generation model handles prompt interpretation; client-side rewriting is not required"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Prompt Handling (Image Generation)] **Default behavior: transparent forwarding.** Pass the user's prompt directly to the script without modification.\n\n**When to offer optimization**:\n- The user provides only a short topic or phrase (e.g., \"a cat\"), AND\n- The user has not explicitly stated they want verbatim generation\n\nIn this case, ask whether the user would like help enriching the prompt. Do not optimize without confirmation.\n\n**When to never modify**:\n- The user pastes a long, structured, or detailed prompt — treat them as experienced\n- The user explicitly says \"use this prompt exactly\" or similar\n\n**If the user agrees to optimization**, the following techniques are available as reference:\n\n**Style**: \"cyberpunk\" → add \"neon lights, futuristic, dystopian\"; \"ink painting\" → add \"Chinese ink painting, traditional art style\"\n\n**Scene**: time of day, lighting conditions, weather\n\n**Quality**: \"highly detailed\", \"8K quality\", \"cinematic composition\"\n\n**Rules when optimizing**:\n- Use English keywords (models trained on English)\n- Show the optimized prompt transparently before submitting\n- Keep the user's core intent unchanged\n- Do not over-stack terminology or add unwanted elements\n\n</instructions>\n\n<examples>\n\n<example name=\"podcast-request\">\n<user>Make a podcast about the latest AI developments</user>\n<response>\n→ Got it! Preparing two-person podcast...\n  Topic: Latest AI developments\n\n→ Generation submitted, about 2-3 minutes\n\n  You can:\n  • Wait and ask \"done yet?\"\n  • Check listenhub.ai/app/library\n</response>\n</example>\n\n<example name=\"explainer-request\">\n<user>Create an explainer video introducing Claude Code</user>\n<response>\n→ Got it! Preparing explainer video...\n  Topic: Claude Code introduction\n\n→ Generation submitted, explainer videos take 3-5 minutes\n\n  Includes: Script + narration + AI visuals\n</response>\n</example>\n\n<example name=\"tts-request\">\n<user>Convert this article to speech https://blog.example.com/article</user>\n<response>\n→ Got it! Parsing article...\n\n→ TTS submitted, about 1-2 mi"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "listenhub"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xfango/listenhub-official-skills/SKILL.md"
+}

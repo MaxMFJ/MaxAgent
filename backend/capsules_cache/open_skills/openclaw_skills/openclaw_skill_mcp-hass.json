@@ -1,0 +1,85 @@
+{
+  "id": "openclaw_skill_mcp-hass",
+  "description": "The skill for control Home Assistant smart home devices and query states using MCP protocol.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Home Assistant\nControl Home Assistant smart home and query states using MCP protocol."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Enable MCP server in Home Assistant:\n- Browse to your Home Assistant instance.\n- Go to  Settings > Devices & services.\n- In the bottom right corner, select the [+ Add Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=mcp) button.\n- From the list, select Model Context Protocol.\n- Follow the instructions on screen to complete the setup."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ```shell\n# Get states\nmcporter call home-assistant.GetLiveContext\n\n# Turn on the device\nmcporter call home-assistant.HassTurnOn(name: \"Bedroom Light\")\nmcporter call home-assistant.HassTurnOn(name: \"Light\", area: \"Bedroom\")\n\n# Turn off the device\nmcporter call home-assistant.HassTurnOff(name: \"Bedroom Light\")\nmcporter call home-assistant.HassTurnOff(area: \"Bedroom\", domain: [\"light\"])\n\n# Control light\n# brightness: The percentage of the light, where 0 is off and 100 is fully lit.\n# color: Name of color\nmcporter call home-assistant.HassLightSet(name: \"Bedroom Light\", brightness: 50)\n\n# Control fan\n# percentage: The percentage of the fan, where 0 is off and 100 is full speed.\nmcporter call home-assistant.HassFanSetSpeed(name: \"Fan\", area: \"Bedroom\", percentage: 80)\n```\n\nExecute the following command to learn about specific usage methods:\n- `mcporter list home-assistant --schema --all-parameters`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Config] When prompted that the MCP server does not exist, remind the user to configure the `HASS_BASE_URL` and `HASS_ACCESS_TOKEN` environment variables by executing the following command to add the configuration:\n```shell\nmcporter config add home-assistant \\\n  --transport http \\\n  --url \"${HASS_BASE_URL:-http://homeassistant.local:8123}/api/mcp\" \\\n  --header \"Authorization=Bearer \\${HASS_ACCESS_TOKEN}\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[About `mcporter`] - When command `mcporter` does not exist, use `npx -y mcporter` instead.\n- https://github.com/steipete/mcporter/raw/refs/heads/main/docs/call-syntax.md\n- https://github.com/steipete/mcporter/raw/refs/heads/main/docs/cli-reference.md"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "mcp_hass"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🏠",
+        "requires": {
+          "anyBins": [
+            "mcporter",
+            "npx"
+          ],
+          "env": [
+            "HASS_ACCESS_TOKEN",
+            "HASS_BASE_URL"
+          ]
+        },
+        "primaryEnv": "HASS_ACCESS_TOKEN",
+        "install": [
+          {
+            "id": "node",
+            "kind": "node",
+            "package": "mcporter",
+            "bins": [
+              "mcporter"
+            ],
+            "label": "Install mcporter (node)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/al-one/mcp-hass/SKILL.md"
+}

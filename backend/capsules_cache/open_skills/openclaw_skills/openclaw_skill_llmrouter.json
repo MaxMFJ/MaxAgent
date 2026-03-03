@@ -1,0 +1,108 @@
+{
+  "id": "openclaw_skill_llmrouter",
+  "description": "Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic, OpenAI, Gemini, Kimi/Moonshot, and Ollama.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # LLM Router\n\nAn intelligent proxy that classifies incoming requests by complexity and routes them to appropriate LLM models. Use cheaper/faster models for simple tasks and reserve expensive models for complex ones.\n\n**Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.\n\n**Status:** Tested with Anthropic, OpenAI, Google Gemini, Kimi/Moonshot, and Ollama."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### Prerequisites\n\n1. **Python 3.10+** with pip\n2. **Ollama** (optional - only if using local classification)\n3. **Anthropic API key** or Claude Code OAuth token (or other provider key)\n\n### Setup\n\n```bash\n# Clone if not already present\ngit clone https://github.com/alexrudloff/llmrouter.git\ncd llmrouter\n\n# Create virtual environment (required on modern Python)\npython3 -m venv venv\nsource venv/bin/activate\n\n# Install dependencies\npip install -r requirements.txt\n\n# Pull classifier model (if using local classification)\nollama pull qwen2.5:3b\n\n# Copy and customize config\ncp config.yaml.example config.yaml\n# Edit config.yaml with your API key and model preferences\n```\n\n### Verify Installation\n\n```bash\n# Start the server\nsource venv/bin/activate\npython server.py\n\n# In another terminal, test health endpoint\ncurl http://localhost:4001/health\n# Should return: {\"status\": \"ok\", ...}\n```\n\n### Start the Server\n\n```bash\npython server.py\n```\n\nOptions:\n- `--port PORT` - Port to listen on (default: 4001)\n- `--host HOST` - Host to bind (default: 127.0.0.1)\n- `--config PATH` - Config file path (default: config.yaml)\n- `--log` - Enable verbose logging\n- `--openclaw` - Enable OpenClaw compatibility (rewrites model name in system prompt)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Configuration] Edit `config.yaml` to customize:\n\n### Model Routing\n\n```yaml\n# Anthropic routing\nmodels:\n  super_easy: \"anthropic:claude-haiku-4-5-20251001\"\n  easy: \"anthropic:claude-haiku-4-5-20251001\"\n  medium: \"anthropic:claude-sonnet-4-20250514\"\n  hard: \"anthropic:claude-opus-4-20250514\"\n  super_hard: \"anthropic:claude-opus-4-20250514\"\n\n# OpenAI routing\nmodels:\n  super_easy: \"openai:gpt-4o-mini\"\n  easy: \"openai:gpt-4o-mini\"\n  medium: \"openai:gpt-4o\"\n  hard: \"openai:o3-mini\"\n  super_hard: \"openai:o3\"\n\n# Google Gemini routing\nmodels:\n  super_easy: \"google:gemini-2.0-flash\"\n  easy: \"google:gemini-2.0-flash\"\n  medium: \"google:gemini-2.0-flash\"\n  hard: \"google:gemini-2.0-flash\"\n  super_hard: \"google:gemini-2.0-flash\"\n```\n\n**Note:** Reasoning models are auto-detected and use correct API params.\n\n### Classifier\n\nThree options for classifying request complexity:\n\n**Local (default)** - Free, requires Ollama:\n```yaml\nclassifier:\n  provider: \"local\"\n  model: \"qwen2.5:3b\"\n```\n\n**Anthropic** - Uses Haiku, fast and cheap:\n```yaml\nclassifier:\n  provider: \"anthropic\"\n  model: \"claude-haiku-4-5-20251001\"\n```\n\n**OpenAI** - Uses GPT-4o-mini:\n```yaml\nclassifier:\n  provider: \"openai\"\n  model: \"gpt-4o-mini\"\n```\n\n**Google** - Uses Gemini:\n```yaml\nclassifier:\n  provider: \"google\"\n  model: \"gemini-2.0-flash\"\n```\n\n**Kimi** - Uses Moonshot:\n```yaml\nclassifier:\n  provider: \"kimi\"\n  model: \"moonshot-v1-8k\"\n```\n\nUse remote (anthropic/openai/google/kimi) if your machine can't run local models.\n\n### Supported Providers\n\n- `anthropic:claude-*` - Anthropic Claude models (tested)\n- `openai:gpt-*`, `openai:o1-*`, `openai:o3-*` - OpenAI models (tested)\n- `google:gemini-*` - Google Gemini models (tested)\n- `kimi:kimi-k2.5`, `kimi:moonshot-*` - Kimi/Moonshot models (tested)\n- `local:model-name` - Local Ollama models (tested)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Complexity Levels] | Level | Use Case | Default Model |\n|-------|----------|---------------|\n| super_easy | Greetings, acknowledgments | Haiku |\n| easy | Simple Q&A, reminders | Haiku |\n| medium | Coding, emails, research | Sonnet |\n| hard | Complex reasoning, debugging | Opus |\n| super_hard | System architecture, proofs | Opus |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Customizing Classification] Edit `ROUTES.md` to tune how messages are classified. The classifier reads the table in this file to determine complexity levels."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[API Usage] The router exposes an OpenAI-compatible API:\n\n```bash\ncurl http://localhost:4001/v1/chat/completions \\\n  -H \"Authorization: Bearer $ANTHROPIC_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"llm-router\",\n    \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]\n  }'\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Testing Classification] ```bash\npython classifier.py \"Write a Python sort function\"\n# Output: medium\n\npython classifier.py --test\n# Runs test suite\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Running as macOS Service] Create `~/Library/LaunchAgents/com.llmrouter.plist`:\n\n```xml\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n    <key>Label</key>\n    <string>com.llmrouter</string>\n    <key>ProgramArguments</key>\n    <array>\n        <string>/path/to/llmrouter/venv/bin/python</string>\n        <string>/path/to/llmrouter/server.py</string>\n        <string>--openclaw</string>\n    </array>\n    <key>RunAtLoad</key>\n    <true/>\n    <key>KeepAlive</key>\n    <true/>\n    <key>WorkingDirectory</key>\n    <string>/path/to/llmrouter</string>\n    <key>StandardOutPath</key>\n    <string>/path/to/llmrouter/logs/stdout.log</string>\n    <key>StandardErrorPath</key>\n    <string>/path/to/llmrouter/logs/stderr.log</string>\n</dict>\n</plist>\n```\n\n**Important:** Replace `/path/to/llmrouter` with your actual install path. Must use the venv python, not system python.\n\n```bash\n# Create logs directory\nmkdir -p ~/path/to/llmrouter/logs\n\n# Load the service\nlaunchctl load ~/Library/LaunchAgents/com.llmrouter.plist\n\n# Verify it's running\ncurl http://localhost:4001/health\n\n# To stop/restart\nlaunchctl unload ~/Library/LaunchAgents/com.llmrouter.plist\nlaunchctl load ~/Library/LaunchAgents/com.llmrouter.plist\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[OpenClaw Configuration] Add the router as a provider in `~/.openclaw/openclaw.json`:\n\n```json\n{\n  \"models\": {\n    \"providers\": {\n      \"localrouter\": {\n        \"baseUrl\": \"http://localhost:4001/v1\",\n        \"apiKey\": \"via-router\",\n        \"api\": \"openai-completions\",\n        \"models\": [\n          {\n            \"id\": \"llm-router\",\n            \"name\": \"LLM Router (Auto-routes by complexity)\",\n            \"reasoning\": false,\n            \"input\": [\"text\", \"image\"],\n            \"cost\": {\n              \"input\": 0,\n              \"output\": 0,\n              \"cacheRead\": 0,\n              \"cacheWrite\": 0\n            },\n            \"contextWindow\": 200000,\n            \"maxTokens\": 8192\n          }\n        ]\n      }\n    }\n  }\n}\n```\n\n**Note:** Cost is set to 0 because actual costs depend on which model the router selects. The router logs which model handled each request.\n\n### Set as Default Model (Optional)\n\nTo use the router for all agents by default, add:\n\n```json\n{\n  \"agents\": {\n    \"defaults\": {\n      \"model\": {\n        \"primary\": \"localrouter/llm-router\"\n      }\n    }\n  }\n}\n```\n\n### Using with OAuth Tokens\n\nIf your `config.yaml` uses an Anthropic OAuth token from OpenClaw's `~/.openclaw/auth-profiles.json`, the router automatically handles Claude Code identity headers.\n\n### OpenClaw Compatibility Mode (Required)\n\n**If using with OpenClaw, you MUST start the server with `--openclaw`:**\n\n```bash\npython server.py --openclaw\n```\n\nThis flag enables compatibility features required for OpenClaw:\n- Rewrites model names in responses so OpenClaw shows the actual model being used\n- Handles tool name and ID remapping for proper tool call routing\n\nWithout this flag, you may encounter errors when using the router with OpenClaw."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Common Tasks] - **Check server status**: `curl http://localhost:4001/health`\n- **View current config**: `cat config.yaml`\n- **Test a classification**: `python classifier.py \"your message\"`\n- **Run classification tests**: `python classifier.py --test`\n- **Restart server**: Stop and run `python server.py` again\n- **View logs** (if running as service): `tail -f logs/stdout.log`"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### \"externally-managed-environment\" error\nPython 3.11+ requires virtual environments. Create one:\n```bash\npython3 -m venv venv\nsource venv/bin/activate\npip install -r requirements.txt\n```\n\n### \"Connection refused\" on port 4001\nServer isn't running. Start it:\n```bash\nsource venv/bin/activate && python server.py\n```\n\n### Classification returns wrong complexity\nEdit `ROUTES.md` to tune classification rules. The classifier reads this file to determine complexity levels.\n\n### Ollama errors / \"model not found\"\nEnsure Ollama is running and the model is pulled:\n```bash\nollama serve  # Start Ollama if not running\nollama pull qwen2.5:3b\n```\n\n### OAuth token not working\nEnsure your token in `config.yaml` starts with `sk-ant-oat`. The router auto-detects OAuth tokens and adds required identity headers.\n\n### LaunchAgent not starting\nCheck logs and ensure paths are absolute:\n```bash\ncat ~/Library/LaunchAgents/com.llmrouter.plist  # Verify paths\ncat /path/to/llmrouter/logs/stderr.log  # Check for errors\n```"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "llmrouter"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔀",
+        "homepage": "https://github.com/alexrudloff/llmrouter",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "python3"
+          ],
+          "anyBins": [
+            "pip",
+            "pip3"
+          ]
+        },
+        "primaryEnv": "ANTHROPIC_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexrudloff/llmrouter/SKILL.md"
+}

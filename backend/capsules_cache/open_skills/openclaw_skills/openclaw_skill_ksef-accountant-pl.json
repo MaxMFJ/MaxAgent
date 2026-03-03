@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_ksef-accountant-pl",
+  "description": "Asystent ksiegowy Krajowego Systemu e-Faktur (KSeF) w jezyku polskim. Uzyj przy pracy z KSeF 2.0 API, fakturami FA(3), zgodnoscia z polskim VAT, przetwarzaniem e-faktur, dopasowywaniem platnosci, rejestrami VAT (JPK_V7), fakturami korygujacymi, mechanizmem podzielonej platnosci (MPP) lub polskimi przeplywami ksiegowymi. Dostarcza wiedze domenowa do wystawiania faktur, przetwarzania zakupow, klasyfikacji kosztow, wykrywania fraudu i prognozowania cash flow w ekosystemie KSeF.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agent Ksiegowy KSeF\n\nSpecjalistyczna wiedza do obslugi Krajowego Systemu e-Faktur (KSeF) w srodowisku KSeF 2.0 ze struktura FA(3). Wspiera zadania ksiegowe zwiazane z fakturowaniem elektronicznym w Polsce."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Model bezpieczenstwa] Ten skill jest **wylacznie instrukcyjny** — sklada sie z plikow Markdown zawierajacych wiedze domenowa, wzorce architektoniczne i przyklady kodu. Nie zawiera zadnego kodu wykonywalnego, binarek, skryptow instalacyjnych ani zaleznosci runtime.\n\n**Gwarancje po stronie skilla:**\n- `disableModelInvocation: true` / `disable-model-invocation: true` — zadeklarowane zarowno w metadanych frontmatter (oba formaty: camelCase i kebab-case) jak i w dedykowanym manifescie [`skill.json`](skill.json). Skill nie powinien byc wywolywany autonomicznie przez model.\n- `secret: true` — zmienne srodowiskowe `KSEF_TOKEN` i `KSEF_ENCRYPTION_KEY` sa oznaczone jako sekrety w frontmatter i `skill.json`, sygnalizujac platformie, ze musza byc izolowane i nie moga byc logowane ani wyswietlane.\n- Brak kodu wykonywalnego — wszystkie przyklady (Python, XML, JSON) to ilustracje pogladowe, NIE kod uruchamiany przez skill.\n- Brak instalacji — skill nie zapisuje plikow na dysk, nie pobiera zaleznosci, nie modyfikuje konfiguracji systemu.\n- Dedykowany manifest [`skill.json`](skill.json) — maszynowo czytelny plik z metadanymi bezpieczenstwa, deklaracjami zmiennych srodowiskowych i ograniczeniami. Jesli platforma nie parsuje frontmatter SKILL.md poprawnie, powinna odczytac metadane z `skill.json`.\n\n**UWAGA — weryfikacja metadanych rejestru przed instalacja:**\n\nFlagi bezpieczenstwa sa zadeklarowane w dwoch zrodlach: frontmatter SKILL.md i [`skill.json`](skill.json). Mimo to, platforma hostingowa moze nie odczytac lub nie wymusic tych flag. **Przed instalacja MUSISZ wykonac ponizsze kroki:**\n\n1. **Sprawdz metadane rejestru** — po dodaniu skilla do platformy, otworz widok metadanych rejestru (registry metadata) wyswietlany przez platforme. Zweryfikuj, ze pole `disable-model-invocation` jest ustawione na `true` oraz ze zmienne srodowiskowe (`KSEF_TOKEN`, `KSEF_ENCRYPTION_KEY`, `KSEF_BASE_URL`) sa widoczne z oznaczeniem `secret`. Jesli platforma pokazuje `not set`, `false` lub nie wyswietla tych pol — flagi NIE"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Ograniczenia] - **Tylko wiedza — brak wykonywania kodu** - Dostarcza wiedze domenowa, wzorce architektoniczne i wskazowki. Wszystkie przyklady kodu (w tym ML/AI) sa edukacyjne i pogladowe. Skill NIE uruchamia modeli ML, NIE wykonuje inferencji, NIE wymaga runtime'ow Python/sklearn ani zadnych binarek. Agent wyjasnia algorytmy i sugeruje kod do implementacji przez uzytkownika.\n- **Nie jest porada prawna ani podatkowa** - Informacje odzwierciedlaja stan wiedzy na dzien sporadzenia i moga byc nieaktualne. Zawsze zalecaj konsultacje z doradca podatkowym przed wdrozeniem.\n- **AI wspiera, nie decyduje** - Opisy funkcji AI (klasyfikacja kosztow, wykrywanie fraudu, predykcja cash flow) to architektura referencyjna i wzorce implementacyjne. Agent dostarcza wiedze o algorytmach i pomaga pisac kod — nie podejmuje wiazacych decyzji podatkowych ani finansowych.\n- **Wymagane potwierdzenie uzytkownika** - Zawsze wymagaj jawnej zgody uzytkownika przed: blokowaniem platnosci, wysylaniem faktur na produkcyjny KSeF, modyfikacja zapisow ksiegowych lub jakimkolwiek dzialaniem z konsekwencjami finansowymi.\n- **Dane uwierzytelniajace zarzadzane przez uzytkownika** - Tokeny KSeF API, certyfikaty i klucze szyfrowania musza byc dostarczone przez uzytkownika przez zmienne srodowiskowe (zadeklarowane w metadanych: `KSEF_TOKEN`, `KSEF_ENCRYPTION_KEY`, `KSEF_BASE_URL`) lub menedzer sekretow. Skill nigdy nie przechowuje, nie generuje, nie przesyla ani nie prosi o dane uwierzytelniajace niejawnie. **NIGDY nie wklejaj danych uwierzytelniajacych (tokenow, kluczy, certyfikatow) bezposrednio w rozmowie z agentem** — uzyj zmiennych srodowiskowych lub menedzera sekretow platformy. Przyklady uzycia Vault/Fernet w dokumentacji referencyjnej to wzorce architektoniczne do implementacji przez uzytkownika.\n- **Uzyj DEMO do testow** - Produkcja (`https://ksef.mf.gov.pl`) wystawia prawnie wiazace faktury. Uzyj DEMO (`https://ksef-demo.mf.gov.pl`) do developmentu i testow.\n- **Wylaczone autonomiczne wywolanie** - Skill ustawi"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Checklist przed instalacja] Przed instalacja skilla i konfiguracja zmiennych srodowiskowych wykonaj ponizsze kroki:\n\n- [ ] Zweryfikuj metadane rejestru platformy — pole `disable-model-invocation` musi pokazywac `true`\n- [ ] Zweryfikuj, ze platforma odczytala deklaracje env vars z frontmatter lub [`skill.json`](skill.json) — zmienne `KSEF_TOKEN` i `KSEF_ENCRYPTION_KEY` musza byc widoczne jako sekrety (`secret: true`)\n- [ ] Potwierdz, ze platforma izoluje zmienne srodowiskowe (nie loguje, nie wyswietla w konwersacji)\n- [ ] Przetestuj skill wylacznie ze srodowiskiem DEMO (`https://ksef-demo.mf.gov.pl`) przed jakimkolwiek uzyciem produkcyjnym\n- [ ] NIE wklejaj tokenow, kluczy ani certyfikatow bezposrednio w rozmowie — uzyj env vars lub menedzera sekretow\n- [ ] Jesli metadane rejestru nie pasuja do frontmatter/skill.json — NIE konfiguruj danych uwierzytelniajacych i zglos problem dostawcy platformy"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Glowne kompetencje] ### 1. Obsluga KSeF 2.0 API\n\nWystawianie faktur FA(3), pobieranie faktur zakupowych, zarzadzanie sesjami/tokenami, obsluga trybu Offline24 (awaryjny), pobieranie UPO (Urzedowe Poswiadczenie Odbioru).\n\nKluczowe endpointy:\n```http\nPOST /api/online/Session/InitToken     # Inicjalizacja sesji\nPOST /api/online/Invoice/Send          # Wyslanie faktury\nGET  /api/online/Invoice/Status/{ref}  # Sprawdzenie statusu\nPOST /api/online/Query/Invoice/Sync    # Zapytanie o faktury zakupowe\n```\n\nZobacz [references/ksef-api-reference.md](references/ksef-api-reference.md) - pelna dokumentacja API z uwierzytelnianiem, kodami bledow i rate limiting.\n\n### 2. Struktura FA(3)\n\nRoznice FA(3) vs FA(2): zalaczniki do faktur, typ kontrahenta PRACOWNIK, rozszerzone formaty konta bankowego, limit 50 000 pozycji w korekcie, identyfikatory JST i grup VAT.\n\nZobacz [references/ksef-fa3-examples.md](references/ksef-fa3-examples.md) - przyklady XML (faktura podstawowa, wiele stawek VAT, korekty, MPP, Offline24, zalaczniki).\n\n### 3. Przeplywy ksiegowe\n\n**Sprzedaz:** Dane -> Generuj FA(3) -> Wyslij KSeF -> Pobierz nr KSeF -> Ksieguj\n`Wn 300 (Rozrachunki) | Ma 700 (Sprzedaz) + Ma 220 (VAT nalezny)`\n\n**Zakupy:** Odpytuj KSeF -> Pobierz XML -> Klasyfikuj AI -> Ksieguj\n`Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)`\n\nZobacz [references/ksef-accounting-workflows.md](references/ksef-accounting-workflows.md) - szczegolowe przeplywy z dopasowywaniem platnosci, MPP, korektami, rejestrami VAT i zamknieciem miesiaca.\n\n### 4. Funkcje wspomagane AI (architektura referencyjna)\n\nPonizsze opisy to wzorce implementacyjne i architektura referencyjna. Skill NIE uruchamia modeli ML — dostarcza wiedze o algorytmach, pomaga projektowac pipeline'y i pisac kod do implementacji w systemie uzytkownika. Przyklady kodu w plikach referencyjnych (Python, sklearn, pandas) to pseudokod pogladowy — skill nie zawiera wytrenowanych modeli, artefaktow ML ani plikow wykonywalnych.\n\n- **Klasyfikacja kosztow** - Wzorzec: historia"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Troubleshooting - szybka pomoc] | Problem | Przyczyna | Rozwiazanie |\n|---------|-----------|-------------|\n| Faktura odrzucona (400/422) | Nieprawidlowy XML, NIP, data, brak pol | Sprawdz UTF-8, waliduj schemat FA(3), weryfikuj NIP |\n| Timeout API | Awaria KSeF, siec, godziny szczytu | Sprawdz status KSeF, retry z exponential backoff |\n| Nie mozna dopasowac platnosci | Niezgodna kwota, brak danych, split payment | Rozszerzone wyszukiwanie (+/-2%, +/-14 dni), sprawdz MPP |\n\nZobacz [references/ksef-troubleshooting.md](references/ksef-troubleshooting.md) - pelny przewodnik troubleshooting."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Pliki referencyjne] Laduj w zaleznosci od zadania:\n\n| Plik | Kiedy czytac |\n|------|-------------|\n| [skill.json](skill.json) | Manifest metadanych — flagi bezpieczenstwa, deklaracje env vars, ograniczenia. Zrodlo prawdy dla rejestrow i skanerow. |\n| [ksef-api-reference.md](references/ksef-api-reference.md) | Endpointy KSeF API, uwierzytelnianie, wysylanie/pobieranie faktur |\n| [ksef-legal-status.md](references/ksef-legal-status.md) | Daty wdrozenia KSeF, wymagania prawne, kary |\n| [ksef-fa3-examples.md](references/ksef-fa3-examples.md) | Tworzenie lub walidacja struktur XML faktur FA(3) |\n| [ksef-accounting-workflows.md](references/ksef-accounting-workflows.md) | Zapisy ksiegowe, dopasowanie platnosci, MPP, korekty, rejestry VAT |\n| [ksef-ai-features.md](references/ksef-ai-features.md) | Klasyfikacja kosztow, wykrywanie fraudu, algorytmy predykcji cash flow |\n| [ksef-security-compliance.md](references/ksef-security-compliance.md) | Biala Lista VAT, bezpieczenstwo tokenow, audit trail, RODO, backup |\n| [ksef-troubleshooting.md](references/ksef-troubleshooting.md) | Bledy API, problemy walidacji, wydajnosc |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Zasoby oficjalne] - Portal KSeF: https://ksef.podatki.gov.pl\n- KSeF DEMO: https://ksef-demo.mf.gov.pl\n- KSeF Produkcja: https://ksef.mf.gov.pl\n- API Bialej Listy VAT: https://wl-api.mf.gov.pl\n- KSeF Latarnia (status): https://github.com/CIRFMF/ksef-latarnia"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ksef_accountant_pl"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexwoo-awso/ksef-accountant-pl/SKILL.md"
+}

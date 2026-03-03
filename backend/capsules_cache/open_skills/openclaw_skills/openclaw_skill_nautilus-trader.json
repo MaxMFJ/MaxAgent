@@ -1,0 +1,95 @@
+{
+  "id": "openclaw_skill_nautilus-trader",
+  "description": "NautilusTrader algorithmic trading platform for strategy development and live trading. Use when building trading strategies, backtesting, or deploying to Hyperliquid.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Nautilus Trader Skill\n\nComprehensive assistance with NautilusTrader development. Includes complete Hyperliquid mainnet integration with SDK patch for live trading.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill covers:\n\n- Strategy development with NautilusTrader\n- Backtesting using the Parquet data catalog\n- Live trading deployment on Hyperliquid mainnet\n- SDK patch for Hyperliquid price precision requirements\n\n### When to Use\n\n- Building trading strategies with NautilusTrader\n- Running backtests with historical data\n- Deploying strategies to Hyperliquid mainnet\n- Debugging NautilusTrader adapter issues\n- Working with multi-timeframe (MTF) indicators\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] ### Core Dependencies\n\n```bash\n# NautilusTrader (backtesting + live trading framework)\npip install nautilus_trader\n\n# Hyperliquid SDK (for live trading patch)\npip install hyperliquid-python-sdk eth-account python-dotenv\n\n# Data handling\npip install pandas numpy\n```\n\n### Verify Installation\n\n```python\nimport nautilus_trader\nprint(f\"Nautilus Trader: {nautilus_trader.__version__}\")\n# Tested with v1.222.0\n```\n\n### Environment Variables\n\nCreate a `.env` file for Hyperliquid credentials:\n\n```bash\nHYPERLIQUID_PK=your_private_key_without_0x_prefix\nHYPERLIQUID_VAULT=0xYourVaultAddressHere\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ### 1. Apply the Hyperliquid Patch (for live trading)\n\n```python\n# CRITICAL: Import patch BEFORE Nautilus Trader\nimport hyperliquid_patch\n\n# Then import Nautilus normally\nfrom nautilus_trader.adapters.hyperliquid import HYPERLIQUID\nfrom nautilus_trader.live.node import TradingNode\n```\n\n### 2. Basic Strategy Template\n\n```python\nfrom nautilus_trader.trading.strategy import Strategy\nfrom nautilus_trader.config import StrategyConfig\nfrom nautilus_trader.model.data import Bar, BarType\nfrom nautilus_trader.model.enums import OrderSide, TimeInForce\nfrom nautilus_trader.model.identifiers import InstrumentId\nfrom decimal import Decimal\n\nclass MyStrategyConfig(StrategyConfig):\n    instrument_id: str\n    bar_type: str\n    trade_size: Decimal = Decimal(\"0.1\")\n\nclass MyStrategy(Strategy):\n    def __init__(self, config: MyStrategyConfig):\n        super().__init__(config)\n        self.instrument_id = InstrumentId.from_str(config.instrument_id)\n        self.bar_type = BarType.from_str(config.bar_type)\n        self.trade_size = config.trade_size\n\n    def on_start(self):\n        self.instrument = self.cache.instrument(self.instrument_id)\n        self.subscribe_bars(self.bar_type)\n\n    def on_bar(self, bar: Bar):\n        # Your strategy logic here\n        pass\n\n    def on_stop(self):\n        self.close_all_positions(self.instrument_id)\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Strategy Development] ### Heiken Ashi Indicator\n\n```python\nfrom nautilus_trader.indicators.base.indicator import Indicator\nfrom nautilus_trader.model.data import Bar\n\nclass HeikenAshi(Indicator):\n    \"\"\"Heiken Ashi candle smoothing indicator.\"\"\"\n\n    def __init__(self):\n        super().__init__([])\n        self.ha_open = 0.0\n        self.ha_close = 0.0\n        self.ha_high = 0.0\n        self.ha_low = 0.0\n        self._prev_ha_open = None\n        self._prev_ha_close = None\n        self.initialized = False\n\n    def handle_bar(self, bar: Bar) -> None:\n        o, h, l, c = float(bar.open), float(bar.high), float(bar.low), float(bar.close)\n\n        self.ha_close = (o + h + l + c) / 4\n\n        if self._prev_ha_open is None:\n            self.ha_open = (o + c) / 2\n        else:\n            self.ha_open = (self._prev_ha_open + self._prev_ha_close) / 2\n\n        self.ha_high = max(h, self.ha_open, self.ha_close)\n        self.ha_low = min(l, self.ha_open, self.ha_close)\n\n        self._prev_ha_open = self.ha_open\n        self._prev_ha_close = self.ha_close\n        self.initialized = True\n\n    @property\n    def is_bullish(self) -> bool:\n        return self.ha_close > self.ha_open\n\n    @property\n    def is_bearish(self) -> bool:\n        return self.ha_close < self.ha_open\n\n    def reset(self) -> None:\n        self._prev_ha_open = None\n        self._prev_ha_close = None\n        self.initialized = False\n```\n\n### Multi-Timeframe EMA Strategy\n\nSee `references/hyperliquid.md` for complete MTF EMA + Heiken Ashi strategy implementation.\n\nKey concepts:\n\n- HTF (Higher Timeframe): Determines trend direction via EMA crossover\n- LTF (Lower Timeframe): Entry timing via Heiken Ashi confirmation\n- Entry: HA color change in trend direction\n- Exit: HA color reversal\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Backtesting] ### Engine Setup\n\n```python\nfrom nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig\nfrom nautilus_trader.model.currencies import USD\nfrom nautilus_trader.model.enums import AccountType, OmsType\nfrom nautilus_trader.model.identifiers import Venue\nfrom nautilus_trader.model.objects import Money\nfrom nautilus_trader.persistence.catalog import ParquetDataCatalog\nfrom decimal import Decimal\n\ndef run_backtest():\n    config = BacktestEngineConfig(\n        trader_id=\"BACKTESTER-001\",\n        logging_level=\"INFO\",\n    )\n    engine = BacktestEngine(config=config)\n\n    # Add venue\n    engine.add_venue(\n        venue=Venue(\"HYPERLIQUID\"),\n        oms_type=OmsType.NETTING,\n        account_type=AccountType.MARGIN,\n        base_currency=USD,\n        starting_balances=[Money(100_000, USD)],\n    )\n\n    # Load data from catalog\n    catalog = ParquetDataCatalog(\"./data_catalog\")\n\n    instruments = catalog.instruments()\n    for instrument in instruments:\n        engine.add_instrument(instrument)\n\n    bars = catalog.bars()\n    engine.add_data(bars)\n\n    # Add strategy\n    strategy = MyStrategy(config=MyStrategyConfig(\n        instrument_id=\"SOL-USD.HYPERLIQUID\",\n        bar_type=\"SOL-USD.HYPERLIQUID-5-MINUTE-LAST-EXTERNAL\",\n        trade_size=Decimal(\"1.0\"),\n    ))\n    engine.add_strategy(strategy)\n\n    # Run\n    engine.run()\n\n    # Results\n    print(engine.trader.generate_account_report(Venue(\"HYPERLIQUID\")))\n    print(engine.trader.generate_order_fills_report())\n    print(engine.trader.generate_positions_report())\n\n    engine.dispose()\n```\n\n### Data Catalog\n\nSee `references/backtesting.md` and `references/data.md` for detailed catalog operations:\n\n- `ParquetDataCatalog` - Query and manage Parquet data files\n- `BarDataWrangler` - Convert pandas DataFrames to Nautilus Bar objects\n- `write_data()` - Persist data to catalog\n- `query()` - Retrieve data with time filters\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Live Trading on Hyperliquid] ### Node Configuration\n\n```python\nimport os\nfrom dotenv import load_dotenv\n\nload_dotenv()\n\n# CRITICAL: Apply patch BEFORE Nautilus imports\nimport hyperliquid_patch\n\nfrom nautilus_trader.adapters.hyperliquid import (\n    HYPERLIQUID,\n    HyperliquidDataClientConfig,\n    HyperliquidExecClientConfig,\n)\nfrom nautilus_trader.live.node import TradingNode, TradingNodeConfig\nfrom nautilus_trader.config import LiveDataEngineConfig, LiveExecEngineConfig\n\ndef main():\n    node_config = TradingNodeConfig(\n        trader_id=\"LIVE-001\",\n        data_engine=LiveDataEngineConfig(),\n        exec_engine=LiveExecEngineConfig(),\n    )\n\n    node = TradingNode(config=node_config)\n\n    data_config = HyperliquidDataClientConfig(\n        wallet_address=os.getenv(\"HYPERLIQUID_VAULT\"),\n        is_testnet=False,\n    )\n\n    exec_config = HyperliquidExecClientConfig(\n        wallet_address=os.getenv(\"HYPERLIQUID_VAULT\"),\n        private_key=os.getenv(\"HYPERLIQUID_PK\"),\n        is_testnet=False,\n    )\n\n    node.build()\n\n    # Add your strategy\n    strategy = MyStrategy(config=my_config)\n    node.trader.add_strategy(strategy)\n\n    node.run()\n\nif __name__ == \"__main__\":\n    main()\n```\n\n### Set Leverage (One-Time Setup)\n\n```python\nfrom hyperliquid.exchange import Exchange\nfrom hyperliquid.utils import constants\nfrom eth_account import Account\nimport os\n\nprivate_key = os.getenv(\"HYPERLIQUID_PK\")\nif not private_key.startswith(\"0x\"):\n    private_key = \"0x\" + private_key\n\naccount = Account.from_key(private_key)\nexchange = Exchange(account, constants.MAINNET_API_URL)\n\n# Set 10x leverage for SOL (cross margin)\nexchange.update_leverage(10, \"SOL\", is_cross=True)\n```\n\n### Network Latency\n\nFor best performance, deploy on AWS ap-northeast-1 (Tokyo):\n\n- Ping to Hyperliquid CloudFront: ~1ms\n- API latency: ~28ms\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Hyperliquid SDK Patch] ### The Problem\n\nNautilus Trader v1.222.0 has bugs in the Hyperliquid adapter:\n\n1. Rust HTTP client serialization causes type mismatches\n2. Price precision exceeds Hyperliquid's 5 significant figure limit\n\n### The Solution\n\nBypass the buggy adapter using the official Hyperliquid Python SDK. The patch file is located at `references/hyperliquid_patch.py`.\n\n### Price Precision Rules\n\nHyperliquid requires maximum 5 significant figures for all prices:\n\n| Price     | Valid? | Sig Figs |\n|-----------|--------|----------|\n| $139.05   | Yes    | 5        |\n| $139.054  | No     | 6        |\n| $1.2345   | Yes    | 5        |\n| $1.23456  | No     | 6        |\n| $12345    | Yes    | 5        |\n| $123456   | No     | 6        |\n\n### Usage\n\n```python\n# CRITICAL: Import patch BEFORE any Nautilus imports\nimport hyperliquid_patch\n\n# Then import Nautilus normally\nfrom nautilus_trader.adapters.hyperliquid import HYPERLIQUID\n```\n\nThe patch auto-applies on import and handles:\n\n- Price formatting to 5 significant figures\n- Rounding up for buys, down for sells (ensures fills)\n- SDK-based order submission bypassing Rust client\n\n### Verified Working\n\nTested on Hyperliquid Mainnet 2025-01-12:\n\n```\nSELL 0.72 SOL @ $143.38 - FILLED\nBUY 0.71 SOL @ $143.39 - FILLED\n```\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Configuration] ### File Structure\n\n```\nyour_trading_project/\n├── .env                        # Credentials (gitignored)\n├── hyperliquid_patch.py        # SDK patch for live trading\n├── heiken_ashi.py              # Heiken Ashi indicator\n├── my_strategy.py              # Strategy implementation\n├── backtest.py                 # Backtest runner\n├── live.py                     # Live trading runner\n└── data_catalog/               # Parquet data for backtesting\n```\n\n### Bar Type Format\n\n```\n{symbol}.{venue}-{step}-{aggregation}-{price_type}-{source}\n\nExamples:\nSOL-USD.HYPERLIQUID-1-HOUR-LAST-EXTERNAL\nSOL-USD.HYPERLIQUID-5-MINUTE-LAST-EXTERNAL\nBTC-USD.HYPERLIQUID-15-MINUTE-LAST-EXTERNAL\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Order Rejected: Invalid Price\n\nEnsure prices have max 5 significant figures. Use the `format_price_5_sigfigs()` function from the patch.\n\n### Connection Error\n\n1. Check `.env` has correct `HYPERLIQUID_PK` and `HYPERLIQUID_VAULT`\n2. Verify private key format (with or without `0x` prefix)\n3. Confirm vault address is correct\n\n### Patch Not Applied\n\nEnsure `import hyperliquid_patch` comes BEFORE any Nautilus imports.\n\n### Missing Data in Backtest\n\n1. Verify data catalog path exists\n2. Check instrument IDs match between data and strategy config\n3. Ensure bar types are correctly formatted\n\n### Position Not Closing\n\nCheck that `reduce_only=True` is set on exit orders for netting accounts.\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Reference Files] Detailed documentation is available in `references/`:\n\n| File | Description |\n|------|-------------|\n| `hyperliquid.md` | Complete Hyperliquid integration guide |\n| `hyperliquid_patch.py` | SDK patch source code |\n| `strategies.md` | Strategy patterns and examples |\n| `backtesting.md` | Data catalog and backtest API |\n| `data.md` | Data handling and wrangling |\n| `getting_started.md` | NautilusTrader fundamentals |\n| `concepts.md` | Core concepts and architecture |\n| `api.md` | Full API reference |\n\nUse `view` to read specific reference files when detailed information is needed."
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "Read,",
+    "Write,",
+    "Edit,",
+    "Bash,",
+    "Glob,",
+    "Grep",
+    "agent-skill"
+  ],
+  "capability": [
+    "nautilus_trader"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahuserious/nautilus-trader/SKILL.md"
+}

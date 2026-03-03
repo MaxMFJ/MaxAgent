@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_youtube-hq-downloader",
+  "description": "Youtube Highest Quality Downloader - Download highest quality silent video and pure audio from YouTube, then merge into video with sound",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # YouTube Highest Quality Downloader\n\nDownload the highest quality silent video and pure audio from YouTube, then merge into a video with sound using ffmpeg.\n从YouTube下载视频的最高清无声版本和纯音频，然后使用ffmpeg合并为有声视频。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features / 功能] - 🎬 Download highest quality silent video from YouTube (bestvideo) / 下载YouTube视频最高清无声版本\n- 🎵 Download pure audio from YouTube (bestaudio) / 下载YouTube视频纯音频\n- 🔧 Merge video and audio using ffmpeg / 使用ffmpeg合并视频和音频\n- 🖥️ Runs independently, no dependencies on other skills / 独立运行，无需依赖其他技能"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage / 使用方法] ### Quick Start\n\n```bash\n# Run the download script directly\npython3 ~/clawd/skills/youtube-hq-downloader/download.py \"YouTube_URL\" [output_directory]\n```\n\n### Full Workflow\n\n```bash\n# 1. Enter the skill directory\ncd ~/clawd/skills/youtube-hq-downloader\n\n# 2. Create virtual environment (first run)\npython3 -m venv .venv\nsource .venv/bin/activate\npip install yt-dlp\n\n# 3. Run download and merge\npython3 download.py \"https://www.youtube.com/watch?v=xxxxx\"\n\n# Or run step by step manually\n./download.sh \"YouTube_URL\"\n```\n\n### Manual Commands\n\n```bash\n# Activate environment\ncd ~/clawd/skills/youtube-hq-downloader\nsource .venv/bin/activate\n\n# Download video (highest quality, silent)\nyt-dlp -f \"bestvideo[ext=mp4]\" \"YouTube_URL\" -o \"%(title)s_video.%(ext)s\"\n\n# Download audio\nyt-dlp -x --audio-format m4a \"YouTube_URL\" -o \"%(title)s_audio.%(ext)s\"\n\n# Merge video and audio\nffmpeg -i \"*.mp4\" -i \"*.m4a\" -c:v copy -c:a aac -shortest \"output.mp4\" -y\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Parameters / 参数说明] ### yt-dlp Video Download\n- `-f \"bestvideo[ext=mp4]\"`: Download highest quality video format (video only)\n- Output template: `%(title)s_video.%(ext)s`\n\n### yt-dlp Audio Download\n- `-x`: Extract audio\n- `--audio-format m4a`: Output as M4A format\n\n### ffmpeg Merge\n- `-i \"video.mp4\" -i \"audio.m4a\"`: Input files\n- `-c:v copy`: Copy video stream, no re-encoding\n- `-c:a aac`: Convert audio to AAC encoding\n- `-shortest`: Use shorter duration\n- `-y`: Overwrite output file"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dependencies / 依赖] - **ffmpeg**: Video processing tool (macOS: `brew install ffmpeg`)\n- **Python 3.8+**: Runtime environment\n- **yt-dlp**: Will be auto-installed on first run"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Auto Install / 自动安装] The script will automatically detect and use system-installed yt-dlp. If not found:\n\n```bash\n# Manual install yt-dlp\npip install yt-dlp\n\n# Or use uv\npip install uv && uv pip install yt-dlp\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[FAQ / 常见问题] ### Q: Downloaded video has no sound?\nA: This is normal. Using `bestvideo` only downloads the video track. You need to download audio separately and merge.\n\n### Q: Video resolution is too low?\nA: YouTube may have regional or quality restrictions on certain videos. Try other formats like `best` instead of `bestvideo`.\n\n### Q: ffmpeg error \"No such file\"?\nA: Make sure ffmpeg is installed: `brew install ffmpeg`\n\n### Q: How to specify output directory?\nA: Pass the second parameter as output directory when running the script, or modify the OUTPUT_DIR variable in the script."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "youtube_hq_downloader"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/accidwar/youtube-hq-downloader/SKILL.md"
+}

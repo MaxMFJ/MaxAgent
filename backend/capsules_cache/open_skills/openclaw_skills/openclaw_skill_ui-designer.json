@@ -1,6 +1,6 @@
 {
   "id": "openclaw_skill_ui-designer",
-  "description": "Design beautiful interfaces using Material You, Minimalism, Glassmorphism, Neo-Brutalism, and Claymorphism. Expert in Tailwind CSS, color harmonics, component theming, and accessibility (WCAG).",
+  "description": "Design beautiful interfaces using Material You, Minimalism, Glassmorphism, Neo-Brutalism, Claymorphism, and Swiss Design. Expert in Tailwind CSS, color harmonics, component theming, and accessibility (WCAG).",
   "inputs": {
     "task": {
       "type": "string",
@@ -27,17 +27,17 @@
     {
       "id": "step_2",
       "type": "subtask",
-      "description": "[Core Design Languages] ### 1. Material You (M3)\n- **Key traits:** Large rounded corners, tonal color palettes, expressive typography.\n- **Reference:** [material-you.md](references/material-you.md)\n\n### 2. Minimalism\n- **Key traits:** Generous padding, typography-driven hierarchy, neutral palettes.\n- **Reference:** [minimalism.md](references/minimalism.md)\n\n### 3. Glassmorphism\n- **Key traits:** Backdrop blur, thin borders, vibrant background gradients.\n- **Reference:** [glassmorphism.md](references/glassmorphism.md)\n\n### 4. Neo-Brutalism\n- **Key traits:** Thick black borders, hard shadows, vibrant clashing colors, bold typography.\n- **Reference:** [neo-brutalism.md](references/neo-brutalism.md)\n\n### 5. Claymorphism\n- **Key traits:** Soft 3D shapes, double inner shadows, large border radius, playful pastels.\n- **Reference:** [claymorphism.md](references/claymorphism.md)\n\n### 6. M3 Pastel Glass (Hybrid)\n- **Key traits:** Pastel Blue/Deep Blue, 28px corners, morphing hover effects.\n- **Reference:** [m3-pastel-glass.md](references/m3-pastel-glass.md)\n\n### 7. Neo-M3 Hybrid (Wired/Verge Style)\n- **Key traits:** Wired/Verge inspired high-contrast, 3px solid black borders, hard shadows (6px+), 24px rounded corners, tonal pastel accents.\n- **Reference:** [neo-m3-hybrid.md](references/neo-m3-hybrid.md)"
+      "description": "[Core Design Languages] ### 1. Material You (M3)\n- **Key traits:** Large rounded corners, tonal color palettes, expressive typography.\n- **Reference:** [material-you.md](references/material-you.md)\n\n### 2. Minimalism\n- **Key traits:** Generous padding, typography-driven hierarchy, neutral palettes.\n- **Reference:** [minimalism.md](references/minimalism.md)\n\n### 3. Glassmorphism\n- **Key traits:** Backdrop blur, thin borders, vibrant background gradients.\n- **Reference:** [glassmorphism.md](references/glassmorphism.md)\n\n### 4. Neo-Brutalism\n- **Key traits:** Thick black borders, hard shadows, vibrant clashing colors, bold typography.\n- **Reference:** [neo-brutalism.md](references/neo-brutalism.md)\n\n### 5. Claymorphism\n- **Key traits:** Soft 3D shapes, double inner shadows, large border radius, playful pastels.\n- **Reference:** [claymorphism.md](references/claymorphism.md)\n\n### 6. M3 Pastel Glass (Hybrid)\n- **Key traits:** Pastel Blue/Deep Blue, 28px corners, morphing hover effects.\n- **Reference:** [m3-pastel-glass.md](references/m3-pastel-glass.md)\n\n### 7. Neo-M3 Hybrid (Wired/Verge Style)\n- **Key traits:** Wired/Verge inspired high-contrast, 3px solid black borders, hard shadows (6px+), 24px rounded corners, tonal pastel accents.\n- **Reference:** [neo-m3-hybrid.md](references/neo-m3-hybrid.md)\n\n### 8. Swiss Design (International Typographic Style)\n- **Key traits:** Strict 12-column grid, massive sans-serif typography, zero border-radius, no shadows, restrained 1–2 color accent palette, asymmetric layouts, whitespace as structure.\n- **Reference:** [swiss-design.md](references/swiss-design.md)"
     },
     {
       "id": "step_3",
       "type": "subtask",
-      "description": "[Automation: Cursor Integration] This skill can automatically update your project's `.cursorrules` to keep the AI aligned with your design goals.\n\n### `apply_ui_rules.py`\nRun this script to append design rules to your current directory's .cursorrules.\n\n```bash\npython ~/.gemini/skills/ui-designer/scripts/apply_ui_rules.py --style [material|minimal|glass|neo-brutalism|claymorphism|m3-pastel|neo-m3] --palette [pastel|dark|vibrant]\n```"
+      "description": "[Automation: Cursor Integration] This skill can automatically update your project's `.cursorrules` to keep the AI aligned with your design goals.\n\n### `apply_ui_rules.py`\nRun this script to append design rules to your current directory's .cursorrules.\n\n```bash\npython3 $WORKSPACE/skills/ui-designer-skill/scripts/apply_ui_rules.py --style [material|minimal|glass|neo-brutalism|claymorphism|m3-pastel|neo-m3|swiss] --palette [pastel|dark|vibrant]\n```"
     },
     {
       "id": "step_4",
       "type": "subtask",
-      "description": "[Workflows] ### 1. Design Conception\nWhen starting a new feature, ask for:\n- Primary design language? (Material You, Minimalism, Glassmorphism, Neo-Brutalism, Claymorphism, M3 Pastel Glass, Neo-M3 Hybrid)\n- Color vibe? (Pastel, Dark, High-Contrast)\n\n### 2. Component Architecture\nPlan the HTML/React structure with Tailwind classes. Focus on Grid/Flex layouts and responsiveness."
+      "description": "[Workflows] ### 1. Design Conception\nWhen starting a new feature, ask for:\n- Primary design language? (Material You, Minimalism, Glassmorphism, Neo-Brutalism, Claymorphism, M3 Pastel Glass, Neo-M3 Hybrid, Swiss Design)\n- Color vibe? (Pastel, Dark, High-Contrast)\n\n### 2. Component Architecture\nPlan the HTML/React structure with Tailwind classes. Focus on Grid/Flex layouts and responsiveness."
     },
     {
       "id": "step_5",

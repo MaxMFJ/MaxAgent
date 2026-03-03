@@ -1,0 +1,94 @@
+{
+  "id": "openclaw_skill_perkoon-transfer",
+  "description": "Your agent has compute, memory, and context. What it lacks is a jump gate to the physical world. Perkoon is that gate. Send files from agent to human — they open a link on any device. Send from agent to agent — CLI to CLI, no human in the loop. The first file transfer protocol engineered for autonomous machines. Free. Encrypted. Zero configuration.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Perkoon — Unlimited File Transfer\n\nYour agent lives in a world of tokens. Your user lives in a world of devices. Perkoon is the airlock between them.\n\nNot \"AI-ready\" the way a gas station is gourmet-ready. Actually built for machines — JSON event streams, structured exit codes, and a state machine that doesn't need a browser, a mouse, or a soul.\n\n**Two supported flight paths:**\n- **Agent → Human**: Your agent sends a file. The human opens a link in any browser. No install required on their end.\n- **Agent → Agent**: CLI to CLI. Two machines, no humans in the loop. Fully autonomous data transit.\n\nP2P transfers are free, unlimited, and encrypted. Both ends need to be online — that's the only constraint. For sensitive files, always use `--password` — without it, anyone with the share link can download."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[SENDING a file] ### Step 1: Start send and get the share link\n\nReplace `/path/to/file` with the actual file path:\n\n```bash\nrm -f /tmp/perkoon-send.log /tmp/perkoon-send.pid\nperkoon send /path/to/file --json --timeout 1800 > /tmp/perkoon-send.log 2>&1 &\necho $! > /tmp/perkoon-send.pid\n\n# Wait for session code (up to 30s)\nfor i in $(seq 1 30); do\n  if grep -q session_created /tmp/perkoon-send.log 2>/dev/null; then\n    grep session_created /tmp/perkoon-send.log\n    break\n  fi\n  if grep -q '\"event\":\"error\"' /tmp/perkoon-send.log 2>/dev/null; then\n    echo \"===SEND FAILED===\" && cat /tmp/perkoon-send.log\n    break\n  fi\n  sleep 1\ndone\n```\n\nOutput: `{\"event\":\"session_created\",\"session_code\":\"K7MX4QPR9W2N\",\"share_url\":\"https://perkoon.com/K7MX4QPR9W2N\"}`\n\n**IMMEDIATELY tell the user the share URL.** Example: \"Here's your file — open this link on any device to download it: https://perkoon.com/K7MX4QPR9W2N\"\n\nThe receiver doesn't need to install anything. The link works in any browser.\n\nFor password-protected sends, add `--password SECRET` and share both the URL and password.\n\n### Step 2: Monitor until complete — then REPORT BACK\n\nYou MUST run this after sharing the link. Do NOT skip this step.\n\n```bash\nfor i in $(seq 1 360); do\n  if grep -q transfer_complete /tmp/perkoon-send.log 2>/dev/null; then\n    echo \"===TRANSFER COMPLETE===\" && grep transfer_complete /tmp/perkoon-send.log\n    break\n  fi\n  if grep -q '\"event\":\"error\"' /tmp/perkoon-send.log 2>/dev/null; then\n    echo \"===TRANSFER FAILED===\" && grep error /tmp/perkoon-send.log\n    break\n  fi\n  if [ \"$((i % 30))\" -eq 0 ]; then\n    grep progress /tmp/perkoon-send.log 2>/dev/null | tail -1\n  fi\n  sleep 5\ndone\n```\n\n- **`===TRANSFER COMPLETE===`** → Tell the user: \"File sent successfully!\" Include speed and duration from the JSON.\n- **`===TRANSFER FAILED===`** → Tell the user what went wrong.\n- **You MUST tell the user the outcome. Never finish silently.**"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[RECEIVING a file] Replace `CODE` with the 12-character session code:\n\n```bash\nrm -f /tmp/perkoon-recv.log /tmp/perkoon-recv.pid\nperkoon receive CODE --json --overwrite --output /home/openclaw/.openclaw/workspace/received/ > /tmp/perkoon-recv.log 2>&1 &\necho $! > /tmp/perkoon-recv.pid\n\nfor i in $(seq 1 360); do\n  if grep -q transfer_complete /tmp/perkoon-recv.log 2>/dev/null; then\n    echo \"===TRANSFER COMPLETE===\" && grep transfer_complete /tmp/perkoon-recv.log\n    break\n  fi\n  if grep -q '\"event\":\"error\"' /tmp/perkoon-recv.log 2>/dev/null; then\n    echo \"===TRANSFER FAILED===\" && grep error /tmp/perkoon-recv.log\n    break\n  fi\n  sleep 5\ndone\n```\n\nFor password-protected sessions, add `--password SECRET`.\n\n- **`===TRANSFER COMPLETE===`** → Tell the user: \"File received!\" and the save path.\n- **`===TRANSFER FAILED===`** → Tell the user what went wrong.\n- **You MUST tell the user the outcome. Never finish silently.**\n\nFiles are saved to `/home/openclaw/.openclaw/workspace/received/`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Pipe to stdout] Stream a received file directly into another process — no disk write:\n\n```bash\nperkoon receive CODE --output - > /path/to/destination\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[CLI reference] | Flag | Description |\n|------|-------------|\n| `--json` | Machine-readable JSON events (always use) |\n| `--password <pw>` | End-to-end password protection |\n| `--timeout <sec>` | Peer wait time (default: 300, use 1800) |\n| `--output <dir>` | Save directory (default: ./received) |\n| `--output -` | Stream to stdout |\n| `--overwrite` | Replace existing files |\n| `--quiet` | Suppress human-readable output |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[JSON event stream] Events appear in order on stdout when using `--json`:\n\n| Event | Meaning | Key fields |\n|-------|---------|------------|\n| `session_created` | Ready — share the link now | `session_code`, `share_url` |\n| `receiver_connected` | Peer joined | |\n| `webrtc_connected` | Direct P2P link established | |\n| `progress` | Transfer in progress | `percent`, `speed`, `eta` |\n| `transfer_complete` | Done | `duration_ms`, `speed` |\n| `error` | Failed | `message`, `exit_code` |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Exit codes] | Code | Meaning |\n|------|---------|\n| 0 | Success |\n| 1 | Bad arguments |\n| 2 | File not found |\n| 3 | Network/session error |\n| 4 | Wrong password |\n| 5 | Timeout — no peer joined |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Rules] 1. ALWAYS use `--json` for parseable output\n2. ALWAYS share the URL **immediately** when `session_created` appears\n3. ALWAYS use `--timeout 1800` for sends (30 min for the human to open the link)\n4. ALWAYS use `--overwrite` for receives\n5. ALWAYS monitor until `transfer_complete` or `error` — then **tell the user the result**\n6. NEVER kill the process mid-transfer\n7. The receiver does NOT need perkoon installed — the browser link works for everyone"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "perkoon_transfer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "⚡",
+        "requires": {
+          "bins": [
+            "node"
+          ]
+        },
+        "install": [
+          {
+            "id": "perkoon",
+            "kind": "node",
+            "package": "perkoon",
+            "bins": [
+              "perkoon"
+            ],
+            "label": "Install Perkoon CLI"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-vy/perkoon-transfer/SKILL.md"
+}

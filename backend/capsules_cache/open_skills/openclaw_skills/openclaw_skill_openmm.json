@@ -1,0 +1,119 @@
+{
+  "id": "openclaw_skill_openmm",
+  "description": "Open-source market making for AI agents. Multi-exchange trading, grid strategies, and real-time market data. CLI + MCP + Skills.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenMM — Open-Source Market Making for AI Agents\n\nOpenMM is an open-source market making framework — multi-exchange support, grid strategies, real-time market data, and automated trading. One CLI for everything.\n\n**GitHub:** https://github.com/3rd-Eye-Labs/OpenMM\n**MCP Server:** https://github.com/QBT-Labs/OpenMM-MCP\n**Docs:** https://deepwiki.com/3rd-Eye-Labs/OpenMM"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What is OpenMM?] - **Multi-Exchange** — MEXC, Gate.io, Kraken, Bitget\n- **Grid Trading** — Automated grid strategies with dynamic spacing, sizing, and volatility adjustment\n- **Market Data** — Tickers, orderbooks, recent trades across all exchanges\n- **Order Management** — Limit/market orders, cancel, list open orders\n- **Cardano DEX** — Pool discovery, aggregated prices via Iris Protocol\n- **CLI + MCP** — Use via command line or as MCP server for AI agents\n- **Open Source** — MIT licensed, fully customizable"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Option A: CLI\n\n```bash\n# Install\nnpm install -g @3rd-eye-labs/openmm\n\n# Set exchange credentials as environment variables\nexport MEXC_API_KEY=\"your_api_key\"\nexport MEXC_SECRET=\"your_secret_key\"\n\n# Check balances\nopenmm balance --exchange mexc\n\n# Get ticker price\nopenmm ticker --exchange mexc --symbol BTC/USDT\n\n# Start grid trading (dry run first)\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT --dry-run\n```\n\n### Option B: MCP Server\n\nRun `npx @qbtlabs/openmm-mcp` to start a local MCP server over stdio. This exposes all 13 tools to any MCP-compatible client.\n\n```json\n{\n  \"mcpServers\": {\n    \"openmm\": {\n      \"command\": \"npx\",\n      \"args\": [\"@qbtlabs/openmm-mcp\"],\n      \"env\": {\n        \"MEXC_API_KEY\": \"your_key\",\n        \"MEXC_SECRET\": \"your_secret\"\n      }\n    }\n  }\n}\n```\n\nOnly include env vars for exchanges you want to use.\n\n### Option C: As Library\n\n```typescript\nimport { OpenMM } from '@3rd-eye-labs/openmm';\n\nconst mm = new OpenMM({\n  exchange: 'mexc',\n  apiKey: process.env.MEXC_API_KEY,\n  secret: process.env.MEXC_SECRET\n});\n\nconst orderbook = await mm.getOrderbook('BTC/USDT');\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Environment Setup] Exchange credentials are configured via environment variables — keys are stored locally and never sent to the server. Add them to your `.env` file or export them in your shell:\n\n```env\n# MEXC (API key + secret)\nMEXC_API_KEY=your_mexc_api_key\nMEXC_SECRET=your_mexc_secret_key\n\n# Gate.io (API key + secret)\nGATEIO_API_KEY=your_gateio_api_key\nGATEIO_SECRET=your_gateio_secret_key\n\n# Bitget (API key + secret + passphrase set when creating the API key)\nBITGET_API_KEY=your_bitget_api_key\nBITGET_SECRET=your_bitget_secret_key\nBITGET_PASSPHRASE=your_bitget_passphrase\n\n# Kraken (API key + secret)\nKRAKEN_API_KEY=your_kraken_api_key\nKRAKEN_SECRET=your_kraken_secret_key\n```\n\n### Symbol Format\n- Use standard format: `BTC/USDT`, `ETH/USDT`, `INDY/USDT`, `ADA/EUR`, `BTC/USD`\n- The CLI automatically converts to exchange-specific format\n- Kraken supports both USD/EUR fiat pairs and USDT pairs\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core Tools] ### Balance & Portfolio\n\nCheck account balances on any connected exchange. Query each exchange separately — there is no cross-exchange aggregate command.\n\n```bash\n# Get all balances\nopenmm balance --exchange mexc\nopenmm balance --exchange gateio\nopenmm balance --exchange bitget\nopenmm balance --exchange kraken\n\n# Get specific asset balance\nopenmm balance --exchange mexc --asset BTC\nopenmm balance --exchange mexc --asset USDT\nopenmm balance --exchange kraken --asset ADA\nopenmm balance --exchange kraken --asset EUR\n\n# JSON output (useful for scripting)\nopenmm balance --exchange mexc --json\nopenmm balance --exchange bitget --json\n```\n\n**Options:**\n- `-e, --exchange <exchange>` — Exchange to query (required)\n- `-a, --asset <asset>` — Specific asset to query (optional)\n- `--json` — Output in JSON format\n\n### Market Data\n\nReal-time prices, orderbooks, and trade history. Use `--symbol` with the standard `BASE/QUOTE` format. Kraken uses fiat pairs like `ADA/EUR` and `BTC/USD` alongside crypto pairs.\n\n**Ticker — current price, bid/ask, spread, volume:**\n\n```bash\n# MEXC\nopenmm ticker --exchange mexc --symbol BTC/USDT\nopenmm ticker --exchange mexc --symbol ETH/USDT --json\n\n# Bitget (Cardano tokens)\nopenmm ticker --exchange bitget --symbol SNEK/USDT\nopenmm ticker --exchange bitget --symbol BTC/USDT --json\n\n# Kraken (fiat pairs)\nopenmm ticker --exchange kraken --symbol ADA/EUR\nopenmm ticker --exchange kraken --symbol BTC/USD --json\n```\n\n**Order Book — bid/ask depth:**\n\n```bash\n# MEXC - BTC/USDT with default 10 levels\nopenmm orderbook --exchange mexc --symbol BTC/USDT\n\n# Bitget - top 5 levels for SNEK\nopenmm orderbook --exchange bitget --symbol SNEK/USDT --limit 5\n\n# Kraken - ADA/EUR with 10 levels\nopenmm orderbook --exchange kraken --symbol ADA/EUR --limit 10\n\n# Gate.io - JSON output\nopenmm orderbook --exchange gateio --symbol BTC/USDT --json\n```\n\n**Recent Trades — latest executions with buy/sell breakdown:**\n\n```bash\n# MEXC - default 20 trades\nopenmm trades --exchange mexc --sy"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Safety Rules] ### Always dry-run first\n\nBefore executing any grid strategy, preview the grid to see what orders will be placed:\n\n```bash\nopenmm trade --strategy grid --exchange mexc --symbol INDY/USDT --dry-run\n```\n\n### Confirm before execution\n\nFor AI agents using MCP:\n1. **Always show the trade plan** — display what will be executed\n2. **Get explicit confirmation** — never auto-execute without user approval\n3. **Use `dryRun: true`** — the MCP `start_grid_strategy` tool defaults to dry-run mode\n\n### Risk management\n\nGrid strategy has built-in risk controls:\n- `--max-position 0.6` — Use max 60% of balance for trading (default: 80%)\n- `--safety-reserve 0.3` — Keep 30% as safety reserve (default: 20%)\n- `--confidence 0.8` — Require 80% price confidence before trading (default: 60%)\n\nTotal allocation is automatically capped regardless of the size model used. The grid recreates when orders are filled and adjusts to significant price movements (configurable via `--deviation`).\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[CLI Reference] ### Balance & Market Data\n| Command | Description |\n|---------|-------------|\n| `balance` | Get balances for an exchange |\n| `ticker` | Get current price, bid/ask, spread, volume |\n| `orderbook` | Get orderbook depth (bids/asks) |\n| `trades` | Get recent trades |\n| `price-comparison` | Compare DEX vs CEX prices for Cardano tokens |\n\n### Orders\n| Command | Description |\n|---------|-------------|\n| `orders list` | List open orders (all or by symbol) |\n| `orders get` | Get specific order by ID |\n| `orders create` | Place a limit or market order |\n| `orders cancel` | Cancel an order by ID |\n\n### Trading\n| Command | Description |\n|---------|-------------|\n| `trade --strategy grid` | Start grid trading strategy |\n\n### Cardano\n| Command | Description |\n|---------|-------------|\n| `pool-discovery discover` | Discover DEX liquidity pools for a token |\n| `pool-discovery supported` | List supported Cardano tokens (INDY, SNEK, NIGHT, MIN) |\n| `pool-discovery prices` | Get live aggregated pool prices |\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Supported Exchanges] | Exchange | Trading | Grid | Market Data | Min Order | Notes |\n|----------|---------|------|-------------|-----------|-------|\n| MEXC | ✅ | ✅ | ✅ | 1 USDT | API key + secret |\n| Gate.io | ✅ | ✅ | ✅ | 1 USDT | API key + secret |\n| Bitget | ✅ | ✅ | ✅ | 1 USDT | API key + secret + passphrase |\n| Kraken | ✅ | ✅ | ✅ | 5 EUR/USD | API key + secret, fiat pairs supported |\n| Binance | 🔜 | 🔜 | 🔜 | — | Coming soon |\n| Coinbase | 🔜 | 🔜 | 🔜 | — | Coming soon |\n| OKX | 🔜 | 🔜 | 🔜 | — | Coming soon |\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Tips for Agents] - **Check balances first** — always run `openmm balance --exchange <ex>` before trading\n- **Use `--dry-run`** — preview grid strategies before placing real orders\n- **Use `BASE/QUOTE` format** — e.g. `BTC/USDT`, `ADA/EUR`, `SNEK/USDT`\n- **Query each exchange separately** — there is no cross-exchange aggregate command\n- **Handle rate limits** — exchanges have API limits, space out requests\n- **Store credentials securely** — use environment variables, never commit `.env` files\n- **Respect minimum order values** — MEXC/Gate.io/Bitget: 1 USDT, Kraken: 5 EUR/USD\n- **Use `--max-position` and `--safety-reserve`** — built-in risk controls for grid strategies\n- **Bitget requires passphrase** — set via `BITGET_PASSPHRASE` env var (created when generating the API key)\n- **Use `--json` for parsing** — all commands support `--json` for structured output\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[MCP Tools (via OpenMM-MCP)] When using OpenMM as an MCP server, these 13 tools are available:\n\n### Market Data\n| Tool | Description | Parameters |\n|------|-------------|------------|\n| `get_ticker` | Real-time price, bid/ask, spread, volume | `exchange`, `symbol` |\n| `get_orderbook` | Order book depth (bids/asks) | `exchange`, `symbol`, `limit?` |\n| `get_trades` | Recent trades with buy/sell summary | `exchange`, `symbol`, `limit?` |\n\n### Account\n| Tool | Description | Parameters |\n|------|-------------|------------|\n| `get_balance` | Account balances (all or filtered by asset) | `exchange`, `asset?` |\n| `list_orders` | Open orders (all or by symbol) | `exchange`, `symbol?` |\n\n### Trading\n| Tool | Description | Parameters |\n|------|-------------|------------|\n| `create_order` | Place limit or market order | `exchange`, `symbol`, `type`, `side`, `amount`, `price?` |\n| `cancel_order` | Cancel order by ID | `exchange`, `symbol`, `orderId` |\n| `cancel_all_orders` | Cancel all open orders for a pair | `exchange`, `symbol` |\n\n### Strategy\n| Tool | Description | Parameters |\n|------|-------------|------------|\n| `start_grid_strategy` | Calculate and place grid orders (defaults to dry-run) | `exchange`, `symbol`, `levels?`, `spacing?`, `orderSize?`, `spacingModel?`, `sizeModel?`, `dryRun?` |\n| `stop_strategy` | Cancel all orders for a pair, stopping the grid | `exchange`, `symbol` |\n| `get_strategy_status` | Grid status with open orders, price, and spread | `exchange`, `symbol` |\n\n### Cardano\n| Tool | Description | Parameters |\n|------|-------------|------------|\n| `get_cardano_price` | Aggregated token price from DEX pools (TOKEN/USDT via ADA bridge) | `symbol` |\n| `discover_pools` | Discover Cardano DEX liquidity pools for a token | `symbol` |\n\n### MCP Resources\n| URI | Description |\n|-----|-------------|\n| `exchanges://list` | Supported exchanges with credential requirements |\n| `strategies://grid` | Grid trading strategy documentation |\n| `strategies://grid/profiles` | Example grid profiles (conse"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Sub-Skills] For specific workflows, load these sub-skills:\n\n| Skill | Description |\n|-------|-------------|\n| `openmm-exchange-setup` | Configure exchange API credentials step-by-step |\n| `openmm-grid-trading` | Grid strategy creation and management |\n| `openmm-portfolio` | Balance tracking and order overview across exchanges |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Links] - **GitHub:** https://github.com/3rd-Eye-Labs/OpenMM\n- **MCP Server:** https://github.com/QBT-Labs/OpenMM-MCP\n- **npm:** https://www.npmjs.com/package/@3rd-eye-labs/openmm\n- **Documentation:** https://deepwiki.com/3rd-Eye-Labs/OpenMM\n- **Discord:** https://discord.gg/qbtlabs\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[About] OpenMM is built by [3rd Eye Labs](https://github.com/3rd-Eye-Labs) and [QBT Labs](https://qbtlabs.io).\n\n**License:** MIT"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openmm"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📈",
+        "homepage": "https://github.com/3rd-Eye-Labs/OpenMM",
+        "docs": "https://deepwiki.com/3rd-Eye-Labs/OpenMM",
+        "requires": {
+          "bins": [
+            "openmm"
+          ]
+        },
+        "install": [
+          {
+            "kind": "node",
+            "package": "@3rd-eye-labs/openmm",
+            "bins": [
+              "openmm"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adacapo21/openmm/SKILL.md"
+}

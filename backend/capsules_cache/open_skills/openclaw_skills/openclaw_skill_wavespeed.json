@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_wavespeed",
+  "description": "Generate and edit images and videos using WaveSpeed AI's 700+ model library. Use when the user wants to generate images from text prompts (FLUX, Seedream, Qwen), edit or retouch photos (nano-banana-pro/edit keeps faces identical while changing clothes/background), generate videos from images or text (Kling, Veo, Sora, Wan, Hailuo), or upscale videos to 4K. Triggers include: generate an image, edit this photo, change the background, swap the outfit, make a video from this image, animate this photo, upscale this video, use WaveSpeed, use nano banana pro.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # WaveSpeed AI\n\n700+ AI models (Google, OpenAI, ByteDance, Kling, Luma) via one API. Images in <2s, videos in <2min."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[API Key — check in this order] 1. **`WAVESPEED_API_KEY` env var** — already set in all Clawster containers, just use it directly\n2. `TOOLS.md` in the workspace — look for `WaveSpeed AI` section\n3. Ask the user\n\n**Never search for the key** — if `WAVESPEED_API_KEY` is in the environment, it's ready to go. Check with:\n```bash\necho $WAVESPEED_API_KEY\n```\n\n### Get your API key\n\nSign up at **[wavespeed.ai](https://wavespeedai.pxf.io/3kPoRd)** → Dashboard → API Keys.  \nNew accounts get free credits. Pay-as-you-go pricing — no subscription required.\n\n```bash\nexport WAVESPEED_API_KEY=your_key_here\n```\n\nThe skill script is at `skills/wavespeed/scripts/wavespeed.js`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ```bash\n# Image generation\nnode wavespeed.js generate --model flux --prompt \"sunset over mountains\" --output out.png\nnode wavespeed.js generate --model seedream --prompt \"...\" --size 1024x1024\n\n# Image editing (face/portrait-safe — preserves identity)\nnode wavespeed.js edit --model nbp --prompt \"change bathrobe to black hoodie, dark background\" \\\n  --image https://example.com/photo.jpg --output result.png\n\n# Video from image\nnode wavespeed.js video --model wan-i2v --prompt \"slow cinematic zoom\" \\\n  --image https://example.com/frame.jpg --output clip.mp4\n\n# List all aliases\nnode wavespeed.js models\n\n# Check task status\nnode wavespeed.js status --id task_abc123\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Key Models (Quick Reference)] | Task | Alias | Best for |\n|------|-------|---------|\n| Edit photo keeping face | `nbp` | Portrait retouching, outfit/bg change |\n| Fast image gen | `flux-schnell` | Drafts, quick tests |\n| Best image quality | `flux-pro` / `seedream` | Final outputs |\n| Image → Video | `wan-i2v` | Fast, affordable |\n| Premium video | `kling` / `veo` | Cinematic quality |\n| Text → Video | `sora` / `veo` | Story videos |\n\nSee `references/models.md` for full model list with IDs, params, and pricing."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Important Notes] - **Image editing** (`nbp`, `nb-edit`): always pass images as `images: [url]` array — this is required\n- **Face preservation**: `google/nano-banana-pro/edit` is the best model for editing photos while keeping the person's face identical\n- Output files are saved to current directory by default; use `--output` to specify path\n- Videos can take 2-5 minutes; script auto-polls with progress indicator\n- For multiple input images (multi-reference editing), use `--images url1,url2`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "wavespeed"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/al1enjesus/wavespeed/SKILL.md"
+}

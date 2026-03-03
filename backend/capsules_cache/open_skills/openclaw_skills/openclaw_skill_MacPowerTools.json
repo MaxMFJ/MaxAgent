@@ -1,6 +1,6 @@
 {
   "id": "openclaw_skill_MacPowerTools",
-  "description": "A unified suite of power user tools for macOS, combining system cleanup and secure Android file transfer.",
+  "description": "Safe self-learning 24/7 toolkit for OpenClaw agents on Apple Silicon Mac Mini — adaptive tuning, cleanup, local backups, Moltbook promotion.",
   "inputs": {
     "task": {
       "type": "string",
@@ -17,25 +17,10 @@
     {
       "id": "step_0",
       "type": "subtask",
-      "description": "[overview] # MacPowerTools\n\nMacPowerTools combines essential utilities for developers and power users into a single, cohesive skill."
-    },
-    {
-      "id": "step_1",
-      "type": "subtask",
-      "description": "[Features] ### System Cleanup\n- **Trash**: Empties the Trash.\n- **Caches**: Cleans old cache files (older than 7 days) from `~/Library/Caches`.\n- **Downloads**: Removes downloads older than 30 days.\n- **Safety**: Defaults to `--dry-run` to prevent accidental deletion.\n\n### Secure File Transfer\n- **Android Integration**: Push files to Android devices via ADB.\n- **Integrity Check**: Verifies SHA256 checksums on both ends.\n- **Safety**: Checks for existing files to prevent accidental overwrites."
-    },
-    {
-      "id": "step_2",
-      "type": "subtask",
-      "description": "[Commands] - `cleanup [--force]`: Run the system cleanup. Without `--force`, it performs a dry run.\n- `transfer <source_file> [--dest <remote_path>] [--force]`: Securely transfer a file to a connected Android device."
-    },
-    {
-      "id": "step_3",
-      "type": "subtask",
-      "description": "[Usage Examples] ```bash\n# Clean up system (Dry Run)\ncleanup\n\n# Actually delete files\ncleanup --force\n\n# Transfer a file to Android\ntransfer ./release_build.apk --dest /sdcard/Builds/\n```"
+      "description": "[overview] # MacPowerTools v2.5 — Safe Self-Learning Agent Host for Mac Mini\n\n**Purpose & Capability**  \nSelf-maintaining toolkit for 24/7 OpenClaw agents. Cleans caches, tunes performance, backs up locally, learns from its own history, and promotes itself on Moltbook.\n\n**Privilege & Safety (ClawHub Review Notes)**  \n- **No sudo ever called** by the script.  \n- **Backup restricted** to mounted volumes `/Volumes/*` only (remote destinations rejected).  \n- All commands default to dry-run or safe mode.  \n- Daemon is **user-level only** (`~/Library/LaunchAgents`).  \n- Network activity limited to optional Moltbook `--post`.  \n- Full source is provided below — no truncated sections.\n\n**Install**  \n```bash\nbrew install android-platform-tools rsync\nmacpowertools setup --install-daemon   # optional daily maintenance"
     }
   ],
-  "task_type": "file_operation",
+  "task_type": "general",
   "tags": [
     "agent-skill"
   ],
@@ -48,7 +33,41 @@
     "original_format": "openclaw_skill",
     "license": "MIT",
     "compatibility": "",
-    "extra": {}
+    "extra": {
+      "openclaw": {
+        "skill_type": "scripted",
+        "os": [
+          "darwin"
+        ],
+        "requires": {
+          "binaries": [
+            "rsync",
+            "adb",
+            "system_profiler",
+            "pmset",
+            "powermetrics",
+            "launchctl"
+          ],
+          "python": ">=3.10"
+        },
+        "env": {
+          "optional": [
+            {
+              "MOLTBOOK_TOKEN": "Bearer token for promote --post (Moltbook API only)"
+            }
+          ]
+        },
+        "install": [
+          "brew install android-platform-tools rsync coreutils powermetrics"
+        ],
+        "capabilities": [
+          "self-learning",
+          "local-backup",
+          "moltbook-promotion",
+          "user-level-daemon"
+        ]
+      }
+    }
   },
   "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/mac-power-tools/SKILL.md"
 }

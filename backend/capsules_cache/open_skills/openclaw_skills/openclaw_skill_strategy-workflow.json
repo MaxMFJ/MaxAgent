@@ -1,0 +1,95 @@
+{
+  "id": "openclaw_skill_strategy-workflow",
+  "description": "Comprehensive strategy development workflow from ideation to validation. Use when creating trading strategies, running backtests, parameter optimization, or walk-forward validation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Strategy Workflow\n\nComprehensive strategy development workflow for quantitative trading, from hypothesis to validated production deployment."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] This skill provides a complete framework for developing, testing, and validating trading strategies. It supports:\n\n- Hypothesis-driven strategy development\n- Multi-GPU backtesting on Vast.ai\n- Bayesian hyperparameter optimization with Optuna\n- Walk-forward validation and out-of-sample testing\n- Automated tearsheet generation"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Entry Points] ### Control Plane (Swarm Orchestration)\n\nAlways-on watchdog loops that manage hardware utilization and self-healing:\n\n```bash\nbash scripts/start_swarm_watchdogs.sh\n```\n\nFor local environments, set explicit paths:\n\n```bash\nVENV_PATH=/path/to/.venv/bin/activate \\\nRESULTS_ROOT=/path/to/backtests \\\nSTATE_ROOT=/path/to/backtests/state \\\nLOGS_ROOT=/path/to/backtests/logs \\\nbash scripts/start_swarm_watchdogs.sh\n```\n\n### Work Plane (Parallel Execution)\n\nUnified wrapper that starts control plane and launches parallel work:\n\n```bash\nscripts/backtest-optimize --parallel\n```\n\nMulti-GPU, multi-symbol execution:\n\n```bash\ncd WORKFLOW && ./launch_parallel.sh\n```\n\n### Single-Symbol Pipeline\n\nFor focused optimization on a single asset:\n\n```bash\nscripts/backtest-optimize --single --symbol SYMBOL --engine native --prescreen 50000 --paths 1000 --by-regime\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Strategy Development] ### 1. Hypothesis Formulation\n\nDefine your strategy hypothesis in measurable terms:\n\n- What market inefficiency are you exploiting?\n- What is the expected holding period?\n- What are the entry/exit conditions?\n- What is the target risk-adjusted return?\n\n### 2. Feature Selection\n\nIdentify relevant features for signal generation:\n\n- Price-based (OHLCV, returns, volatility)\n- Technical indicators (EMA, RSI, Bollinger Bands)\n- Multi-timeframe features (MTF resampling)\n- Volume analysis (PVSRA, VWAP)\n- Market microstructure (order flow, spread)\n\n### 3. Signal Generation\n\nConvert features into actionable signals:\n\n- Directional bias (trend following, mean reversion)\n- Entry conditions (threshold crossings, pattern recognition)\n- Exit conditions (take-profit, stop-loss, trailing stops)\n- Position sizing rules\n\n### 4. Position Sizing\n\nImplement risk-aware position sizing:\n\n- Fixed fractional\n- Kelly criterion\n- Volatility-adjusted\n- Regime-dependent scaling"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Backtesting] ### Pre-Flight Validation\n\n**MANDATORY** before every optimization run:\n\n```bash\npython validation.py --check-all --data-path DATA_PATH --symbol SYMBOL\n```\n\nValidation checks:\n- Data >= 90 days with no gaps/NaN\n- Min trades >= 30 for statistical significance\n- MTF resampling implemented correctly\n- No look-ahead bias\n\n### Multi-GPU Execution on Vast.ai\n\nDeploy to cloud GPU instances for large-scale parameter sweeps:\n\n```bash\n# Copy workflow files\nscp -P PORT workflow_files root@HOST:/root/WORKFLOW/\n\n# Run optimization\nssh -p PORT root@HOST \"cd /root/WORKFLOW && python optimize_strategy.py \\\n  --data-path /root/data --symbol SYMBOL --mode aggressive \\\n  --prescreen 5000 --paths 200 --engine gpu\"\n```\n\n### Prescreening with Vectorized Backtests\n\nPhase 0: GPU-accelerated parameter screening:\n\n- Generate N random parameter combinations\n- Batch evaluate on GPU\n- Filter by minimum trades (30+)\n- Return top K by Sharpe ratio\n\nPerformance baseline (RTX 5090, 730d lookback, 250k combos): ~4s per mode.\n\n### Full Backtests with NautilusTrader\n\nPhase 1: Event-driven backtesting for top candidates:\n\n- High-fidelity simulation with realistic execution\n- Slippage and commission modeling\n- Multi-asset portfolio backtests"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Parameter Optimization] ### Optuna for Hyperparameter Search\n\nPhase 2: Bayesian optimization with warm-start from prescreening:\n\n```python\nimport optuna\n\nstudy = optuna.create_study(\n    direction=\"maximize\",\n    sampler=optuna.samplers.TPESampler(seed=42),\n    pruner=optuna.pruners.MedianPruner()\n)\n\nstudy.optimize(objective, n_trials=1000)\n```\n\n### Grid Search vs Bayesian Optimization\n\n| Method | Use Case |\n|--------|----------|\n| Grid Search | Small parameter space, exhaustive coverage needed |\n| Random Search | Large space, quick exploration |\n| Bayesian (TPE) | Efficient optimization, exploitation/exploration balance |\n| CMA-ES | Continuous parameters, smooth objective |\n\n### Pruning Strategies\n\n- **MedianPruner**: Prune if worse than median of completed trials\n- **PercentilePruner**: Prune bottom X% of trials\n- **HyperbandPruner**: Multi-fidelity optimization\n- **SuccessiveHalvingPruner**: Aggressive early stopping\n\n### Distributed Optimization\n\nFor large-scale runs, use persistent storage:\n\n```python\n# JournalStorage for multi-process\nstorage = optuna.storages.JournalStorage(\n    optuna.storages.JournalFileStorage(\"journal.log\")\n)\n\n# RDBStorage for distributed clusters\nstorage = optuna.storages.RDBStorage(\"postgresql://...\")\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Walk-Forward Validation] ### Rolling Window Validation\n\nSlide the training/test window through time:\n\n```\n[Train 1][Test 1]\n    [Train 2][Test 2]\n        [Train 3][Test 3]\n```\n\nParameters:\n- `train_window`: Training period length\n- `test_window`: Out-of-sample test length\n- `step_size`: Window advancement increment\n\n### Anchored Walk-Forward\n\nExpand training window while sliding test window:\n\n```\n[Train 1      ][Test 1]\n[Train 1 + 2      ][Test 2]\n[Train 1 + 2 + 3      ][Test 3]\n```\n\nUse when historical regime diversity improves model robustness.\n\n### Epoch Selection Criteria\n\nIntelligent selection of training periods:\n\n- **Regime-aware**: Match training regimes to expected deployment conditions\n- **Volatility-adjusted**: Include both high and low volatility periods\n- **Event-inclusive**: Ensure major market events are represented\n- **Recency-weighted**: Emphasize recent data while maintaining diversity\n\n### Out-of-Sample Testing\n\nFinal validation phase:\n- Hold out 20-30% of data for final OOS test\n- No parameter tuning on OOS data\n- Monte Carlo stress testing\n- Regime-conditional performance analysis"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[SLOs and Guardrails] ### Utilization Targets\n\n- CPU utilization target: >= 70%\n- GPU utilization target: >= 70%\n- No silent GPU fallback for GPU sweeps\n\n### Hardware Watchdog Hooks\n\nEnforced by:\n- `hooks/hardware_capacity_watchdog.py`\n- `scripts/process_auditor.py`\n\n### Capacity Monitoring\n\nControl plane loops monitor:\n- Worker health and liveness\n- Progress artifact freshness\n- Resource utilization\n- Job queue depth\n\nSelf-healing actions:\n- Automatic worker restart on crash\n- Fill lanes for underutilized resources\n- Cooldown guardrails to prevent thrashing"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Tearsheet Generation] Generate QuantStats-style performance reports:\n\n```bash\nscripts/generate-tearsheet STRATEGY_NAME \\\n  --trades /path/to/trades.csv \\\n  --capital 10000 \\\n  --output ./tearsheets\n```\n\nSee `tearsheet-generator` skill for detailed visualization options."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Multi-Provider Orchestration] ### PAL MCP Integration\n\nAttach PAL as an MCP server for research/consensus across multiple model providers:\n\n- Config template: `config/mcp/pal.mcp.json.example`\n- Docs: `docs/reference/PAL_MCP_INTEGRATION.md`\n- Providers: OpenRouter, OpenAI, Anthropic, xAI, local models"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Resources] ### Documentation\n\n- [VectorBT Documentation](https://vectorbt.dev/)\n- [NautilusTrader Docs](https://nautilustrader.io/)\n- [Optuna Documentation](https://optuna.readthedocs.io/)\n- [QuantStats](https://github.com/ranaroussi/quantstats)\n\n### Project References\n\n- `config/workflow_defaults.yaml` - Default configuration\n- `config/model_policy.yaml` - Model policy (advisory)\n- `docs/guides/SWARM_OPTIMIZATION_RUNBOOK.md` - Detailed runbook\n- `hooks/pipeline-hooks.md` - Hook contracts\n- `docs/reference/VECTORBT_GRAPH_INGEST.md` - VectorBT PRO integration\n\n### Results Structure\n\n```\nBacktests/optimizations/{SYMBOL}/{MODE}/\n  best_sharpe/\n    config.json      # Best Sharpe configuration\n    metrics.json     # Performance metrics\n  best_returns/\n  lowest_drawdown/\n  best_winrate/\n  all_trials.json    # All Optuna trials\n  phase0_top500.json # Prescreening results\n```"
+    }
+  ],
+  "task_type": "testing",
+  "tags": [
+    "Read,",
+    "Write,",
+    "Edit,",
+    "Bash,",
+    "Glob,",
+    "Grep",
+    "agent-skill"
+  ],
+  "capability": [
+    "strategy_workflow"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahuserious/strategy-workflow/SKILL.md"
+}

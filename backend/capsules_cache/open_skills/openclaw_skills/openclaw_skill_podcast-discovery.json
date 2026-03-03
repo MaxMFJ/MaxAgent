@@ -1,0 +1,93 @@
+{
+  "id": "openclaw_skill_podcast-discovery",
+  "description": "Podcast discovery for Wherever.Audio -- find shows and episodes, generate wherever.audio links.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # podcast-discovery\n\nPodcast discovery skill for Wherever.Audio. Given a natural-language query, find the right podcast show or episode and return a playable wherever.audio link.\n\nDo NOT use this skill for non-podcast queries (general web search, music, etc.)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Trigger phrases] Use this skill immediately when the user message includes podcast lookup language such as:\n- \"find podcast\", \"find the podcast\", \"look up podcast\", \"search podcasts\"\n- \"find episode\", \"podcast episode about\", \"interview episode\", \"latest episodes\"\n- \"give me a wherever link\", \"wherever link\", \"wherever.audio link\", \"listen link\", \"show link\"\n- named show/host requests like \"Radiolab\", \"Lex Fridman\", \"Hard Fork\", or \"Joe Rogan\"\n\nWhen triggered, prioritize link construction over metadata reporting."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Primary Objective (Highest Priority)] Your job is to produce a working Wherever link (`/show` or `/listen`) as soon as enough information is available.\n\nSuccess condition:\n1. Resolve a valid RSS URL from Clawsica.\n2. If `contentScope = podcast-show`, immediately return a show link.\n3. If `contentScope = podcast-episode` and a matching item is found, immediately return an episode link.\n\nDo not stop at metadata, search summaries, or candidate lists if a valid link can be constructed."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Link Templates] Episode (contentScope = podcast-episode):\n  `https://wherever.audio/listen?rssUrl={rss_url}&itemGuid={guid}&fallbackLink={fallback}`\n\nShow (contentScope = podcast-show):\n  `https://wherever.audio/show?rssUrl={rss_url}`\n\nAll `{placeholder}` values must be URL-encoded."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Action Policy: Link-First, Ask-Last] Default behavior is to execute and return a link in the same response.\n\nOnly ask a follow-up question when one of these is true:\n- You cannot determine whether the user wants a show vs episode.\n- Clawsica returns no plausible show/RSS result after retries.\n- Multiple episode candidates are similarly strong and no clear best match exists.\n\nIf none of the above apply, do not ask for confirmation. Return the link."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Token Budget Policy] - Run local tooling first and send only compact result fields to the model.\n- Never send raw RSS XML, full feed dumps, or large metadata blobs to the model.\n- For episode matching, pass only top-ranked candidate rows needed for decision-making and link construction."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Workflow] ### Step 1 — Classify the query\n\nBefore searching, classify the user's query along two dimensions:\n\n**intentType** — what kind of request?\n- `specific-podcaster` — user names a host or show (e.g. \"Lex Fridman\", \"Radiolab\")\n- `specific-topic` — user describes a topic or guest (e.g. \"Geoffrey Hinton interview about AI\")\n- `discovery` — broad exploration (e.g. \"best science podcasts\", \"podcasts about space\")\n\n**contentScope** — what are they looking for?\n- `podcast-show` — a show/feed (e.g. \"find the Radiolab podcast\")\n- `podcast-episode` — a specific episode (e.g. \"the Radiolab episode about colors\")\n\n### Step 2 — Resolve the show\n\n**If intentType is `specific-podcaster`** (show name is known):\nGo directly to Clawsica (step 3). The query likely contains the show title.\n\n**If intentType is `specific-topic` or `discovery`** (show name is unknown):\nSearch the web first to discover likely podcast titles, then proceed to Clawsica with those titles.\n\n### Step 3 — Clawsica show search\n\nSearch for podcast shows using the public Clawsica endpoint. This returns show metadata including RSS feed URLs.\n\n```bash\ncurl -s \"https://clawsica.wherever.audio/p?q=radiolab\"\n```\n\nReturns a JSON array of show objects. Each object includes a `url` field containing the RSS feed URL.\n\n**Important:** Only use the `url` field from Clawsica results as the RSS URL. Do NOT substitute web page URLs, Apple Podcasts links, Spotify links, or any other URL — Wherever.Audio only understands RSS feed URLs. If Clawsica returns no results and you cannot obtain a definitive RSS feed URL, tell the user you were unable to find the podcast rather than guessing with a non-RSS URL.\n\nIf Clawsica returns no results, try alternate spellings or broader terms. See `references/CLAWSICA_API.md` for the full API reference.\n\n### Step 4 — Branch by contentScope\n\n**If contentScope is `podcast-show`:**\nConstruct a show link using the RSS URL from step 3 and present it immediately. Do not ask for additional confirmation. Done."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Response Format] When a link is available, respond in this order:\n1. The Wherever URL (first line).\n2. One short line identifying the resolved show/episode.\n3. Optional one-line note only if there was ambiguity.\n\nKeep responses concise. Do not include raw metadata dumps unless explicitly requested."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Prohibited Behavior] - Do not return only webpage metadata when a Wherever link can be built.\n- Do not ask \"Should I proceed?\" if required link parameters are already known.\n- Do not present candidate options unless disambiguation is truly required."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Privacy] - Do NOT expose internal Clawsica infrastructure details beyond what is documented here.\n- The Clawsica search endpoint does not require authentication.\n- See `references/CLAWSICA_API.md` for the full API reference.\n- See `references/LOCAL_EPISODE_SEARCH.md` for local feed-tool commands and schema details."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Example prompts] - \"Find a Geoffrey Hinton interview episode and give me a wherever.audio link.\"\n- \"What episodes cover Radiolab's space stories?\"\n- \"Search for BBC science podcasts about AI.\"\n- \"Give me the Lex Fridman podcast.\"\n- \"Find the podcast Hard Fork.\""
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "podcast_discovery"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎧"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aegrumet/podcast-discovery/SKILL.md"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_bug-audit",
+  "description": "Comprehensive bug audit for Node.js web projects. Activate when user asks to audit, review, check bugs, find vulnerabilities, or do security/quality review on a project. Supports game projects (Canvas/Phaser/Three.js), data tools (crawlers/schedulers), WeChat mini-programs, API services, dashboards, and bots. Dynamically generates a tailored audit plan based on project profiling rather than running a fixed checklist.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Bug Audit Flow\n\nAudit any Node.js web project by profiling it first, then selecting relevant audit modules."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Flow] ```\nStep 1: Profile → Step 2: Plan → Step 3: Execute → Step 4: Regress → Step 5: Archive\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Step 1: Project Profile (5 min)] Read the project's key files and answer:\n\n### 1.1 Basics\n- Project name, server.js lines, index.html lines, total files\n- Stack: Express / Socket.IO / Phaser / Three.js / Canvas / DOM-only\n- DB: SQLite / MySQL / PostgreSQL / none\n- Recent modular refactor? (variable ordering bugs likely)\n\n### 1.2 Type Tags (multi-select)\n\n| Signal | Tag |\n|--------|-----|\n| Canvas/Phaser/physics/game loop | 🎮 game |\n| Crawler/scheduler/data sync/Feishu import | 📊 data-tool |\n| WeChat OAuth/JS-SDK/official account API | 🔧 wechat |\n| Socket.IO/WebSocket realtime | ⚡ realtime |\n| External API with key auth | 🔌 api-service |\n| Charts/dashboard/monitoring | 📈 dashboard |\n| Money/transactions/assets | 💰 finance |\n| Admin panel/config.json hot-reload | 🛠️ admin |\n| Bot/auto-reply/message handler | 🤖 bot |\n\n### 1.3 Risk Scan\n\n| Question | If yes → focus on |\n|----------|-------------------|\n| server.js > 1000 lines? | High-density bugs, understand structure first |\n| User login / resource system? | Security + economy exploits |\n| Cron / scheduled tasks? | Task reliability + error isolation |\n| Third-party API calls? | Timeout / retry / fallback |\n| Runs in WeChat WebView? | ES6 compat + CDN + debugging |\n| Multiplayer realtime? | Concurrency / state sync / memory leaks |\n| Recent modular split? | Variable order / cross-file refs / regression |\n| Has config.json? | Are values actually read by code? |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 2: Build Plan] Based on the profile, pick modules from `references/modules.md`. Read only the sections that match the project's tags. Do NOT run all modules on every project.\n\n**Required for all projects:** S (Security, if has users), D1 (Atomic ops, if has DB), R1 (Deploy basics).\n\n**Pick by tag:**\n- 🎮 game → G1 G2 G3 G4\n- 📊 data-tool → D3\n- 🔧 wechat → W1 W2 W3\n- ⚡ realtime → P1\n- 🔌 api-service → A1 A2 A3\n- 🤖 bot → B1\n- 💰 finance → D1 (extra strict)\n- 🛠️ admin → G4 (config validation)\n\n**Always add project-specific items** — the modules are a starting point, not a ceiling. If you spot something unusual during profiling, add it to the plan."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 3: Execute] Run rounds in risk order:\n\n```\nRound 1: Quick scan (node -c syntax + HTML tag matching + obvious issues)\nRound 2: Security (S modules)\nRound 3: Core logic (G/D/A/B modules by type)\nRound 4: User path simulation (login → core feature, full walkthrough)\nRound 5: Red team (simulate attacker: resource exploits, level skipping, parameter forgery, race conditions)\nRound 6: Performance + memory (P modules)\nRound 7: Config + compatibility (G4/W modules)\nRound 8: Deploy verification (R modules)\n```\n\n**Output format per round:**\n```\nBug N: [🔴/🟡/🟢] Brief description\n- Cause: ...\n- Fix: ...\n- File: ...\n```\n\n**Early exit:** 2 consecutive rounds with 0 new bugs → done.\n**Small projects (<1000 lines):** 3-4 rounds is enough.\n**API-only (no frontend):** Skip G/W modules."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 4: Regression + Live Verify] ### Regression (mandatory)\n- Check fixes didn't introduce new bugs\n- After modular split: verify cross-file variable/function reachability\n- If changed file A, check files that depend on A\n\n### Live smoke test\n- Homepage returns 200\n- Key APIs return valid JSON\n- Login flow works\n- Core feature functional"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 5: Archive] Update `memory/projects/<project>.md` changelog:\n- Date + rounds completed + bugs fixed count\n- Key pitfalls discovered (for next audit reference)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Reference Files] - `references/modules.md` — All audit modules (Security, Data, Performance, Game, WeChat, API, Bot, Deploy). Read sections matching project tags.\n- `references/pitfalls.md` — Real-world pitfall lookup table from 200+ bugs across 30+ projects, plus WeChat WebView remote debugging techniques."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "bug_audit"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abczsl520/bug-audit/SKILL.md"
+}

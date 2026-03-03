@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_x402-wach",
+  "description": "DeFi risk analysis toolkit powered by WACH.AI via x402 payments using AWAL wallet custody. Use when the user asks to check if a token is safe, assess DeFi risk, detect honeypots, analyze liquidity, holder distribution, or smart contract vulnerabilities for tokens on Ethereum, Polygon, Base, BSC, or Solana. Costs 0.01 USDC per query on Base.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # x402-wach — DeFi Risk Analysis\n\nA DeFi risk analysis toolkit powered by WACH.AI, using x402 with AWAL-managed key custody."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[OpenClaw Hard Rules (Non-Negotiable)] When this skill is active, OpenClaw must follow all rules below:\n\n1. **Never request or expose secrets**\n   - Never ask for private keys, seed phrases, mnemonics, wallet export files, or raw signing material.\n   - Never suggest using `wallet.json` or any local key file flow.\n\n2. **AWAL-only custody path**\n   - Always use AWAL-backed commands for setup and payments.\n   - Treat legacy local-wallet instructions as invalid for this skill version.\n\n3. **Run readiness checks before paid calls**\n   - Before `verify-risk`, ensure AWAL is ready via `wallet setup` or `wallet doctor`.\n   - If not ready, stop and guide user to login/fund flow.\n\n4. **Respect payment guardrails**\n   - Default max payment cap is `10000` atomic USDC (`$0.01`) per request.\n   - Do not raise cap unless the user explicitly asks.\n\n5. **Do not hide payment failure details**\n   - If payment fails, surface clear reason and next action (auth, balance, network, command mismatch).\n   - Do not claim success unless report payload is actually present.\n\n6. **No blind retries that may duplicate spend**\n   - For network/transient errors, retry once at most.\n   - Keep the same request context and tell the user a retry was attempted.\n\n7. **Always present source link in final report**\n   - Prefer TokenSense URL pattern:\n     - `https://tokensense.wach.ai/<chain>/<tokenAddress>`\n   - Use API source only as fallback."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use This Skill] Use this skill when user asks to:\n\n- assess DeFi risk for a token\n- detect scam/honeypot patterns\n- inspect holder concentration/liquidity quality\n- review contract risk signals\n- get risk/market/code score breakdown\n- evaluate tokens across `eth`, `pol`, `base`, `bsc`, or `sol`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Supported Chains] | Short Name | Chain               | Token Standard |\n| ---------- | ------------------- | -------------- |\n| `eth`      | Ethereum            | ERC-20         |\n| `pol`      | Polygon             | ERC-20         |\n| `base`     | Base                | ERC-20         |\n| `bsc`      | Binance Smart Chain | BEP-20         |\n| `sol`      | Solana              | SPL            |\n\nPayment is always in USDC on Base, regardless of analysis chain."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Command Playbook for OpenClaw] ### 1) Readiness / Setup\n\nRun:\n\n```bash\nx402-wach wallet setup\n```\n\nIf setup says not ready, run:\n\n```bash\nx402-wach wallet doctor\nx402-wach wallet login <EMAIL>\nx402-wach wallet verify <FLOW_ID> <OTP>\nx402-wach wallet balance\n```\n\nInterpretation:\n\n- `✓ Ready to make x402 payments with AWAL` -> proceed to analysis.\n- `AWAL wallet is not authenticated` -> run login + verify flow.\n- `Insufficient USDC on Base` -> ask user to fund AWAL address.\n- `Could not read AWAL balance/status` -> run doctor and show raw failure.\n\n### 2) Risk Analysis\n\nRun:\n\n```bash\nx402-wach verify-risk <TOKEN_ADDRESS> <CHAIN_SHORT_NAME>\n```\n\nPreferred cap-safe form:\n\n```bash\nx402-wach verify-risk <TOKEN_ADDRESS> <CHAIN_SHORT_NAME> --max-amount-atomic 10000\n```\n\n### 3) Optional Helpers\n\n```bash\nx402-wach wallet status\nx402-wach wallet address\nx402-wach chains\nx402-wach guide\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Tool Result Interpretation Rules] ### Readiness/Doctor Output\n\n- **Contains `✓ Ready`** -> safe to proceed with paid analysis.\n- **Contains `not authenticated`** -> require OTP login/verify.\n- **Contains `Insufficient USDC`** -> request wallet funding on Base.\n- **Contains command-help text from AWAL** -> command mismatch/version issue; run `x402-wach wallet doctor` and use supported subcommands shown.\n- **Contains JSON parse errors** -> treat as AWAL output format mismatch; surface raw error and do not continue paid flow.\n\n### verify-risk Output\n\n- **`Token analysis complete!` + populated sections** -> success.\n- **Header only with empty body** -> payload unwrap issue; report as tool parsing bug.\n- **`No token found` / empty report** -> valid call, no token at address/chain.\n- **402/payment error** -> wallet balance/cap/auth issue; user action required."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Safety-Focused User Guidance] When blocked, provide this exact short path:\n\n```bash\nx402-wach wallet doctor\nx402-wach wallet login <email>\nx402-wach wallet verify <flowId> <otp>\nx402-wach wallet balance\n```\n\nThen retry:\n\n```bash\nx402-wach verify-risk <TOKEN_ADDRESS> <CHAIN_SHORT_NAME> --max-amount-atomic 10000\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Programmatic Usage Pattern (Agent-Friendly)] ```typescript\nimport {\n  getAwalReadiness,\n  validateTokenAddress,\n  verifyTokenRisk,\n} from \"@quillai-network/x402-wach\";\n\nconst token = \"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\";\nconst chain = \"eth\";\n\nconst validation = validateTokenAddress(token, chain);\nif (!validation.valid) throw new Error(validation.error);\n\nconst readiness = await getAwalReadiness(10_000);\nif (!readiness.ready) throw new Error(readiness.reasons.join(\"; \"));\n\nconst report = await verifyTokenRisk(token, chain, { maxAmountAtomic: 10_000 });\nconsole.log(report);\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Expected Report Sections] On successful analysis, formatted output can include:\n\n- Market Data\n- Risk Scores\n- Honeypot Analysis\n- Holders\n- Liquidity\n- Code Analysis\n- Social & Community\n- Source (TokenSense link) + report timestamp"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Absolute Prohibitions for OpenClaw] - Do not use or suggest `wallet create`, `wallet import`, or `wallet.json`.\n- Do not ask user for private key or seed phrase.\n- Do not increase spend cap silently.\n- Do not claim analysis success when output parsing failed.\n- Do not suppress AWAL raw errors when diagnosis is needed."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "x402_wach"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Requires Node.js 18+, npm, network access, AWAL installed and authenticated, and a funded AWAL wallet with USDC on Base.",
+    "extra": {
+      "author": "quillai-network",
+      "version": "3.0",
+      "endpoint": "https://x402.wach.ai/verify-token",
+      "payment": "0.01 USDC on Base (automatic via x402)"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akshat-mishra101/wachai-x402/SKILL.md"
+}

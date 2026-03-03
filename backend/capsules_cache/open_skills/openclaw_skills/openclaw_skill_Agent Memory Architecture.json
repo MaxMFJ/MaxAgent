@@ -1,0 +1,260 @@
+{
+  "id": "openclaw_skill_Agent Memory Architecture",
+  "description": "Complete zero-dependency memory system for AI agents — file-based architecture, daily notes, long-term curation, context management, heartbeat integration, and memory hygiene. No APIs, no databases, no external tools. Works with any agent framework.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Agent Memory Architecture\n\nComplete memory system for AI agents using only files. No APIs. No databases. No external dependencies. Just smart file structures and disciplined practices that give your agent perfect recall.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[1. Memory Architecture Overview] ```\nworkspace/\n├── MEMORY.md              ← Long-term curated memory (the brain)\n├── ACTIVE-CONTEXT.md      ← Hot working memory (what matters NOW)\n├── AGENTS.md              ← Operating manual (how you work)\n├── memory/\n│   ├── 2026-01-15.md      ← Daily notes (raw event log)\n│   ├── 2026-01-16.md\n│   ├── heartbeat-state.json  ← Heartbeat tracking state\n│   ├── topics/\n│   │   ├── project-alpha.md  ← Topic-specific deep context\n│   │   ├── client-acme.md\n│   │   └── tech-stack.md\n│   └── archive/\n│       ├── 2025-Q4.md       ← Quarterly archive summaries\n│       └── 2025-Q3.md\n```\n\n### The 5 Memory Layers\n\n| Layer | File | Purpose | Read Frequency | Write Frequency |\n|-------|------|---------|----------------|-----------------|\n| **1. Hot** | ACTIVE-CONTEXT.md | Current priorities, blockers, in-flight work | Every session | Multiple times/day |\n| **2. Warm** | MEMORY.md | Curated long-term knowledge, decisions, people | Every main session | Weekly curation |\n| **3. Daily** | memory/YYYY-MM-DD.md | Raw event log, conversations, actions taken | Today + yesterday | Throughout the day |\n| **4. Topic** | memory/topics/*.md | Deep context on specific subjects | When topic comes up | As knowledge grows |\n| **5. Cold** | memory/archive/*.md | Historical summaries, rarely accessed | On explicit search | Quarterly rollup |\n\n### Core Principle: Write It Down\n\n**Memory is limited. Files are permanent.**\n\n- \"Mental notes\" don't survive session restarts. Files do.\n- If someone says \"remember this\" → write to a file\n- If you learn a lesson → update the relevant file\n- If you make a mistake → document it so future-you doesn't repeat it\n- **Text > Brain** 📝\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[2. Layer 1: Hot Memory (ACTIVE-CONTEXT.md)] Your working scratchpad. What's happening RIGHT NOW.\n\n### Template\n\n```markdown\n# ACTIVE-CONTEXT.md — What's Hot\n\nLast updated: 2026-01-15 14:30 GMT"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[🔥 Current Priority] [ONE sentence: what is the most important thing right now?]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[In Progress] - [ ] Task A — status, next step\n- [ ] Task B — status, blocker"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Waiting On] - Waiting for [person] to [action] — asked [date]\n- Waiting for [system] to [complete] — ETA [time]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Key Decisions Made Today] - Decided to [X] because [Y] — reversible: yes/no"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Context for Next Session] [What does future-you need to know to pick up where you left off?]\n```\n\n### Rules\n- **Max 50 lines** — if it's longer, you're hoarding. Move completed items to daily notes.\n- **Update before ending session** — your gift to future-you\n- **One priority** — if everything is priority, nothing is\n- **Delete completed items** — this is NOT an archive\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[3. Layer 2: Long-Term Memory (MEMORY.md)] Your curated brain. Distilled knowledge, not raw logs.\n\n### Structure Template\n\n```markdown\n# MEMORY.md — Long-Term Memory"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[About [Human]] - Name, preferences, timezone, communication style\n- What motivates them, what frustrates them\n- Key relationships, roles, goals"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[About Me [Agent]] - Name, personality, capabilities\n- Operating preferences learned over time"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Active Projects] ### Project Name\n- Status, key decisions, blockers\n- Links to relevant topic files"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Key People] - [Name] — role, relationship, communication notes"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Lessons Learned] - [Date] — [What happened] → [What I learned]"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Preferences & Patterns] - [Human prefers X over Y]\n- [This approach works better than that one]"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Important Dates] - [Event] — [Date] — [Context]\n```\n\n### Curation Rules\n\n1. **Only curated insights** — not raw events (those go in daily notes)\n2. **Review weekly** — scan daily notes, extract what's worth keeping\n3. **Prune quarterly** — remove outdated info, archive completed projects\n4. **Max 500 lines** — if it's longer, you need topic files\n5. **Security** — never store secrets, API keys, passwords\n6. **Main session only** — don't load MEMORY.md in group chats or shared contexts\n\n### What Goes In vs What Doesn't\n\n| ✅ Goes in MEMORY.md | ❌ Stays in daily notes |\n|----------------------|------------------------|\n| \"Kalin prefers being told, not asked\" | \"Today Kalin said he prefers being told\" |\n| \"Apollo.io free plan doesn't support API\" | \"Tried Apollo.io API, got 403 error\" |\n| \"Client AcmeCo — $50K deal, Q2 close\" | \"Sent AcmeCo the proposal at 3pm\" |\n| \"Always verify prospect names with live search\" | \"Found 6/18 prospect names were wrong\" |\n\n---"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[4. Layer 3: Daily Notes (memory/YYYY-MM-DD.md)] Raw event log. Everything that happened today.\n\n### Template\n\n```markdown\n# 2026-01-15 — Daily Notes"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Morning] - [08:15] Started session, reviewed ACTIVE-CONTEXT\n- [08:30] Received task from [human]: [summary]\n- [09:00] Completed [task] — result: [outcome]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Afternoon] - [14:00] [Event/conversation summary]\n- [15:30] Decision: [what was decided and why]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Key Takeaways] - [Anything worth remembering beyond today]"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Tomorrow] - [ ] Follow up on [X]\n- [ ] Check [Y]\n```\n\n### Rules\n- **One file per day** — `memory/YYYY-MM-DD.md`\n- **Append-only** during the day — don't edit earlier entries\n- **Timestamps** for important events\n- **Summarize, don't transcribe** — capture essence, not every word\n- **Auto-create** the `memory/` directory if it doesn't exist\n- **Retention**: Keep 30 days of daily notes. Archive older ones quarterly.\n\n---"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[5. Layer 4: Topic Files (memory/topics/*.md)] Deep context on specific subjects that span many days.\n\n### When to Create a Topic File\n\n- A project lasts more than 2 weeks\n- A client/person comes up frequently\n- A technical area needs accumulated knowledge\n- You keep searching daily notes for the same information\n\n### Template\n\n```markdown\n# [Topic Name]\n\nCreated: YYYY-MM-DD\nLast updated: YYYY-MM-DD"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Summary] [2-3 sentences: what is this about?]"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Key Facts] - [Fact 1]\n- [Fact 2]"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Decision Log] | Date | Decision | Reasoning | Outcome |\n|------|----------|-----------|---------|\n| | | | |"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Open Questions] - [Question 1]"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[Related] - memory/topics/[related-topic].md\n- [External link]\n```\n\n### Rules\n- **Name descriptively** — `project-alpha.md` not `topic-1.md`\n- **One topic per file** — if it covers two things, split it\n- **Link from MEMORY.md** — topic files are extensions of long-term memory\n- **Update when you learn** — don't let them go stale\n\n---"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[6. Layer 5: Archive (memory/archive/*.md)] Historical summaries for completed projects and past quarters.\n\n### Quarterly Archive Process\n\nEvery quarter (or when daily notes exceed 30 files):\n\n1. Read all daily notes older than 30 days\n2. Extract key events, decisions, outcomes, lessons\n3. Write `memory/archive/YYYY-QN.md` (e.g., `2025-Q4.md`)\n4. Delete or move archived daily notes\n5. Update MEMORY.md if any long-term insights emerged\n\n### Archive Template\n\n```markdown\n# Q4 2025 Archive"
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[Summary] [3-5 sentences: what defined this quarter?]"
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Major Events] - [Event 1] — [outcome]\n- [Event 2] — [outcome]"
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[Projects] ### [Project Name]\n- Started: [date], Ended: [date]\n- Outcome: [result]\n- Lesson: [what we learned]"
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[Metrics] - [Key metric 1]: [value]\n- [Key metric 2]: [value]"
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[Lessons Carried Forward] - [Lesson added to MEMORY.md: yes/no]\n```\n\n---"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[7. Session Startup Protocol] What to read at the start of every session, in order:\n\n### Main Session (Direct Chat with Human)\n\n```\n1. SOUL.md          — Who am I? (personality, values)\n2. USER.md          — Who am I helping? (human context)\n3. MEMORY.md        — Long-term memory (full brain)\n4. ACTIVE-CONTEXT.md — Hot working memory (current state)\n5. memory/today.md  — Today's daily notes (if exists)\n6. memory/yesterday.md — Yesterday's notes (recent context)\n```\n\n### Shared/Group Session (Discord, Slack, Group Chats)\n\n```\n1. SOUL.md          — Who am I?\n2. USER.md          — Who am I helping?\n3. ACTIVE-CONTEXT.md — Current priorities only\n4. memory/today.md  — Today's notes\n⚠️ DO NOT load MEMORY.md — contains private context\n```\n\n### Sub-Agent / Isolated Session\n\n```\n1. Task-specific context only\n2. Relevant topic file if applicable\n3. ACTIVE-CONTEXT.md for current state\n⚠️ Minimal context = focused output + lower token cost\n```\n\n---"
+    },
+    {
+      "id": "step_34",
+      "type": "subtask",
+      "description": "[8. Memory Write Protocol] ### When to Write (Triggers)\n\n| Event | Action | Target File |\n|-------|--------|-------------|\n| Session starts | Log start time | Daily notes |\n| Task completed | Log result + outcome | Daily notes |\n| Decision made | Log decision + reasoning | Daily notes + topic file |\n| Lesson learned | Log lesson | Daily notes → MEMORY.md |\n| Person mentioned with new info | Update person section | MEMORY.md or topic file |\n| Human says \"remember this\" | Write immediately | MEMORY.md |\n| Session ends | Update ACTIVE-CONTEXT | ACTIVE-CONTEXT.md |\n| Weekly review | Curate MEMORY.md | MEMORY.md |\n| Quarterly | Archive old daily notes | Archive |\n\n### Write-Ahead Protocol\n\nFor critical information, write BEFORE acting:\n\n```\n1. Human gives important instruction\n2. IMMEDIATELY write to daily notes or MEMORY.md\n3. THEN execute the instruction\n4. Update with results after\n\nWhy: If the session crashes mid-execution, the instruction is preserved.\n```\n\n### Conflict Resolution\n\nWhen information conflicts between layers:\n- **ACTIVE-CONTEXT.md wins** for current state (most recent)\n- **MEMORY.md wins** for long-term facts (curated)\n- **Daily notes** are evidence — use to resolve disputes\n- **Topic files** win for deep domain knowledge\n\n---"
+    },
+    {
+      "id": "step_35",
+      "type": "subtask",
+      "description": "[9. Memory Search Strategy] When you need to find something:\n\n### Search Order (Fast to Slow)\n\n```\n1. ACTIVE-CONTEXT.md    — Is it current? (instant)\n2. MEMORY.md            — Is it a known fact? (quick scan)\n3. memory/today.md      — Did it happen today? (quick)\n4. memory/yesterday.md  — Did it happen recently? (quick)\n5. memory/topics/*.md   — Is it a deep topic? (targeted)\n6. memory_search tool   — Semantic search across all files\n7. memory/archive/*.md  — Is it historical? (slow)\n```\n\n### Search Tips\n- Use `memory_search` tool for fuzzy/semantic queries\n- Use `memory_get` with line numbers for precise retrieval after search\n- Check daily notes in reverse chronological order\n- If you can't find it after 3 searches, ask the human\n\n---"
+    },
+    {
+      "id": "step_36",
+      "type": "subtask",
+      "description": "[10. Memory Hygiene Schedule] ### Daily (During Session)\n- [ ] Read ACTIVE-CONTEXT.md at session start\n- [ ] Create/append to today's daily notes\n- [ ] Update ACTIVE-CONTEXT.md before session ends\n- [ ] Move completed ACTIVE-CONTEXT items to daily notes\n\n### Weekly (Pick One Heartbeat)\n- [ ] Read last 7 daily notes\n- [ ] Extract significant events/lessons to MEMORY.md\n- [ ] Prune ACTIVE-CONTEXT.md (remove stale items)\n- [ ] Check topic files for staleness\n- [ ] Review MEMORY.md for outdated information\n\n### Monthly\n- [ ] MEMORY.md line count check (target: <500 lines)\n- [ ] Topic files audit — any need merging or archiving?\n- [ ] Daily notes older than 30 days → archive\n- [ ] Check if any topic files should be promoted to MEMORY.md sections\n\n### Quarterly\n- [ ] Full archive process (see Layer 5)\n- [ ] MEMORY.md deep review — still accurate?\n- [ ] Topic files — archive completed projects\n- [ ] Update AGENTS.md with any process improvements learned\n\n---"
+    },
+    {
+      "id": "step_37",
+      "type": "subtask",
+      "description": "[11. Heartbeat Integration] Use heartbeats (periodic agent wake-ups) for memory maintenance:\n\n### heartbeat-state.json\n\n```json\n{\n  \"last_memory_review\": \"2026-01-15\",\n  \"last_archive\": \"2025-12-31\",\n  \"last_active_context_prune\": \"2026-01-14\",\n  \"daily_notes_count\": 12,\n  \"memory_md_lines\": 287,\n  \"next_scheduled\": {\n    \"weekly_review\": \"2026-01-19\",\n    \"monthly_audit\": \"2026-02-01\",\n    \"quarterly_archive\": \"2026-03-31\"\n  }\n}\n```\n\n### Heartbeat Memory Tasks (Rotate)\n\n```\nHeartbeat 1: Check daily notes count, prune ACTIVE-CONTEXT\nHeartbeat 2: Scan recent daily notes, update MEMORY.md\nHeartbeat 3: Check topic files for staleness\nHeartbeat 4: Token guard — how much are memory reads costing?\n```\n\n---"
+    },
+    {
+      "id": "step_38",
+      "type": "subtask",
+      "description": "[12. Context Window Management] ### Token Budget Rules\n\n| File | Max Size | If Over Limit |\n|------|----------|---------------|\n| ACTIVE-CONTEXT.md | 50 lines / 2KB | Move items to daily notes |\n| MEMORY.md | 500 lines / 25KB | Split into topic files |\n| Daily notes | 200 lines / 10KB | Summarize, stop transcribing |\n| Topic files | 300 lines / 15KB | Split or archive |\n\n### Smart Loading Strategy\n\nDon't load everything every session. Use progressive disclosure:\n\n```\nLevel 1: Always load (every session)\n  → ACTIVE-CONTEXT.md (tiny, essential)\n  → SOUL.md, USER.md (identity)\n\nLevel 2: Load in main sessions\n  → MEMORY.md (the brain)\n  → Today's daily notes\n\nLevel 3: Load on demand\n  → Topic files (when topic comes up)\n  → Yesterday's notes (if needed)\n  → Archive (only on explicit search)\n```\n\n### Context Overflow Protocol\n\nWhen context gets too large mid-session:\n\n1. Write ACTIVE-CONTEXT.md with full current state\n2. Write `HANDOFF.md` with: what was done, in progress, next steps, key decisions, gotchas\n3. Start fresh session\n4. New session reads HANDOFF.md → picks up seamlessly\n5. Delete HANDOFF.md after successful handoff\n\n---"
+    },
+    {
+      "id": "step_39",
+      "type": "subtask",
+      "description": "[13. Security Rules] ### Never Store in Memory Files\n- API keys, tokens, passwords, secrets\n- Full credit card or bank account numbers\n- Social security numbers or government IDs\n- Private encryption keys\n- Anything that would cause harm if the file were shared\n\n### Safe Storage Pattern\n```markdown\n# ✅ Safe\n- API keys: stored in 1Password vault \"MyVault\"\n- Database password: see secrets manager, item \"prod-db\"\n\n# ❌ Dangerous\n- API key: sk-abc123def456...\n- Password: MyS3cretP@ss!\n```\n\n### Privacy in Shared Contexts\n- MEMORY.md contains personal context — **never load in group chats**\n- Topic files may contain sensitive business data — check before sharing\n- Daily notes may reference private conversations — don't share\n- When in doubt, ask before exposing any memory content\n\n---"
+    },
+    {
+      "id": "step_40",
+      "type": "subtask",
+      "description": "[14. Memory Patterns & Anti-Patterns] ### ✅ Good Patterns\n\n| Pattern | Why It Works |\n|---------|-------------|\n| Write immediately when told \"remember\" | Captures before you forget |\n| One fact per line in MEMORY.md | Easy to find, update, delete |\n| Date-prefix important entries | Enables chronological search |\n| Link between files | Creates a knowledge web |\n| Prune regularly | Keeps context fresh and cheap |\n\n### ❌ Anti-Patterns\n\n| Anti-Pattern | Why It Fails | Fix |\n|-------------|-------------|-----|\n| Giant MEMORY.md (1000+ lines) | Expensive to load, hard to find things | Split into topic files |\n| Never pruning ACTIVE-CONTEXT | Stale items cause confusion | Prune daily, archive weekly |\n| Transcribing conversations verbatim | Wastes tokens, buries signal | Summarize: essence, not every word |\n| Storing secrets in memory files | Security risk | Use secrets manager, reference by name |\n| Reading all files every session | Token burn, slow startup | Progressive loading strategy |\n| No daily notes | History is lost | Discipline: one file per day |\n| Multiple sources of truth | Conflicts, confusion | Single source per fact type |\n\n---"
+    },
+    {
+      "id": "step_41",
+      "type": "subtask",
+      "description": "[15. Migration Guide] ### From No Memory System\n\n```\nDay 1: Create MEMORY.md with basic info about human + agent\nDay 2: Start daily notes (memory/YYYY-MM-DD.md)\nDay 3: Create ACTIVE-CONTEXT.md\nWeek 2: First weekly review — extract lessons to MEMORY.md\nMonth 2: Create first topic files for recurring subjects\nQuarter 2: First archive cycle\n```\n\n### From MEMORY.md-Only System\n\n```\n1. Create memory/ directory\n2. Start daily notes — stop putting raw events in MEMORY.md\n3. Create ACTIVE-CONTEXT.md — move \"current\" stuff out of MEMORY.md\n4. Review MEMORY.md — what's curated vs what's raw? Move raw to daily notes.\n5. Identify topics that deserve their own files — split them out\n```\n\n### From External Tool (Database, API, Cloud)\n\n```\n1. Export key data to markdown files\n2. Structure into the 5-layer architecture\n3. Set up heartbeat maintenance schedule\n4. Gradually reduce dependency on external tool\n5. Benefits: zero cost, zero dependencies, works offline, no vendor lock-in\n```\n\n---"
+    },
+    {
+      "id": "step_42",
+      "type": "subtask",
+      "description": "[16. Natural Language Commands] - `/memory-status` — Show memory system health: file sizes, line counts, staleness, next maintenance\n- `/memory-review` — Run weekly review: scan daily notes, extract to MEMORY.md, prune active context\n- `/memory-search [query]` — Search across all memory layers for a topic\n- `/memory-archive` — Run quarterly archive: summarize old daily notes, create archive file\n- `/remember [fact]` — Immediately write a fact to MEMORY.md\n- `/active-context` — Show current ACTIVE-CONTEXT.md contents\n- `/daily-summary` — Generate summary of today's daily notes\n- `/topic-create [name]` — Create a new topic file with template\n- `/memory-prune` — Audit all memory files for staleness and bloat\n- `/handoff` — Write HANDOFF.md for session transition\n- `/memory-migrate` — Guided migration from current system to this architecture\n- `/memory-debug` — Diagnose memory issues: missing files, conflicts, outdated info"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Agent Memory Architecture"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "category": "agent",
+      "skills": [
+        "memory",
+        "agent",
+        "context",
+        "persistence",
+        "knowledge-management",
+        "openclaw",
+        "productivity"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/1kalin/afrexai-agent-memory/SKILL.md"
+}

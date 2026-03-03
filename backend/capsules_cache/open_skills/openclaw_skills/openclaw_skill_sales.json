@@ -1,0 +1,274 @@
+{
+  "id": "openclaw_skill_sales",
+  "description": "CRM integration, lead tracking, outreach automation, and pipeline management. Transform your AI agent into a sales assistant that never lets leads slip through the cracks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Sales Skill 💼\n\n**Turn your AI agent into an elite sales operations partner.**\n\nTrack leads, manage pipelines, automate outreach, and never lose a deal to poor follow-up again.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Does] ✅ **Lead Tracking** — Capture, qualify, and track leads through your pipeline\n✅ **CRM Integration** — Work with your existing CRM or use built-in tracking\n✅ **Outreach Automation** — Generate personalized outreach sequences\n✅ **Pipeline Management** — Track deals, forecast revenue, identify bottlenecks\n✅ **Follow-up Automation** — Never miss a follow-up again\n✅ **Sales Analytics** — Track conversion rates, velocity, and win/loss reasons\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] 1. Set up your sales workspace:\n```bash\n./scripts/sales-init.sh\n```\n\n2. Configure your preferences in `TOOLS.md`:\n```markdown\n### Sales\n- CRM: [HubSpot/Salesforce/Notion/Built-in]\n- Default pipeline stages: [Stages]\n- Follow-up cadence: [Days between touchpoints]\n- Meeting booking link: [URL]\n```\n\n3. Start tracking leads!\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Lead Management] ### Lead Qualification Framework (BANT)\n\n| Criteria | Question | Weight |\n|----------|----------|--------|\n| **Budget** | Can they afford it? | 25% |\n| **Authority** | Are they the decision-maker? | 25% |\n| **Need** | Do they have a real problem you solve? | 30% |\n| **Timeline** | When do they need a solution? | 20% |\n\n**Lead Score Thresholds:**\n- 80-100: Hot 🔥 — Contact immediately\n- 60-79: Warm — Nurture actively\n- 40-59: Cool — Keep in nurture sequence\n- 0-39: Cold — Low priority\n\n### Lead Capture Template\n\n```markdown\n# Lead: [Company Name]"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Contact Info] - **Name:** [Full Name]\n- **Title:** [Job Title]\n- **Email:** [Email]\n- **Phone:** [Phone]\n- **LinkedIn:** [URL]\n- **Company:** [Company]\n- **Website:** [URL]"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Qualification (BANT)] - **Budget:** [Yes/No/Unknown] — [Notes]\n- **Authority:** [Decision-maker/Influencer/User] — [Notes]\n- **Need:** [Strong/Moderate/Weak] — [Notes]\n- **Timeline:** [Immediate/1-3mo/3-6mo/6mo+] — [Notes]\n- **Lead Score:** [X/100]"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Source] - **How they found us:** [Source]\n- **First touchpoint:** [Date]\n- **Initial interest:** [What they asked about]"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] [Relevant context, pain points, opportunities]"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Next Action] - [ ] [Action] — Due: [Date]\n```\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Pipeline Management] ### Standard Pipeline Stages\n\n| Stage | Definition | Typical Actions |\n|-------|------------|-----------------|\n| **Lead** | Initial contact, not yet qualified | Qualify, research, initial outreach |\n| **Qualified** | BANT criteria met | Discovery call, needs analysis |\n| **Discovery** | Understanding needs | Demo prep, stakeholder mapping |\n| **Demo/Proposal** | Presenting solution | Demo, proposal creation |\n| **Negotiation** | Terms discussion | Handle objections, negotiate |\n| **Closed Won** | Deal signed | Onboarding handoff |\n| **Closed Lost** | Deal lost | Loss analysis, nurture |\n\n### Pipeline Tracking Template\n\n```markdown\n# Sales Pipeline — [Month]"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Summary] - Total pipeline value: $[X]\n- Weighted pipeline: $[X]\n- Deals in pipeline: [X]\n- Expected closes this month: [X]"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[By Stage] ### Lead ([X] deals, $[X])\n| Company | Value | Owner | Last Activity | Next Step |\n|---------|-------|-------|---------------|-----------|\n| [Name] | $[X] | [You] | [Date] | [Action] |\n\n### Qualified ([X] deals, $[X])\n...\n\n### Demo/Proposal ([X] deals, $[X])\n...\n\n### Negotiation ([X] deals, $[X])\n..."
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Stale Deals (>14 days no activity)] | Company | Stage | Last Activity | Recommended Action |\n|---------|-------|---------------|-------------------|\n```\n\n### Pipeline Velocity Metrics\n\n| Metric | How to Calculate | Target |\n|--------|------------------|--------|\n| **Win Rate** | Won ÷ (Won + Lost) | >25% |\n| **Average Deal Size** | Total Won ÷ # Won | Track trend |\n| **Sales Cycle** | Avg days from Lead → Won | <30 days |\n| **Pipeline Coverage** | Pipeline ÷ Quota | 3x+ |\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Outreach Automation] ### Cold Outreach Sequence\n\n**Day 1: Initial Email**\n```\nSubject: [Personalized hook based on research]\n\nHi [Name],\n\n[Observation about their company/role — show you did research].\n\n[One sentence about what you do and why it's relevant to them].\n\n[Specific question or soft CTA].\n\nBest,\n[Your name]\n```\n\n**Day 3: Follow-up 1**\n```\nSubject: Re: [Original subject]\n\nHi [Name],\n\nWanted to make sure this didn't get buried — [brief restate of value].\n\n[New angle or additional value point].\n\nWorth a quick chat?\n\n[Your name]\n```\n\n**Day 7: Follow-up 2 (Value Add)**\n```\nSubject: [Related resource or insight]\n\nHi [Name],\n\nFound this [article/resource/insight] and thought of you: [link]\n\n[Brief explanation of why it's relevant].\n\nIf this resonates, happy to share how we helped [similar company] with [similar challenge].\n\n[Your name]\n```\n\n**Day 14: Break-up Email**\n```\nSubject: Should I close your file?\n\nHi [Name],\n\nI haven't heard back, so I'm assuming the timing isn't right.\n\nNo worries — I'll close out my notes for now.\n\nIf things change, feel free to reply anytime.\n\n[Your name]\n```\n\n### Personalization Research Checklist\n\nBefore outreach, gather:\n- [ ] Recent company news (funding, launch, hire)\n- [ ] LinkedIn activity (posts, comments, likes)\n- [ ] Company blog/newsletter\n- [ ] Mutual connections\n- [ ] Tech stack (if relevant)\n- [ ] Competitors they might use\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Follow-up System] ### Never Miss a Follow-up\n\n**The Rule:** Every deal has a next action with a due date. No exceptions.\n\n**Follow-up Cadence by Stage:**\n| Stage | Check-in Frequency |\n|-------|--------------------|\n| Lead | Every 3-5 days |\n| Qualified | Every 2-3 days |\n| Demo/Proposal | Every 1-2 days |\n| Negotiation | Daily |\n\n### Follow-up Reminder Template\n\n```markdown\n# Daily Follow-up Queue"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Due Today] | Lead | Stage | Last Contact | Reason | Next Action |\n|------|-------|--------------|--------|-------------|\n| [Co] | [Stage] | [Date] | [Context] | [Action] |"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Overdue] | Lead | Stage | Days Overdue | Priority |\n|------|-------|--------------|----------|\n| [Co] | [Stage] | [X] days | 🔥/⚠️ |\n```\n\n---"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Meeting Management] ### Pre-Meeting Research Template\n\n```markdown\n# Meeting Prep: [Company]\n**Date:** [Date/Time]\n**Attendees:** [Names, titles]"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[Company Research] - Founded: [Year]\n- Size: [Employees]\n- Funding: [Stage/Amount]\n- Recent news: [Key items]"
+    },
+    {
+      "id": "step_19",
+      "type": "subtask",
+      "description": "[Attendee Research] - [Name 1]: [Background, relevant info]\n- [Name 2]: [Background, relevant info]"
+    },
+    {
+      "id": "step_20",
+      "type": "subtask",
+      "description": "[Their Likely Pain Points] 1. [Pain point based on research]\n2. [Pain point based on research]"
+    },
+    {
+      "id": "step_21",
+      "type": "subtask",
+      "description": "[Questions to Ask] 1. [Discovery question]\n2. [Discovery question]\n3. [Qualification question]"
+    },
+    {
+      "id": "step_22",
+      "type": "subtask",
+      "description": "[Our Value Proposition for Them] [Customized pitch based on research]"
+    },
+    {
+      "id": "step_23",
+      "type": "subtask",
+      "description": "[Objections to Expect] 1. [Likely objection] → [Response]\n2. [Likely objection] → [Response]"
+    },
+    {
+      "id": "step_24",
+      "type": "subtask",
+      "description": "[Meeting Goals] 1. [Specific goal]\n2. [Specific goal]\n```\n\n### Post-Meeting Notes Template\n\n```markdown\n# Meeting Notes: [Company] — [Date]"
+    },
+    {
+      "id": "step_25",
+      "type": "subtask",
+      "description": "[Attendees] - [Name, Title]"
+    },
+    {
+      "id": "step_26",
+      "type": "subtask",
+      "description": "[Key Takeaways] 1. [Insight]\n2. [Insight]"
+    },
+    {
+      "id": "step_27",
+      "type": "subtask",
+      "description": "[Pain Points Confirmed] - [Pain point]"
+    },
+    {
+      "id": "step_28",
+      "type": "subtask",
+      "description": "[Decision Process] - Decision maker: [Name]\n- Influencers: [Names]\n- Timeline: [When]\n- Budget: [Range if discussed]"
+    },
+    {
+      "id": "step_29",
+      "type": "subtask",
+      "description": "[Objections Raised] - [Objection]: [How we handled it]"
+    },
+    {
+      "id": "step_30",
+      "type": "subtask",
+      "description": "[Next Steps] - [ ] [Action] — Owner: [Name] — Due: [Date]\n- [ ] [Action] — Owner: [Name] — Due: [Date]"
+    },
+    {
+      "id": "step_31",
+      "type": "subtask",
+      "description": "[Follow-up Email] [Draft the follow-up email here]\n```\n\n---"
+    },
+    {
+      "id": "step_32",
+      "type": "subtask",
+      "description": "[Objection Handling] ### Common Objections & Responses\n\n| Objection | Response Framework |\n|-----------|-------------------|\n| **\"Too expensive\"** | Explore value vs cost: \"What's the cost of NOT solving this?\" |\n| **\"We use [competitor]\"** | \"What made you choose them? What's working/not working?\" |\n| **\"Not the right time\"** | \"What would make it the right time? Can we reconnect then?\" |\n| **\"Need to think about it\"** | \"Of course. What specifically do you want to think through?\" |\n| **\"Send me info\"** | \"Happy to. What specifically would be most helpful to see?\" |\n| **\"We're too small\"** | \"That's actually perfect for [reason]. [Similar customer example]\" |\n\n### Objection Documentation\n\nTrack objections to improve pitch:\n```markdown\n# Objection Log\n\n| Date | Company | Objection | Our Response | Result |\n|------|---------|-----------|--------------|--------|\n| [Date] | [Co] | [Objection] | [Response] | Won/Lost |\n```\n\n---"
+    },
+    {
+      "id": "step_33",
+      "type": "subtask",
+      "description": "[Sales Analytics] ### Weekly Sales Report Template\n\n```markdown\n# Sales Report — Week of [Date]"
+    },
+    {
+      "id": "step_34",
+      "type": "subtask",
+      "description": "[Summary] - New leads: [X]\n- Deals advanced: [X]\n- Deals closed won: [X] ($[X])\n- Deals closed lost: [X]"
+    },
+    {
+      "id": "step_35",
+      "type": "subtask",
+      "description": "[Pipeline Health] - Total pipeline: $[X]\n- Change from last week: +/-[X]%\n- Weighted pipeline: $[X]\n- Forecast this month: $[X]"
+    },
+    {
+      "id": "step_36",
+      "type": "subtask",
+      "description": "[Activity Metrics] - Outreach sent: [X]\n- Meetings held: [X]\n- Proposals sent: [X]\n- Follow-ups completed: [X]"
+    },
+    {
+      "id": "step_37",
+      "type": "subtask",
+      "description": "[Wins] | Company | Value | Time to Close | Key Factor |\n|---------|-------|---------------|------------|\n| [Name] | $[X] | [X] days | [What won it] |"
+    },
+    {
+      "id": "step_38",
+      "type": "subtask",
+      "description": "[Losses] | Company | Value | Stage Lost | Reason |\n|---------|-------|------------|--------|\n| [Name] | $[X] | [Stage] | [Why] |"
+    },
+    {
+      "id": "step_39",
+      "type": "subtask",
+      "description": "[Focus for Next Week] 1. [Priority]\n2. [Priority]\n```\n\n### Win/Loss Analysis\n\n```markdown\n# Win/Loss Analysis — [Quarter]"
+    },
+    {
+      "id": "step_40",
+      "type": "subtask",
+      "description": "[Win Patterns] - Common traits of won deals: [Patterns]\n- Average deal size: $[X]\n- Average sales cycle: [X] days\n- Top win reasons:\n  1. [Reason]\n  2. [Reason]"
+    },
+    {
+      "id": "step_41",
+      "type": "subtask",
+      "description": "[Loss Patterns] - Where deals die: [Stage]\n- Common objections: [List]\n- Top loss reasons:\n  1. [Reason]\n  2. [Reason]"
+    },
+    {
+      "id": "step_42",
+      "type": "subtask",
+      "description": "[Insights & Actions] - [Insight] → [Action to take]\n```\n\n---"
+    },
+    {
+      "id": "step_43",
+      "type": "subtask",
+      "description": "[Scripts] ### sales-init.sh\nInitialize your sales workspace with templates and tracking.\n\n### lead-tracker.sh\nCLI tool for quick lead management.\n\n```bash\n# Add new lead\n./scripts/lead-tracker.sh add \"Company Name\" \"Contact Name\" \"email@company.com\"\n\n# List all leads\n./scripts/lead-tracker.sh list\n\n# Update lead stage\n./scripts/lead-tracker.sh update \"Company Name\" --stage \"demo\"\n\n# Get daily follow-ups\n./scripts/lead-tracker.sh followups\n```\n\n### pipeline-report.sh\nGenerate pipeline reports.\n\n```bash\n# Weekly pipeline summary\n./scripts/pipeline-report.sh weekly\n\n# Monthly forecast\n./scripts/pipeline-report.sh forecast\n```\n\n---"
+    },
+    {
+      "id": "step_44",
+      "type": "subtask",
+      "description": "[CRM Integration] ### Built-in Tracking\n\nIf you don't use an external CRM, use markdown files:\n\n```\nsales/\n├── leads/\n│   ├── company-name.md\n│   └── ...\n├── pipeline.md\n├── analytics/\n│   ├── weekly-YYYY-MM-DD.md\n│   └── ...\n└── templates/\n```\n\n### External CRM Integration\n\n**HubSpot:** Use HubSpot API for syncing\n**Salesforce:** Use Salesforce API for syncing\n**Notion:** Export/import via CSV or API\n\n---"
+    },
+    {
+      "id": "step_45",
+      "type": "subtask",
+      "description": "[Best Practices] 1. **Follow up relentlessly** — 80% of sales need 5+ touchpoints\n2. **Personalize everything** — Generic outreach = ignore\n3. **Always have next step** — Every conversation ends with clear action\n4. **Track why you lose** — More valuable than why you win\n5. **Speed to lead** — Respond within 5 minutes when possible\n6. **Listen more than talk** — Discovery > Pitching\n7. **Document everything** — Your future self will thank you\n8. **Review pipeline weekly** — Stale deals kill forecasts\n\n---"
+    },
+    {
+      "id": "step_46",
+      "type": "subtask",
+      "description": "[Common Mistakes] ❌ **Pitching before understanding** — Do discovery first\n❌ **Forgetting to follow up** — Use reminders religiously\n❌ **Vanity metrics** — Calls made matters less than meetings held\n❌ **Ignoring closed-lost** — They can become wins later\n❌ **No CRM hygiene** — Bad data = bad decisions\n\n---"
+    },
+    {
+      "id": "step_47",
+      "type": "subtask",
+      "description": "[License] **License:** MIT — use freely, modify, distribute.\n\n---\n\n*\"Sales is not about selling anymore, but about building trust and educating.\" — Siva Devaki*"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sales"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexeyvorobiev/tmp-skill/SKILL.md"
+}

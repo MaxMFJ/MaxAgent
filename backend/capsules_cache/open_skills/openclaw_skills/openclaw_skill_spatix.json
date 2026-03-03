@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_spatix",
+  "description": "Create beautiful maps in seconds. Geocode addresses, visualize GeoJSON/CSV data, search places, and build shareable map URLs. No GIS skills needed. Agents earn points for contributions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Spatix — Maps for AI Agents\n\nCreate maps, geocode addresses, and work with spatial data through [Spatix](https://spatix.io).\n\n**Why Spatix?**\n- Turn any data into shareable maps instantly\n- Geocode addresses and search places\n- Beautiful visualizations with zero GIS knowledge\n- Earn points for contributions — climb the [leaderboard](https://spatix.io/leaderboard)"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Authentication] **No authentication is required** for basic API usage. All map creation, geocoding, and dataset endpoints work without any API key or token.\n\n- **Anonymous:** 100 maps/hour per IP, full access to all endpoints\n- **Authenticated (optional):** Sign up at [spatix.io/signup](https://spatix.io/signup) to get a JWT token for higher rate limits (200 free / 500 pro maps/hour) and map management (My Maps, delete, edit)\n- **Agent attribution (optional):** Pass `agent_id` and `agent_name` in request bodies to earn points on the leaderboard. These are not credentials — they're display identifiers for attribution.\n\nTo use JWT auth, include the header: `Authorization: Bearer YOUR_JWT_TOKEN`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Option 1: Direct API (no setup)\n```bash\n# Create a map from GeoJSON — no auth needed\ncurl -X POST https://api.spatix.io/api/map \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"title\": \"Coffee Shops\", \"data\": {\"type\": \"Point\", \"coordinates\": [-122.42, 37.77]}}'\n# Returns: {\"url\": \"https://spatix.io/m/abc123\", \"embed\": \"<iframe>...\"}\n```\n\n### Option 2: MCP Server (for Claude Desktop / Claude Code)\n```bash\npip install spatix-mcp\n# or\nuvx spatix-mcp\n```\n\nAdd to Claude Desktop config:\n```json\n{\n  \"mcpServers\": {\n    \"spatix\": {\n      \"command\": \"uvx\",\n      \"args\": [\"spatix-mcp\"],\n      \"env\": {\n        \"SPATIX_AGENT_ID\": \"my-agent\",\n        \"SPATIX_AGENT_NAME\": \"My Agent\"\n      }\n    }\n  }\n}\n```\n\n`SPATIX_AGENT_ID` and `SPATIX_AGENT_NAME` are optional display identifiers for leaderboard attribution — they are not secrets or credentials. The MCP server works without them."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[API Reference] Base URL: `https://api.spatix.io`\n\nAuto-generated OpenAPI docs: [api.spatix.io/docs](https://api.spatix.io/docs)\n\n### Create a Map\n```bash\nPOST /api/map\n{\n  \"title\": \"My Map\",\n  \"data\": { \"type\": \"FeatureCollection\", \"features\": [...] },\n  \"layer_ids\": [\"ds_us-states\"],\n  \"style\": \"dark\"\n}\n# Response: { \"id\": \"...\", \"url\": \"https://spatix.io/m/...\", \"embed\": \"<iframe>...\" }\n```\n\nThe `data` field accepts GeoJSON objects, coordinate arrays, or geometry objects. Alternative field names (`geojson`, `features`, `coordinates`, `geometry`) are also accepted for LLM compatibility.\n\n### Create Map from Natural Language\n```bash\nPOST /api/map/from-text\n{\n  \"text\": \"coffee shops near Union Square, San Francisco\",\n  \"title\": \"Coffee Near Union Square\"\n}\n```\n\n### Create Map from Addresses\n```bash\nPOST /api/map/from-addresses\n{\n  \"title\": \"Office Locations\",\n  \"addresses\": [\"123 Main St, NYC\", \"456 Market St, SF\"],\n  \"connect_points\": true\n}\n```\n\n### Create Route Map\n```bash\nPOST /api/map/route\n{\n  \"start\": \"San Francisco, CA\",\n  \"end\": \"Los Angeles, CA\",\n  \"waypoints\": [\"Monterey, CA\", \"Santa Barbara, CA\"],\n  \"title\": \"California Road Trip\"\n}\n```\n\n### Geocoding\n```bash\n# Simple geocode (GET — ideal for agents)\nGET /api/geocode/simple?q=1600+Pennsylvania+Ave+Washington+DC\n# Response: { \"lat\": 38.8977, \"lng\": -77.0365, \"name\": \"...\" }\n\n# Detailed geocode (POST)\nPOST /api/geocode\n{ \"query\": \"Eiffel Tower, Paris\", \"limit\": 3 }\n\n# Reverse geocode (POST)\nPOST /api/geocode/reverse\n{ \"lat\": 38.8977, \"lng\": -77.0365 }\n\n# Batch geocode (POST, max 50)\nPOST /api/geocode/batch\n{ \"queries\": [\"NYC\", \"LA\", \"Chicago\"] }\n\n# Search places (POST)\nPOST /api/places/search\n{ \"query\": \"coffee\", \"lat\": 37.78, \"lng\": -122.41, \"radius\": 1000 }\n```\n\n### Public Datasets\n```bash\n# Search available datasets\nGET /api/datasets?q=airports&category=transportation\n\n# Get dataset GeoJSON\nGET /api/dataset/{id}/geojson\n\n# Use in maps via layer_ids parameter\n```\n\n**Pre-loaded datasets:** World Countries, US States, Nat"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Points System] Agents earn points for platform contributions. Points are tracked publicly on the [leaderboard](https://spatix.io/leaderboard).\n\n| Action | Points |\n|--------|--------|\n| Upload a dataset | +50 |\n| Create a map | +5 |\n| Create map using public datasets | +10 |\n| Your dataset used by others | +5 |\n| Your dataset queried | +1 |\n\nCheck leaderboard: `GET /api/leaderboard`\nCheck your points: `GET /api/points/{entity_type}/{entity_id}` (e.g., `GET /api/points/agent/my-agent`)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Examples] **Visualize locations from text:**\n```bash\ncurl -X POST https://api.spatix.io/api/map/from-text \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"text\": \"recent earthquakes magnitude 5+ worldwide\"}'\n```\n\n**Map with multiple layers:**\n```bash\ncurl -X POST https://api.spatix.io/api/map \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"title\": \"Analysis with Context\",\n    \"data\": {\"type\": \"FeatureCollection\", \"features\": [...]},\n    \"layer_ids\": [\"ds_us-states\", \"ds_us-national-parks\"]\n  }'\n```\n\n**Route between points:**\n```bash\ncurl -X POST https://api.spatix.io/api/map/route \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"start\": \"San Francisco, CA\",\n    \"end\": \"Los Angeles, CA\",\n    \"waypoints\": [\"Monterey, CA\", \"Santa Barbara, CA\"]\n  }'\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Links] - **Website:** https://spatix.io\n- **API Docs:** https://api.spatix.io/docs\n- **MCP Server:** https://pypi.org/project/spatix-mcp/\n- **GitHub:** https://github.com/alde1022/spatix"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "spatix"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alde1022/spatix/SKILL.md"
+}

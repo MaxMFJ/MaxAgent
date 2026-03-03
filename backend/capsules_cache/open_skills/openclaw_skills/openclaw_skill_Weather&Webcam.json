@@ -1,0 +1,63 @@
+{
+  "id": "openclaw_skill_Weather&Webcam",
+  "description": "Fetches current weather from wttr.in and automatically captures a live webcam image from Meteoblue or Windy for the requested location. Use it when the user asks for the weather and wants to see a real image of the current conditions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Weather Location\n\nThis skill automates weather data retrieval and live webcam image capture using **agent-browser** for maximum quality."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflow] 1.  **Get weather (wttr.in)**:\n    - Execute `curl -s \"wttr.in/[Location]?format=%l:+%c+%t+%h+%w\"` to get basic data.\n    - Note: Encode spaces (e.g., `Sant+Adria+de+Besos`).\n\n2.  **Search for Webcam**:\n    - Web search for `site:meteoblue.com [Location] webcam` or `site:windy.com [Location] webcam`.\n    - Select the direct link to the location's webcam page.\n\n3.  **Capture Image (Agent Browser Method)**:\n    - Use **agent-browser** to navigate and interact:\n      ```bash\n      /home/user/.npm-global/bin/agent-browser --session-name webcam open \"[URL]\"\n      ```\n    - **Interaction**:\n      - Click \"OK/Accept\" on cookie banners using `snapshot` + `click @ref`.\n      - Click the specific location link to open the large view/gallery.\n    - **Extraction**:\n      - Use `eval` to find the highest resolution URL (look for `/full/` and `original.jpg`):\n        ```javascript\n        Array.from(document.querySelectorAll('img')).map(img => img.src).filter(src => src.includes('original.jpg') && src.includes('/full/'))[0]\n        ```\n    - **Download**:\n      - Download with `curl` to `/home/user/.openclaw/workspace/webcam.jpg`.\n\n4.  **User Response**:\n    - Send with `message(action=send, media=\"/home/user/.openclaw/workspace/webcam.jpg\", caption=\"[wttr.in data]\\n[Comment]\")`.\n    - Respond with `NO_REPLY`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Optimization (Token Saving)] 1. **Agent Browser**: Priority method for Alex to ensure interaction (cookies) and high-quality images.\n2. **Session Persistence**: Use `--session-name webcam` to keep cookies.\n3. **Scrapling (Fallback)**: Use only if `agent-browser` fails."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Usage Examples] - \"What's the weather like in London?\"\n- \"Show me the webcam in Barcelona\"\n- \"How's the sky in Vilassar de Mar?\""
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Weather&Webcam"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "agent-browser",
+            "curl"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex1389/weather-location/SKILL.md"
+}

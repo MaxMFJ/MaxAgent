@@ -373,6 +373,9 @@ class VectorMemoryStore:
         Get optimized context messages for LLM.
         Combines recent messages (连贯性) with semantically relevant ones (相关性).
         每条消息内容超过 max_msg_chars 时会被截断，避免单条消息消耗过多 token。
+
+        **重要**: 采用 newest-first 策略：先保证最新消息（当前用户查询）必定入选，
+        剩余预算按时间从新到旧填充历史，防止旧消息挤占预算导致当前查询被丢弃。
         """
         MAX_MSG_CHARS = 800  # 单条消息最大字符数
 
@@ -386,23 +389,24 @@ class VectorMemoryStore:
             return len(text) // 2
 
         try:
-            messages = []
+            collected = []  # (item, content) 按 newest-first 暂存
             seen_ids = set()
             estimated_tokens = 0
 
-            # 1. 最近消息（保持对话连贯性）
-            recent = self.get_recent(recent_count)
-            for item in reversed(recent):
+            # 1. 最近消息：newest-first，确保当前用户查询永远不被丢弃
+            recent = self.get_recent(recent_count)  # newest first
+            for item in recent:
                 if item.id not in seen_ids:
                     content = _truncate(item.content)
                     msg_tokens = _estimate_tokens(content)
                     if estimated_tokens + msg_tokens > max_tokens:
                         break
-                    messages.append({"role": item.role, "content": content})
+                    collected.append({"role": item.role, "content": content})
                     seen_ids.add(item.id)
                     estimated_tokens += msg_tokens
 
             # 2. 语义相关的历史消息（BGE 检索，补充与当前查询相关的上下文）
+            semantic_msgs = []
             if current_query:
                 try:
                     relevant = self.search(current_query, top_k=semantic_count)
@@ -412,11 +416,15 @@ class VectorMemoryStore:
                             msg_tokens = _estimate_tokens(content)
                             if estimated_tokens + msg_tokens > max_tokens:
                                 break
-                            messages.append({"role": item.role, "content": content})
+                            semantic_msgs.append({"role": item.role, "content": content})
                             seen_ids.add(item.id)
                             estimated_tokens += msg_tokens
                 except Exception as e:
                     logger.warning(f"Semantic search failed: {e}")
+
+            # 3. 组装最终消息列表：语义历史在前（较旧），最近消息在后（较新），保持时间顺序
+            #    collected 是 newest-first，需要反转为 chronological 顺序
+            messages = semantic_msgs + list(reversed(collected))
 
             logger.info(
                 f"Context optimized: {len(messages)} msgs, ~{estimated_tokens} tokens "

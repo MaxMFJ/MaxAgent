@@ -1,0 +1,110 @@
+{
+  "id": "openclaw_skill_video-generator-auto-post",
+  "description": "Generate videos using local AI models (ComfyUI/Stable Video Diffusion) and auto-publish to social media platforms. Supports text-to-video, image-to-video, batch processing, and automated posting to Twitter, LinkedIn, Instagram, TikTok.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[🦞 小龙虾品牌] **Created by 小龙虾 AI 工作室**\n\n> \"小龙虾，有大钳（前）途！\"\n\n**Contact for custom services:** +86 15805942886\n\nNeed custom AI video workflows, automation setup, or bulk content generation? Reach out!\n\n---\n\n# Video Generator + Auto Post\n\nGenerate AI videos locally and publish them to social media platforms automatically."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] ### Hardware\n- **GPU:** NVIDIA RTX 3060 12GB or better (recommended)\n- **RAM:** 16GB+ system memory\n- **Storage:** 50GB+ free space on D: drive (recommended)\n\n### Software\n- **ComfyUI Desktop** - Install from https://comfyui.org\n- **Python 3.10+** - For scripts\n- **Node.js 18+** - For CLI tools"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Step 1: Install ComfyUI\n\n```bash\n# Windows (winget)\nwinget install Comfy.ComfyUI-Desktop\n\n# Or download from https://comfyui.org\n```\n\n### Step 2: Install Video Models\n\nIn ComfyUI Manager, install:\n- **Stable Video Diffusion (SVD)**\n- **AnimateDiff**\n- **ModelScope Text-to-Video**\n\n### Step 3: Configure Output Paths (D: Drive)\n\n**Recommended:** Store videos on D: drive to save C: space\n\nEdit `comfyui/settings.json`:\n```json\n{\n  \"output_directory\": \"D:/AI-Video-Studio/outputs\",\n  \"model_path\": \"D:/AI-Video-Studio/models\",\n  \"workflow_path\": \"D:/AI-Video-Studio/workflows\",\n  \"auto_save\": true\n}\n```\n\n**Or use command line:**\n```bash\nComfyUI.exe --output-directory \"D:/AI-Video-Studio/outputs\" --model-path \"D:/AI-Video-Studio/models\"\n```\n\n### Step 4: Generate Your First Video\n\n1. Open ComfyUI\n2. Load \"Text to Video\" workflow\n3. Enter your prompt\n4. Click \"Generate\"\n5. Wait 2-5 minutes (depends on GPU)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflows] ### Text-to-Video (SVD)\n\n**Best for:** Short clips (2-4 seconds), realistic motion\n\n```\nPrompt → SVD Model → Decode → Save MP4\n```\n\n**Settings:**\n- Resolution: 1024x576 or 576x1024\n- Frames: 25\n- FPS: 6\n- Motion bucket: 127 (adjust for more/less movement)\n\n### Image-to-Video\n\n**Best for:** Bringing static images to life\n\n```\nImage + Prompt → SVD XT → Decode → Save MP4\n```\n\n**Tips:**\n- Use high-quality source images\n- Add motion hints in prompt\n- Experiment with motion bucket (100-150)\n\n### AnimateDiff (Longer Videos)\n\n**Best for:** 5-15 second animated clips\n\n```\nPrompt → Stable Diffusion XL → AnimateDiff → Save MP4\n```\n\n**Settings:**\n- Context length: 16 frames\n- Context overlap: 4 frames\n- Model: mm_sd_v15_v2.ckpt"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Auto-Post to Social Media] ### Platform Specifications\n\n| Platform | Max Duration | Aspect Ratio | Max File Size |\n|----------|-------------|--------------|---------------|\n| Twitter/X | 2:20 | 16:9, 1:1, 9:16 | 512MB |\n| TikTok | 10:00 | 9:16 | 287.6MB |\n| Instagram Reels | 1:30 | 9:16 | 4GB |\n| LinkedIn | 15:00 | 16:9, 1:1, 9:16 | 200MB |\n| YouTube Shorts | 1:00 | 9:16 | 128MB |\n\n### Automated Posting Script\n\nSee `scripts/auto-post.py` for automation.\n\n**Setup:**\n1. Install dependencies: `pip install tweepy google-auth`\n2. Configure API keys in `.env`\n3. Run: `python scripts/auto-post.py video.mp4 --platforms all`\n\n### Content Strategy\n\n**For each video:**\n1. Generate 3-5 caption variations\n2. Add relevant hashtags (5-10)\n3. Schedule posts at optimal times\n4. Engage with comments\n\nSee `references/caption-templates.md` for examples."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Batch Processing] Generate multiple videos at once:\n\n```bash\n# Using the batch script\npython scripts/batch-generate.py --prompts prompts.txt --output ./videos\n\n# Process 100 videos overnight\npython scripts/batch-generate.py --prompts prompts.txt --count 100 --queue\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Optimization Tips] ### Speed Up Generation\n\n1. **Use FP16 precision** - 2x faster, minimal quality loss\n2. **Reduce frames** - 16 frames instead of 25 for drafts\n3. **Lower resolution** - 512x512 for testing, upscale later\n4. **Batch multiple prompts** - Process in parallel\n\n### Improve Quality\n\n1. **Use better prompts** - Be specific about motion\n2. **Adjust motion bucket** - Higher = more movement\n3. **Add negative prompts** - Reduce artifacts\n4. **Upscale output** - Use ESRGAN or similar"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Out of Memory (OOM)\n\n**Fix:**\n- Reduce resolution\n- Decrease batch size to 1\n- Close other GPU applications\n- Use `--lowvram` flag\n\n### Slow Generation\n\n**Fix:**\n- Check GPU utilization (should be 90%+)\n- Update NVIDIA drivers\n- Use `--precision fp16`\n- Close background apps\n\n### Poor Video Quality\n\n**Fix:**\n- Use more detailed prompts\n- Try different models (SVD vs AnimateDiff)\n- Adjust motion settings\n- Generate at higher resolution, then compress"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/generate-video.py` - Single video generation\n- `scripts/batch-generate.py` - Batch processing\n- `scripts/auto-post.py` - Auto-publish to social media\n- `scripts/optimize-video.py` - Compress for platforms"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[References] - `references/prompt-guide.md` - Writing effective video prompts\n- `references/platform-specs.md` - Detailed platform requirements\n- `references/caption-templates.md` - Social media caption templates\n- `references/workflow-examples.json` - ComfyUI workflow examples"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Assets] - `assets/default-workflow.json` - Basic text-to-video workflow\n- `assets/optimal-settings.json` - Recommended settings per platform\n- `assets/hashtag-lists.json` - Curated hashtag collections"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Commands / Triggers] Use this skill when:\n- \"Generate a video of...\"\n- \"Create AI video for social media\"\n- \"Auto-post this video to...\"\n- \"Batch generate videos from prompts\"\n- \"Optimize video for TikTok/Instagram\"\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[📊 Performance Benchmarks (RTX 3060 12GB)] | Task | Time | VRAM Usage |\n|------|------|------------|\n| SVD 25 frames | 2-3 min | 8-10 GB |\n| AnimateDiff 16 frames | 3-4 min | 7-9 GB |\n| Image-to-Video | 1-2 min | 6-8 GB |\n| Upscale 2x | 30-60 sec | 4-6 GB |\n\n---\n\n_Ready to create viral AI videos? Let's go! 🦞🎬_"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "video_generator_auto_post"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "author": "小龙虾 (Little Lobster)",
+      "homepage": "https://clawhub.ai/users/954215110",
+      "tags": [
+        "video",
+        "ai-generation",
+        "comfyui",
+        "auto-post",
+        "social-media",
+        "stable-diffusion"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/954215110/video-generator-auto-post/SKILL.md"
+}

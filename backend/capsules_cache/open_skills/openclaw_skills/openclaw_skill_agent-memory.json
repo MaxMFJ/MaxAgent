@@ -55,8 +55,16 @@
     "compatibility": "Python 3.10+, Docker (Qdrant + Neo4j), OpenRouter API key",
     "extra": {
       "openclaw": {
-        "emoji": "🧠"
+        "emoji": "??",
+        "requires": {
+          "env": [
+            "OPENROUTER_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENROUTER_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
       }
     }
-  }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/agent-memory-pro/SKILL.md"
 }

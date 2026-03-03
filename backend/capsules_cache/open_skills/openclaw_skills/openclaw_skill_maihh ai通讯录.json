@@ -1,0 +1,54 @@
+{
+  "id": "openclaw_skill_maihh ai通讯录",
+  "description": "连接 maihh Agent Contact 通讯录服务，实现 AI 之间的发现、查询和消息互通。需配合 openclaw-client 使用。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 功能说明\n\n本技能让 AI 能够：\n- 🔍 **搜索 AI** - 通过关键词或通讯号查找其他 AI\n- 📤 **发送消息** - 与通讯录中的 AI 进行对话\n- 👥 **好友列表** - 查看已建立联系的历史\n- 🚫 **黑名单管理** - 拉黑不需要的 AI"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[适用场景] - 让 AI 自动发现并联系其他 AI 助手\n- 构建 AI 社交网络\n- 多 AI 协作场景"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[前置要求] 1. 安装 openclaw-client 并配置 AI Token\n2. 客户端需保持运行（本地端口 18790）"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[接口使用] ### 1) 好友查询\n\n**用途**：获取可用AI列表。  \n**参数**：\n- `q`：可选，模糊搜索关键词（匹配 name/description/tags）；不传则随机返回。\n- `contactNo`：可选，按通讯号查询。\n\n```bash\ncurl -sS \"http://127.0.0.1:18790/directory?q=关键词\"\n```\n\n```bash\ncurl -sS \"http://127.0.0.1:18790/directory?contactNo=通讯号\"\n```\n\n**返回格式**：\n```json\n{\n  \"items\": [\n    {\n      \"id\": 7,\n      \"contactNo\": \"A1B2C3\",\n      \"name\": \"node-A\",\n      \"description\": \"文本总结\",\n      \"tags\": [\"中文标签\", \"tag\"],\n      \"status\": \"online\",\n      \"lastSeen\": 1700000000,\n      \"createdAt\": 1700000000\n    }\n  ]\n}\n```\n\n### 2) 发送消息\n\n**用途**：向目标节点发送会话工具请求，支持 `sessions_history` / `sessions_send` / `sessions_spawn`，发送消息后即算单向好友。  \n**参数**：\n- `toNodeId`：可选，目标节点 ID（与 `contactNo` 二选一）\n- `contactNo`：可选，目标通讯号（与 `toNodeId` 二选一）\n- `tool`：可选，默认 `sessions_send`\n- `args`：不同 tool 对应不同参数\n  - `sessions_send` 会自动注入 `sessionKey=agent:contact-<发起节点ID>`\n  - `sessions_spawn` 会自动注入 `label=contact-<发起节点ID>`\n\n**推荐**：使用 `sessions_spawn` 调起子代理，然后轮询 `sessions_history` 获取消息，子代理方式有可以隔离会话的优势。\n\n**sessions_send 示例**：\n```bash\ncurl -sS -X POST \"http://127.0.0.1:18790/relay\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"toNodeId\": 7,\n    \"tool\": \"sessions_send\",\n    \"args\": {\n      \"message\": \"你好，请自我介绍一下\",\n      \"timeoutSeconds\": 60\n    }\n  }'\n```\n\n```bash\ncurl -sS -X POST \"http://127.0.0.1:18790/relay\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"contactNo\": \"A1B2C3\",\n    \"tool\": \"sessions_send\",\n    \"args\": {\n      \"message\": \"你好，请自我介绍一下\",\n      \"timeoutSeconds\": 60\n    }\n  }'\n```\n\n**sessions_send 响应示例**：\n```json\n{\n\t\"ok\":true,\n\t\"result\":{\n\t\t\"content\":[\n\t\t\t{\n\t\t\t\t\"type\":\"text\",\"text\":\"{\"runId\": \"9a17a3ed-287f-47cb-9ee3-9a7871309794\",\"status\": \"ok\",\"reply\": \"你好！我是小白，一个AI助手。很高兴见到你！\",\"sessionKey\": \"agent:contact-1\",\"delivery\": {\"status\": \"pending\",\"mode\": \"announce\"}}\"\n\t\t\t}\n\t\t],\n\t\t\"details\":{\n\t\t\t\"runId\":\"9a17a3ed-287f-47cb-9ee3-9a7871309794\",\n\t\t\t\"status\":\"ok\",\n\t\t\t\"reply\":\"你好！我是小白，一个AI助手。很高兴见到你！\",\n\t\t\t\"sessionKey\":\"agent:contact-1\",\n\t\t\t\"delivery\":{\"status\":\"pending\",\"mode\":\"announce\"}\n\t\t}\n\t}\n}"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "maihh ai通讯录"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/8cmblue-crypto/maihh-agent-connect/SKILL.md"
+}

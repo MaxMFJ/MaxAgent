@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_Static Website Hosting - Static.app",
+  "description": "Deploy static websites to Static.app hosting. Use when the user wants to deploy, upload, or host a static site on Static.app. Triggers on phrases like \"deploy to static.app\", \"upload to static\", \"host on static.app\", \"static.app deploy\", or when working with the Static.app hosting service.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Static.app Deployment Skill\n\nDeploy static websites and applications to [Static.app](https://static.app) hosting directly from OpenClaw."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workspace Structure] All Static.app operations in your workspace use a dedicated folder structure:\n\n```\nworkspace/\n└── staticapp/              # Main folder for all Static.app operations\n    ├── new-site/           # New sites created locally\n    └── {pid}/              # Downloaded existing sites (by PID)\n```\n\n- **New sites**: Created in `staticapp/` subfolders before deployment\n- **Downloaded sites**: Extracted to `staticapp/{pid}/` for editing"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How Static.app Handles Files] Static.app automatically creates clean URLs from your filenames:\n\n| File | URL |\n|------|-----|\n| `index.html` | `/` (homepage) |\n| `about.html` | `/about` |\n| `portfolio.html` | `/portfolio` |\n| `contact.html` | `/contact` |\n\n**No subdirectories needed!** Just create `.html` files in the root folder."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Project Structure] ### Simple Multi-Page Site\n\n```\nmy-site/\n├── index.html          # Homepage → /\n├── about.html          # About page → /about\n├── portfolio.html      # Portfolio → /portfolio\n├── contact.html        # Contact → /contact\n├── style.css           # Stylesheet\n├── js/                 # JavaScript files\n│   ├── main.js\n│   └── utils.js\n└── images/             # Images folder\n    ├── logo.png\n    └── photo.jpg\n```\n\n### JavaScript App (React, Vue, etc.)\n\nFor JS apps, **build first**, then deploy the `dist` (or `build`) folder:\n\n```bash\n# Build your app\nnpm run build\n\n# Deploy the dist folder\nnode scripts/deploy.js ./dist\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **Get API Key**: Go to https://static.app/account/api and create an API key (starts with `sk_`)\n2. **Set Environment Variable**: Store the API key in `STATIC_APP_API_KEY` env var"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Usage] ### Deploy Multi-Page Site\n\n```bash\n# Create your pages\necho '<h1>Home</h1>' > index.html\necho '<h1>About</h1>' > about.html\necho '<h1>Portfolio</h1>' > portfolio.html\n\n# Deploy\nnode scripts/deploy.js\n```\n\n### Deploy Specific Directory\n\n```bash\nnode scripts/deploy.js ./my-site\n```\n\n### Update Existing Site\n\n```bash\nnode scripts/deploy.js . --pid olhdscieyr\n```\n\n### List All Sites\n\n```bash\nnode scripts/list.js\n```\n\n### List Site Files\n\n```bash\nnode scripts/files.js YOUR_PID\n```\n\nOptions:\n- `--raw` — Output raw JSON\n- `-k <key>` — Specify API key\n\n### Delete Site\n\n```bash\nnode scripts/delete.js YOUR_PID\n```\n\nOptions:\n- `-f, --force` — Skip confirmation prompt\n- `-k <key>` — Specify API key\n\n### Download Site\n\nDownload an existing site to your workspace for editing:\n\n```bash\nnode scripts/download.js YOUR_PID\n```\n\nThis will:\n1. Fetch the download URL from Static.app API\n2. Download the site archive\n3. Extract it to `staticapp/{pid}/`\n\nOptions:\n- `-p, --pid` — Site PID to download\n- `-o, --output` — Custom output directory (default: `./staticapp/{pid}`)\n- `-k <key>` — Specify API key\n- `--raw` — Output raw JSON response\n\nExample:\n```bash\n# Download site to default location\nnode scripts/download.js abc123\n\n# Download to custom folder\nnode scripts/download.js abc123 -o ./my-site\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Script Options] ```\nnode scripts/deploy.js [SOURCE_DIR] [OPTIONS]\n\nArguments:\n  SOURCE_DIR          Directory to deploy (default: current directory)\n\nOptions:\n  -k, --api-key       API key (or set STATIC_APP_API_KEY env var)\n  -p, --pid           Project PID to update existing site\n  -e, --exclude       Comma-separated exclude patterns\n  --keep-zip          Keep zip archive after deployment\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Default Exclusions] The following are automatically excluded from deployment:\n- `node_modules`\n- `.git`, `.github`\n- `*.md`\n- `package*.json`\n- `.env`\n- `.openclaw`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Important Notes] ### ✅ What Works\n\n- **Static HTML sites** — Any number of `.html` pages\n- **CSS & JavaScript** — Frontend frameworks, vanilla JS\n- **Images & Assets** — Place in `images/` folder or root\n- **JavaScript files** — Place in `js/` folder or root\n- **Built JS Apps** — Deploy `dist/` or `build/` folder after `npm run build`\n\n### ❌ What Doesn't Work\n\n- **Node.js Server Apps** — No server-side rendering, no Express.js, no API routes\n- **PHP, Python, Ruby** — Static.app only serves static files\n- **Databases** — Use client-side storage or external APIs\n\n### JavaScript Apps Workflow\n\n```bash\n# 1. Build your React/Vue/Angular app\nnpm run build\n\n# 2. Deploy the build output\nnode scripts/deploy.js ./dist --pid YOUR_PID\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[API Reference] ### Deploy Site\n- **Endpoint**: `POST https://api.static.app/v1/sites/zip`\n- **Auth**: Bearer token (API key)\n- **Body**: Multipart form with `archive` (zip file) and optional `pid`\n\n### List Sites\n- **Endpoint**: `GET https://api.static.app/v1/sites`\n- **Auth**: Bearer token (API key)\n- **Headers**: `Accept: application/json`\n\n### List Site Files\n- **Endpoint**: `GET https://api.static.app/v1/sites/files/{pid}`\n- **Auth**: Bearer token (API key)\n- **Headers**: `Accept: application/json`\n\n### Delete Site\n- **Endpoint**: `DELETE https://api.static.app/v1/sites/{pid}`\n- **Auth**: Bearer token (API key)\n- **Headers**: `Accept: application/json`\n\n### Download Site\n- **Endpoint**: `GET https://api.static.app/v1/sites/download/{pid}`\n- **Auth**: Bearer token (API key)\n- **Headers**: `Accept: application/json`\n- **Response**: Returns download URL for the site archive"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Dependencies] - `archiver` — Zip archive creation\n- `form-data` — Multipart form encoding\n- `node-fetch` — HTTP requests\n- `adm-zip` — Zip extraction\n\nInstall with: `cd scripts && npm install`"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Response] On success, the script outputs:\n```\n✅ Deployment successful!\n🌐 Site URL: https://xyz.static.app\n📋 PID: abc123\n\nSTATIC_APP_URL=https://xyz.static.app\nSTATIC_APP_PID=abc123\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Workflow] 1. Check for `STATIC_APP_API_KEY` env var or `--api-key`\n2. Create zip archive from source directory (with exclusions)\n3. Upload to Static.app API\n4. Parse response and output URLs\n5. Clean up temporary zip file"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Error Handling] - Missing API key → Clear error with instructions\n- Network issues → HTTP error details\n- Invalid PID → API error message"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "Static Website Hosting _ Static.app"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akellacom/static-app/SKILL.md"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_openclaw-backup",
+  "description": "Backup and restore OpenClaw data. Use when user asks to create backups, set up automatic backup schedules, restore from backup, or manage backup rotation. Handles ~/.openclaw directory archiving with proper exclusions.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Backup\n\nBackup and restore OpenClaw configuration, credentials, and workspace."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Create Backup] Run the backup script:\n\n```bash\n./scripts/backup.sh [backup_dir]\n```\n\nDefault backup location: `~/openclaw-backups/`\n\nOutput: `openclaw-YYYY-MM-DD_HHMM.tar.gz`"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[What Gets Backed Up] - `openclaw.json` — main config\n- `credentials/` — API keys, tokens\n- `agents/` — agent configs, auth profiles\n- `workspace/` — memory, SOUL.md, user files\n- `telegram/` — session data\n- `cron/` — scheduled tasks"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Excluded] - `completions/` — cache, regenerated automatically\n- `*.log` — logs"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Setup Daily Backup with Cron] Use OpenClaw cron for daily backups with notification:\n\n```json\n{\n  \"name\": \"daily-backup\",\n  \"schedule\": {\"kind\": \"cron\", \"expr\": \"0 3 * * *\", \"tz\": \"UTC\"},\n  \"payload\": {\n    \"kind\": \"agentTurn\",\n    \"message\": \"Run ~/.openclaw/backup.sh and report result to user.\"\n  },\n  \"sessionTarget\": \"isolated\",\n  \"delivery\": {\"mode\": \"announce\"}\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Restore] See [references/restore.md](references/restore.md) for step-by-step restore instructions.\n\nQuick restore:\n\n```bash\nopenclaw gateway stop\nmv ~/.openclaw ~/.openclaw-old\ntar -xzf ~/openclaw-backups/openclaw-YYYY-MM-DD_HHMM.tar.gz -C ~\nopenclaw gateway start\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Rotation] Script keeps last 7 backups automatically."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openclaw_backup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex3alex/openclaw-backup/SKILL.md"
+}

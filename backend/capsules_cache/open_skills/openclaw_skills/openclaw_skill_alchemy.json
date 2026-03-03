@@ -1,0 +1,75 @@
+{
+  "id": "openclaw_skill_alchemy",
+  "description": "Alchemy — blockchain data, NFTs, token balances, transactions, gas prices, and webhooks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ⛓️ Alchemy\n\nAlchemy — blockchain data, NFTs, token balances, transactions, gas prices, and webhooks."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `ALCHEMY_API_KEY` | ✅ | Alchemy API key |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Get ETH balance\npython3 {{baseDir}}/scripts/alchemy.py get-balance --address <value>\n\n# Get ERC-20 token balances\npython3 {{baseDir}}/scripts/alchemy.py get-token-balances --address <value>\n\n# Get transaction by hash\npython3 {{baseDir}}/scripts/alchemy.py get-transaction --hash <value>\n\n# Get block by number\npython3 {{baseDir}}/scripts/alchemy.py get-block --block \"latest\"\n\n# Get NFTs for address\npython3 {{baseDir}}/scripts/alchemy.py get-nfts --address <value>\n\n# Get NFT metadata\npython3 {{baseDir}}/scripts/alchemy.py get-nft-metadata --contract <value> --token-id <value>\n\n# Get token metadata\npython3 {{baseDir}}/scripts/alchemy.py get-token-metadata --contract <value>\n\n# Get current gas price\npython3 {{baseDir}}/scripts/alchemy.py get-gas-price\n\n# Get latest block number\npython3 {{baseDir}}/scripts/alchemy.py get-block-number\n\n# Get event logs\npython3 {{baseDir}}/scripts/alchemy.py get-logs --address <value> --from-block \"0x0\" --to-block \"latest\" --topics <value>\n\n# Get asset transfers for address\npython3 {{baseDir}}/scripts/alchemy.py get-asset-transfers --address <value> --category \"external,erc20\"\n\n# Get NFT floor price\npython3 {{baseDir}}/scripts/alchemy.py get-floor-price --contract <value>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/alchemy.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "alchemy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "⛓️",
+        "requires": {
+          "env": [
+            "ALCHEMY_API_KEY"
+          ]
+        },
+        "primaryEnv": "ALCHEMY_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/alchemy/SKILL.md"
+}

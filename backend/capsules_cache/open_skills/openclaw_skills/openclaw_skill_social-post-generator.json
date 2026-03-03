@@ -1,0 +1,100 @@
+{
+  "id": "openclaw_skill_social-post-generator",
+  "description": "Generate engaging social media content for multiple platforms. Use when users need to create posts for Twitter/X, LinkedIn, Instagram, Facebook, or other social platforms. Supports tone customization, hashtag generation, content repurposing, and platform-specific formatting.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[🦞 小龙虾品牌] **Created by 小龙虾 AI 工作室**\n\n> \"小龙虾，有大钳（前）途！\"\n\n**Contact for custom services:** +86 15805942886\n\nNeed custom skill development, AI consulting, or social media management? Reach out!\n\n---\n\n# Social Post Generator\n\nGenerate engaging, platform-optimized social media content quickly."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] When user asks to create social media content:\n\n1. **Identify the topic** - What are they posting about?\n2. **Choose platform(s)** - Twitter, LinkedIn, Instagram, etc.\n3. **Determine tone** - Professional, casual, funny, inspirational?\n4. **Generate content** - Create platform-specific posts"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Platform Guidelines] ### Twitter/X\n- Max 280 characters per tweet\n- Use 2-3 relevant hashtags\n- Can create threads for longer content\n- Emojis work well\n- Include CTAs when appropriate\n\n### LinkedIn\n- Professional tone (usually)\n- Longer form welcome (up to 3000 chars)\n- 3-5 hashtags max\n- Focus on value/insights\n- Hook in first 2-3 lines\n\n### Instagram\n- Caption up to 2200 characters\n- Hashtags: 5-15 (mix of sizes)\n- Emojis encouraged\n- Include engagement hooks (questions, CTAs)\n- Consider visual context\n\n### Facebook\n- Casual to semi-professional\n- 1-3 hashtags\n- Links work well\n- Questions drive engagement"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Workflow] ```\n1. Ask clarifying questions if needed:\n   - What's the topic/product/event?\n   - Target audience?\n   - Preferred platforms?\n   - Tone/vibe?\n\n2. Generate options:\n   - Create 2-3 variations per platform\n   - Include hashtags\n   - Add emoji suggestions\n\n3. Refine based on feedback\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Hashtag Strategy] See [references/hashtags.md](references/hashtags.md) for hashtag research tips.\n\n**Quick rules:**\n- Twitter: 2-3 hashtags, keep them short\n- LinkedIn: 3-5 professional hashtags\n- Instagram: 10-15 mixed (broad + niche)\n- Facebook: 1-3 max"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Tone Examples] | Tone | Example Hook |\n|------|-------------|\n| Professional | \"Here's what I learned about...\" |\n| Casual | \"Okay but can we talk about...\" |\n| Funny | \"Nobody: ... Me:\" |\n| Inspirational | \"Remember: small steps lead to big changes\" |\n| Urgent | \"This changes everything...\" |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Content Repurposing] Transform one piece of content into multiple posts:\n\n1. **Blog post** → Twitter thread + LinkedIn article + Instagram carousel captions\n2. **Video** → Quote clips + Behind-the-scenes + Key takeaways\n3. **Product launch** → Teaser + Announcement + Feature highlights + User testimonials\n\nSee [references/repurposing.md](references/repurposing.md) for templates."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Commands / Triggers] Use this skill when user says things like:\n- \"Write a tweet about...\"\n- \"Create a LinkedIn post for...\"\n- \"Help me with social media content\"\n- \"Generate hashtags for...\"\n- \"Make this go viral\"\n- \"Post about [topic]\""
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Scripts] - `scripts/generate_hashtags.py` - Generate relevant hashtags from topic\n- `scripts/count_characters.py` - Validate character counts per platform"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Assets] - `assets/emoji-guide.md` - Emoji suggestions by category\n- `assets/templates/` - Ready-to-use post templates"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Tips] 1. **Always include a hook** - First line determines if people read more\n2. **Add whitespace** - Walls of text get skipped\n3. **End with CTA** - Tell people what to do next\n4. **Test variations** - What works varies by audience\n5. **Stay authentic** - Don't sound like a bot"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "social_post_generator"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "author": "小龙虾 (Little Lobster)",
+      "homepage": "https://clawhub.ai/users/954215110",
+      "tags": [
+        "social-media",
+        "content",
+        "marketing",
+        "twitter",
+        "linkedin",
+        "instagram"
+      ]
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/954215110/social-post-generator/SKILL.md"
+}

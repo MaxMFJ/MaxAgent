@@ -1,0 +1,90 @@
+{
+  "id": "openclaw_skill_sectors-api",
+  "description": "Query financial market data from the Sectors API (api.sectors.app) for IDX (Indonesia Stock Exchange) and SGX (Singapore Exchange) markets. Use when the user asks about stock prices, company reports, financials, market indices, top movers, dividends, earnings, market cap, or any Indonesian or Singaporean equity market data. Only calls https://api.sectors.app. Python with requests.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Sectors API\n\nQuery IDX and SGX financial market data through the Sectors REST API.\n\n**Full API docs**: https://sectors.app/api"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Constraints] - ONLY make HTTP requests to `https://api.sectors.app/v1`. Never call any other domain, database, or external service.\n- All endpoints are `GET` requests returning JSON.\n- Never hardcode or guess an API key. Always read it from the `SECTORS_API_KEY` environment variable.\n- If `SECTORS_API_KEY` is not set, prompt the user to set it: `export SECTORS_API_KEY=\"your-api-key-here\"` or run the setup check script at `scripts/check_setup.py`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] ### 1. Set the API key\n\nThe API key must be available as the `SECTORS_API_KEY` environment variable.\n\n```bash\n# Option A: Set in your current shell\nexport SECTORS_API_KEY=\"your-api-key-here\"\n\n# Option B: Add to your shell profile (~/.bashrc, ~/.zshrc) for persistence\necho 'export SECTORS_API_KEY=\"your-api-key-here\"' >> ~/.bashrc\n\n# Option C: Use a .env file in the project root (see .env.example)\n```\n\nFor agent-specific configuration:\n- **Claude Code**: `claude config set env SECTORS_API_KEY your-api-key-here`\n- **OpenCode**: Set in `~/.config/opencode/config.json` under `env`\n- **Cursor**: Settings > Features > Environment Variables\n\n### 2. Install the dependency\n\n```bash\npip install requests\n```\n\n### 3. Verify setup (optional)\n\n```bash\npython scripts/check_setup.py\n```\n\n### Making requests\n\n```python\nimport os\nimport requests\n\nAPI_KEY = os.environ[\"SECTORS_API_KEY\"]\nBASE_URL = \"https://api.sectors.app/v1\"\n\nheaders = {\"Authorization\": API_KEY}\nresponse = requests.get(f\"{BASE_URL}/subsectors/\", headers=headers)\ndata = response.json()\n```\n\nThe `Authorization` header takes the raw API key. Do NOT prefix it with `Bearer`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Endpoint decision table] Pick the right endpoint based on what the user needs:\n\n### Market structure\n\n| User wants | Endpoint | Required params |\n|---|---|---|\n| List all subsectors | `GET /subsectors/` | none |\n| List all industries | `GET /industries/` | none |\n| List all subindustries | `GET /subindustries/` | none |\n| SGX sector list | `GET /sgx/sectors/` | none |\n\n### Company discovery\n\n| User wants | Endpoint | Required params |\n|---|---|---|\n| Companies in a subsector | `GET /companies/?sub_sector={sub_sector}` | `sub_sector` |\n| Companies in a subindustry | `GET /companies/?sub_industry={sub_industry}` | `sub_industry` |\n| Companies in a stock index | `GET /index/{index}/` | `index` |\n| Companies with segment data | `GET /companies/list_companies_with_segments/` | none |\n| SGX companies by sector | `GET /sgx/companies/?sector={sector}` | `sector` |\n\n### Company details\n\n| User wants | Endpoint | Required params |\n|---|---|---|\n| Full company report (IDX) | `GET /company/report/{ticker}/` | `ticker` |\n| SGX company report | `GET /sgx/company/report/{ticker}` | `ticker` |\n| Listing performance | `GET /listing-performance/{ticker}/` | `ticker` |\n| Quarterly financial dates | `GET /company/get_quarterly_financial_dates/{ticker}/` | `ticker` |\n| Quarterly financials | `GET /financials/quarterly/{ticker}/` | `ticker` |\n| Company segments | `GET /company/get-segments/{ticker}/` | `ticker` |\n\n### Market data\n\n| User wants | Endpoint | Required params |\n|---|---|---|\n| Daily stock price | `GET /daily/{ticker}` | `ticker` |\n| Index daily data | `GET /index-daily/{index_code}/` | `index_code` |\n| Index summary | `GET /index/{index}/` | `index` |\n| IDX total market cap | `GET /idx-total/` | none |\n\n### Rankings and screening\n\n| User wants | Endpoint | Required params |\n|---|---|---|\n| Top gainers/losers | `GET /companies/top-changes/` | none (all optional) |\n| Top companies by metric | `GET /companies/top/` | none (all optional) |\n| Top growth companies | `GET /companies/top-growth/` | none (al"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common patterns] ### Fetch a company report\n\n```python\nimport os\nimport requests\n\nAPI_KEY = os.environ[\"SECTORS_API_KEY\"]\nBASE_URL = \"https://api.sectors.app/v1\"\nheaders = {\"Authorization\": API_KEY}\n\nticker = \"BBCA\"\nparams = {\"sections\": \"overview,valuation,financials\"}\nresp = requests.get(f\"{BASE_URL}/company/report/{ticker}/\", headers=headers, params=params)\nreport = resp.json()\n\nprint(report[\"company_name\"])\nprint(report[\"overview\"][\"market_cap\"])\n```\n\nAvailable sections: `overview`, `valuation`, `future`, `peers`, `financials`, `dividend`, `management`, `ownership`. Use `all` or omit for everything.\n\n### Get daily stock prices in a date range\n\n```python\nimport os\nimport requests\n\nAPI_KEY = os.environ[\"SECTORS_API_KEY\"]\nBASE_URL = \"https://api.sectors.app/v1\"\nheaders = {\"Authorization\": API_KEY}\n\nticker = \"BBRI.JK\"\n# Normalize: uppercase, strip .JK\nclean = ticker.upper().replace(\".JK\", \"\")\n\nparams = {\"start\": \"2025-01-01\", \"end\": \"2025-01-31\"}\nresp = requests.get(f\"{BASE_URL}/daily/{clean}\", headers=headers, params=params)\nprices = resp.json()\n\nfor day in prices:\n    print(day[\"date\"], day[\"close\"], day[\"volume\"])\n```\n\n### Find top gainers and losers\n\n```python\nimport os\nimport requests\n\nAPI_KEY = os.environ[\"SECTORS_API_KEY\"]\nBASE_URL = \"https://api.sectors.app/v1\"\nheaders = {\"Authorization\": API_KEY}\n\nparams = {\n    \"classifications\": \"top_gainers,top_losers\",\n    \"periods\": \"7d,30d\",\n    \"n_stock\": 5,\n    \"min_mcap_billion\": 5000,\n}\nresp = requests.get(f\"{BASE_URL}/companies/top-changes/\", headers=headers, params=params)\nmovers = resp.json()\n\nfor stock in movers[\"top_gainers\"][\"7d\"]:\n    print(stock[\"symbol\"], stock[\"price_change\"])\n```\n\n### List companies in an index\n\n```python\nimport os\nimport requests\n\nAPI_KEY = os.environ[\"SECTORS_API_KEY\"]\nBASE_URL = \"https://api.sectors.app/v1\"\nheaders = {\"Authorization\": API_KEY}\n\n# Available: lq45, idx30, kompas100, jii70, idxhidiv20, srikehati, etc.\nresp = requests.get(f\"{BASE_URL}/index/lq45/\", headers=headers)\ncompanies = resp.json("
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Ticker normalization] | Market | Rule | Example |\n|---|---|---|\n| IDX | Uppercase, strip `.JK` suffix | `bbca.jk` -> `BBCA` |\n| SGX | Uppercase, strip `.SI` suffix | `d05.si` -> `D05` |\n\nAlways normalize before passing to an endpoint."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Gotchas] 1. **Auth header format**: Use `Authorization: <raw_key>`. NOT `Bearer <key>`. NOT `Authorization: Bearer <key>`.\n\n2. **Date format**: Always `YYYY-MM-DD`. Example: `2025-06-15`.\n\n3. **Date range limit**: The `/most-traded/` endpoint requires start and end dates within 90 days of each other.\n\n4. **Kebab-case for subsectors and sectors**: Use `banks`, `financing-service`, `consumer-defensive`. Not camelCase or snake_case.\n\n5. **Nested response structure**: Ranking endpoints (`top-changes`, `top`, `top-growth`) return objects keyed by classification, then by period. Always navigate both levels.\n\n   ```python\n   # top-changes returns: { \"top_gainers\": { \"7d\": [...], \"30d\": [...] } }\n   # top returns: { \"dividend_yield\": [...], \"revenue\": [...] }\n   ```\n\n6. **Market cap units**: IDX values are in billion IDR (`min_mcap_billion`). SGX values are in million SGD (`min_mcap_million`).\n\n7. **Default values matter**: Many optional params default to `\"all\"` or specific values (e.g. `n_stock` defaults to 5, `min_mcap_billion` defaults to 5000). Be explicit when you need different behavior.\n\n8. **Index codes**: IDX index daily data uses lowercase codes: `ihsg`, `lq45`, `idx30`. Company-by-index uses the same codes.\n\n9. **Quarterly financials `approx` flag**: When `approx=true`, the API returns the closest available quarter if an exact match for `report_date` is not found.\n\n10. **Company report sections param**: Only appended to the URL when not `\"all\"`. If you want all sections, omit the `sections` parameter entirely."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Available IDX indices] `ftse`, `idx30`, `idxbumn20`, `idxesgl`, `idxg30`, `idxhidiv20`, `idxq30`, `idxv30`, `jii70`, `kompas100`, `lq45`, `sminfra18`, `srikehati`, `economic30`, `idxvesta28`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Top companies classifications] **IDX** (`/companies/top/`): `dividend_yield`, `total_dividend`, `revenue`, `earnings`, `market_cap`, `pb`, `pe`, `ps`\n\n**IDX growth** (`/companies/top-growth/`): `top_earnings_growth_gainers`, `top_earnings_growth_losers`, `top_revenue_growth_gainers`, `top_revenue_growth_losers`\n\n**IDX movers** (`/companies/top-changes/`): `top_gainers`, `top_losers`\n\n**SGX** (`/sgx/companies/top/`): `dividend_yield`, `revenue`, `earnings`, `market_cap`, `pe`"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Error handling] Always check the response status:\n\n```python\nresp = requests.get(url, headers=headers)\nif resp.status_code == 403:\n    raise ValueError(\"Invalid or missing API key. Ensure SECTORS_API_KEY is set correctly.\")\nif resp.status_code == 404:\n    raise ValueError(f\"Resource not found: {url}\")\nif not resp.ok:\n    raise RuntimeError(f\"API error {resp.status_code}: {resp.text}\")\ndata = resp.json()\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "Bash(python:*)",
+    "Bash(pip:*)",
+    "Read",
+    "agent-skill"
+  ],
+  "capability": [
+    "sectors_api"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Requires Python 3.8+ with the requests library. Requires the SECTORS_API_KEY environment variable to be set. Requires network access to https://api.sectors.app.\n",
+    "extra": {
+      "author": "supertype",
+      "version": "1.1"
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aidityasadhakim/sectors-financial-agents/SKILL.md"
+}

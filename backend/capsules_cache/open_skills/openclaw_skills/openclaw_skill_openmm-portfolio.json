@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_openmm-portfolio",
+  "description": "Balance tracking, order overview, and market data across exchanges using OpenMM.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenMM Portfolio Management\n\nTrack balances, review open orders, and monitor market data across exchanges."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[View Balances] ```bash\n# All assets on an exchange\nopenmm balance --exchange mexc\nopenmm balance --exchange kraken\n\n# Specific asset\nopenmm balance --exchange mexc --asset BTC\nopenmm balance --exchange kraken --asset ADA\nopenmm balance --exchange bitget --asset USDT\n\n# JSON output\nopenmm balance --exchange mexc --json\n```\n\nTo see balances across all exchanges, query each one:\n\n```bash\nopenmm balance --exchange mexc\nopenmm balance --exchange gateio\nopenmm balance --exchange bitget\nopenmm balance --exchange kraken\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Review Open Orders] ```bash\n# All open orders on an exchange\nopenmm orders list --exchange mexc\n\n# Filter by trading pair\nopenmm orders list --exchange bitget --symbol SNEK/USDT\n\n# Limit results\nopenmm orders list --exchange kraken --limit 5\n\n# Get specific order details\nopenmm orders get --exchange mexc --id 123456 --symbol BTC/USDT\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Check Market Prices] ```bash\n# Current price\nopenmm ticker --exchange mexc --symbol BTC/USDT\nopenmm ticker --exchange kraken --symbol ADA/EUR\n\n# Order book depth\nopenmm orderbook --exchange bitget --symbol SNEK/USDT --limit 10\n\n# Recent trades\nopenmm trades --exchange mexc --symbol ETH/USDT --limit 50\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Compare Prices Across Exchanges] ```bash\n# Compare DEX and CEX prices for Cardano tokens\nopenmm price-comparison --symbol SNEK\nopenmm price-comparison --symbol INDY\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Cardano Token Prices] ```bash\n# Aggregated price from DEX pools\nopenmm pool-discovery prices NIGHT\nopenmm pool-discovery prices SNEK\n\n# Discover liquidity pools\nopenmm pool-discovery discover INDY\nopenmm pool-discovery discover SNEK --min-liquidity 50000\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[MCP Tools for Portfolio Overview] When using the MCP server, these tools are relevant for portfolio management:\n\n| Tool | Description |\n|------|-------------|\n| `get_balance` | Get balances for an exchange (all or specific asset) |\n| `list_orders` | List open orders on an exchange |\n| `get_ticker` | Current price for a trading pair |\n| `get_strategy_status` | Grid status with open orders and spread |\n| `get_cardano_price` | Aggregated Cardano token price |\n\nThe MCP server also provides a `portfolio_overview` prompt that automatically summarizes balances and open orders for an exchange."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Tips for Agents] 1. **Check balances before trading** — always verify available funds\n2. **Query each exchange separately** — there is no cross-exchange aggregate command\n3. **Use `--json` for parsing** — structured output for programmatic use\n4. **Monitor grid strategies** — use `get_strategy_status` MCP tool to check active grids"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "openmm_portfolio"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💼",
+        "requires": {
+          "bins": [
+            "openmm"
+          ],
+          "env": [
+            "MEXC_API_KEY",
+            "GATEIO_API_KEY",
+            "BITGET_API_KEY",
+            "KRAKEN_API_KEY"
+          ]
+        },
+        "install": [
+          {
+            "kind": "node",
+            "package": "@3rd-eye-labs/openmm",
+            "bins": [
+              "openmm"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adacapo21/openmm/skills/portfolio/SKILL.md"
+}

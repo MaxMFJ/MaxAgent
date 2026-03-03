@@ -1,0 +1,87 @@
+{
+  "id": "openclaw_skill_jlm-coffee",
+  "description": "Search Jerusalem specialty coffee shops by name, amenities, ratings, and opening hours. Use when user asks about \"coffee in Jerusalem\", \"Jerusalem cafe\", \"בית קפה בירושלים\", \"קפה בירושלים\", \"specialty coffee Jerusalem\", \"where to get coffee in Jerusalem\", \"dog-friendly cafe Jerusalem\", \"laptop cafe Jerusalem\", \"open now coffee Jerusalem\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Jerusalem Coffee Finder\n\nSearch specialty coffee shops in Jerusalem - ratings, amenities, opening hours, reviews, and locations from [coffee.amsterdamski.com](https://coffee.amsterdamski.com), created and curated by [Shaul Amsterdamski](https://x.com/amsterdamski2) ([@amsterdamski2](https://x.com/amsterdamski2)).\n\n> Data from the official public JSON export provided by the site maintainer. May not reflect current status. Provided \"as is\" without warranty of any kind."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List all coffee shops\npython3 {baseDir}/scripts/jlm-coffee.py list\n\n# Find a shop by name\npython3 {baseDir}/scripts/jlm-coffee.py search \"סיבריס\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `list` | List all approved specialty coffee shops |\n| `search <query>` | Search shops by name (Hebrew or English) |\n| `get <id_or_name>` | Get full details for a specific shop |\n| `filter <amenity>` | Filter shops by amenity (wifi, dogs, kosher, etc.) |\n| `open-now` | Show shops currently open |\n| `amenities` | List all available amenity filters |\n| `surprise` | Pick a random coffee shop (prefers open ones) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Search and Filter Examples] ```bash\n# Search by name (Hebrew or English)\npython3 {baseDir}/scripts/jlm-coffee.py search \"רוסטרס\"\npython3 {baseDir}/scripts/jlm-coffee.py search \"Cafe Pepa\"\n\n# Filter by amenity\npython3 {baseDir}/scripts/jlm-coffee.py filter wifi\npython3 {baseDir}/scripts/jlm-coffee.py filter dogs\npython3 {baseDir}/scripts/jlm-coffee.py filter kosher\npython3 {baseDir}/scripts/jlm-coffee.py filter laptop\n\n# Shops open right now\npython3 {baseDir}/scripts/jlm-coffee.py open-now\n\n# Full details for a shop\npython3 {baseDir}/scripts/jlm-coffee.py get \"בארוק\"\npython3 {baseDir}/scripts/jlm-coffee.py get EljFiggwObssQpypWMf0\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Options Reference] | Option | Commands | Description |\n|--------|----------|-------------|\n| `--json` | all | Output in JSON format (agent-friendly) |\n| `--no-color` | all | Disable colored output (auto-detected for non-TTY) |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Amenity Filters] | Key | Label | Aliases |\n|-----|-------|---------|\n| `wifi` | WiFi | |\n| `dogs` | Dog-friendly | dog, dog-friendly |\n| `laptop` | Laptop-friendly | laptops |\n| `outdoor` | Outdoor seating | outside, terrace |\n| `accessible` | Wheelchair accessible | wheelchair |\n| `vegan` | Vegan options | |\n| `kids` | Kid-friendly | children, kid-friendly |\n| `quiet` | Quiet atmosphere | |\n| `smoking` | Smoking area | |\n| `local-roasting` | Local roasting | roasting |\n| `sell-beans` | Sells beans | beans |\n| `filter-coffee` | Filter coffee | filter |\n| `kosher` | Kosher | |\n| `open-saturday` | Open Saturday | saturday, shabbat |\n| `power` | Power outlets | outlets |\n| `parking` | Parking | |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Workflow Example] ```bash\n# 1. Find shops with WiFi and look at the list\npython3 {baseDir}/scripts/jlm-coffee.py filter wifi\n\n# 2. Get details on one that looks good\npython3 {baseDir}/scripts/jlm-coffee.py get \"מטאפורה\"\n\n# 3. Check what's open right now\npython3 {baseDir}/scripts/jlm-coffee.py open-now\n\n# 4. Feeling lucky? Get a random pick\npython3 {baseDir}/scripts/jlm-coffee.py surprise\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Notes] - **Community-curated**: All specialty coffee in Jerusalem, community-reviewed\n- **Official data source**: Reads from a public JSON export provided by the site maintainer (no API key, no Firestore)\n- **Bilingual**: Search works with Hebrew and English names\n- **Opening hours**: Based on Google Places data, cached by the site\n- **Reviews included**: Shop details show community reviews with ratings\n- **Color output**: ANSI colors in terminal (respects `NO_COLOR` env var and `--no-color` flag)\n- **CLI shortcut**: Install as `jlm-coffee` via symlink to the wrapper script\n- **No dependencies**: Python stdlib only (urllib, json)\n- **Fast caching**: 15-minute local cache TTL - one fetch covers all commands"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "jlm_coffee"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "☕",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexpolonsky/jlm-coffee/SKILL.md"
+}

@@ -1,0 +1,72 @@
+{
+  "id": "openclaw_skill_shieldapi",
+  "description": "ShieldAPI — x402 Security Intelligence for AI Agents. 7 endpoints: password breach check (900M+ HIBP hashes), email breach lookup, domain reputation (DNS/blacklists/SSL/SPF/DMARC), IP reputation (Tor/blacklists), URL safety (phishing/malware/brand impersonation), and full security scan. Pay-per-request with USDC micropayments ($0.001-$0.01). No account, no API key, no subscription. Demo mode on all endpoints.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🛡️ ShieldAPI — Security Intelligence for AI Agents\n\nShieldAPI is a pay-per-request Security Intelligence Service built on the **x402** protocol (HTTP 402 Payment Required). It lets any AI agent perform comprehensive security checks — without accounts, API keys, or subscriptions. Just call, pay, get results.\n\nPayments are settled in USDC on Base Sepolia. All endpoints support free demo mode.\n\n**Base URL:** `https://shield.vainplex.dev/api`\n\n**Health/Discovery:** `GET /api/health` (free, lists all endpoints + prices)\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Endpoints] ### 1. `check-password` — Password Breach Check\nChecks a full SHA1 hash against 900M+ leaked passwords (HIBP Pwned Passwords).\n- **Cost:** 0.001 USDC\n- **Request:** `GET /api/check-password?hash=<40-char-sha1>`\n- **Returns:** `{ found: true/false, count: 3861493 }`\n\n### 2. `check-password-range` — k-Anonymity Range Lookup\nReturns all matching hash suffixes for a 5-char prefix (privacy-preserving).\n- **Cost:** 0.001 USDC\n- **Request:** `GET /api/check-password-range?prefix=<5-char-sha1-prefix>`\n- **Returns:** `{ prefix, total_matches, results: [{ suffix, count }] }`\n\n### 3. `check-domain` — Domain Reputation\nChecks DNS records, SPF/DMARC, SSL certificate, and queries Spamhaus/SpamCop/SORBS blacklists.\n- **Cost:** 0.003 USDC\n- **Request:** `GET /api/check-domain?domain=<domain>`\n- **Returns:** `{ domain, dns, blacklists, ssl, risk_score, risk_level }`\n\n### 4. `check-ip` — IP Reputation\nChecks IPv4 against 4 blacklists, detects Tor exit nodes, resolves reverse DNS.\n- **Cost:** 0.002 USDC\n- **Request:** `GET /api/check-ip?ip=<ipv4>`\n- **Returns:** `{ ip, blacklists, is_tor_exit, reverse_dns, risk_score, risk_level }`\n\n### 5. `check-email` — Email Breach Exposure\nChecks which data breaches affected the email's domain. Returns breach details, exposed data types, and risk recommendations.\n- **Cost:** 0.005 USDC\n- **Request:** `GET /api/check-email?email=<email>`\n- **Returns:** `{ breaches: [...], domain_breach_count, risk_score, risk_level, recommendations }`\n- **Example:** `test@linkedin.com` → 3 breaches (2012: 164M accounts, 2021 scrape: 125M, 2023 scrape: 19M)\n\n### 6. `check-url` — URL Safety & Phishing Detection\nChecks URL against URLhaus malware database, runs heuristic analysis (brand impersonation, suspicious TLDs, redirect chains), and probes HTTP.\n- **Cost:** 0.003 USDC\n- **Request:** `GET /api/check-url?url=<url>`\n- **Returns:** `{ url, checks: { urlhaus, heuristics, http }, threats, risk_score, risk_level }`\n- **Detects:** Malware distribution, brand impersonat"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Demo Mode] All 7 endpoints support `?demo=true` — returns realistic fake data, no payment required. Perfect for testing your integration before going live.\n\n```bash\n# Try it now:\ncurl -s \"https://shield.vainplex.dev/api/check-url?demo=true\"\ncurl -s \"https://shield.vainplex.dev/api/full-scan?demo=true\"\ncurl -s \"https://shield.vainplex.dev/api/check-email?demo=true\"\n```\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[x402 Payment Flow] When you call any paid endpoint without payment, ShieldAPI returns `HTTP 402` with machine-readable payment instructions:\n\n```json\n{\n  \"x402Version\": 1,\n  \"error\": \"X-PAYMENT header is required\",\n  \"accepts\": [{\n    \"scheme\": \"exact\",\n    \"network\": \"base-sepolia\",\n    \"maxAmountRequired\": \"3000\",\n    \"asset\": \"0x036CbD53842c5426634e7929541eC2318f3dCF7e\",\n    \"payTo\": \"0x...\",\n    \"resource\": \"https://shield.vainplex.dev/api/check-domain?domain=example.com\",\n    \"description\": \"Domain reputation & security check\"\n  }]\n}\n```\n\nAn x402-enabled client (using `@coinbase/x402`, `@x402/core`, or any x402 library) will:\n1. Read the 402 response\n2. Sign a USDC payment on Base Sepolia\n3. Retry with `X-PAYMENT` header\n4. Receive the security check results\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Use Cases] - **Password rotation agents** — Check if proposed passwords are in breach databases before setting them\n- **Email onboarding** — Verify new user emails aren't from heavily breached domains\n- **URL safety gates** — Screen links before agents click or users visit them\n- **IP allowlisting** — Verify IPs aren't Tor exits, proxies, or blacklisted\n- **Security audits** — Full-scan an organization's domain, IPs, and common passwords in one call\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Source & Links] - **Live API:** https://shield.vainplex.dev/api/health\n- **Source:** https://github.com/alberthild/shieldapi *(coming soon)*\n- **Protocol:** https://x402.org\n- **Data:** HIBP (CC-BY), PhishTank, URLhaus (abuse.ch), Spamhaus"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "shieldapi"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "curl"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alberthild/shieldapi/SKILL.md"
+}

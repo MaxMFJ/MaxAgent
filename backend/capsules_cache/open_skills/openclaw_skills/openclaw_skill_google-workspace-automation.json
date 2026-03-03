@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_google-workspace-automation",
+  "description": "Design Gmail, Drive, Sheets, and Calendar automations with scope-aware plans. Use for repeatable daily task automation with explicit OAuth scopes and audit-ready outputs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Google Workspace Automation"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Create structured automation plans for common Gmail, Drive, Sheets, and Calendar workflows."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Define automation goal, services, and actions.\n2. Derive required OAuth scopes and integration boundaries.\n3. Build execution plan with schedule and retry behavior.\n4. Export auditable artifact for implementation."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/plan_workspace_automation.py` for deterministic automation planning.\n- Read `references/workspace-guide.md` for scope and quota considerations."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Always declare least-privilege scopes.\n- Keep automations idempotent and auditable."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "google_workspace_automation"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/google-workspace-automation/SKILL.md"
+}

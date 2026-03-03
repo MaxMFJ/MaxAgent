@@ -1,0 +1,112 @@
+{
+  "id": "openclaw_skill_timemap",
+  "description": "Search historical entertainment, nightlife, and culture venues in Tel Aviv and Haifa from timemap.co.il. Bars, cafes, clubs, cinemas, food venues, performance spaces. Use for \"bars in Tel Aviv history\", \"what was at this address\", \"nightlife history\", \"בילה בתל אביב\", \"מה היה פה פעם\", \"מועדונים שנסגרו\", \"בתי קפה היסטוריים\", \"בתי קולנוע בחיפה\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Timemap - Tel Aviv & Haifa Venue History\n\nSearch historical entertainment, nightlife, and culture venues in Tel Aviv-Yafo and Haifa from [timemap.co.il](https://timemap.co.il) - a community-curated database mapping bars, cafes, clubs, cinemas, food venues, and performance spaces throughout the cities' history.\n\n> Data from [timemap.co.il](https://timemap.co.il), a non-profit project by [Reut Miryam Cohen](https://x.com/reutc) and Amir Ozer - \"a loving tribute to the places and people that made the cities we grew up in.\" Venues include opening/closing dates, locations, tags, user memories, and photos. This skill is an unofficial CLI wrapper."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Search for a venue (Hebrew or English)\npython3 {baseDir}/scripts/timemap.py search \"רוטשילד\"\npython3 {baseDir}/scripts/timemap.py search \"Barby\"\n\n# See what was active in a specific year\npython3 {baseDir}/scripts/timemap.py timeline 2010\n\n# Get database statistics\npython3 {baseDir}/scripts/timemap.py stats\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `search <query>` | Search venues by name or address (Hebrew or English) |\n| `filter` | Filter by --city, --tags, --year, --active-in, --opened, --closed |\n| `venue <id>` | Get full details for a specific venue (by ID or name) |\n| `timeline <year>` | Show all venues that were active in a given year |\n| `nearby <lat> <lng>` | Find venues near coordinates (--radius in km, default 0.5) |\n| `tags [tag]` | List all tags, or show venues with a specific tag |\n| `cities` | List cities with venue counts |\n| `stats` | Database statistics (venues by city, tag, decade, status) |\n| `memories <id>` | Show user memories for a specific venue |\n| `random` | Pick a random venue (prefers ones with memories/photos) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Search Examples] ```bash\n# Search by name (Hebrew or English)\npython3 {baseDir}/scripts/timemap.py search \"טדי\"\npython3 {baseDir}/scripts/timemap.py search \"Barby\"\n\n# Search by address\npython3 {baseDir}/scripts/timemap.py search \"רוטשילד\"\npython3 {baseDir}/scripts/timemap.py search \"דיזנגוף\"\n\n# Get full details for a venue\npython3 {baseDir}/scripts/timemap.py venue 192\n\n# Find venues with user memories\npython3 {baseDir}/scripts/timemap.py memories 253\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Filter Examples] ```bash\n# Filter by city\npython3 {baseDir}/scripts/timemap.py filter --city tlv\npython3 {baseDir}/scripts/timemap.py filter --city haifa\n\n# Filter by tag\npython3 {baseDir}/scripts/timemap.py filter --tags bar\npython3 {baseDir}/scripts/timemap.py filter --tags food\npython3 {baseDir}/scripts/timemap.py filter --tags cinema\n\n# Venues that opened in a specific year\npython3 {baseDir}/scripts/timemap.py filter --opened 2005\n\n# Venues that closed in a specific year\npython3 {baseDir}/scripts/timemap.py filter --closed 2010\n\n# Venues active in a specific year\npython3 {baseDir}/scripts/timemap.py filter --active-in 2008\n\n# Combine filters\npython3 {baseDir}/scripts/timemap.py filter --city tlv --tags bar --active-in 2010\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Timeline & Location Examples] ```bash\n# See what was happening in a specific year\npython3 {baseDir}/scripts/timemap.py timeline 2005\npython3 {baseDir}/scripts/timemap.py timeline 1995\n\n# Find venues near coordinates (Rothschild Blvd area)\npython3 {baseDir}/scripts/timemap.py nearby 32.0646 34.7731\npython3 {baseDir}/scripts/timemap.py nearby 32.0646 34.7731 --radius 1.0\n\n# Find venues near Florentin\npython3 {baseDir}/scripts/timemap.py nearby 32.0566 34.7608 --radius 0.5\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Browse & Explore] ```bash\n# List all tags\npython3 {baseDir}/scripts/timemap.py tags\n\n# Show venues with a specific tag\npython3 {baseDir}/scripts/timemap.py tags bar\npython3 {baseDir}/scripts/timemap.py tags club\n\n# List cities\npython3 {baseDir}/scripts/timemap.py cities\n\n# Database statistics\npython3 {baseDir}/scripts/timemap.py stats\n\n# Random venue (great for discovery)\npython3 {baseDir}/scripts/timemap.py random\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Options Reference] | Option | Commands | Description |\n|--------|----------|-------------|\n| `--json` | all | Output in JSON format (agent-friendly) |\n| `--limit N` | search, filter, timeline, nearby, tags | Max results (default: 25 for terminal, unlimited for --json) |\n| `--no-color` | all | Disable colored output (auto-detected for non-TTY) |\n| `--fresh` | all | Bypass cache and fetch fresh data from API |\n| `--city` | filter | Filter by city code (tlv, haifa) |\n| `--tags` | filter | Filter by tag (substring match) |\n| `--year` | filter | Venues that opened or closed in this year |\n| `--active-in` | filter | Venues that were active in this year |\n| `--opened` | filter | Venues that opened in this year |\n| `--closed` | filter | Venues that closed in this year |\n| `--radius` | nearby | Search radius in km (default: 0.5) |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[City Codes] | Code | City |\n|------|------|\n| `tlv` | Tel Aviv |\n| `haifa` | Haifa |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Tags] 7 main categories (matching the site's UI filters):\n\n| Tag | Hebrew | Description |\n|-----|--------|-------------|\n| `bar` | ברים | Bar/pub |\n| `food` | אוכל | Restaurant/food venue |\n| `cafe` | בתי קפה | Cafe |\n| `club` | מועדונים | Nightclub |\n| `cinema` | בתי קולנוע | Cinema/movie theater |\n| `live_shows` | הופעות | Live performances |\n| `lgbtq` | להטב\"ק | LGBTQ venue |\n\nAdditional tags: `dance_bar`, `lounge`, `wine_bar`, `restaurant`\n\nUse `python3 {baseDir}/scripts/timemap.py tags` to see current counts from live data."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Workflow Example] ```bash\n# 1. Explore what Tel Aviv nightlife looked like in 2008\npython3 {baseDir}/scripts/timemap.py timeline 2008\n\n# 2. Filter just the bars\npython3 {baseDir}/scripts/timemap.py filter --active-in 2008 --tags bar\n\n# 3. Get details on an interesting venue\npython3 {baseDir}/scripts/timemap.py venue \"Barby\"\n\n# 4. Read user memories about it\npython3 {baseDir}/scripts/timemap.py memories \"Barby\"\n\n# 5. Find nearby venues\npython3 {baseDir}/scripts/timemap.py nearby 32.0646 34.7731 --radius 0.5\n```"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Notes] - **Community-curated**: Historical data maintained by timemap.co.il community\n- **No API key needed**: Public API endpoint, no authentication required\n- **Bilingual**: Search works with Hebrew and English venue names\n- **Caching**: 24-hour local cache (one API call per day max, ~500KB)\n- **Coordinates**: Haversine formula for accurate distance calculations\n- **Deleted venues filtered**: Venues marked as deleted are automatically excluded\n- **Color output**: ANSI colors in terminal (respects `NO_COLOR` env var and `--no-color` flag)\n- **User memories**: Many venues have community-submitted memories and photos\n- **Year estimates**: Some opening/closing years are marked as estimates"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Agent Usage Patterns] For agent integration, always use `--json` flag for structured output:\n\n```bash\n# Search returns array of matching venues\npython3 {baseDir}/scripts/timemap.py search \"Barby\" --json\n\n# Timeline returns venues active in a year\npython3 {baseDir}/scripts/timemap.py timeline 2010 --json\n\n# Stats returns comprehensive database metrics\npython3 {baseDir}/scripts/timemap.py stats --json\n```\n\nAll commands support `--json` for machine-readable output with consistent structure:\n```json\n{\n  \"ok\": true,\n  \"command\": \"search\",\n  \"count\": 2,\n  \"venues\": [...]\n}\n```"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "timemap"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🗺️",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "python3"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexpolonsky/timemap/SKILL.md"
+}

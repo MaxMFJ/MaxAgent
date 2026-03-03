@@ -1,0 +1,92 @@
+{
+  "id": "openclaw_skill_instagram-poster",
+  "description": "Post images to Instagram automatically via Telegram. Generates images with WaveSpeed or uses your own. Bypasses Instagram bot detection using residential proxy. Use when: user wants to post to Instagram, auto-post image, share photo on Instagram, instagram autoposter, schedule instagram post, publish to instagram, post reel image. Requires IG_USERNAME + IG_PASSWORD env vars or a saved session. Needs human-browser skill for residential proxy.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # instagram-poster\n\nPost images to Instagram directly from your AI agent — bypasses bot detection with a real residential IP."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\nnode {baseDir}/scripts/post.js \\\n  --image ./photo.jpg \\\n  --caption \"Good morning 🌅 #photography\" \\\n  --user YOUR_USERNAME \\\n  --pass YOUR_PASSWORD\n```\n\nPost a WaveSpeed-generated image:\n\n```bash\n# 1. Generate image\nnode /workspace/.agents/skills/wavespeed/scripts/wavespeed.js generate \\\n  --model flux-schnell --prompt \"sunset over mountains\" --output /tmp/post.png\n\n# 2. Post to Instagram\nnode {baseDir}/scripts/post.js \\\n  --image /tmp/post.png \\\n  --caption \"Golden hour 🏔️ #nature #photography\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Options] | Flag | Env | Description |\n|------|-----|-------------|\n| `--image` | `IG_IMAGE` | Local file path or HTTPS URL |\n| `--caption` | `IG_CAPTION` | Post caption (optional) |\n| `--user` | `IG_USERNAME` | Instagram username |\n| `--pass` | `IG_PASSWORD` | Instagram password |\n| `--session` | `IG_SESSION_PATH` | Cookie session file (default: `~/.openclaw/ig-session.json`) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Session caching] On first run, logs in and saves cookies to `~/.openclaw/ig-session.json`.\nSubsequent runs reuse the session — no re-login needed."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Config in openclaw.json] ```json5\n{\n  skills: {\n    entries: {\n      \"instagram-poster\": {\n        env: {\n          IG_USERNAME: \"your_username\",\n          IG_PASSWORD: \"your_password\"\n        }\n      }\n    }\n  }\n}\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[How it works] 1. Launches a stealth browser with a **Romanian residential IP** (via human-browser)\n2. Logs into Instagram as a real iPhone user — passes all bot checks\n3. Uploads your image and submits the caption\n4. Saves session cookies so you stay logged in"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Requirements] - [human-browser](https://clawhub.ai/skills/human-browser) skill installed\n- Human Browser subscription (residential proxy) → [humanbrowser.dev](https://humanbrowser.dev)\n- Instagram account credentials"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Agent usage example] ```\nUser: Post this sunset photo to Instagram with caption \"Golden hour 🌅\"\nAgent: node {baseDir}/scripts/post.js --image /tmp/sunset.jpg --caption \"Golden hour 🌅\"\n```"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "instagram_poster"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📸",
+        "os": [
+          "linux",
+          "darwin",
+          "win32"
+        ],
+        "requires": {
+          "skills": [
+            "human-browser"
+          ],
+          "env": [
+            "IG_USERNAME",
+            "IG_PASSWORD"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/al1enjesus/instagram-poster/SKILL.md"
+}

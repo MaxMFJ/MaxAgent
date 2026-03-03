@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_skill-seo",
+  "description": "Optimize your ClawHub skill for maximum discoverability. Analyzes and rewrites SKILL.md description for vector search ranking, suggests keyword coverage, checks competitor positioning, and plans update cadence. Use when you want to 'improve skill SEO', 'get more downloads', 'optimize skill description', 'skill not showing in search', 'increase skill visibility', 'clawhub ranking', 'skill marketing', 'skill discovery', 'why no one finds my skill', 'skill description optimization', 'publish strategy', 'skill metadata', 'get featured on clawhub'. Works with any skill folder — just point it at your SKILL.md.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Skill SEO Optimizer 🔍\n\nGet your ClawHub skill found. This skill analyzes your SKILL.md and optimizes it for ClawHub's vector search, explore rankings, and agent auto-discovery."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```\nOptimize my skill for ClawHub: [path/to/skill/SKILL.md]\n```\n\nThe agent will audit your skill and output an optimized version."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How ClawHub Discovery Works] Skills are found through three channels. Each needs different optimization:\n\n### Channel 1: `clawhub search` (Vector Search) — 70% of discovery\n\nClawHub uses **semantic vector search** on the `description` field in YAML frontmatter. This is NOT keyword matching — it's meaning matching.\n\n**What gets indexed:** Only the `description` field.\n**What does NOT get indexed:** The markdown body, scripts, references, filenames.\n\n**Optimization rules:**\n\n1. **Cover synonyms and variations**\n   ```yaml\n   # ❌ Bad: narrow description\n   description: Generate weekly reports from Reddit data.\n   \n   # ✅ Good: covers how users actually search\n   description: \"Generate weekly trend reports from Reddit, Twitter/X, and \n     YouTube. Social media monitoring, content research, competitive analysis, \n     trend tracking. Use when asked to 'monitor trends', 'weekly report', \n     'what's trending', 'social listening', 'content ideas from social media',\n     'track competitors', 'find viral topics'.\"\n   ```\n\n2. **Include trigger phrases** — Write the exact phrases users say:\n   - \"how do I...\"\n   - \"is there a skill that...\"  \n   - \"I want to...\"\n   - \"can my agent...\"\n\n3. **Name the problem, not just the solution**\n   ```yaml\n   # ❌ Solution only\n   description: Agent journaling and mood tracking.\n   \n   # ✅ Problem + solution\n   description: \"Reduce repetitive AI output and pattern rigidity. Agent \n     journaling, mood tracking, creative refresh. Fix agent burnout, boring \n     responses, lack of personality.\"\n   ```\n\n4. **Optimal description length:** 150-300 words. Too short = misses search terms. Too long = dilutes relevance.\n\n### Channel 2: `clawhub explore` (Rankings) — 20% of discovery\n\nUsers browse by: `newest`, `trending`, `downloads`, `rating`.\n\n**Optimization rules:**\n\n1. **Update frequently** — Each version bump puts you in `newest`\n   - Ship v0.1.0, then v0.1.1 next week, v0.1.2 the week after\n   - Even small improvements (typo fix, example added) justify a patch\n   \n2. **"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Audit Checklist] Run this against any SKILL.md:\n\n```markdown"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Description Audit] - [ ] Length: 150-300 words?\n- [ ] Contains 10+ synonym/variation phrases?\n- [ ] Contains 5+ \"trigger phrases\" (user natural language)?\n- [ ] Names the PROBLEM, not just the solution?\n- [ ] Mentions target audience/use case?\n- [ ] Includes negative triggers (\"not showing\", \"can't find\", \"no results\")?"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Competitive Audit] - [ ] Searched ClawHub for your top 5 keywords — where do you rank?\n- [ ] Identified top 3 competing skills?\n- [ ] Description differentiates from competitors?"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Freshness Audit] - [ ] Updated in the last 2 weeks?\n- [ ] Changelog or version history maintained?\n- [ ] Plan for next 3 patch releases?\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Workflow: Optimize an Existing Skill] ### Step 1: Extract current state\n```bash\n# Read the current description\nhead -20 path/to/SKILL.md\n\n# Check current search ranking\nclawhub search \"your main keyword\" --limit 10\nclawhub search \"alternate keyword\" --limit 10\n```\n\n### Step 2: Competitor analysis\n```bash\n# Find competing skills\nclawhub search \"your niche\" --limit 10\n# Inspect top results\nclawhub inspect competitor-skill-name\n```\n\n### Step 3: Generate optimized description\n\n**Formula:**\n```\n[Core capability in 1 sentence]\n[3-4 specific features/modules]\n[5+ trigger phrases in natural language]\n[Target audience]\n[Differentiator from competitors]\n[Token/resource cost if relevant]\n```\n\n### Step 4: Publish and verify\n```bash\nclawhub publish ./your-skill --version X.Y.Z\n\n# Wait 2-3 minutes for indexing, then verify\nclawhub search \"your keyword 1\" --limit 5\nclawhub search \"your keyword 2\" --limit 5\nclawhub search \"natural language question\" --limit 5\n```\n\n### Step 5: Track and iterate\n- Check ranking weekly for your top 5 keywords\n- If dropping, update description and bump version\n- Monitor competitors for new entrants"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Anti-Patterns] - ❌ **Keyword stuffing with irrelevant terms** — Vector search penalizes semantic mismatch\n- ❌ **Description longer than 400 words** — Dilutes relevance signal\n- ❌ **Generic descriptions** — \"A useful skill for various tasks\" matches nothing\n- ❌ **Never updating** — Falls off newest, loses freshness signal\n- ❌ **Ignoring competitors** — If 3 skills match the same query, differentiation matters"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "skill_seo"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexyuui/skill-seo/SKILL.md"
+}

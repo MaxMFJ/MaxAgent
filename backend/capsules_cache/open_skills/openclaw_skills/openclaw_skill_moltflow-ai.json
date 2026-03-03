@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_moltflow-ai",
+  "description": "AI-powered WhatsApp features: auto-replies, voice transcription, RAG knowledge base, and style profiles. Use when: ai reply, transcribe voice, knowledge base, upload document, build style, learn mode.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **MoltFlow** -- WhatsApp Business automation for teams. Connect, monitor, and automate WhatsApp at scale.\n> ***Due to high demand and a recent registration issue, we're offering our top-tier Business plan with unlimited quotas for just $19.90/month on yearly billing — for a limited time only.*** [**Claim the deal**](https://buy.stripe.com/cNifZibX7gpQebJ0nsfnO00)\n> Free tier available. [Sign up](https://molt.waiflow.app/checkout?plan=free)\n\n# MoltFlow AI Features\n\nAI-powered capabilities for WhatsApp automation: voice transcription, RAG knowledge base, style profile learning, and intelligent reply generation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Real-World Scenarios] **Healthcare clinic** — \"Transcribe patient voice notes sent via WhatsApp and save them as searchable text records I can pull up later.\"\n\n**Law firm** — \"Upload our service agreements to the knowledge base so the AI can answer client questions about terms and pricing accurately.\"\n\n**Sales team** — \"Clone my top closer's writing style so AI replies to leads sound like him — casual, confident, uses emojis.\"\n\n**Customer support** — \"Auto-reply to common questions like 'What are your hours?' and 'Where are you located?' using our FAQ document.\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - \"Transcribe a voice message\" or \"convert audio to text\"\n- \"Upload a document to knowledge base\" or \"ingest PDF\"\n- \"Search knowledge base\" or \"find in documents\"\n- \"Build style profile\" or \"learn my writing style\"\n- \"Generate an AI reply\" or \"auto-reply to customer\"\n- \"Preview AI response\" or \"test reply generation\"\n- \"List knowledge sources\" or \"delete document\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **MOLTFLOW_API_KEY** -- Generate from the [MoltFlow Dashboard](https://molt.waiflow.app) under Settings > API Keys\n2. **Pro plan or higher** ($29.90/mo) -- AI features are not available on the Starter plan\n3. Base URL: `https://apiv2.waiflow.app/api/v2`\n4. All AI endpoints are under the `/ai` prefix"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Required API Key Scopes] | Scope | Access |\n|-------|--------|\n| `ai` | `read/manage` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Authentication] Every request must include one of:\n\n```\nAuthorization: Bearer <jwt_token>\n```\n\nor\n\n```\nX-API-Key: <your_api_key>\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Voice Transcription] Transcribe WhatsApp voice messages using Whisper AI. Transcription runs asynchronously via a Celery worker.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/ai/voice/transcribe` | Queue a voice message for transcription |\n| GET | `/ai/voice/status/{task_id}` | Check transcription task status |\n| GET | `/ai/messages/{message_id}/transcript` | Get the transcript for a message |\n\n### Queue Transcription\n\n**POST** `/ai/voice/transcribe`\n\n```json\n{\n  \"message_id\": \"msg-uuid-...\"\n}\n```\n\n**Response** `200 OK`:\n\n```json\n{\n  \"task_id\": \"celery-task-id-...\",\n  \"message_id\": \"msg-uuid-...\",\n  \"status\": \"queued\"\n}\n```\n\n### Check Status\n\n**GET** `/ai/voice/status/{task_id}`\n\n```json\n{\n  \"task_id\": \"celery-task-id-...\",\n  \"status\": \"completed\",\n  \"result\": {\n    \"transcript\": \"Hello, I wanted to ask about...\",\n    \"language\": \"en\",\n    \"confidence\": 0.95\n  }\n}\n```\n\nStatus values: `queued`, `processing`, `completed`, `failed`\n\n### Get Transcript\n\n**GET** `/ai/messages/{message_id}/transcript`\n\n```json\n{\n  \"message_id\": \"msg-uuid-...\",\n  \"transcript\": \"Hello, I wanted to ask about...\",\n  \"language\": \"en\",\n  \"confidence\": 0.95,\n  \"transcribed_at\": \"2026-02-11T10:05:00Z\"\n}\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[RAG Knowledge Base] Build a searchable knowledge base for AI-powered replies grounded in your business data.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/ai/knowledge/ingest` | Upload and index a document |\n| POST | `/ai/knowledge/search` | Semantic search across documents |\n| GET | `/ai/knowledge/sources` | List all indexed documents |\n| DELETE | `/ai/knowledge/{source_id}` | Delete a document |\n\n### Upload Document\n\n**POST** `/ai/knowledge/ingest` (multipart/form-data)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `file` | File | PDF or TXT file (max 100MB) |\n\n**Response** `200 OK`:\n\n```json\n{\n  \"id\": \"src-uuid-...\",\n  \"name\": \"product-catalog.pdf\",\n  \"source_type\": \"application/pdf\",\n  \"chunk_count\": 47,\n  \"status\": \"indexed\",\n  \"task_id\": \"celery-task-id-...\"\n}\n```\n\nSupported file types: `application/pdf`, `text/plain` (`.pdf`, `.txt`)\n\n### Search Knowledge Base\n\n**POST** `/ai/knowledge/search`\n\n```json\n{\n  \"query\": \"What is the return policy?\",\n  \"top_k\": 5\n}\n```\n\n**Response** `200 OK`:\n\n```json\n{\n  \"query\": \"What is the return policy?\",\n  \"results\": [\n    {\n      \"source_id\": \"src-uuid-...\",\n      \"content_type\": \"application/pdf\",\n      \"content_preview\": \"Our return policy allows returns within 30 days...\",\n      \"metadata\": {\"page\": 12, \"chunk\": 3},\n      \"similarity\": 0.92\n    }\n  ],\n  \"count\": 1\n}\n```\n\nOptional filters:\n\n```json\n{\n  \"query\": \"shipping costs\",\n  \"filters\": {\"source_type\": \"application/pdf\"},\n  \"top_k\": 10\n}\n```\n\n### List Documents\n\n**GET** `/ai/knowledge/sources`\n\n```json\n[\n  {\n    \"id\": \"src-uuid-...\",\n    \"name\": \"product-catalog.pdf\",\n    \"source_type\": \"application/pdf\",\n    \"chunk_count\": 47,\n    \"status\": \"indexed\",\n    \"created_at\": \"2026-02-11T09:00:00Z\",\n    \"indexed_at\": \"2026-02-11T09:02:00Z\"\n  }\n]\n```\n\nDocument status values: `processing`, `indexed`, `failed`\n\n### Delete Document\n\n**DELETE** `/ai/knowledge/{source_id}` -- Returns `204 No Content`\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Style Profiles (Learn Mode)] Configure AI writing style profiles scoped to individual chats or as a general profile. The AI auto-selects the best matching profile when generating replies.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/ai/style/train` | Start building a style profile |\n| GET | `/ai/style/status/{task_id}` | Check build status |\n| GET | `/ai/style/profile` | Get a style profile |\n| GET | `/ai/style/profiles` | List all style profiles |\n| DELETE | `/ai/style/profile/{profile_id}` | Delete a style profile |\n\n### Build Style Profile\n\n**POST** `/ai/style/train`\n\n```json\n{\n  \"session_id\": \"session-uuid-...\",\n  \"wa_chat_id\": \"5511999999999@c.us\",\n  \"name\": \"Sales\"\n}\n```\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `contact_id` | string | No | Legacy — use `wa_chat_id` instead |\n| `session_id` | UUID | No | Session to scope the build to |\n| `wa_chat_id` | string | No | Chat to scope the build to (WhatsApp JID). Omit for general profile |\n| `name` | string | No | Profile name (e.g., \"Sales\", \"Support\", \"Family\") |\n\n**Note:** Omit both `session_id` and `wa_chat_id` to build a general profile from all conversations.\n\n**Response** `200 OK`:\n\n```json\n{\n  \"task_id\": \"celery-task-id-...\",\n  \"tenant_id\": \"tenant-uuid-...\",\n  \"contact_id\": \"5511999999999@c.us\",\n  \"status\": \"queued\"\n}\n```\n\nThe build runs asynchronously. Check progress with the status endpoint.\n\n### Get Style Profile\n\n**GET** `/ai/style/profile?contact_id=5511999999999@c.us`\n\n```json\n{\n  \"id\": \"profile-uuid-...\",\n  \"tenant_id\": \"tenant-uuid-...\",\n  \"contact_id\": \"5511999999999@c.us\",\n  \"name\": \"Sales\",\n  \"session_id\": \"session-uuid-...\",\n  \"wa_chat_id\": \"5511999999999@c.us\",\n  \"features\": {\n    \"avg_sentence_length\": 12.5,\n    \"formality_score\": 0.7,\n    \"emoji_frequency\": 0.15,\n    \"vocabulary_richness\": 0.82\n  },\n  \"sample_count\": 150,\n  \"last_trained_at\": \"2026-02-11T09:30:00Z\"\n}\n```\n\n### List All Profiles\n\n**GET** `/ai/style/profiles`\n\n```json\n[\n  {"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[AI Reply Generation] Generate intelligent reply suggestions using RAG context and style profiles.\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| POST | `/ai/generate-reply` | Generate a reply suggestion |\n| GET | `/ai/preview` | Preview a reply without tracking usage |\n\n### Generate Reply\n\n**POST** `/ai/generate-reply`\n\n```json\n{\n  \"contact_id\": \"5511999999999@c.us\",\n  \"context\": \"Customer asks: Do you offer international shipping?\",\n  \"use_rag\": true,\n  \"apply_style\": true,\n  \"profile_id\": \"profile-uuid-...\",\n  \"session_id\": \"session-uuid-...\"\n}\n```\n\n**Response** `200 OK`:\n\n```json\n{\n  \"reply\": \"Yes, we ship internationally to over 50 countries! Shipping typically takes 7-14 business days. You can find our full shipping policy on our website.\",\n  \"rag_sources\": [\"product-catalog.pdf\"],\n  \"style_applied\": true,\n  \"model\": \"gpt-4o-mini\",\n  \"tokens_used\": 245,\n  \"requires_approval\": false\n}\n```\n\n### Parameters\n\n| Field | Type | Default | Description |\n|-------|------|---------|-------------|\n| `contact_id` | string | required | WhatsApp JID of the contact |\n| `context` | string | required | Customer question or prompt for reply generation (max 2000 chars) |\n| `use_rag` | boolean | `true` | Include knowledge base context in generation |\n| `apply_style` | boolean | `true` | Apply style profile to response |\n| `profile_id` | UUID | `null` | Specific style profile to use (skips auto-selection cascade) |\n| `session_id` | UUID | `null` | Session for cascade profile resolution |\n| `approved` | boolean | `false` | Set `true` to confirm an approval-required reply |\n\n**Note:** If `profile_id` is omitted and `apply_style` is true, the API auto-selects the best profile using the cascade: exact chat match → session-level → tenant-level general → no style.\n\n### Preview Reply\n\n**GET** `/ai/preview?contact_id=5511999999999@c.us&context=What+are+your+hours&use_rag=true&apply_style=true`\n\nSame response format as `generate-reply`, but does not count toward usage metrics.\n\n### Saf"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Examples] ### Upload a knowledge base document\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/ai/knowledge/ingest \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -F \"file=@product-catalog.pdf\"\n```\n\n### Generate an AI reply using RAG\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/ai/generate-reply \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"contact_id\": \"5511999999999@c.us\",\n    \"context\": \"Customer asks: What is your return policy?\",\n    \"use_rag\": true,\n    \"apply_style\": true\n  }'\n```\n\n### Generate reply with specific profile\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/ai/generate-reply \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"contact_id\": \"5511999999999@c.us\",\n    \"context\": \"Customer asks: What is your return policy?\",\n    \"use_rag\": true,\n    \"apply_style\": true,\n    \"profile_id\": \"profile-uuid-...\"\n  }'\n```\n\n### Build a style profile\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/ai/style/train \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"session_id\": \"session-uuid-...\",\n    \"wa_chat_id\": \"5511999999999@c.us\",\n    \"name\": \"Sales\"\n  }'\n```\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Plan Requirements] | Feature | Starter | Pro ($29.90/mo) | Business ($69.90/mo) |\n|---------|---------|-----------------|------------|\n| Voice Transcription | -- | Yes | Yes |\n| RAG Knowledge Base | -- | Yes (10 docs) | Yes (unlimited) |\n| Style Profiles | -- | Yes (3 profiles) | Yes (unlimited) |\n| AI Reply Generation | -- | Yes | Yes |\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Error Responses] | Status | Meaning |\n|--------|---------|\n| 400 | Bad request (invalid input, unsupported file type) |\n| 401 | Unauthorized (missing or invalid auth) |\n| 403 | Forbidden (feature requires Pro plan or higher) |\n| 404 | Resource not found (message, document, profile) |\n| 413 | File too large (exceeds 100MB limit) |\n| 429 | Rate limited |\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-outreach** -- Bulk Send, Scheduled Messages, Custom Groups\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltflow_ai"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow-ai/SKILL.md"
+}

@@ -1,0 +1,75 @@
+{
+  "id": "openclaw_skill_clearbit",
+  "description": "Clearbit — person enrichment, company enrichment, prospecting, and reveal (identify website visitors).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔮 Clearbit\n\nClearbit — person enrichment, company enrichment, prospecting, and reveal (identify website visitors)."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `CLEARBIT_API_KEY` | ✅ | Clearbit API key (or HubSpot Clearbit key) |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Enrich person by email\npython3 {{baseDir}}/scripts/clearbit.py enrich-person --email <value>\n\n# Enrich company by domain\npython3 {{baseDir}}/scripts/clearbit.py enrich-company --domain <value>\n\n# Combined person + company lookup\npython3 {{baseDir}}/scripts/clearbit.py combined-lookup --email <value>\n\n# Prospect/search for leads\npython3 {{baseDir}}/scripts/clearbit.py prospect --query \"JSON filter object\"\n\n# Reveal company by IP address\npython3 {{baseDir}}/scripts/clearbit.py reveal --ip <value>\n\n# Find company domain by name\npython3 {{baseDir}}/scripts/clearbit.py name-to-domain --name <value>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{baseDir}/scripts/clearbit.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clearbit"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔮",
+        "requires": {
+          "env": [
+            "CLEARBIT_API_KEY"
+          ]
+        },
+        "primaryEnv": "CLEARBIT_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/clearbit/SKILL.md"
+}

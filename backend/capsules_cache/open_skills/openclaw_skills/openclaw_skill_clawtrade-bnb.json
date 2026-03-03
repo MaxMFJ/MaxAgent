@@ -1,0 +1,129 @@
+{
+  "id": "openclaw_skill_clawtrade-bnb",
+  "description": "Autonomous DeFi trading agent for BNB Chain with multi-strategy engine, network switching, and reinforced learning.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # CawTrade BNB - Autonomous DeFi Trading Agent v1.1.0\n\n**Production-ready autonomous trading agent** for BNB Chain testnet & mainnet. Features 3 intelligent strategies, real-time performance analytics, on-chain event logging, and self-improving reinforced learning."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Core Features] ### 🤖 Three Autonomous Strategies\n1. **Compound Yield** - Auto-reinvest harvested rewards for exponential growth\n2. **Rebalance** - Move capital from low-APR to high-APR vaults automatically\n3. **Dynamic Harvest** - Intelligent harvesting based on gas cost optimization\n\n### 🌐 Network Switching\n- Instant testnet ↔ mainnet toggle (no restart)\n- Separate configs per network (gas, thresholds, RPCs)\n- Contract address mapping per chain\n- Persistent network preferences\n\n### 📊 Real-Time Analytics\n- Realized APR (actual, based on historical yields)\n- Per-vault performance breakdown\n- Strategy effectiveness scoring\n- Success rate tracking (target: >90%)\n- Failure pattern detection\n\n### 🧠 Reinforced Learning\n- Auto-learns from past failures\n- Dynamically optimizes strategy parameters\n- Adjusts thresholds based on success rates\n- Confidence scoring per strategy\n- Self-improving over time\n\n### ⛓️ On-Chain Event Logging\n- All actions logged with TX hashes\n- Auditable blockchain trail\n- BNB Testnet Scanner links\n- Complete execution history\n\n### 🎮 Control Panel CLI\n- Interactive command-line interface\n- Network management commands\n- Performance metrics dashboard\n- Learning progress tracking\n- Real-time optimization"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation & Setup] ### 1. Install Skill\n```bash\nclawhub install clawtrade-bnb\ncd ~/.openclaw/workspace/skills/clawtrade-bnb\nnpm install\n```\n\n### 2. Configure Environment\n```bash\n# Copy example config\ncp config.deployed.json config.live.json\n\n# Edit with your settings\nnano config.live.json\n# Set RPC endpoint, contract addresses, wallet\n```\n\n### 3. Set Private Key (Secure)\n```bash\n# Option A: Environment variable (recommended)\nexport PRIVATE_KEY=\"your_testnet_private_key\"\n\n# Option B: .env file (git-ignored)\necho \"PRIVATE_KEY=your_key\" >> .env\n\n# NOTE: Never commit private keys!\n```\n\n### 4. Verify Setup\n```bash\n# Test connection and contracts\nnode agent-cli.js network status\n\n# Check wallet balance\nnpm run verify\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start - 3 Commands] ```bash\n# Terminal 1: Run strategy engine (60-second cycles)\nnode strategy-scheduler.js\n\n# Terminal 2: Real-time dashboard\nnpm run dev:dashboard\n# → Open http://localhost:5173\n\n# Terminal 3: Control panel\nnode agent-cli.js\n\n# Example commands:\nnode agent-cli.js network testnet        # Switch network\nnode agent-cli.js perf summary           # See performance\nnode agent-cli.js learn now              # Optimize strategies\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Architecture] ```\nDeFi Strategy Engine\n├─ Compound Yield Strategy\n│  └─ Harvest when pending > $25 → Re-deposit\n├─ Rebalance Strategy\n│  └─ Move 20% from low-APR to high-APR vault\n└─ Dynamic Harvest Strategy\n   └─ Harvest only if pending > 2x gas cost\n\n         ↓ (runs every 60 seconds)\n\nStrategy Scheduler\n├─ Read vault APRs & pending rewards\n├─ Execute all 3 strategies\n└─ Log actions + TX hashes\n\n         ↓ (logs to blockchain)\n\nOn-Chain Logger\n├─ execution-log.jsonl (append-only)\n├─ performance-metrics.json (cumulative)\n└─ learning-state.json (optimization history)\n\n         ↓ (analyzes continuously)\n\nReinforced Learning System\n├─ Tracks success rates per strategy\n├─ Detects failure patterns\n├─ Auto-adjusts thresholds\n└─ Generates improvement reports\n\n         ↓ (displays real-time)\n\nDashboard + Control Panel\n├─ React dashboard (http://localhost:5173)\n├─ Agent CLI (network, perf, learn commands)\n└─ Performance API (/api/logs, /api/health)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration Files] **config.deployed.json** - Contract addresses & ABIs\n```json\n{\n  \"chainId\": 97,\n  \"network\": \"BNB Testnet\",\n  \"contracts\": [\n    {\n      \"vaultId\": \"vault_eth_staking_001\",\n      \"address\": \"0x588eD88A145144F1E368D624EeFC336577a4276b\",\n      \"strategy\": \"Ethereum 2.0 Staking\",\n      \"risk_score\": 0.3\n    }\n  ]\n}\n```\n\n**config.scheduler.json** - Strategy thresholds\n```json\n{\n  \"scheduler\": {\n    \"execution_interval_seconds\": 60,\n    \"enabled\": true\n  },\n  \"agent\": {\n    \"harvest_threshold_usd\": 25,\n    \"rebalance_apr_delta\": 2.0,\n    \"max_allocation_percent\": 0.35,\n    \"min_confidence\": 0.6\n  }\n}\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Strategy Decision Logic] Each 60-second cycle:\n\n1. **COMPOUND YIELD**\n   - Check pending rewards per vault\n   - If pending ≥ $25 → Harvest + Re-deposit\n   - Log action with TX hash\n\n2. **REBALANCE**\n   - Compare APRs across all vaults\n   - If top APR > bottom APR by ≥ 2% → Rebalance\n   - Move 20% from worst to best vault\n   - Log action with TX hash\n\n3. **DYNAMIC HARVEST**\n   - Estimate gas cost per harvest\n   - Only harvest if pending > 2x gas cost\n   - Maximize profitability per action\n   - Log action with TX hash\n\n**Example Output:**\n```\nCycle #42 @ 2026-02-18T18:00:00Z\n✓ vault_eth_staking_001: COMPOUND ($45.50 harvested)\n✓ vault_high_risk_001: REBALANCE (2.1% APR delta)\n✓ vault_link_oracle_001: HARVEST ($12.30 pending)\n✅ Total Rewards: $57.80 | Compounded: $45.50\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[CLI Commands] ### Network Management\n```bash\nnode agent-cli.js network status      # Current network config\nnode agent-cli.js network testnet     # Switch to testnet\nnode agent-cli.js network mainnet     # Switch to mainnet (⚠️ production)\n```\n\n### Performance Monitoring\n```bash\nnode agent-cli.js perf summary        # Quick stats\nnode agent-cli.js perf report         # Detailed analysis\nnode agent-cli.js perf vaults         # Per-vault breakdown\nnode agent-cli.js perf strategies     # Strategy effectiveness\n```\n\n### Reinforced Learning\n```bash\nnode agent-cli.js learn now           # Analyze & optimize\nnode agent-cli.js learn report        # View improvements\nnode agent-cli.js learn reset         # Reset learning state\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Supported Networks] | Network | Chain ID | Use Case | Harvest Min | Gas Multiplier |\n|---------|----------|----------|-------------|----------------|\n| BNB Testnet | 97 | Development | $25 | 1.2x |\n| BNB Mainnet | 56 | Production | $100 | 1.5x |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Network Switching] Switch instantly without restarting:\n```bash\n# Current config\nnode agent-cli.js network status\n# → BNB Testnet\n\n# Switch to production\nnode agent-cli.js network mainnet\n# → Updated RPC, contract addresses, and thresholds\n\n# All settings updated automatically\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Security & Safety] ### On-Chain Auditing\n- ✅ Every action logged with transaction hash\n- ✅ Blockchain verification via BNB Testnet/Mainnet Scanner\n- ✅ Append-only execution log (execution-log.jsonl)\n- ✅ Complete audit trail for compliance\n\n### Risk Management\n- ✅ Deterministic decision logic (reproducible, auditable)\n- ✅ Success rate monitoring (>90% target)\n- ✅ Confidence thresholds per strategy\n- ✅ Graceful error handling & recovery\n- ✅ Automatic parameter optimization via learning\n\n### Private Key Security\n- ✅ Never hardcoded - use environment variables only\n- ✅ .env file git-ignored\n- ✅ Testnet for development, mainnet when ready\n- ✅ For production: use hardware wallet support (future)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[File Structure] ```\nclawtrade-bnb/\n├── defi-strategy-engine.js          # 3 strategies (compound, rebalance, harvest)\n├── on-chain-logger.js                # Event logging with TX hashes\n├── strategy-scheduler.js              # Main loop (60s cycles)\n├── network-switcher.js                # Testnet ↔ mainnet toggle\n├── performance-analytics.js           # Real APR & metrics\n├── reinforced-learning.js             # Self-improving parameters\n├── agent-cli.js                       # Control panel\n├── dashboard/                         # React frontend (real-time)\n├── contracts/                         # Vault smart contracts\n├── config.deployed.json               # Contract addresses & ABIs\n├── config.scheduler.json              # Strategy thresholds\n├── execution-log.jsonl                # Action history (generated)\n├── performance-metrics.json           # Metrics (generated)\n├── learning-state.json                # Learning progress (generated)\n├── README.md                          # User guide\n├── README_STRATEGY.md                 # Strategy details\n├── README_ADVANCED.md                 # Network switching & learning\n├── SKILL.md                           # This file\n└── package.json                       # Dependencies\n```"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Integration with Other Skills] This is a **standalone, complete skill**. It can also integrate with:\n\n- **Telegram Notifications** - Send alerts to OpenClaw users\n- **Email Reports** - Daily performance summaries\n- **Database Logging** - Store metrics in persistent DB\n- **Webhook Integrations** - Trigger external services"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Documentation] | File | Purpose |\n|------|---------|\n| `README.md` | Complete user guide |\n| `README_STRATEGY.md` | Strategy details & examples |\n| `README_ADVANCED.md` | Network switching & reinforced learning |\n| `SKILL.md` | This installation & architecture guide |"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[What You Get] ✅ **Production-ready code** (tested, documented, error-handling)\n✅ **3 profitable strategies** (auto-optimizing, self-learning)\n✅ **Real-time dashboard** (React, live updates)\n✅ **CLI control panel** (manage from terminal)\n✅ **On-chain logging** (auditable, transparent)\n✅ **Network switching** (testnet → mainnet in seconds)\n✅ **Self-improvement** (learns from failures automatically)\n✅ **Complete documentation** (guides, examples, FAQ)"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[Replicating This Skill] For someone else to replicate:\n\n1. **Install**\n   ```bash\n   clawhub install clawtrade-bnb\n   npm install\n   ```\n\n2. **Configure**\n   ```bash\n   # Edit config files with your contracts & RPC\n   nano config.deployed.json\n   ```\n\n3. **Deploy Contracts** (if using new vaults)\n   ```bash\n   cd contracts && npm run deploy:testnet\n   ```\n\n4. **Run**\n   ```bash\n   node strategy-scheduler.js      # Main engine\n   npm run dev:dashboard           # Dashboard\n   node agent-cli.js               # Control panel\n   ```\n\n5. **Monitor**\n   - Dashboard: http://localhost:5173\n   - Logs: execution-log.jsonl\n   - Analytics: node agent-cli.js perf report\n\n**Total setup time: ~15 minutes**"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[Support & Community] - GitHub Issues: https://github.com/open-web-academy/clawtrade-bnb-bnb\n- ClawHub: https://clawhub.com (search: clawtrade-bnb)\n- Discord: https://discord.com/invite/clawd"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[Version History] - **v1.1.0** (2026-02-18) - Network switcher, analytics, reinforced learning, CLI\n- **v1.0.0** (2026-02-17) - Initial release, 3 strategies, on-chain logging"
+    },
+    {
+      "id": "step_18",
+      "type": "subtask",
+      "description": "[License] MIT - Free to use, modify, and distribute"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawtrade_bnb"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alannetwork/clawtrade-bnb/SKILL.md"
+}

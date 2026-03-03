@@ -1,0 +1,73 @@
+{
+  "id": "openclaw_skill_gemini-voice-assistant",
+  "description": "Voice-to-voice AI assistant using Gemini Live API. Speak to the AI and get spoken responses. Use when you want to have natural voice conversations with an AI assistant powered by Google's Gemini models.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Gemini Voice Assistant\n\nA voice-to-voice AI assistant powered by Google's Gemini Live API. Speak to the AI and it responds with natural-sounding voice."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ### Text Mode\n\n```bash\ncd ~/.openclaw/agents/kashif/skills/gemini-assistant && python3 handler.py \"Your question or message\"\n```\n\n### Voice Mode\n\n```bash\ncd ~/.openclaw/agents/kashif/skills/gemini-assistant && python3 handler.py --audio /path/to/audio.ogg \"optional context\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Response Format] The handler returns a JSON response:\n\n```json\n{\n  \"message\": \"[[audio_as_voice]]\\nMEDIA:/tmp/gemini_voice_xxx.ogg\",\n  \"text\": \"Text response from Gemini\"\n}\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Configuration] Set your Gemini API key:\n\n```bash\nexport GEMINI_API_KEY=\"your-api-key-here\"\n```\n\nOr create a `.env` file in the skill directory:\n\n```\nGEMINI_API_KEY=your-api-key-here\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Model Options] The default model is `gemini-2.5-flash-native-audio-preview-12-2025` for audio support.\n\nTo use a different model, edit `handler.py`:\n\n```python\nMODEL = \"gemini-2.0-flash-exp\"  # For text-only\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Requirements] - `google-genai>=1.0.0`\n- `numpy>=1.24.0`\n- `soundfile>=0.12.0`\n- `librosa>=0.10.0` (for audio input)\n- FFmpeg (for audio conversion)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Features] - 🎙️ Voice input/output support\n- 💬 Text conversations\n- 🔧 Configurable system instructions\n- ⚡ Fast responses with Gemini Flash"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "gemini_voice_assistant"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎙️"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alimostafaradwan/gemini-voice-assistant/SKILL.md"
+}

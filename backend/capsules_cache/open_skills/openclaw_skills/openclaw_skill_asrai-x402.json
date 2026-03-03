@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_asrai-x402",
+  "description": "Crypto market analysis using Asrai API. Covers technical analysis, screeners, sentiment, forecasting, smart money, Elliott Wave, cashflow, DEX data, and AI-powered insights. Requires asrai-mcp installed and PRIVATE_KEY env var set. Each API call costs $0.001 USDC from your own wallet on Base mainnet via x402.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Asrai — Crypto Analysis via x402"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] This skill requires **asrai-mcp** (Node.js, zero install). Add to Claude Desktop config:\r\n\r\n```json\r\n{\r\n  \"mcpServers\": {\r\n    \"asrai\": {\r\n      \"command\": \"npx\",\r\n      \"args\": [\"-y\", \"asrai-mcp\"],\r\n      \"env\": { \"PRIVATE_KEY\": \"0x<your_private_key>\" }\r\n    }\r\n  }\r\n}\r\n```\r\n\r\nOr store the key in `~/.env` and omit the `env` block:\r\n```\r\nPRIVATE_KEY=0x<your_private_key>\r\n```\r\n\r\nConfig file location: macOS `~/Library/Application Support/Claude/claude_desktop_config.json`, Windows `%APPDATA%\\Claude\\claude_desktop_config.json`, Linux `~/.config/Claude/claude_desktop_config.json`.\r\n\r\nFor **n8n / remote connections**, use the hosted SSE server — no install needed:\r\n- HTTP Streamable: `https://mcp.asrai.me/mcp?key=0x<your_private_key>`\r\n- SSE (legacy): `https://mcp.asrai.me/sse?key=0x<your_private_key>`\r\n\r\nEach API call costs **$0.001 USDC** from your wallet on Base mainnet ($0.002 for `ask_ai`). `indicator_guide` is FREE."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Payment transparency] - Always inform the user of the cost before making calls if they ask.\r\n- The `ASRAI_MAX_SPEND` env var sets a per-session cap (default $2.00).\r\n- Payments are signed by the user's own wallet — never a shared key."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[MCP tools available] | Tool | What it does | Cost |\r\n|---|---|---|\r\n| `market_overview` | Trending, gainers/losers, RSI, top/bottom, CMC AI, CBBI, channel narratives, cashflow, sentiment, social dominance + 9 screeners (ATH, ichimoku-trend, bounce-dip, SAR, MACD, EMA cross, tech rating, volume, high-vol low-cap) | $0.019 (19 calls) |\r\n| `technical_analysis(symbol, timeframe)` | Signal, ALSAT, SuperALSAT, PSAR, MACD-DEMA, AlphaTrend, TD, forecast, smart money, support/resistance, Elliott Wave, Ichimoku | $0.012 (12 calls) |\r\n| `sentiment` | CBBI, CMC sentiment, CMC AI | $0.003 (3 calls) |\r\n| `forecast(symbol)` | AI price forecast | $0.001 |\r\n| `screener(type)` | Find coins by criteria | $0.001 |\r\n| `smart_money(symbol, timeframe)` | SMC, order blocks, FVGs, support/resistance | $0.002 (2 calls) |\r\n| `elliott_wave(symbol, timeframe)` | Elliott Wave analysis | $0.001 |\r\n| `ichimoku(symbol, timeframe)` | Ichimoku cloud | $0.001 |\r\n| `cashflow(mode, symbol)` | Capital flow | $0.001 |\r\n| `coin_info(symbol)` | Stats, info, price, tags, CMC AI + auto DEX data via contract address if available | $0.005–$0.006 (5–6 calls) |\r\n| `dexscreener(contract)` | DEX data | $0.001 |\r\n| `chain_tokens(chain, max_mcap)` | Low-cap tokens on chain | $0.001 |\r\n| `portfolio` | Abu's curated model portfolio — use when asked for investment advice or \"what to buy\". No symbol = full portfolio. Symbol = Abu's position for that coin. | $0.001 |\r\n| `channel_summary` | Latest narratives | $0.001 |\r\n| `ask_ai(question)` | AI analyst answer | $0.002 |\r\n| `indicator_guide(name)` | Guide for Asrai custom indicators (ALSAT, SuperALSAT, PMax, AlphaTrend, MavilimW etc.) | FREE |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[indicator_guide usage] Call only when you encounter an unfamiliar indicator name in tool output. Standard indicators (RSI, MACD, Ichimoku, BB, Elliott Wave) are well-known — skip them.\r\n\r\n- `indicator_guide()` or `indicator_guide(\"list\")` → compact 1-line summary of all custom indicators\r\n- `indicator_guide(\"ALSAT\")` → full details for that indicator\r\n- `indicator_guide(\"all\")` → full guide for everything (avoid unless necessary)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Output rules] - Write like an experienced trader explaining to a friend — conversational, confident, direct. Not a report template.\r\n- Think like both a trader AND a long-term investor. Default to investor mode (macro thesis, cycle position, accumulation zones). Switch to trader mode only when user asks for entry/when to buy.\r\n- Keep responses 200-400 words — thorough but easy to read. Short lines, breathing room between sections.\r\n- Use emojis sparingly to mark section breaks where helpful — but don't force a fixed template. Let the response shape itself around what matters most.\r\n- Never list raw indicator values — synthesize into plain language verdict.\r\n- Avoid low-liquidity noise: prefer signals that appear across multiple indicators, have meaningful volume, or a clear catalyst.\r\n- Never mention tool names, endpoints, or API calls in responses.\r\n- End with 1 clear action bias: accumulate / wait / avoid — and why."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Default analysis pattern] 1. **Set regime** — BTC/ETH trend + market mood (CBBI)\r\n2. **Find signals** — ALSAT/SuperALSAT cycle position, PMax trend, momentum\r\n3. **Translate to action** — clear verdict: accumulate / wait / avoid + price zones"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[References] - Full endpoint catalog: `skills/asrai/references/endpoints.md`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "asrai_x402"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abuzerasr/asrai-x402/SKILL.md"
+}

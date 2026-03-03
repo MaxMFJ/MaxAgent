@@ -1,0 +1,70 @@
+{
+  "id": "openclaw_skill_close-crm",
+  "description": "Close CRM — manage leads, contacts, opportunities, tasks, and activities. Sales CRM with built-in calling and email.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 📞 Close CRM\n\nSales CRM with built-in calling and email — leads, contacts, opportunities, tasks."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Leads** — list, create, get details\n- **Contacts** — manage contact info\n- **Opportunities** — track deals and values\n- **Tasks** — create and manage tasks\n- **Activities** — view activity feed"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `CLOSE_API_KEY` | ✅ | API key/token for Close CRM |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\npython3 {baseDir}/scripts/close-crm.py leads --limit 10\npython3 {baseDir}/scripts/close-crm.py lead-create \"Acme Corp\" --contact-name John --contact-email john@acme.com\npython3 {baseDir}/scripts/close-crm.py opportunities\npython3 {baseDir}/scripts/close-crm.py me\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "close_crm"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "📞",
+        "requires": {
+          "env": [
+            "CLOSE_API_KEY"
+          ]
+        },
+        "primaryEnv": "CLOSE_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/close-crm/SKILL.md"
+}

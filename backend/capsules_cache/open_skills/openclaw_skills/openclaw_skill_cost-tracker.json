@@ -1,0 +1,70 @@
+{
+  "id": "openclaw_skill_cost-tracker",
+  "description": "AI spending monitor — track costs across OpenRouter models with daily, weekly, and monthly reports. Budget limits with alerts, per-model analysis, savings recommendations, and historical tracking via SQLite. Use for controlling AI costs and optimizing model selection.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 💰 Cost Tracker\n\nAI spending monitor for OpenRouter. Track per-model costs, get daily/weekly/monthly reports, set budget alerts, and get savings recommendations."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Usage] ```bash\n# Fetch and store current usage from OpenRouter\npython3 {baseDir}/scripts/cost_tracker.py fetch\n\n# Show spending reports\npython3 {baseDir}/scripts/cost_tracker.py report --period daily\npython3 {baseDir}/scripts/cost_tracker.py report --period weekly\npython3 {baseDir}/scripts/cost_tracker.py report --period monthly\n\n# Per-model breakdown\npython3 {baseDir}/scripts/cost_tracker.py models\n\n# Set monthly budget + check status\npython3 {baseDir}/scripts/cost_tracker.py budget --set 25.00\npython3 {baseDir}/scripts/cost_tracker.py budget --check\n\n# Savings recommendations\npython3 {baseDir}/scripts/cost_tracker.py savings\n\n# Export data as JSON\npython3 {baseDir}/scripts/cost_tracker.py export --format json\npython3 {baseDir}/scripts/cost_tracker.py export --format csv\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Features] - **Live Usage Fetch** — Pulls real spending data from OpenRouter's `/api/v1/auth/key` endpoint\n- **Per-Model Tracking** — See which models cost you the most\n- **Period Reports** — Daily, weekly, monthly summaries with trends\n- **Budget Alerts** — Set limits and get warned at 80% threshold\n- **Savings Tips** — Identifies cheaper models that could handle the same workload\n- **Historical Data** — SQLite storage for long-term trend analysis\n- **Export** — JSON or CSV export for spreadsheets"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Data Storage] All data stored in `{baseDir}/data/cost_tracker.db` (SQLite)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cost_tracker"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, OpenRouter API key",
+    "extra": {
+      "openclaw": {
+        "emoji": "??",
+        "requires": {
+          "env": [
+            "OPENROUTER_API_KEY"
+          ]
+        },
+        "primaryEnv": "OPENROUTER_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/cost-tracker/SKILL.md"
+}

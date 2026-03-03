@@ -64,7 +64,7 @@
     "license": "MIT",
     "compatibility": "",
     "extra": {
-      "version": "1.0.2",
+      "version": "1.0.4",
       "author": "24601",
       "parent_skill": "surrealdb",
       "snapshot_date": "2026-02-19",

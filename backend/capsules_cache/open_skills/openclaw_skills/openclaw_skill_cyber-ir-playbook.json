@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_cyber-ir-playbook",
+  "description": "Build incident response timelines and report packs from event logs. Use for detection-to-recovery reporting, phase tracking, and stakeholder-ready incident summaries.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Cyber IR Playbook"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] Convert incident events into a standardized response timeline and phase-based report."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Workflow] 1. Ingest incident events with timestamps.\n2. Classify events into detection, containment, eradication, recovery, or post-incident phases.\n3. Build ordered timeline and summarize current phase completion.\n4. Produce a report artifact for internal and executive audiences."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Use Bundled Resources] - Run `scripts/ir_timeline_report.py` to generate a deterministic timeline report.\n- Read `references/ir-phase-guide.md` for phase mapping guidance."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Guardrails] - Focus on defensive incident handling and post-incident learning.\n- Do not provide offensive exploitation instructions."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cyber_ir_playbook"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0x-professor/cyber-ir-playbook/SKILL.md"
+}

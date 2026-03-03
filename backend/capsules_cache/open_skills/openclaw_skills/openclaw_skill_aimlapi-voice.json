@@ -1,0 +1,72 @@
+{
+  "id": "openclaw_skill_aimlapi-voice",
+  "description": "Transcribe audio files (ogg, mp3, wav, etc.) using AIMLAPI. Use when the user provides audio messages or local audio files. Provides a reliable Python script with retries and polling.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AIMLAPI Voice Transcription"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Overview] A robust skill for transcribing audio via AIMLAPI's specialized speech-to-text endpoints. It handles queuing, polling for results, and automatic MIME-type detection."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# Set your API key first (if not in env)\n# export AIMLAPI_API_KEY=\"your-key-here\"\n\n# Transcribe a file\npython {baseDir}/scripts/transcribe.py path/to/audio.ogg\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Tasks] ### Process Voice Messages\n\nWhen an audio file is received, use this script to extract the text.\n\n```bash\npython {baseDir}/scripts/transcribe.py <file_path> \\\n  --model \"#g1_whisper-medium\" \\\n  --verbose\n```\n\n### Arguments\n\n- `file`: (Required) Path to the audio file.\n- `--model`: Model ID (default: `#g1_whisper-medium`).\n- `--out`: Path to save the transcript text.\n- `--poll-interval`: Seconds between status checks (default: 5).\n- `--max-wait`: Stop waiting after N seconds (default: 300)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dependencies] - Python 3\n- `AIMLAPI_API_KEY` set in environment or provided via `--apikey-file`."
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "aimlapi_voice"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🎙️",
+        "requires": {
+          "bins": [
+            "python"
+          ],
+          "env": [
+            "AIMLAPI_API_KEY"
+          ]
+        },
+        "primaryEnv": "AIMLAPI_API_KEY"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aimlapihello/aiml-voice/SKILL.md"
+}

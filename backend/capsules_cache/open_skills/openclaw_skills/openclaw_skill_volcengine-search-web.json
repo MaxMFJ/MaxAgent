@@ -1,0 +1,74 @@
+{
+  "id": "openclaw_skill_volcengine-search-web",
+  "description": "Openclaw/Trae 联网搜索国内方案，使用火山引擎联网问答智能体 API 进行网络搜索问答。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Volcengine Search Web Skill - 联网搜索国内方案\n\n专为 **Openclaw、Trae** 等 AI 编程工具设计的联网搜索国内解决方案。\n\n> **免责声明**：本项目为个人开发代码，与火山引擎官方无关，仅供学习参考使用。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[适用场景] 当 Openclaw、Trae 等工具需要联网搜索信息时，可使用此技能作为国内方案替代 Brave Search。支持搜索网络、获取参考资料、富媒体卡片数据，实现追问、引用角标、图文混排、百科划线词等高级功能。"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[为什么选择此方案？] - **无需绑定信用卡** - 国内支付方式即可开通\n- **访问稳定** - 国内服务器，响应速度快\n- **中文搜索优化** - 更懂中文语境，搜索结果更精准"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[使用步骤] 1. 准备清晰具体的问题。\n2. 运行脚本 `python scripts/volcengine_search_web.py \"<question>\"`。运行之前cd到对应的目录。\n3. 脚本将返回智能体的回答内容，包括参考来源、追问建议等。"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[认证与凭据来源] - 读取 `VOLCENGINE_SEARCH_API_KEY` 环境变量作为 API Key。\n- 需要配置 `VOLCENGINE_SEARCH_BOT_ID` 环境变量指定智能体ID（在控制台创建智能体后获取）。"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[输出格式] - 输出智能体的回答内容。\n- 显示参考来源（URL、标题、发布时间等）。\n- 显示追问建议（如有）。\n- 显示 Token 使用情况。\n- 若调用失败，将打印错误信息。"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[示例] ```bash\npython scripts/volcengine_search_web.py \"openclaw的最新动态\"\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[高级功能] 该技能支持以下高级功能（需在控制台开启）：\n\n- **引用角标**：在回答中插入引用标记 `[ref_x]` 指示文本来源\n- **图文/视频混排**：在输出中穿插图片或视频\n- **百科划线词**：自动将百科词条以下划线超链接形式呈现\n- **追问建议**：提供相关追问建议\n- **深度思考模式**：通过设置 `model=thinking` 开启"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "volcengine_search_web"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexjunanjing-2/openclaw-skill-search-web/SKILL.md"
+}

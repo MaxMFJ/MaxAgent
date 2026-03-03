@@ -1,0 +1,88 @@
+{
+  "id": "openclaw_skill_obsidian-cli-official",
+  "description": "Official Obsidian CLI (v1.12+). Complete command-line interface for \nObsidian notes, tasks, search, tags, properties, links, and more.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Obsidian Official CLI\n\nOfficial command-line interface for Obsidian (v1.12+). 110 commands."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] - **Obsidian 1.12+** with Catalyst license ($25 one-time)\n- **Obsidian must be running** (CLI connects via IPC)\n- **Enable CLI**: Settings → General → Enable CLI"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Setup] Add Obsidian to PATH:\n\n**macOS:**\n```bash\nexport PATH=\"$PATH:/Applications/Obsidian.app/Contents/MacOS\"\n```\n\n**Windows:**\n```powershell\n$env:PATH += \";$env:LOCALAPPDATA\\Obsidian\"\n```\n\n**Linux:**\n- Snap: Already in PATH\n- Flatpak: `alias obsidian='flatpak run md.obsidian.Obsidian'`\n- AppImage: Move to `~/.local/bin` and `chmod +x`\n\n**Test:** `obsidian version`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Syntax] - **Parameters**: `name=value` or `name=\"value with spaces\"`\n- **Flags**: just the name, e.g. `open`, `overwrite`\n- **Newlines**: use `\\n` in content strings\n- **Target vault**: `obsidian vault=\"My Vault\" <command>` (must be first)\n- **Target file**: `file=<name>` (wikilink-style) or `path=<folder/file.md>` (exact)\n- **Copy output**: append `--copy` to any command"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Common Commands (with examples)] ### Daily Notes\n```bash\nobsidian daily                                    # Open today\nobsidian daily:append content=\"- [ ] Buy milk\"    # Add to today\nobsidian daily:prepend content=\"# Important\"      # Add to top\nobsidian daily:read                               # Read today's content\nobsidian daily:path                               # Get daily note path\n```\n\n### Files\n```bash\nobsidian create name=\"Note\" content=\"# Hello\"     # Create note\nobsidian create name=\"Note\" template=Meeting       # Create from template\nobsidian read file=\"Note\"                          # Read note\nobsidian append file=\"Note\" content=\"More text\"    # Append to note\nobsidian prepend file=\"Note\" content=\"Top text\"    # Prepend to note\nobsidian move file=\"Note\" to=\"Archive/Note.md\"     # Move note\nobsidian rename file=\"Note\" name=\"New Name\"        # Rename note\nobsidian delete file=\"Note\"                        # Delete note\nobsidian open file=\"Note\"                          # Open note\n```\n\n### Search\n```bash\nobsidian search query=\"meeting notes\"              # Search vault\nobsidian search:context query=\"TODO\"               # Search with context\nobsidian search:open query=\"project\"               # Open search view\n```\n\n### Tasks\n```bash\nobsidian tasks daily todo                          # Incomplete tasks in daily\nobsidian tasks todo                                # All incomplete tasks\nobsidian task daily line=3 toggle                  # Toggle task at line 3\n```\n\n### Tags & Properties\n```bash\nobsidian tags counts                               # List all tags\nobsidian tags counts sort=count                    # Sort by frequency\nobsidian property:set name=\"status\" value=\"done\" file=\"Note\"\nobsidian property:read name=\"status\" file=\"Note\"\nobsidian property:remove name=\"status\" file=\"Note\"\nobsidian properties file=\"Note\"                    # List all properties\n```\n\n### Links\n```bash\nobsidian backlinks file=\"Note\"                     # Incoming links\nobsidian links file=\"Note\"               "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[All Commands (110 total)] ### General (4)\n- `help` - Show help / help for specific command\n- `version` - Show Obsidian version\n- `reload` - Reload the app window\n- `restart` - Restart the app\n\n### Daily Notes (5)\n- `daily` - Open daily note\n- `daily:path` - Get daily note path\n- `daily:read` - Read daily note contents\n- `daily:append` - Append content to daily note\n- `daily:prepend` - Prepend content to daily note\n\n### Files & Folders (12)\n- `file` - Show file info\n- `files` - List files in vault\n- `folder` - Show folder info\n- `folders` - List folders in vault\n- `open` - Open a file\n- `create` - Create a new file\n- `read` - Read file contents\n- `append` - Append content to a file\n- `prepend` - Prepend content to a file\n- `move` - Move or rename a file\n- `rename` - Rename a file\n- `delete` - Delete a file\n\n### Search (3)\n- `search` - Search vault for text\n- `search:context` - Search with matching line context\n- `search:open` - Open search view\n\n### Tasks (2)\n- `tasks` - List tasks in the vault\n- `task` - Show or update a task\n\n### Tags (2)\n- `tags` - List tags in the vault\n- `tag` - Get tag info\n\n### Properties (4)\n- `properties` - List properties in the vault\n- `property:set` - Set a property on a file\n- `property:remove` - Remove a property from a file\n- `property:read` - Read a property value\n\n### Aliases (1)\n- `aliases` - List aliases in the vault\n\n### Links (5)\n- `backlinks` - List backlinks to a file\n- `links` - List outgoing links from a file\n- `unresolved` - List unresolved links\n- `orphans` - Files with no incoming links\n- `deadends` - Files with no outgoing links\n\n### Outline (1)\n- `outline` - Show headings for a file\n\n### Bookmarks (2)\n- `bookmarks` - List bookmarks\n- `bookmark` - Add a bookmark\n\n### Bases / Database (3)\n- `bases` - List all base files\n- `base:views` - List views in a base\n- `base:create` - Create a new item in a base\n- `base:query` - Query a base and return results\n\n### Templates (3)\n- `templates` - List templates\n- `template:read` - Read template content\n- `temp"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"Cannot connect to Obsidian\"**\n- Ensure Obsidian is running\n- Enable CLI in Settings → General → Enable CLI\n\n**\"Command not found: obsidian\"**\n- Add Obsidian to PATH (see Setup above)\n\n**\"File not found\"**\n- `file=Name` resolves like wikilinks (no path, no .md)\n- `path=folder/file.md` for exact paths"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[中文说明] ### 前置条件\n- Obsidian 1.12+ 需要 Catalyst 许可证（$25）\n- Obsidian 必须运行中\n- 启用 CLI：设置 → 通用 → 启用 CLI\n\n### 常用命令\n```bash\nobsidian daily                    # 打开今日日记\nobsidian create name=\"笔记\"       # 创建笔记\nobsidian search query=\"关键词\"    # 搜索\nobsidian tasks daily todo         # 列出未完成任务\nobsidian tags counts              # 列出标签\n```"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "obsidian_cli_official"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "💎",
+        "requires": {
+          "bins": [
+            "obsidian"
+          ]
+        },
+        "platform": [
+          "macos",
+          "windows",
+          "linux"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexanderkinging/obsidian-cli-official/SKILL.md"
+}

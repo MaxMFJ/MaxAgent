@@ -1,0 +1,80 @@
+{
+  "id": "openclaw_skill_voice-agent-builder",
+  "description": "Build and manage Voice AI agents using Vapi, Bland.ai, or Retell. Create agents, configure voices, set prompts, make outbound calls, and retrieve transcripts. Includes platform comparison guide. Use when building phone agents, IVR systems, or voice-first customer service.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Voice Agent Builder\n\nBuild, configure, and manage Voice AI agents. Supports **Vapi** (primary), **Bland.ai**, and **Retell** platforms."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\nexport VAPI_API_KEY=\"your-vapi-api-key\"\n\n# Create a voice agent\npython3 {baseDir}/scripts/vapi_agent.py create-agent '{\"name\":\"Sales Agent\",\"firstMessage\":\"Hi! How can I help you today?\",\"systemPrompt\":\"You are a helpful sales assistant for Acme Corp.\"}'\n\n# Make an outbound call\npython3 {baseDir}/scripts/vapi_agent.py call '{\"assistantId\":\"asst_xxx\",\"phoneNumberId\":\"pn_xxx\",\"customer\":{\"number\":\"+15551234567\"}}'\n\n# List agents\npython3 {baseDir}/scripts/vapi_agent.py list-agents\n\n# List calls\npython3 {baseDir}/scripts/vapi_agent.py list-calls\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Platform Comparison] | Feature | Vapi | Bland.ai | Retell |\n|---------|------|----------|--------|\n| **Best For** | Custom agents, dev-friendly | Simple outbound campaigns | Enterprise, low latency |\n| **Latency** | ~800ms | ~500ms | ~500ms |\n| **Languages** | 100+ | 30+ | 30+ |\n| **Custom LLM** | ✅ Any OpenAI-compatible | ✅ Limited | ✅ Via API |\n| **Phone Numbers** | Buy/import | Buy/import | Buy/import |\n| **Pricing** | $0.05/min + provider costs | $0.09/min all-in | $0.07-0.15/min |\n| **WebSocket** | ✅ | ❌ | ✅ |\n| **Knowledge Base** | ✅ Built-in | ✅ | ✅ |\n| **Transfers** | ✅ | ✅ | ✅ |\n\n**Recommendation:** Start with **Vapi** — most flexible, best docs, largest community. Use **Bland** for simple high-volume outbound. Use **Retell** for enterprise low-latency needs.\n\nSee `{baseDir}/scripts/voice_comparison.md` for detailed breakdown."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Agent Creation Workflow] ### 1. Choose a Voice\nVapi supports multiple TTS providers:\n- **ElevenLabs** — Best quality, most natural (recommended)\n- **PlayHT** — Good quality, lower cost\n- **Deepgram** — Fast, good for real-time\n- **Azure** — Enterprise, many languages\n\n### 2. Configure the Agent\n```json\n{\n  \"name\": \"Appointment Setter\",\n  \"firstMessage\": \"Hi! This is Sarah from Dr. Smith's office. I'm calling to help you schedule your appointment.\",\n  \"systemPrompt\": \"You are Sarah, a friendly appointment scheduler...\",\n  \"voice\": {\n    \"provider\": \"11labs\",\n    \"voiceId\": \"21m00Tcm4TlvDq8ikWAM\"\n  },\n  \"model\": {\n    \"provider\": \"openai\",\n    \"model\": \"gpt-4o\",\n    \"temperature\": 0.7\n  },\n  \"endCallFunctionEnabled\": true,\n  \"maxDurationSeconds\": 300,\n  \"silenceTimeoutSeconds\": 30\n}\n```\n\n### 3. Prompt Engineering for Voice\n\nVoice prompts differ from text. Key principles:\n- **Keep responses SHORT** — 1-2 sentences max per turn\n- **Be conversational** — use filler words naturally (\"Sure thing!\", \"Got it!\")\n- **Handle interruptions** — voice agents get cut off, design for it\n- **Confirm understanding** — repeat back key info (names, numbers, dates)\n- **Include fallback** — \"I didn't catch that, could you repeat?\"\n\n### 4. Phone Number Setup\n```bash\n# List available phone numbers\npython3 {baseDir}/scripts/vapi_agent.py list-phones\n\n# Buy a number (via Vapi dashboard or API)\n# Import existing number (Twilio, Vonage)\npython3 {baseDir}/scripts/vapi_agent.py import-phone '{\"provider\":\"twilio\",\"number\":\"+15551234567\",\"twilioAccountSid\":\"AC...\",\"twilioAuthToken\":\"...\"}'\n```\n\n### 5. Call Handling\n\n**Outbound calls:**\n```bash\npython3 {baseDir}/scripts/vapi_agent.py call '{\"assistantId\":\"asst_xxx\",\"phoneNumberId\":\"pn_xxx\",\"customer\":{\"number\":\"+15551234567\"}}'\n```\n\n**Inbound:** Assign agent to phone number in Vapi dashboard, or via API:\n```bash\npython3 {baseDir}/scripts/vapi_agent.py update-phone '{\"id\":\"pn_xxx\",\"assistantId\":\"asst_xxx\"}'\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Integration Patterns] ### Voice + CRM (GHL)\n1. Voice agent qualifies lead on call\n2. Use Vapi's `serverUrl` webhook to capture call data\n3. On call end → create/update GHL contact\n4. Move opportunity to appropriate pipeline stage\n5. Schedule follow-up if needed\n\n### Voice + Calendar Booking\n1. Agent checks availability via calendar API\n2. Uses function calling to book appointment\n3. Confirms date/time verbally\n4. Sends SMS confirmation after call\n\n### Voice + Knowledge Base\nUpload documents to Vapi's knowledge base for RAG:\n```bash\npython3 {baseDir}/scripts/vapi_agent.py create-kb '{\"name\":\"Product FAQ\",\"files\":[\"faq.pdf\"]}'\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Available Commands] ```bash\npython3 {baseDir}/scripts/vapi_agent.py create-agent '{...}'     # Create new agent\npython3 {baseDir}/scripts/vapi_agent.py get-agent <id>            # Get agent details\npython3 {baseDir}/scripts/vapi_agent.py list-agents               # List all agents\npython3 {baseDir}/scripts/vapi_agent.py update-agent <id> '{...}' # Update agent\npython3 {baseDir}/scripts/vapi_agent.py delete-agent <id>         # Delete agent\npython3 {baseDir}/scripts/vapi_agent.py call '{...}'              # Make outbound call\npython3 {baseDir}/scripts/vapi_agent.py get-call <id>             # Get call details\npython3 {baseDir}/scripts/vapi_agent.py list-calls                # List all calls\npython3 {baseDir}/scripts/vapi_agent.py list-phones               # List phone numbers\npython3 {baseDir}/scripts/vapi_agent.py import-phone '{...}'      # Import phone number\npython3 {baseDir}/scripts/vapi_agent.py update-phone '{...}'      # Update phone config\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "voice_agent_builder"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, Vapi API key",
+    "extra": {
+      "openclaw": {
+        "emoji": "??️",
+        "requires": {
+          "env": [
+            "VAPI_API_KEY"
+          ]
+        },
+        "primaryEnv": "VAPI_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/voice-agent-pro/SKILL.md"
+}

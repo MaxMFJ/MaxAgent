@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_k3-blockchain-agent",
+  "description": "Build automated blockchain analysis workflows on K3 — from natural language requests to deployed, running automations that fetch on-chain data, analyze it with AI, and deliver insights via email, Telegram, or Slack. Use this skill whenever the user mentions blockchain workflows, on-chain analytics, DeFi monitoring, token tracking, wallet alerts, pool analysis, protocol dashboards, NFT tracking, automated trading, smart contract monitoring, or wants to automate anything involving blockchain data. Also trigger when the user mentions K3, workflow builder, or wants scheduled crypto/DeFi reports. Even if they just say \"monitor this wallet\" or \"track this token\" — this skill applies.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # K3 Blockchain Agent\n\nTransform requests like *\"Send me daily updates about the WETH/USDC pool on Uniswap\"*\ninto fully deployed workflows that fetch data, run AI analysis, and deliver reports\nautomatically."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Setup] This skill requires the **K3 Development MCP** to be connected. The MCP provides\ntools like `generateWorkflow`, `executeWorkflow`, `findAgentByFunctionality`, and\nothers that let you create and manage blockchain workflows programmatically.\n\nIf the K3 MCP isn't connected yet, tell the user they need to add it before\nproceeding. Once connected, verify by calling `listTeamMcpServerIntegrations()` —\nthis confirms the connection and shows what data source integrations (TheGraph,\nCoinGecko, etc.) the user's team has wired up. Every team's integrations will be\ndifferent — discover what's available rather than assuming."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[How Workflow Building Works] The K3 orchestrator is **conversational**. You describe what you want in plain\nlanguage, and the orchestrator asks clarifying questions, then builds and deploys\nthe workflow. Your job is to show up with the right information so the conversation\nis productive.\n\nThe loop:\n\n```\nUNDERSTAND → what does the user actually want?\nFIND DATA  → how do we get that information into the workflow?\nTEST       → does the data actually come back correctly?\nBUILD      → give the orchestrator everything it needs\nDEPLOY     → launch it and verify it works\n```\n\nSkipping \"test\" is the most common mistake — you end up with a deployed workflow\nthat returns empty data."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 1: Understand the Request] When a user asks for a workflow, figure out these parameters. Ask if anything is\nunclear — don't guess on addresses or emails.\n\n| Parameter | What to find out | Examples |\n|-----------|-----------------|----------|\n| **Data target** | What blockchain data do they need? | pool metrics, token price, wallet balance, NFT data |\n| **Protocol** | Which DeFi protocol or chain feature? | Uniswap, Aave, SushiSwap, native transfers |\n| **Chain** | Which blockchain? | Ethereum, Arbitrum, Polygon, Base, Stellar |\n| **Schedule** | How often / what triggers it? | daily, hourly, on-demand, on wallet activity, on contract event, Telegram chatbot |\n| **Analysis** | What kind of insights? | performance summary, anomaly alerts, trend report, trade signal |\n| **Delivery** | How should results arrive? | email, Telegram, Slack, Google Sheets |\n| **Actions** | Should the workflow do anything? | execute a swap, transfer tokens, write to a contract |\n| **Specifics** | Any addresses or IDs? | pool address, token contract, wallet address |\n\nIf the user is new to DeFi, briefly explain relevant concepts as you go (what TVL\nmeans, what a liquidity pool is, etc.). Don't assume they know the jargon."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 2: Find the Right Data] This is the critical step. K3 has many ways to get data into a workflow, and you\nneed to figure out which approach works for the user's specific request.\n\n### K3 data functions\n\nThese are the built-in functions for getting data into a workflow. Read\n`references/node-types.md` for full details on each.\n\n| Function | What it does |\n|----------|-------------|\n| **Read API** | Call any REST/GraphQL API — the most flexible option |\n| **Read Smart Contract** | Query any smart contract directly on-chain |\n| **Read Market Data** | Get token prices, volumes, market metrics |\n| **Read Wallet** | Wallet balances, transfers, transaction history |\n| **Read NFT** | NFT collections, floor prices, traits, holders |\n| **Read Graph** | Query TheGraph subgraphs with custom GraphQL |\n| **Read Deployment** | Pull output from your own deployed code on K3 |\n| **AI Web Scraper** | Extract structured data from any web page |\n| **AI Agent with tools** | AI that dynamically decides what to fetch |\n\n### How to find the data you need\n\nThe goal is to figure out the best way to get the specific data the user wants.\nThink of it as problem-solving — there are multiple valid approaches and you\nshould explore them:\n\n1. **Check what the team already has** — call `listTeamMcpServerIntegrations()` to\n   see what MCP data sources are connected. If they have TheGraph, CoinGecko, or\n   other integrations set up, those are the easiest path.\n\n2. **Search for existing templates** — call `findAgentByFunctionality()` with the\n   user's intent. If someone already built a similar workflow, use it as a starting\n   point.\n\n3. **Think about which K3 function fits**:\n   - Need on-chain contract data? → **Read Smart Contract** can query it directly\n   - Need token prices or market data? → **Read Market Data** has it built in\n   - Need complex DeFi metrics (TVL, volume, fees)? → **Read Graph** with the right\n     subgraph, or **Read API** to a protocol's analytics endpoint\n   - Need wallet info? → **Read Wallet** for b"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 3: Build the Workflow] Now give the K3 orchestrator everything it needs. Use `generateWorkflow()` with\na detailed prompt that includes:\n\n- **Trigger type and schedule** (e.g., \"runs daily\" or \"triggers on wallet activity\")\n- **Data source and how to query it** (e.g., \"use Read Graph to query pool X\" or\n  \"use Read Smart Contract to get the pair's reserves\")\n- **What the AI should analyze** (e.g., \"highlight TVL changes over 5%\")\n- **Any actions to take** (e.g., \"execute a swap on Uniswap if condition is met\")\n- **How to deliver results** (e.g., \"send Telegram alert\" or \"email the report\")\n- **Any MCP integration IDs** the orchestrator needs (from team integrations)\n\nSet `deployWorkflow: false` on the first call so you can review before deploying.\n\nThe orchestrator will likely ask follow-up questions — answer them using\n`editGeneratedWorkflow()` with the same `generatedWorkflowId`. This back-and-forth\nis normal; expect 2-4 rounds.\n\nOnce the configuration looks correct, call `editGeneratedWorkflow()` one final time\nwith `deployWorkflow: true`.\n\nFor the full list of available functions, triggers, AI models, and output options,\nread `references/node-types.md`."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 4: Deploy and Verify] After deploying:\n\n1. **Run it manually** with `executeWorkflow()` to trigger an immediate test\n2. **Check the run** with `getWorkflowRuns()` or `getWorkflowRunById()`\n3. **Verify the full chain**: Did data fetch? Did AI analyze? Did notification send?\n\nIf something failed, use `editGeneratedWorkflow()` to fix it — you don't need to\nstart over. See `references/troubleshooting.md` for common issues.\n\nTell the user what happened: \"Your workflow is live and will run daily. I just ran\na test — here's what the first report looks like: [summary].\""
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[K3 MCP Tool Reference] | Tool | What it does |\n|------|-------------|\n| `generateWorkflow` | Start building a workflow from natural language |\n| `editGeneratedWorkflow` | Continue the conversation with the orchestrator |\n| `executeWorkflow` | Run a workflow manually |\n| `getWorkflowById` | Get workflow details and config |\n| `getWorkflowRuns` | List execution history |\n| `getWorkflowRunById` | Get a specific run's details and output |\n| `updateWorkflow` | Pause/unpause a scheduled workflow |\n| `findAgentByFunctionality` | Search for existing workflow templates |\n| `listAgentTemplates` | Browse all available templates |\n| `getAgentTemplateById` | Get details on a specific template |\n| `listTeamMcpServerIntegrations` | See what data sources the team has connected |\n| `listMcpServerIntegrations` | Browse all available MCP data sources |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Important Rules] 1. **Always test data sources** before building the full workflow. A quick test\n   fetch saves a lot of debugging time.\n2. **The orchestrator is conversational** — expect multiple rounds of back-and-forth\n   via `editGeneratedWorkflow`. That's how it's designed to work.\n3. **Ask the user for anything you can't look up** — never guess email addresses,\n   Telegram handles, or wallet addresses.\n4. **Discover team integrations** — call `listTeamMcpServerIntegrations()` to see\n   what's available. Every team is different.\n5. **Verify workflows work** before telling the user it's done. Run it, check the\n   output, confirm delivery.\n6. **Be mindful of context** — don't call many K3 MCP tools at once or dump large\n   responses. Fetch what you need, check it, move on.\n7. **Use web search** to find API endpoints, subgraph URLs, and smart contract\n   addresses when you don't know them. The web is your research tool."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Going Deeper] - `references/node-types.md` — All trigger types, data functions, AI functions,\n  DeFi/trading actions, and notification options\n- `references/data-sources.md` — How to discover and evaluate data sources for\n  different blockchain data needs\n- `references/workflow-patterns.md` — Common workflow architectures and when to\n  use each one\n- `references/troubleshooting.md` — Diagnosing and fixing common workflow issues"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "k3_blockchain_agent"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexgrankinukr-hash/k3-blockchain-agent/SKILL.md"
+}

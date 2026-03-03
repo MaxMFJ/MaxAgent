@@ -1,0 +1,91 @@
+{
+  "id": "openclaw_skill_image-to-relief-stl",
+  "description": "Turn a source image (or multi-color mask image) into a 3D-printable bas-relief STL by mapping colors (or grayscale) to heights. Use when you have an image from an image-gen skill (nano-banana-pro, etc.) and want a real, printable model (STL) via a deterministic pipeline.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # image-to-relief-stl\n\nGenerate a **watertight, printable STL** from an input image by mapping colors (or grayscale) to heights.\n\nThis is an orchestrator-friendly workflow:\n- Use **nano-banana-pro** (or any image model) to generate a **flat-color** image.\n- Run this skill to convert it into a **bas-relief** model."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Practical constraints (to make it work well)] Ask the image model for:\n- **exactly N solid colors** (no gradients)\n- **no shadows / no antialiasing**\n- bold shapes with clear edges\n\nThat makes segmentation reliable."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start (given an image)] ```bash\nbash scripts/image_to_relief.sh input.png --out out.stl \\\n  --mode palette \\\n  --palette '#000000=3.0,#ffffff=0.0' \\\n  --base 1.5 \\\n  --pixel 0.4\n```\n\n### Grayscale mode\n\n```bash\nbash scripts/image_to_relief.sh input.png --out out.stl \\\n  --mode grayscale \\\n  --min-height 0.0 \\\n  --max-height 3.0 \\\n  --base 1.5 \\\n  --pixel 0.4\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Outputs] - `out.stl` (ASCII STL)\n- optional `out-preview.svg` (vector preview via potrace; best-effort)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Notes] - This v0 uses a **raster heightfield** meshing approach (robust, no heavy CAD deps).\n- The `--pixel` parameter controls resolution (smaller = higher detail, bigger STL)."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "image_to_relief_stl"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "python3",
+            "potrace",
+            "mkbitmap"
+          ]
+        },
+        "install": [
+          {
+            "id": "apt",
+            "kind": "apt",
+            "package": "potrace",
+            "bins": [
+              "potrace",
+              "mkbitmap"
+            ],
+            "label": "Install potrace + mkbitmap (apt)"
+          },
+          {
+            "id": "brew",
+            "kind": "brew",
+            "formula": "potrace",
+            "bins": [
+              "potrace",
+              "mkbitmap"
+            ],
+            "label": "Install potrace + mkbitmap (brew)"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajmwagar/image-to-relief-stl/SKILL.md"
+}

@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_schema-markup",
+  "description": "When the user wants to add, fix, or optimize schema markup and structured data on their site. Also use when the user mentions \"schema markup,\" \"structured data,\" \"JSON-LD,\" \"rich snippets,\" \"schema.org,\" \"FAQ schema,\" \"product schema,\" \"review schema,\" or \"breadcrumb schema.\" For broader SEO issues, see seo-audit.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Schema Markup\n\nYou are an expert in structured data and schema markup. Your goal is to implement schema.org markup that helps search engines understand content and enables rich results in search."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Initial Assessment] Before implementing schema, understand:\n\n1. **Page Type**\n   - What kind of page is this?\n   - What's the primary content?\n   - What rich results are possible?\n\n2. **Current State**\n   - Any existing schema?\n   - Errors in current implementation?\n   - Which rich results are already appearing?\n\n3. **Goals**\n   - Which rich results are you targeting?\n   - What's the business value?\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Principles] ### 1. Accuracy First\n- Schema must accurately represent page content\n- Don't markup content that doesn't exist\n- Keep updated when content changes\n\n### 2. Use JSON-LD\n- Google recommends JSON-LD format\n- Easier to implement and maintain\n- Place in `<head>` or end of `<body>`\n\n### 3. Follow Google's Guidelines\n- Only use markup Google supports\n- Avoid spam tactics\n- Review eligibility requirements\n\n### 4. Validate Everything\n- Test before deploying\n- Monitor Search Console\n- Fix errors promptly\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Common Schema Types] ### Organization\n**Use for**: Company/brand homepage or about page\n\n**Required properties**:\n- name\n- url\n\n**Recommended properties**:\n- logo\n- sameAs (social profiles)\n- contactPoint\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Organization\",\n  \"name\": \"Example Company\",\n  \"url\": \"https://example.com\",\n  \"logo\": \"https://example.com/logo.png\",\n  \"sameAs\": [\n    \"https://twitter.com/example\",\n    \"https://linkedin.com/company/example\",\n    \"https://facebook.com/example\"\n  ],\n  \"contactPoint\": {\n    \"@type\": \"ContactPoint\",\n    \"telephone\": \"+1-555-555-5555\",\n    \"contactType\": \"customer service\"\n  }\n}\n```\n\n### WebSite (with SearchAction)\n**Use for**: Homepage, enables sitelinks search box\n\n**Required properties**:\n- name\n- url\n\n**For search box**:\n- potentialAction with SearchAction\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"WebSite\",\n  \"name\": \"Example\",\n  \"url\": \"https://example.com\",\n  \"potentialAction\": {\n    \"@type\": \"SearchAction\",\n    \"target\": {\n      \"@type\": \"EntryPoint\",\n      \"urlTemplate\": \"https://example.com/search?q={search_term_string}\"\n    },\n    \"query-input\": \"required name=search_term_string\"\n  }\n}\n```\n\n### Article / BlogPosting\n**Use for**: Blog posts, news articles\n\n**Required properties**:\n- headline\n- image\n- datePublished\n- author\n\n**Recommended properties**:\n- dateModified\n- publisher\n- description\n- mainEntityOfPage\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Article\",\n  \"headline\": \"How to Implement Schema Markup\",\n  \"image\": \"https://example.com/image.jpg\",\n  \"datePublished\": \"2024-01-15T08:00:00+00:00\",\n  \"dateModified\": \"2024-01-20T10:00:00+00:00\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Jane Doe\",\n    \"url\": \"https://example.com/authors/jane\"\n  },\n  \"publisher\": {\n    \"@type\": \"Organization\",\n    \"name\": \"Example Company\",\n    \"logo\": {\n      \"@type\": \"ImageObject\",\n      \"url\": \"https://example.com/logo.png\"\n    }\n  },\n  \"description\": \"A complete guide to implementing schema ma"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Multiple Schema Types on One Page] You can (and often should) have multiple schema types:\n\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@graph\": [\n    {\n      \"@type\": \"Organization\",\n      \"@id\": \"https://example.com/#organization\",\n      \"name\": \"Example Company\",\n      \"url\": \"https://example.com\"\n    },\n    {\n      \"@type\": \"WebSite\",\n      \"@id\": \"https://example.com/#website\",\n      \"url\": \"https://example.com\",\n      \"name\": \"Example\",\n      \"publisher\": {\n        \"@id\": \"https://example.com/#organization\"\n      }\n    },\n    {\n      \"@type\": \"BreadcrumbList\",\n      \"itemListElement\": [...]\n    }\n  ]\n}\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Validation and Testing] ### Tools\n- **Google Rich Results Test**: https://search.google.com/test/rich-results\n- **Schema.org Validator**: https://validator.schema.org/\n- **Search Console**: Enhancements reports\n\n### Common Errors\n\n**Missing required properties**\n- Check Google's documentation for required fields\n- Different from schema.org minimum requirements\n\n**Invalid values**\n- Dates must be ISO 8601 format\n- URLs must be fully qualified\n- Enumerations must use exact values\n\n**Mismatch with page content**\n- Schema doesn't match visible content\n- Ratings for products without reviews shown\n- Prices that don't match displayed prices\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Implementation Patterns] ### Static Sites\n- Add JSON-LD directly in HTML template\n- Use includes/partials for reusable schema\n\n### Dynamic Sites (React, Next.js, etc.)\n- Component that renders schema\n- Server-side rendered for SEO\n- Serialize data to JSON-LD\n\n```jsx\n// Next.js example\nexport default function ProductPage({ product }) {\n  const schema = {\n    \"@context\": \"https://schema.org\",\n    \"@type\": \"Product\",\n    name: product.name,\n    // ... other properties\n  };\n\n  return (\n    <>\n      <Head>\n        <script\n          type=\"application/ld+json\"\n          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}\n        />\n      </Head>\n      {/* Page content */}\n    </>\n  );\n}\n```\n\n### CMS / WordPress\n- Plugins (Yoast, Rank Math, Schema Pro)\n- Theme modifications\n- Custom fields to structured data\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Output Format] ### Schema Implementation\n```json\n// Full JSON-LD code block\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"...\",\n  // Complete markup\n}\n```\n\n### Placement Instructions\nWhere to add the code and how\n\n### Testing Checklist\n- [ ] Validates in Rich Results Test\n- [ ] No errors or warnings\n- [ ] Matches page content\n- [ ] All required properties included\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Questions to Ask] If you need more context:\n1. What type of page is this?\n2. What rich results are you hoping to achieve?\n3. What data is available to populate the schema?\n4. Is there existing schema on the page?\n5. What's your tech stack for implementation?\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Related Skills] - **seo-audit**: For overall SEO including schema review\n- **programmatic-seo**: For templated schema at scale\n- **analytics-tracking**: For measuring rich result impact"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "schema_markup"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexeyvorobiev/alexey-marketing-skills/references/schema-markup/SKILL.md"
+}

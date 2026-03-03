@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_epragma-redmine-issue",
+  "description": "Read Redmine issues from any Redmine server via REST API with configurable URL and credentials. Use when you need to fetch a single issue, list/filter issues, or inspect issue fields for change planning; supports deployment to different Redmine instances via environment variables.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ePragma Redmine Issue\n\nRead Redmine issues through REST API."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Configuration] This skill requires `REDMINE_URL` and `REDMINE_API_KEY` to be configured.\n\n### Setup with OpenClaw CLI\n\nRun these commands to configure the skill:\n\n```bash\n# Set your Redmine URL\nopenclaw skills config epragma-redmine-issue set REDMINE_URL https://your-redmine-server.com\n\n# Set your API key (generate from Redmine My Account page)\nopenclaw skills config epragma-redmine-issue set REDMINE_API_KEY your-api-key-here\n```\n\n### Get your API Key\n\n1. Log in to your Redmine server\n2. Go to \"My Account\" \n3. Click \"Show\" next to \"API access key\"\n4. Copy the key"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Get one issue] ```bash\nnode {baseDir}/scripts/issues.mjs get --id 123\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[List issues] ```bash\nnode {baseDir}/scripts/issues.mjs list\nnode {baseDir}/scripts/issues.mjs list --project-id my-project --status-id open --limit 20 --offset 0\nnode {baseDir}/scripts/issues.mjs list --assigned-to-id me --sort \"updated_on:desc\"\nnode {baseDir}/scripts/issues.mjs list --project my-project\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[List projects] ```bash\nnode {baseDir}/scripts/issues.mjs projects\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[List statuses] ```bash\nnode {baseDir}/scripts/issues.mjs statuses\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Update one issue] ```bash\nnode {baseDir}/scripts/issues.mjs update --id 123 --status-id 2 --notes \"this is ok\"\nnode {baseDir}/scripts/issues.mjs update --id 123 --assigned-to-id 6 --priority-id 3\nnode {baseDir}/scripts/issues.mjs update --id 123 --done-ratio 50 --notes \"done 50%\"\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Add comment to issue] ```bash\nnode {baseDir}/scripts/issues.mjs comment --id 123 --notes \"This is a comment\"\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Create new issue] ```bash\n# Required: --project-id (or project name), --subject\n# Optional: --description, --tracker-id, --priority-id, --assigned-to-id, --status-id, --start-date, --due-date, --done-ratio, --estimated-hours\n\nnode {baseDir}/scripts/issues.mjs create --project-id 1 --subject \"New issue title\"\nnode {baseDir}/scripts/issues.mjs create --project-id epragma --subject \"Bug report\" --description \"Details here\" --priority-id 4\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Time Entries] ```bash\n# List time entries (filters: --issue-id, --project-id, --user-id, --from, --to, --spent-on)\nnode {baseDir}/scripts/issues.mjs time-list\nnode {baseDir}/scripts/issues.mjs time-list --issue-id 232\nnode {baseDir}/scripts/issues.mjs time-list --project-id 1 --from 2026-01-01 --to 2026-01-31\n\n# Add time entry (required: --issue-id OR --project-id, --hours; optional: --activity-id, --spent-on, --comments)\nnode {baseDir}/scripts/issues.mjs time-add --issue-id 232 --hours 2 --activity-id 9 --comments \"Work done\"\nnode {baseDir}/scripts/issues.mjs time-add --project-id 1 --hours 1.5 --activity-id 8\n\n# List available activities\nnode {baseDir}/scripts/issues.mjs time-activities\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Notes] - URL and auth are variables by design for cross-environment deployment.\n- API responses are output as JSON.\n- For automation, prefer `REDMINE_API_KEY` over username/password."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "epragma_redmine_issue"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agelospanagiotakis/epragma-redmine-issue/SKILL.md"
+}

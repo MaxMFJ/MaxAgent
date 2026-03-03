@@ -1,0 +1,44 @@
+{
+  "id": "openclaw_skill_wavelet-world-model",
+  "description": "Generates a world model representation from state inputs using discrete wavelet transforms (DWT) to capture multi-resolution temporal and spatial features.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Wavelet World Model Skill\n\nThis skill allows your OpenClaw agent to transform high-dimensional sequential state data into a compact world model representation using Wavelet Transforms.\n\nIt leverages multi-resolution analysis to efficiently encode BOTH high-frequency details (rapid changes) and low-frequency components (long-term dependencies), making it highly effective for robotic control, continuous state tracking, and predicting complex environments."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Commands] - `wavelet-model`: standardized command to initialize the wavelet world model and process state inputs."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "wavelet_world_model"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aadipapp/wavelet-worldmodel-skill/SKILL.md"
+}

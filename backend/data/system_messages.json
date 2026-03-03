@@ -1,62 +1,12 @@
 [
   {
-    "id": "a55acf3b-9da5-4c06-aed7-18c37092bbb7",
-    "level": "warning",
-    "title": "启动检查: 工具加载被跳过（安全校验）",
-    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-02T10:39:56.247841",
-    "read": true
-  },
-  {
-    "id": "e1be79a8-7edd-4a67-bc33-9931acb503bb",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-02T10:39:56.249041",
-    "read": true
-  },
-  {
-    "id": "c50a37a1-62e1-4ff5-9f1e-a70fc442cc3d",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-02T12:19:52.624773",
-    "read": true
-  },
-  {
-    "id": "6fdd0c41-a685-42a5-8f8a-4f00484ebbf3",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-02T13:27:57.717094",
-    "read": true
-  },
-  {
-    "id": "f5f63d76-1c12-417d-abf4-7c720efa2383",
-    "level": "warning",
-    "title": "启动检查: 模块初始化异常",
-    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-02T14:35:44.698209",
-    "read": true
-  },
-  {
-    "id": "106b8e5a-7b02-449a-825b-172338994602",
+    "id": "48b8557f-36d4-4c60-9c58-f03adafef5bb",
     "level": "error",
-    "title": "自主任务被停止",
-    "content": "任务: 打开 微信 找到 文件传输助手 并发送 你好\n原因: 达到最大迭代次数 (5)\n建议: 考虑分解任务或提高复杂度估计",
-    "source": "autonomous_task",
+    "title": "对话执行错误",
+    "content": "Error code: 503 - {'error': {'message': '分组 tb-codex 下模型 ggg-5.1-codex-high 无可用渠道（distributor） (request id: 202603030854576445531092ft9Obyg)', 'type': 'new_api_error', 'param': '', 'code': 'model_not_found'}}",
+    "source": "chat_stream",
     "category": "system_error",
-    "timestamp": "2026-03-02T15:40:18.059839",
+    "timestamp": "2026-03-03T08:54:57.762081",
     "read": true
   }
 ]

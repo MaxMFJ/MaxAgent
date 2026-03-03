@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_translink-cli",
+  "description": "Query, troubleshoot, and explain Translink SEQ GTFS static + realtime data using local translink_* commands or plugin slash commands. Use for schedule lookups, stop/route/trip joins, vehicle/trip realtime checks, alerts, schema drift review, PK/FK reasoning, and paginated filtering.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Translink CLI Skill\n\nUse when working with Translink data in this environment."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisite] This skill requires the Translink CLI scripts to be installed and available in PATH.\n\n- CLI repo: `https://github.com/alanburchill/traslink-cli-scripts`\n- Expected commands: `translink_*` (or equivalent wrappers that expose the same command names)\n\nIf the CLI is not installed, stop and ask the user to install it first."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Command surfaces] - Shell CLI: `translink_*`\n- Plugin slash commands: `/translink_*` and `/translink <command> [args...]`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core workflow] 1. Refresh or validate cache/schema with `translink_schedule_refresh` when freshness is uncertain.\n2. Query with shared parameters (`--where`, `--contains`, `--in`, `--page`, `--per-page`, etc.).\n3. On strict field errors, use fuzzy suggestions in the JSON error payload to auto-correct.\n4. Use PK/FK references for joins across routes/trips/stops/stop_times/calendar/shapes.\n5. For authoritative current schema, read generated schema docs first."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Shared parameter contract] All commands support:\n- `--where field=value` (repeatable)\n- `--contains field=text` (repeatable)\n- `--in field=v1,v2,...` (repeatable)\n- `--fields a,b,c`\n- `--sort field`\n- `--order asc|desc`\n- `--page N`\n- `--per-page N` (default 20)\n- `--format table|json|csv`\n- `--count-only`\n\nRealtime extras:\n- `--expand` (include nested JSON fields)\n- `--raw` (include full raw entity JSON)\n- `--time epoch|iso`\n\nSchedule extras:\n- `--refresh`\n- `--schema`"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Runtime behavior] - Static cache: `~/.openclaw/cache/translink/`\n- TTL: 24h\n- Daily refresh cron (example): 5:00 AM local time (`translink:schedule-refresh`)\n- Refresh lock prevents concurrent extract races.\n- Schema is header-driven and auto-adapts to added columns."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Read these references as needed] - `references/commands.md` — command/param/error contract\n- `references/usage.md` — examples\n- `references/relationships.md` — PK/FK joins\n- `references/schema-generated.md` — auto-generated live schema (authoritative)\n- `references/column-meanings.md` — GTFS field semantics"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "translink_cli"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alanburchill/translink-cli/SKILL.md"
+}

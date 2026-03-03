@@ -1,0 +1,75 @@
+{
+  "id": "openclaw_skill_clickup-pro",
+  "description": "AI-powered ClickUp project management — tasks, spaces, folders, time tracking, comments, custom fields. AI task prioritization by urgency and importance, daily standup generator. Use for project management, sprint planning, and team coordination.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ✅ ClickUp Pro\n\nAI-powered ClickUp task management for OpenClaw agents. Fork of clickup-api v1.0.3, massively improved with AI prioritization and standup generation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What's New vs clickup-api] - **AI task prioritization** — score tasks by urgency × importance using LLM\n- **Daily standup generator** — auto-summarize done/in-progress/blocked\n- **Time tracking** — start, stop, log time entries\n- **Custom fields** — read and write custom fields\n- **Comments** — add comments to tasks\n- **Full CRUD** — spaces, folders, lists, tasks"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `CLICKUP_API_KEY` | ✅ | ClickUp personal API token |\n| `OPENROUTER_API_KEY` | Optional | For AI prioritization and standups |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List workspaces (teams)\npython3 {baseDir}/scripts/clickup_api.py workspaces\n\n# List spaces\npython3 {baseDir}/scripts/clickup_api.py spaces <team_id>\n\n# List folders in a space\npython3 {baseDir}/scripts/clickup_api.py folders <space_id>\n\n# List lists in a folder\npython3 {baseDir}/scripts/clickup_api.py lists <folder_id>\n\n# List tasks in a list\npython3 {baseDir}/scripts/clickup_api.py tasks <list_id>\n\n# Create a task\npython3 {baseDir}/scripts/clickup_api.py create-task <list_id> --name \"Fix bug\" --priority 2 --due \"2026-02-20\"\n\n# Update a task\npython3 {baseDir}/scripts/clickup_api.py update-task <task_id> --status \"in progress\" --assignee user123\n\n# Add comment\npython3 {baseDir}/scripts/clickup_api.py comment <task_id> --text \"Working on this now\"\n\n# Time tracking\npython3 {baseDir}/scripts/clickup_api.py start-timer <task_id>\npython3 {baseDir}/scripts/clickup_api.py stop-timer <team_id>\npython3 {baseDir}/scripts/clickup_api.py log-time <task_id> --duration 3600000 --description \"Code review\"\n\n# AI prioritize tasks in a list\npython3 {baseDir}/scripts/clickup_api.py prioritize <list_id>\n\n# Daily standup summary\npython3 {baseDir}/scripts/clickup_api.py standup <list_id>\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Commands] ### Navigation\n- `workspaces` — List all workspaces/teams\n- `spaces <team_id>` — List spaces in a workspace\n- `folders <space_id>` — List folders in a space\n- `lists <folder_id>` — List lists in a folder (also: `folderless-lists <space_id>`)\n\n### Tasks\n- `tasks <list_id>` — List tasks (with `--status`, `--assignee`, `--subtasks` filters)\n- `get-task <task_id>` — Get task details\n- `create-task <list_id>` — Create task (`--name`, `--description`, `--priority 1-4`, `--due DATE`, `--assignee`)\n- `update-task <task_id>` — Update task (`--name`, `--status`, `--priority`, `--due`, `--assignee`)\n- `delete-task <task_id>` — Delete a task\n\n### Time Tracking\n- `start-timer <task_id>` — Start tracking time\n- `stop-timer <team_id>` — Stop current timer\n- `log-time <task_id>` — Log time entry (`--duration MS`, `--description`)\n\n### Comments\n- `comment <task_id>` — Add comment (`--text`)\n\n### AI Features (require OPENROUTER_API_KEY)\n- `prioritize <list_id>` — AI-score tasks by urgency × importance, output ranked list\n- `standup <list_id>` — Generate daily standup (done, in progress, blocked)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clickup_pro"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+, ClickUp API key",
+    "extra": {
+      "openclaw": {
+        "emoji": "✅",
+        "requires": {
+          "env": [
+            "CLICKUP_API_KEY"
+          ]
+        },
+        "primaryEnv": "CLICKUP_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/clickup-pro/SKILL.md"
+}

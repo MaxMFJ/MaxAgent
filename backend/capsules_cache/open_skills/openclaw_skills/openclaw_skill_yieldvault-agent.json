@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_yieldvault-agent",
+  "description": "Autonomous yield farming agent for BNB Chain with deterministic execution, smart contract integration, and automated decision-making.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # YieldVault Agent\n\nAutonomous yield farming agent for BNB Chain with deterministic execution, smart contract integration, and automated decision-making."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - **Deterministic Decision Engine** - Same input always produces same output (auditable)\n- **Smart Contract Integration** - Interact with YieldVault contracts on BNB testnet/mainnet\n- **Autonomous Scheduler** - Run farming decisions hourly without manual intervention\n- **Transaction Executor** - Automatic DEPOSIT, WITHDRAW, HARVEST, COMPOUND, REBALANCE actions\n- **Telegram Alerts** - Real-time notifications for executions, APR changes, and errors\n- **Risk Management** - Conservative risk filtering (only vaults with risk_score ≤ 0.5)\n- **Yield Optimization** - Net APR calculation (apr - fees - risk_penalty)"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Installation] ```bash\nclawhub install yieldvault-agent\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Quick Start] ### 1. Configure\n\n```bash\ncp config.deployed.json .env.local\n# Edit with your contract addresses and RPC endpoint\n```\n\n### 2. Deploy Contracts (if needed)\n\n```bash\ncd contracts\nnpm install\nnpm run deploy:testnet\n```\n\n### 3. Run Tests\n\n```bash\nnpm test                    # Unit tests\nnode test.live.mock.js      # Integration tests (offline)\nnode test.live.js           # Live testnet tests\n```\n\n### 4. Start Scheduler\n\n```bash\nnode scheduler.js\n# Runs decision cycle every hour against testnet\n```\n\n### 5. Monitor Alerts\n\nTelegram notifications sent automatically for:\n- Execution started (vault_id, action, amount)\n- APR changes (>1% delta)\n- Errors (with severity level)\n- Cycle completion (stats summary)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Architecture] ```\nSmart Contracts (BNB Testnet/Mainnet)\n    ↓\nBlockchainReader (live vault data)\n    ↓\nYieldFarmingAgent (deterministic decisions)\n    ↓\nTransactionExecutor (sign & broadcast)\n    ↓\nScheduler (hourly automation)\n    ↓\nNotifications (Telegram alerts)\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Configuration] Edit `config.scheduler.json`:\n\n```json\n{\n  \"chainId\": 97,\n  \"interval_minutes\": 60,\n  \"harvest_threshold_usd\": 25,\n  \"rebalance_apr_delta\": 0.02,\n  \"max_allocation_percent\": 0.35,\n  \"risk_score_threshold\": 0.5\n}\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Decision Logic] 1. **Read** current vault state (APR, TVL, user balance)\n2. **Calculate** Net APR = apr - fees - (risk_score × 0.10)\n3. **Filter** vaults with risk_score ≤ 0.5\n4. **Select** vault with highest Net APR\n5. **Decide** action:\n   - HARVEST if pending_rewards ≥ $25 USD\n   - COMPOUND if net_apr ≥ 2% delta\n   - REBALANCE if another vault beats current by ≥ 2%\n   - NOOP if already optimized\n\n6. **Execute** transaction (with retry logic)\n7. **Log** execution record (SHA256 auditable)"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Supported Networks] - **Testnet:** BNB Chain Testnet (chainId: 97)\n- **Mainnet:** BNB Chain Mainnet (chainId: 56)"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Security] - ✅ Deterministic execution (reproducible, auditable)\n- ✅ SHA256 audit trail for every decision\n- ✅ Risk filtering (conservative)\n- ✅ Constraint enforcement (max 35% per vault)\n- ✅ Retry logic with exponential backoff\n- ✅ No hardcoded private keys (use environment variables)"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Production Readiness] For mainnet deployment, add:\n\n1. **Chainlink Oracle** - Live APR feeds\n2. **Hardware Wallet Support** - Ledger/Trezor signing\n3. **Smart Contract Audit** - Professional security review\n4. **Emergency Pause** - Multi-sig pause mechanism\n\nSee `FINAL_CHECKLIST.md` for complete production requirements."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Documentation] - `README.md` - Full user guide\n- `SKILL.md` - This file\n- `FINAL_CHECKLIST.md` - Production requirements\n- `INTEGRATION_GUIDE.md` - Smart contract integration\n- `EXAMPLES.md` - Usage examples\n- `RESPUESTAS_PREGUNTAS.md` - FAQ & architecture"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Support] Issues & PRs welcome: https://github.com/open-web-academy/yieldvault-agent-bnb"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[License] MIT"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "yieldvault_agent"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alannetwork/yieldvault-agent/SKILL.md"
+}

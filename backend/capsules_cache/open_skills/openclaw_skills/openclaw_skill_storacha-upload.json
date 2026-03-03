@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_storacha-upload",
+  "description": "Upload files to IPFS, store on Storacha, upload to decentralized storage, check Storacha status, view storage usage, create Storacha space, switch space, list spaces, retrieve files by CID, open IPFS content, get gateway link, decentralized storage, web3 storage, pin to IPFS, content-addressed storage, store on chain, get my CID, backup to IPFS, share IPFS link, upload directory, remove upload, Storacha delegation, IPFS file sharing, permanent storage, Filecoin backup, manage Storacha account, upload this image, upload this photo, upload this file to storacha, save this to IPFS, put this on IPFS, how much space do I have, how much storage left, check my storage, what's my storage usage, am I running out of space, storage remaining, create a new space, make a space, set up storacha, setup storacha, login to storacha, sign in to storacha, connect storacha, authenticate storacha, show my uploads, what have I uploaded, list my files, my IPFS files, delete this upload, remove this file from storacha, get me the link, give me the IPFS link, share this file, get download link, open this CID, upload pic, upload document, store image, save photo to IPFS, how much space is there, check storacha, storacha status",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Storacha Upload\n\nUpload, manage, and retrieve files on IPFS via Storacha decentralized storage.\n\n> **AGENT EXECUTION NOTE:** All `storacha` CLI commands in this skill are non-interactive when arguments are provided. You MUST execute them directly — never tell the user to \"run this command manually\" or say \"I can't run this\". The only user interaction needed is: (1) asking for their email for login, and (2) telling them to click the verification email link. Everything else you handle silently.\n\n> **PUBLIC DATA WARNING:** All files uploaded to Storacha/IPFS are publicly accessible. Anyone with the CID can retrieve them. Never upload unencrypted sensitive data.\n\n> **PERMANENT DATA WARNING:** Removing a file only deletes it from your listing. Other IPFS nodes may retain copies indefinitely. Treat every upload as permanent.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Understanding User Intent] Users will send casual, natural language messages. Match their intent to the correct action:\n\n| User says something like... | Action |\n|---|---|\n| \"upload this image/photo/file\", \"save this to IPFS\", \"put this on storacha\", \"store this pic\" | **Upload** — save the attached/referenced file, then upload with `storacha up` |\n| \"how much space do I have\", \"storage left?\", \"am I running out of space\", \"check my usage\" | **Usage** — run `storacha usage report` and show human-readable stats |\n| \"create a space\", \"make a new space\", \"new storage space\" | **Create Space** — ask for a name (or suggest one), run `storacha space create \"Name\" --no-recovery` |\n| \"login to storacha\", \"set up storacha\", \"connect my storacha\", \"authenticate\" | **Login** — start the authentication flow (Step 2a) |\n| \"show my uploads\", \"what have I uploaded\", \"list my files\", \"my IPFS files\" | **List** — run `storacha ls` and present results |\n| \"delete this\", \"remove this upload\", \"remove CID\" | **Remove** — run `storacha rm CID` with appropriate warnings |\n| \"get me the link\", \"share this file\", \"IPFS link for this\", \"download link\" | **Retrieve** — construct and share both gateway URLs |\n| \"switch space\", \"use my other space\", \"change space\" | **Switch Space** — run `storacha space ls`, then `storacha space use` |\n| \"check storacha\", \"storacha status\", \"is storacha working\" | **Health Check** — run full diagnostic (Steps 1-5) |\n\n**Rules for handling user messages:**\n\n1. **Always check authentication first.** Before any operation, silently run `storacha whoami`. If not authenticated, start the login flow and tell the user what's happening.\n2. **Handle file attachments.** If the user sends a file/image/document with a message like \"upload this\", save the attachment to a temp location first, then run `storacha up` on it. After upload, share the gateway URL back.\n3. **Be proactive with results.** After uploading, always share the gateway link. After checking usage, always convert bytes to human-readab"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Prerequisites] Run this before anything else:\n\n```bash\nwhich storacha && storacha --version\n```\n\nIf `storacha` is not found, install it:\n\n```bash\nnpm install -g @storacha/cli\n```\n\nRequires **Node.js v18+**. Verify with `node -v`. If missing or outdated, direct the user to [nodejs.org](https://nodejs.org).\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[First-Time Setup & Authentication] Complete these steps in order before any upload operation.\n\n### Step 1 — Check CLI Installation\n\n```bash\nwhich storacha && storacha --version\n```\n\n**Expected output:**\n```\n/usr/local/bin/storacha\nx.y.z\n```\n\nIf missing, install:\n```bash\nnpm install -g @storacha/cli\n```\n\nThen re-run the check. If install fails, verify Node.js v18+ is available.\n\n### Step 2 — Check Authentication\n\n```bash\nstoracha whoami\n```\n\n**If output contains `did:key:`** → authenticated. Proceed to Step 3.\n\n**If error or no DID** → not logged in. Go to Step 2a.\n\n### Step 2a — Login Flow\n\nThis is a conversation with the user. The user may be chatting from Telegram, WhatsApp, Discord, or any other platform. Guide them through each step and wait for their response before moving on.\n\n**Step A — Ask for email:**\n\nIf the user hasn't provided their email yet, ask:\n> \"To use Storacha, I need to log you in. What's your email address? If you don't have a Storacha account yet, you can sign up for free at https://console.storacha.network and then give me your email.\"\n\nIf the user already provided their email (e.g. \"login to storacha, my email is user@example.com\"), skip asking and go straight to Step B.\n\n**DO NOT proceed until you have the user's email address.**\n\n**Step B — Run login:**\n\n**IMPORTANT: The `storacha login` command is NOT interactive when you pass the email as an argument. You MUST run it directly. Do NOT tell the user to run it manually. Do NOT say you can't run it. YOU run it.**\n\n```bash\nstoracha login user@example.com\n```\n\nReplace `user@example.com` with the actual email the user gave you. This command:\n- Takes the email as a command-line argument (no prompts, no interactive input needed)\n- Sends a verification email automatically\n- Blocks (waits) until the user clicks the link in their email\n- Returns `Agent was authorized by did:mailto:...` on success\n\nRight after running the command, message the user:\n> \"I've started the login process. A verification link has been sent to user@example.com"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Core Operations] ### Upload a File\n\nWhen a user asks to upload something (file, image, photo, document, video, etc.):\n\n1. **If the user attached a file** — save it to a temp location (e.g. `/tmp/upload/filename.ext`)\n2. **If the user referenced a file path** — use that path directly\n3. **Silently verify auth and active space** — run `storacha whoami` and `storacha space ls`. Fix any issues without bothering the user.\n4. **Upload:**\n\n```bash\nstoracha up /path/to/file\n```\n\n5. **Parse the output** and respond conversationally:\n\n> \"Done! Your file is uploaded to IPFS. Here's your link:\n> https://storacha.link/ipfs/bafy...\n> Anyone with this link can access the file.\"\n\nAlways provide both gateway URL styles:\n- Path style: `https://storacha.link/ipfs/CID`\n- Subdomain style: `https://CID.ipfs.storacha.link`\n\nIf uploading an image/photo, also mention:\n> \"You can share this link directly — it works in any browser.\"\n\n### Upload a Directory\n\n```bash\nstoracha up /path/to/directory/\n```\n\n- Dotfiles (hidden files) are excluded by default. Use `--hidden` to include them.\n- Use `--no-wrap` to upload without wrapping in a directory (loses filename in URL).\n\nFor directory uploads, files are accessible at:\n```\nhttps://storacha.link/ipfs/CID/filename.txt\n```\n\n### List Uploads\n\n```bash\nstoracha ls\n```\n\nDisplays all uploads in the current space with their CIDs.\n\n### Remove an Upload\n\n```bash\nstoracha rm CID\n```\n\nTo also remove underlying data shards:\n```bash\nstoracha rm CID --shards\n```\n\n**Warn the user:** removal only deletes from your listing. The data may persist on other IPFS nodes indefinitely.\n\n### Retrieve / Open a File\n\nOpen in browser:\n```bash\nstoracha open CID\n```\n\nDownload programmatically:\n```bash\ncurl -o output.txt \"https://storacha.link/ipfs/CID\"\n```\n\nSubdomain style:\n```bash\ncurl -o output.txt \"https://CID.ipfs.storacha.link\"\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Space Management] **Create a space:**\n```bash\nstoracha space create \"ProjectName\" --no-recovery\n```\n**IMPORTANT:** Always use `--no-recovery` flag. Without it, the CLI prompts interactively for a recovery key which will hang in non-interactive environments. Space names are permanent and cannot be changed after creation.\n\n**List all spaces:**\n```bash\nstoracha space ls\n```\nThe active space is marked with `*`.\n\n**Switch active space:**\n```bash\nstoracha space use \"SpaceName\"\n```\nOr by DID:\n```bash\nstoracha space use did:key:z6Mk...\n```\n\n**View space details:**\n```bash\nstoracha space info\n```\nShows the space DID and registered providers.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Sharing & Delegation] Create a UCAN delegation for another agent:\n```bash\nstoracha delegation create AUDIENCE_DID --can store/add --can upload/add --output ./delegation.ucan\n```\n\nFull admin delegation:\n```bash\nstoracha delegation create AUDIENCE_DID --can '*' --output ./admin.ucan --base64\n```\n\nList active delegations:\n```bash\nstoracha delegation ls\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Error Handling] 1. **\"command not found: storacha\"** → Install CLI: `npm install -g @storacha/cli`\n2. **\"no proofs available for resource\"** → Re-login with `storacha login EMAIL` or switch spaces with `storacha space use \"Name\"`\n3. **\"Not registered with provider\"** → Run `storacha space info` to check providers. Re-register at https://console.storacha.network or create a new space.\n4. **Upload hangs or times out** → Check internet connection. Retry the upload. For large files, ensure stable connectivity.\n5. **\"usage/report\" permission error** → This is informational only. Uploads should still work. Proceed with the operation.\n6. **\"no spaces\" or empty space list** → Create a space: `storacha space create \"MyFiles\" --no-recovery`\n7. **Storage limit errors** → Upgrade plan at https://console.storacha.network or remove old uploads: `storacha rm CID --shards`\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Quick Reference] | Action | Command |\n|---|---|\n| Install CLI | `npm install -g @storacha/cli` |\n| Login | `storacha login user@email.com` |\n| Check identity | `storacha whoami` |\n| Create space | `storacha space create \"Name\" --no-recovery` (always use --no-recovery) |\n| List spaces | `storacha space ls` |\n| Switch space | `storacha space use \"Name\"` |\n| Space details | `storacha space info` |\n| Upload file | `storacha up /path/to/file` |\n| Upload directory | `storacha up /path/to/dir/` |\n| Upload without wrap | `storacha up /path --no-wrap` |\n| Upload with dotfiles | `storacha up /path --hidden` |\n| List uploads | `storacha ls` |\n| Remove upload | `storacha rm CID` |\n| Remove with shards | `storacha rm CID --shards` |\n| Open in browser | `storacha open CID` |\n| Check usage | `storacha usage report` |\n| Create delegation | `storacha delegation create DID --can store/add --output file.ucan` |\n| List delegations | `storacha delegation ls` |\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Important Notes] - Authentication is email-based using DIDs and UCAN. There are no API keys or tokens.\n- Spaces are storage namespaces identified by `did:key`. Each space tracks its own uploads independently.\n- Content-addressing means every file gets a unique CID based on its contents. Identical files produce identical CIDs.\n- Filecoin backup provides cryptographic proof of storage on the Filecoin network.\n- Two gateway URL styles are available:\n  - Path: `https://storacha.link/ipfs/CID`\n  - Subdomain: `https://CID.ipfs.storacha.link`\n- The current CLI binary is `storacha`. It was previously called `w3` during the web3.storage era."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "storacha_upload"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🔥",
+        "requires": {
+          "bins": [
+            "storacha",
+            "node"
+          ],
+          "env": []
+        },
+        "primaryEnv": "",
+        "files": [
+          "scripts/*"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adielliot37/storacha-upload/SKILL.md"
+}

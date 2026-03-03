@@ -1,0 +1,109 @@
+{
+  "id": "openclaw_skill_axelrod",
+  "description": "AI-powered Base-chain trading and on-chain query agent via natural language. Use when the user wants to trade crypto (buy/sell/swap tokens), set up automated strategies (DCA, limit orders, RSI), check portfolio balances, view token prices, query token info/analysis, check order status, manage take-profit/stop-loss orders, or ask about crypto/DeFi topics on Base chain. Always run scripts/axelrod_chat.py to fetch real-time results.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Axelrod\n\nExecute Base-chain trading and on-chain queries using natural language through the AIxVC AI Automation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] ### First-Time Setup\n\n1. **Configure credentials** in OpenClaw config under `skills.entries.axelrod.env`:\n\n```json\n{\n  \"skills\": {\n    \"entries\": {\n      \"axelrod\": {\n        \"enabled\": true,\n        \"env\": {\n          \"AIXVC_ACCESS_KEY\": \"your_access_key\",\n          \"AIXVC_SECRET_KEY\": \"your_secret_key\"\n        }\n      }\n    }\n  }\n}\n```\n\n2. **Install dependencies**:\n\n```bash\npip install -r skills/axelrod/requirements.txt\n```\n\n3. **Verify setup**:\n\n```bash\npython skills/axelrod/scripts/axelrod_chat.py --message \"check my balance\"\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Usage] ### Simple Query\n\nFor straightforward requests that complete quickly:\n\n```bash\npython skills/axelrod/scripts/axelrod_chat.py --message \"check my ETH balance\"\npython skills/axelrod/scripts/axelrod_chat.py --message \"what is ETH price now\"\n```\n\n### JSON Debug Mode\n\nFor inspecting the full API response:\n\n```bash\npython skills/axelrod/scripts/axelrod_chat.py --message \"check my balance\" --json\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Mandatory Workflow] 1. **Check AK/SK** — If `AIXVC_ACCESS_KEY` or `AIXVC_SECRET_KEY` is missing, ask the user to configure them. Do not guess or fabricate credentials.\n2. **Run the script** — Whenever the request needs real-time on-chain data or execution, always run the CLI. Do not answer from model memory alone.\n3. **Return stdout** — Capture the script's stdout and return it to the user. Light formatting is fine, but do not omit key results (amounts, tx hashes, confirm keys, error messages).\n4. **Handle confirmation** — If the response includes `confirmKey`, guide the user to confirm or cancel (see Confirmation Flow below)."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Capabilities Overview] ### Trading Operations\n\n- **Spot Buy/Sell/Swap**: Exchange tokens on Base chain\n- **DCA**: Dollar-cost averaging automation (e.g. \"DCA 20u into ETH every day\")\n- **Limit/Trigger Orders**: Execute at target prices or PnL rates\n- **RSI Strategy**: Conditional trading based on RSI indicators (e.g. \"if 1h RSI < 30, buy 100u BTC\")\n- **Take-Profit / Stop-Loss**: Automated risk management via `QUERY_ALGO`\n\n**Reference**: [references/api.md](references/api.md)\n\n### Query Operations\n\n- **Balance Query**: Single token or all-asset portfolio\n- **Token Info & Analysis**: Contract details, decimals, analytics\n- **Price Query**: Real-time prices with 24h change\n- **Order Query**: Active order list and details\n- **TP/SL Order Query**: Take-profit/stop-loss order status\n\n### Blockchain Assistant\n\n- Crypto/DeFi domain Q&A and execution guidance\n- Trading plan suggestions on Base chain"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Confirmation Flow] Orders usually require risk-control confirmation; small orders (approximately ≤ $10) may skip confirmation. `confirmKey` is valid for about **10 minutes**.\n\nWhen the response includes `confirmKey`, ask the user to send one of:\n\n```text\nyes, please execute <confirmKey>\nno, please cancel <confirmKey>\n```\n\nIf the key has expired, the user must submit the original request again."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Current Limitations] | Limitation | Details |\n| ---------- | ------- |\n| Chain | Base only |\n| Multiple trades | One trade per message; ask user to split if needed |\n| Not supported | Leverage/futures/options, lending, cross-chain, NFT, fiat on/off-ramp |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Common Patterns] ### Check Before Trading\n\n```bash\n# Check balance\npython skills/axelrod/scripts/axelrod_chat.py --message \"check my ETH balance\"\n\n# Check price\npython skills/axelrod/scripts/axelrod_chat.py --message \"what is ETH price now\"\n\n# Then trade\npython skills/axelrod/scripts/axelrod_chat.py --message \"buy 50u of ETH\"\n```\n\n### Automated Strategies\n\n```bash\n# DCA strategy\npython skills/axelrod/scripts/axelrod_chat.py --message \"DCA 20u into ETH every day\"\n\n# RSI conditional strategy\npython skills/axelrod/scripts/axelrod_chat.py --message \"if 1h RSI < 30, buy 100u BTC\"\n\n# Limit order\npython skills/axelrod/scripts/axelrod_chat.py --message \"buy ETH when price drops to 2500\"\n```\n\n### Portfolio Review\n\n```bash\n# Full portfolio\npython skills/axelrod/scripts/axelrod_chat.py --message \"check my balance\"\n\n# Token analysis\npython skills/axelrod/scripts/axelrod_chat.py --message \"analyze AXR token for me\"\n\n# Order status\npython skills/axelrod/scripts/axelrod_chat.py --message \"show my recent orders\"\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] ### Exit Codes\n\n| Code | Meaning | Resolution |\n| ---- | ------- | ---------- |\n| `0` | Success | — |\n| `2` | Missing AK/SK | Ask user to configure `AIXVC_ACCESS_KEY` and `AIXVC_SECRET_KEY` |\n| `3` | HTTP failure or invalid/non-JSON response | Check network, verify endpoint is reachable |\n| `4` | API business error (`code` not in success set) | Read the error message, guide user to fix |\n\n### Common Issues\n\n| Issue | Resolution |\n| ----- | ---------- |\n| \"Please login first\" | AK/SK is incorrect — reconfigure credentials |\n| Authentication error | Verify AK/SK are correct and not expired |\n| Insufficient balance | Reduce trade amount or add funds |\n| Token not found | Check token symbol or contract address |\n| confirmKey expired | Re-submit the original trade request |\n| Multiple trades in one message | Split into separate requests |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Prompt Examples by Category] ### Trading\n\n- `\"buy 50u of AXR\"`\n- `\"sell 50% of my ETH\"`\n- `\"swap 10 SOL to ETH\"`\n\n### Automated Strategies\n\n- `\"DCA 20u into ETH every day\"`\n- `\"if 1h RSI < 30, buy 100u BTC\"`\n- `\"buy ETH when price drops to 2500\"`\n\n### Portfolio & Queries\n\n- `\"check my balance\"`\n- `\"show AXR token info\"`\n- `\"what is ETH price now\"`\n- `\"show my recent orders\"`\n- `\"show my TP/SL orders\"`\n\n### Blockchain Assistant\n\n- `\"analyze AXR token for me\"`\n- `\"help me make a Base trading plan\"`"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Best Practices] ### Security\n\n1. Never share your AK/SK credentials\n2. Start with small test amounts\n3. Verify token addresses before large trades\n4. Review confirmation details carefully before executing\n\n### Trading\n\n1. Check balance before trades\n2. Specify amounts clearly (`50u`, `50%`, `0.1 ETH`)\n3. Start small, scale up after validation\n4. Use limit orders for better entry prices\n5. Set TP/SL for risk management"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[API Reference] For the full API contract, SigV4 signing protocol, request/response format, and response field details, see:\n\n**Reference**: [references/api.md](references/api.md)"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Implementation Notes] - The script uses AK/SK with SigV4-style signing to call the AIxVC.\n- Current endpoint: `https://api.aixvc.io/gw/openapi/v2/public/twa/agent/chat` (`chain-id=base`).\n- If documentation conflicts with code behavior, follow the script implementation."
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[File Structure] - **SKILL.md** — Agent instructions (this file). The agent reads this to understand how to use the skill.\n- **README.md** — Human-facing setup and usage guide.\n- **scripts/axelrod_chat.py** — CLI client. Always invoke with `python skills/axelrod/scripts/axelrod_chat.py --message \"<instruction>\"`.\n- **references/api.md** — Full API contract and signing reference.\n- **requirements.txt** — Python dependencies (`requests`)."
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### Script Not Working\n\n```bash\n# Ensure Python 3 is available\npython --version\n\n# Install dependencies\npip install -r skills/axelrod/requirements.txt\n\n# Test connectivity\ncurl -I https://api.aixvc.io\n```\n\n### API Errors\n\nSee exit codes and common issues tables above. If an error persists:\n\n1. Check the error message from stderr\n2. Use `--json` mode to inspect the full API response\n3. Verify AK/SK configuration\n4. Test with a simple query first (`\"check my balance\"`)\n\n---\n\n**💡 Pro Tip**: The most common issue is missing or incorrect AK/SK. Always verify credentials first when encountering errors.\n\n**⚠️ Security**: Keep your AK/SK private. Never commit credentials to version control. Only trade amounts you can afford to lose.\n\n**🚀 Quick Win**: Start by checking your balance to verify setup, then try a small trade like `\"buy 1u of ETH\"` to get familiar with the flow."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "axelrod"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aixvcteam/axelrod/SKILL.md"
+}

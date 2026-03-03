@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_figure-legend-gen",
+  "description": "Generate standardized figure legends for scientific charts and graphs. Trigger when user uploads/requesting legend for research figures, academic papers, or data charts. Supports bar charts, line graphs, scatter plots, box plots, heatmaps, and microscopy images. This tool generates text legends only, not visualizations.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Figure Legend Generator\n\nGenerate publication-quality figure legends for scientific research charts and images."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Supported Chart Types] | Chart Type | Description |\n|------------|-------------|\n| Bar Chart | Compare values across categories |\n| Line Graph | Show trends over time or continuous data |\n| Scatter Plot | Display relationships between variables |\n| Box Plot | Show distribution and outliers |\n| Heatmap | Display matrix data intensity |\n| Microscopy | Fluorescence/confocal images |\n| Flow Cytometry | FACS plots and histograms |\n| Western Blot | Protein expression bands |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ```bash\npython scripts/main.py --input <image_path> --type <chart_type> [--output <output_path>]\n```\n\n### Parameters\n\n| Parameter | Required | Description |\n|-----------|----------|-------------|\n| `--input` | Yes | Path to chart image |\n| `--type` | Yes | Chart type (bar/line/scatter/box/heatmap/microscopy/flow/western) |\n| `--output` | No | Output path for legend text (default: stdout) |\n| `--format` | No | Output format (text/markdown/latex), default: markdown |\n| `--language` | No | Language (en/zh), default: en |\n\n### Examples\n\n```bash\n# Generate legend for bar chart\npython scripts/main.py --input figure1.png --type bar\n\n# Save to file\npython scripts/main.py --input plot.jpg --type line --output legend.md\n\n# Chinese output\npython scripts/main.py --image.png --type scatter --language zh\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Legend Structure] Generated legends follow academic standards:\n\n1. **Figure Number** - Sequential numbering\n2. **Brief Title** - Concise description\n3. **Main Description** - What the figure shows\n4. **Data Details** - Key statistics/measurements\n5. **Methodology** - Brief experimental context\n6. **Statistics** - P-values, significance markers\n7. **Scale Bars** - For microscopy images"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Technical Notes] - **Difficulty**: Low\n- **Dependencies**: PIL, pytesseract (optional OCR)\n- **Processing**: Vision analysis for chart type detection\n- **Output**: Structured markdown by default"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[References] - `references/legend_templates.md` - Templates by chart type\n- `references/academic_style_guide.md` - Formatting guidelines"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Risk Assessment] | Risk Indicator | Assessment | Level |\n|----------------|------------|-------|\n| Code Execution | Python scripts with tools | High |\n| Network Access | External API calls | High |\n| File System Access | Read/write data | Medium |\n| Instruction Tampering | Standard prompt guidelines | Low |\n| Data Exposure | Data handled securely | Medium |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Security Checklist] - [ ] No hardcoded credentials or API keys\n- [ ] No unauthorized file system access (../)\n- [ ] Output does not expose sensitive information\n- [ ] Prompt injection protections in place\n- [ ] API requests use HTTPS only\n- [ ] Input validated against allowed patterns\n- [ ] API timeout and retry mechanisms implemented\n- [ ] Output directory restricted to workspace\n- [ ] Script execution in sandboxed environment\n- [ ] Error messages sanitized (no internal paths exposed)\n- [ ] Dependencies audited\n- [ ] No exposure of internal service architecture"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Prerequisites] ```bash\n# Python dependencies\npip install -r requirements.txt\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Evaluation Criteria] ### Success Metrics\n- [ ] Successfully executes main functionality\n- [ ] Output meets quality standards\n- [ ] Handles edge cases gracefully\n- [ ] Performance is acceptable\n\n### Test Cases\n1. **Basic Functionality**: Standard input → Expected output\n2. **Edge Case**: Invalid input → Graceful error handling\n3. **Performance**: Large dataset → Acceptable processing time"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Lifecycle Status] - **Current Stage**: Draft\n- **Next Review Date**: 2026-03-06\n- **Known Issues**: None\n- **Planned Improvements**: \n  - Performance optimization\n  - Additional feature support"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "figure_legend_gen"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aipoch-ai/figure-legend-gen/SKILL.md"
+}

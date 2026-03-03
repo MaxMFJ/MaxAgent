@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_netlify",
+  "description": "Use the Netlify CLI (netlify) to create/link Netlify sites and set up CI/CD (continuous deployment) from GitHub, especially for monorepos (multiple sites in one repo like Hugo sites under sites/<domain>). Use when Avery asks to deploy a new site, connect a repo to Netlify, configure build/publish settings, set environment variables, enable deploy previews, or automate Netlify site creation.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # netlify\n\nUse the `netlify` CLI to create projects (“sites”), link local folders, and configure CI/CD from GitHub."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Pre-reqs] - `netlify --version`\n- Logged in (`netlify login`) **or** provide `--auth $NETLIFY_AUTH_TOKEN`.\n- Know the Netlify team/account slug you want to create sites under (optional but recommended).\n\nHelpful checks:\n\n```bash\nnetlify status\nnetlify sites:list\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Monorepo pattern (recommended)] For **one repo with multiple sites** (e.g. `sites/seattlecustomboatparts.com`, `sites/floridacustomerboatparts.com`):\n\n- Create **one Netlify site per domain**.\n- Set the site’s **Base directory** to that subfolder.\n- Put a `netlify.toml` *inside that subfolder*.\n\nThis keeps each domain’s build config self-contained.\n\n### Hugo subfolder `netlify.toml`\n\nCreate `sites/<domain>/netlify.toml`:\n\n```toml\n[build]\n  command = \"hugo --minify\"\n  publish = \"public\"\n\n[build.environment]\n  HUGO_VERSION = \"0.155.1\"\n```\n\n(Adjust HUGO_VERSION as needed.)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Fast workflow: create + link + init CI/CD] ### 1) Create a Netlify site (project)\nRun inside the site folder you want to deploy (base dir):\n\n```bash\ncd sites/<domain>\nnetlify sites:create --name <netlify-site-name> --account-slug <team> --with-ci\n```\n\nNotes:\n- `--with-ci` starts CI hooks setup.\n- If you need manual control, add `--manual`.\n\n### 2) Link local folder to the created site\nIf not linked already:\n\n```bash\nnetlify link\n```\n\n### 3) Connect to GitHub for continuous deployment\n\n```bash\nnetlify init\n```\n\nThis is usually interactive (select Git remote/repo + build settings). For automation we can pre-create `netlify.toml` and then accept defaults."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Environment variables] Set per-site vars:\n\n```bash\nnetlify env:set VAR_NAME value\nnetlify env:list\n```\n\nUseful for monorepos:\n- `CONTACT_EMAIL` (or other shared config)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Deploy] Manual deploys (handy for quick preview):\n\n```bash\nnetlify deploy            # draft deploy\nnetlify deploy --prod     # production deploy\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Included scripts] - `scripts/hugo_netlify_toml.sh`: create a `netlify.toml` in a Hugo subfolder\n- `scripts/netlify_monorepo_site.sh`: helper to create/link/init a site for a subfolder\n\nWhen using scripts, prefer passing `NETLIFY_AUTH_TOKEN` via env for non-interactive runs."
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "netlify"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ajmwagar/netlify/SKILL.md"
+}

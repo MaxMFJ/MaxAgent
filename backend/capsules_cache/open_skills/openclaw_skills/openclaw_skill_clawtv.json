@@ -1,0 +1,120 @@
+{
+  "id": "openclaw_skill_clawtv",
+  "description": "AI-powered Apple TV remote control with vision — navigate any app autonomously.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # ClawTV\n\nAI-powered Apple TV remote that can see the screen and navigate any app autonomously using vision + remote control."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to use (trigger phrases)] Use this skill immediately when the user asks:\n\n- \"play [movie/show] on Apple TV\"\n- \"search for [content] on [Netflix/Plex/YouTube/etc]\"\n- \"open [app] on the TV\"\n- \"turn on subtitles\" / \"go to TV settings\"\n- \"what's playing on Apple TV?\"\n- \"take a screenshot of the TV\"\n- Any Apple TV navigation or control task"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick start] ```bash\n# AI agent mode — tell it what you want in plain English\npython3 ~/Developer/clawtv/clawtv.py do \"open Plex and play Fight Club\"\npython3 ~/Developer/clawtv/clawtv.py do \"search for Stranger Things on Netflix\"\npython3 ~/Developer/clawtv/clawtv.py do \"go to settings and turn on subtitles\"\n\n# Direct Plex control (instant, no vision loop)\npython3 ~/Developer/clawtv/clawtv.py plex play \"Fight Club\"\npython3 ~/Developer/clawtv/clawtv.py plex play \"Westworld\" -s 2 -e 6\n\n# Manual remote commands\npython3 ~/Developer/clawtv/clawtv.py cmd up down select\npython3 ~/Developer/clawtv/clawtv.py type \"breaking bad\"\npython3 ~/Developer/clawtv/clawtv.py launch com.plexapp.plex\n\n# Screenshot\npython3 ~/Developer/clawtv/clawtv.py screenshot\n\n# Status\npython3 ~/Developer/clawtv/clawtv.py playing\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Required Credentials] ### ANTHROPIC_API_KEY (Required for AI/Vision Mode)\n\nThe `do` command (AI agent mode) requires an Anthropic API key to access Claude's vision API for screenshot analysis and navigation decisions.\n\n```bash\nexport ANTHROPIC_API_KEY=sk-ant-...\n```\n\nOr add to your shell profile (~/.zshrc, ~/.bashrc).\n\n**Note:** This is only required for the `do` command. Manual commands (`cmd`, `type`, `launch`) and `plex` direct control do not use the API.\n\n### Plex Credentials (Optional)\n\nFor instant Plex playback without the vision loop, add these to `~/.clawtv/config.json`:\n\n```json\n{\n  \"plex_url\": \"http://192.168.1.100:32400\",\n  \"plex_token\": \"your-plex-token\",\n  \"plex_client\": \"Living Room\"\n}\n```\n\n- **plex_url**: Your Plex server address (local or remote)\n- **plex_token**: Authentication token from your Plex account\n- **plex_client**: Name of the Plex client on your Apple TV\n\nGet your Plex token: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Privacy & Data] ### What Data is Collected and Sent\n\n**Screenshots:**\n- ClawTV captures screenshots of your Apple TV screen using QuickTime Player or Xcode\n- Screenshots are saved locally to `~/.clawtv/screenshots/` with timestamps\n- When using the `do` command (AI agent mode), screenshots are sent to Anthropic's Claude API for vision analysis\n- Screenshots may contain sensitive on-screen content including:\n  - Content you're watching (movie/show titles, thumbnails)\n  - Search queries\n  - Account information visible in app UIs\n  - Any other content displayed on your TV screen\n\n**Anthropic API:**\n- Only the `do` command sends data to Anthropic\n- Data sent: screenshots (JPEG compressed) + your goal/instruction + conversation history\n- Anthropic's data retention policy: https://support.anthropic.com/en/articles/7996885-how-long-do-you-store-personal-data\n- Manual commands (`cmd`, `type`, `launch`) and Plex direct control do NOT send any data to external APIs\n\n### Credential Storage\n\n**Apple TV Pairing Credentials:**\n- Stored unencrypted in `~/.clawtv/config.json` in your home directory\n- Contains device identifiers and pairing tokens for remote control\n- File permissions: readable only by your user account (standard Unix permissions)\n\n**Plex Tokens (if configured):**\n- Stored unencrypted in the same `~/.clawtv/config.json` file\n- Grants full access to your Plex server and library\n- Can be used to play, pause, search, and control any Plex client\n\n**Anthropic API Key:**\n- Stored in environment variables or your shell profile\n- Grants access to your Anthropic account and incurs API usage charges\n\n### Recommendations\n\n1. **Use a budget-limited API key**: Set spending limits on your Anthropic account to prevent unexpected charges\n2. **Review config file permissions**: Ensure `~/.clawtv/config.json` is only readable by your user\n3. **Be aware of screenshot content**: Screenshots are sent to Anthropic's API and may contain sensitive information\n4. **Monitor API usage**: The `do` command can "
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security Considerations] ### Plaintext Credential Storage\n\n- **Apple TV pairing credentials** and **Plex tokens** are stored in plaintext in `~/.clawtv/config.json`\n- The file is in your user home directory (`~/.clawtv/`) with standard Unix file permissions\n- Any process running as your user can read these credentials\n- If your Mac is compromised, these credentials are accessible\n- Consider this when deciding whether to configure Plex integration\n\n### Screenshot Privacy\n\n- **Screenshots may contain sensitive content** visible on your TV screen\n- Screenshots are saved locally to `~/.clawtv/screenshots/` and persist until manually deleted\n- When using AI agent mode (`do`), screenshots are transmitted to Anthropic's servers\n- DRM content (Netflix, Disney+, etc.) cannot be captured via QuickTime, but works with Xcode method\n- Review screenshot history periodically and delete sensitive captures\n\n### API Cost and Autonomous Behavior\n\n- **The `do` command runs in a loop** (up to 20 steps) and makes Claude API calls automatically\n- Each step = 1 API call with screenshot (~$0.01-0.02 per step depending on model)\n- A stuck or confused agent could consume all 20 steps before giving up\n- **Cost implications**: Complex tasks can cost $0.10-0.20; monitor your Anthropic usage dashboard\n- **Recommendation**: Set spending limits on your Anthropic account\n\n### Manual Commands are API-Free\n\n- **`cmd`**, **`type`**, **`launch`**, and **`plex`** commands do not use the Claude API\n- No screenshots are sent externally when using these commands\n- Zero cost, zero external data transmission\n- Use these for privacy-sensitive operations\n\n### Network Exposure\n\n- ClawTV communicates with your Apple TV over your local network using the Companion protocol\n- Plex integration (if configured) communicates with your Plex server (local or remote)\n- No external network access except:\n  - Anthropic API (when using `do` command)\n  - Plex server (if remote URL configured)"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Setup (first-time only)] ### 1. Install dependencies\n\n```bash\ncd ~/Developer/clawtv\npip install -r requirements.txt\n```\n\nFor QuickTime screenshot method (recommended):\n```bash\npip install pyobjc-framework-Quartz\n```\n\n### 2. Pair with Apple TV (remote control)\n\n```bash\npython3 ~/Developer/clawtv/clawtv.py scan    # Find your Apple TV on network\npython3 ~/Developer/clawtv/clawtv.py pair    # Enter 4-digit PIN shown on TV\n```\n\nPairing credentials are saved to `~/.clawtv/config.json`.\n\n### 3. Set up screenshots\n\n**QuickTime (recommended):**\n```bash\npython3 ~/Developer/clawtv/clawtv.py screenshot --method quicktime\n```\n\n- QuickTime Player opens and selects your Apple TV as video source\n- Accept the AirPlay pairing on your TV (one-time PIN)\n- Subsequent runs reuse the existing mirror instantly (~0.6s per screenshot)\n\n**Xcode (fallback for DRM apps):**\n1. On Apple TV: **Settings > Privacy & Security** → enable \"Share with App Devs\"\n2. Then **Settings > Remotes and Devices > Remote App and Devices**\n3. On Mac: Open Xcode, press **Cmd+Shift+2** (Devices)\n4. Click your Apple TV in sidebar, enter pairing code\n5. Keep Xcode Devices window open while using ClawTV\n\n### 4. Set API key\n\n```bash\nexport ANTHROPIC_API_KEY=sk-ant-...\n```\n\nOr add to your shell profile (~/.zshrc, ~/.bashrc).\n\n### 5. Optional: Plex direct control setup\n\nFor instant Plex playback without vision loop, add to `~/.clawtv/config.json`:\n\n```json\n{\n  \"plex_url\": \"http://192.168.1.100:32400\",\n  \"plex_token\": \"your-plex-token\",\n  \"plex_client\": \"Living Room\"\n}\n```\n\nGet your Plex token: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Commands] ### AI Agent Mode (`do`)\n\nTell ClawTV what you want and it figures out the rest using vision + reasoning.\n\n```bash\npython3 ~/Developer/clawtv/clawtv.py do \"<goal>\"\n```\n\n**How it works:**\n1. Takes screenshot of Apple TV\n2. Sends to Claude vision API to analyze UI\n3. Decides what to do (navigate, select, type, launch app)\n4. Sends remote commands\n5. Takes another screenshot to verify\n6. Repeats until goal is accomplished (max 20 steps)\n\n**Examples:**\n```bash\npython3 ~/Developer/clawtv/clawtv.py do \"open Plex and play Fight Club\"\npython3 ~/Developer/clawtv/clawtv.py do \"search for Stranger Things on Netflix\"\npython3 ~/Developer/clawtv/clawtv.py do \"open YouTube and find lo-fi beats\"\npython3 ~/Developer/clawtv/clawtv.py do \"go to settings and turn on subtitles\"\npython3 ~/Developer/clawtv/clawtv.py do \"open Spotify and play my liked songs\"\n```\n\n**Token optimizations (automatic):**\n- Plex goals bypass vision entirely via direct API (instant, pennies)\n- Sliding window: only last 2 screenshots kept in context (~70% token reduction)\n- Images compressed to JPEG 800px q50 (~40% fewer image tokens)\n- System prompt cached via `cache_control` (90% savings on steps 2+)\n- Haiku 4.5 for routine steps, auto-escalates to Sonnet 4.5 when stuck\n\n**Playback pattern:** Navigate → start playback → verify playing → skip intro if visible → `disconnect` → report done\n\n### Remote Commands (`cmd`)\n\nSend direct remote control commands without AI.\n\n```bash\npython3 ~/Developer/clawtv/clawtv.py cmd <commands...>\n```\n\n**Available commands:**\n`up`, `down`, `left`, `right`, `select`, `menu`, `home`, `play`, `pause`, `play_pause`, `next`, `previous`, `volume_up`, `volume_down`, `top_menu`\n\n**Examples:**\n```bash\npython3 ~/Developer/clawtv/clawtv.py cmd up\npython3 ~/Developer/clawtv/clawtv.py cmd down down right select\npython3 ~/Developer/clawtv/clawtv.py cmd select sleep:1.5 down    # with timing\n```\n\n**Timing:** Insert `sleep:X` between commands to add delays (in seconds).\n\n### Type Text (`type`)\n\nType"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Important Notes] ### DRM Limitations\n\n**DRM apps (YouTube, Netflix, Disney+, HBO Max) terminate the QuickTime AirPlay mirror entirely.** When this happens:\n\n- QuickTime method shows a black screen\n- ClawTV auto-detects the disconnection in `auto` mode\n- Falls back to Xcode method automatically\n- Or manually use: `--method xcode`\n\n**Apps that work with QuickTime:** Plex (local media), Settings, home screen, Apple TV+, most non-DRM apps.\n\n### QuickTime Side Effects\n\nWhen QuickTime mirror is active:\n- Red recording border appears on TV\n- Audio routes to Mac instead of TV speakers\n- DRM apps may refuse to play\n\n**Solution:** Always run `disconnect` after starting playback. The `do` command does this automatically.\n\n### Cost\n\n**Vision loop (AI agent mode):** Uses Claude API for every see-think-act step. Each step = 1 API call with screenshot.\n\n- Typical task: 5-10 steps = few cents\n- Complex navigation: up to 20 steps = ~$0.10-0.20\n- Uses Haiku 4.5 (cheap) with auto-escalation to Sonnet 4.5 when stuck\n\n**Plex direct control:** 2 API calls total (pennies) — no vision loop.\n\n**Manual commands (`cmd`, `type`, `launch`):** Zero API cost.\n\n### Config File\n\n`~/.clawtv/config.json` stores:\n\n```json\n{\n  \"devices\": {\n    \"Living Room\": {\n      \"identifier\": \"...\",\n      \"credentials\": \"...\"\n    }\n  },\n  \"screenshot_method\": \"auto\",\n  \"plex_url\": \"http://192.168.1.100:32400\",\n  \"plex_token\": \"your-plex-token\",\n  \"plex_client\": \"Living Room\"\n}\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Companion Project] [**Lookout**](https://github.com/akivasolutions/lookout-tvos) — tvOS app with built-in HTTP screenshot server at port 8080. Fastest possible screenshot method (~100ms) but only captures Lookout's own UI, not other apps."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Requirements] - **macOS** (uses AppleScript for automation)\n- **Apple TV 4K** (gen 2 or later, tvOS 16+) on same network as Mac\n- **Python 3.9+**\n- **Anthropic API key** for Claude vision\n- **QuickTime Player** (built-in) or **Xcode** (free from App Store)"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Troubleshooting] **\"No Apple TV found\"**\n- Run `python3 ~/Developer/clawtv/clawtv.py scan` to verify device is on network\n- Check that Apple TV and Mac are on same WiFi/LAN\n- Verify Apple TV is awake (not in sleep mode)\n\n**\"QuickTime mirror disconnected\"**\n- DRM app killed the mirror — use `--method xcode` instead\n- Or use Plex direct control to bypass vision entirely\n\n**\"Screenshot failed\"**\n- QuickTime: Ensure AirPlay pairing is accepted on TV\n- Xcode: Verify Devices window is open and Apple TV is connected\n- Try `--method auto` to fall back automatically\n\n**\"API key not found\"**\n- Set `export ANTHROPIC_API_KEY=sk-ant-...` in your shell\n- Or add to ~/.zshrc or ~/.bashrc\n\n**\"Plex not found\"**\n- Verify `plex_url`, `plex_token`, and `plex_client` in config\n- Run `python3 ~/Developer/clawtv/clawtv.py plex clients` to verify client name\n- Ensure Plex server is running and accessible"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Architecture] ```\nclawtv.py            — Single-file CLI: pairing, remote, screenshots, AI agent\n~/.clawtv/\n  config.json        — Device pairing credentials + settings\n  screenshots/       — Screenshot history (timestamped PNGs)\n```\n\n**Stack:**\n- [pyatv](https://github.com/postlund/pyatv) — Apple TV remote control (Companion protocol)\n- [QuickTime Player](https://support.apple.com/guide/quicktime-player/) — AirPlay mirror for screenshots (primary)\n- [Xcode](https://developer.apple.com/xcode/) — Developer device screenshots (fallback)\n- [Claude](https://www.anthropic.com/) — Vision + reasoning for autonomous navigation\n- [python-plexapi](https://github.com/pkkid/python-plexapi) — Plex direct control"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[License] MIT — see [LICENSE](LICENSE)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "clawtv"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "📺",
+        "requires": {
+          "bins": [
+            "python3"
+          ],
+          "env": [
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "primaryEnv": "ANTHROPIC_API_KEY",
+        "configPaths": [
+          "~/.clawtv/config.json"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/akivasolutions/clawtv/skill.md"
+}

@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_council-of-wisdom",
+  "description": "A multi-agent deliberation hub with 3 core agents and extensible extended agents. Can call user workspace skills when needed.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Council of Wisdom\n\nA multi-agent deliberation hub with 3 core agents and extensible extended agents."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[When to Activate] ### Auto-Trigger\n- Decision words: should I, should we, better to, which option\n- Risk signals: dangerous, risk, worried, concerned, scared\n- Complex words: analyze, compare, think, help me\n- Explicit: council:, ask the council\n\n### Auto-Skip\n```\nhello, hi, hey, thanks, thank you\nwhat time, weather, temperature\nyes, no, ok, sure\ndefine, what is\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Architecture] ```\nQuery → Check Skip List\n           │\n           ▼ (if not skipped)\n    ┌──────────────────┐\n    │  CORE AGENTS    │ (always run)\n    │ - Intent Decoder│\n    │ - Risk Checker  │\n    │ - Tone Designer │\n    └──────────────────┘\n           │\n           ▼ (if extended triggered)\n    ┌──────────────────┐\n    │ EXTENDED AGENTS │ (included)\n    └──────────────────┘\n           │\n           ▼\n    ┌──────────────────┐\n    │ WORKSPACE SKILLS │ (if needed)\n    └──────────────────┘\n           │\n           ▼\n    Enriched Response\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Core Agents (Always Run)] ### Intent Decoder\nWhat does the user actually want?\n\n### Risk Checker\nWhat could go wrong?\n\n### Tone Designer\nHow should this feel?"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Extended Agents (Included)] | Agent | Trigger Keywords |\n|-------|-----------------|\n| System Designer | api, database, architecture, system |\n| Complexity Assessor | complex, analyze, compare |\n| Values Guardian | ethical, moral, values, fair |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Calling Workspace Skills] The council can call skills from your workspace when specialized knowledge is needed.\n\n**Example:**\n- Query about Quran → call quran-search-engine-mcp\n- Query about GitHub → call github-mcp\n- Query about security → call penetration-tester agent\n\n**To add workspace skills:**\n1. Skills go in `workspace/skills/`\n2. Agents go in `workspace/agents/`\n3. The council detects keywords and calls them when needed"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Adding Custom Extended Agents] Create a new `.md` file in `agents/` folder:\n\n```markdown\n# Your Agent Name\n\nTrigger: keyword1, keyword2\n\nYour analysis...\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Output] ### Implicit Mode (Default)\nSkill runs silently. Apply analysis to shape response.\n\n### Explicit Mode (When Asked)\nUse `council:` prefix to see full analysis."
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Simple Rules (80% of Value)] ```\nIF query contains: dangerous, risk, worried, scared\nTHEN: Risk Checker flag = high\n\nIF query contains: frustrated, angry, upset\nTHEN: Tone = empathetic\n```"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[SEO] **Keywords:** multi-agent, AI router, agent council, decision support, AI deliberation, extensible hub, workspace skills\n\n**Use cases:** personal AI assistant, decision making, risk assessment"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "council_of_wisdom"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adelpro/council-of-wisdom/SKILL.md"
+}

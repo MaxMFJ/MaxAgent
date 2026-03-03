@@ -32,7 +32,7 @@
     {
       "id": "step_3",
       "type": "subtask",
-      "description": "[Python AI Agent] Built on Pydantic AI with tools that mirror the filesystem commands.\n\n```python\nfrom surrealfs_ai import build_chat_agent\n\n# Create the agent (default LLM: Claude Haiku)\nagent = build_chat_agent()\n\n# Expose over HTTP\nimport uvicorn\napp = agent.to_web()\nuvicorn.run(app, host=\"127.0.0.1\", port=7932)\n```\n\nFeatures:\n- Default LLM: Claude Haiku\n- Telemetry via Pydantic Logfire (OpenTelemetry)\n- All filesystem operations available as agent tools\n- HTTP hosting (default port 7932)\n- Path normalization (cannot escape `/`)"
+      "description": "[Python AI Agent] Built on Pydantic AI with tools that mirror the filesystem commands.\n\n```python\nfrom surrealfs_ai import build_chat_agent\n\n# Create the agent (default LLM: Claude Haiku)\nagent = build_chat_agent()\n\n# Expose over HTTP\nimport uvicorn\napp = agent.to_web()\nuvicorn.run(app, host=\"127.0.0.1\", port=7932)\n```\n\nFeatures:\n- Default LLM: Claude Haiku\n- Telemetry via Pydantic Logfire (OpenTelemetry) -- see Security section for opt-out\n- All filesystem operations available as agent tools\n- HTTP hosting (default port 7932, bound to 127.0.0.1)\n- Path normalization: virtual FS root `/` is isolated; paths cannot escape to host filesystem"
     },
     {
       "id": "step_4",
@@ -46,6 +46,11 @@
     },
     {
       "id": "step_6",
+      "type": "subtask",
+      "description": "[Security Considerations] **Credentials**: Remote SurrealDB connections require `--user`/`--pass`. Use\ndedicated, least-privilege credentials scoped to a specific namespace/database.\nNever use `root` credentials in shared or production environments.\n\n**Telemetry**: The Python agent uses Pydantic Logfire (OpenTelemetry). To\ndisable telemetry, set: `export LOGFIRE_SEND_TO_LOGFIRE=false` or configure\nLogfire with `send_to_logfire=False` in code. Audit telemetry endpoints before\nenabling in environments with sensitive data.\n\n**HTTP binding**: The agent binds to `127.0.0.1` by default. Do not expose to\n`0.0.0.0` or public networks without authentication and TLS. If running in a\ncontainer, use network isolation.\n\n**Pipe commands**: The Rust core supports `curl URL > /path` syntax for content\ningress. This executes the pipe source command on the host. Use only with\ntrusted URLs in controlled environments. Do not allow untrusted input to\nconstruct pipe commands.\n\n**Sandboxing**: The virtual FS root (`/`) is a SurrealDB-backed abstraction,\nnot the host filesystem. Path traversal (e.g., `../../etc/passwd`) is\nnormalized and rejected. However, pipe commands execute on the host -- run\nin a container or sandbox if accepting untrusted agent input."
+    },
+    {
+      "id": "step_7",
       "type": "subtask",
       "description": "[Full Documentation] See the main skill's rule file for complete guidance:\n- **[rules/surrealfs.md](../../rules/surrealfs.md)** -- architecture, Rust core API, Python agent setup, SurrealDB schema, multi-agent patterns, and deployment\n- **[surrealdb/surrealfs](https://github.com/surrealdb/surrealfs)** -- upstream repository"
     }
@@ -64,10 +69,10 @@
     "license": "MIT",
     "compatibility": "",
     "extra": {
-      "version": "1.0.2",
+      "version": "1.0.4",
       "author": "24601",
       "parent_skill": "surrealdb",
-      "snapshot_date": "2026-02-19",
+      "snapshot_date": "2026-02-22",
       "upstream": {
         "repo": "surrealdb/surrealfs",
         "sha": "0008a3a94dbe"

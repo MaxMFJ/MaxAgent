@@ -1,0 +1,104 @@
+{
+  "id": "openclaw_skill_email-sequence",
+  "description": "When the user wants to create or optimize an email sequence, drip campaign, automated email flow, or lifecycle email program. Also use when the user mentions \"email sequence,\" \"drip campaign,\" \"nurture sequence,\" \"onboarding emails,\" \"welcome sequence,\" \"re-engagement emails,\" \"email automation,\" or \"lifecycle emails.\" For in-app onboarding, see onboarding-cro.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Email Sequence Design\n\nYou are an expert in email marketing and automation. Your goal is to create email sequences that nurture relationships, drive action, and move people toward conversion."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Initial Assessment] Before creating a sequence, understand:\n\n1. **Sequence Type**\n   - Welcome/onboarding sequence\n   - Lead nurture sequence\n   - Re-engagement sequence\n   - Post-purchase sequence\n   - Event-based sequence\n   - Educational sequence\n   - Sales sequence\n\n2. **Audience Context**\n   - Who are they?\n   - What triggered them into this sequence?\n   - What do they already know/believe?\n   - What's their current relationship with you?\n\n3. **Goals**\n   - Primary conversion goal\n   - Relationship-building goals\n   - Segmentation goals\n   - What defines success?\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Core Principles] ### 1. One Email, One Job\n- Each email has one primary purpose\n- One main CTA per email\n- Don't try to do everything\n\n### 2. Value Before Ask\n- Lead with usefulness\n- Build trust through content\n- Earn the right to sell\n\n### 3. Relevance Over Volume\n- Fewer, better emails win\n- Segment for relevance\n- Quality > frequency\n\n### 4. Clear Path Forward\n- Every email moves them somewhere\n- Links should do something useful\n- Make next steps obvious\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Email Sequence Strategy] ### Sequence Length\n- Welcome: 3-7 emails\n- Lead nurture: 5-10 emails\n- Onboarding: 5-10 emails\n- Re-engagement: 3-5 emails\n\nDepends on:\n- Sales cycle length\n- Product complexity\n- Relationship stage\n\n### Timing/Delays\n- Welcome email: Immediately\n- Early sequence: 1-2 days apart\n- Nurture: 2-4 days apart\n- Long-term: Weekly or bi-weekly\n\nConsider:\n- B2B: Avoid weekends\n- B2C: Test weekends\n- Time zones: Send at local time\n\n### Subject Line Strategy\n- Clear > Clever\n- Specific > Vague\n- Benefit or curiosity-driven\n- 40-60 characters ideal\n- Test emoji (they're polarizing)\n\n**Patterns that work:**\n- Question: \"Still struggling with X?\"\n- How-to: \"How to [achieve outcome] in [timeframe]\"\n- Number: \"3 ways to [benefit]\"\n- Direct: \"[First name], your [thing] is ready\"\n- Story tease: \"The mistake I made with [topic]\"\n\n### Preview Text\n- Extends the subject line\n- ~90-140 characters\n- Don't repeat subject line\n- Complete the thought or add intrigue\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Sequence Templates] ### Welcome Sequence (Post-Signup)\n\n**Email 1: Welcome (Immediate)**\n- Subject: Welcome to [Product] — here's your first step\n- Deliver what was promised (lead magnet, access, etc.)\n- Single next action\n- Set expectations for future emails\n\n**Email 2: Quick Win (Day 1-2)**\n- Subject: Get your first [result] in 10 minutes\n- Enable small success\n- Build confidence\n- Link to helpful resource\n\n**Email 3: Story/Why (Day 3-4)**\n- Subject: Why we built [Product]\n- Origin story or mission\n- Connect emotionally\n- Show you understand their problem\n\n**Email 4: Social Proof (Day 5-6)**\n- Subject: How [Customer] achieved [Result]\n- Case study or testimonial\n- Relatable to their situation\n- Soft CTA to explore\n\n**Email 5: Overcome Objection (Day 7-8)**\n- Subject: \"I don't have time for X\" — sound familiar?\n- Address common hesitation\n- Reframe the obstacle\n- Show easy path forward\n\n**Email 6: Core Feature (Day 9-11)**\n- Subject: Have you tried [Feature] yet?\n- Highlight underused capability\n- Show clear benefit\n- Direct CTA to try it\n\n**Email 7: Conversion (Day 12-14)**\n- Subject: Ready to [upgrade/buy/commit]?\n- Summarize value\n- Clear offer\n- Urgency if appropriate\n- Risk reversal (guarantee, trial)\n\n---\n\n### Lead Nurture Sequence (Pre-Sale)\n\n**Email 1: Deliver + Introduce (Immediate)**\n- Deliver the lead magnet\n- Brief intro to who you are\n- Preview what's coming\n\n**Email 2: Expand on Topic (Day 2-3)**\n- Related insight to lead magnet\n- Establish expertise\n- Light CTA to content\n\n**Email 3: Problem Deep-Dive (Day 4-5)**\n- Articulate their problem deeply\n- Show you understand\n- Hint at solution\n\n**Email 4: Solution Framework (Day 6-8)**\n- Your approach/methodology\n- Educational, not salesy\n- Builds toward your product\n\n**Email 5: Case Study (Day 9-11)**\n- Real results from real customer\n- Specific and relatable\n- Soft CTA\n\n**Email 6: Differentiation (Day 12-14)**\n- Why your approach is different\n- Address alternatives\n- Build preference\n\n**Email 7: Objection Handler (Day 15-18)"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Email Types Reference] A comprehensive guide to lifecycle and campaign emails. Use this as an audit checklist and implementation reference.\n\n### Onboarding Emails\n\n#### New Users Series\n**Trigger**: User signs up (free or trial)\n**Goal**: Activate user, drive to aha moment\n**Typical sequence**: 5-7 emails over 14 days\n\n- Email 1: Welcome + single next step (immediate)\n- Email 2: Quick win / getting started (day 1)\n- Email 3: Key feature highlight (day 3)\n- Email 4: Success story / social proof (day 5)\n- Email 5: Check-in + offer help (day 7)\n- Email 6: Advanced tip (day 10)\n- Email 7: Upgrade prompt or next milestone (day 14)\n\n**Key metrics**: Activation rate, feature adoption\n\n---\n\n#### New Customers Series\n**Trigger**: User converts to paid\n**Goal**: Reinforce purchase decision, drive adoption, reduce early churn\n**Typical sequence**: 3-5 emails over 14 days\n\n- Email 1: Thank you + what's next (immediate)\n- Email 2: Getting full value — setup checklist (day 2)\n- Email 3: Pro tips for paid features (day 5)\n- Email 4: Success story from similar customer (day 7)\n- Email 5: Check-in + introduce support resources (day 14)\n\n**Key point**: Different from new user series—they've committed. Focus on reinforcement and expansion, not conversion.\n\n---\n\n#### Key Onboarding Step Reminder\n**Trigger**: User hasn't completed critical setup step after X time\n**Goal**: Nudge completion of high-value action\n**Format**: Single email or 2-3 email mini-sequence\n\n**Example triggers**:\n- Hasn't connected integration after 48 hours\n- Hasn't invited team member after 3 days\n- Hasn't completed profile after 24 hours\n\n**Copy approach**:\n- Remind them what they started\n- Explain why this step matters\n- Make it easy (direct link to complete)\n- Offer help if stuck\n\n---\n\n#### New User Invite\n**Trigger**: Existing user invites teammate\n**Goal**: Activate the invited user\n**Recipient**: The person being invited\n\n- Email 1: You've been invited (immediate)\n- Email 2: Reminder if not accepted (day 2)\n- Email 3: Final remind"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Email Audit Checklist] Use this to audit your current email program:\n\n### Onboarding\n- [ ] New users series\n- [ ] New customers series\n- [ ] Key onboarding step reminders\n- [ ] New user invite sequence\n\n### Retention\n- [ ] Upgrade to paid sequence\n- [ ] Upgrade to higher plan triggers\n- [ ] Ask for review (timed properly)\n- [ ] Proactive support outreach\n- [ ] Product usage reports\n- [ ] NPS survey\n- [ ] Referral program emails\n\n### Billing\n- [ ] Switch to annual campaign\n- [ ] Failed payment recovery sequence\n- [ ] Cancellation survey\n- [ ] Upcoming renewal reminders\n\n### Usage\n- [ ] Daily/weekly/monthly summaries\n- [ ] Key event notifications\n- [ ] Milestone celebrations\n\n### Win-Back\n- [ ] Expired trial sequence\n- [ ] Cancelled customer sequence\n\n### Campaigns\n- [ ] Monthly roundup / newsletter\n- [ ] Seasonal promotion calendar\n- [ ] Product update announcements\n- [ ] Pricing update communications\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Email Copy Guidelines] ### Structure\n1. **Hook**: First line grabs attention\n2. **Context**: Why this matters to them\n3. **Value**: The useful content\n4. **CTA**: What to do next\n5. **Sign-off**: Human, warm close\n\n### Formatting\n- Short paragraphs (1-3 sentences)\n- White space between sections\n- Bullet points for scanability\n- Bold for emphasis (sparingly)\n- Mobile-first (most read on phone)\n\n### Tone\n- Conversational, not formal\n- First-person (I/we) and second-person (you)\n- Active voice\n- Match your brand but lean friendly\n- Read it out loud—does it sound human?\n\n### Length\n- Shorter is usually better\n- 50-125 words for transactional\n- 150-300 words for educational\n- 300-500 words for story-driven\n- If it's long, it better be good\n\n### CTA Buttons vs. Links\n- Buttons: Primary actions, high-visibility\n- Links: Secondary actions, in-text\n- One clear primary CTA per email\n- Button text: Action + outcome\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Personalization] ### Merge Fields\n- First name (fallback to \"there\" or \"friend\")\n- Company name (B2B)\n- Relevant data (usage, plan, etc.)\n\n### Dynamic Content\n- Based on segment\n- Based on behavior\n- Based on stage\n\n### Triggered Emails\n- Action-based sends\n- More relevant than time-based\n- Examples: Feature used, milestone hit, inactivity\n\n---"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Segmentation Strategies] ### By Behavior\n- Openers vs. non-openers\n- Clickers vs. non-clickers\n- Active vs. inactive\n\n### By Stage\n- Trial vs. paid\n- New vs. long-term\n- Engaged vs. at-risk\n\n### By Profile\n- Industry/role (B2B)\n- Use case / goal\n- Company size\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Testing and Optimization] ### What to Test\n- Subject lines (highest impact)\n- Send times\n- Email length\n- CTA placement and copy\n- Personalization level\n- Sequence timing\n\n### How to Test\n- A/B test one variable at a time\n- Sufficient sample size\n- Statistical significance\n- Document learnings\n\n### Metrics to Track\n- Open rate (benchmark: 20-40%)\n- Click rate (benchmark: 2-5%)\n- Unsubscribe rate (keep under 0.5%)\n- Conversion rate (specific to sequence goal)\n- Revenue per email (if applicable)\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Output Format] ### Sequence Overview\n```\nSequence Name: [Name]\nTrigger: [What starts the sequence]\nGoal: [Primary conversion goal]\nLength: [Number of emails]\nTiming: [Delay between emails]\nExit Conditions: [When they leave the sequence]\n```\n\n### For Each Email\n```\nEmail [#]: [Name/Purpose]\nSend: [Timing]\nSubject: [Subject line]\nPreview: [Preview text]\nBody: [Full copy]\nCTA: [Button text] → [Link destination]\nSegment/Conditions: [If applicable]\n```\n\n### Metrics Plan\nWhat to measure and benchmarks\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Questions to Ask] If you need more context:\n1. What triggers entry to this sequence?\n2. What's the primary goal/conversion action?\n3. Who is the audience?\n4. What do they already know about you?\n5. What other emails are they receiving?\n6. What's your current email performance?\n\n---"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[Related Skills] - **onboarding-cro**: For in-app onboarding (email supports this)\n- **copywriting**: For landing pages emails link to\n- **ab-test-setup**: For testing email elements\n- **popup-cro**: For email capture popups"
+    }
+  ],
+  "task_type": "communication",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "email_sequence"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexeyvorobiev/alexey-marketing-skills/references/email-sequence/SKILL.md"
+}

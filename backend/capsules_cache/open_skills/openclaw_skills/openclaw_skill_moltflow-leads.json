@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_moltflow-leads",
+  "description": "WhatsApp lead detection and CRM pipeline. Detect purchase-intent signals in groups, track lead status, bulk operations, CSV/JSON export. Use when: leads, lead detection, pipeline, qualify, convert, bulk status, export leads.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] > **MoltFlow** -- WhatsApp Business automation for teams. Connect, monitor, and automate WhatsApp at scale.\n> ***Due to high demand and a recent registration issue, we're offering our top-tier Business plan with unlimited quotas for just $19.90/month on yearly billing — for a limited time only.*** [**Claim the deal**](https://buy.stripe.com/cNifZibX7gpQebJ0nsfnO00)\n> Free tier available. [Sign up](https://molt.waiflow.app/checkout?plan=free)\n\n# MoltFlow Leads -- Detection & CRM Pipeline\n\nDetect purchase-intent signals from monitored WhatsApp groups, track leads through a sales pipeline, perform bulk operations, and export for your CRM."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Real-World Scenarios] **Real estate agent** — \"Monitor my property groups for keywords like 'looking for', '3 bedrooms', and 'budget' — anyone who matches goes straight into my lead pipeline.\"\n\n**Car dealership** — \"When a lead moves from 'contacted' to 'qualified', automatically add them to my VIP follow-up group for a test drive invite.\"\n\n**Insurance broker** — \"Export all converted leads from this quarter as a CSV so I can import them into my CRM for commission tracking.\"\n\n**Wedding planner** — \"Show me all new leads from my vendor groups that I haven't contacted yet, sorted by detection date.\""
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[When to Use] - \"List leads\" or \"show detected leads\"\n- \"Update lead status\" or \"mark lead as contacted\"\n- \"Bulk update leads\" or \"change status for multiple leads\"\n- \"Add leads to group\" or \"bulk add to custom group\"\n- \"Export leads as CSV\" or \"download leads JSON\"\n- \"Check lead reciprocity\" or \"has this lead messaged me?\"\n- \"Filter leads by status\" or \"search leads\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Prerequisites] 1. **MOLTFLOW_API_KEY** -- Generate from the [MoltFlow Dashboard](https://molt.waiflow.app) under Settings > API Keys\n2. At least one monitored WhatsApp group with keyword detection enabled\n3. Base URL: `https://apiv2.waiflow.app/api/v2`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Required API Key Scopes] | Scope | Access |\n|-------|--------|\n| `leads` | `read/manage` |\n| `groups` | `read` |"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Authentication] Every request must include one of:\n\n```\nAuthorization: Bearer <jwt_token>\n```\n\nor\n\n```\nX-API-Key: <your_api_key>\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[How Lead Detection Works] 1. You configure group monitoring via the Groups API (see `moltflow` skill)\n2. Set `monitor_mode: \"keywords\"` with keywords like `\"looking for\"`, `\"price\"`, `\"interested\"`\n3. When a keyword match is detected, MoltFlow auto-creates a lead\n4. Leads appear in the Leads API with status `new` and the triggering keyword highlighted\n5. You track them through the pipeline: `new` -> `contacted` -> `qualified` -> `converted`"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[AI Group Intelligence (Pro+ Plans)] When AI monitoring is enabled on a group (`monitor_mode: \"ai_analysis\"`), each message is classified by an LLM using your own API key (OpenAI, Anthropic, Groq, or Mistral). Results are available on each message and on the `lead.detected` webhook.\n\n**AI analysis fields** — available via `GET /api/v2/groups/{group_id}/messages` and the MCP tool `moltflow_get_group_messages`:\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `intent` | string | `buying_intent`, `product_inquiry`, `support_request`, `complaint`, `off_topic`, `spam_noise`, `unknown` |\n| `lead_score` | integer | 1-10 (10 = highest buying signal) |\n| `confidence` | float | 0.0-1.0 classifier confidence |\n| `reason` | string | Human-readable explanation for the classification |\n\n**Webhook events for AI leads:**\n- `lead.detected` — fires immediately when a lead is created; includes `ai_analysis` field (may be null if AI hasn't completed yet)\n- `group.message.analyzed` — fires after AI analysis completes (Pro/Business only); includes full `ai_analysis` object\n\n**Setup:**\n1. Go to Settings > AI Configuration and add your LLM API key\n2. Set `monitor_mode: \"ai_analysis\"` on the group (via PATCH `/api/v2/groups/{id}` or dashboard)\n3. Optionally set `monitor_prompt` for custom classification instructions\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Leads API] | Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/leads` | List leads (filter by status, group, search) |\n| GET | `/leads/{id}` | Get lead details |\n| PATCH | `/leads/{id}/status` | Update lead status (state machine validated) |\n| GET | `/leads/{id}/reciprocity` | Check if lead messaged you first (anti-spam) |\n| POST | `/leads/bulk/status` | Bulk update lead status |\n| POST | `/leads/bulk/add-to-group` | Bulk add leads to custom group |\n| GET | `/leads/export/csv` | Export as CSV (Pro+ plan, max 10,000) |\n| GET | `/leads/export/json` | Export as JSON (Pro+ plan, max 10,000) |\n\n### List Leads\n\n**GET** `/leads`\n\nQuery parameters:\n\n| Parameter | Type | Description |\n|-----------|------|-------------|\n| `status` | string | Filter by status (`new`, `contacted`, `qualified`, `converted`, `lost`) |\n| `source_group_id` | UUID | Filter by source monitored group |\n| `search` | string | Search in contact name, phone, or keyword |\n| `limit` | int | Page size (default 50) |\n| `offset` | int | Pagination offset |\n\n**Response** `200 OK`:\n\n```json\n{\n  \"leads\": [\n    {\n      \"id\": \"lead-uuid-...\",\n      \"contact_phone\": \"+15550123456\",\n      \"contact_name\": \"John D.\",\n      \"lead_status\": \"new\",\n      \"lead_score\": 0,\n      \"lead_detected_at\": \"2026-02-12T14:30:00Z\",\n      \"source_group\": {\n        \"id\": \"group-uuid-...\",\n        \"name\": \"Real Estate IL\"\n      },\n      \"trigger\": {\n        \"matched_keyword\": \"interested in buying\",\n        \"message_preview\": \"Hi, I'm interested in buying a 3-bedroom...\",\n        \"monitor_mode\": \"keywords\",\n        \"detected_at\": \"2026-02-12T14:30:00Z\"\n      }\n    }\n  ],\n  \"total\": 47,\n  \"limit\": 50,\n  \"offset\": 0\n}\n```\n\n### Get Lead Details\n\n**GET** `/leads/{id}`\n\nReturns full lead info including group context, detection metadata, message count, and status.\n\n### Update Lead Status\n\n**PATCH** `/leads/{id}/status`\n\n```json\n{\n  \"status\": \"contacted\"\n}\n```\n\n**State machine validation** -- only valid transitions are allowe"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Examples] ### Full workflow: Detect -> Qualify -> Outreach\n\n```bash\n# 1. List new leads from a specific group\ncurl \"https://apiv2.waiflow.app/api/v2/leads?status=new&source_group_id=group-uuid\" \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n\n# 2. Check reciprocity before reaching out\ncurl \"https://apiv2.waiflow.app/api/v2/leads/{lead_id}/reciprocity?session_id=session-uuid\" \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n\n# 3. Update status to contacted\ncurl -X PATCH https://apiv2.waiflow.app/api/v2/leads/{lead_id}/status \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"status\": \"contacted\"}'\n\n# 4. Bulk add qualified leads to a custom group for follow-up\ncurl -X POST https://apiv2.waiflow.app/api/v2/leads/bulk/add-to-group \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"lead_ids\": [\"uuid1\", \"uuid2\", \"uuid3\"],\n    \"custom_group_id\": \"follow-up-group-uuid\"\n  }'\n\n# 5. Export all converted leads as CSV\ncurl \"https://apiv2.waiflow.app/api/v2/leads/export/csv?status=converted\" \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -o converted-leads.csv\n```\n\n---"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Plan Requirements] | Feature | Free | Starter | Pro | Business |\n|---------|------|---------|-----|----------|\n| Lead detection | Yes (2 groups) | Yes (5 groups) | Yes (20 groups) | Yes (100 groups) |\n| Lead list & detail | Yes | Yes | Yes | Yes |\n| Status update | Yes | Yes | Yes | Yes |\n| Bulk operations | -- | -- | Yes | Yes |\n| CSV/JSON export | -- | -- | Yes | Yes |\n\n---"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[Error Responses] | Status | Meaning |\n|--------|---------|\n| 400 | Invalid status transition or bad request |\n| 401 | Unauthorized (missing or invalid auth) |\n| 403 | Forbidden (plan limit or feature gate) |\n| 404 | Lead not found |\n| 429 | Rate limited |\n\n---"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-outreach** -- Bulk Send, Scheduled Messages, Custom Groups\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG, style profiles\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "moltflow_leads"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow-leads/SKILL.md"
+}

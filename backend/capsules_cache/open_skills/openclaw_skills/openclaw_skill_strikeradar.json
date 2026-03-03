@@ -1,0 +1,68 @@
+{
+  "id": "openclaw_skill_strikeradar",
+  "description": "Monitor US-Iran strike probability using open-source indicators - news alerts, Iran internet connectivity, oil prices, flight traffic, military tanker detection, weather, Polymarket odds, and Pentagon activity. Use when user asks about \"Iran strike probability\", \"strike radar\", \"Iran situation\", \"US attack Iran\", \"flights over Iran\", \"oil prices Iran\", \"Pentagon activity\", \"Polymarket Iran\", \"הסתברות תקיפה באיראן\", \"מצב איראן\", \"סטרייק ראדאר\".",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # StrikeRadar - US-Iran strike probability monitor\n\nReal-time risk scores across 8 signal categories, aggregated into a composite strike probability.\n\nRisk scores are algorithmic estimates from publicly available data, not intelligence assessments. Do not use for personal, financial, or safety decisions. Wraps [StrikeRadar](https://usstrikeradar.com/) by Yonatan Back."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Quick Start] No dependencies needed. Run directly:\n```bash\nnpx tsx {baseDir}/scripts/strikeradar.ts status\n```"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] | Command | Description |\n|---------|-------------|\n| `status` | All 8 signals with risk scores and total risk |\n| `signal <name>` | Deep dive into one signal with raw data |\n| `pulse` | Live viewer count and activity by country |\n\n### Status\n```bash\nnpx tsx {baseDir}/scripts/strikeradar.ts status\n```\nReturns: total_risk (0-100%), per-signal risk + detail, last_updated.\n\n### Signal deep-dive\n```bash\nnpx tsx {baseDir}/scripts/strikeradar.ts signal <name>\n```\nValid signals: `news`, `connectivity`, `energy`, `flight`, `tanker`, `weather`, `polymarket`, `pentagon`\n\n**What each signal tracks:**\n- **news** - article alerts from BBC/Al Jazeera, alert_count, total_count\n- **connectivity** - Iran internet status via Cloudflare Radar\n- **energy** - Brent crude price, volatility, market status\n- **flight** - aircraft count near Iran, key airline presence\n- **tanker** - military refueling tanker detection, callsigns\n- **weather** - conditions over Iran (visibility matters for strikes)\n- **polymarket** - betting market odds for US strike\n- **pentagon** - building activity level and patterns\n\n### Pulse\n```bash\nnpx tsx {baseDir}/scripts/strikeradar.ts pulse\n```\nReturns: watching_now, activity_level, surge multiplier, country breakdown."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Agent Usage] All commands return JSON with `next_actions` when output is piped:\n```bash\nnpx tsx {baseDir}/scripts/strikeradar.ts status | cat\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "strikeradar"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🚀",
+        "os": [
+          "darwin",
+          "linux"
+        ],
+        "requires": {
+          "bins": [
+            "node",
+            "npx"
+          ]
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexpolonsky/strikeradar/SKILL.md"
+}

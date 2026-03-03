@@ -1,0 +1,89 @@
+{
+  "id": "openclaw_skill_agentkeys",
+  "description": "Secure credential proxy for AI agents. Make API calls through AgentKeys — real secrets never leave the vault.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AgentKeys Skill\n\nSecure credential proxy for AI agents. Route API calls through AgentKeys so your agent never sees real secrets."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Configuration] You have two options. Set these in your environment or `.env`:\n\n### Option A — API Key (recommended, multi-credential)\n\n```\nAGENTKEYS_API_KEY=ak_ws_...\nAGENTKEYS_PROXY_URL=https://proxy.agentkeys.io\n```\n\nUse your workspace API key to proxy requests to any credential by name. Get your API key from [Settings](https://app.agentkeys.io/dashboard/settings).\n\n### Option B — Direct Proxy Token (single credential)\n\n```\nAGENTKEYS_PROXY_TOKEN=pxr_...\nAGENTKEYS_PROXY_URL=https://proxy.agentkeys.io\n```\n\nUse a proxy token for one specific credential. Get it by assigning a credential to an agent in the [dashboard](https://app.agentkeys.io)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] ### With API Key (Option A) — reference credentials by name\n\n```bash\ncurl -X POST $AGENTKEYS_PROXY_URL/v1/proxy \\\n  -H \"Authorization: Bearer $AGENTKEYS_API_KEY\" \\\n  -H \"X-Credential-Name: resend\" \\\n  -H \"X-Target-Url: https://api.resend.com/emails\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\": \"noreply@example.com\", \"to\": \"user@example.com\", \"subject\": \"Hello\", \"text\": \"Sent via AgentKeys\"}'\n```\n\n### With Proxy Token (Option B) — direct credential access\n\n```bash\ncurl -X POST $AGENTKEYS_PROXY_URL/v1/proxy \\\n  -H \"Authorization: Bearer $AGENTKEYS_PROXY_TOKEN\" \\\n  -H \"X-Target-Url: https://api.resend.com/emails\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\": \"noreply@example.com\", \"to\": \"user@example.com\", \"subject\": \"Hello\", \"text\": \"Sent via AgentKeys\"}'\n```\n\n### Headers\n\n| Header | Required | Description |\n|--------|----------|-------------|\n| `Authorization` | ✅ | `Bearer $AGENTKEYS_API_KEY` or `Bearer $AGENTKEYS_PROXY_TOKEN` |\n| `X-Target-Url` | ✅ | Target API URL to forward to |\n| `X-Credential-Name` | ✅ (API key mode) | Name of the credential to use (case-insensitive) |\n| `Content-Type` | ❌ | Passed through to target |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How It Works] 1. Agent sends request to AgentKeys proxy with API key + credential name (or proxy token)\n2. AgentKeys finds and decrypts the real credential server-side\n3. Real credential is injected into headers\n4. Request is forwarded to the target API\n5. Response is returned to the agent\n6. Every request is logged in the audit trail\n\nThe agent never sees the real API key, OAuth token, or password."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Credential Types Supported] - API Key — injected as `Authorization: Bearer <key>`\n- Basic Auth — injected as `Authorization: Basic base64(user:pass)`\n- Custom Headers — injected as key-value pairs\n- Query Parameters — appended to URL\n- Cookies — injected as `Cookie` header\n- OAuth — auto-refreshed tokens"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security] - Credentials are AES-256-GCM encrypted at rest\n- Proxy tokens are scoped to one credential + one agent\n- API key mode still respects workspace permissions\n- Tokens can be revoked instantly from the dashboard\n- Full audit trail for every proxied request\n- Agent never has access to plaintext secrets"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Links] - Dashboard: [app.agentkeys.io](https://app.agentkeys.io)\n- Docs: [agentkeys.io/docs](https://agentkeys.io/docs)\n- Support: support@agentkeys.io"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "agentkeys"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "AGENTKEYS_PROXY_URL"
+          ]
+        },
+        "credentials": [
+          {
+            "name": "AGENTKEYS_API_KEY",
+            "description": "Workspace API key (starts with ak_ws_). Use with X-Credential-Name header to proxy by credential name.",
+            "required": false
+          },
+          {
+            "name": "AGENTKEYS_PROXY_TOKEN",
+            "description": "Direct proxy token for a single credential (starts with pxr_). Simpler but limited to one credential.",
+            "required": false
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexandr-belogubov/agentkeys/SKILL.md"
+}
