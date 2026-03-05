@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_feishu-message-fallback",
+  "description": "Feishu message fallback mechanism with retry logic. Automatically retries failed messages with exponential backoff and fallback from rich text to plain text.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 飞书消息回退机制"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[功能] - **自动重试**：消息发送失败时自动重试（最多 3 次）\n- **指数退避**：重试间隔递增（1s → 2s → 4s）\n- **降级策略**：富文本失败 → 纯文本重试\n- **错误日志**：记录失败原因和重试结果"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[使用场景] - 网络波动导致消息发送失败\n- 富文本格式不被支持\n- 消息队列积压"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[实现逻辑] ```powershell\n# 伪代码\nfunction Send-FeishuMessageWithFallback {\n    param($message, $retryCount = 3)\n    \n    for ($i = 0; $i -lt $retryCount; $i++) {\n        try {\n            # 尝试发送富文本\n            $result = Send-FeishuRichText -message $message\n            if ($result.success) { return $result }\n        } catch {\n            Write-Host \"Attempt $($i+1) failed: $_\"\n        }\n        \n        # 指数退避等待\n        if ($i -lt $retryCount - 1) {\n            $waitTime = [Math]::Pow(2, $i)\n            Start-Sleep -Seconds $waitTime\n        }\n    }\n    \n    # 所有重试失败，降级为纯文本\n    Write-Host \"Rich text failed, falling back to plain text...\"\n    return Send-FeishuPlainText -message $message\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[配置] 在 `TOOLS.md` 中添加：\n\n```markdown\n### 飞书消息回退配置\n\n- **最大重试次数：** 3\n- **重试间隔：** 1s, 2s, 4s（指数退避）\n- **降级策略：** 富文本 → 纯文本\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[错误处理] | 错误类型 | 处理方式 |\n|---------|---------|\n| 网络超时 | 自动重试 |\n| 格式错误 | 降级为纯文本 |\n| 权限不足 | 立即失败，通知用户 |\n| 消息过长 | 截断后重试 |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[集成到定时任务] 定时任务调用时自动启用回退机制：\n\n```json\n{\n  \"delivery\": {\n    \"mode\": \"announce\",\n    \"channel\": \"feishu\",\n    \"to\": \"ou_faec8fadc584abfd18a2996f55d607b5\",\n    \"retry\": {\n      \"maxAttempts\": 3,\n      \"backoffMs\": 1000\n    }\n  }\n}\n```"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "feishu_message_fallback"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2426758093/feishu-message-fallback/SKILL.md"
+}

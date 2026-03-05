@@ -82,7 +82,12 @@
     {
       "id": "step_13",
       "type": "subtask",
-      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG, style profiles\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration"
+      "description": "[Related Skills] - **moltflow** -- Core API: sessions, messaging, groups, labels, webhooks\n- **moltflow-leads** -- Lead detection, pipeline tracking, bulk operations, CSV/JSON export\n- **moltflow-ai** -- AI-powered auto-replies, voice transcription, RAG, style profiles\n- **moltflow-a2a** -- Agent-to-Agent protocol, encrypted messaging, content policy\n- **moltflow-reviews** -- Review collection and testimonial management\n- **moltflow-admin** -- Platform administration, user management, plan configuration\n\n---"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[WhatsApp Channels (v7.0)] Broadcast one-way to WhatsApp Channel followers without exposing your phone number. No anti-spam delays needed — channel posts are newsletters, not 1-on-1 messages.\n\n### Real-World Scenarios\n\n**Publisher** — \"Post our weekly newsletter to the channel every Monday at 9 AM\"\n\nSchedule a recurring channel post with cron `0 9 * * 1`.\n\n**Brand** — \"Announce a product launch now to all 3,000 channel followers\"\n\nCall `broadcast_channel_post` with the announcement text.\n\n### Key Endpoints\n\n| Action | Method | Path |\n|--------|--------|------|\n| List channels | GET | `/api/v2/channels` |\n| Get channel | GET | `/api/v2/channels/{id}` |\n| Create channel | POST | `/api/v2/channels` |\n| Discover importable channels | GET | `/api/v2/channels/discover?session_id=` |\n| Import existing channel | POST | `/api/v2/channels/import` |\n| Delete channel | DELETE | `/api/v2/channels/{id}` |\n| Broadcast post | POST | `/api/v2/channels/{id}/broadcast` |\n| Sync followers | POST | `/api/v2/channels/{id}/sync-followers` |\n| Check media support | GET | `/api/v2/channels/capabilities` |\n| Schedule channel post | POST | `/api/v2/scheduled-messages` (target_type: channel) |\n\n### Plan Limits\n\n| Plan | Channels | Posts/Month |\n|------|----------|-------------|\n| Free | 1 | 10 |\n| Starter | 2 | 50 |\n| Pro | 5 | 500 |\n| Business | 20 | 2,000 |\n\n### Example: Broadcast Now\n\n```bash\ncurl -X POST https://apiv2.waiflow.app/api/v2/channels/{channel_id}/broadcast \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"text\": \"New product just launched. Tap the link for early access.\"}'\n```\n\n### Example: Discover and Import Existing Channels\n\n```bash\n# Discover and import existing channels\ncurl \"https://apiv2.waiflow.app/api/v2/channels/discover?session_id=$SESSION_ID\" \\\n  -H \"X-API-Key: $MOLTFLOW_API_KEY\"\n# Returns: [{wa_channel_id, name, follower_count, role}, ...]\n\n# Import a discovered channel\ncurl -X POST https://apiv2.waiflow.app/api/v2/channels/import \\\n  -H \"X-API-Key: $MO"
     }
   ],
   "task_type": "general",
@@ -100,5 +105,5 @@
     "compatibility": "",
     "extra": {}
   },
-  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-a2a/moltflow-outreach/SKILL.md"
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alex-tradequo/whatsapp-automation-suite/moltflow-outreach/SKILL.md"
 }

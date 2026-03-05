@@ -77,7 +77,7 @@
     {
       "id": "step_12",
       "type": "subtask",
-      "description": "[Links] - **Full API Reference:** [simmer.markets/docs.md](https://simmer.markets/docs.md)\n- **Dashboard:** [simmer.markets/dashboard](https://simmer.markets/dashboard)\n- **Skills:** [clawhub.ai](https://clawhub.ai) (search \"simmer\")\n- **Support:** [Telegram](https://t.me/+m7sN0OLM_780M2Fl)\n- **SDK Source:** [github.com/SpartanLabsXyz/simmer-sdk](https://github.com/SpartanLabsXyz/simmer-sdk)\n- **MCP Server:** `pip install simmer-mcp` — gives your agent direct access to Simmer docs and error troubleshooting ([PyPI](https://pypi.org/project/simmer-mcp/))\n\n---"
+      "description": "[Links] - **FAQ:** [simmer.markets/faq.md](https://simmer.markets/faq.md) — common questions about venues, tiers, wallets, fees\n- **Full API Reference:** [simmer.markets/docs.md](https://simmer.markets/docs.md)\n- **Dashboard:** [simmer.markets/dashboard](https://simmer.markets/dashboard)\n- **Skills:** [clawhub.ai](https://clawhub.ai) (search \"simmer\")\n- **Support:** [Telegram](https://t.me/+m7sN0OLM_780M2Fl)\n- **SDK Source:** [github.com/SpartanLabsXyz/simmer-sdk](https://github.com/SpartanLabsXyz/simmer-sdk)\n- **Troubleshoot errors:** `POST /api/sdk/troubleshoot` with `{\"error_text\": \"...\"}` — returns a fix for known errors. No auth required. Also: all 4xx errors now include a `fix` field inline.\n- **MCP Server:** `pip install simmer-mcp` — gives your agent direct access to Simmer docs and error troubleshooting ([PyPI](https://pypi.org/project/simmer-mcp/))\n\n---"
     },
     {
       "id": "step_13",
@@ -99,11 +99,9 @@
     "license": "",
     "compatibility": "",
     "extra": {
-      "openclaw": {
-        "emoji": "🔮",
-        "category": "trading",
-        "api_base": "https://api.simmer.markets"
-      }
+      "author": "Simmer (@simmer_markets)",
+      "version": "1.18.2",
+      "homepage": "https://simmer.markets"
     }
   },
   "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/simmer/SKILL.md"

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_structs-economy",
+  "description": "Manages economic operations in Structs. Covers reactor staking, energy providers, agreements, allocations, generator infusion, and token transfers. Use when staking Alpha Matter in reactors, creating or managing energy providers, negotiating agreements, allocating energy, infusing generators, transferring tokens, or managing economic infrastructure.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Economy"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Procedure] 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.\n2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. The `amount` **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [player-address] [source-validator-address] [dest-validator-address] [amount]`.\n3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.\n4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Valid `access-policy` values: `open-market` (anyone can buy), `guild-market` (guild members only), `closed-market` (invite-only via `provider-guild-grant`). Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.\n5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.\n6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated TX_FLAGS"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [validator-addr] [amount]` (validator = `structsvaloper1...`, NOT reactor ID) |\n| Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |\n| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-validator-addr] [dest-validator-addr] [amount]` |\n| Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion [reactor-id]` |\n| Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount]` |\n| Provider create | `structsd tx structs provider-create [substation-id] [rate] [access] [prov-penalty] [cons-penalty] [cap-min] [cap-max] [dur-min] [dur-max]` |\n| Provider delete | `structsd tx structs provider-delete [provider-id]` |\n| Provider withdraw | `structsd tx structs provider-withdraw-balance [provider-id]` |\n| Agreement open | `structsd tx structs agreement-open [provider-id] [duration] [capacity]` |\n| Agreement close | `structsd tx structs agreement-close [agreement-id]` |\n| Allocation create | `structsd tx structs allocation-create [source-id] [power] --allocation-type [type]` |\n| Allocation update | `structsd tx structs allocation-update [allocation-id] [power]` |\n| Allocation delete | `structsd tx structs allocation-delete [allocation-id]` |\n| Player send | `structsd tx structs player-send [from] [to] [amount]` |\n\n**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command TX_FLAGS -- [entity-id] [other-args]`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Verification] - **Reactor**: `structsd query structs reactor [id]` — check `infusedAmount`, `defusionCooldown`.\n- **Provider**: `structsd query structs provider [id]` — verify capacity, rate, active agreements.\n- **Agreement**: `structsd query structs agreement [id]` — check status, capacity, duration.\n- **Allocation**: `structsd query structs allocation [id]` — confirm power, source, destination.\n- **Player balance**: `structsd query structs player [id]` — verify Alpha Matter after transfers."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] - **Insufficient balance**: Check player Alpha Matter before infuse/send. Refine ore first.\n- **Provider capacity exceeded**: Query provider `capacityMaximum`; reduce agreement capacity or create new provider.\n- **Defusion cooldown**: Use `reactor-cancel-defusion` to re-stake during cooldown, or wait.\n- **Generator infuse failed**: Cannot undo. Verify struct is a generator type and amount is correct before submitting."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[See Also] - [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — \"I need more energy\" decision tree and workflows\n- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement flow, pricing\n- [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank tokens\n- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter, conversion rates\n- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_economy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-economy/SKILL.md"
+}

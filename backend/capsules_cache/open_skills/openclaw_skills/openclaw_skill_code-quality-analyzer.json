@@ -1,0 +1,98 @@
+{
+  "id": "openclaw_skill_code-quality-analyzer",
+  "description": "代码质量分析器 | Professional code quality analyzer. 静态代码分析、代码异味检测、复杂度评估、最佳实践建议。适用于 JavaScript、TypeScript、Python、Java 等主流语言。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Code Quality Analyzer 🔍\n\n专业的代码质量分析服务，帮助开发者写出更好的代码。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[服务内容] ### 1. 单文件分析 ($5)\n- 代码复杂度评估\n- 潜在bug检测\n- 命名规范检查\n- 改进建议\n\n### 2. 项目级分析 ($20)\n- 整体架构评估\n- 模块依赖分析\n- 代码重复检测\n- 性能优化建议\n- 安全漏洞扫描\n\n### 3. 团队订阅 ($50/月)\n- 无限次分析\n- 自定义规则\n- CI/CD 集成指南\n- 优先支持"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[支持的语言] - JavaScript / TypeScript\n- Python\n- Java\n- Go\n- Rust\n- C/C++"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[分析维度] ### 1. 可读性\n- 命名规范\n- 注释质量\n- 代码格式\n\n### 2. 可维护性\n- 函数复杂度\n- 模块耦合度\n- 代码重复\n\n### 3. 性能\n- 算法效率\n- 内存使用\n- 潜在瓶颈\n\n### 4. 安全性\n- 常见漏洞\n- 敏感数据处理\n- 输入验证"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[使用方式] ### 方式1：直接对话\n将代码贴给我，我会分析并给出建议。\n\n### 方式2：文件分析\n```\n请分析 /path/to/file.js 的代码质量\n```\n\n### 方式3：项目分析\n```\n请分析 /path/to/project 的整体代码质量\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[输出示例] ```markdown\n# 代码质量报告"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[概览] - 总体评分：B+ (85/100)\n- 文件数：12\n- 代码行数：2,340\n- 问题数：8"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[关键问题] ### 🔴 高优先级\n1. **src/auth.js:45** - 硬编码的API密钥\n   - 建议：使用环境变量存储敏感信息\n\n### 🟡 中优先级\n2. **src/utils.js:120** - 函数复杂度过高 (圈复杂度: 15)\n   - 建议：拆分为多个小函数\n\n### 🟢 低优先级\n3. **src/config.js** - 缺少类型定义\n   - 建议：添加TypeScript类型或JSDoc"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[改进建议] 1. 添加单元测试（当前覆盖率：0%）\n2. 统一代码风格（建议使用Prettier）\n3. 添加错误处理中间件"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[优点] ✅ 良好的模块化结构\n✅ 清晰的函数命名\n✅ 合理的目录组织\n```"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[定价] | 服务 | 价格 | 交付时间 |\n|------|------|----------|\n| 单文件分析 | $5 | 即时 |\n| 项目分析 | $20 | 24小时 |\n| 团队订阅 | $50/月 | - |\n\n---\n\n*好代码 = 好产品 = 好生意 🔍*"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "code_quality_analyzer"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔍",
+        "pricing": {
+          "single_file": "5 USDC",
+          "project_analysis": "20 USDC",
+          "team_subscription": "50 USDC/month"
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/a1ucard2q/code-quality-analyzer/SKILL.md"
+}

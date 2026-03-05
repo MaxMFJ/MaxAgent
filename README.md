@@ -1,6 +1,6 @@
 # Chow Duck - macOS AI 智能助手
 
-基于 SwiftUI + Python 后端的 macOS 本地 AI Agent（项目目录名 MacAgent）。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。内置**监控仪表板**、**语音输入**、**TTS 朗读**、**权限管理**、**Cloudflare Tunnel** 等完整能力。
+基于 SwiftUI + Python 后端的 macOS 本地 AI Agent。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。内置**监控仪表板**、**语音输入**、**TTS 朗读**、**权限管理**、**Cloudflare Tunnel** 等完整能力。
 
 ---
 
@@ -16,7 +16,7 @@
 - **基础**：文件操作、终端命令、应用控制、系统信息、剪贴板、脚本执行、截图、浏览器、邮件、日历、通知
 - **扩展**：Docker、网络诊断、数据库查询、开发工具、联网搜索（DuckDuckGo/维基）、动态工具生成、视觉、鼠标键盘模拟
 - **Generated 工具**：隧道监控、隧道管理、交互式邮件等（Self-Upgrade 产出 + 手写，动态加载）
-- **Agent 能力**：请求工具升级（Self-Upgrade）、EvoMap 技能（可选）、技能 Capsule（本地 + 开放技能源）
+- **Agent 能力**：请求工具升级（Self-Upgrade）、EvoMap 技能（可选）、技能 Capsule（本地 + 开放技能源，v3.2 支持按需拉取）
 
 ### Mac 客户端能力
 - **监控仪表板**：执行时间线、系统状态、历史分析、实时日志流、用户平台统计（Token/RPM/TPM、模型分布）
@@ -27,13 +27,19 @@
 - **终端会话增强**：记录 cwd/输出，供后续命令和 prompt 复用
 
 ### 架构与运维
-- **上下文与记忆**：BGE 向量检索（可关）、会话持久化、情景记忆与策略 DB、任务上下文（目标应用绑定）
+- **上下文与记忆**：BGE 向量检索（可关）、会话持久化、情景记忆与策略 DB、任务上下文（目标应用绑定）；v3.2 支持重要性加权 memory
 - **EventBus 解耦**：错误收集、自愈建议、升级触发通过事件总线，不侵入主循环
 - **工具自我升级**：Planner → Strategy → Executor → Validation → Activation，沙箱执行（resource_dispatcher）
-- **自愈**：诊断引擎、修复计划与执行，支持 HTTP 与 WebSocket 调用
+- **自愈**：诊断引擎、修复计划与执行，支持 HTTP 与 WebSocket 调用；v3.2 支持失败分类反思（7 种 FailureType）
 - **系统消息与日志**：统一系统通知、启动日志分析（错误模式匹配与用户提示）
 - **多客户端**：Mac/iOS 同时连接，按 session 同步；可选 Cloudflared 隧道 + Token 认证
 - **Tunnel 生命周期**：Cloudflared 隧道自动启停、局域网信息、自动启动配置
+
+### v3.2 可观测与可评估
+- **Trace 完善**：span 级 token 统计、工具调用记录、`get_trace_summary` / `list_traces` / `get_trace_spans` / `delete_trace`
+- **Traces REST API**：`GET /traces`、`GET /traces/{task_id}`、`GET /traces/{task_id}/spans`、`DELETE /traces/{task_id}`
+- **深度健康检查**：`GET /health/deep` 8 子系统（LLM、磁盘、内存、vector_db、tool_router、task_tracker、traces、evomap）
+- **Benchmark 自动化**：`scripts/run_benchmark.py` B1-B7 用例，WebSocket 自动执行并汇总
 
 ---
 
@@ -46,8 +52,6 @@
 ---
 
 ## 快速开始
-
-**新机器部署或遇环境/依赖问题可参考 [新环境部署指南](docs/新环境部署指南.md)。**
 
 ### 1. 安装 Python 依赖
 
@@ -176,15 +180,16 @@ MacAgent/
 │
 ├── backend/                       # Python FastAPI 后端
 │   ├── main.py                    # 入口、lifespan、路由与 WebSocket 注册
-│   ├── app_state.py               # 全局状态、TaskTracker、Feature Flags
+│   ├── app_state.py               # 全局状态、TaskTracker、Feature Flags（含 v3.2）
 │   ├── auth.py                    # 隧道认证
 │   ├── connection_manager.py      # WebSocket 连接与按 session 广播
 │   ├── ws_handler.py              # /ws 消息分发（chat/stop/autonomous/resume/monitor_event...）
-│   ├── config/                    # llm_config, smtp_config, github_config, agent_config
-│   ├── data/                      # llm_config, smtp, github, contexts/, episodes/
+│   ├── config/                    # llm_config, smtp_config, github_config, agent_config（合并原根目录）
+│   ├── core/                      # v3 框架层（error_model, task_state_machine, trace_logger v3.2）
+│   ├── data/                      # llm_config, smtp, github, contexts/, episodes/, traces/
 │   │
 │   ├── routes/                    # HTTP 路由
-│   │   ├── health.py              # /health, /server-status, /connections
+│   │   ├── health.py              # /health, /health/deep（v3.2）, /server-status, /connections
 │   │   ├── auth_routes.py         # /auth/status, generate-token, disable
 │   │   ├── config.py              # /config, /config/smtp, /config/github, /config/install-langchain
 │   │   ├── tools.py               # /tools, /tools/pending, approve, reload
@@ -193,40 +198,45 @@ MacAgent/
 │   │   ├── memory.py              # /memory/status, /local-llm/status, /model-selector/*
 │   │   ├── self_healing.py        # /self-healing/*, /ws/self-healing
 │   │   ├── evomap.py              # /evomap/*（ENABLE_EVOMAP=true 时）
-│   │   ├── capsules.py            # /capsules, /capsules/find, execute
+│   │   ├── capsules.py           # /capsules, /capsules/find, execute
 │   │   ├── chat.py                # POST /chat 非流式
-│   │   ├── monitor.py             # /monitor/episodes, /monitor/statistics
-│   │   ├── usage_stats.py         # /usage-stats/overview, /usage-stats/model-analysis
-│   │   ├── tunnel.py              # /tunnel/status, start, stop, restart, lan-info, auto-start
-│   │   ├── workspace.py           # POST /workspace（上报 cwd、open_files）
-│   │   └── permissions.py         # /permissions/status
+│   │   ├── monitor.py            # /monitor/episodes, /monitor/statistics
+│   │   ├── usage_stats.py        # /usage-stats/overview, /usage-stats/model-analysis
+│   │   ├── tunnel.py             # /tunnel/status, start, stop, restart, lan-info, auto-start
+│   │   ├── workspace.py          # POST /workspace（上报 cwd、open_files）
+│   │   ├── permissions.py        # /permissions/status
+│   │   ├── traces.py             # /traces（v3.2 新增）
+│   │   └── files.py              # /files/* 文件读写
 │   │
 │   ├── agent/                     # Agent 核心与周边
 │   │   ├── core.py                # AgentCore ReAct 循环
 │   │   ├── autonomous_agent.py    # 自主任务、反思、模型选择
-│   │   ├── llm_client.py          # 统一 LLM 客户端（DeepSeek/Ollama/LM Studio/New API）
-│   │   ├── local_llm_manager.py    # 本地模型检测
-│   │   ├── model_selector.py      # 任务→模型选择
-│   │   ├── prompt_loader.py       # LITE/FULL system prompt、进化规则
-│   │   ├── context_manager.py     # 对话上下文、向量检索
-│   │   ├── vector_store.py        # BGE 嵌入与语义检索
+│   │   ├── llm_client.py         # 统一 LLM 客户端（v3.2：extra_body/Extended Thinking）
+│   │   ├── local_llm_manager.py   # 本地模型检测
+│   │   ├── model_selector.py     # 任务→模型选择
+│   │   ├── prompt_loader.py      # LITE/FULL system prompt、进化规则
+│   │   ├── context_manager.py    # 对话上下文、向量检索
+│   │   ├── vector_store.py       # BGE 嵌入与语义检索
 │   │   ├── task_context_manager.py# 目标应用解析与绑定
-│   │   ├── web_augmented_thinking.py  # 联网增强（天气/百科/事实核查等）
+│   │   ├── episodic_memory.py    # 情景记忆（v3.2：重要性加权）
+│   │   ├── reflect_engine.py     # 反思（v3.2：失败分类 + 专用 prompt）
+│   │   ├── web_augmented_thinking.py  # 联网增强
 │   │   ├── local_tool_parser.py   # 本地模型 tool_calls 解析
+│   │   ├── capsule_on_demand.py  # v3.2 按需拉取 Skill
 │   │   ├── event_bus.py, error_service.py, self_healing_worker.py, upgrade_service.py
 │   │   ├── system_message_service.py, log_analyzer.py
-│   │   ├── self_upgrade/          # 工具自我升级（orchestrator, planner, executors, ...）
-│   │   ├── self_healing/          # 自愈（diagnostic, repair_planner/validator/executor）
-│   │   ├── capsule_*.py           # Capsule 加载、执行、校验、开放技能源
-│   │   ├── evomap_*.py            # EvoMap 服务与升级钩子（可选）
-│   │   ├── stop_policy.py         # 自主任务自适应停止
+│   │   ├── self_upgrade/         # 工具自我升级
+│   │   ├── self_healing/         # 自愈
+│   │   ├── capsule_*.py         # Capsule 加载、执行、校验、开放技能源
+│   │   ├── evomap_*.py          # EvoMap 服务与升级钩子（可选）
+│   │   ├── stop_policy.py       # 自主任务自适应停止
 │   │   ├── resource_dispatcher.py # 升级任务沙箱执行
-│   │   ├── usage_tracker.py       # Token/RPM/TPM 统计
-│   │   ├── workspace_context.py   # 工作区 cwd、open_files
-│   │   ├── terminal_session.py   # 终端 cwd 与输出记录
+│   │   ├── usage_tracker.py     # Token/RPM/TPM 统计
+│   │   ├── workspace_context.py # 工作区 cwd、open_files
+│   │   ├── terminal_session.py  # 终端 cwd 与输出记录
 │   │   └── ...
 │   │
-│   ├── tools/                     # 工具实现
+│   ├── tools/                    # 工具实现
 │   │   ├── base.py, registry.py, router.py, schema_registry.py, validator.py, middleware.py
 │   │   ├── file_tool, terminal_tool, app_tool, system_tool, clipboard_tool
 │   │   ├── script_tool, screenshot_tool, browser_tool, mail_tool, calendar_tool
@@ -237,10 +247,18 @@ MacAgent/
 │   │
 │   ├── services/                  # tunnel_lifecycle 等
 │   ├── llm/                       # tool_parser_v2, json_repair
-│   └── runtime/                   # RuntimeAdapter, mac_adapter, permission_checker, cg_event
+│   ├── runtime/                   # RuntimeAdapter, mac_adapter, permission_checker, cg_event
+│   └── scripts/                   # run_benchmark.py（v3.2）, check_ollama.py 等
 │
 └── docs/
-    └── ...
+    ├── README.md                  # 文档总览与主线目标点
+    ├── backend-structure.md       # 后端目录与模块说明
+    ├── 主线目标与路线图.md
+    ├── 痛点分析与解决方案.md
+    ├── v3.2_PLAN.md               # v3.2 功能清单
+    ├── V3.1_PLAN.md
+    ├── 测试与验收.md
+    └── archive/                   # 历史与专项文档
 ```
 
 ---
@@ -290,6 +308,7 @@ def get_all_tools(runtime_adapter=None):
 | 类别 | 方法 | 路径 | 说明 |
 |------|------|------|------|
 | 健康 | GET | /health, /server-status, /connections | 健康与连接数 |
+| 健康 | GET | /health/deep | v3.2 深度健康检查（8 子系统）|
 | 配置 | GET/POST | /config, /config/smtp, /config/github | LLM / 邮件 / GitHub；GET 含 langchain_compat，POST 可传 langchain_compat |
 | 配置 | POST | /config/install-langchain | 安装 LangChain 可选依赖 |
 | 工具 | GET | /tools | 工具列表 |
@@ -304,12 +323,15 @@ def get_all_tools(runtime_adapter=None):
 | 自愈 | WebSocket | /ws/self-healing | 自愈对话与执行 |
 | 监控 | GET | /monitor/episodes, /monitor/statistics | 执行历史、统计摘要 |
 | 统计 | GET | /usage-stats/overview, /usage-stats/model-analysis | Token/RPM/TPM、模型分布 |
+| traces | GET | /traces | v3.2 列出 trace 列表 |
+| traces | GET | /traces/{task_id} | v3.2 获取 trace 摘要 |
+| traces | GET | /traces/{task_id}/spans | v3.2 分页获取 spans |
+| traces | DELETE | /traces/{task_id} | v3.2 删除 trace |
 | 隧道 | GET/POST | /tunnel/status, /tunnel/start, /tunnel/stop, /tunnel/restart, /tunnel/lan-info, /tunnel/auto-start | Cloudflare Tunnel 管理 |
 | 工作区 | POST/GET | /workspace, /workspace/{session_id} | 上报 cwd、open_files |
 | 权限 | GET | /permissions/status | 辅助功能、屏幕录制、自动化等状态 |
 | EvoMap | GET/POST | /evomap/status, register, search, resolve, publish, events, audit | 需 ENABLE_EVOMAP=true |
 | Capsule | GET/POST | /capsules, /capsules/find, /capsules/{id}, /capsules/{id}/execute | 技能胶囊 |
-
 
 ---
 
@@ -321,8 +343,40 @@ def get_all_tools(runtime_adapter=None):
 | EMBEDDING_MODEL | BAAI/bge-small-zh-v1.5 | 嵌入模型 |
 | ENABLE_EVOMAP | false | 是否启用 EvoMap |
 | MACAGENT_AUTO_TOOL_UPGRADE | true | 是否自动触发工具升级 |
-| AUTH_ENABLED, AUTH_TOKEN | - | 隧道/iOS 认证（见 auth.py） |
+| AUTH_ENABLED, AUTH_TOKEN | - | 隧道/iOS 认证（见 auth.py）|
 | HF_ENDPOINT | - | 国内可设 https://hf-mirror.com 加速 BGE 下载 |
+
+### v3.2 Feature Flags（`MACAGENT_` 前缀）
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| MACAGENT_TRACE_TOKEN_STATS | true | span 级 token 统计 |
+| MACAGENT_TRACE_TOOL_CALLS | true | 工具调用写入 trace |
+| MACAGENT_ENABLE_IMPORTANCE_WEIGHTED_MEMORY | true | 重要性加权 memory |
+| MACAGENT_ENABLE_FAILURE_TYPE_REFLECTION | true | 失败分类反思 |
+| MACAGENT_ENABLE_ON_DEMAND_SKILL_FETCH | true | 按需拉取 Skill（启动不全量同步）|
+| MACAGENT_ENABLE_EXTENDED_THINKING | false | Extended Thinking / CoT |
+| MACAGENT_ENABLE_IDEMPOTENT_TASKS | false | 幂等任务（实验性）|
+| MACAGENT_ENABLE_SUBAGENT | false | 子 Agent（规划中）|
+| MACAGENT_HEALTH_DEEP_LLM_TIMEOUT | 5.0 | /health/deep LLM 超时（秒）|
+
+---
+
+## Benchmark 自动化（v3.2）
+
+```bash
+cd backend
+pip install websockets
+
+# 运行所有用例（默认端口 8765）
+python scripts/run_benchmark.py --url http://localhost:8765
+
+# 运行指定用例
+python scripts/run_benchmark.py --url http://localhost:8765 --cases B1,B3,B7
+
+# 保存结果
+python scripts/run_benchmark.py --url http://localhost:8765 --out ./data/benchmark_results
+```
 
 ---
 
@@ -358,6 +412,29 @@ cd MacAgent/iOSAgentApp && pod install
 - 危险终端命令会被拒绝（如 `rm -rf /`）；Self-Upgrade 执行在沙箱内（`resource_dispatcher`：cwd 限制、命令黑名单、超时）
 - API Key 与配置存于本地（`backend/data/`），不会上传
 - 建议在沙盒或测试环境中验证新工具与升级流程
+
+---
+
+## Mac App 与 v3.2 兼容性
+
+**v3.2 不破坏 v3.1 任何接口或行为**，现有 Mac App 无需修改即可与 v3.2 后端兼容。
+
+| 项目 | 说明 |
+|------|------|
+| **必须改动** | 无。Mac App 使用的 `/health`、`/ws`、`/permissions/status`、`/logs` 等接口保持不变 |
+| **可选增强** | 1）用 `GET /health/deep` 替代或补充 `/health`，获取 8 子系统详细状态；2）在监控仪表板中集成 `GET /traces`、`GET /traces/{task_id}/spans` 展示执行轨迹与 token 消耗 |
+| **端口** | 后端仍为 `127.0.0.1:8765`，Mac App 无需调整 |
+
+---
+
+## 相关文档
+
+- 文档总览与主线目标点：[docs/README.md](docs/README.md)
+- 后端结构：[docs/backend-structure.md](docs/backend-structure.md)
+- 主线目标与路线图：[docs/主线目标与路线图.md](docs/主线目标与路线图.md)
+- v3.2 功能清单：[docs/v3.2_PLAN.md](docs/v3.2_PLAN.md)
+- 痛点与方案：[docs/痛点分析与解决方案.md](docs/痛点分析与解决方案.md)
+- 测试与验收：[docs/测试与验收.md](docs/测试与验收.md)
 
 ---
 

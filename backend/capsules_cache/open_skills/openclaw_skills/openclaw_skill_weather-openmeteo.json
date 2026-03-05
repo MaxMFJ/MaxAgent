@@ -1,0 +1,96 @@
+{
+  "id": "openclaw_skill_weather-openmeteo",
+  "description": "Get current weather and forecasts using Open-Meteo API (no API key required). Optimized for PowerShell environments with Chinese support.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Weather Open-Meteo Skill\n\nA reliable weather skill using Open-Meteo API, specifically optimized for PowerShell environments with full Chinese support."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Features] - ✅ **No API key required** - Completely free to use\n- ✅ **PowerShell optimized** - Works well in PowerShell environments\n- ✅ **Chinese support** - Designed for Chinese users\n- ✅ **7-day forecast** - Complete weather predictions\n- ✅ **Multi-city support** - Built-in Chinese major cities\n- ✅ **Weather code translation** - Converts WMO codes to Chinese descriptions"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ### Basic Usage\n\n```powershell\n# Navigate to skill directory\ncd ~/.openclaw/workspace/skills/weather-openmeteo\n\n# Get current weather (English version)\n.\\weather-en.ps1 -City Shanghai\n\n# Get current weather (Chinese version)\n.\\weather-cn.ps1 -City Beijing\n```\n\n### Supported Cities\n\n- Shanghai (上海)\n- Beijing (北京)\n- Guangzhou (广州)\n- Shenzhen (深圳)\n- Chengdu (成都)\n- Hangzhou (杭州)\n- Nanjing (南京)\n- Wuhan (武汉)\n- Xian (西安)\n- Chongqing (重庆)"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Script Files] ### weather-en.ps1 (English Version)\n- Displays weather information in English\n- Complete weather code descriptions\n- Suitable for international users\n\n### weather-cn.ps1 (Chinese Version)\n- Displays weather information using Pinyin\n- Avoids Chinese character encoding issues\n- Suitable for Chinese users\n\n### weather-simple.ps1 (Simplified Version)\n- Basic functionality\n- Good for learning and modification"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[API Reference] ### Current Weather API\n```\nhttps://api.open-meteo.com/v1/forecast?\n  latitude=31.2304&\n  longitude=121.4737&\n  current_weather=true&\n  timezone=Asia/Shanghai\n```\n\n### 7-Day Forecast API\n```\nhttps://api.open-meteo.com/v1/forecast?\n  latitude=31.2304&\n  longitude=121.4737&\n  daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&\n  timezone=Asia/Shanghai\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Weather Code Reference] | Code | English | Chinese |\n|------|---------|---------|\n| 0 | Clear sky | 晴天 |\n| 1 | Mainly clear | 主要晴朗 |\n| 2 | Partly cloudy | 部分多云 |\n| 3 | Overcast | 多云 |\n| 45 | Fog | 雾 |\n| 48 | Depositing rime fog | 雾凇 |\n| 51-55 | Drizzle | 雨 |\n| 61-65 | Rain | 雨 |\n| 71-77 | Snow | 雪 |\n| 80-86 | Rain showers | 雨 |\n| 95-99 | Thunderstorm | 雷暴 |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Example Output] ### Current Weather\n```\n=== Current Weather - Shanghai ===\nTime: 2026-03-03T17:45\nTemperature: 8.7C\nWind speed: 12.0 km/h\nWind direction: 16 degrees\nWeather: Overcast\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Troubleshooting] ### 1. Script Execution Error\n```powershell\n# Set execution policy\nSet-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser\n```\n\n### 2. Network Connection Issues\n- Ensure you can access open-meteo.com\n- Check firewall settings\n\n### 3. City Not Supported\nEdit the `$cityCoords` hash table to add new cities:\n```powershell\n\"CityName\" = @{ latitude = 纬度; longitude = 经度; timezone = \"Asia/Shanghai\" }\n```"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Files Included] - `SKILL.md` - Skill description\n- `README.md` - Usage instructions\n- `USAGE.md` - Detailed usage guide\n- `CREATION.md` - Creation process documentation\n- `weather.ps1` - Complete script (Chinese)\n- `weather-en.ps1` - English version\n- `weather-cn.ps1` - Chinese version (Pinyin)\n- `weather-simple.ps1` - Simplified version\n- `example.ps1` - Usage examples"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Advantages] ### vs Original Weather Skill\n| Feature | Original | New Skill |\n|---------|----------|-----------|\n| API Key | Not needed | Not needed |\n| PowerShell Support | Problematic | Optimized |\n| Chinese Display | Limited | Full support |\n| City Database | None | Built-in Chinese cities |\n| Error Handling | Basic | Comprehensive |\n\n### vs Other Weather Services\n| Service | API Key | PowerShell | Chinese |\n|---------|---------|------------|---------|\n| Open-Meteo | ❌ | ✅ | ✅ |\n| wttr.in | ❌ | ❌ | Limited |\n| WeatherAPI | ✅ | ✅ | ✅ |"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[License] MIT License - Free to use and modify"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "weather_openmeteo"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "clawdbot": {
+        "emoji": "🌤️",
+        "requires": {
+          "bins": []
+        }
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/alexfeng75/weather-openmeteo/SKILL.md"
+}

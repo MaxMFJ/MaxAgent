@@ -1,0 +1,79 @@
+{
+  "id": "openclaw_skill_sealvera",
+  "description": "Tamper-evident audit trail for AI agent decisions. Use when logging LLM decisions, setting up AI compliance, auditing agents for EU AI Act, HIPAA, GDPR or SOC 2, or when a user asks about AI decision audit trails, explainability, or SealVera.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # SealVera Skill for OpenClaw\n\n**Cryptographically-sealed, tamper-evident audit trails for every AI decision your agents make.**\n\nSealVera is AI Decision Audit Infrastructure. This skill wires any OpenClaw agent into SealVera\nso every decision it makes is logged, cryptographically signed, chained, and monitored —\nautomatically. Built for teams shipping AI in finance, healthcare, legal, and insurance.\n\n> EU AI Act · SOC 2 · HIPAA · GDPR · FINRA · ISO 42001\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Why SealVera?] - **Tamper-evident** — every decision is cryptographically hashed (RSA-2048) and chained; any alteration is detectable\n- **Works in 2 lines** — `init()` + one patch call and every LLM decision is logged\n- **Full explainability** — captures inputs, outputs, reasoning steps, confidence scores, model used\n- **Real-time dashboard** — search, filter, export at [app.sealvera.com](https://app.sealvera.com)\n- **Drift detection** — alerts when agent behaviour deviates from its baseline\n- **Any LLM** — OpenAI, Anthropic, Gemini, Ollama, LangChain, CrewAI, AutoGen\n- **Zero friction** — no new infrastructure, installs in seconds\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[First time? Run setup] Check if SealVera is configured:\n\n```javascript\nconst fs = require('fs');\nconst path = require('path');\nconst configured = fs.existsSync(path.join(process.env.OPENCLAW_WORKSPACE || process.cwd(), '.sealvera.json'));\n```\n\nIf `.sealvera.json` does NOT exist, run setup:\n\n```bash\nnode <skill_dir>/scripts/setup.js\n```\n\nSetup will:\n1. Ask for your API key (get one free at [app.sealvera.com](https://app.sealvera.com))\n2. Verify connectivity and show org/plan info\n3. Copy `sealvera-log.js` into the workspace\n4. Patch `AGENTS.md` with the mandatory sub-agent audit rule\n5. Write `.sealvera.json` config\n6. Fire a test log to confirm end-to-end\n\n**One-time setup. After this, every sub-agent you spawn is audited automatically.**\n\nIf the user says \"install SealVera\", \"set up SealVera\", or \"connect SealVera\" — run setup, don't just describe it.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How logging works] After setup, logging is automatic for sub-agents via the `AGENTS.md` convention.\nFor manual logging:\n\n```javascript\nconst log = require('./sealvera-log');\nawait log({\n  action: 'describe what happened',\n  decision: 'COMPLETED',\n  input:  { task: '...' },\n  output: { result: '...' },\n  reasoning: [{ factor: 'outcome', value: 'ok', signal: 'safe', explanation: '...' }]\n});\n```\n\nEach log entry includes: input/output, reasoning steps, RSA-2048 signature, chain link, timestamp, model, and agent name.\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Decision vocabulary] **Task / agent execution:**\n\n| Decision | Meaning |\n|---|---|\n| `COMPLETED` | Task finished successfully |\n| `RESPONDED` | Answered a question / returned output |\n| `FAILED` | Task failed |\n| `ERROR` | Unexpected exception |\n| `ESCALATED` | Handed off to human or higher-level agent |\n| `SKIPPED` | Task intentionally not run |\n| `PARTIAL` | Completed with caveats |\n\n**Approval / gating:**\n\n| Decision | Meaning |\n|---|---|\n| `APPROVED` | Request approved |\n| `REJECTED` | Request blocked |\n| `FLAGGED` | Needs human review |\n\n**Tests:**\n\n| Decision | Meaning |\n|---|---|\n| `PASSED` | Test passed |\n| `FAILED` | Test failed |\n| `SKIPPED` | Test skipped |\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Sub-agent audit rule] Append this footer to every `sessions_spawn` task:\n\n```\n---\nMANDATORY: Before you finish, log your result to SealVera:\n  const log = require('<workspace>/sealvera-log');\n  await log({\n    action: '<what you did>',\n    decision: 'COMPLETED',\n    input: { task: '<summary>' },\n    output: { result: '<summary>' },\n    reasoning: [{ factor: 'outcome', value: '<result>', signal: 'safe', explanation: '<why>' }]\n  });\nVocabulary: task=COMPLETED/FAILED | test=PASSED/FAILED | gate=APPROVED/REJECTED | handoff=ESCALATED\n```\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Check status] ```bash\nnode <skill_dir>/scripts/status.js\n```\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Get your API key] Sign up at **[app.sealvera.com](https://app.sealvera.com)** — free tier includes 10,000 decisions/month.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reference] See `references/api.md` for all SDK methods and log field schema.\nSee `references/compliance.md` for regulation mapping (EU AI Act, FINRA, HIPAA, GDPR, SOC 2)."
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "sealvera"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ahessami123/sealvera/SKILL.md"
+}

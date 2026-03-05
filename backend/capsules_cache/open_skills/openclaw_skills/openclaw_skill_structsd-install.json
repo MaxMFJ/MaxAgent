@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_structsd-install",
+  "description": "Installs the structsd binary from source. Covers Go, Ignite CLI, and building structsd for Linux and macOS. Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Install structsd\n\nBuilds the `structsd` binary from source using Ignite CLI. After this procedure, `structsd` will be available on your PATH."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Prerequisites] Two dependencies are required: **Go 1.24.1+** and **Ignite CLI**.\n\n---\n\n### 1. Install Go\n\n#### Linux (amd64)\n\n```bash\nwget https://go.dev/dl/go1.24.1.linux-amd64.tar.gz\nsudo rm -rf /usr/local/go\nsudo tar -C /usr/local -xzf go1.24.1.linux-amd64.tar.gz\nrm go1.24.1.linux-amd64.tar.gz\n```\n\nIf an older Go was installed via apt, remove it first: `sudo apt remove -y golang-go`\n\n#### macOS (Apple Silicon)\n\n```bash\ncurl -OL https://go.dev/dl/go1.24.1.darwin-arm64.tar.gz\nsudo rm -rf /usr/local/go\nsudo tar -C /usr/local -xzf go1.24.1.darwin-arm64.tar.gz\nrm go1.24.1.darwin-arm64.tar.gz\n```\n\n#### macOS (Intel)\n\n```bash\ncurl -OL https://go.dev/dl/go1.24.1.darwin-amd64.tar.gz\nsudo rm -rf /usr/local/go\nsudo tar -C /usr/local -xzf go1.24.1.darwin-amd64.tar.gz\nrm go1.24.1.darwin-amd64.tar.gz\n```\n\nAlternatively on macOS: `brew install go@1.24`\n\n#### Configure PATH\n\nAdd to `~/.profile` (or `~/.zshrc` on macOS):\n\n```bash\nexport PATH=$PATH:/usr/local/go/bin:~/go/bin\n```\n\nReload: `source ~/.profile` (or `source ~/.zshrc`)\n\n#### Verify\n\n```bash\ngo version\n```\n\nExpected: `go version go1.24.1 linux/amd64` (or `darwin/arm64`, etc.)\n\n---\n\n### 2. Install Ignite CLI\n\n```bash\ncurl https://get.ignite.com/cli! | bash\n```\n\n#### Verify\n\n```bash\nignite version\n```\n\n---\n\n### 3. Build structsd\n\nClone the repository and build:\n\n```bash\ngit clone https://github.com/playstructs/structsd.git\ncd structsd\nignite chain build\n```\n\nThe binary is installed to `~/go/bin/structsd`. Since `~/go/bin` is on your PATH (from step 1), it's immediately available.\n\n#### Verify\n\n```bash\nstructsd version\n```\n\n---\n\n### 4. Update structsd\n\nTo update to the latest version:\n\n```bash\ncd structsd\ngit pull origin main\nignite chain build\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Check] Run all verifications in sequence:\n\n```bash\ngo version && ignite version && structsd version\n```\n\nIf any command fails, revisit the corresponding step above."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Troubleshooting] - **`structsd: command not found`** — Ensure `~/go/bin` is on your PATH. Run `ls ~/go/bin/structsd` to confirm the binary exists.\n- **`ignite: command not found`** — Re-run the Ignite CLI install. The curl command installs to `/usr/local/bin/ignite`.\n- **`go: command not found`** — Ensure `/usr/local/go/bin` is on your PATH. Reload your shell profile.\n- **Build fails with Go version error** — Verify `go version` shows 1.24.1+. Older Go versions are not compatible.\n- **Permission denied on `/usr/local`** — Use `sudo` for the tar extraction. On shared systems, ask your administrator."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[See Also] - [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)\n- [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structsd_install"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structsd-install/SKILL.md"
+}

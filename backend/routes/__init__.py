@@ -18,6 +18,8 @@ from .monitor import router as monitor_router
 from .usage_stats import router as usage_stats_router
 from .tunnel import router as tunnel_router
 from .permissions import router as permissions_router
+from .files import router as files_router
+from .traces import router as traces_router
 
 all_routers = [
     health_router,
@@ -36,4 +38,6 @@ all_routers = [
     usage_stats_router,
     tunnel_router,
     permissions_router,
+    files_router,
+    traces_router,
 ]

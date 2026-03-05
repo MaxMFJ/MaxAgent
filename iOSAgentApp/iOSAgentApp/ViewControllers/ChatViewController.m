@@ -755,7 +755,8 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     (void)inputView;
     
     // 未连接服务器时禁止开启语音模式
-    if ([WebSocketService sharedService].connectionState != WebSocketConnectionStateConnected) {
+    if (!self.inputView.voiceInputActive &&
+        [WebSocketService sharedService].connectionState != WebSocketConnectionStateConnected) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"无法使用语音"
                                                                        message:@"请先连接服务器后再使用语音输入"
                                                                 preferredStyle:UIAlertControllerStyleAlert];
@@ -765,8 +766,17 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     }
     
     VoiceInputService *voice = [VoiceInputService sharedService];
-    if (voice.isRecording) {
-        NSString *committed = [voice commitCurrentText];
+    
+    // 用 UI 状态判断当前是否处于语音模式（比 voice.isRecording 更可靠，
+    // 因为 startRecording 可能内部失败但 UI 已切换）
+    if (self.inputView.voiceInputActive || voice.isRecording) {
+        // 关闭语音模式
+        NSString *committed = @"";
+        if (voice.isRecording) {
+            committed = [voice commitCurrentText];
+        } else {
+            [voice stopRecording]; // 确保清理
+        }
         self.inputView.voiceInputActive = NO;
         [self.voiceRainbow stopFlowing];
         [self.voiceRainbow hideAnimated];
@@ -775,6 +785,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             [self inputView:self.inputView didSendMessage:committed];
         }
     } else {
+        // 开启语音模式
         [voice startRecording];
         self.inputView.voiceInputActive = YES;
         [self.voiceRainbow showAnimated];

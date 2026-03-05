@@ -32,7 +32,7 @@
     {
       "id": "step_3",
       "type": "subtask",
-      "description": "[Parameters / 参数说明] ### yt-dlp Video Download\n- `-f \"bestvideo[ext=mp4]\"`: Download highest quality video format (video only)\n- Output template: `%(title)s_video.%(ext)s`\n\n### yt-dlp Audio Download\n- `-x`: Extract audio\n- `--audio-format m4a`: Output as M4A format\n\n### ffmpeg Merge\n- `-i \"video.mp4\" -i \"audio.m4a\"`: Input files\n- `-c:v copy`: Copy video stream, no re-encoding\n- `-c:a aac`: Convert audio to AAC encoding\n- `-shortest`: Use shorter duration\n- `-y`: Overwrite output file"
+      "description": "[Parameters / 参数说明] ### yt-dlp Video Download\n- `-f \"bestvideo\"`: Download highest quality video format (may be WebM or MP4)\n- Output template: `%(title)s_video.%(ext)s`\n\n### yt-dlp Audio Download\n- `-x`: Extract audio\n- `--audio-format m4a`: Output as M4A format\n\n### ffmpeg Merge\n- `-i \"video.mp4\" -i \"audio.m4a\"`: Input files\n- `-c:v copy`: Copy video stream, no re-encoding\n- `-c:a aac`: Convert audio to AAC encoding\n- `-shortest`: Use shorter duration\n- `-y`: Overwrite output file"
     },
     {
       "id": "step_4",

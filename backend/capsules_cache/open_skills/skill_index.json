@@ -3211,6 +3211,10 @@
         "desc": "Use when building .NET 8/9 applications, ASP.NET Core APIs."
       },
       {
+        "name": "domain-trust-check",
+        "desc": "Check any URL for phishing, malware, brand abuse, and scams before visiting. Powered by the Outtake Trust API."
+      },
+      {
         "name": "exec-display",
         "desc": "Structured command execution with security levels, color-coded."
       },
@@ -3521,5 +3525,5 @@
     ],
     "Star History": []
   },
-  "total": 879
+  "total": 880
 }

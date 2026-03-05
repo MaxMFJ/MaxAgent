@@ -1,0 +1,112 @@
+{
+  "id": "openclaw_skill_skills-weekly",
+  "description": "OpenClaw Skills Weekly — tracks trending ClawHub skills, generates GitHubAwesome-style YouTube video scripts with two-track ranking (Movers + Rockets).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Skills Weekly\r\n\r\nAutomated pipeline for tracking trending ClawHub skills and generating YouTube-ready video scripts in the GitHubAwesome format."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **ClawHub API Discovery** — Fetches all ~13K skills from `GET https://clawhub.ai/api/v1/skills` with cursor pagination. No auth required.\r\n2. **SQLite Time-Series Snapshots** — Records daily metrics (installs, downloads, stars) to build 7-day velocity history.\r\n3. **Two-Track Ranking** — MOVERS (established skills, 30+ days, ranked by install velocity) and ROCKETS (new skills <30 days, with recency bonus). Author diversity cap prevents one author from dominating.\r\n4. **Content Harvesting** — Fetches documentation and author info from ClawHub detail API for top-ranked skills.\r\n5. **YouTube Script Generation** — Generates GitHubAwesome-style video segments via Claude Haiku: hook-first, technical specs, no popularity metrics, dry newscast tone.\r\n6. **Dual Output** — Markdown report (`.md`) + voice-ready video script (`.txt`)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] Parse the user's request and route to the correct mode:\r\n\r\n| User says | Mode | What happens |\r\n|---|---|---|\r\n| `weekly report` or `full report` or `generate report` | Full Pipeline | Discovery → snapshot → rank → harvest → scripts → output |\r\n| `snapshot` or `daily snapshot` | Snapshot Only | Record ClawHub metrics to DB (no scripts) |\r\n| `trending` or `what's trending` | Quick Trending | Show top 10 from existing DB data |\r\n| `status` or `db status` | Status | Show DB health and snapshot history |\r\n| `video script` or `generate script` | Script Only | Re-generate scripts from last snapshot (no re-fetch) |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Full Pipeline (Weekly Report)] First, install dependencies if not already present:\r\n\r\n```bash\r\ncd \"${SKILL_ROOT}\" && pip install -r requirements.txt --quiet 2>/dev/null || pip3 install -r requirements.txt --quiet\r\n```\r\n\r\nThen run the full pipeline:\r\n\r\n```bash\r\ncd \"${SKILL_ROOT}\" && python3 run_weekly.py --top 10 --episode ${EPISODE_NUM:-1}\r\n```\r\n\r\nReplace `${EPISODE_NUM}` with the episode number the user specifies, or default to 1.\r\n\r\nIf the user says `--skip-x` or doesn't want X/Twitter capture, add `--skip-x`:\r\n\r\n```bash\r\ncd \"${SKILL_ROOT}\" && python3 run_weekly.py --top 10 --skip-x --episode ${EPISODE_NUM:-1}\r\n```\r\n\r\n**What this produces:**\r\n- `openclaw_weekly_YYYYMMDD.md` — Data-rich markdown report with metrics, rankings, and scripts\r\n- `openclaw_weekly_YYYYMMDD_script.txt` — Voice-ready video script in GitHubAwesome format\r\n\r\nPresent both file paths to the user when done.\r\n\r\n**Expected output:**\r\n```\r\n============================================================\r\n  OpenClaw Skills Weekly — Full Pipeline (v4)\r\n  Week of Mar 01, 2026\r\n============================================================\r\n  PHASE 1: X/Twitter Signal Capture\r\n  PHASE 2: ClawHub Data Pipeline\r\n  [1/5] Discovering ClawHub skills...\r\n  [2/5] Saving snapshot...\r\n  [3/5] Ranking by 7-day velocity...\r\n  [4/5] Harvesting content...\r\n  [5/5] Generating YouTube scripts...\r\n  DONE:\r\n    Report: openclaw_weekly_20260301.md\r\n    Script: openclaw_weekly_20260301_script.txt\r\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Snapshot Only (Daily Cron)] For daily snapshot accumulation without script generation:\r\n\r\n```bash\r\ncd \"${SKILL_ROOT}\" && python3 run_weekly.py --snapshot-only --skip-x\r\n```\r\n\r\nTell the user how many skills were captured and how many snapshot dates exist in the DB."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Quick Trending] Show what's trending from existing DB data without re-fetching:\r\n\r\n```bash\r\ncd \"${SKILL_ROOT}\" && python3 main.py --list-db\r\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Status] ```bash\r\ncd \"${SKILL_ROOT}\" && python3 main.py --list-db\r\n```\r\n\r\nShows: DB path, total snapshot rows, distinct dates, top skills by current installs."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[CLI Options Reference] | Flag | Default | Description |\r\n|---|---|---|\r\n| `--top N` | 10 | Number of top movers to include |\r\n| `--days N` | 7 | Trailing days for velocity calculation |\r\n| `--episode N` | 1 | Episode number for video script cold open |\r\n| `--skip-x` | false | Skip X/Twitter signal capture |\r\n| `--snapshot-only` | false | Just record snapshot, no scripts |\r\n| `--max-pages N` | 0 (all) | Limit API pages (for testing) |\r\n| `--model MODEL` | claude-haiku-4-5-20251001 | Anthropic model for script gen |\r\n| `--output FILE` | auto-dated | Custom output file path |\r\n| `--mock` | false | Use synthetic data (offline dev) |"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Environment Variables] | Variable | Required | Description |\r\n|---|---|---|\r\n| `ANTHROPIC_API_KEY` | Yes | For YouTube script generation via Claude |\r\n| `GITHUB_TOKEN` | No | For fetching source READMEs from GitHub |\r\n| `XAI_API_KEY` | No | For X/Twitter signal capture via xAI |\r\n| `CLAWHUB_BASE_URL` | No | Override ClawHub URL (default: https://clawhub.ai) |"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Video Script Format] Scripts follow the GitHubAwesome \"GitHub Trending Weekly\" format:\r\n- **Cold open**: \"It is time for OpenClaw Skills Weekly, episode number N...\"\r\n- **Per-skill segments** (~20 sec each): Hook first → technical specs → sharp closer\r\n- **No popularity metrics** in narration (no download/install/star counts)\r\n- **Dry, confident newscast tone** — no hype, no superlatives\r\n- **No outro** — last item ends the episode"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Architecture] ```\r\nrun_weekly.py          # Full pipeline orchestrator\r\nmain.py                # Alternative CLI with --list-db\r\ndiscovery.py           # ClawHub API cursor pagination (~13K skills)\r\nstorage.py             # SQLite time-series (slug-scoped dedup, CTE velocity)\r\nranker.py              # Two-track: Movers + Rockets, author diversity cap\r\nharvester.py           # ClawHub detail API content + author extraction\r\nscript_generator.py    # LLM script gen + markdown + video script rendering\r\ncommunity_signals.py   # X/Twitter signal loading and rendering\r\nx_capture.py           # xAI x_search API integration\r\ndata/metrics.db        # SQLite database (auto-created)\r\n```"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "skills_weekly"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "version": "1.0.0",
+        "requires": {
+          "bins": [
+            "python3"
+          ],
+          "env": [
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "triggers": [
+          "skills weekly",
+          "trending skills",
+          "clawhub trending",
+          "skill metrics",
+          "weekly report",
+          "skill snapshot",
+          "openclaw skills",
+          "generate report",
+          "video script"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ademczuk/skills-weekly/SKILL.md"
+}

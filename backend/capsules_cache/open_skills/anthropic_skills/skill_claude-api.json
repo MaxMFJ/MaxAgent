@@ -1,0 +1,89 @@
+{
+  "id": "skill_claude-api",
+  "description": "Build apps with the Claude API or Anthropic SDK. TRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`/`claude_agent_sdk`, or user asks to use Claude API, Anthropic SDKs, or Agent SDK. DO NOT TRIGGER when: code imports `openai`/other AI SDK, general programming, or ML/data-science tasks.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Building LLM-Powered Applications with Claude\n\nThis skill helps you build LLM-powered applications with Claude. Choose the right surface based on your needs, detect the project language, then read the relevant language-specific documentation."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Defaults] Unless the user requests otherwise:\n\nFor the Claude model version, please use Claude Opus 4.6, which you can access via the exact model string `claude-opus-4-6`. Please default to using adaptive thinking (`thinking: {type: \"adaptive\"}`) for anything remotely complicated. And finally, please default to streaming for any request that may involve long input, long output, or high `max_tokens` — it prevents hitting request timeouts. Use the SDK's `.get_final_message()` / `.finalMessage()` helper to get the complete response if you don't need to handle individual stream events\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Language Detection] Before reading code examples, determine which language the user is working in:\n\n1. **Look at project files** to infer the language:\n\n   - `*.py`, `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile` → **Python** — read from `python/`\n   - `*.ts`, `*.tsx`, `package.json`, `tsconfig.json` → **TypeScript** — read from `typescript/`\n   - `*.js`, `*.jsx` (no `.ts` files present) → **TypeScript** — JS uses the same SDK, read from `typescript/`\n   - `*.java`, `pom.xml`, `build.gradle` → **Java** — read from `java/`\n   - `*.kt`, `*.kts`, `build.gradle.kts` → **Java** — Kotlin uses the Java SDK, read from `java/`\n   - `*.scala`, `build.sbt` → **Java** — Scala uses the Java SDK, read from `java/`\n   - `*.go`, `go.mod` → **Go** — read from `go/`\n   - `*.rb`, `Gemfile` → **Ruby** — read from `ruby/`\n   - `*.cs`, `*.csproj` → **C#** — read from `csharp/`\n   - `*.php`, `composer.json` → **PHP** — read from `php/`\n\n2. **If multiple languages detected** (e.g., both Python and TypeScript files):\n\n   - Check which language the user's current file or question relates to\n   - If still ambiguous, ask: \"I detected both Python and TypeScript files. Which language are you using for the Claude API integration?\"\n\n3. **If language can't be inferred** (empty project, no source files, or unsupported language):\n\n   - Use AskUserQuestion with options: Python, TypeScript, Java, Go, Ruby, cURL/raw HTTP, C#, PHP\n   - If AskUserQuestion is unavailable, default to Python examples and note: \"Showing Python examples. Let me know if you need a different language.\"\n\n4. **If unsupported language detected** (Rust, Swift, C++, Elixir, etc.):\n\n   - Suggest cURL/raw HTTP examples from `curl/` and note that community SDKs may exist\n   - Offer to show Python or TypeScript examples as reference implementations\n\n5. **If user needs cURL/raw HTTP examples**, read from `curl/`.\n\n### Language-Specific Feature Support\n\n| Language   | Tool Runner | Agent SDK | Notes                                 |\n| ---------- "
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Which Surface Should I Use?] > **Start simple.** Default to the simplest tier that meets your needs. Single API calls and workflows handle most use cases — only reach for agents when the task genuinely requires open-ended, model-driven exploration.\n\n| Use Case                                        | Tier            | Recommended Surface       | Why                                     |\n| ----------------------------------------------- | --------------- | ------------------------- | --------------------------------------- |\n| Classification, summarization, extraction, Q&A  | Single LLM call | **Claude API**            | One request, one response               |\n| Batch processing or embeddings                  | Single LLM call | **Claude API**            | Specialized endpoints                   |\n| Multi-step pipelines with code-controlled logic | Workflow        | **Claude API + tool use** | You orchestrate the loop                |\n| Custom agent with your own tools                | Agent           | **Claude API + tool use** | Maximum flexibility                     |\n| AI agent with file/web/terminal access          | Agent           | **Agent SDK**             | Built-in tools, safety, and MCP support |\n| Agentic coding assistant                        | Agent           | **Agent SDK**             | Designed for this use case              |\n| Want built-in permissions and guardrails        | Agent           | **Agent SDK**             | Safety features included                |\n\n> **Note:** The Agent SDK is for when you want built-in file/web/terminal tools, permissions, and MCP out of the box. If you want to build an agent with your own tools, Claude API is the right choice — use the tool runner for automatic loop handling, or the manual loop for fine-grained control (approval gates, custom logging, conditional execution).\n\n### Decision Tree\n\n```\nWhat does your application need?\n\n1. Single LLM call (classification, summarization, extraction, Q&A)\n   └── Claude API — one request, one res"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Architecture] Everything goes through `POST /v1/messages`. Tools and output constraints are features of this single endpoint — not separate APIs.\n\n**User-defined tools** — You define tools (via decorators, Zod schemas, or raw JSON), and the SDK's tool runner handles calling the API, executing your functions, and looping until Claude is done. For full control, you can write the loop manually.\n\n**Server-side tools** — Anthropic-hosted tools that run on Anthropic's infrastructure. Code execution is fully server-side (declare it in `tools`, Claude runs code automatically). Computer use can be server-hosted or self-hosted.\n\n**Structured outputs** — Constrains the Messages API response format (`output_config.format`) and/or tool parameter validation (`strict: true`). The recommended approach is `client.messages.parse()` which validates responses against your schema automatically. Note: the old `output_format` parameter is deprecated; use `output_config: {format: {...}}` on `messages.create()`.\n\n**Supporting endpoints** — Batches (`POST /v1/messages/batches`), Files (`POST /v1/files`), and Token Counting feed into or support Messages API requests.\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Current Models (cached: 2026-02-17)] | Model             | Model ID            | Context        | Input $/1M | Output $/1M |\n| ----------------- | ------------------- | -------------- | ---------- | ----------- |\n| Claude Opus 4.6   | `claude-opus-4-6`   | 200K (1M beta) | $5.00      | $25.00      |\n| Claude Sonnet 4.6 | `claude-sonnet-4-6` | 200K (1M beta) | $3.00      | $15.00      |\n| Claude Haiku 4.5  | `claude-haiku-4-5`  | 200K           | $1.00      | $5.00       |\n\n**ALWAYS use `claude-opus-4-6` unless the user explicitly names a different model.** This is non-negotiable. Do not use `claude-sonnet-4-6`, `claude-sonnet-4-5`, or any other model unless the user literally says \"use sonnet\" or \"use haiku\". Never downgrade for cost — that's the user's decision, not yours.\n\n**CRITICAL: Use only the exact model ID strings from the table above — they are complete as-is. Do not append date suffixes.** For example, use `claude-sonnet-4-5`, never `claude-sonnet-4-5-20250514` or any other date-suffixed variant you might recall from training data. If the user requests an older model not in the table (e.g., \"opus 4.5\", \"sonnet 3.7\"), read `shared/models.md` for the exact ID — do not construct one yourself.\n\nA note: if any of the model strings above look unfamiliar to you, that's to be expected — that just means they were released after your training data cutoff. Rest assured they are real models; we wouldn't mess with you like that.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Thinking & Effort (Quick Reference)] **Opus 4.6 — Adaptive thinking (recommended):** Use `thinking: {type: \"adaptive\"}`. Claude dynamically decides when and how much to think. No `budget_tokens` needed — `budget_tokens` is deprecated on Opus 4.6 and Sonnet 4.6 and must not be used. Adaptive thinking also automatically enables interleaved thinking (no beta header needed). **When the user asks for \"extended thinking\", a \"thinking budget\", or `budget_tokens`: always use Opus 4.6 with `thinking: {type: \"adaptive\"}`. The concept of a fixed token budget for thinking is deprecated — adaptive thinking replaces it. Do NOT use `budget_tokens` and do NOT switch to an older model.**\n\n**Effort parameter (GA, no beta header):** Controls thinking depth and overall token spend via `output_config: {effort: \"low\"|\"medium\"|\"high\"|\"max\"}` (inside `output_config`, not top-level). Default is `high` (equivalent to omitting it). `max` is Opus 4.6 only. Works on Opus 4.5, Opus 4.6, and Sonnet 4.6. Will error on Sonnet 4.5 / Haiku 4.5. Combine with adaptive thinking for the best cost-quality tradeoffs. Use `low` for subagents or simple tasks; `max` for the deepest reasoning.\n\n**Sonnet 4.6:** Supports adaptive thinking (`thinking: {type: \"adaptive\"}`). `budget_tokens` is deprecated on Sonnet 4.6 — use adaptive thinking instead.\n\n**Older models (only if explicitly requested):** If the user specifically asks for Sonnet 4.5 or another older model, use `thinking: {type: \"enabled\", budget_tokens: N}`. `budget_tokens` must be less than `max_tokens` (minimum 1024). Never choose an older model just because the user mentions `budget_tokens` — use Opus 4.6 with adaptive thinking instead.\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Compaction (Quick Reference)] **Beta, Opus 4.6 only.** For long-running conversations that may exceed the 200K context window, enable server-side compaction. The API automatically summarizes earlier context when it approaches the trigger threshold (default: 150K tokens). Requires beta header `compact-2026-01-12`.\n\n**Critical:** Append `response.content` (not just the text) back to your messages on every turn. Compaction blocks in the response must be preserved — the API uses them to replace the compacted history on the next request. Extracting only the text string and appending that will silently lose the compaction state.\n\nSee `{lang}/claude-api/README.md` (Compaction section) for code examples. Full docs via WebFetch in `shared/live-sources.md`.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reading Guide] After detecting the language, read the relevant files based on what the user needs:\n\n### Quick Task Reference\n\n**Single text classification/summarization/extraction/Q&A:**\n→ Read only `{lang}/claude-api/README.md`\n\n**Chat UI or real-time response display:**\n→ Read `{lang}/claude-api/README.md` + `{lang}/claude-api/streaming.md`\n\n**Long-running conversations (may exceed context window):**\n→ Read `{lang}/claude-api/README.md` — see Compaction section\n\n**Function calling / tool use / agents:**\n→ Read `{lang}/claude-api/README.md` + `shared/tool-use-concepts.md` + `{lang}/claude-api/tool-use.md`\n\n**Batch processing (non-latency-sensitive):**\n→ Read `{lang}/claude-api/README.md` + `{lang}/claude-api/batches.md`\n\n**File uploads across multiple requests:**\n→ Read `{lang}/claude-api/README.md` + `{lang}/claude-api/files-api.md`\n\n**Agent with built-in tools (file/web/terminal):**\n→ Read `{lang}/agent-sdk/README.md` + `{lang}/agent-sdk/patterns.md`\n\n### Claude API (Full File Reference)\n\nRead the **language-specific Claude API folder** (`{language}/claude-api/`):\n\n1. **`{language}/claude-api/README.md`** — **Read this first.** Installation, quick start, common patterns, error handling.\n2. **`shared/tool-use-concepts.md`** — Read when the user needs function calling, code execution, memory, or structured outputs. Covers conceptual foundations.\n3. **`{language}/claude-api/tool-use.md`** — Read for language-specific tool use code examples (tool runner, manual loop, code execution, memory, structured outputs).\n4. **`{language}/claude-api/streaming.md`** — Read when building chat UIs or interfaces that display responses incrementally.\n5. **`{language}/claude-api/batches.md`** — Read when processing many requests offline (not latency-sensitive). Runs asynchronously at 50% cost.\n6. **`{language}/claude-api/files-api.md`** — Read when sending the same file across multiple requests without re-uploading.\n7. **`shared/error-codes.md`** — Read when debugging HTTP errors or implementing er"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[When to Use WebFetch] Use WebFetch to get the latest documentation when:\n\n- User asks for \"latest\" or \"current\" information\n- Cached data seems incorrect\n- User asks about features not covered here\n\nLive documentation URLs are in `shared/live-sources.md`."
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[Common Pitfalls] - Don't truncate inputs when passing files or content to the API. If the content is too long to fit in the context window, notify the user and discuss options (chunking, summarization, etc.) rather than silently truncating.\n- **Opus 4.6 / Sonnet 4.6 thinking:** Use `thinking: {type: \"adaptive\"}` — do NOT use `budget_tokens` (deprecated on both Opus 4.6 and Sonnet 4.6). For older models, `budget_tokens` must be less than `max_tokens` (minimum 1024). This will throw an error if you get it wrong.\n- **Opus 4.6 prefill removed:** Assistant message prefills (last-assistant-turn prefills) return a 400 error on Opus 4.6. Use structured outputs (`output_config.format`) or system prompt instructions to control response format instead.\n- **128K output tokens:** Opus 4.6 supports up to 128K `max_tokens`, but the SDKs require streaming for large `max_tokens` to avoid HTTP timeouts. Use `.stream()` with `.get_final_message()` / `.finalMessage()`.\n- **Tool call JSON parsing (Opus 4.6):** Opus 4.6 may produce different JSON string escaping in tool call `input` fields (e.g., Unicode or forward-slash escaping). Always parse tool inputs with `json.loads()` / `JSON.parse()` — never do raw string matching on the serialized input.\n- **Structured outputs (all models):** Use `output_config: {format: {...}}` instead of the deprecated `output_format` parameter on `messages.create()`. This is a general API change, not 4.6-specific.\n- **Don't reimplement SDK functionality:** The SDK provides high-level helpers — use them instead of building from scratch. Specifically: use `stream.finalMessage()` instead of wrapping `.on()` events in `new Promise()`; use typed exception classes (`Anthropic.RateLimitError`, etc.) instead of string-matching error messages; use SDK types (`Anthropic.MessageParam`, `Anthropic.Tool`, `Anthropic.Message`, etc.) instead of redefining equivalent interfaces.\n- **Don't define custom types for SDK data structures:** The SDK exports types for all API objects. Use `Anthropi"
+    }
+  ],
+  "task_type": "development",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "claude_api"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:anthropics/skills",
+  "metadata": {
+    "original_format": "agent_skills_md",
+    "license": "Complete terms in LICENSE.txt",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/anthropics/skills/main/skills/claude-api/SKILL.md"
+}

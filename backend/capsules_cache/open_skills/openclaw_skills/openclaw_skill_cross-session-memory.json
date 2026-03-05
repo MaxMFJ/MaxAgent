@@ -1,0 +1,124 @@
+{
+  "id": "openclaw_skill_cross-session-memory",
+  "description": "Cross-session memory continuity system. Automatically loads 24h rolling memory and daily memory files for context awareness.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 跨会话记忆连续性"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[功能] - **24 小时滚动记忆**：自动加载最近 24 小时的记忆文件\n- **每日记忆加载**：自动读取昨天和今天的 memory 文件\n- **上下文恢复**：会话开始时自动恢复之前的对话上下文\n- **长期记忆整合**：可选加载 MEMORY.md 长期记忆"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[使用场景] - 跨天对话连续性\n- 多会话协作\n- 长期项目跟踪\n- 上下文不丢失"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[实现逻辑] ```powershell\n# 伪代码\nfunction Load-CrossSessionMemory {\n    param(\n        [int]$RollingHours = 24,\n        [bool]$LoadLongTerm = $true\n    )\n    \n    $now = Get-Date\n    $memoryDir = \"$workspace\\memory\"\n    $context = @()\n    \n    # 1. 加载长期记忆（仅主会话）\n    if ($LoadLongTerm -and $IsMainSession) {\n        $longTerm = Get-Content \"$workspace\\MEMORY.md\" -Raw\n        $context += \"## 长期记忆`n$longTerm\"\n    }\n    \n    # 2. 计算时间范围\n    $startTime = $now.AddHours(-$RollingHours)\n    \n    # 3. 加载范围内的每日记忆文件\n    $date = $startTime.Date\n    while ($date -le $now.Date) {\n        $file = \"$memoryDir\\$($date.ToString('yyyy-MM-dd')).md\"\n        if (Test-Path $file) {\n            $content = Get-Content $file -Raw\n            $context += \"## 记忆：$($date.ToString('yyyy-MM-dd'))`n$content\"\n        }\n        $date = $date.AddDays(1)\n    }\n    \n    # 4. 返回整合的上下文\n    return $context -join \"`n`n\"\n}\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[文件结构] ```\nworkspace/\n├── MEMORY.md              # 长期记忆（ curated ）\n└── memory/\n    ├── 2026-03-02.md      # 每日记忆（raw logs）\n    ├── 2026-03-03.md\n    └── ...\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[使用示例] ### 会话开始时自动加载\n\n在 AGENTS.md 中已经定义：\n\n```markdown"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Every Session] Before doing anything else:\n\n1. Read `SOUL.md` — this is who you are\n2. Read `USER.md` — this is who you're helping\n3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context\n4. **If in MAIN SESSION**: Also read `MEMORY.md`\n```\n\n### 手动加载\n\n```powershell\n# 加载最近 24 小时记忆\n$context = Load-CrossSessionMemory -RollingHours 24\n\n# 加载最近 7 天记忆（长期项目）\n$context = Load-CrossSessionMemory -RollingHours 168 -LoadLongTerm $false\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[记忆文件内容] ### 每日记忆文件 (memory/YYYY-MM-DD.md)\n\n```markdown\n# 2026-03-03"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[对话摘要] - 11:08 用户询问定时任务状态\n- 11:22 确认修复飞书投送配置\n- 14:10 要求安装 5 个推荐技能"
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[任务状态] - ✅ 定时任务配置修复完成\n- ❌ 技能安装失败（无可用 package）\n- 🔄 自行实现技能中"
+    },
+    {
+      "id": "step_10",
+      "type": "subtask",
+      "description": "[配置变更] - 修改 jobs.json 添加 delivery.to 字段\n- 创建 feishu-message-fallback 技能\n```\n\n### 长期记忆 (MEMORY.md)\n\n```markdown\n# 长期记忆"
+    },
+    {
+      "id": "step_11",
+      "type": "subtask",
+      "description": "[用户信息] - 姓名：白凤\n- 邮箱：2426758093@qq.com\n- 位置：北京"
+    },
+    {
+      "id": "step_12",
+      "type": "subtask",
+      "description": "[重要项目] - 新闻自动化系统 ✅\n- 数字员工系统 ✅\n- 定时任务系统 ✅"
+    },
+    {
+      "id": "step_13",
+      "type": "subtask",
+      "description": "[偏好] - 不喜欢频繁确认\n- 喜欢直接简洁的回复\n```"
+    },
+    {
+      "id": "step_14",
+      "type": "subtask",
+      "description": "[集成到 OpenClaw] ### 方法 1：修改 AGENTS.md（已实现）\n\n在 `Every Session` 部分添加记忆加载步骤。\n\n### 方法 2：Cron 定时加载\n\n```json\n{\n  \"name\": \"memory-context-loader\",\n  \"schedule\": \"0 * * * *\",\n  \"payload\": {\n    \"kind\": \"systemEvent\",\n    \"text\": \"Load recent memory files and update session context\"\n  }\n}\n```\n\n### 方法 3：会话启动 Hook\n\n在 OpenClaw 配置中添加：\n\n```json\n{\n  \"hooks\": {\n    \"sessionStart\": {\n      \"enabled\": true,\n      \"script\": \"skills/cross-session-memory/load-memory.ps1\"\n    }\n  }\n}\n```"
+    },
+    {
+      "id": "step_15",
+      "type": "subtask",
+      "description": "[性能优化] ### 1. 限制加载文件数量\n\n```powershell\n# 只加载最近 N 天的记忆\n$maxDays = 7\n$files = Get-ChildItem $memoryDir -Filter \"*.md\" | \n    Sort-Object LastWriteTime -Descending | \n    Select-Object -First $maxDays\n```\n\n### 2. 增量加载\n\n```powershell\n# 只加载上次会话后新增的内容\n$lastSessionTime = Get-Content \"$workspace\\.last-session-time\"\n$files = Get-ChildItem $memoryDir -Filter \"*.md\" | \n    Where-Object { $_.LastWriteTime -gt $lastSessionTime }\n```\n\n### 3. 缓存机制\n\n```powershell\n# 缓存加载的记忆内容\n$cacheFile = \"$workspace\\.memory-cache.json\"\nif (Test-Path $cacheFile) {\n    $cache = Get-Content $cacheFile | ConvertFrom-Json\n    if ((Get-Date) -lt $cache.expiresAt) {\n        return $cache.content\n    }\n}\n```"
+    },
+    {
+      "id": "step_16",
+      "type": "subtask",
+      "description": "[最佳实践] 1. **每日记忆**：记录 raw logs，详细但简洁\n2. **长期记忆**：只记录重要决策、用户偏好、项目状态\n3. **定期整理**：每周回顾，将重要内容从每日记忆迁移到长期记忆\n4. **控制大小**：长期记忆不超过 50KB，避免 token 浪费"
+    },
+    {
+      "id": "step_17",
+      "type": "subtask",
+      "description": "[与现有系统集成] 当前工作空间已实现：\n\n- ✅ `MEMORY.md` - 长期记忆\n- ✅ `memory/YYYY-MM-DD.md` - 每日记忆\n- ✅ `AGENTS.md` - 会话启动时加载\n- ✅ `auto-logger` 技能 - 自动记录\n\n需要增强：\n\n- 🔄 24 小时滚动窗口自动计算\n- 🔄 会话间状态持久化\n- 🔄 记忆搜索和检索优化"
+    }
+  ],
+  "task_type": "file_operation",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "cross_session_memory"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/2426758093/cross-session-memory/SKILL.md"
+}

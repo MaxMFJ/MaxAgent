@@ -645,18 +645,28 @@ class AutonomousAgent:
                 "【联网研究】你有 web_search 工具可搜索网页、新闻、财报等实时信息。请用 call_tool(tool_name=\"web_search\", args={\"action\":\"search\"或\"news\", \"query\":\"关键词\", \"language\":\"zh-CN\"}) 获取数据，不要以「无法获取实时数据」为由拒绝任务。"
             )
 
-        # 2) 扫描并注入匹配的 skill/capsule
+        # 2) 扫描并注入匹配的 skill/capsule（本地注册表优先；N/A 时按需拉取）
         try:
             registry = get_capsule_registry()
-            if len(registry) > 0:
-                capsules = registry.find_capsule_by_task(task, limit=3, min_score=0.7)
-                if capsules:
-                    parts.append("【匹配技能】以下技能与任务相关，可用 call_tool 执行:")
-                    for cap in capsules[:3]:
-                        parts.append(
-                            f"  - {cap.id}: {cap.description[:60]}… → "
-                            f"call_tool(tool_name=\"capsule\", args={{\"action\":\"execute\", \"capsule_id\":\"{cap.id}\", \"inputs\":{{\"task\":\"...\"}}}})"
-                        )
+            capsules = registry.find_capsule_by_task(task, limit=3, min_score=0.7) if len(registry) > 0 else []
+
+            # 本地未命中，且当前开启了按需拉取 — 异步拉取（不阻塞本轮 LLM 调用）
+            if not capsules:
+                try:
+                    from app_state import ENABLE_ON_DEMAND_SKILL_FETCH
+                    if ENABLE_ON_DEMAND_SKILL_FETCH:
+                        from .capsule_on_demand import search_and_fetch as _od_fetch
+                        capsules = await _od_fetch(task, limit=3, min_score=0.5)
+                except Exception as ode:
+                    logger.debug(f"On-demand skill fetch skipped: {ode}")
+
+            if capsules:
+                parts.append("【匹配技能】以下技能与任务相关，可用 call_tool 执行:")
+                for cap in capsules[:3]:
+                    parts.append(
+                        f"  - {cap.id}: {cap.description[:60]}… → "
+                        f"call_tool(tool_name=\"capsule\", args={{\"action\":\"execute\", \"capsule_id\":\"{cap.id}\", \"inputs\":{{\"task\":\"...\"}}}})"
+                    )
         except Exception as e:
             logger.debug(f"Capsule scan for task guidance: {e}")
 
@@ -672,6 +682,9 @@ class AutonomousAgent:
         """
         Search the CapsuleRegistry for skills relevant to the task.
         Returns formatted guidance text, or empty string if nothing found.
+
+        Note: 按需拉取（async）在 _build_task_guidance 中处理；
+              此方法为 escalation 层同步兜底，仅查本地注册表。
         """
         try:
             registry = get_capsule_registry()
@@ -1437,7 +1450,51 @@ class AutonomousAgent:
                 extra_tokens = 8192
             else:
                 extra_tokens = None
-            chat_coro = self.llm.chat(messages=messages, max_tokens=extra_tokens)
+
+            # Phase C：Extended Thinking / CoT 支持
+            chat_extra_body: Optional[Dict[str, Any]] = None
+            try:
+                from app_state import (  # type: ignore
+                    ENABLE_EXTENDED_THINKING,
+                    EXTENDED_THINKING_BUDGET_TOKENS,
+                )
+            except ImportError:
+                ENABLE_EXTENDED_THINKING = False
+                EXTENDED_THINKING_BUDGET_TOKENS = 8000
+            if ENABLE_EXTENDED_THINKING:
+                provider = (self.llm.config.provider or "").lower()
+                if provider == "anthropic":
+                    # Anthropic Extended Thinking（via extra_body）
+                    budget = max(1024, int(EXTENDED_THINKING_BUDGET_TOKENS))
+                    chat_extra_body = {
+                        "thinking": {"type": "enabled", "budget_tokens": budget}
+                    }
+                    # Extended Thinking 要求 temperature=1（否则 API 报错）
+                    messages_for_thinking = messages
+                    logger.info(
+                        f"Extended Thinking enabled: provider={provider} budget={budget}"
+                    )
+                else:
+                    # 其他模型：注入 CoT 系统指令（通用 Chain-of-Thought 前缀）
+                    cot_prefix = (
+                        "[Chain-of-Thought Reasoning] 在输出最终 JSON 动作之前，"
+                        "请先在 <thinking>...</thinking> 标签内逐步推理分析当前状态、"
+                        "潜在风险和最优下一步，然后再输出 JSON。"
+                    )
+                    if messages and messages[0].get("role") == "system":
+                        import copy
+                        messages = copy.copy(messages)
+                        messages[0] = dict(messages[0])
+                        messages[0]["content"] = cot_prefix + "\n\n" + messages[0]["content"]
+                    logger.info(
+                        f"CoT prompt injection enabled: provider={provider}"
+                    )
+
+            chat_coro = self.llm.chat(
+                messages=messages,
+                max_tokens=extra_tokens,
+                extra_body=chat_extra_body,
+            )
             if get_timeout_policy is not None:
                 response = await get_timeout_policy().with_llm_timeout(chat_coro)
             else:

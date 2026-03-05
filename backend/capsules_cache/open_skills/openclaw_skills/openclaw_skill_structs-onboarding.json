@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_structs-onboarding",
+  "description": "Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~17 min (Command Ship) to ~57 min (Ore Extractor/Refinery).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Onboarding"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Personal Files] Before starting, check if [SOUL.md](https://structs.ai/SOUL), [IDENTITY.md](https://structs.ai/IDENTITY), [TOOLS.md](https://structs.ai/TOOLS), [COMMANDER.md](https://structs.ai/COMMANDER), or [USER.md](https://structs.ai/USER) already have content. If so, **read and merge** — do not overwrite. These files may contain a previous agent's identity, a human operator's preferences, or your own prior configuration. Add your identity to the existing content.\n\n**Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this. Always include `--` when running `structsd tx structs` commands with entity IDs."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Procedure] ### Step 0: Key Management\n\nIf using **Path B** (guild signup) below, the `create-player.mjs` script can generate a mnemonic automatically — you can skip ahead to Step 1 and let the script handle key creation.\n\nIf using **Path A** (agent has $alpha) or need a key in the local `structsd` keyring:\n\n```\nstructsd keys list\n```\n\n**If no key exists**, create or recover one:\n\n- **Create new key**: `structsd keys add [key-name]` — outputs a mnemonic. Save it securely.\n- **Recover from mnemonic**: `structsd keys add [key-name] --recover` — prompts for mnemonic input.\n\nGet your address:\n\n```\nstructsd keys show [key-name] -a\n```\n\n**Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository.\n\n**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid using `--output json` unless you are redirecting output to a secure location.\n\n---\n\n### Step 1: Check Player Status\n\n```\nstructsd query structs address [your-address]\n```\n\nIf the result shows a player ID other than `1-0`, a player already exists. Skip to **Step 3: Explore Planet** (or later steps if planet already explored).\n\nIf the player ID is `1-0`, no player exists — proceed to Step 2.\n\n---\n\n### Step 2: Create Player\n\nTwo paths depending on whether the agent has $alpha (the native token).\n\n#### Path A: Agent has $alpha\n\nIf the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.\n\n1. Choose a validator/reactor to delegate to\n2. Run: `structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]`\n3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`\n\n#### Path B: Agent has no $alpha (guild signup)\n\nJoin a guild that supports pr"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Proof-of-Work Notes] The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.\n\n**Auto-activation**: Structs automatically activate after build-complete. You do not need to run `struct-activate` after building. Use `struct-activate` only to re-activate a struct that was previously deactivated.\n\nThe `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 3`** — at D=3 the hash is trivially instant with zero wasted CPU. Lower values wait longer but waste less compute.\n\n| Struct | Type ID | Build Difficulty | Wait to D=3 |\n|--------|---------|------------------|-------------|\n| Command Ship | 1 | 200 | ~17 min |\n| Ore Extractor | 14 | 700 | ~57 min |\n| Ore Refinery | 15 | 700 | ~57 min |\n| Ore Bunker | 18 | 3,600 | ~4.6 hr |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Charge] Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the full charge cost table.\n\n**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).\n\n**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both may reach target difficulty simultaneously and submit conflicting sequence numbers — one fails silently, leaving the struct stuck. Sequence compute jobs for the same player."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Ambit Encoding] Struct types have a `possibleAmbit` bit-flag field:\n\n| Ambit | Bit Value |\n|-------|-----------|\n| Space | 16 |\n| Air | 8 |\n| Land | 4 |\n| Water | 2 |\n\nValues are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` before choosing an operating ambit."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | CLI Command |\n|--------|-------------|\n| List keys | `structsd keys list` |\n| Create key | `structsd keys add [name]` |\n| Recover key | `structsd keys add [name] --recover` |\n| Show address | `structsd keys show [name] -a` |\n| Discover player | `structsd query structs address [address]` |\n| Query player | `structsd query structs player [id]` |\n| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |\n| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id \"...\" --guild-api \"...\" --reactor-api \"...\" [--mnemonic \"...\"] [--username \"...\"]` |\n| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |\n| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |\n| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |\n| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -y -- [struct-id]` |\n| Query planet | `structsd query structs planet [id]` |\n| Query fleet | `structsd query structs fleet [id]` |\n| Query struct | `structsd query structs struct [id]` |\n\nBuild order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet). Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Verification] - `structsd query structs address [address]` — player exists (ID is not `1-0`)\n- `structsd query structs player [id]` — player online\n- `structsd query structs planet [id]` — planet claimed, ore present\n- `structsd query structs fleet [id]` — fleet on station\n- `structsd query structs struct [id]` — struct status = Online"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] - **Player ID is `1-0`** — Player doesn't exist. Follow Step 2 (Path A or Path B).\n- **create-player.mjs fails** — Check that `--guild-api` and `--reactor-api` URLs are correct and reachable. Verify the guild supports programmatic signup (`services.guild_api` exists). If providing a `--mnemonic`, verify it is a valid 24-word BIP39 mnemonic.\n- **Guild API returns HTML or 404** — The URL is wrong or you are not using the script. The signup endpoint (`/auth/signup`) is **POST only**. Always use `create-player.mjs` which handles the POST, signing, and polling automatically.\n- **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.\n- **\"insufficient resources\"** — Check player Alpha Matter balance.\n- **\"fleet not on station\"** — Wait for fleet or move fleet before planet builds.\n- **\"invalid slot\"** — Use slot 0-3 per ambit; check planet structs for occupancy.\n- **\"power overload\"** — Not enough capacity to activate. Add power sources or connect to a substation with more capacity."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[See Also] - [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build times, difficulty, charge costs\n- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots\n- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules\n- [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties\n- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status\n- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_onboarding"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-onboarding/SKILL.md"
+}

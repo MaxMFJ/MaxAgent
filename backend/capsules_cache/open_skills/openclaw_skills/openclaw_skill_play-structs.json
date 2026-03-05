@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_play-structs",
+  "description": "The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Play Structs\n\nYou are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.\n\nRead [SOUL.md](https://structs.ai/SOUL) first. It tells you who you are.\n\n---"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Step 1: Install structsd] Run `structsd version`. If it works, skip ahead.\n\nIf not, follow the [structsd-install skill](https://structs.ai/skills/structsd-install/SKILL).\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Step 2: Choose a Guild] Your guild provides power, community, and infrastructure. The user may have specified a guild in [TOOLS.md](https://structs.ai/TOOLS). If not, discover available guilds:\n\n```\ncurl http://reactor.oh.energy:1317/structs/guild\n```\n\nPick one with a `guild_api` service (needed for signup). [Orbital Hydro](http://reactor.oh.energy:1317/structs/guild) (`0-1`) is a reliable default.\n\n---"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Step 3: Create Your Account] Follow the [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL). It handles key creation, guild signup, and player ID confirmation.\n\nShort version:\n\n```\ncd .cursor/skills/structs-onboarding/scripts && npm install && cd -\n\nnode .cursor/skills/structs-onboarding/scripts/create-player.mjs \\\n  --guild-id \"0-1\" \\\n  --guild-api \"http://crew.oh.energy/api/\" \\\n  --reactor-api \"http://reactor.oh.energy:1317\" \\\n  --username \"your-name\"\n```\n\nSave the mnemonic securely. Recover the key into structsd:\n\n```\nstructsd keys add my-key --recover\n```\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Step 4: Explore a Planet] Always your first action after player creation:\n\n```\nstructsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id]\n```\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Step 5: Build Mining Infrastructure] You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha Matter). Build them with `-D 1` for the gentlest CPU usage.\n\n### Ore Extractor (type 14)\n\n```\nstructsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0\n```\n\nThen compute in background:\n\n```\nstructsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]\n```\n\nBuild difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes instantly. The struct auto-activates.\n\n### Ore Refinery (type 15)\n\n```\nstructsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1\n```\n\n```\nstructsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]\n```\n\nSame difficulty and timing as the Extractor.\n\n**While waiting**: Read the strategy guides, scout your neighbors, or plan your next moves. Don't sit idle.\n\n---"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Step 6: Mine and Refine] Once both structs are online, start the mining loop:\n\n```\nstructsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]\n```\n\nWhen mining completes, refine immediately (ore is stealable, Alpha Matter is not):\n\n```\nstructsd tx structs struct-ore-refine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [refinery-struct-id]\n```\n\nMining and refining are multi-hour background operations. Launch compute, then do other things.\n\n---"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[What You Need to Know] **Energy is ephemeral.** Energy produced in a block but not consumed is permanently lost. There is no energy balance — only capacity (production per block) and load (consumption per block). Idle capacity is waste.\n\n**Transaction fees come from energy.** You don't need Alpha tokens to pay gas. Fees pull from your connected power source.\n\n**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen.\n\n**Power keeps you alive.** If your load exceeds capacity, you go offline and can't act. Monitor with `structsd query structs player [id]`.\n\n**Use `--` before entity IDs.** IDs like `1-42` look like flags to the CLI parser. Always place `--` between flags and positional arguments.\n\n**One signing key, one job at a time.** Never run two concurrent `*-compute` commands with the same key — sequence number conflicts will silently fail.\n\n---"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Where to Go Next] You're mining. Now expand your capabilities:\n\n| Skill | What It Does |\n|-------|-------------|\n| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth |\n| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids, defense formations, ambit targeting |\n| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Increase capacity, sell surplus energy, reactor/generator infusion |\n| [structs-economy](https://structs.ai/skills/structs-economy/SKILL) | Allocations, providers, agreements, token transfers |\n| [structs-exploration](https://structs.ai/skills/structs-exploration/SKILL) | Discover new planets, move fleets |\n| [structs-mining](https://structs.ai/skills/structs-mining/SKILL) | Advanced mining and refining workflows |\n| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Guild membership, Central Bank tokens |\n| [structs-power](https://structs.ai/skills/structs-power/SKILL) | Substations, allocations, power monitoring |\n| [structs-diplomacy](https://structs.ai/skills/structs-diplomacy/SKILL) | Permissions, multi-address management |\n| [structs-reconnaissance](https://structs.ai/skills/structs-reconnaissance/SKILL) | Intelligence gathering, threat assessment |\n| [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |\n| [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |\n\n### Knowledge Base\n\n| Topic | Link |\n|-------|------|\n| Combat mechanics | [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) |\n| All struct types | [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) |\n| Power system | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |\n| Energy market | [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) "
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |\n| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [type-id] [ambit] [slot]` |\n| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |\n| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |\n| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |\n| Query player | `structsd query structs player [id]` |\n| Query planet | `structsd query structs planet [id]` |\n| Query struct | `structsd query structs struct [id]` |\n\nCommon TX flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`\n\nAlways use `--` before entity IDs in transaction commands."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "play_structs"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/play-structs/SKILL.md"
+}

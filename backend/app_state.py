@@ -44,6 +44,37 @@ ESCALATION_FORCE_AFTER_N: int = max(1, int(os.environ.get("MACAGENT_ESCALATION_F
 ESCALATION_SKILL_AFTER_N: int = max(2, int(os.environ.get("MACAGENT_ESCALATION_SKILL_AFTER_N", "3")))
 ESCALATION_SIMILARITY_THRESHOLD: float = max(0.0, min(1.0, float(os.environ.get("MACAGENT_ESCALATION_SIMILARITY_THRESHOLD", "0.85"))))
 
+# v3.2 Feature flags — 可观测 / 安全 / 幂等
+# Token 统计是否写入 trace span（true=每次 LLM 调用后追加 token span）
+TRACE_TOKEN_STATS: bool = os.environ.get("MACAGENT_TRACE_TOKEN_STATS", "true").lower() == "true"
+# 是否在工具调用前记录执行轨迹 span（type='tool'）
+TRACE_TOOL_CALLS: bool = os.environ.get("MACAGENT_TRACE_TOOL_CALLS", "true").lower() == "true"
+# /health/deep LLM 连通性探测超时（秒）
+HEALTH_DEEP_LLM_TIMEOUT: float = float(os.environ.get("MACAGENT_HEALTH_DEEP_LLM_TIMEOUT", "5"))
+# 幂等：相同 task_id 再次提交时是否直接返回已有结果（而非重新执行）
+ENABLE_IDEMPOTENT_TASKS: bool = os.environ.get("MACAGENT_ENABLE_IDEMPOTENT_TASKS", "false").lower() == "true"
+
+# Phase C Feature flags — 研究/高级增强（默认关闭，需显式开启）
+# 重要性加权 memory：按重要性分数优先召回 episode
+ENABLE_IMPORTANCE_WEIGHTED_MEMORY: bool = os.environ.get("MACAGENT_ENABLE_IMPORTANCE_WEIGHTED_MEMORY", "true").lower() == "true"
+# 失败类型分类 → 专属反思模板
+ENABLE_FAILURE_TYPE_REFLECTION: bool = os.environ.get("MACAGENT_ENABLE_FAILURE_TYPE_REFLECTION", "true").lower() == "true"
+# Extended Thinking / CoT（链路推理）— 支持时在 LLM 请求中注入 reasoning 参数
+ENABLE_EXTENDED_THINKING: bool = os.environ.get("MACAGENT_ENABLE_EXTENDED_THINKING", "false").lower() == "true"
+# CoT budget tokens（Extended Thinking 最大思考 token 数；仅对支持 thinking 的模型有效）
+EXTENDED_THINKING_BUDGET_TOKENS: int = int(os.environ.get("MACAGENT_EXTENDED_THINKING_BUDGET_TOKENS", "8000"))
+# Subagent（可选多智能体）— v3.3+，占位
+ENABLE_SUBAGENT: bool = os.environ.get("MACAGENT_ENABLE_SUBAGENT", "false").lower() == "true"
+
+# ── Skill 按需拉取（v3.2+）───────────────────────────────────────────────────
+# True（默认）= 按需拉取，只在 LLM 搜索技能时才从 GitHub 下载对应 SKILL.md
+# False = 旧行为：启动时全量同步所有已配置 GitHub 技能源
+ENABLE_ON_DEMAND_SKILL_FETCH: bool = os.environ.get("MACAGENT_ENABLE_ON_DEMAND_SKILL_FETCH", "true").lower() == "true"
+# 按需拉取超时（秒）
+ON_DEMAND_SKILL_FETCH_TIMEOUT: float = float(os.environ.get("MACAGENT_ON_DEMAND_SKILL_FETCH_TIMEOUT", "10.0"))
+# 按需拉取：单次最多拉取几个新技能
+ON_DEMAND_SKILL_MAX_FETCH: int = int(os.environ.get("MACAGENT_ON_DEMAND_SKILL_MAX_FETCH", "3"))
+
 
 # ============== Task Tracker ==============
 

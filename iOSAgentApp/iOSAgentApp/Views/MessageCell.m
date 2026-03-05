@@ -1,6 +1,8 @@
 #import "MessageCell.h"
 #import "ThinkingContentParser.h"
 #import "ThinkingBlockView.h"
+#import "FileDownloadView.h"
+#import "ServerConfig.h"
 #import "TechTheme.h"
 
 // MARK: - 三点打字动画视图
@@ -389,6 +391,27 @@
         [_typingDots stopAnimating];
     }
 
+    // --- 文件下载卡片 ---
+    // 先移除旧的 FileDownloadView
+    for (UIView *v in [_bubbleStackView.arrangedSubviews copy]) {
+        if ([v isKindOfClass:[FileDownloadView class]]) {
+            [_bubbleStackView removeArrangedSubview:v];
+            [v removeFromSuperview];
+        }
+    }
+    // 检测文件路径并添加
+    NSArray<NSString *> *filePaths = [FileDownloadView detectFilePathsInText:message.content];
+    if (filePaths.count > 0) {
+        NSString *baseURL = [ServerConfig sharedConfig].serverURL;
+        for (NSString *path in filePaths) {
+            FileDownloadView *fdv = [[FileDownloadView alloc] initWithFilePath:path serverBaseURL:baseURL];
+            [_bubbleStackView addArrangedSubview:fdv];
+            // 宽度填充气泡
+            [fdv.leadingAnchor constraintEqualToAnchor:_bubbleStackView.leadingAnchor].active = YES;
+            [fdv.trailingAnchor constraintEqualToAnchor:_bubbleStackView.trailingAnchor].active = YES;
+        }
+    }
+
     // --- 图片 ---
     if (message.imageBase64.length > 0) {
         NSData *imageData = [[NSData alloc] initWithBase64EncodedString:message.imageBase64 options:NSDataBase64DecodingIgnoreUnknownCharacters];
@@ -424,6 +447,13 @@
     _bubbleView.layer.shadowOpacity = 0;
     _bubbleView.layer.shadowPath = nil;
     _bubbleView.layer.shouldRasterize = NO;
+    // 移除文件下载卡片
+    for (UIView *v in [_bubbleStackView.arrangedSubviews copy]) {
+        if ([v isKindOfClass:[FileDownloadView class]]) {
+            [_bubbleStackView removeArrangedSubview:v];
+            [v removeFromSuperview];
+        }
+    }
     // 重置缓存，确保复用后正确重新配置
     _cachedContent = nil;
     _cachedRole = (MessageRole)NSIntegerMax; // sentinel：确保复用后触发完整样式配置

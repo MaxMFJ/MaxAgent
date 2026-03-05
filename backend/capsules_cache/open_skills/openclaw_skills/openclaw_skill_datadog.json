@@ -1,0 +1,81 @@
+{
+  "id": "openclaw_skill_datadog",
+  "description": "Datadog monitoring — manage monitors, dashboards, metrics, logs, events, and incidents via REST API",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🐕 Datadog\n\nDatadog monitoring — manage monitors, dashboards, metrics, logs, events, and incidents via REST API"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `DD_API_KEY` | ✅ | API key from app.datadoghq.com |\n| `DD_APP_KEY` | ✅ | Application key |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List monitors\npython3 {{baseDir}}/scripts/datadog.py monitors --query <value> --tags <value>\n\n# Get monitor\npython3 {{baseDir}}/scripts/datadog.py monitor-get id <value>\n\n# Create monitor\npython3 {{baseDir}}/scripts/datadog.py monitor-create --name <value> --type <value> --query <value> --message <value>\n\n# Update monitor\npython3 {{baseDir}}/scripts/datadog.py monitor-update id <value> --name <value> --query <value>\n\n# Delete monitor\npython3 {{baseDir}}/scripts/datadog.py monitor-delete id <value>\n\n# Mute monitor\npython3 {{baseDir}}/scripts/datadog.py monitor-mute id <value>\n\n# List dashboards\npython3 {{baseDir}}/scripts/datadog.py dashboards\n\n# Get dashboard\npython3 {{baseDir}}/scripts/datadog.py dashboard-get id <value>\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[All Commands] | Command | Description |\n|---------|-------------|\n| `monitors` | List monitors |\n| `monitor-get` | Get monitor |\n| `monitor-create` | Create monitor |\n| `monitor-update` | Update monitor |\n| `monitor-delete` | Delete monitor |\n| `monitor-mute` | Mute monitor |\n| `dashboards` | List dashboards |\n| `dashboard-get` | Get dashboard |\n| `dashboard-create` | Create dashboard |\n| `dashboard-delete` | Delete dashboard |\n| `metrics-search` | Search metrics |\n| `metrics-query` | Query metrics |\n| `events-list` | List events |\n| `event-create` | Create event |\n| `logs-search` | Search logs |\n| `incidents` | List incidents |\n| `incident-get` | Get incident |\n| `hosts` | List hosts |\n| `downtimes` | List downtimes |\n| `downtime-create` | Create downtime |\n| `slos` | List SLOs |\n| `synthetics` | List synthetic tests |\n| `users` | List users |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default. Add `--human` for readable formatted output.\n\n```bash\npython3 {{baseDir}}/scripts/datadog.py <command> --human\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{{baseDir}}/scripts/datadog.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "datadog"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🐕",
+        "requires": {
+          "env": [
+            "DD_API_KEY",
+            "DD_APP_KEY"
+          ]
+        },
+        "primaryEnv": "DD_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/datadog/SKILL.md"
+}

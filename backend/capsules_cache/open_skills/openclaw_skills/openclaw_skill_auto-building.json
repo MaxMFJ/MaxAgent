@@ -1,0 +1,96 @@
+{
+  "id": "openclaw_skill_auto-building",
+  "description": "基于 AUTO-BUILDING 源码，生成定制化信息采集管理系统。用户指定栏目、分类、数据源后，系统自动采集、审核、发布内容。",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # AUTO-BUILDING\n基于 AI 的自动化信息采集管理系统技能。"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[什么是 AUTO-BUILDING] AUTO-BUILDING 是一个开源的信息采集管理平台，可以帮助用户快速构建定制化的内容采集系统。用户只需指定想要采集的栏目、分类和数据源，系统会自动完成采集、审核、展示的全流程。"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[何时使用此技能] 当用户想要：\n- 构建自己的新闻早报系统\n- 监控系统监控竞品价格和动态\n- 采集特定行业资讯（如科技、财经、医疗）\n- 建立资源导航页面（如 AI 工具集、开源项目）\n- 定制化信息聚合平台"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[快速开始] ### 步骤 1：克隆源码\n```bash\ngit clone https://github.com/hasd52636-a11y/Auto_Building_new\ncd Auto_Building_new\n```\n\n### 步骤 2：安装依赖\n```bash\nnpm install\n```\n\n### 步骤 3：启动服务\n```bash\nnpm run dev\n```\n\n### 步骤 4：访问\n- 首页：`http://localhost:3000`\n- 管理后台：`http://localhost:3000/admin`"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[如何根据用户需求生成系统] ### 步骤 1：理解用户需求\n当用户提出需求时，识别：\n1. **目标栏目**（如：新闻早报、产品监控、行业资讯）\n2. **分类规则**（如：科技/财经/体育、亚马逊/淘宝/京东）\n3. **数据来源**（如：36kr、虎嗅、GitHub 仓库、RSS 订阅）\n\n### 步骤 2：修改配置文件\n根据用户需求修改以下文件：\n\n#### 2.1 修改 `config/sources.json`\n```json\n{\n  \"primaryCategories\": [\"智能母体\", \"用户想要的栏目\"],\n  \"secondaryCategories\": {\n    \"智能母体\": [\"agent\", \"skill\", \"mcp\", \"prompt\", \"opensource_soft\"],\n    \"用户想要的栏目\": [\"分类1\", \"分类2\", \"分类3\"]\n  },\n  \"sources\": [\n    {\n      \"name\": \"数据源名称\",\n      \"type\": \"github|rss|directory|custom\",\n      \"url\": \"地址\",\n      \"enabled\": true\n    }\n  ]\n}\n```\n\n#### 2.2 修改 `src/data/resources.ts`\n```typescript\nexport const PRIMARY_CATEGORIES = [\n  '智能母体',\n  '用户想要的栏目',\n];\n\nexport const SECONDARY_CATEGORIES = [\n  { labelKey: 'type.agent', value: 'agent' },\n  { labelKey: 'type.skill', value: 'skill' },\n  { labelKey: 'type.分类1', value: 'category1' },\n  { labelKey: 'type.分类2', value: 'category2' },\n];\n```\n\n### 步骤 3：指导用户配置\n告诉用户执行以下操作：\n1. 运行 `npm install && npm run dev`\n2. 访问 `http://localhost:3000/admin`\n3. 在「采集规则」Tab 添加具体采集规则\n4. 在「数据源」Tab 确认数据源已添加\n5. 点击「执行采集」开始采集内容\n6. 在「审核」Tab 审核采集的内容\n7. 内容自动展示在首页"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[配置说明] ### 数据源类型\n| 类型 | 说明 | 示例 |\n|------|------|------|\n| `github` | GitHub 仓库 | `composiohq/awesome-claude-skills` |\n| `rss` | RSS 订阅 | `https://36kr.com/feed/` |\n| `directory` | 目录网站 | `https://skills.sh/` |\n| `custom` | 自定义 URL | 任意网页地址 |\n\n### 采集规则\n用户可通过管理后台 `/admin` 的「采集规则」Tab：\n- 手动添加正则匹配规则\n- 使用 AI 自然语言生成规则\n- 设置关键词过滤\n- 设置内容类型（视频/图文/全部）"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[示例对话] ### 示例 1：新闻早报系统\n**用户**：\"帮我做个科技新闻早报，每天采集36kr和虎嗅\"\n**修改内容**：\n`config/sources.json`:\n```json\n{\n  \"primaryCategories\": [\"智能母体\", \"新闻早报\"],\n  \"secondaryCategories\": {\n    \"新闻早报\": [\"科技\", \"财经\", \"创投\"]\n  },\n  \"sources\": [\n    {\n      \"name\": \"36kr\",\n      \"type\": \"rss\",\n      \"url\": \"https://36kr.com/feed/\",\n      \"enabled\": true\n    },\n    {\n      \"name\": \"虎嗅\",\n      \"type\": \"rss\",\n      \"url\": \"https://www.huxiu.com/rss\",\n      \"enabled\": true\n    }\n  ]\n}\n```\n**告诉用户**：\n```\n系统已配置完成！运行以下命令启动：\ncd Auto_Building_new\nnpm install\nnpm run dev\n\n然后访问 http://localhost:3000/admin\n1. 在「采集规则」添加：只采集今天发布的文章\n2. 点击「执行采集」\n3. 在「审核」Tab 审核内容\n```\n\n### 示例 2：产品监控系统\n**用户**：\"做个电商产品价格监控系统，监控亚马逊和淘宝\"\n**修改内容**：\n`config/sources.json`:\n```json\n{\n  \"primaryCategories\": [\"智能母体\", \"产品监控\"],\n  \"secondaryCategories\": {\n    \"产品监控\": [\"亚马逊\", \"淘宝\", \"京东\"]\n  },\n  \"sources\": [\n    {\n      \"name\": \"亚马逊\",\n      \"type\": \"directory\",\n      \"url\": \"https://www.amazon.cn\",\n      \"enabled\": true\n    },\n    {\n      \"name\": \"淘宝\",\n      \"type\": \"directory\",\n      \"url\": \"https://www.taobao.com\",\n      \"enabled\": true\n    }\n  ]\n}\n```\n\n### 示例 3：AI 工具集\n**用户**：\"我想做一个 AI 编程工具导航页面\"\n**修改内容**：\n`config/sources.json`:\n```json\n{\n  \"primaryCategories\": [\"AI编程工具\"],\n  \"secondaryCategories\": {\n    \"AI编程工具\": [\"代码补全\", \"代码审查\", \"自动化测试\"]\n  },\n  \"sources\": [\n    {\n      \"name\": \"GitHub Copilot\",\n      \"type\": \"github\",\n      \"repo\": \"github/copilot\",\n      \"enabled\": true\n    },\n    {\n      \"name\": \"Cursor\",\n      \"type\": \"github\",\n      \"repo\": \"getcursor/cursor\",\n      \"enabled\": true\n    }\n  ]\n}\n```"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[核心功能（不可修改）] - 采集脚本：`scripts/scrape-all.ts`, `scripts/classify.ts`\n- 审核流程：`pending-review.json` → `approved-resources.json`\n- 展示极面：动态读取配置渲染栏目和分类"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[注意事项] 1. **只修改配置文件**：`config/sources.json` 和 `src/data/resources.ts`\n2. **不要修改采集脚本和页面逻辑**\n3. 运行后需要执行 `npm run daily` 采集内容\n4. 在 `/admin` 审核采集的内容后才会展示在首页\n5. 如果需要更多自定义，可以通过管理后台的「采集规则」和「数据源」Tab 进行配置"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "auto_building"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "bins": [
+            "node",
+            "npm"
+          ]
+        },
+        "install": [
+          {
+            "id": "clone",
+            "kind": "clone",
+            "repo": "hasd52636-a11y/Auto_Building_new",
+            "label": "Clone AUTO-BUILDING 源码"
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/addogiavara-tech/auto-building/SKILL.md"
+}

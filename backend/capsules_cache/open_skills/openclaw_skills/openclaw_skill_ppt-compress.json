@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_ppt-compress",
+  "description": "Compress PPT/PPTX file size. Decompress PPT, compress large images, repackage and convert to PDF to significantly reduce file size. Suitable for scenarios where large PPT files need to be shared or uploaded.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # PPT压缩 / PPT Compression\n\n将大型PPT/PPTX文件压缩为更小的PDF版本。\nCompress large PPT/PPTX files into smaller PDF versions."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Workflow] 1. **Decompress PPT** - PPTX is essentially a ZIP, decompress to extract media files\n   \n2. **Compress Images** - Use sips to compress images larger than 1MB\n   \n3. **Repackage** - Repackage as PPTX\n\n4. **Convert to PDF** - Use LibreOffice to convert to PDF"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Usage] Run the compression script:\n\n```bash\npython3 ~/clawd/skills/ppt-compress/scripts/compress.py <pptx_file_path> [output_directory]\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Examples] ```bash\n# Compress PPT and convert to PDF\npython3 ~/clawd/skills/ppt-compress/scripts/compress.py \"/path/to/file.pptx\"\n\n# Specify output directory\npython3 ~/clawd/skills/ppt-compress/scripts/compress.py \"/path/to/file.pptx\" \"/Users/xxx/Downloads\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Dependencies] - Python 3\n- sips (built-in to macOS)\n- LibreOffice (used for PDF conversion)\n\nInstall LibreOffice: `brew install libreoffice`"
+    }
+  ],
+  "task_type": "document",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "ppt_compress"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/accidwar/ppt-compress/SKILL.md"
+}

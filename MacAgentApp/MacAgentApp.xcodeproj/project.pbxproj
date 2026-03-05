@@ -61,6 +61,7 @@
 		F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */; };
 		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
 		A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */; };
+		B100002C234567890ABCDEF1 /* FileDownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002D234567890ABCDEF1 /* FileDownloadView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,6 +103,7 @@
 		B1000026234567890ABCDEF1 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		B1000028234567890ABCDEF1 /* TypingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingIndicator.swift; sourceTree = "<group>"; };
 		B100002A234567890ABCDEF1 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
+		B100002D234567890ABCDEF1 /* FileDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadView.swift; sourceTree = "<group>"; };
 		B1000037234567890ABCDEF1 /* RichMessageTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMessageTextView.swift; sourceTree = "<group>"; };
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
@@ -320,6 +322,7 @@
 				B1000026234567890ABCDEF1 /* WelcomeView.swift */,
 				B1000028234567890ABCDEF1 /* TypingIndicator.swift */,
 				B100002A234567890ABCDEF1 /* ViewExtensions.swift */,
+				B100002D234567890ABCDEF1 /* FileDownloadView.swift */,
 			);
 			path = "辅助组件";
 			sourceTree = "<group>";
@@ -533,6 +536,7 @@
 				B1000025234567890ABCDEF1 /* WelcomeView.swift in Sources */,
 				B1000027234567890ABCDEF1 /* TypingIndicator.swift in Sources */,
 				B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */,
+				B100002C234567890ABCDEF1 /* FileDownloadView.swift in Sources */,
 				A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */,
 				A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */,
 				A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */,

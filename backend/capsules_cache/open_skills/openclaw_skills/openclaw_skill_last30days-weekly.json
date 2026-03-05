@@ -1,0 +1,99 @@
+{
+  "id": "openclaw_skill_last30days-weekly",
+  "description": "Weekly OpenClaw Skills intelligence. Tracks trending ClawHub skills via API snapshots, researches community buzz on Reddit/X/Web, generates YouTube-ready briefings. Run daily for snapshot accumulation, weekly for full report.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # OpenClaw Skills Weekly — Community Intelligence Skill\r\n\r\nAutomated pipeline for tracking trending OpenClaw/ClawHub skills and community discussion."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What This Skill Does] 1. **ClawHub API Snapshots** — Pulls all skills from `GET https://clawhub.ai/api/v1/skills` with cursor pagination. Stores daily snapshots in SQLite for 7-day velocity trending.\r\n2. **Community Signal Capture** — Searches Reddit, X/Twitter, and web for OpenClaw skill discussions from the last 7 days. Structures findings into categorised signals.\r\n3. **Trending Analysis** — Calculates install velocity (installs_current delta over trailing 7 days) to identify breakout skills.\r\n4. **YouTube Briefing** — Generates punchy 15-second pitch scripts for the top trending skills."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands] Parse the user's request and route to the correct mode:\r\n\r\n| User says | Mode | Action |\r\n|---|---|---|\r\n| `snapshot` or `daily snapshot` | Snapshot | Record ClawHub metrics to DB |\r\n| `report` or `weekly report` | Full Report | Snapshot + rank + community + scripts |\r\n| `trending` or `what's trending` | Quick Trending | Show top 10 by velocity from DB |\r\n| `community` or `community buzz` | Community Signals | Search Reddit/X/Web for discussions |\r\n| `status` or `db status` | Status | Show DB health and snapshot history |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Snapshot Mode (run daily)] ```bash\r\npython3 \"${SKILL_ROOT}/scripts/clawhub_snapshot.py\" snapshot\r\n```\r\n\r\nThis fetches all skills from ClawHub API and records a timestamped snapshot to SQLite. Run this daily to build velocity history.\r\n\r\n**Expected output:**\r\n```\r\n[SNAPSHOT] Fetching from https://clawhub.ai/api/v1/skills...\r\n[SNAPSHOT] Page 1: 100 skills...\r\n[SNAPSHOT] Done: 13,729 skills recorded at 2026-03-01T09:00:00\r\n[SNAPSHOT] DB: 5 snapshot dates, 68,645 total rows\r\n```\r\n\r\nTell the user how many skills were captured and how many snapshot dates exist."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Full Report Mode (run weekly)] ```bash\r\npython3 \"${SKILL_ROOT}/scripts/clawhub_snapshot.py\" report --top 10\r\n```\r\n\r\nRuns: snapshot → velocity ranking → outputs markdown report.\r\n\r\nPresent the top 10 skills in a formatted table:\r\n```\r\n# OpenClaw Skills Weekly — Week of Mar 01, 2026\r\n\r\n| # | Skill | Installs | 7d Delta | Stars | Score |\r\n|---|-------|----------|----------|-------|-------|\r\n| 1 | Gog   | 1,304    | +127     | 593   | 0.42  |\r\n```\r\n\r\nThen tell the user the report is saved and suggest they run community capture too."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Community Signal Mode] Use the OpenClaw gateway's built-in WebSearch tool to search for recent community discussion:\r\n\r\n1. Search: `\"openclaw skills\" site:reddit.com` (last 7 days)\r\n2. Search: `\"clawhub\" trending skill` (last 7 days)\r\n3. Search: `\"openclaw skill\" tutorial OR guide OR demo` (last 7 days)\r\n\r\nFor each notable result found:\r\n- Extract the title, URL, and a 1-sentence summary\r\n- Categorise as: tutorial, security, ecosystem, showcase, discussion, or market\r\n- Save to the signals JSON file\r\n\r\n```bash\r\npython3 \"${SKILL_ROOT}/scripts/clawhub_snapshot.py\" community --save\r\n```"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Status Mode] ```bash\r\npython3 \"${SKILL_ROOT}/scripts/clawhub_snapshot.py\" status\r\n```\r\n\r\nShows: DB path, total rows, distinct snapshot dates, top 10 skills by current installs."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Setup] The script uses Python 3 stdlib only (sqlite3, urllib, json). No pip required.\r\n\r\nDB location: `/home/node/.local/share/skills-weekly/metrics.db`\r\nSignals file: `/home/node/.local/share/skills-weekly/weekly_signals.json`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Cron / Scheduling] For automated daily snapshots, add to the host's Task Scheduler or cron:\r\n\r\n```bash\r\n# Daily snapshot at 9am\r\ndocker exec -u node openclaw-gateway-secure python3 /home/node/.openclaw/workspace/skills/last30days-weekly/scripts/clawhub_snapshot.py snapshot\r\n```\r\n\r\nFor the weekly full report:\r\n```bash\r\n# Weekly report on Mondays at 9am\r\ndocker exec -u node openclaw-gateway-secure python3 /home/node/.openclaw/workspace/skills/last30days-weekly/scripts/clawhub_snapshot.py report --top 10\r\n```"
+    }
+  ],
+  "task_type": "search",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "last30days_weekly"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "version": "1.0.0",
+        "requires": {
+          "bins": [
+            "python3",
+            "curl"
+          ]
+        },
+        "triggers": [
+          "skills weekly",
+          "trending skills",
+          "clawhub",
+          "skill metrics",
+          "weekly report",
+          "skill snapshot",
+          "last30days weekly",
+          "openclaw skills"
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/ademczuk/skills-weekly/openclaw-skill/last30days-weekly/SKILL.md"
+}

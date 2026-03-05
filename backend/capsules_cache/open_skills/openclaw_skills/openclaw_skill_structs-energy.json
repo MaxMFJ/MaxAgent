@@ -1,0 +1,84 @@
+{
+  "id": "openclaw_skill_structs-energy",
+  "description": "Manages energy capacity in Structs. Covers increasing capacity (reactor infusion, generator infusion, buying agreements), selling surplus energy (creating providers), and diagnosing power problems. Use when capacity is too low, going offline, need more power for new structs, want to sell energy, or asking \"how do I get more energy?\"",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Energy Management"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Decision Tree] ```\nNeed more capacity?\n├── Have Alpha Matter?\n│   ├── Infuse into a reactor (safest, immediate, 1g ≈ 1kW minus commission)\n│   │   → See \"Reactor Infusion\" below\n│   └── Infuse into a generator (higher ratio, IRREVERSIBLE, vulnerable to raids)\n│       → See \"Generator Infusion\" below\n└── No Alpha Matter?\n    └── Buy energy from a provider via agreement\n        → See \"Buy Energy\" below\n\nHave surplus energy?\n└── Sell it by creating a provider\n    → See \"Sell Energy\" below\n```\n\n---"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Reactor Infusion (most common path)] Infusing Alpha Matter (ualpha) into a reactor immediately increases the player's capacity. This is the safest and most common way to get more energy.\n\n### How It Works\n\nWhen you infuse ualpha into a reactor, the system generates power equal to the amount infused. This power is split between you and the reactor based on the reactor's **commission rate**:\n\n- **Player receives**: `power * (1 - commission)`\n- **Reactor receives**: `power * commission`\n\nThe player's capacity increases automatically — no allocation or substation setup needed.\n\n### Example\n\nInfusing 3,000,000 ualpha into a reactor with 4% commission:\n\n```json\n{\n  \"destinationType\": \"reactor\",\n  \"destinationId\": \"3-1\",\n  \"fuel\": \"3000000\",\n  \"power\": \"3000000\",\n  \"commission\": \"0.040000000000000000\",\n  \"playerId\": \"1-33\"\n}\n```\n\n- `fuel`: 3,000,000 ualpha infused\n- `power`: 3,000,000 mW generated (1 ualpha = 1 mW = 0.001 W)\n- Reactor keeps 4%: 120,000 mW (120 W)\n- Player receives 96%: 2,880,000 mW (2,880 W) added to capacity\n\n### Procedure\n\n1. Check current capacity: `structsd query structs player [id]`\n2. Choose a reactor (usually your guild's): `structsd query structs reactor [id]` — note the `commission` field\n3. Infuse:\n\n```\nstructsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y\n```\n\n**Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.\n\n4. Verify: re-query player, confirm capacity increased\n\n### Choosing a Reactor\n\n- Your guild's reactor is the default choice — it strengthens the guild and you benefit from guild infrastructure\n- Lower commission = more capacity for you\n- Check commission before infusing: `structsd query structs reactor [id]`\n- You can infuse into any reactor, not just your guild's\n- The `reactor-infuse` command takes the **validator address** (`structsvaloper1...`), not the reactor ID. Find it in the"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Generator Infusion] Generators convert Alpha Matter to energy at higher ratios than reactors, but the infusion is **irreversible** and the generator is vulnerable to raids.\n\n### Conversion Rates\n\n| Generator | Type ID | Rate | Risk |\n|-----------|---------|------|------|\n| Field Generator | 20 | 1g = 2 kW | High — vulnerable to raids, irreversible |\n| Continental Power Plant | 21 | 1g = 5 kW | High — vulnerable to raids, irreversible |\n| World Engine | 22 | 1g = 10 kW | High — vulnerable to raids, irreversible |\n\n### Procedure\n\n1. Identify your generator struct: `structsd query structs struct [id]` — must be type 20, 21, or 22\n2. Infuse:\n\n```\nstructsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y\n```\n\n**Important**: Amount must include denomination, e.g. `5000000ualpha`.\n\n3. Verify: query player for capacity increase\n\n### When to Use Generators\n\n- You need maximum energy efficiency per gram of Alpha Matter\n- You have defense in place (shields, PDC, defenders) to protect the generator\n- You accept the risk that if the generator is destroyed, the infused Alpha is lost forever\n\n**Do not infuse generators without adequate defense.**\n\n---"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Buy Energy (Agreement Path)] If you have no Alpha Matter to infuse, you can buy energy from another player who is running a provider.\n\n### Procedure\n\n1. **Find a provider**: Query available providers:\n\n```\nstructsd query structs provider-all\n```\n\nOr check your guild's providers. Look for one with acceptable `rateAmount`, `capacityMaximum`, and `durationMaximum`.\n\n2. **Open an agreement**:\n\n```\nstructsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5 -y\n```\n\nThe agreement automatically creates an allocation.\n\n3. **Connect the allocation to a substation**:\n\n```\nstructsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y\n```\n\nConnect to your guild's substation to benefit the guild, or create your own substation for independent energy management.\n\n4. **Verify**: Query player to confirm capacity increased.\n\n### Agreement Management\n\n- Increase capacity: `agreement-capacity-increase [agreement-id] [additional-capacity]`\n- Decrease capacity: `agreement-capacity-decrease [agreement-id] [reduce-by]`\n- Extend duration: `agreement-duration-increase [agreement-id] [additional-blocks]`\n- Close: `agreement-close [agreement-id]` — may incur cancellation penalty\n\n---"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Sell Energy (Energy Commerce Pipeline)] If you have surplus capacity, you can sell energy to other players through the reactor-allocation-substation-provider pipeline. This is the core of Structs economic gameplay.\n\n### Full Pipeline (Step by Step)\n\n1. **Accumulate Alpha** -- Mine ore, refine immediately. Consolidate ualpha to the account that will manage energy commerce.\n\n2. **Infuse into reactor** -- Increases your player capacity. Use your guild's reactor for simplicity:\n\n```\nstructsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto -y\n```\n\nThe `validator-address` is `structsvaloper1...` (find it in `structsd query structs reactor [id]` under the `validator` field). Commission is locked at infusion time and permanent for that infusion.\n\n3. **Create automated allocation** -- Routes your capacity to a substation. Use `automated` type so it auto-grows when you infuse more alpha:\n\n```\nstructsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -y -- [your-player-id] [power-amount]\n```\n\n4. **Create substation** -- The distribution node for your energy:\n\n```\nstructsd tx structs substation-create --from [key-name] --gas auto -y -- [your-player-id] [allocation-id]\n```\n\n5. **Create provider** -- Your marketplace storefront:\n\n```\nstructsd tx structs provider-create --from [key-name] --gas auto -y -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]\n```\n\n| Parameter | Purpose | Recommendation |\n|-----------|---------|----------------|\n| `rate` | Price per unit capacity per block | `1uguild.0-1` (guild tokens create demand for your guild's currency) |\n| `access-policy` | Who can buy | `open-market` for maximum revenue |\n| `provider-penalty` | Penalty you pay if you cancel | `0` initially |\n| `consumer-penalty` | Penalty buyer pays if they cancel | `0` to lower friction |\n| `cap-min` / `cap-max` | Capacity range per agreement | `1000` to `1000000000` |\n| `dur-"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Quick Reference] | Situation | Action |\n|-----------|--------|\n| Low capacity, have Alpha | Infuse into guild reactor |\n| Need maximum kW per gram | Infuse into generator (irreversible) |\n| No Alpha, need capacity | Open agreement with a provider |\n| Surplus capacity | Create provider to sell energy |\n| Going offline (load > capacity) | Deactivate structs immediately, then increase capacity |\n| Check commission rate | `structsd query structs reactor [id]` |\n| Check your capacity | `structsd query structs player [id]` |"
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount-ualpha]` (validator = `structsvaloper1...`, NOT reactor ID) |\n| Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |\n| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-validator-addr] [dest-validator-addr] [amount]` |\n| Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |\n| Open agreement | `structsd tx structs agreement-open [provider-id] [duration] [capacity]` |\n| Close agreement | `structsd tx structs agreement-close [agreement-id]` |\n| Create provider | `structsd tx structs provider-create [substation-id] [rate] [access] [prov-pen] [cons-pen] [cap-min] [cap-max] [dur-min] [dur-max]` |\n| Delete provider | `structsd tx structs provider-delete [provider-id]` |\n| Withdraw earnings | `structsd tx structs provider-withdraw-balance [provider-id]` |\n| Connect allocation | `structsd tx structs substation-allocation-connect [substation-id] [allocation-id]` |\n| Query player power | `structsd query structs player [id]` |\n| Query reactor | `structsd query structs reactor [id]` |\n| Query providers | `structsd query structs provider-all` |\n\nCommon tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -y -- [entity-id] [other-args]`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Error Handling] - **Going offline** — Load exceeds capacity. Immediately deactivate non-essential structs (`struct-deactivate`), then increase capacity via reactor infusion or agreement.\n- **\"insufficient balance\"** — Not enough ualpha. Mine and refine ore first, or buy energy via agreement instead.\n- **\"generator infuse failed\"** — Verify the struct is a generator type (20, 21, or 22) and is online.\n- **Commission too high** — Check other reactors. You can infuse into any reactor, not just your guild's.\n- **No providers available** — Ask guild members to create providers, or infuse your own reactor."
+    },
+    {
+      "id": "step_9",
+      "type": "subtask",
+      "description": "[See Also] - [structs-economy skill](https://structs.ai/skills/structs-economy/SKILL) — Full economic operations (all allocation types, token transfers)\n- [structs-power skill](https://structs.ai/skills/structs-power/SKILL) — Substations, player connections, power monitoring\n- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity formulas, load calculations, online status\n- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement mechanics, pricing\n- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter conversion rates"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_energy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-energy/SKILL.md"
+}

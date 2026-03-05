@@ -61,8 +61,9 @@ backend/
 ## agent/ 包
 
 - **核心执行**：`core.py`（AgentCore）、`autonomous_agent.py`、`action_schema.py`、`stop_policy.py`
-- **上下文与记忆**：`context_manager.py`、`task_context_manager.py`、`episodic_memory.py`
-- **LLM/模型**：`llm_client.py`、`local_llm_manager.py`、`model_selector.py`
+- **上下文与记忆**：`context_manager.py`、`task_context_manager.py`、`episodic_memory.py`（v3.2：重要性加权 memory）
+- **反思**：`reflect_engine.py`（v3.2：失败分类 + 专用 prompt 模板）
+- **LLM/模型**：`llm_client.py`（v3.2：extra_body/Extended Thinking）、`local_llm_manager.py`、`model_selector.py`
 - **Capsule/技能**：`capsule_*.py`、`skill_adapter.py`、`open_skill_sources.py`
 - **自愈**：`self_healing/`、`self_healing_worker.py`、`error_service.py`
 - **自升级**：`self_upgrade/`、`upgrade_service.py`
@@ -74,8 +75,21 @@ backend/
 
 ## routes/ 与 tools/
 
-- **routes/**：按领域拆分的 APIRouter（health、config、chat、tools、upgrade、logs、memory、self_healing、evomap、capsules、auth）。
+- **routes/**：按领域拆分的 APIRouter。已注册路由：
+  - `health`（含 `/health/deep` v3.2 新增）
+  - `auth`、`config`、`chat`、`tools`、`upgrade`
+  - `logs`、`memory`、`self_healing`、`evomap`、`capsules`
+  - `workspace`、`monitor`、`usage_stats`、`tunnel`、`permissions`、`files`
+  - `traces`（v3.2 新增，`/traces` REST API）
 - **tools/**：各工具实现；`generated/` 为动态生成工具；工具注册与路由在 `tools/router.py`、`tools/registry.py`。
+
+---
+
+## scripts/ 目录
+
+- `scripts/run_benchmark.py`（v3.2 新增）：Benchmark 自动化脚本，B1-B7 用例，通过 WebSocket 连接后端执行，输出成功率/耗时统计。
+- `scripts/check_ollama.py`：Ollama 本地 LLM 可用性检测。
+- `scripts/test_local_parse.py`：本地模型输出解析测试。
 
 ---
 

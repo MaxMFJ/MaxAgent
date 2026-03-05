@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_structs-diplomacy",
+  "description": "Handles permissions, address management, and inter-player coordination in Structs. Use when granting or revoking permissions on objects, registering new addresses, managing multi-address accounts, delegating authority to other players, or setting up address-level access control.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Diplomacy\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Procedure] 1. **Query permissions** — `structsd query structs permission [id]`, `permission-by-object [object-id]`, `permission-by-player [player-id]`.\n2. **Grant on object** — `structsd tx structs permission-grant-on-object TX_FLAGS -- [object-id] [player-id] [permissions]`. Permissions are additive.\n3. **Revoke on object** — `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]`.\n4. **Set on object** — `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` — clears existing and applies new set.\n5. **Address-level permissions** — `structsd tx structs permission-grant-on-address -- [address] [permissions]`, `permission-revoke-on-address -- [address] [permissions]`, `permission-set-on-address -- [address] [permissions]`.\n6. **Address management** — Register: `structsd tx structs address-register TX_FLAGS -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]`. Revoke: `structsd tx structs address-revoke -- [address]`. Update primary: `structsd tx structs player-update-primary-address -- [player-id] [new-address]`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Grant on object | `structsd tx structs permission-grant-on-object -- [object-id] [player-id] [permissions]` |\n| Revoke on object | `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]` |\n| Set on object | `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` |\n| Grant on address | `structsd tx structs permission-grant-on-address -- [address] [permissions]` |\n| Revoke on address | `structsd tx structs permission-revoke-on-address -- [address] [permissions]` |\n| Set on address | `structsd tx structs permission-set-on-address -- [address] [permissions]` |\n| Address register | `structsd tx structs address-register -- [player-id] [address] [proof-pubkey] [proof-sig] [permissions]` |\n| Address revoke | `structsd tx structs address-revoke -- [address]` |\n| Update primary address | `structsd tx structs player-update-primary-address -- [player-id] [new-address]` |\n\n**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`\n\n| Query | Command |\n|-------|---------|\n| Permission by ID | `structsd query structs permission [id]` |\n| Permission by object | `structsd query structs permission-by-object [object-id]` |\n| Permission by player | `structsd query structs permission-by-player [player-id]` |\n| Address | `structsd query structs address [address]` |\n| Addresses by player | `structsd query structs address-all-by-player [player-id]` |"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Verification] - **Permission**: `structsd query structs permission-by-object [object-id]` — list players with access.\n- **Address**: `structsd query structs address [address]` — verify registration, player link.\n- **Player addresses**: `structsd query structs address-all-by-player [player-id]` — all linked addresses."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] - **Permission denied**: Signer lacks permission on object. Check `permission-by-object` for current grants.\n- **Address already registered**: Use `address-revoke` first, or link to different player.\n- **Invalid proof**: Address registration requires valid proof pubkey and signature. Verify auth flow.\n- **Object not found**: Object ID may be stale. Re-query to confirm entity exists."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[See Also] - [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — Object types and IDs\n- [protocols/authentication](https://structs.ai/protocols/authentication) — Auth for address registration"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_diplomacy"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-diplomacy/SKILL.md"
+}

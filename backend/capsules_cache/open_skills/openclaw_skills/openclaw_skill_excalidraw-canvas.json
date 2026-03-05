@@ -1,0 +1,59 @@
+{
+  "id": "openclaw_skill_excalidraw-canvas",
+  "description": "Create Excalidraw diagrams and render them as PNG images. Use whenever you need to draw, explain complex workflows, visualize UIs/wireframes, or diagram anything.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Excalidraw Canvas\n\nRender diagrams or any drawings as PNG via a hosted API. Always double-check coordinates of elements or arrows."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Render] ```bash\nRESULT=$(curl -s -m 60 -X POST https://excalidraw-mcp.up.railway.app/api/render \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Accept: application/json\" \\\n  -d '{\"elements\": [...]}')\n\n# Save PNG\necho \"$RESULT\" | python3 -c \"import json,sys,base64; d=json.load(sys.stdin); open('/tmp/diagram.png','wb').write(base64.b64decode(d['png']))\"\n\n# Get edit URL\necho \"$RESULT\" | python3 -c \"import json,sys; print(json.load(sys.stdin)['editUrl'])\"\n```\n\nResponse: `{\"success\": true, \"png\": \"<base64>\", \"editUrl\": \"https://..../canvas/render-xxxxx\"}`\n\nAlways returns both the PNG image and an edit URL where your owner can modify the diagram in a full Excalidraw editor."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Element Types] All available types: `rectangle`, `ellipse`, `diamond`, `text`, `arrow`, `line`, `freedraw`\n\n### Shapes (rectangle, ellipse, diamond)\n```json\n{\"type\":\"rectangle\",\"x\":100,\"y\":100,\"width\":200,\"height\":80,\"bg\":\"#a5d8ff\",\"label\":\"My Box\"}\n{\"type\":\"ellipse\",\"x\":100,\"y\":100,\"width\":150,\"height\":100,\"bg\":\"#b2f2bb\",\"label\":\"Node\"}\n{\"type\":\"diamond\",\"x\":100,\"y\":100,\"width\":140,\"height\":100,\"bg\":\"#ffec99\",\"label\":\"Decision?\"}\n```\n- `x`, `y` — position\n- `width`, `height` — size\n- `bg` — any hex fill color\n- `stroke` — border color (default `#1e1e1e`)\n- `label` — text centered inside the shape\n\n### Text\n```json\n{\"type\":\"text\",\"x\":100,\"y\":50,\"text\":\"Title\",\"fontSize\":28}\n```\n\n### Arrows & Lines\n```json\n{\"type\":\"arrow\",\"x\":300,\"y\":140,\"points\":[[0,0],[150,0]]}\n{\"type\":\"line\",\"x\":0,\"y\":200,\"points\":[[0,0],[800,0]]}\n```\nPoints are relative to x,y. Horizontal: `[[0,0],[150,0]]`, vertical: `[[0,0],[0,100]]`, bent: `[[0,0],[0,50],[100,50]]`.\n\n### Freedraw\n```json\n{\"type\":\"freedraw\",\"x\":100,\"y\":100,\"points\":[[0,0],[5,3],[10,8],[20,15]]}\n```\nFreehand path — array of [x,y] points relative to position."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Full Example] ```bash\nRESULT=$(curl -s -m 60 -X POST https://excalidraw-mcp.up.railway.app/api/render \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Accept: application/json\" \\\n  -d '{\"elements\": [\n    {\"type\":\"text\",\"x\":250,\"y\":20,\"text\":\"System Design\",\"fontSize\":28},\n    {\"type\":\"rectangle\",\"x\":50,\"y\":80,\"width\":180,\"height\":70,\"bg\":\"#a5d8ff\",\"label\":\"Frontend\"},\n    {\"type\":\"rectangle\",\"x\":300,\"y\":80,\"width\":180,\"height\":70,\"bg\":\"#b2f2bb\",\"label\":\"API\"},\n    {\"type\":\"rectangle\",\"x\":550,\"y\":80,\"width\":180,\"height\":70,\"bg\":\"#ffec99\",\"label\":\"Database\"},\n    {\"type\":\"arrow\",\"x\":230,\"y\":115,\"points\":[[0,0],[70,0]]},\n    {\"type\":\"arrow\",\"x\":480,\"y\":115,\"points\":[[0,0],[70,0]]}\n  ]}')\n\necho \"$RESULT\" | python3 -c \"import json,sys,base64; d=json.load(sys.stdin); open('/tmp/diagram.png','wb').write(base64.b64decode(d['png'])); print(d['editUrl'])\"\n```"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Sending to User] ```\nmessage(action=\"send\", filePath=\"/tmp/diagram.png\", caption=\"✏️ Edit: {editUrl}\")\n```\n\nAlways include the edit URL so the user can tweak the diagram."
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "excalidraw_canvas"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/0xartex/excalidraw-canvas/SKILL.md"
+}

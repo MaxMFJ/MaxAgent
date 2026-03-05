@@ -101,13 +101,28 @@ async def execute_strategy(
         f"registered={registered}"
     )
 
-    # ── Step 3: 远程 sync（Open Skills 放后台，不阻塞；EvoMap 仍同步）──
+    # ── Step 3: 远程 sync（Open Skills 按需模式下只同步索引；EvoMap 仍同步）──
     if run_sync:
         if strategy == "evomap":
             result["remote"] = await _run_evomap_strategy(cache_dir)
         else:
-            result["remote"] = {"type": "open_skills", "sync": "background"}
-            asyncio.create_task(_background_open_skills_sync(cache_dir))
+            # 检查是否启用按需拉取 — 若是，只同步轻量索引，不全量拉取 SKILL.md
+            on_demand_enabled = True
+            try:
+                from app_state import ENABLE_ON_DEMAND_SKILL_FETCH
+                on_demand_enabled = ENABLE_ON_DEMAND_SKILL_FETCH
+            except ImportError:
+                import os
+                on_demand_enabled = os.environ.get("MACAGENT_ENABLE_ON_DEMAND_SKILL_FETCH", "true").lower() not in ("false", "0", "no")
+
+            if on_demand_enabled:
+                # 按需模式：仅拉取轻量 skill_index（单次 HTTP），不全量下载 SKILL.md
+                result["remote"] = {"type": "open_skills", "sync": "on_demand_mode"}
+                asyncio.create_task(_background_sync_index_only(cache_dir))
+            else:
+                # 旧模式：后台全量同步（保持向后兼容）
+                result["remote"] = {"type": "open_skills", "sync": "background_full_sync"}
+                asyncio.create_task(_background_open_skills_sync(cache_dir))
     else:
         result["remote"] = {"type": strategy, "sync": "skipped"}
 
@@ -135,6 +150,27 @@ async def _run_evomap_strategy(cache_dir: Optional[Path] = None) -> Dict[str, An
     except Exception as e:
         logger.warning(f"EvoMap strategy failed, falling back to open_skills: {e}")
         return await _run_open_skills_strategy(cache_dir)
+
+
+async def _background_sync_index_only(cache_dir: Optional[Path] = None) -> None:
+    """
+    后台仅同步轻量 skill_index（按需模式）。
+    只拉取 awesome-openclaw-skills README 解析的索引 JSON（单次 HTTP ~10KB），
+    让 LLM 知道有哪些在线技能，需要时再按需拉取 SKILL.md。
+    """
+    try:
+        from .skill_index import sync_skill_index, load_cached_index
+        index = load_cached_index(cache_dir)
+        if index:
+            logger.debug("Skill index already cached, skip background sync")
+            return
+        ok, total = await sync_skill_index(cache_dir)
+        if ok:
+            logger.info(f"Skill index ready (on-demand mode): {total} skills indexed, 0 downloaded")
+        else:
+            logger.debug("Skill index sync failed (non-critical, on-demand still works via direct fetch)")
+    except Exception as e:
+        logger.debug(f"Background index sync error: {e}")
 
 
 async def _background_open_skills_sync(cache_dir: Optional[Path] = None) -> None:

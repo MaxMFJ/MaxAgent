@@ -84,19 +84,10 @@
     "license": "",
     "compatibility": "",
     "extra": {
-      "clawdbot": {
-        "emoji": "💳",
-        "requires": {
-          "env": [
-            "EVM_PRIVATE_KEY"
-          ],
-          "pip": [
-            "x402[httpx,evm]"
-          ]
-        },
-        "cron": null,
-        "autostart": false
-      }
+      "author": "Simmer (@simmer_markets)",
+      "version": "1.0.2",
+      "displayName": "x402 Payments",
+      "difficulty": "advanced"
     }
   },
   "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/simmer-x402/SKILL.md"

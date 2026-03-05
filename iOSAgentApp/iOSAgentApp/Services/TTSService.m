@@ -136,34 +136,47 @@ static NSCharacterSet *sentenceEndChars(void) {
         }
     }
 
-    // 4. 过滤 emoji（保留中日韩 + ASCII + 常用标点）
+    // 4. 过滤所有不可朗读字符（只保留中日韩文字、ASCII字母数字、常用标点）
+    //    使用正则白名单：不在以下范围内的字符一律删除
     {
-        NSMutableString *filtered = [NSMutableString stringWithCapacity:result.length];
-        [result enumerateSubstringsInRange:NSMakeRange(0, result.length)
-                                   options:NSStringEnumerationByComposedCharacterSequences
-                                usingBlock:^(NSString *substring, NSRange substringRange, NSRange enclosingRange, BOOL *stop) {
-            // 取第一个字符的 Unicode 标量
-            if (substring.length == 0) return;
-            unichar first = [substring characterAtIndex:0];
-            // 跳过 surrogate pair（大多数 emoji 在增补平面），也跳过常见表情 Unicode 区间
-            BOOL isSurrogate = CFStringIsSurrogateHighCharacter(first) || CFStringIsSurrogateLowCharacter(first);
-            BOOL isEmoji = NO;
-            if (substring.length == 1) {
-                // 常见 emoji 区间：Dingbats(2700-27BF), Misc Symbols(2600-26FF),
-                // Emoticons(FE00-FE0F variation selectors), Symbols & Picts(1F000+)
-                isEmoji = (first >= 0x2600 && first <= 0x27BF) ||
-                          (first >= 0xFE00 && first <= 0xFE0F) ||
-                          (first >= 0x2B50 && first <= 0x2B55) ||
-                          (first == 0x200D); // ZWJ
-            }
-            if (!isSurrogate && !isEmoji) {
-                [filtered appendString:substring];
-            }
-        }];
-        result = filtered;
+        static NSRegularExpression *nonReadable;
+        static dispatch_once_t emojiOnce;
+        dispatch_once(&emojiOnce, ^{
+            nonReadable = [NSRegularExpression regularExpressionWithPattern:
+                @"[^"
+                @"\\u0020-\\u007E"  // ASCII printable (space ~ tilde)
+                @"\\u00A0-\\u024F"  // Latin Extended (accented chars)
+                @"\\u2010-\\u2027"  // Dashes, quotes, leaders, ellipsis
+                @"\\u2030-\\u205E"  // Per mille, prime, brackets (skip 2028-202F bidi/separators)
+                @"\\u3000-\\u303F"  // CJK Symbols & Punctuation (、。「」等)
+                @"\\u3040-\\u30FF"  // Hiragana & Katakana
+                @"\\u3400-\\u4DBF"  // CJK Extension A
+                @"\\u4E00-\\u9FFF"  // CJK Unified Ideographs
+                @"\\uAC00-\\uD7AF"  // Hangul Syllables
+                @"\\uF900-\\uFAFF"  // CJK Compatibility Ideographs
+                @"\\uFE30-\\uFE4F"  // CJK Compatibility Forms (︰︱等)
+                @"\\uFF00-\\uFFEF"  // Fullwidth Forms (！？等)
+                @"]+"
+                options:0 error:nil];
+        });
+        [nonReadable replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];
     }
 
-    return [result copy];
+    // 5. 清理多余空白：连续空格合并为一个，去掉首尾空白
+    {
+        static NSRegularExpression *multiSpace;
+        static dispatch_once_t spaceOnce;
+        dispatch_once(&spaceOnce, ^{
+            multiSpace = [NSRegularExpression regularExpressionWithPattern:@"\\s{2,}" options:0 error:nil];
+        });
+        [multiSpace replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@" "];
+        NSString *trimmed = [result stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        [result setString:trimmed];
+    }
+
+    NSString *finalResult = [result copy];
+    NSLog(@"[TTS preprocess] in=%@ out=%@", [text substringToIndex:MIN(text.length, 50u)], [finalResult substringToIndex:MIN(finalResult.length, 50u)]);
+    return finalResult;
 }
 
 /// 查找设备上最高质量的中文语音（Premium > Enhanced > Default）
@@ -296,6 +309,26 @@ static NSString * const kTTSVoiceIdentifierKey = @"tts_preferred_voice_identifie
     NSString *t = [fullText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (t.length == 0) return;
 
+    // ⚡ 关键：在句子分割前就移除 <thinking> 块
+    // 否则 thinking 内容会被 splitIntoSentences 按 "." 分成多个句子，
+    // 每个句子不包含 <thinking> 标签，preprocessForSpeech 就无法移除它们
+    {
+        NSMutableString *cleaned = [t mutableCopy];
+        // 移除完整的 <thinking>...</thinking> 块
+        static NSRegularExpression *thinkComplete;
+        static NSRegularExpression *thinkOpen;
+        static dispatch_once_t thinkOnce;
+        dispatch_once(&thinkOnce, ^{
+            thinkComplete = [NSRegularExpression regularExpressionWithPattern:@"<thinking>[\\s\\S]*?</thinking>" options:NSRegularExpressionCaseInsensitive error:nil];
+            thinkOpen = [NSRegularExpression regularExpressionWithPattern:@"<thinking>[\\s\\S]*$" options:NSRegularExpressionCaseInsensitive error:nil];
+        });
+        [thinkComplete replaceMatchesInString:cleaned options:0 range:NSMakeRange(0, cleaned.length) withTemplate:@""];
+        // 移除未闭合的 <thinking>（流式中可能尚未收到 </thinking>）
+        [thinkOpen replaceMatchesInString:cleaned options:0 range:NSMakeRange(0, cleaned.length) withTemplate:@""];
+        t = [cleaned stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (t.length == 0) return;
+    }
+
     NSArray<NSString *> *sentences = nil;
     NSString *remainder = nil;
     [self splitIntoSentences:t sentences:&sentences remainder:&remainder];
@@ -316,7 +349,11 @@ static NSString * const kTTSVoiceIdentifierKey = @"tts_preferred_voice_identifie
 
 - (void)speakUtterance:(NSString *)text {
     NSString *processed = [TTSService preprocessForSpeech:text];
-    if (processed.length == 0) return;
+    if (processed.length == 0) {
+        NSLog(@"[TTS] Empty after preprocess, skipping. raw=%@", [text substringToIndex:MIN(text.length, 80u)]);
+        return;
+    }
+    NSLog(@"[TTS speak] \"%@\"", [processed substringToIndex:MIN(processed.length, 100u)]);
     AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:processed];
     utterance.voice = self.bestChineseVoice;
     [self.synthesizer speakUtterance:utterance];

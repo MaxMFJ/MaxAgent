@@ -79,19 +79,10 @@
     "license": "",
     "compatibility": "",
     "extra": {
-      "clawdbot": {
-        "emoji": "📓",
-        "requires": {
-          "env": [
-            "SIMMER_API_KEY"
-          ],
-          "pip": [
-            "simmer-sdk"
-          ]
-        },
-        "cron": null,
-        "autostart": false
-      }
+      "author": "Simmer (@simmer_markets)",
+      "version": "1.1.8",
+      "displayName": "Prediction Trade Journal",
+      "difficulty": "beginner"
     }
   },
   "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/adlai88/prediction-trade-journal/SKILL.md"

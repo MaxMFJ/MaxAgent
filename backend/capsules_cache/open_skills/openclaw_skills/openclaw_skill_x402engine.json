@@ -1,0 +1,110 @@
+{
+  "id": "openclaw_skill_x402engine",
+  "description": "Pay-per-call API gateway skill — calls 63 APIs (LLMs, image/video gen, flights, hotels, crypto, web search) via x402 micropayments. Each call costs $0.001-$0.60 in USDC/USDm, enforced by a local policy engine with spend caps.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # x402engine\n\nCall 63 paid APIs via x402 micropayments. Each API call costs between $0.001 and $0.60, paid with USDC on Base/Solana or USDm on MegaETH."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[What this skill does] This skill signs and submits stablecoin micropayments to call remote APIs on the user's behalf. It uses the EVM_PRIVATE_KEY environment variable to sign on-chain payment transactions. Each call deducts a small amount from the wallet.\n\n**Cost transparency:** When presenting results, include the cost of the call (e.g. \"Bitcoin is $97,500 (cost: $0.001)\"). If the user asks about spending, show full budget breakdown."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Triggers] - \"what's the price of bitcoin\"\n- \"ethereum price\"\n- \"show me trending crypto\"\n- \"generate an image of a sunset\"\n- \"run this python code\"\n- \"transcribe this audio\"\n- \"wallet activity of vitalik.eth\"\n- \"ask gpt to explain x402\"\n- \"scrape this url\"\n- \"pin this to ipfs\"\n- \"resolve vitalik.eth\"\n- \"flights from JFK to LAX\"\n- \"search hotels in Paris\"\n- \"find cheap flights to Tokyo\"\n- \"how much budget is left\"\n- \"list available services\""
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[How it works] 1. Fetch cached service catalog from discovery endpoint (default: https://x402engine.app/.well-known/x402.json).\n2. Score query against 63 service descriptions to find best match.\n3. Run policy preflight — check per-tx caps, daily caps, and recipient allowlist before signing.\n4. Call service via @x402/fetch — handles 402 payment flow automatically.\n5. Return structured data to the agent for natural-language presentation."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Rules] - Present results naturally. Include the cost of each call so the user knows what was spent.\n- If a payment fails due to insufficient funds, tell the user: \"I need funds to access this service. Add USDC to your wallet to continue.\"\n- If no matching service is found, say so plainly — don't expose internal routing details.\n- Policy limits are authoritative — do not bypass spend caps or recipient allowlists.\n- Keep all decisions explainable with reason codes internally."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Security] ### Required credential\n- **EVM_PRIVATE_KEY** (required) — signs payment transactions. Use a dedicated wallet with limited funds — never your primary wallet. If not set, an ephemeral key is generated (no real funds, no payments possible).\n\n### Optional configuration\nThese environment variables are NOT required. They provide additional controls:\n- **EVM_PRIVATE_KEY_FILE** — alternative to EVM_PRIVATE_KEY; reads the key from a file instead of an env var. Use one or the other, not both.\n- **X402_POLICY_PATH** — path to a JSON policy file. Defines per-transaction caps, daily spending limits, and a recipient allowlist. Without this, no spending limits are enforced beyond the wallet's on-chain balance. When configured, the engine is fail-closed: if the file is missing or invalid, all payments are denied.\n- **X402_STATE_PATH** — path to a JSON file tracking daily spend and rate-limit state. Defaults to `.x402engine-state.json`.\n- **X402_DISCOVERY_URL** — override the service catalog URL (default: `https://x402engine.app/.well-known/x402.json`). Use a self-hosted catalog if you don't trust the default.\n- **X402_AUTOPREFLIGHT** — set to `false` to skip policy preflight checks. Enabled by default.\n- **X402_DISCOVERY_REFRESH_MS** — cache TTL for the service catalog in milliseconds.\n\n### How payments work\nAll payments go to the `payTo` address declared in the service catalog. The catalog is fetched from the discovery URL above. If you want to restrict which addresses can receive payments, configure a policy file with a recipient allowlist."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Budget check] When the user asks \"how much budget is left\" or similar:\n- Load policy and state files.\n- Show daily cap remaining per chain/asset if caps are enabled.\n- Show rate limit status.\n- Show wallet balance."
+    },
+    {
+      "id": "step_7",
+      "type": "subtask",
+      "description": "[Dependencies] This skill requires Node.js and the following npm packages (declared in package.json):\n- `@x402/fetch` — x402 payment-aware fetch wrapper\n- `@x402/evm` — EVM payment scheme (Permit2 signatures)\n- `viem` — Ethereum client library\n\nInstall with: `cd skills/x402engine && npm install`"
+    },
+    {
+      "id": "step_8",
+      "type": "subtask",
+      "description": "[Reason Codes] - `POLICY_MISSING`, `POLICY_INVALID`\n- `CHAIN_DENIED`, `ASSET_DENIED`, `RECIPIENT_DENIED`\n- `PER_TX_EXCEEDED`, `DAILY_CAP_EXCEEDED`, `RATE_LIMITED`\n- `ACTION_DENIED`\n- `SERVICE_NOT_FOUND`\n- `WALLET_UNDERFUNDED`"
+    }
+  ],
+  "task_type": "creative",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "x402engine"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {
+      "openclaw": {
+        "requires": {
+          "env": [
+            "EVM_PRIVATE_KEY"
+          ],
+          "bins": [
+            "node"
+          ]
+        },
+        "primaryEnv": "EVM_PRIVATE_KEY",
+        "emoji": "⚡",
+        "homepage": "https://x402engine.app",
+        "install": [
+          {
+            "kind": "node",
+            "package": "@x402/fetch",
+            "bins": []
+          },
+          {
+            "kind": "node",
+            "package": "@x402/evm",
+            "bins": []
+          },
+          {
+            "kind": "node",
+            "package": "viem",
+            "bins": []
+          }
+        ]
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/agentc22/x402engine/SKILL.md"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "openclaw_skill_structs-power",
+  "description": "Manages power infrastructure in Structs. Covers substations, allocations, player connections, and power monitoring. Use when power is low or overloaded, creating or managing substations, connecting players to substations, allocating capacity, diagnosing offline status, or planning power budget for new structs.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Power\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Procedure] 1. **Assess power state** — Query player: `structsd query structs player [id]`. Compute: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If `load + structsLoad > capacity + capacitySecondary`, player goes **OFFLINE** (cannot act). Player passive draw: 25,000 mW.\n2. **Create substation** — First create allocation from reactor/generator: `structsd tx structs allocation-create --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS -- [source-id] [power]`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address**, not a player ID. Then: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.\n3. **Connect power** — `structsd tx structs substation-allocation-connect -- [substation-id] [allocation-id]` to add source. `structsd tx structs substation-allocation-disconnect -- [substation-id] [allocation-id]` to remove.\n4. **Connect players** — `structsd tx structs substation-player-connect -- [substation-id] [player-id]` to draw power. `structsd tx structs substation-player-disconnect -- [substation-id] [player-id]` to remove.\n5. **Migrate players** — `structsd tx structs substation-player-migrate TX_FLAGS -- [source-substation-id] [dest-substation-id] [player-id,player-id2,...]`.\n6. **Manage allocations** — Update: `structsd tx structs allocation-update -- [allocation-id] [new-power]`. Delete: `structsd tx structs allocation-delete -- [allocation-id]`.\n7. **Delete substation** — `structsd tx structs substation-delete -- [substation-id]` (disconnect allocations/players first)."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Substation create | `structsd tx structs substation-create -- [owner-id] [allocation-id]` |\n| Substation delete | `structsd tx structs substation-delete -- [substation-id]` |\n| Allocation connect | `structsd tx structs substation-allocation-connect -- [substation-id] [allocation-id]` |\n| Allocation disconnect | `structsd tx structs substation-allocation-disconnect -- [substation-id] [allocation-id]` |\n| Player connect | `structsd tx structs substation-player-connect -- [substation-id] [player-id]` |\n| Player disconnect | `structsd tx structs substation-player-disconnect -- [substation-id] [player-id]` |\n| Player migrate | `structsd tx structs substation-player-migrate -- [src-substation-id] [dest-substation-id] [player-ids]` |\n| Allocation create | `structsd tx structs allocation-create --allocation-type [type] -- [source-id] [power]` |\n| Allocation update | `structsd tx structs allocation-update -- [allocation-id] [power]` |\n| Allocation delete | `structsd tx structs allocation-delete -- [allocation-id]` |\n\n**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Verification] - **Player**: `structsd query structs player [id]` — `capacity`, `capacitySecondary`, `load`, `structsLoad`, online status.\n- **Substation**: `structsd query structs substation [id]` — connected allocations, players.\n- **Allocations**: `structsd query structs allocation-all-by-source [source-id]`, `allocation-all-by-destination [dest-id]` — power flow."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[How to Increase Capacity] If capacity is too low (or you're going offline), there are three paths:\n\n| Method | Requires | Speed | Risk | Rate |\n|--------|----------|-------|------|------|\n| Reactor infusion | Alpha Matter | Immediate | Low | 1g ≈ 1 kW (minus commission) |\n| Generator infusion | Alpha Matter + generator struct | Immediate | High (irreversible, raidable) | 1g = 2-10 kW |\n| Buy via agreement | A provider with capacity | Immediate | Medium (ongoing cost) | Varies by provider |\n\n**Most common**: Infuse Alpha Matter into your guild's reactor. Capacity increases automatically.\n\nFor step-by-step workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL)."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Error Handling] - **Going offline**: Load exceeds capacity. Deactivate structs immediately (`struct-deactivate`), then increase capacity — see the `structs-energy` skill for options.\n- **Allocation exceeds source**: Source (reactor/provider) has limited capacity. Query source; create smaller allocation or add capacity.\n- **Substation delete failed**: Ensure no players or allocations connected. Disconnect first.\n- **Automated allocation limit**: One automated allocation per source. Attempting a second from the same source will error. Use static/dynamic for multiple.\n- **capacity=0 false positive**: A player connected to a substation pool may show `capacity=0` while structs are online and drawing power. Check `structsLoad > 0` as the real indicator of functionality, not `capacity > 0`."
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[See Also] - [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — \"I need more energy\" decision tree and workflows\n- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Formulas, capacity, load, online status\n- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build power requirements\n- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Reactor vs generator conversion rates"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_power"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-power/SKILL.md"
+}

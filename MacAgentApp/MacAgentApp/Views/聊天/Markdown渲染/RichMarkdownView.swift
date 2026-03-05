@@ -38,6 +38,7 @@ private struct WidthPreferenceKey: PreferenceKey {
 private enum UnifiedSegment {
     case text([MarkdownElement])
     case code(code: String, language: String?)
+    case file(path: String)
 }
 
 /// 统一富文本 + 图片：文本段用 NSTextView（可选、可复制、链接可点），代码块用可折叠 CodeBlockView，图片单独渲染。
@@ -54,7 +55,7 @@ struct UnifiedMarkdownView: View {
     /// 将元素切成「文本段」与「代码块」交替的列表，不含图片
     private var segments: [UnifiedSegment] {
         let nonImage = elements.filter {
-            switch $0 { case .image, .base64Image, .localImage: return false; default: return true }
+            switch $0 { case .image, .base64Image, .localImage, .filePath: return false; default: return true }
         }
         var out: [UnifiedSegment] = []
         var textAccum: [MarkdownElement] = []
@@ -78,6 +79,21 @@ struct UnifiedMarkdownView: View {
             switch $0 { case .image, .base64Image, .localImage: return true; default: return false }
         }
     }
+    
+    private var filePathElements: [MarkdownElement] {
+        // 合并：解析器检测到的独立路径 + 从全文提取的嵌入路径
+        var parserPaths: [String] = elements.compactMap {
+            if case .filePath(let p) = $0 { return p }
+            return nil
+        }
+        let inlinePaths = MarkdownParser.extractFilePaths(from: content)
+        for p in inlinePaths {
+            if !parserPaths.contains(p) {
+                parserPaths.append(p)
+            }
+        }
+        return parserPaths.map { .filePath(path: $0) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -86,6 +102,11 @@ struct UnifiedMarkdownView: View {
             }
             ForEach(Array(imageElements.enumerated()), id: \.offset) { _, element in
                 renderImageElement(element)
+            }
+            ForEach(Array(filePathElements.enumerated()), id: \.offset) { _, element in
+                if case .filePath(let path) = element {
+                    FileDownloadView(filePath: path)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -105,6 +126,8 @@ struct UnifiedMarkdownView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         case .code(let code, let lang):
             CodeBlockView(code: code, language: lang)
+        case .file(let path):
+            FileDownloadView(filePath: path)
         }
     }
     
@@ -163,6 +186,9 @@ struct RichMarkdownView: View {
             
         case .localImage(let path):
             LocalFileImageView(filePath: path)
+        
+        case .filePath(let path):
+            FileDownloadView(filePath: path)
             
         case .link(let text, let url):
             ClickableLink(text: text, url: url)

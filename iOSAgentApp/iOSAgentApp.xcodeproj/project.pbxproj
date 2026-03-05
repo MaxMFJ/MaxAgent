@@ -35,6 +35,7 @@
 		VIW001 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* MessageCell.m */; };
 		VIW002 /* InputView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* InputView.m */; };
 		VIW003 /* ThinkingBlockView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* ThinkingBlockView.m */; };
+		VIW004 /* FileDownloadView.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC020 /* FileDownloadView.m */; };
 		VOICE001 /* VoiceRainbowView.m in Sources */ = {isa = PBXBuildFile; fileRef = VOICE002 /* VoiceRainbowView.m */; };
 /* End PBXBuildFile section */
 
@@ -92,6 +93,8 @@
 		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };
 		SRC019 /* TechTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TechTheme.m; sourceTree = "<group>"; };
 		SRC019H /* TechTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TechTheme.h; sourceTree = "<group>"; };
+		SRC020 /* FileDownloadView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FileDownloadView.m; sourceTree = "<group>"; };
+		SRC020H /* FileDownloadView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileDownloadView.h; sourceTree = "<group>"; };
 		VOICE002 /* VoiceRainbowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceRainbowView.m; sourceTree = "<group>"; };
 		VOICE003 /* VoiceRainbowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceRainbowView.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -247,6 +250,8 @@
 				SRC018 /* ThinkingBlockView.m */,
 				VOICE003 /* VoiceRainbowView.h */,
 				VOICE002 /* VoiceRainbowView.m */,
+				SRC020H /* FileDownloadView.h */,
+				SRC020 /* FileDownloadView.m */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -368,6 +373,7 @@
 				4C4742222F5406CD00B528B2 /* ActionLogEntry.m in Sources */,
 				4C47421F2F5406A700B528B2 /* TaskProgressView.m in Sources */,
 				VIW003 /* ThinkingBlockView.m in Sources */,
+				VIW004 /* FileDownloadView.m in Sources */,
 				UTIL002 /* TechTheme.m in Sources */,
 				VOICE001 /* VoiceRainbowView.m in Sources */,
 			);

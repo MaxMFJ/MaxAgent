@@ -1,0 +1,81 @@
+{
+  "id": "openclaw_skill_fivetran",
+  "description": "Fivetran — manage connectors, destinations, sync status, and groups via REST API",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # 🔗 Fivetran\n\nFivetran — manage connectors, destinations, sync status, and groups via REST API"
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Requirements] | Variable | Required | Description |\n|----------|----------|-------------|\n| `FIVETRAN_API_KEY` | ✅ | API key |\n| `FIVETRAN_API_SECRET` | ✅ | API secret |"
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Quick Start] ```bash\n# List connectors\npython3 {{baseDir}}/scripts/fivetran.py connectors group_id <value>\n\n# Get connector\npython3 {{baseDir}}/scripts/fivetran.py connector-get id <value>\n\n# Create connector\npython3 {{baseDir}}/scripts/fivetran.py connector-create --service <value> --group_id <value> --config <value>\n\n# Update connector\npython3 {{baseDir}}/scripts/fivetran.py connector-update id <value> --paused <value>\n\n# Delete connector\npython3 {{baseDir}}/scripts/fivetran.py connector-delete id <value>\n\n# Trigger sync\npython3 {{baseDir}}/scripts/fivetran.py connector-sync id <value>\n\n# Get schema\npython3 {{baseDir}}/scripts/fivetran.py connector-schema id <value>\n\n# List destinations\npython3 {{baseDir}}/scripts/fivetran.py destinations\n```"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[All Commands] | Command | Description |\n|---------|-------------|\n| `connectors` | List connectors |\n| `connector-get` | Get connector |\n| `connector-create` | Create connector |\n| `connector-update` | Update connector |\n| `connector-delete` | Delete connector |\n| `connector-sync` | Trigger sync |\n| `connector-schema` | Get schema |\n| `destinations` | List destinations |\n| `destination-get` | Get destination |\n| `groups` | List groups |\n| `group-get` | Get group |\n| `group-create` | Create group |\n| `users` | List users |\n| `metadata-connectors` | List connector types |\n| `webhooks` | List webhooks |"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Output Format] All commands output JSON by default. Add `--human` for readable formatted output.\n\n```bash\npython3 {{baseDir}}/scripts/fivetran.py <command> --human\n```"
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[Script Reference] | Script | Description |\n|--------|-------------|\n| `{{baseDir}}/scripts/fivetran.py` | Main CLI — all commands in one tool |"
+    },
+    {
+      "id": "step_6",
+      "type": "subtask",
+      "description": "[Credits] Built by [M. Abidi](https://www.linkedin.com/in/mohammad-ali-abidi) | [agxntsix.ai](https://www.agxntsix.ai)\n[YouTube](https://youtube.com/@aiwithabidi) | [GitHub](https://github.com/aiwithabidi)\nPart of the **AgxntSix Skill Suite** for OpenClaw agents.\n\n📅 **Need help setting up OpenClaw for your business?** [Book a free consultation](https://cal.com/agxntsix/abidi-openclaw)"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "fivetran"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "MIT",
+    "compatibility": "Python 3.10+ (stdlib only — no dependencies)",
+    "extra": {
+      "openclaw": {
+        "emoji": "🔗",
+        "requires": {
+          "env": [
+            "FIVETRAN_API_KEY",
+            "FIVETRAN_API_SECRET"
+          ]
+        },
+        "primaryEnv": "FIVETRAN_API_KEY",
+        "homepage": "https://www.agxntsix.ai"
+      }
+    }
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/aiwithabidi/fivetran/SKILL.md"
+}

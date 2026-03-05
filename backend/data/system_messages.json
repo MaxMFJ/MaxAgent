@@ -1,12 +1,22 @@
 [
   {
-    "id": "48b8557f-36d4-4c60-9c58-f03adafef5bb",
+    "id": "ba3a05df-9ffe-4d24-ae62-46f90dc62e41",
     "level": "error",
     "title": "对话执行错误",
-    "content": "Error code: 503 - {'error': {'message': '分组 tb-codex 下模型 ggg-5.1-codex-high 无可用渠道（distributor） (request id: 202603030854576445531092ft9Obyg)', 'type': 'new_api_error', 'param': '', 'code': 'model_not_found'}}",
+    "content": "Error code: 429 - {'error': {'message': 'status_code=500, Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.（traceid: 92df3d5609df9918623c975404cbeeb0） (request id: 20260305064559416009544NFwUELn5)', 'type': '<nil>', 'param': '', 'code': None}}",
     "source": "chat_stream",
     "category": "system_error",
-    "timestamp": "2026-03-03T08:54:57.762081",
+    "timestamp": "2026-03-05T14:45:58.260021",
+    "read": true
+  },
+  {
+    "id": "491db322-9156-4986-af11-ff5657841da6",
+    "level": "error",
+    "title": "启动检查: API 请求频率限制",
+    "content": "检测到 2 次API 请求频率限制。\nAPI 调用频率超限，请稍后重试或更换 API Key\n\n最近一条: agent.open_skill_sources - No GitHub token — API rate limit may apply (60/hour unauthenticated)",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-05T16:00:26.941537",
     "read": true
   }
 ]

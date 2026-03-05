@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_structs-guild",
+  "description": "Manages guild operations in Structs. Covers creation, membership, settings, and Central Bank token operations. Use when creating a guild, joining or leaving a guild, managing guild settings, minting or redeeming guild tokens, managing Central Bank collateral, or coordinating guild membership.",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Guild\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Procedure] 1. **Discover guilds** — `structsd query structs guild-all` or `structsd query structs guild [id]`.\n2. **Create guild** — Requires associated reactor. `structsd tx structs guild-create TX_FLAGS -- [endpoint] [substation-id]`.\n3. **Membership** — Join: `structsd tx structs guild-membership-join -- [guild-id] [infusion-id,infusion-id2,...]` (use `--player-id`, `--substation-id` if needed). Proxy join: `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]`. Invite flow: `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` → invitee runs `structsd tx structs guild-membership-invite-approve -- [guild-id]` or `structsd tx structs guild-membership-invite-deny -- [guild-id]`. Request flow: `structsd tx structs guild-membership-request -- [guild-id]` → owner runs `structsd tx structs guild-membership-request-approve -- [guild-id] [player-id]` or `structsd tx structs guild-membership-request-deny -- [guild-id] [player-id]`. Kick: `structsd tx structs guild-membership-kick -- [guild-id] [player-id]`.\n4. **Settings** — See Commands Reference: `guild-update-endpoint`, `guild-update-entry-substation-id`, `guild-update-join-infusion-minimum` (and `-minimum-by-invite`, `-minimum-by-request`), `guild-update-owner-id`. All use `--` before positional args.\n5. **Central Bank** — Mint: `structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]` (no guild-id — signer's guild is used implicitly; both amounts are raw integers). Redeem: `structsd tx structs guild-bank-redeem -- [guild-id] [amount]`. Confiscate and burn: `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]`."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | Command |\n|--------|---------|\n| Create | `structsd tx structs guild-create -- [endpoint] [substation-id]` |\n| Join | `structsd tx structs guild-membership-join -- [guild-id] [infusion-ids]` |\n| Join proxy | `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]` |\n| Invite | `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` |\n| Invite approve/deny | `structsd tx structs guild-membership-invite-approve/deny -- [guild-id]` |\n| Invite revoke | `structsd tx structs guild-membership-invite-revoke -- [guild-id] [player-id]` |\n| Request | `structsd tx structs guild-membership-request -- [guild-id]` |\n| Request approve/deny | `structsd tx structs guild-membership-request-approve/deny -- [guild-id] [player-id]` |\n| Request revoke | `structsd tx structs guild-membership-request-revoke -- [guild-id]` |\n| Kick | `structsd tx structs guild-membership-kick -- [guild-id] [player-id]` |\n| Update endpoint | `structsd tx structs guild-update-endpoint -- [guild-id] [endpoint]` |\n| Update entry substation | `structsd tx structs guild-update-entry-substation-id -- [guild-id] [substation-id]` |\n| Update infusion minimums | `structsd tx structs guild-update-join-infusion-minimum/minimum-by-invite/minimum-by-request -- [guild-id] [value]` |\n| Update owner | `structsd tx structs guild-update-owner-id -- [guild-id] [new-owner-player-id]` |\n| Bank mint | `structsd tx structs guild-bank-mint -- [alpha-amount] [token-amount]` (signer's guild, raw integers) |\n| Bank redeem | `structsd tx structs guild-bank-redeem -- [guild-id] [amount]` |\n| Bank confiscate | `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]` |\n\n**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`"
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Verification] - **Guild**: `structsd query structs guild [id]` — members, settings, owner.\n- **Membership applications**: `structsd query structs guild-membership-application-all` or by ID.\n- **Bank collateral**: `structsd query structs guild-bank-collateral-address [guild-id]` — verify reserves."
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] - **Insufficient infusion**: Guild may require minimum infusion to join. Query guild for `joinInfusionMinimum`; meet requirement or get invite (bypass).\n- **Already member**: Cannot join twice. Check `guild-membership-application` status.\n- **Mint/redeem failed**: Verify guild has sufficient Alpha Matter collateral for mint; sufficient tokens for redeem.\n- **Permission denied**: Only guild owner (or delegated address) can update settings, approve requests, mint/redeem."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[See Also] - [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank, collateral, token lifecycle\n- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider guild access\n- [knowledge/lore/factions](https://structs.ai/knowledge/lore/factions) — Guild politics"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_guild"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-guild/SKILL.md"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "openclaw_skill_structs-exploration",
+  "description": "Explores new planets and manages fleet movement in Structs. Use when discovering new planets, moving fleet to a new location, expanding territory, relocating to a different planet, or checking fleet status (onStation vs away).",
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "Task description or user request"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_0",
+      "type": "subtask",
+      "description": "[overview] # Structs Exploration\n\n**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this."
+    },
+    {
+      "id": "step_1",
+      "type": "subtask",
+      "description": "[Procedure] 1. **Check eligibility** — `structsd query structs planet [id]`. Exploration requires `currentOre == 0` (planet complete). One planet per player at a time; old planet is released on explore.\n2. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.\n3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.\n4. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value."
+    },
+    {
+      "id": "step_2",
+      "type": "subtask",
+      "description": "[Commands Reference] | Action | CLI Command |\n|--------|-------------|\n| Explore planet | `structsd tx structs planet-explore -- [player-id]` |\n| Move fleet | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |\n| Query planet | `structsd query structs planet [id]` |\n| List planets | `structsd query structs planet-all-by-player [player-id]` |\n| Query fleet | `structsd query structs fleet [id]` |\n| Query grid | `structsd query structs grid [id]` |\n| Planet attribute | `structsd query structs planet-attribute [planet-id] [attribute-type]` |\n\n**Rules**: Starting ore = 5. New planet when ore = 0. One planet per player at a time. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`."
+    },
+    {
+      "id": "step_3",
+      "type": "subtask",
+      "description": "[Verification] - `structsd query structs planet [id]` — new planet has currentOre = 5, maxOre = 5\n- `structsd query structs planet-all-by-player [player-id]` — planet list updated\n- `structsd query structs fleet [id]` — fleet location matches destination (onStation/away)"
+    },
+    {
+      "id": "step_4",
+      "type": "subtask",
+      "description": "[Error Handling] - **\"planet not complete\"** — Deplete ore (currentOre = 0) before exploring.\n- **\"fleet away\"** — Fleet must be available; wait for return or check fleet state.\n- **\"invalid destination\"** — Use valid location ID; query grid for options."
+    },
+    {
+      "id": "step_5",
+      "type": "subtask",
+      "description": "[See Also] - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots\n- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules\n- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — How entities connect"
+    }
+  ],
+  "task_type": "general",
+  "tags": [
+    "agent-skill"
+  ],
+  "capability": [
+    "structs_exploration"
+  ],
+  "schema_version": "1.1.0",
+  "source": "github:openclaw/skills",
+  "metadata": {
+    "original_format": "openclaw_skill",
+    "license": "",
+    "compatibility": "",
+    "extra": {}
+  },
+  "_url": "https://raw.githubusercontent.com/openclaw/skills/main/skills/abstrct/structs-exploration/SKILL.md"
+}

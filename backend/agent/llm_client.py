@@ -117,20 +117,24 @@ class LLMClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_choice: str = "auto",
         max_tokens: Optional[int] = None,
+        extra_body: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Send a chat completion request
-        
+
         Args:
             messages: List of message dicts with 'role' and 'content'
             tools: Optional list of tool definitions
             tool_choice: "auto", "none", or specific tool
-            max_tokens: Optional override for output length (避免长报告等场景被截断)
-            
+            max_tokens: Optional override for output length（避免长报告等场景被截断）
+            extra_body: Phase C · 透传给底层 API 的额外请求体字段，例如
+                        Anthropic Extended Thinking:
+                          {"thinking": {"type": "enabled", "budget_tokens": 8000}}
+
         Returns:
             Response dict with 'content' and optional 'tool_calls'
         """
-        kwargs = {
+        kwargs: Dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
             "temperature": self.config.temperature,
@@ -140,7 +144,11 @@ class LLMClient:
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
             kwargs["tool_choice"] = tool_choice
-        
+
+        # Phase C：透传 extra_body（例如 Anthropic Extended Thinking 参数）
+        if extra_body:
+            kwargs["extra_body"] = extra_body
+
         try:
             create_coro = self._client.chat.completions.create(**kwargs)
             if get_timeout_policy is not None:

@@ -1,10 +1,18 @@
 """
 Reflection Engine for Autonomous Agent
 Uses local Ollama model to analyze execution and extract insights
+
+v3.1: 基础反思引擎（任务级反思、策略提取、模式分析）
+Phase C 增强:
+  - FailureType: 失败类型枚举（7 类）
+  - classify_failure_type(): 根据错误信息自动分类
+  - FAILURE_REFLECTION_TEMPLATES: 失败类型专属反思 prompt 模板
+  - reflect() 在 ENABLE_FAILURE_TYPE_REFLECTION=true 时使用专属模板
 """
 
 import json
 import logging
+from enum import Enum
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,6 +25,192 @@ from .llm_utils import extract_text_from_content
 logger = logging.getLogger(__name__)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase C：失败类型分类与反思模板
+# ─────────────────────────────────────────────────────────────────────────────
+
+class FailureType(str, Enum):
+    """Agent 执行失败的 7 类主要原因。"""
+    COMMAND_ERROR    = "command_error"      # shell 命令语法/运行错误
+    PERMISSION        = "permission"         # 权限不足（sudo、系统路径）
+    FILE_NOT_FOUND   = "file_not_found"     # 文件/路径不存在
+    NETWORK_ERROR    = "network_error"      # 网络请求失败、超时
+    TIMEOUT          = "timeout"            # 执行超时
+    LOGIC_ERROR      = "logic_error"        # 逻辑/语义错误（错误理解任务）
+    UNKNOWN          = "unknown"            # 无法识别
+
+
+# 每种失败类型的关键词（用于启发式分类）
+_FAILURE_KEYWORDS: Dict[FailureType, List[str]] = {
+    FailureType.COMMAND_ERROR:  ["command not found", "syntax error", "exit code", "error:", "returned non-zero", "bash:", "zsh:"],
+    FailureType.PERMISSION:     ["permission denied", "operation not permitted", "sudo", "access denied", "不允许", "没有权限"],
+    FailureType.FILE_NOT_FOUND: ["no such file", "not found", "does not exist", "文件不存在", "找不到文件", "path not found"],
+    FailureType.NETWORK_ERROR:  ["connection refused", "network", "timeout", "ssl", "dns", "http error", "requests.exceptions", "网络"],
+    FailureType.TIMEOUT:        ["timed out", "timeout", "超时", "time limit"],
+    FailureType.LOGIC_ERROR:    ["logic", "incorrect", "wrong", "unexpected", "逻辑", "理解错误", "结果不对"],
+}
+
+
+# 失败类型 → 专属反思 prompt 模板
+FAILURE_REFLECTION_TEMPLATES: Dict[FailureType, str] = {
+    FailureType.COMMAND_ERROR: """\
+## 失败分析（命令执行错误）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 哪条命令出错？错误信息是什么？
+2. 是命令格式、参数还是路径问题？
+3. 正确的命令应该怎么写？
+4. 类似任务今后应注意哪些命令规范？
+
+以 JSON 输出：
+```json
+{{
+  "efficiency_score": 5,
+  "root_cause": "根本原因",
+  "correct_approach": "正确做法",
+  "successes": [],
+  "failures": ["失败原因"],
+  "strategies": ["今后策略"],
+  "improvements": ["改进建议"]
+}}
+```""",
+
+    FailureType.PERMISSION: """\
+## 失败分析（权限问题）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 哪个操作触发权限拒绝？
+2. 是否需要 sudo？是否存在安全限制？
+3. 有无替代方案（不需要特权的路径）？
+4. 今后如何提前判断权限需求？
+
+以 JSON 输出，字段同上。""",
+
+    FailureType.FILE_NOT_FOUND: """\
+## 失败分析（文件/路径不存在）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 访问的路径是什么？为何不存在？
+2. 是否应先 list_directory 确认路径？
+3. 路径是相对还是绝对？有无拼写错误？
+4. 今后操作文件前应如何验证？
+
+以 JSON 输出，字段同上。""",
+
+    FailureType.NETWORK_ERROR: """\
+## 失败分析（网络错误）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 网络请求失败的具体原因（超时/DNS/连接拒绝）？
+2. 是否可以重试？是否需要代理或其他配置？
+3. 有无离线替代方案？
+4. 今后联网任务应如何做容错设计？
+
+以 JSON 输出，字段同上。""",
+
+    FailureType.TIMEOUT: """\
+## 失败分析（超时）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 哪个步骤超时？预期执行时间是多少？
+2. 是否应该使用 background=true 或异步方式？
+3. 如何拆分为更小的子任务？
+4. 今后对耗时操作应如何规划？
+
+以 JSON 输出，字段同上。""",
+
+    FailureType.LOGIC_ERROR: """\
+## 失败分析（逻辑/语义错误）
+
+任务：{task}
+失败步骤摘要：
+{action_summary}
+
+请重点分析：
+1. 对任务的理解是否有偏差？
+2. 执行策略是否符合用户真实意图？
+3. 哪个步骤的逻辑判断出现错误？
+4. 今后如何在 Gather 阶段更准确理解任务？
+
+以 JSON 输出，字段同上。""",
+
+    FailureType.UNKNOWN: """\
+## 失败分析
+
+任务：{task}
+执行统计：{status}，共 {total_actions} 步，{iterations} 次迭代
+失败步骤摘要：
+{action_summary}
+
+请分析：
+1. 整体执行效率（1-10 分）
+2. 成功的步骤
+3. 失败的步骤及原因
+4. 可提取的可复用策略
+5. 改进建议
+
+以 JSON 输出：
+```json
+{{
+  "efficiency_score": 7,
+  "successes": [],
+  "failures": [],
+  "strategies": [],
+  "improvements": []
+}}
+```""",
+}
+
+
+def classify_failure_type(error_text: str) -> FailureType:
+    """
+    启发式分类失败类型。
+    按 COMMAND_ERROR → PERMISSION → FILE_NOT_FOUND → NETWORK → TIMEOUT → LOGIC → UNKNOWN 顺序匹配。
+    """
+    if not error_text:
+        return FailureType.UNKNOWN
+    text_lower = error_text.lower()
+    for ftype, keywords in _FAILURE_KEYWORDS.items():
+        if any(kw in text_lower for kw in keywords):
+            return ftype
+    return FailureType.UNKNOWN
+
+
+def classify_action_logs_failure(action_logs: "List[ActionLog]") -> FailureType:
+    """从 action_log 中提取失败错误信息，综合分类主要失败类型。"""
+    error_texts = []
+    for log in action_logs:
+        if not log.result.success and log.result.error:
+            error_texts.append(log.result.error)
+    combined = " ".join(error_texts)
+    return classify_failure_type(combined)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data classes
+# ─────────────────────────────────────────────────────────────────────────────
+
+
 @dataclass
 class ReflectResult:
     """Result of reflection analysis"""
@@ -27,7 +221,11 @@ class ReflectResult:
     improvements: List[str] = field(default_factory=list)
     raw_response: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    
+    # Phase C: 失败类型（分类结果）
+    failure_type: FailureType = FailureType.UNKNOWN
+    root_cause: str = ""
+    correct_approach: str = ""
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "efficiency_score": self.efficiency_score,
@@ -35,11 +233,18 @@ class ReflectResult:
             "failures": self.failures,
             "strategies": self.strategies,
             "improvements": self.improvements,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
+            "failure_type": self.failure_type.value,
+            "root_cause": self.root_cause,
+            "correct_approach": self.correct_approach,
         }
-    
+
     @classmethod
-    def from_llm_response(cls, response: str) -> "ReflectResult":
+    def from_llm_response(
+        cls,
+        response: str,
+        failure_type: FailureType = FailureType.UNKNOWN,
+    ) -> "ReflectResult":
         """Parse LLM response into ReflectResult"""
         try:
             text = response.strip()
@@ -50,21 +255,25 @@ class ReflectResult:
             if text.endswith("```"):
                 text = text[:-3]
             text = text.strip()
-            
+
             data = json.loads(text)
-            
+
             return cls(
                 efficiency_score=data.get("efficiency_score", 5),
                 successes=data.get("successes", []),
                 failures=data.get("failures", []),
                 strategies=data.get("strategies", []),
                 improvements=data.get("improvements", []),
-                raw_response=response
+                raw_response=response,
+                failure_type=failure_type,
+                root_cause=data.get("root_cause", ""),
+                correct_approach=data.get("correct_approach", ""),
             )
         except (json.JSONDecodeError, KeyError):
             return cls(
                 efficiency_score=5,
-                raw_response=response
+                raw_response=response,
+                failure_type=failure_type,
             )
 
 
@@ -118,58 +327,63 @@ class ReflectEngine:
     
     async def reflect(self, context: TaskContext) -> ReflectResult:
         """
-        Analyze a completed task and extract insights
+        Analyze a completed task and extract insights.
+        Phase C：若 ENABLE_FAILURE_TYPE_REFLECTION=true，自动分类失败类型并使用专属模板。
         """
         action_summary = self._summarize_actions(context.action_logs)
-        
-        prompt = f"""分析以下任务执行过程，提取经验和改进建议：
 
-## 任务
-{context.task_description}
+        # Phase C：失败类型分类 + 专属模板
+        try:
+            from app_state import ENABLE_FAILURE_TYPE_REFLECTION  # type: ignore
+        except ImportError:
+            ENABLE_FAILURE_TYPE_REFLECTION = True
 
-## 执行结果
-状态: {context.status}
-总迭代次数: {context.current_iteration}
-总动作数: {len(context.action_logs)}
+        failure_type = FailureType.UNKNOWN
+        if ENABLE_FAILURE_TYPE_REFLECTION and context.action_logs:
+            failure_type = classify_action_logs_failure(context.action_logs)
 
-## 动作日志
-{action_summary}
+        if ENABLE_FAILURE_TYPE_REFLECTION and failure_type != FailureType.UNKNOWN:
+            template = FAILURE_REFLECTION_TEMPLATES[failure_type]
+            prompt = template.format(
+                task=context.task_description,
+                status=context.status,
+                total_actions=len(context.action_logs),
+                iterations=context.current_iteration,
+                action_summary=action_summary,
+            )
+        else:
+            # 通用反思 prompt（兼容旧行为）
+            template = FAILURE_REFLECTION_TEMPLATES[FailureType.UNKNOWN]
+            prompt = template.format(
+                task=context.task_description,
+                status=context.status,
+                total_actions=len(context.action_logs),
+                iterations=context.current_iteration,
+                action_summary=action_summary,
+            )
 
-## 分析要求
-请分析：
-1. 执行效率如何？（1-10分）
-2. 哪些步骤执行得好？
-3. 哪些步骤失败了？原因是什么？
-4. 可以提取哪些可复用的策略？
-5. 有哪些改进建议？
-
-请以 JSON 格式输出：
-```json
-{{
-  "efficiency_score": 7,
-  "successes": ["成功点1", "成功点2"],
-  "failures": ["失败点1及原因"],
-  "strategies": ["策略1: 描述", "策略2: 描述"],
-  "improvements": ["改进建议1", "改进建议2"]
-}}
-```"""
-        
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.3
+                temperature=0.3,
             )
-            
+
             raw = getattr(response.choices[0].message, "content", None)
             content = extract_text_from_content(raw)
-            return ReflectResult.from_llm_response(content)
-            
+            result = ReflectResult.from_llm_response(content, failure_type=failure_type)
+            logger.info(
+                f"Reflection done: failure_type={failure_type.value} "
+                f"efficiency={result.efficiency_score}"
+            )
+            return result
+
         except Exception as e:
             logger.error(f"Reflection error: {e}")
             return ReflectResult(
                 efficiency_score=5,
-                raw_response=f"Error: {str(e)}"
+                raw_response=f"Error: {str(e)}",
+                failure_type=failure_type,
             )
     
     async def suggest_strategies(

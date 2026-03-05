@@ -1,6 +1,12 @@
 """
 Episodic Memory System for Autonomous Agent
 Stores and retrieves task execution experiences for learning
+
+Phase C 增强：
+  - Episode.importance_score: 重要性得分（0~1），综合成功率、用户反馈、失败复杂度、新近度
+  - Episode.compute_importance_score(): 自动计算重要性
+  - EpisodicMemory.search_similar(): 融合相似度与重要性分数召回（ENABLE_IMPORTANCE_WEIGHTED_MEMORY 控制）
+  - EpisodicMemory.update_importance(): 支持外部更新 importance_score 并持久化
 """
 
 import os
@@ -36,7 +42,48 @@ class Episode:
     created_at: datetime = field(default_factory=datetime.now)
     # Token 使用量跟踪
     token_usage: Dict[str, int] = field(default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
-    
+    # Phase C：重要性得分（0~1），由 compute_importance_score 填充
+    importance_score: float = 0.5
+
+    def compute_importance_score(
+        self,
+        recency_half_life_days: float = 14.0,
+    ) -> float:
+        """
+        计算综合重要性得分（0~1），写入 self.importance_score 并返回。
+
+        权重构成：
+          - 成功权重  (0.35): 成功 episode 更重要，可提取正向策略
+          - 失败复杂度 (0.25): 失败步骤多 → 更值得分析
+          - 用户反馈   (0.20): 有用户反馈 → 重要性提升
+          - 新近度     (0.20): 越近的 episode 越相关（指数衰减）
+        """
+        import time
+        import math
+
+        # 1. 成功权重
+        success_w = 0.35 if self.success else 0.0
+
+        # 2. 失败复杂度（基于失败步骤比例）
+        failed_count = sum(
+            1 for step in self.action_log
+            if not step.get("success", True) or step.get("error")
+        )
+        total = max(self.total_actions, len(self.action_log), 1)
+        fail_ratio = failed_count / total
+        complexity_w = 0.25 * min(fail_ratio * 2, 1.0)  # 超过 50% 失败步骤即满分
+
+        # 3. 用户反馈
+        feedback_w = 0.20 if self.user_feedback and len(self.user_feedback.strip()) > 5 else 0.0
+
+        # 4. 新近度（指数衰减，half_life_days 为半衰期）
+        age_days = (datetime.now() - self.created_at).total_seconds() / 86400.0
+        recency_w = 0.20 * math.exp(-0.693 * age_days / max(recency_half_life_days, 1.0))
+
+        score = success_w + complexity_w + feedback_w + recency_w
+        self.importance_score = min(max(score, 0.0), 1.0)
+        return self.importance_score
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "episode_id": self.episode_id,
@@ -51,7 +98,8 @@ class Episode:
             "strategies_used": self.strategies_used,
             "reflection": self.reflection,
             "created_at": self.created_at.isoformat(),
-            "token_usage": self.token_usage
+            "token_usage": self.token_usage,
+            "importance_score": self.importance_score,
         }
     
     @classmethod
@@ -75,7 +123,8 @@ class Episode:
             strategies_used=data.get("strategies_used", []),
             reflection=data.get("reflection"),
             created_at=created_at,
-            token_usage=data.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
+            token_usage=data.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
+            importance_score=float(data.get("importance_score", 0.5)),
         )
     
     def get_summary(self) -> str:
@@ -137,20 +186,33 @@ class EpisodicMemory:
         return f"ep_{timestamp}_{task_hash}"
     
     def add_episode(self, episode: Episode) -> str:
-        """Add a new episode to memory"""
+        """Add a new episode to memory.
+        Phase C：存储前自动计算 importance_score。
+        """
+        # Phase C：自动计算重要性得分
+        try:
+            from app_state import ENABLE_IMPORTANCE_WEIGHTED_MEMORY  # type: ignore
+        except ImportError:
+            ENABLE_IMPORTANCE_WEIGHTED_MEMORY = True
+        if ENABLE_IMPORTANCE_WEIGHTED_MEMORY:
+            episode.compute_importance_score()
+
         episode_file = self.storage_dir / f"{episode.episode_id}.json"
-        
+
         try:
             with open(episode_file, "w", encoding="utf-8") as f:
                 json.dump(episode.to_dict(), f, ensure_ascii=False, indent=2)
-            
+
             self._episodes_cache[episode.episode_id] = episode
-            
+
             self._cleanup_old_episodes()
-            
-            logger.info(f"Saved episode: {episode.episode_id}")
+
+            logger.info(
+                f"Saved episode: {episode.episode_id} "
+                f"importance={episode.importance_score:.3f}"
+            )
             return episode.episode_id
-            
+
         except Exception as e:
             logger.error(f"Failed to save episode: {e}")
             raise
@@ -180,35 +242,72 @@ class EpisodicMemory:
         self,
         task_description: str,
         top_k: int = 5,
-        success_only: bool = False
+        success_only: bool = False,
+        importance_weight: float = 0.3,
     ) -> List[Episode]:
         """
-        Search for similar past episodes
-        Uses simple keyword matching if vector search is disabled
+        Search for similar past episodes using keyword Jaccard similarity.
+        Phase C：若 ENABLE_IMPORTANCE_WEIGHTED_MEMORY=true，将 importance_score 与
+                 相似度融合为综合得分，提升高质量 episode 的召回优先级。
+
+        排序公式（当重要性加权启用时）：
+            final_score = (1 - importance_weight) * similarity + importance_weight * importance_score
         """
+        try:
+            from app_state import ENABLE_IMPORTANCE_WEIGHTED_MEMORY  # type: ignore
+        except ImportError:
+            ENABLE_IMPORTANCE_WEIGHTED_MEMORY = True
+
         all_episodes = self._get_all_episodes()
-        
+
         if success_only:
             all_episodes = [ep for ep in all_episodes if ep.success]
-        
-        scored_episodes = []
+
+        scored_episodes: List[tuple] = []
         task_words = set(task_description.lower().split())
-        
+
         for episode in all_episodes:
             ep_words = set(episode.task_description.lower().split())
-            
+
             if task_words and ep_words:
                 intersection = len(task_words & ep_words)
                 union = len(task_words | ep_words)
-                score = intersection / union if union > 0 else 0
+                similarity = intersection / union if union > 0 else 0.0
             else:
-                score = 0
-            
-            scored_episodes.append((score, episode))
-        
+                similarity = 0.0
+
+            if ENABLE_IMPORTANCE_WEIGHTED_MEMORY:
+                # 融合重要性得分（动态刷新 importance_score）
+                episode.compute_importance_score()
+                imp = episode.importance_score
+                iw = max(0.0, min(importance_weight, 1.0))
+                final_score = (1 - iw) * similarity + iw * imp
+            else:
+                final_score = similarity
+
+            scored_episodes.append((final_score, episode))
+
         scored_episodes.sort(key=lambda x: x[0], reverse=True)
-        
         return [ep for _, ep in scored_episodes[:top_k]]
+
+    def update_importance(self, episode_id: str, delta: float = 0.1) -> bool:
+        """
+        Phase C：外部更新 episode 的 importance_score（增减 delta 并持久化）。
+        例如：用户点赞后调用 update_importance(ep_id, +0.2)。
+        """
+        episode = self.get_episode(episode_id)
+        if episode is None:
+            return False
+        episode.importance_score = min(max(episode.importance_score + delta, 0.0), 1.0)
+        episode_file = self.storage_dir / f"{episode_id}.json"
+        try:
+            with open(episode_file, "w", encoding="utf-8") as f:
+                json.dump(episode.to_dict(), f, ensure_ascii=False, indent=2)
+            self._episodes_cache[episode_id] = episode
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update importance: {e}")
+            return False
     
     def get_recent(self, count: int = 10) -> List[Episode]:
         """Get most recent episodes"""

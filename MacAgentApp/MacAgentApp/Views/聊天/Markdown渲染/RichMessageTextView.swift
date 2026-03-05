@@ -154,6 +154,14 @@ struct RichMessageTextView: NSViewRepresentable {
                 result.append(NSAttributedString(string: "――――――\n", attributes: [.font: textFont, .foregroundColor: NSColor.separatorColor]))
             case .image, .base64Image, .localImage:
                 result.append(NSAttributedString(string: "[图片]", attributes: [.font: textFont, .foregroundColor: NSColor.secondaryLabelColor]))
+            case .filePath(let path):
+                let seg = NSMutableAttributedString(string: "📎 \(path)")
+                seg.addAttributes([
+                    .font: codeFont,
+                    .foregroundColor: linkColor,
+                    .link: "file://\(path)",
+                ], range: NSRange(location: 0, length: seg.length))
+                result.append(seg)
             }
         }
         
