@@ -232,6 +232,7 @@ MCP 工具通过 **Unified Tool Router** 与内置工具无缝协作：
 
 ---
 
+<<<<<<< HEAD
 ## 项目结构
 
 ```
@@ -365,6 +366,8 @@ MacAgent/
     └── archive/                   # 历史与专项文档
 ```
 
+=======
+>>>>>>> 94c017d736ee34dd28c59a60b384abee3305795d
 ---
 
 ## 扩展工具
@@ -519,28 +522,6 @@ cd MacAgent/iOSAgentApp && pod install
 
 ---
 
-## Mac App 与 v3.2 兼容性
-
-**v3.2 不破坏 v3.1 任何接口或行为**，现有 Mac App 无需修改即可与 v3.2 后端兼容。
-
-| 项目 | 说明 |
-|------|------|
-| **必须改动** | 无。Mac App 使用的 `/health`、`/ws`、`/permissions/status`、`/logs` 等接口保持不变 |
-| **可选增强** | 1）用 `GET /health/deep` 替代或补充 `/health`，获取 8 子系统详细状态；2）在监控仪表板中集成 `GET /traces`、`GET /traces/{task_id}/spans` 展示执行轨迹与 token 消耗 |
-| **端口** | 后端仍为 `127.0.0.1:8765`，Mac App 无需调整 |
-
----
-
-## 相关文档
-
-- 文档总览与主线目标点：[docs/README.md](docs/README.md)
-- 后端结构：[docs/backend-structure.md](docs/backend-structure.md)
-- 主线目标与路线图：[docs/主线目标与路线图.md](docs/主线目标与路线图.md)
-- v3.2 功能清单：[docs/v3.2_PLAN.md](docs/v3.2_PLAN.md)
-- 痛点与方案：[docs/痛点分析与解决方案.md](docs/痛点分析与解决方案.md)
-- 测试与验收：[docs/测试与验收.md](docs/测试与验收.md)
-
----
 
 ## 许可证
 
