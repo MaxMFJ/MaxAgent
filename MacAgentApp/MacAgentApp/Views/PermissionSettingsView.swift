@@ -40,23 +40,23 @@ struct PermissionSettingsContent: View {
             // 总体状态指示
             VStack(spacing: 8) {
                 Image(systemName: permissionManager.allCriticalPermissionsGranted ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
-                    .font(.system(size: 36))
+                    .font(CyberFont.display(size: 36))
                     .foregroundColor(permissionManager.allCriticalPermissionsGranted ? .green : .orange)
                 
                 Text(permissionManager.allCriticalPermissionsGranted ? "权限就绪" : "需要配置")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                     .foregroundColor(permissionManager.allCriticalPermissionsGranted ? .green : .orange)
             }
             .frame(width: 100)
             
             VStack(alignment: .leading, spacing: 6) {
                 Text("MacAgent 需要以下系统权限才能完整运行")
-                    .font(.subheadline)
+                    .font(CyberFont.body(size: 13))
                     .foregroundColor(.secondary)
                 
                 if !permissionManager.allCriticalPermissionsGranted {
                     Text("请按照下方引导逐项开启权限。⚠️ 授权后需重启后端服务（或重启电脑），然后点击「刷新」检查状态。")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.orange)
                 }
                 
@@ -77,7 +77,7 @@ struct PermissionSettingsContent: View {
                     
                     if let lastCheck = permissionManager.lastCheckTime {
                         Text("上次检测: \(lastCheck, formatter: timeFormatter)")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -164,12 +164,12 @@ struct PermissionSettingsContent: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 4) {
                     Text("Python 实际路径 (sys.executable):")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                     
                     if permissionManager.pythonPathChanged {
                         Label("路径已变更，需重新授权", systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.orange)
                     }
                 }
@@ -179,7 +179,7 @@ struct PermissionSettingsContent: View {
                 // 如果 venv 路径不同于实际路径，也显示
                 if !permissionManager.pythonPathVenv.isEmpty && permissionManager.pythonPathVenv != permissionManager.pythonPath {
                     Text("Python venv 路径:")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                         .padding(.top, 4)
                     pathCopyRow(permissionManager.pythonPathVenv)
@@ -197,7 +197,7 @@ struct PermissionSettingsContent: View {
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }) {
                         Label("在 Finder 中显示", systemImage: "folder")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                     }
                     .buttonStyle(.link)
                 }
@@ -206,13 +206,13 @@ struct PermissionSettingsContent: View {
                 Divider()
                 VStack(alignment: .leading, spacing: 6) {
                     Label(permissionManager.pythonAccessibilityGranted ? "权限生效中 ✓" : "⚠️ 授权后必须重启后端才能生效", systemImage: permissionManager.pythonAccessibilityGranted ? "checkmark.circle.fill" : "arrow.clockwise.circle.fill")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .fontWeight(.medium)
                         .foregroundColor(permissionManager.pythonAccessibilityGranted ? .green : .orange)
                     
                     if !permissionManager.pythonAccessibilityGranted {
                         Text("macOS 辅助功能权限在进程启动时加载。在系统设置中添加 Python 后，必须重启后端服务（或重新启动电脑），权限才会生效。")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -242,7 +242,7 @@ struct PermissionSettingsContent: View {
                     
                     if !permissionManager.pythonAccessibilityGranted {
                         Text("如果重启后仍显示未授权，请尝试重启电脑后再打开 MacAgentApp。")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.orange)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -258,7 +258,7 @@ struct PermissionSettingsContent: View {
     private func pathCopyRow(_ path: String) -> some View {
         HStack {
             Text(path)
-                .font(.system(size: 11, design: .monospaced))
+                .font(CyberFont.mono(size: 11))
                 .foregroundColor(.primary)
                 .textSelection(.enabled)
                 .lineLimit(2)
@@ -288,14 +288,14 @@ struct PermissionSettingsContent: View {
     private var appBundlePythonGuidance: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Python 位于 .app 包内，系统文件浏览器中可能无法选择", systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .fontWeight(.medium)
                 .foregroundColor(.orange)
             
             // 方式 1：⌘⇧G 跳转全路径
             VStack(alignment: .leading, spacing: 4) {
                 Text("方式 1（推荐）— 在文件选择器中输入完整路径")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .fontWeight(.medium)
                 
                 Text("""
@@ -303,14 +303,14 @@ struct PermissionSettingsContent: View {
                 2. 在弹出的文件选择器中，按 ⌘⇧G（Cmd+Shift+G）
                 3. 在弹出的「前往文件夹」输入框中，粘贴以下完整路径：
                 """)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 pathCopyRow(permissionManager.pythonPath)
                 
                 Text("4. 点击「前往」，系统会自动选中该文件，再点击「打开」即可")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
@@ -319,11 +319,11 @@ struct PermissionSettingsContent: View {
             // 方式 2：Homebrew Python（推荐长期方案）
             VStack(alignment: .leading, spacing: 4) {
                 Text("方式 2 — 改用 Homebrew Python（一劳永逸）")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .fontWeight(.medium)
                 
                 Text("当前 Python 来自 Xcode 内部，路径不便操作。推荐安装独立的 Homebrew Python：")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
@@ -331,7 +331,7 @@ struct PermissionSettingsContent: View {
                 
                 HStack {
                     Text(brewCommand)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(.primary)
                         .textSelection(.enabled)
                         .lineLimit(3)
@@ -355,7 +355,7 @@ struct PermissionSettingsContent: View {
                 .cornerRadius(6)
                 
                 Text("安装后重启后端，新的 Python 路径（如 /opt/homebrew/bin/python3）可在文件浏览器中正常选择。")
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -438,10 +438,10 @@ struct PermissionSettingsContent: View {
     private var toolsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("工具可用性")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             Text("以下工具用于 Agent 的自动化操作，非必需但可提升兼容性")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             HStack(spacing: 20) {
@@ -500,18 +500,18 @@ struct PermissionRow: View {
             HStack(spacing: 10) {
                 // 状态图标
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(CyberFont.display(size: 20))
                     .foregroundColor(statusColor)
                     .frame(width: 30)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 8) {
                         Text(title)
-                            .font(.headline)
+                            .font(CyberFont.body(size: 14, weight: .semibold))
                         
                         // 状态标签
                         Text(statusText)
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .fontWeight(.medium)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
@@ -521,7 +521,7 @@ struct PermissionRow: View {
                     }
                     
                     Text(description)
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -531,7 +531,7 @@ struct PermissionRow: View {
             
             // 引导文本
             Text(guidance)
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -599,11 +599,11 @@ struct ToolStatusPill: View {
                     .fill(isAvailable ? Color.green : Color.gray)
                     .frame(width: 8, height: 8)
                 Text(name)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .fontWeight(.medium)
             }
             Text(isAvailable ? "可用" : "不可用")
-                .font(.caption2)
+                .font(CyberFont.body(size: 10))
                 .foregroundColor(.secondary)
         }
         .padding(.horizontal, 10)

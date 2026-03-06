@@ -7,93 +7,39 @@ struct ContentView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @StateObject private var processManager = ProcessManager.shared
     @State private var showRestartAlert = false
-    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
-        HSplitView {
-            // 左侧边栏
-            SidebarView()
-                .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
+        VStack(spacing: 0) {
+            // 自定义顶部栏（无系统边框，完全自控样式）
+            CustomToolbarView(processManager: processManager)
+                .environmentObject(viewModel)
             
-            // 中间聊天区域
-            ChatView()
-                .frame(minWidth: 400)
-            
-            // 右侧工具面板（可隐藏）
-            if viewModel.showToolPanel {
-                ToolPanelView()
-                    .frame(minWidth: 250, idealWidth: 300, maxWidth: 400)
-            }
-            
-            // 系统消息面板（可隐藏）
-            if viewModel.showSystemMessages {
-                SystemMessageView()
-                    .environmentObject(viewModel)
-                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 420)
+            HSplitView {
+                // 左侧边栏
+                SidebarView()
+                    .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
+                
+                // 中间聊天区域
+                ChatView()
+                    .frame(minWidth: 400)
+                
+                // 右侧工具面板（可隐藏）
+                if viewModel.showToolPanel {
+                    ToolPanelView()
+                        .frame(minWidth: 250, idealWidth: 300, maxWidth: 400)
+                }
+                
+                // 系统消息面板（可隐藏）
+                if viewModel.showSystemMessages {
+                    SystemMessageView()
+                        .environmentObject(viewModel)
+                        .frame(minWidth: 280, idealWidth: 360, maxWidth: 420)
+                }
             }
         }
         .frame(minWidth: 800, minHeight: 500)
-        .toolbar {
-            // 左侧：服务状态 + 系统消息铃铛
-            ToolbarItem(placement: .navigation) {
-                HStack(spacing: 8) {
-                    ServiceStatusIndicator(
-                        label: "后端",
-                        isRunning: processManager.isBackendRunning,
-                        onTap: {
-                            if processManager.isBackendRunning {
-                                processManager.stopBackend()
-                            } else {
-                                processManager.startBackend()
-                            }
-                        }
-                    )
-                    
-                    ServiceStatusIndicator(
-                        label: "Ollama",
-                        isRunning: processManager.isOllamaRunning,
-                        onTap: {
-                            if processManager.isOllamaRunning {
-                                processManager.stopOllama()
-                            } else {
-                                processManager.startOllama()
-                            }
-                        }
-                    )
-                    
-                    // 系统消息入口（铃铛），点击展开/收起系统消息面板
-                    NotificationBellButton()
-                        .environmentObject(viewModel)
-                }
-            }
-            
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button(action: { openWindow(id: "monitoring") }) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .foregroundColor(Color(red: 0, green: 0.9, blue: 1.0).opacity(0.7))
-                }
-                .help("打开监控仪表板")
-
-                Button(action: {
-                    withAnimation {
-                        viewModel.showToolPanel.toggle()
-                    }
-                }) {
-                    Image(systemName: "sidebar.right")
-                        .foregroundColor(viewModel.showToolPanel ? Color(red: 0, green: 0.9, blue: 1.0) : Color(red: 0, green: 0.9, blue: 1.0).opacity(0.5))
-                }
-                .help(viewModel.showToolPanel ? "隐藏工具面板" : "显示工具面板")
-                
-                Button(action: { viewModel.showSettings = true }) {
-                    Image(systemName: "gear")
-                        .foregroundColor(Color(red: 0, green: 0.9, blue: 1.0).opacity(0.7))
-                }
-                .help("设置")
-            }
-        }
-        .navigationTitle("Chow Duck")
-        .toolbarBackground(Color(red: 0.04, green: 0.04, blue: 0.08).opacity(0.85), for: .windowToolbar)
-        .toolbarColorScheme(.dark, for: .windowToolbar)
+        .toolbar(.hidden, for: .windowToolbar)
+        .navigationTitle("")
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsView()
         }
@@ -139,6 +85,112 @@ struct ContentView: View {
     }
 }
 
+/// 自定义顶部栏：无系统边框，完全自控样式
+private struct CustomToolbarView: View {
+    @ObservedObject var processManager: ProcessManager
+    @EnvironmentObject var viewModel: AgentViewModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        HStack {
+            // 左侧：服务状态 + 铃铛
+            HStack(spacing: 10) {
+                ServiceStatusIndicator(
+                    label: "后端",
+                    isRunning: processManager.isBackendRunning,
+                    onTap: {
+                        if processManager.isBackendRunning {
+                            processManager.stopBackend()
+                        } else {
+                            processManager.startBackend()
+                        }
+                    }
+                )
+                ServiceStatusIndicator(
+                    label: "Ollama",
+                    isRunning: processManager.isOllamaRunning,
+                    onTap: {
+                        if processManager.isOllamaRunning {
+                            processManager.stopOllama()
+                        } else {
+                            processManager.startOllama()
+                        }
+                    }
+                )
+                NotificationBellButton()
+                    .environmentObject(viewModel)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // 中间：标题
+            ChowDuckTitleView()
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            // 右侧：监控、工具面板、设置
+            HStack(spacing: 8) {
+                ToolbarIconButton(systemName: "chart.bar.xaxis", color: CyberColor.cyan.opacity(0.7)) {
+                    openWindow(id: "monitoring")
+                }
+                .help("打开监控仪表板")
+
+                ToolbarIconButton(
+                    systemName: "sidebar.right",
+                    color: viewModel.showToolPanel ? CyberColor.cyan : CyberColor.cyan.opacity(0.5)
+                ) {
+                    withAnimation { viewModel.showToolPanel.toggle() }
+                }
+                .help(viewModel.showToolPanel ? "隐藏工具面板" : "显示工具面板")
+
+                ToolbarIconButton(systemName: "gear", color: CyberColor.cyan.opacity(0.7)) {
+                    viewModel.showSettings = true
+                }
+                .help("设置")
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(minHeight: 52)
+        .background(CyberColor.bg0.opacity(0.85))
+        .buttonStyle(.plain)
+    }
+}
+
+/// 程序标题：霓虹发光 + 呼吸动画（官网 Chow Duck 赛博朋克效果，无边框）
+private struct ChowDuckTitleView: View {
+    @State private var breathePhase = false
+
+    var body: some View {
+        Text("Chow Duck")
+            .font(CyberFont.display(size: 20, weight: .bold))
+            .foregroundStyle(CyberColor.textPrimary)
+            .tracking(1.5)
+            .shadow(color: CyberColor.cyan.opacity(breathePhase ? 0.95 : 0.55), radius: breathePhase ? 10 : 5)
+            .shadow(color: CyberColor.cyan.opacity(breathePhase ? 0.8 : 0.4), radius: breathePhase ? 22 : 14)
+            .shadow(color: CyberColor.cyan.opacity(breathePhase ? 0.5 : 0.25), radius: breathePhase ? 40 : 26)
+            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: breathePhase)
+            .onAppear { breathePhase = true }
+    }
+}
+
+/// 顶部栏图标按钮：统一尺寸与点击区域
+private struct ToolbarIconButton: View {
+    let systemName: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundColor(color)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct ServiceStatusIndicator: View {
     let label: String
     let isRunning: Bool
@@ -146,17 +198,17 @@ struct ServiceStatusIndicator: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Circle()
                     .fill(isRunning ? CyberColor.green : CyberColor.red)
-                    .frame(width: 8, height: 8)
+                    .frame(width: 10, height: 10)
                     .shadow(color: (isRunning ? CyberColor.green : CyberColor.red).opacity(0.5), radius: 4)
                 Text(label)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(CyberFont.mono(size: 12))
                     .foregroundColor(CyberColor.textPrimary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(CyberColor.bg2)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)

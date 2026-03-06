@@ -407,7 +407,26 @@ async def lifespan(app: FastAPI):
             logger.info("LangChain compat: disabled — Chat uses native runner")
     except Exception as e:
         logger.debug("LangChain compat status not logged: %s", e)
+    # MCP — load persisted server connections & sync tools to ToolRegistry
+    try:
+        from agent.mcp_client import get_mcp_manager
+        _mcp_cfg = os.path.join(os.path.dirname(__file__), "data", "mcp_servers.json")
+        await get_mcp_manager().load_config(_mcp_cfg)
+
+        # Unified Tool Router: 将 MCP 工具注入 ToolRegistry
+        from tools.mcp_adapter import sync_mcp_tools_to_registry
+        synced = sync_mcp_tools_to_registry(core.registry, get_mcp_manager())
+        logger.info("MCP manager initialized (config: %s, synced %d tools)", _mcp_cfg, len(synced))
+    except Exception as e:
+        logger.warning("MCP manager init skipped: %s", e)
     yield
+    # MCP manager shutdown
+    try:
+        from agent.mcp_client import get_mcp_manager
+        await get_mcp_manager().shutdown()
+        logger.info("MCP manager shutdown complete")
+    except Exception:
+        pass
     # Tunnel lifecycle shutdown
     try:
         from services.tunnel_lifecycle import get_tunnel_lifecycle

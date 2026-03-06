@@ -1,7 +1,9 @@
 """
-Tool Router - 统一工具执行入口
-从 registry 查找工具，调用真实执行，返回 ToolResult
+Tool Router - 统一工具执行入口（Unified Tool Router）
+从 registry 查找工具 → 执行 → 内置失败时自动 fallback 到 MCP Adapter
 v3: 工具执行通过 TimeoutPolicy.with_tool_timeout 包装。
+
+优先级：Builtin Tool → MCP Adapter（同名工具内置优先，失败后 fallback）
 """
 
 import asyncio
@@ -108,6 +110,23 @@ async def execute_tool(
             result = await execute_coro
         # 后执行中间件（可修改 result，如截断、格式化、埋点）
         result = await run_post_hooks(name, args, result)
+
+        # ── MCP Fallback ──────────────────────────────────────────────
+        # 内置工具返回 tool_not_found 或执行失败时，尝试 MCP 同名工具
+        if not result.success:
+            mcp_proxy = _try_mcp_fallback(reg, name)
+            if mcp_proxy is not None:
+                logger.info("Builtin tool '%s' failed, falling back to MCP: %s", name, mcp_proxy.name)
+                try:
+                    mcp_coro = mcp_proxy.execute(**args)
+                    if get_timeout_policy is not None:
+                        result = await get_timeout_policy().with_tool_timeout(mcp_coro)
+                    else:
+                        result = await mcp_coro
+                    result = await run_post_hooks(name, args, result)
+                except Exception as mcp_err:
+                    logger.warning("MCP fallback for '%s' also failed: %s", name, mcp_err)
+
         return result
     except asyncio.TimeoutError as e:
         logger.warning(f"Tool {name} timed out: {e}")
@@ -115,3 +134,12 @@ async def execute_tool(
     except Exception as e:
         logger.exception(f"Tool {name} execute error")
         return ToolResult(success=False, error=str(e))
+
+
+def _try_mcp_fallback(reg: ToolRegistry, tool_name: str):
+    """尝试查找 MCP fallback 工具（延迟导入避免循环依赖）。"""
+    try:
+        from .mcp_adapter import find_mcp_fallback
+        return find_mcp_fallback(reg, tool_name)
+    except ImportError:
+        return None

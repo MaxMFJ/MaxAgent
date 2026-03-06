@@ -32,7 +32,7 @@ struct MessageBubble: View {
                 }
                 
                 Text(message.timestamp.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
             }
             .contextMenu {
@@ -86,7 +86,7 @@ struct UserMessageActions: View {
                 viewModel.editMessage(message)
             } label: {
                 Image(systemName: "pencil.circle.fill")
-                    .font(.title3)
+                    .font(CyberFont.body(size: 15, weight: .semibold))
                     .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)

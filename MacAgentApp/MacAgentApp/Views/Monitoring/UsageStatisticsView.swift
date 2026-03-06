@@ -80,11 +80,11 @@ private struct StatCell: View {
     var body: some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(CyberFont.mono(size: 18, weight: .bold))
                 .foregroundColor(color)
                 .shadow(color: color.opacity(0.5), radius: 4)
             Text(label)
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .font(CyberFont.mono(size: 9, weight: .medium))
                 .foregroundColor(CyberColor.textSecond)
         }
     }
@@ -114,7 +114,7 @@ private struct RequestTrendCard: View {
 
     private var emptyChart: some View {
         Text("暂无数据")
-            .font(.system(size: 10, design: .monospaced))
+            .font(CyberFont.mono(size: 10))
             .foregroundColor(CyberColor.textSecond)
             .frame(height: 48)
             .frame(maxWidth: .infinity)
@@ -150,7 +150,7 @@ private struct TokenTrendCard: View {
 
     private var emptyChart: some View {
         Text("暂无数据")
-            .font(.system(size: 10, design: .monospaced))
+            .font(CyberFont.mono(size: 10))
             .foregroundColor(CyberColor.textSecond)
             .frame(height: 48)
             .frame(maxWidth: .infinity)
@@ -174,7 +174,7 @@ private struct ModelConsumptionCard: View {
 
                 if vm.modelAnalysis.consumptionDistribution.isEmpty {
                     Text("暂无数据")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .frame(maxWidth: .infinity, minHeight: 60)
                 } else {
@@ -205,7 +205,7 @@ private struct ModelCallRankingCard: View {
 
                 if vm.modelAnalysis.callRanking.isEmpty {
                     Text("暂无数据")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .frame(maxWidth: .infinity, minHeight: 60)
                 } else {
@@ -236,7 +236,7 @@ private struct ConsumptionTrendCard: View {
 
                 if vm.modelAnalysis.consumptionTrend.isEmpty {
                     Text("暂无数据")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .frame(maxWidth: .infinity, minHeight: 48)
                 } else {
@@ -272,7 +272,7 @@ private struct BarRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(CyberFont.mono(size: 10, weight: .medium))
                 .foregroundColor(CyberColor.textPrimary)
                 .lineLimit(1)
                 .frame(width: 100, alignment: .trailing)
@@ -290,7 +290,7 @@ private struct BarRow: View {
             .frame(height: 10)
 
             Text(formatNumber(value))
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .font(CyberFont.mono(size: 9, weight: .semibold))
                 .foregroundColor(color)
                 .frame(width: 50, alignment: .trailing)
         }

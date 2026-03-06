@@ -76,13 +76,13 @@ struct ThinkingBlockView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "brain.head.profile")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                     Text("思考过程")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                     Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
-                        .font(.caption2)
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 10)
@@ -95,7 +95,7 @@ struct ThinkingBlockView: View {
             
             if !isCollapsed {
                 Text(thinkingContent)
-                    .font(.system(.caption, design: .default))
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -13,6 +13,12 @@
 		APP001 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* AppDelegate.m */; };
 		APP002 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.m */; };
 		APP003 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* main.m */; };
+		FONT001 /* Orbitron-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_ORB /* Orbitron-Variable.ttf */; };
+		FONT002 /* Rajdhani-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_RJ_R /* Rajdhani-Regular.ttf */; };
+		FONT003 /* Rajdhani-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_RJ_M /* Rajdhani-Medium.ttf */; };
+		FONT004 /* Rajdhani-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_RJ_SB /* Rajdhani-SemiBold.ttf */; };
+		FONT005 /* Rajdhani-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_RJ_B /* Rajdhani-Bold.ttf */; };
+		FONT006 /* Rajdhani-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FONT_RJ_V /* Rajdhani-Variable.ttf */; };
 		FRM001 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_AV /* AVFoundation.framework */; };
 		FRM002 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_AUDIO /* AudioToolbox.framework */; };
 		FRM003 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_SPEECH /* Speech.framework */; };
@@ -47,6 +53,12 @@
 		73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iOSAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C8841357FFDDD1B3D72ADF4F /* Pods-iOSAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSAgentApp.release.xcconfig"; path = "Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp.release.xcconfig"; sourceTree = "<group>"; };
 		E661C1AB28DF1EDB6254201B /* Pods-iOSAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
+		FONT_ORB /* Orbitron-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Orbitron-Variable.ttf"; sourceTree = "<group>"; };
+		FONT_RJ_B /* Rajdhani-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Rajdhani-Bold.ttf"; sourceTree = "<group>"; };
+		FONT_RJ_M /* Rajdhani-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Rajdhani-Medium.ttf"; sourceTree = "<group>"; };
+		FONT_RJ_R /* Rajdhani-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Rajdhani-Regular.ttf"; sourceTree = "<group>"; };
+		FONT_RJ_SB /* Rajdhani-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Rajdhani-SemiBold.ttf"; sourceTree = "<group>"; };
+		FONT_RJ_V /* Rajdhani-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Rajdhani-Variable.ttf"; sourceTree = "<group>"; };
 		FRM_AUDIO /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		FRM_AV /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		FRM_SPEECH /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
@@ -142,6 +154,19 @@
 			path = iOSAgentApp;
 			sourceTree = "<group>";
 		};
+		FONTS_GROUP /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				FONT_ORB /* Orbitron-Variable.ttf */,
+				FONT_RJ_R /* Rajdhani-Regular.ttf */,
+				FONT_RJ_M /* Rajdhani-Medium.ttf */,
+				FONT_RJ_SB /* Rajdhani-SemiBold.ttf */,
+				FONT_RJ_B /* Rajdhani-Bold.ttf */,
+				FONT_RJ_V /* Rajdhani-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		FRAMEWORKS_GROUP /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				RES_ASSETS /* Assets.xcassets */,
+				FONTS_GROUP /* Fonts */,
 				RES_LAUNCH /* LaunchScreen.storyboard */,
 				RES_LOC_GROUP /* Localizable.strings */,
 			);
@@ -316,6 +342,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				RES001 /* Assets.xcassets in Resources */,
+				FONT001 /* Orbitron-Variable.ttf in Resources */,
+				FONT002 /* Rajdhani-Regular.ttf in Resources */,
+				FONT003 /* Rajdhani-Medium.ttf in Resources */,
+				FONT004 /* Rajdhani-SemiBold.ttf in Resources */,
+				FONT005 /* Rajdhani-Bold.ttf in Resources */,
+				FONT006 /* Rajdhani-Variable.ttf in Resources */,
 				RES002 /* LaunchScreen.storyboard in Resources */,
 				RES003 /* Localizable.strings in Resources */,
 			);
@@ -466,6 +498,7 @@
 				DEVELOPMENT_TEAM = MA8YY74FVW;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOSAgentApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -547,6 +580,7 @@
 				DEVELOPMENT_TEAM = MA8YY74FVW;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOSAgentApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

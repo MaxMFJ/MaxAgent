@@ -128,6 +128,14 @@ class FileTool(BaseTool):
     
     async def _write(self, path: str, content: str) -> ToolResult:
         """Write content to file"""
+        # v3.4 snapshot before overwrite
+        try:
+            from agent.snapshot_manager import get_snapshot_manager
+            _task_id = getattr(self, "_current_task_id", "")
+            _session_id = getattr(self, "_current_session_id", "")
+            get_snapshot_manager().capture("write", path, task_id=_task_id, session_id=_session_id)
+        except Exception:
+            pass
         parent = os.path.dirname(path)
         if parent and not os.path.exists(parent):
             os.makedirs(parent, exist_ok=True)
@@ -170,6 +178,14 @@ class FileTool(BaseTool):
         if not os.path.exists(path):
             return ToolResult(success=False, error=f"路径不存在: {path}")
         
+        # v3.4 snapshot before delete
+        try:
+            from agent.snapshot_manager import get_snapshot_manager
+            _task_id = getattr(self, "_current_task_id", "")
+            _session_id = getattr(self, "_current_session_id", "")
+            get_snapshot_manager().capture("delete", path, task_id=_task_id, session_id=_session_id)
+        except Exception:
+            pass
         if os.path.isdir(path):
             if recursive:
                 shutil.rmtree(path)
@@ -185,6 +201,14 @@ class FileTool(BaseTool):
         if not os.path.exists(src):
             return ToolResult(success=False, error=f"源路径不存在: {src}")
         
+        # v3.4 snapshot before move
+        try:
+            from agent.snapshot_manager import get_snapshot_manager
+            _task_id = getattr(self, "_current_task_id", "")
+            _session_id = getattr(self, "_current_session_id", "")
+            get_snapshot_manager().capture("move", src, task_id=_task_id, session_id=_session_id, destination=dest)
+        except Exception:
+            pass
         shutil.move(src, dest)
         return ToolResult(success=True, data={"from": src, "to": dest})
     
@@ -193,6 +217,14 @@ class FileTool(BaseTool):
         if not os.path.exists(src):
             return ToolResult(success=False, error=f"源路径不存在: {src}")
         
+        # v3.4 snapshot destination path (to support undo of copy)
+        try:
+            from agent.snapshot_manager import get_snapshot_manager
+            _task_id = getattr(self, "_current_task_id", "")
+            _session_id = getattr(self, "_current_session_id", "")
+            get_snapshot_manager().capture("copy", src, task_id=_task_id, session_id=_session_id, destination=dest)
+        except Exception:
+            pass
         if os.path.isdir(src):
             shutil.copytree(src, dest)
         else:

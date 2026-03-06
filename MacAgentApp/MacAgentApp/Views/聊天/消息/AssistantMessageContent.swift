@@ -55,7 +55,7 @@ struct AssistantMessageContent: View {
                         .scaleEffect(0.6)
                         .tint(CyberColor.cyan)
                     Text("正在思考...")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(CyberColor.textSecond)
                 }
             }
@@ -86,7 +86,7 @@ struct AssistantMessageContent: View {
                         .scaleEffect(0.6)
                         .tint(CyberColor.cyan)
                     Text("正在思考...")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(CyberColor.textSecond)
                 }
             }
@@ -99,16 +99,16 @@ struct AssistantMessageContent: View {
             if !message.isStreaming, let modelName = message.modelName, !modelName.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "cpu")
-                        .font(.caption2)
+                        .font(CyberFont.body(size: 10))
                     Text(modelName)
-                        .font(.caption2)
+                        .font(CyberFont.body(size: 10))
                     if let usage = message.tokenUsage {
                         Text("·")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                         Image(systemName: "number")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                         Text(usage.formatted)
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                     }
                 }
                 .foregroundColor(CyberColor.textSecond)
@@ -120,9 +120,9 @@ struct AssistantMessageContent: View {
                 } label: {
                     HStack(spacing: 2) {
                         Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                         Text(showCopied ? "已复制" : "复制全部")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                     }
                     .foregroundColor(showCopied ? CyberColor.green : CyberColor.textSecond)
                     .padding(.horizontal, 8)

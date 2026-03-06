@@ -28,6 +28,10 @@ enum StreamChunk {
     case taskComplete(taskId: String, success: Bool, summary: String, totalActions: Int)
     /// 解析重试提示（非错误，任务继续）
     case retry(message: String)
+    /// v3.4: Gather→Act→Verify 阶段验证结果
+    case phaseVerify(iteration: Int, phase: String, note: String)
+    /// v3.4: HITL 人工审批请求
+    case hitlRequest(actionId: String, actionType: String, description: String, riskLevel: String)
 }
 
 @MainActor
@@ -1110,7 +1114,7 @@ class BackendService: ObservableObject {
     
     // MARK: - Autonomous Execution
     
-    func sendAutonomousTask(_ task: String, sessionId: String? = nil, enableModelSelection: Bool = true, preferLocal: Bool = false) -> AsyncThrowingStream<StreamChunk, Error> {
+    func sendAutonomousTask(_ task: String, sessionId: String? = nil, enableModelSelection: Bool = true, preferLocal: Bool = false, preferredTier: String? = nil) -> AsyncThrowingStream<StreamChunk, Error> {
         return AsyncThrowingStream { [weak self] continuation in
             Task { [weak self] in
                 guard let self = self else {
@@ -1132,6 +1136,10 @@ class BackendService: ObservableObject {
                         "enable_model_selection": enableModelSelection,
                         "prefer_local": preferLocal
                     ]
+                    
+                    if let tier = preferredTier, !tier.isEmpty, tier != "auto" {
+                        message["preferred_tier"] = tier
+                    }
                     
                     if let sessionId = sessionId {
                         message["session_id"] = sessionId
@@ -1295,6 +1303,21 @@ class BackendService: ObservableObject {
                                     // 服务端确认接受任务，返回 task_id
                                     continue
                                 
+                                case "phase_verify":
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let phase = json["phase"] as? String ?? ""
+                                    let note = json["note"] as? String ?? ""
+                                    continuation.yield(.phaseVerify(iteration: iteration, phase: phase, note: note))
+                                    continue
+                                
+                                case "hitl_request":
+                                    let actionId = json["action_id"] as? String ?? ""
+                                    let actionType = json["action_type"] as? String ?? ""
+                                    let description = json["description"] as? String ?? ""
+                                    let riskLevel = json["risk_level"] as? String ?? "medium"
+                                    continuation.yield(.hitlRequest(actionId: actionId, actionType: actionType, description: description, riskLevel: riskLevel))
+                                    continue
+                                
                                 case "system_notification":
                                     await MainActor.run { [weak self] in
                                         self?.handleSystemNotification(json)
@@ -1328,4 +1351,153 @@ class BackendService: ObservableObject {
             }
         }
     }
+
+    // MARK: - MCP (Model Context Protocol)
+
+    nonisolated func fetchMCPServers() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/mcp/servers") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let servers = json["servers"] as? [[String: Any]] else { return [] }
+        return servers
+    }
+
+    nonisolated func addMCPServer(name: String, transport: String, command: [String]?, cmdUrl: String?) async throws {
+        guard let reqUrl = URL(string: "\(baseURL)/mcp/servers") else { throw URLError(.badURL) }
+        var request = URLRequest(url: reqUrl)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: Any] = ["name": name, "transport": transport]
+        if let cmd = command { body["command"] = cmd }
+        if let u = cmdUrl { body["url"] = u }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            // 提取后端返回的 detail 错误信息
+            var detail = "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)"
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let msg = json["detail"] as? String {
+                detail = msg
+            } else if let text = String(data: data, encoding: .utf8), !text.isEmpty {
+                detail = String(text.prefix(200))
+            }
+            throw NSError(domain: "MCP", code: (response as? HTTPURLResponse)?.statusCode ?? 0,
+                          userInfo: [NSLocalizedDescriptionKey: detail])
+        }
+    }
+
+    nonisolated func deleteMCPServer(name: String) async throws {
+        let encoded = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
+        guard let url = URL(string: "\(baseURL)/mcp/servers/\(encoded)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func fetchMCPTools() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/mcp/tools") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let tools = json["tools"] as? [[String: Any]] else { return [] }
+        return tools
+    }
+
+    // MARK: - Rollback / Snapshots
+
+    nonisolated func fetchSnapshots(taskId: String? = nil, limit: Int = 50) async throws -> [[String: Any]] {
+        var path = "\(baseURL)/rollback/snapshots?limit=\(limit)"
+        if let tid = taskId, !tid.isEmpty { path += "&task_id=\(tid)" }
+        guard let url = URL(string: path) else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let snapshots = json["snapshots"] as? [[String: Any]] else { return [] }
+        return snapshots
+    }
+
+    nonisolated func rollbackSnapshot(snapshotId: String) async throws -> String {
+        guard let url = URL(string: "\(baseURL)/rollback") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["snapshot_id": snapshotId])
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        return json["message"] as? String ?? "已回滚"
+    }
+
+    // MARK: - HITL
+
+    nonisolated func hitlConfirm(actionId: String) async throws {
+        let encoded = actionId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? actionId
+        guard let url = URL(string: "\(baseURL)/hitl/confirm/\(encoded)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func hitlReject(actionId: String) async throws {
+        let encoded = actionId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? actionId
+        guard let url = URL(string: "\(baseURL)/hitl/reject/\(encoded)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    // MARK: - Feature Flags
+
+    nonisolated func fetchFeatureFlags() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/feature-flags") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let flags = json["flags"] as? [[String: Any]] else { return [] }
+        return flags
+    }
+
+    nonisolated func updateFeatureFlag(name: String, value: Any) async throws {
+        guard let url = URL(string: "\(baseURL)/feature-flags") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["name": name, "value": value])
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    // MARK: - Audit Log
+
+    nonisolated func fetchAuditLogs(limit: Int = 50, offset: Int = 0, logType: String? = nil) async throws -> [[String: Any]] {
+        var path = "\(baseURL)/audit?limit=\(limit)&offset=\(offset)"
+        if let t = logType, !t.isEmpty {
+            let encoded = t.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? t
+            path += "&type=\(encoded)"
+        }
+        guard let url = URL(string: path) else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let logs = json["logs"] as? [[String: Any]] else { return [] }
+        return logs
+    }
+
+    // MARK: - Context Visualization
+
+    nonisolated func fetchContext() async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/context") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
 }
+

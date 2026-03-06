@@ -55,7 +55,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
         appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.92];
         appearance.titleTextAttributes = @{
             NSForegroundColorAttributeName: TechTheme.neonCyan,
-            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+            NSFontAttributeName: [TechTheme fontDisplaySize:16 weight:UIFontWeightSemibold]
         };
         self.navigationController.navigationBar.standardAppearance = appearance;
         self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
@@ -295,7 +295,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
             
             UILabel *label = [[UILabel alloc] init];
             label.translatesAutoresizingMaskIntoConstraints = NO;
-            label.font = [UIFont systemFontOfSize:15];
+            label.font = [TechTheme fontBodySize:15 weight:UIFontWeightRegular];
             label.textColor = [UIColor labelColor];
             [cell.contentView addSubview:label];
             
@@ -334,7 +334,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
                 cell.textLabel.text = NSLocalizedString(@"connection", nil);
                 if (!self.connectionStatusLabel) {
                     self.connectionStatusLabel = [[UILabel alloc] init];
-                    self.connectionStatusLabel.font = [UIFont systemFontOfSize:15];
+                    self.connectionStatusLabel.font = [TechTheme fontBodySize:15 weight:UIFontWeightRegular];
                     self.connectionStatusLabel.textAlignment = NSTextAlignmentRight;
                 }
                 cell.accessoryView = self.connectionStatusLabel;
@@ -343,7 +343,7 @@ typedef NS_ENUM(NSInteger, SettingsSection) {
                 cell.textLabel.text = NSLocalizedString(@"model", nil);
                 if (!self.modelLabel) {
                     self.modelLabel = [[UILabel alloc] init];
-                    self.modelLabel.font = [UIFont systemFontOfSize:15];
+                    self.modelLabel.font = [TechTheme fontBodySize:15 weight:UIFontWeightRegular];
                     self.modelLabel.textColor = [UIColor secondaryLabelColor];
                     self.modelLabel.textAlignment = NSTextAlignmentRight;
                     self.modelLabel.text = @"-";

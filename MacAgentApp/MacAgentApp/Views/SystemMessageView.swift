@@ -13,10 +13,10 @@ struct SystemMessageView: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "bell.badge")
-                        .font(.system(size: 12))
+                        .font(CyberFont.body(size: 12))
                         .foregroundColor(CyberColor.cyan)
                     Text("SYSTEM MSG")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 11, weight: .bold))
                         .foregroundColor(CyberColor.cyan)
                         .tracking(1)
                 }
@@ -71,10 +71,10 @@ struct SystemMessageView: View {
             if displayedNotifications.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: viewModel.selectedNotificationTab.category?.icon ?? "bell.slash")
-                        .font(.system(size: 36, weight: .ultraLight))
+                        .font(CyberFont.display(size: 36))
                         .foregroundColor(CyberColor.cyanDim)
                     Text(viewModel.selectedNotificationTab == .all ? "暂无系统消息" : "该分类下暂无消息")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(CyberFont.mono(size: 11))
                         .foregroundColor(CyberColor.textSecond)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,7 +114,7 @@ private struct CyberMsgTab: View {
     var body: some View {
         Button(action: onTap) {
             Text(title)
-                .font(.system(size: 9, weight: isSelected ? .bold : .medium, design: .monospaced))
+                .font(CyberFont.mono(size: 9, weight: isSelected ? .bold : .medium))
                 .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -152,7 +152,7 @@ struct SystemMessageRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: notification.level.icon)
                 .foregroundColor(levelColor)
-                .font(.system(size: 14))
+                .font(CyberFont.body(size: 14))
                 .frame(width: 20, alignment: .center)
                 .padding(.top, 2)
                 .shadow(color: levelColor.opacity(0.3), radius: 2)
@@ -160,7 +160,7 @@ struct SystemMessageRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(notification.title)
-                        .font(.system(size: 12, weight: notification.read ? .regular : .semibold, design: .monospaced))
+                        .font(CyberFont.mono(size: 12, weight: notification.read ? .regular : .semibold))
                         .foregroundColor(CyberColor.textPrimary)
                         .lineLimit(1)
                     
@@ -168,7 +168,7 @@ struct SystemMessageRow: View {
                     
                     if showCopied {
                         Text("已复制")
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(CyberFont.mono(size: 9))
                             .foregroundColor(CyberColor.green)
                             .transition(.opacity)
                     }
@@ -176,7 +176,7 @@ struct SystemMessageRow: View {
                     if isHovering {
                         Button(action: copyToClipboard) {
                             Image(systemName: "doc.on.doc")
-                                .font(.system(size: 11))
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(CyberColor.textSecond)
                         }
                         .buttonStyle(.plain)
@@ -185,19 +185,19 @@ struct SystemMessageRow: View {
                     }
                     
                     Text(notification.relativeTime)
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond)
                 }
                 
                 Text(notification.content)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(CyberFont.mono(size: 11))
                     .foregroundColor(CyberColor.textSecond)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 if !notification.source.isEmpty && notification.source != "system" {
                     Text("来源: \(notification.source)")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond.opacity(0.6))
                 }
             }
@@ -268,12 +268,12 @@ struct NotificationBellButton: View {
         }) {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: viewModel.unreadNotificationCount > 0 ? "bell.badge.fill" : "bell")
-                    .font(.system(size: 14))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(viewModel.showSystemMessages || viewModel.unreadNotificationCount > 0 ? CyberColor.cyan : CyberColor.textSecond)
                 
                 if viewModel.unreadNotificationCount > 0 {
                     Text("\(min(viewModel.unreadNotificationCount, 99))")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 9, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
@@ -281,6 +281,8 @@ struct NotificationBellButton: View {
                         .offset(x: 8, y: -6)
                 }
             }
+            .frame(width: 36, height: 36)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(viewModel.showSystemMessages ? "隐藏系统消息面板" : "系统消息 (\(viewModel.unreadNotificationCount) 条未读)，点击显示面板")

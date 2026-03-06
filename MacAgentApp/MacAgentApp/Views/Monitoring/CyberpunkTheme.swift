@@ -1,18 +1,22 @@
 import SwiftUI
+#if canImport(CoreText)
+import CoreText
+#endif
 
-// MARK: - Cyberpunk Color Palette
+// MARK: - Cyberpunk Color Palette（与官网 website 对齐）
+// 官网 CSS: --bg #0a0a0f, --bg-card #12121f, --accent #00f5ff, --text #e8e8f0, --text-muted #8b8ba3
 
 enum CyberColor {
-    static let bg0          = Color(red: 0.04, green: 0.04, blue: 0.08)   // 极深背景
-    static let bg1          = Color(red: 0.07, green: 0.07, blue: 0.12)   // 卡片背景
-    static let bg2          = Color(red: 0.10, green: 0.10, blue: 0.16)   // 次级面板
-    static let bgHighlight  = Color(red: 0.12, green: 0.12, blue: 0.20)   // 悬停/选中
+    static let bg0          = Color(hex: 0x0a0a0f)   // --bg 极深背景
+    static let bg1          = Color(hex: 0x12121f)   // --bg-card 卡片背景
+    static let bg2          = Color(hex: 0x0f0f18)   // --bg-elevated 次级面板
+    static let bgHighlight  = Color(hex: 0x1a1a2e)   // --bg-card-hover 悬停/选中
 
-    static let cyan         = Color(red: 0.00, green: 0.90, blue: 1.00)   // 主色 - 青
-    static let cyanDim      = Color(red: 0.00, green: 0.55, blue: 0.65)
+    static let cyan         = Color(hex: 0x00f5ff)   // --accent 主色
+    static let cyanDim      = Color(hex: 0x00b8c4)   // --accent-dim
     static let green        = Color(red: 0.00, green: 1.00, blue: 0.55)   // 成功/在线
     static let greenDim     = Color(red: 0.00, green: 0.60, blue: 0.35)
-    static let purple       = Color(red: 0.75, green: 0.10, blue: 1.00)   // 强调
+    static let purple       = Color(hex: 0xbf00ff)   // --neon-purple
     static let purpleDim    = Color(red: 0.45, green: 0.05, blue: 0.60)
     static let orange       = Color(red: 1.00, green: 0.55, blue: 0.00)   // 警告/运行中
     static let orangeDim    = Color(red: 0.60, green: 0.30, blue: 0.00)
@@ -20,13 +24,118 @@ enum CyberColor {
     static let redDim       = Color(red: 0.55, green: 0.05, blue: 0.10)
     static let yellow       = Color(red: 1.00, green: 0.90, blue: 0.00)   // 强调/pending
 
-    static let textPrimary  = Color(red: 0.88, green: 0.92, blue: 1.00)
-    static let textSecond   = Color(red: 0.45, green: 0.52, blue: 0.65)
-    static let border       = Color(red: 0.20, green: 0.22, blue: 0.32)
-    static let borderGlow   = Color(red: 0.00, green: 0.90, blue: 1.00).opacity(0.25)
+    static let textPrimary  = Color(hex: 0xe8e8f0)   // --text
+    static let textSecond   = Color(hex: 0x8b8ba3)   // --text-muted
+    static let border       = Color(hex: 0x2a2a3a)   // --border
+    static let borderGlow   = Color(hex: 0x00f5ff).opacity(0.25)
+    /// 霓虹发光色（官网 --accent-glow: rgba(0,245,255,0.4)）
+    static let accentGlow   = Color(hex: 0x00f5ff).opacity(0.4)
+    static let neonCyan     = Color(hex: 0x00ffff)   // --neon-cyan
+    static let neonPink     = Color(hex: 0xff00ff)   // --neon-pink
 }
 
-// MARK: - Cyber Card
+// MARK: - Color Hex 扩展
+
+extension Color {
+    init(hex: Int) {
+        let r = Double((hex >> 16) & 0xff) / 255
+        let g = Double((hex >> 8) & 0xff) / 255
+        let b = Double(hex & 0xff) / 255
+        self.init(red: r, green: g, blue: b)
+    }
+}
+
+// MARK: - Cyber Font（全局仅用 Orbitron-Variable）
+// 全应用统一 Orbitron 几何科技感，变量字体支持 400–900 字重
+
+enum CyberFont {
+    /// 标题/品牌
+    static func display(size: CGFloat = 14, weight: Font.Weight = .semibold) -> Font {
+        .custom("Orbitron", size: size).weight(weight)
+    }
+    /// 正文
+    static func body(size: CGFloat = 13, weight: Font.Weight = .regular) -> Font {
+        .custom("Orbitron", size: size).weight(weight)
+    }
+    /// 标签/数据/等宽风格
+    static func mono(size: CGFloat = 11, weight: Font.Weight = .medium) -> Font {
+        .custom("Orbitron", size: size).weight(weight)
+    }
+
+#if canImport(AppKit)
+    /// NSFont 版本，供 NSTextView/AppKit 使用（Orbitron 变量字体实例）
+    /// 若按名称查找失败则从 Bundle 直接加载，避免回退到 PingFang
+    static func nsDisplay(size: CGFloat = 14) -> NSFont {
+        NSFont(name: "Orbitron-SemiBold", size: size)
+            ?? NSFont(name: "Orbitron", size: size)
+            ?? nsFontFromBundle(size: size, weight: 600)
+            ?? .systemFont(ofSize: size, weight: .semibold)
+    }
+    static func nsBody(size: CGFloat = 13) -> NSFont {
+        NSFont(name: "Orbitron-Regular", size: size)
+            ?? NSFont(name: "Orbitron", size: size)
+            ?? nsFontFromBundle(size: size, weight: 400)
+            ?? .systemFont(ofSize: size)
+    }
+    static func nsBodyBold(size: CGFloat = 13) -> NSFont {
+        NSFont(name: "Orbitron-Bold", size: size)
+            ?? NSFont(name: "Orbitron", size: size)
+            ?? nsFontFromBundle(size: size, weight: 700)
+            ?? .systemFont(ofSize: size, weight: .bold)
+    }
+    static func nsMono(size: CGFloat = 11) -> NSFont {
+        NSFont(name: "Orbitron-Medium", size: size)
+            ?? NSFont(name: "Orbitron", size: size)
+            ?? nsFontFromBundle(size: size, weight: 500)
+            ?? .systemFont(ofSize: size, weight: .medium)
+    }
+
+    /// 从 Bundle 直接加载 Orbitron-Variable.ttf，用于名称查找失败时的回退
+    private static func nsFontFromBundle(size: CGFloat, weight: CGFloat) -> NSFont? {
+#if canImport(CoreText)
+        guard let url = Bundle.main.url(forResource: "Orbitron-Variable", withExtension: "ttf", subdirectory: "Fonts")
+            ?? Bundle.main.url(forResource: "Orbitron-Variable", withExtension: "ttf") else { return nil }
+        guard let descriptors = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor],
+              let first = descriptors.first else { return nil }
+        let ctFont = CTFontCreateWithFontDescriptor(first, size, nil)
+        return ctFont as NSFont?
+#else
+        return nil
+#endif
+    }
+#endif
+}
+
+// MARK: - 霓虹发光文字（官网 neon-text + neon-breathe）
+// text-shadow: 0 0 10px/20px/40px accent-glow；呼吸动画 3s 循环
+
+struct NeonGlowText: ViewModifier {
+    var color: Color = CyberColor.accentGlow
+    var breathe: Bool = false
+    @State private var breathPhase: Bool = false
+
+    func body(content: Content) -> some View {
+        let r1: CGFloat = breathe ? (breathPhase ? 15 : 10) : 10
+        let r2: CGFloat = breathe ? (breathPhase ? 35 : 20) : 20
+        let r3: CGFloat = breathe ? (breathPhase ? 50 : 40) : 40
+        let o: Double = breathe ? (breathPhase ? 0.5 : 0.35) : 0.4
+        content
+            .shadow(color: color.opacity(o), radius: r1)
+            .shadow(color: color.opacity(o), radius: r2)
+            .shadow(color: color.opacity(o * 0.8), radius: r3)
+            .animation(breathe ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .default, value: breathPhase)
+            .onAppear { if breathe { breathPhase = true } }
+    }
+}
+
+extension View {
+    /// 霓虹发光，可选呼吸动画
+    func neonGlow(color: Color = CyberColor.accentGlow, breathe: Bool = false) -> some View {
+        modifier(NeonGlowText(color: color, breathe: breathe))
+    }
+}
+
+// MARK: - Cyber Card（官网 rounded-xl = 12，增强霓虹边框）
 
 struct CyberCard<Content: View>: View {
     var glowColor: Color = CyberColor.cyan
@@ -38,26 +147,87 @@ struct CyberCard<Content: View>: View {
             .padding(padding)
             .background(CyberColor.bg1)
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(glowColor.opacity(0.35), lineWidth: 1)
             )
-            .cornerRadius(8)
-            .shadow(color: glowColor.opacity(0.10), radius: 8, x: 0, y: 0)
+            .cornerRadius(12)
+            .shadow(color: glowColor.opacity(0.15), radius: 12, x: 0, y: 0)
+            .shadow(color: glowColor.opacity(0.08), radius: 24, x: 0, y: 0)
     }
 }
 
-// MARK: - Neon Label
+// MARK: - Neon Label（使用 display 字体，与官网 font-display 对齐，可选发光）
 
 struct CyberLabel: View {
     let text: String
     var color: Color = CyberColor.cyan
     var size: CGFloat = 10
+    var glow: Bool = false
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: size, weight: .semibold, design: .monospaced))
+            .font(CyberFont.display(size: size, weight: .semibold))
             .foregroundColor(color)
             .tracking(1.5)
+            .modifier(OptionalNeonGlow(glow: glow, color: color.opacity(0.4)))
+    }
+}
+
+private struct OptionalNeonGlow: ViewModifier {
+    let glow: Bool
+    let color: Color
+    func body(content: Content) -> some View {
+        if glow {
+            content
+                .shadow(color: color, radius: 8)
+                .shadow(color: color, radius: 16)
+        } else {
+            content
+        }
+    }
+}
+
+// MARK: - 丰富背景（官网层次：网格 + 顶部渐变 + 紫色/青色径向光晕）
+
+struct CyberRichBackground: View {
+    var body: some View {
+        ZStack {
+            CyberGridBackground()
+            // 官网 Home: from accent/10 via transparent
+            LinearGradient(
+                colors: [CyberColor.cyan.opacity(0.1), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+            // 官网: radial ellipse 80% 50% at 50% -20%, purple/20%
+            RadialGradient(
+                colors: [CyberColor.purple.opacity(0.15), Color.clear],
+                center: UnitPoint(x: 0.5, y: 0.0),
+                startRadius: 0,
+                endRadius: 350
+            )
+            .allowsHitTesting(false)
+            // 官网: radial ellipse 60% 40% at 80% 20%, accent/8%
+            RadialGradient(
+                colors: [CyberColor.cyan.opacity(0.08), Color.clear],
+                center: UnitPoint(x: 0.85, y: 0.15),
+                startRadius: 0,
+                endRadius: 280
+            )
+            .allowsHitTesting(false)
+            // 底部渐变过渡
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [Color.clear, CyberColor.bg0.opacity(0.6)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 120)
+            }
+            .allowsHitTesting(false)
+        }
     }
 }
 
@@ -115,21 +285,21 @@ struct CyberStatBox: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 26, weight: .bold, design: .monospaced))
+                .font(CyberFont.display(size: 26, weight: .bold))
                 .foregroundColor(color)
                 .shadow(color: color.opacity(0.6), radius: 4, x: 0, y: 0)
             CyberLabel(text: label, color: CyberColor.textSecond, size: 9)
             if let sub = subLabel {
                 Text(sub)
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(CyberFont.mono(size: 9))
                     .foregroundColor(CyberColor.textSecond.opacity(0.7))
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .background(CyberColor.bg1)
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(color.opacity(0.3), lineWidth: 1))
-        .cornerRadius(6)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(color.opacity(0.3), lineWidth: 1))
+        .cornerRadius(8)
         .shadow(color: color.opacity(0.08), radius: 6)
     }
 }
@@ -377,13 +547,13 @@ struct SuccessCelebrationBadge: View {
         ZStack {
             ForEach(0..<6, id: \.self) { i in
                 Image(systemName: "sparkle")
-                    .font(.system(size: 12))
+                    .font(CyberFont.body(size: 12))
                     .foregroundColor(CyberColor.green)
                     .offset(x: CGFloat(cos(Double(i) * .pi / 3)) * 24, y: CGFloat(sin(Double(i) * .pi / 3)) * 24)
                     .opacity(opacity)
             }
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 32))
+                .font(CyberFont.display(size: 32))
                 .foregroundColor(CyberColor.green)
                 .scaleEffect(scale)
         }
@@ -399,10 +569,10 @@ struct SuccessCelebrationBadge: View {
     }
 }
 
-// MARK: - Hex Grid Pattern
+// MARK: - Hex Grid Pattern（官网 --grid-color: rgba(0,245,255,0.06)）
 
 struct HexGridPattern: View {
-    var color: Color = CyberColor.cyan.opacity(0.04)
+    var color: Color = CyberColor.cyan.opacity(0.06)
 
     var body: some View {
         Canvas { ctx, size in

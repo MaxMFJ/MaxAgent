@@ -64,8 +64,12 @@ class ToolRegistry:
         return [t for t in self._tools.values() if t.category == category]
     
     def get_schemas(self) -> List[Dict[str, Any]]:
-        """Get all tool schemas for LLM"""
-        return [tool.to_function_schema() for tool in self._tools.values()]
+        """Get all tool schemas for LLM (excludes mcp/ fallback tools)"""
+        return [
+            tool.to_function_schema()
+            for tool in self._tools.values()
+            if not tool.name.startswith("mcp/")
+        ]
 
     def get_relevant_schemas(
         self, query: str, max_tools: int = 8, always_include: Optional[List[str]] = None
@@ -74,7 +78,8 @@ class ToolRegistry:
         根据用户查询语义匹配，只返回最相关的工具 schema，大幅减少 token。
         always_include: 无论匹配结果如何都保留的工具名列表。
         """
-        all_tools = list(self._tools.values())
+        # 排除 mcp/ 前缀的 fallback 工具（仅由 ToolRouter 内部 fallback 使用）
+        all_tools = [t for t in self._tools.values() if not t.name.startswith("mcp/")]
         if len(all_tools) <= max_tools:
             return self.get_schemas()
 

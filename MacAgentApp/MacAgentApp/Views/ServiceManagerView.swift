@@ -63,13 +63,13 @@ struct ServiceCard: View {
                     .frame(width: 10, height: 10)
                 
                 Text(title)
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 Spacer()
             }
             
             Text(isRunning ? "运行中" : "已停止")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             HStack(spacing: 8) {
@@ -116,25 +116,25 @@ struct LogView: View {
             // 工具栏
             HStack {
                 Text("\(logs.count) 条日志")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
                 Toggle("自动滚动", isOn: $autoScroll)
                     .toggleStyle(.checkbox)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                 
                 Button(action: copyAllLogs) {
                     Label("复制全部", systemImage: "doc.on.doc")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                 }
                 .buttonStyle(.plain)
                 .disabled(logs.isEmpty)
                 
                 Button(action: onClear) {
                     Label("清除", systemImage: "trash")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                 }
                 .buttonStyle(.plain)
             }

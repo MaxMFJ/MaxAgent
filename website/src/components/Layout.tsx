@@ -13,6 +13,7 @@ const navItems = [
   { path: '/docs', label: '文档' },
   { path: '/help', label: '帮助' },
   { path: '/roadmap', label: '待扩展' },
+  { path: '/test', label: '联机测试' },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -20,21 +21,21 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="min-h-screen">
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-xl">
+    <div className="min-h-screen relative z-10">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-xl shadow-[0_0_30px_rgba(0,245,255,0.08)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="font-display text-xl font-semibold tracking-tight">
-            Chow Duck
+          <Link to="/" className="font-display text-xl font-bold tracking-wider text-[var(--accent)] neon-text">
+            CHOW DUCK
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`text-sm transition-colors ${
+                className={`text-sm font-medium transition-all duration-300 ${
                   location.pathname === item.path
-                    ? 'text-[var(--accent)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                    ? 'text-[var(--accent)] drop-shadow-[0_0_8px_rgba(0,245,255,0.5)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--accent)]'
                 }`}
               >
                 {item.label}
@@ -71,11 +72,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         )}
       </header>
       <main className="pt-16">{children}</main>
-      <footer className="border-t border-[var(--border)] bg-[var(--bg-elevated)] py-12">
+      <footer className="border-t border-[var(--border)] bg-[var(--bg-elevated)]/95 py-12 relative">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/50 to-transparent" />
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <span className="font-display text-sm text-[var(--text-muted)]">
-              Chow Duck · macOS AI 智能助手
+            <span className="font-display text-sm text-[var(--text-muted)] tracking-wider">
+              CHOW DUCK · macOS AI AGENT
             </span>
             <div className="flex gap-8 text-sm text-[var(--text-muted)]">
               <Link to="/docs" className="hover:text-[var(--text)]">文档</Link>

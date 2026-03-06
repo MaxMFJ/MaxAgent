@@ -55,10 +55,10 @@ private struct NeuralStreamPanel: View {
                     if isActive {
                         HStack(spacing: 3) {
                             Text("●")
-                                .font(.system(size: 8))
+                                .font(CyberFont.mono(size: 8))
                                 .foregroundColor(CyberColor.green)
                             Text("LIVE")
-                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .font(CyberFont.mono(size: 8, weight: .bold))
                                 .foregroundColor(CyberColor.purple)
                         }
                         .padding(.horizontal, 4)
@@ -71,7 +71,7 @@ private struct NeuralStreamPanel: View {
                 ScrollView {
                     HStack(alignment: .top, spacing: 2) {
                         Text(text.isEmpty ? (isActive ? "AI 正在思考..." : "等待输出") : text)
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(CyberFont.mono(size: 11))
                             .foregroundColor(text.isEmpty ? CyberColor.textSecond.opacity(0.6) : CyberColor.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .textSelection(.enabled)
@@ -102,16 +102,16 @@ private struct EmptyTimelineView: View {
                     AIThinkingBrain(isActive: true, nodeCount: 10)
                         .frame(width: 80, height: 80)
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 36))
+                        .font(CyberFont.display(size: 36))
                         .foregroundColor(CyberColor.cyan.opacity(0.6))
                 }
 
                 Text("AI 随时待命")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(CyberFont.body(size: 18, weight: .semibold))
                     .foregroundColor(CyberColor.textPrimary)
 
                 Text("启动一个自主任务，看 AI 如何一步步完成任务")
-                    .font(.system(size: 13))
+                    .font(CyberFont.body(size: 13))
                     .foregroundColor(CyberColor.textSecond)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -161,7 +161,7 @@ private struct TimelineScrollView: View {
                 Spacer()
                 Toggle("自动滚动", isOn: $autoScroll)
                     .toggleStyle(.checkbox)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
             }
             .padding(.horizontal, 16)
@@ -203,7 +203,7 @@ private struct TaskHeaderBar: View {
                 }
             } else if progress.status == .completed {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 20))
+                    .font(CyberFont.display(size: 20))
                     .foregroundColor(CyberColor.green)
             } else {
                 NeonDot(color: statusColor, size: 4)
@@ -211,18 +211,18 @@ private struct TaskHeaderBar: View {
             CyberLabel(text: statusLabel, color: statusColor, size: 10)
 
             Text(progress.taskDescription)
-                .font(.system(size: 11, design: .monospaced))
+                .font(CyberFont.mono(size: 11))
                 .foregroundColor(CyberColor.textPrimary)
                 .lineLimit(1)
 
             Spacer()
 
             Text("\(progress.successfulActions)/\(progress.totalActions) 步")
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textSecond)
 
             Text(formatElapsed(elapsed))
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textSecond)
         }
     }
@@ -284,7 +284,7 @@ private struct TimelineStepRow: View {
                         SpinnerDot()
                     } else {
                         Image(systemName: statusIcon)
-                            .font(.system(size: 14))
+                            .font(CyberFont.body(size: 14))
                             .foregroundColor(statusColor)
                     }
                 }
@@ -300,20 +300,20 @@ private struct TimelineStepRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(entry.actionType == "llm_request" ? "LLM" : "步骤 \(entry.iteration)")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                     Text(entry.actionType == "llm_request" ? "远端 LLM 请求" : entry.actionType)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(CyberFont.body(size: 11, weight: .semibold))
                         .foregroundColor(entry.actionType == "llm_request" ? CyberColor.cyan : CyberColor.textPrimary)
                     Spacer()
                     Text(entry.timestamp, style: .time)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                 }
 
                 if !entry.reasoning.isEmpty {
                     Text(entry.reasoning)
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .lineLimit(3)
                 }
@@ -321,7 +321,7 @@ private struct TimelineStepRow: View {
                 if let output = entry.output, !output.isEmpty {
                     DisclosureGroup {
                         Text(output)
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(CyberFont.mono(size: 10))
                             .foregroundColor(CyberColor.textPrimary)
                             .padding(6)
                             .background(CyberColor.bg2)
@@ -329,7 +329,7 @@ private struct TimelineStepRow: View {
                             .overlay(RoundedRectangle(cornerRadius: 4).stroke(CyberColor.border, lineWidth: 1))
                     } label: {
                         Text("查看输出")
-                            .font(.system(size: 10))
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.cyan)
                     }
                 }
@@ -338,9 +338,9 @@ private struct TimelineStepRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(CyberColor.red)
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                         Text(error)
-                            .font(.system(size: 10))
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.red)
                             .lineLimit(2)
                     }
@@ -361,7 +361,7 @@ private struct SpinnerDot: View {
 
     var body: some View {
         Image(systemName: "arrow.triangle.2.circlepath")
-            .font(.system(size: 14))
+            .font(CyberFont.body(size: 14))
             .foregroundColor(CyberColor.orange)
             .rotationEffect(.degrees(rotating ? 360 : 0))
             .onAppear {
@@ -448,10 +448,10 @@ private struct TokenGaugeMeter: View {
 
                     VStack(spacing: 1) {
                         Text("\(formatK(usage.totalTokens))")
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .font(CyberFont.mono(size: 16, weight: .bold))
                             .foregroundColor(gaugeColor)
                         Text("tokens")
-                            .font(.system(size: 9))
+                            .font(CyberFont.mono(size: 9))
                             .foregroundColor(CyberColor.textSecond)
                     }
                 }
@@ -462,15 +462,15 @@ private struct TokenGaugeMeter: View {
                 HStack(spacing: 12) {
                     VStack(spacing: 1) {
                         Text("\(formatK(usage.promptTokens))")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(CyberFont.mono(size: 10))
                             .foregroundColor(CyberColor.cyanDim)
-                        Text("输入").font(.system(size: 8)).foregroundColor(CyberColor.textSecond)
+                        Text("输入").font(CyberFont.mono(size: 8)).foregroundColor(CyberColor.textSecond)
                     }
                     VStack(spacing: 1) {
                         Text("\(formatK(usage.completionTokens))")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(CyberFont.mono(size: 10))
                             .foregroundColor(CyberColor.greenDim)
-                        Text("输出").font(.system(size: 8)).foregroundColor(CyberColor.textSecond)
+                        Text("输出").font(CyberFont.mono(size: 8)).foregroundColor(CyberColor.textSecond)
                     }
                 }
             }
@@ -507,7 +507,7 @@ private struct ModelSelectionCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: isLocal ? "house.fill" : "cloud.fill")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(isLocal ? CyberColor.green : CyberColor.cyan)
                     CyberLabel(text: isLocal ? "本地模型" : "云端模型",
                                color: isLocal ? CyberColor.green : CyberColor.cyan, size: 9)
@@ -517,13 +517,13 @@ private struct ModelSelectionCard: View {
                     CyberLabel(text: "复杂度", color: CyberColor.textSecond, size: 9)
                     CyberBar(ratio: Double(complexity) / 10, color: complexityColor, height: 5)
                     Text("\(complexity)/10")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond)
                 }
 
                 if let r = reason, !r.isEmpty {
                     Text(r)
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .lineLimit(4)
                 }

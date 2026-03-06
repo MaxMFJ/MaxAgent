@@ -25,7 +25,7 @@ struct FileDownloadView: View {
             // 文件信息
             VStack(alignment: .leading, spacing: 2) {
                 Text(fileInfo?.name ?? fileName)
-                    .font(.system(.callout, design: .monospaced))
+                    .font(CyberFont.mono(size: 14))
                     .fontWeight(.medium)
                     .foregroundColor(CyberColor.textPrimary)
                     .lineLimit(1)
@@ -33,24 +33,24 @@ struct FileDownloadView: View {
                 HStack(spacing: 8) {
                     if let info = fileInfo {
                         Text(info.sizeFormatted)
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                         
                         Text("·")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                         
                         Text(info.extension.isEmpty ? "文件" : info.extension.uppercased())
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.cyan.opacity(0.8))
                     } else if isLoading {
                         Text("加载中...")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                     }
                     
                     Text(filePath)
-                        .font(.caption2)
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond.opacity(0.6))
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -116,7 +116,7 @@ struct FileDownloadView: View {
                 .frame(width: 40, height: 40)
             
             Image(systemName: iconName)
-                .font(.system(size: 18))
+                .font(CyberFont.display(size: 18))
                 .foregroundColor(iconColor)
         }
     }
@@ -126,19 +126,19 @@ struct FileDownloadView: View {
         if let error = downloadError {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(CyberColor.red)
                 Text(error)
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.red)
             }
         } else if downloadSuccess {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(CyberColor.green)
                 Text("已保存")
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.green)
             }
         } else {
@@ -146,7 +146,7 @@ struct FileDownloadView: View {
                 // 在 Finder 中打开
                 Button(action: openInFinder) {
                     Image(systemName: "folder")
-                        .font(.system(size: 14))
+                        .font(CyberFont.body(size: 14))
                         .foregroundColor(CyberColor.textSecond)
                         .frame(width: 28, height: 28)
                         .background(CyberColor.bg2)
@@ -163,7 +163,7 @@ struct FileDownloadView: View {
                             .frame(width: 28, height: 28)
                     } else {
                         Image(systemName: "square.and.arrow.down")
-                            .font(.system(size: 14))
+                            .font(CyberFont.body(size: 14))
                             .foregroundColor(CyberColor.cyan)
                             .frame(width: 28, height: 28)
                             .background(CyberColor.cyan.opacity(0.15))

@@ -64,15 +64,15 @@ private struct ActivitySparklineCard: View {
                                 .frame(width: 24, height: 24)
                         } else {
                             Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.system(size: 20))
+                                .font(CyberFont.display(size: 20))
                                 .foregroundColor(CyberColor.cyan)
                         }
                         Text(vm.isStreamingLLM ? "AI 正在思考" : "活动趋势")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(CyberFont.body(size: 12, weight: .semibold))
                             .foregroundColor(CyberColor.textPrimary)
                     }
                     Text(vm.isStreamingLLM ? "神经网络活跃中..." : "Token 消耗随时间变化")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                 }
 
@@ -83,72 +83,141 @@ private struct ActivitySparklineCard: View {
     }
 }
 
-// MARK: - 服务健康总览
+// MARK: - 深度健康检查总览 (/health/deep — 8 子系统)
 
 private struct ServiceHealthCard: View {
     @EnvironmentObject var vm: MonitoringViewModel
 
+    private static let subsystemMeta: [String: (icon: String, label: String)] = [
+        "llm":          ("brain.head.profile", "LLM"),
+        "disk":         ("internaldrive",      "磁盘"),
+        "memory":       ("memorychip",         "内存"),
+        "vector_db":    ("cylinder.split.1x2", "向量库"),
+        "tools":        ("wrench.and.screwdriver", "工具"),
+        "task_tracker": ("list.bullet.clipboard", "任务"),
+        "traces":       ("waveform.path.ecg",  "Traces"),
+        "evomap":       ("arrow.triangle.2.circlepath", "EvoMap"),
+    ]
+
+    // 排序键：保证显示顺序一致
+    private static let subsystemOrder = ["llm", "disk", "memory", "vector_db", "tools", "task_tracker", "traces", "evomap"]
+
     var body: some View {
-        CyberCard(glowColor: CyberColor.cyan, padding: 14) {
-            HStack(spacing: 0) {
-                ServiceDotItem(
-                    label: "后端服务",
-                    icon: "server.rack",
-                    ok: vm.healthInfo.backendHealthy
-                )
-                cyberDivider()
-                ServiceDotItem(
-                    label: "WebSocket",
-                    icon: "wifi",
-                    ok: vm.healthInfo.wsConnectionCount > 0
-                )
-                cyberDivider()
-                ServiceDotItem(
-                    label: "向量库",
-                    icon: "cylinder.split.1x2",
-                    ok: vm.memoryStatus.embeddingModelLoaded
-                )
-                cyberDivider()
-                ServiceDotItem(
-                    label: "本地LLM",
-                    icon: "house.fill",
-                    ok: vm.localLLMInfo.available || vm.localLLMInfo.ollamaServerRunning || vm.localLLMInfo.lmStudioServerRunning
-                )
-                cyberDivider()
-                ServiceDotItem(
-                    label: "EvoMap",
-                    icon: "arrow.triangle.2.circlepath",
-                    ok: vm.healthInfo.evomapStatus == "connected"
-                )
+        CyberCard(glowColor: overallGlow, padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                // 顶部状态行
+                HStack(spacing: 8) {
+                    NeonDot(color: vm.deepHealth.healthy ? CyberColor.green : CyberColor.red, size: 6)
+                    Text(vm.deepHealth.healthy ? "系统健康" : "检测到异常")
+                        .font(CyberFont.body(size: 12, weight: .bold))
+                        .foregroundColor(vm.deepHealth.healthy ? CyberColor.green : CyberColor.red)
+                    Spacer()
+                    if vm.deepHealth.checkDurationMs > 0 {
+                        Text(String(format: "%.0fms", vm.deepHealth.checkDurationMs))
+                            .font(CyberFont.mono(size: 9))
+                            .foregroundColor(CyberColor.textSecond)
+                    }
+                    Text(vm.deepHealth.serverStatus.uppercased())
+                        .font(CyberFont.mono(size: 9, weight: .semibold))
+                        .foregroundColor(CyberColor.cyanDim)
+                        .tracking(1)
+                }
+
+                // 8 子系统网格
+                let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(Self.subsystemOrder, id: \.self) { key in
+                        if let check = vm.deepHealth.checks.first(where: { $0.id == key }) {
+                            let meta = Self.subsystemMeta[key] ?? ("questionmark.circle", key)
+                            SubsystemCell(check: check, icon: meta.icon, label: meta.label)
+                        }
+                    }
+                }
+
+                // 失败的 required 子系统警告
+                if !vm.deepHealth.requiredFailed.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(CyberFont.body(size: 11))
+                            .foregroundColor(CyberColor.red)
+                        Text("关键失败: \(vm.deepHealth.requiredFailed.joined(separator: ", "))")
+                            .font(CyberFont.body(size: 10))
+                            .foregroundColor(CyberColor.red)
+                    }
+                    .padding(.top, 2)
+                }
             }
-            .frame(maxWidth: .infinity)
         }
     }
 
-    private func cyberDivider() -> some View {
-        Rectangle()
-            .fill(CyberColor.border)
-            .frame(width: 1, height: 44)
-            .padding(.horizontal, 12)
+    private var overallGlow: Color {
+        vm.deepHealth.healthy ? CyberColor.green : CyberColor.red
     }
 }
 
-private struct ServiceDotItem: View {
-    let label: String
+private struct SubsystemCell: View {
+    let check: DeepHealthCheck
     let icon: String
-    let ok: Bool
+    let label: String
+
+    @State private var showDetail = false
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 5) {
             ZStack(alignment: .bottomTrailing) {
                 Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(ok ? CyberColor.cyan : CyberColor.textSecond.opacity(0.4))
-                NeonDot(color: ok ? CyberColor.green : CyberColor.red, size: 5)
+                    .font(CyberFont.display(size: 20))
+                    .foregroundColor(check.ok ? CyberColor.cyan : CyberColor.red.opacity(0.8))
+                NeonDot(color: check.ok ? CyberColor.green : CyberColor.red, size: 4)
             }
-            CyberLabel(text: label, color: CyberColor.textSecond, size: 9)
+            Text(label)
+                .font(CyberFont.mono(size: 9, weight: .semibold))
+                .foregroundColor(CyberColor.textSecond)
+                .tracking(0.5)
+            if check.required {
+                Text("必需")
+                    .font(CyberFont.body(size: 7, weight: .bold))
+                    .foregroundColor(CyberColor.orange)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(CyberColor.orange.opacity(0.15))
+                    .cornerRadius(3)
+            }
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(check.ok ? CyberColor.bg2.opacity(0.5) : CyberColor.red.opacity(0.08))
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(check.ok ? CyberColor.border : CyberColor.red.opacity(0.3), lineWidth: 0.5)
+        )
+        .onTapGesture { showDetail.toggle() }
+        .popover(isPresented: $showDetail) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    NeonDot(color: check.ok ? CyberColor.green : CyberColor.red, size: 5)
+                    Text(check.id.uppercased())
+                        .font(CyberFont.mono(size: 11, weight: .bold))
+                        .foregroundColor(CyberColor.textPrimary)
+                }
+                Text(check.detail)
+                    .font(CyberFont.body(size: 10))
+                    .foregroundColor(CyberColor.textSecond)
+                    .lineLimit(5)
+                if let lat = check.latencyMs, lat > 0 {
+                    Text("延迟: \(String(format: "%.1f", lat))ms")
+                        .font(CyberFont.mono(size: 10))
+                        .foregroundColor(CyberColor.cyanDim)
+                }
+                Text(check.required ? "必需子系统" : "可选子系统")
+                    .font(CyberFont.mono(size: 9))
+                    .foregroundColor(check.required ? CyberColor.orange : CyberColor.textSecond)
+            }
+            .padding(12)
+            .frame(minWidth: 200)
+            .background(CyberColor.bg1)
+        }
     }
 }
 
@@ -172,21 +241,21 @@ private struct LLMInfoCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: providerIcon)
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(CyberColor.purple)
                     CyberLabel(text: vm.healthInfo.llmProvider.uppercased(),
                                color: CyberColor.purple, size: 9)
                 }
 
                 Text(vm.healthInfo.llmModel)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 13, weight: .semibold))
                     .foregroundColor(CyberColor.textPrimary)
                     .lineLimit(2)
 
                 HStack(spacing: 4) {
                     NeonDot(color: vm.healthInfo.backendHealthy ? CyberColor.green : CyberColor.red, size: 4)
                     Text(vm.healthInfo.backendHealthy ? "已连接" : "未连接")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                 }
             }
@@ -205,23 +274,23 @@ private struct ConnectionStatsCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(vm.healthInfo.wsConnectionCount)")
-                        .font(.system(size: 34, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 34, weight: .bold))
                         .foregroundColor(CyberColor.cyan)
                         .contentTransition(.numericText())
                         .animation(.spring(), value: vm.healthInfo.wsConnectionCount)
                     Text("个连接")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(CyberColor.textSecond)
                 }
 
                 ForEach(vm.healthInfo.wsConnectionsByType.sorted(by: { $0.key < $1.key }), id: \.key) { key, val in
                     HStack {
                         Text(key == "mac" ? "Mac" : key == "ios" ? "iOS" : key)
-                            .font(.system(size: 10))
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                         Spacer()
                         Text("\(val)")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(CyberFont.mono(size: 10))
                             .foregroundColor(CyberColor.cyanDim)
                     }
                 }
@@ -280,11 +349,11 @@ private struct LocalLLMRow: View {
         HStack(spacing: 6) {
             NeonDot(color: dotColor, size: 4)
             Text(name)
-                .font(.system(size: 10, weight: .semibold))
+                .font(CyberFont.body(size: 10, weight: .semibold))
                 .foregroundColor(CyberColor.textPrimary)
             Spacer()
             Text(statusText)
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(serverRunning ? CyberColor.textPrimary : CyberColor.textSecond)
                 .lineLimit(1)
         }
@@ -305,16 +374,16 @@ private struct ModelSelectorCard: View {
                     CyberLabel(text: "总决策次数", color: CyberColor.textSecond, size: 9)
                     Spacer()
                     Text("\(info.totalSelections)")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 12, weight: .bold))
                         .foregroundColor(CyberColor.orange)
                 }
 
                 if info.totalSelections > 0 {
                     VStack(alignment: .leading, spacing: 3) {
                         HStack {
-                            Text("本地").font(.system(size: 9)).foregroundColor(CyberColor.green)
+                            Text("本地").font(CyberFont.mono(size: 9)).foregroundColor(CyberColor.green)
                             Spacer()
-                            Text("远程").font(.system(size: 9)).foregroundColor(CyberColor.cyan)
+                            Text("远程").font(CyberFont.mono(size: 9)).foregroundColor(CyberColor.cyan)
                         }
                         GeometryReader { geo in
                             HStack(spacing: 0) {
@@ -332,10 +401,10 @@ private struct ModelSelectorCard: View {
 
                         HStack {
                             Text("\(Int(info.localRatio * 100))%")
-                                .font(.system(size: 9)).foregroundColor(CyberColor.green)
+                                .font(CyberFont.mono(size: 9)).foregroundColor(CyberColor.green)
                             Spacer()
                             Text("\(100 - Int(info.localRatio * 100))%")
-                                .font(.system(size: 9)).foregroundColor(CyberColor.cyan)
+                                .font(CyberFont.mono(size: 9)).foregroundColor(CyberColor.cyan)
                         }
                     }
                 }
@@ -358,8 +427,8 @@ private struct StatMiniItem: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.system(size: 9)).foregroundColor(CyberColor.textSecond)
-            Text(value).font(.system(size: 11, weight: .semibold)).foregroundColor(color)
+            Text(label).font(CyberFont.mono(size: 9)).foregroundColor(CyberColor.textSecond)
+            Text(value).font(CyberFont.body(size: 11, weight: .semibold)).foregroundColor(color)
         }
     }
 }
@@ -376,16 +445,16 @@ private struct MemoryStatusCard: View {
                     HStack(spacing: 6) {
                         NeonDot(color: vm.memoryStatus.embeddingModelLoaded ? CyberColor.green : CyberColor.orange, size: 5)
                         Text(vm.memoryStatus.embeddingModelLoaded ? "BGE 模型已加载" : "BGE 模型加载中")
-                            .font(.system(size: 10))
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                     }
 
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(vm.memoryStatus.totalMemories)")
-                            .font(.system(size: 28, weight: .bold, design: .monospaced))
+                            .font(CyberFont.mono(size: 28, weight: .bold))
                             .foregroundColor(CyberColor.purple)
                         Text("条记忆")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(CyberColor.textSecond)
                     }
                 }
@@ -398,11 +467,11 @@ private struct MemoryStatusCard: View {
                         ForEach(vm.memoryStatus.sessionSummary.sorted(by: { $0.key < $1.key }).prefix(4), id: \.key) { key, count in
                             HStack {
                                 Text(key.count > 12 ? String(key.prefix(12)) + "…" : key)
-                                    .font(.system(size: 9, design: .monospaced))
+                                    .font(CyberFont.mono(size: 9))
                                     .foregroundColor(CyberColor.textSecond)
                                 Spacer()
                                 Text("\(count)")
-                                    .font(.system(size: 9, design: .monospaced))
+                                    .font(CyberFont.mono(size: 9))
                                     .foregroundColor(CyberColor.purpleDim)
                             }
                         }

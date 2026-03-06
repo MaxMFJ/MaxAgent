@@ -17,7 +17,7 @@ struct AsyncImageView: View {
                     ProgressView()
                         .scaleEffect(0.8)
                     Text("加载图片...")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 .padding()
@@ -28,7 +28,7 @@ struct AsyncImageView: View {
                     Image(systemName: "photo")
                         .foregroundColor(.secondary)
                     Text(altText.isEmpty ? "图片加载失败" : altText)
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 .padding()

@@ -261,7 +261,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.85];
         appearance.titleTextAttributes = @{
             NSForegroundColorAttributeName: TechTheme.neonCyan,
-            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+            NSFontAttributeName: [TechTheme fontDisplaySize:16 weight:UIFontWeightSemibold]
         };
         self.navigationController.navigationBar.standardAppearance = appearance;
         self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
@@ -305,7 +305,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
     _statusLabel = [[UILabel alloc] init];
     _statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _statusLabel.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightMedium];
+    _statusLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightMedium];
     _statusLabel.textColor = TechTheme.textSecondary;
     _statusLabel.text = NSLocalizedString(@"status_disconnected", nil);
     [_statusBar addSubview:_statusLabel];

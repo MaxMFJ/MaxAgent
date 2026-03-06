@@ -1,6 +1,6 @@
 # Chow Duck - macOS AI 智能助手
 
-基于 SwiftUI + Python 后端的 macOS 本地 AI Agent。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。内置**监控仪表板**、**语音输入**、**TTS 朗读**、**权限管理**、**Cloudflare Tunnel** 等完整能力。
+基于 SwiftUI + Python 后端的 macOS 本地 AI Agent。支持**流式对话（ReAct）**与**自主长任务（Autonomous）**两种模式，具备多模型选择、上下文向量检索、技能 Capsule、工具自我升级与自愈能力，Mac/iOS 多端会话同步。内置**监控仪表板**、**语音输入**、**TTS 朗读**、**权限管理**、**Cloudflare Tunnel**、**MCP 生态集成**等完整能力。
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 对话与执行模式
 - **流式对话（Chat）**：ReAct 循环，按需调用工具（文件、终端、应用、截图、邮件等），支持断线重连与输出恢复
-- **自主任务（Autonomous）**：长 horizon 多步执行，可选反思、模型选择（本地/云端）、自适应停止（任务完成/无进展/循环检测等）
+- **自主任务（Autonomous）**：长 horizon 多步执行，三阶段主循环（Gather → Act → Verify），可选反思、模型选择（本地/云端）、自适应停止
 - **Prompt 与 Token 优化**：简单查询用 LITE system prompt，复杂任务用 FULL；上下文 token 上限 2000，工具 schema 按查询语义裁剪（最多 8 个），减少无效 token
 - **LangChain 兼容**：可选启用 LangChain 进行对话（需安装 `requirements-langchain.txt`），与原生引擎并存、可随时切换
 
@@ -16,15 +16,42 @@
 - **基础**：文件操作、终端命令、应用控制、系统信息、剪贴板、脚本执行、截图、浏览器、邮件、日历、通知
 - **扩展**：Docker、网络诊断、数据库查询、开发工具、联网搜索（DuckDuckGo/维基）、动态工具生成、视觉、鼠标键盘模拟
 - **Generated 工具**：隧道监控、隧道管理、交互式邮件等（Self-Upgrade 产出 + 手写，动态加载）
+- **MCP 生态**：通过 Model Context Protocol 连接外部 MCP 服务器（GitHub、Brave Search、Filesystem 等），即插即用
+- **统一工具路由**：内置工具优先，MCP 作为 fallback；同名工具自动遮蔽，LLM 无感知切换
 - **Agent 能力**：请求工具升级（Self-Upgrade）、EvoMap 技能（可选）、技能 Capsule（本地 + 开放技能源，v3.2 支持按需拉取）
 
 ### Mac 客户端能力
 - **监控仪表板**：执行时间线、系统状态、历史分析、实时日志流、用户平台统计（Token/RPM/TPM、模型分布）
+- **MCP 管理**：内置 6 个 MCP 服务一键连接（GitHub / Brave Search / Sequential Thinking / Puppeteer / Filesystem / Memory），支持自定义添加
+- **上下文可视化**：Token 用量、文件清单、模型路由统计、Phase 阶段统计
+- **功能开关**：FeatureFlag 热切换，支持运行时调整无需重启
+- **审计日志**：全量操作审计查看器，支持类型 / 日期过滤
+- **快照回滚**：文件操作快照列表、一键回滚
+- **HITL 人工审批**：危险操作弹窗确认（如删除文件、执行高风险命令），可拒绝
 - **语音输入**：实时语音识别（中/英）、静音自动提交、无说话超时提交
 - **TTS 朗读**：流式按句朗读、支持中英文，可随时停止
-- **权限管理**：辅助功能、屏幕录制、自动化、cliclick、Quartz、osascript 状态检测与引导；**快捷入口**：工具栏齿轮 → 设置 → 权限
+- **权限管理**：辅助功能、屏幕录制、自动化、cliclick、Quartz、osascript 状态检测与引导
 - **Workspace 上下文**：上报当前工作目录、打开文件，供 prompt 注入
 - **终端会话增强**：记录 cwd/输出，供后续命令和 prompt 复用
+
+### v3.3 人机协同与安全
+- **FeatureFlag 体系化**：REST API + 热更新 + 持久化（运行时 > JSON > 环境变量 > 默认值）
+- **HITL 人工审批**：关键动作需用户确认，可配超时（默认 120s）
+- **统一审计日志**：全量操作记录（`data/audit/`），磁盘自动轮转（默认上限 100MB）
+- **会话恢复/分支**：Session Resume / Fork，从检查点恢复或分支新会话
+- **SubAgent 并行**：任务拆分给子 Agent 并行执行（最多 3 个，可配）
+- **幂等任务**：同一 task hash 不重复执行（24h TTL）
+
+### v3.4 MCP 生态与可回滚
+- **MCP 生态集成**：支持 stdio（npx 子进程）和 HTTP 两种传输；配置持久化，启动自动重连
+- **统一工具路由器**（Unified Tool Router）：`Agent → ToolRouter → Builtin Tools → MCP Fallback`
+  - 内置工具优先级最高，LLM 直接使用
+  - MCP 工具：与内置重名的注册为 `mcp/` 前缀（隐藏），仅在内置失败时自动 fallback
+  - MCP 独有工具：以 `{server}_{tool}` 格式暴露给 LLM
+- **三级模型路由**：Fast（本地/低延迟）/ Strong（旗舰远程）/ Cheap（性价比），按任务复杂度自动选择
+- **可回滚操作**：文件操作前自动快照（最多 500 条），支持 write/delete/move/copy 一键 undo
+- **三阶段执行**：Gather → Act → Verify，自动验证执行结果并注入 LLM 上下文
+- **上下文查询**：`/context` API 提供完整运行时状态快照（Token / 文件 / 路由 / MCP / 快照）
 
 ### 架构与运维
 - **上下文与记忆**：BGE 向量检索（可关）、会话持久化、情景记忆与策略 DB、任务上下文（目标应用绑定）；v3.2 支持重要性加权 memory
@@ -47,6 +74,7 @@
 
 - **macOS 14.0+**
 - **Python 3.10+**
+- **Node.js 18+**（MCP 服务器需要，自动发现 Homebrew keg-only 安装如 `node@22`）
 - **Xcode 15.0+**（编译 SwiftUI 应用）
 
 ---
@@ -105,6 +133,52 @@ xcodebuild -project MacAgentApp.xcodeproj -scheme MacAgentApp -configuration Deb
 1. 安装 [Ollama](https://ollama.ai/) 或 LM Studio，并拉取模型（如 `ollama pull qwen2.5-coder:7b`）
 2. 在应用设置中选择「Ollama」或「LM Studio」，配置对应地址与模型名
 3. 自主任务可勾选「自动选模型」，由后端按任务复杂度选择本地/云端
+
+---
+
+## MCP 服务器管理
+
+通过 MCP（Model Context Protocol）连接外部工具服务器，扩展 Agent 能力。
+
+### Mac App 内置目录（一键连接）
+
+| MCP 服务 | 包名 | 说明 | 前置条件 |
+|----------|------|------|---------|
+| GitHub | `@modelcontextprotocol/server-github` | 仓库/PR/Issues/代码搜索 | `GITHUB_TOKEN` 环境变量 |
+| Brave Search | `@modelcontextprotocol/server-brave-search` | 隐私优先网页搜索 | `BRAVE_API_KEY` 环境变量 |
+| Sequential Thinking | `@modelcontextprotocol/server-sequential-thinking` | 增强推理与问题分解 | Node.js 18+ |
+| Puppeteer | `@modelcontextprotocol/server-puppeteer` | 浏览器自动化 | Node.js 18+ |
+| Filesystem | `@modelcontextprotocol/server-filesystem` | 沙箱文件操作 | Node.js 18+ |
+| Memory | `@modelcontextprotocol/server-memory` | 知识图谱/跨会话记忆 | Node.js 18+ |
+
+### 命令行手动添加
+
+```bash
+# 添加 MCP 服务器
+curl -X POST http://127.0.0.1:8765/mcp/servers \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "memory", "transport": "stdio", "command": ["npx", "-y", "@modelcontextprotocol/server-memory"]}'
+
+# 查看已连接的服务器
+curl http://127.0.0.1:8765/mcp/servers
+
+# 查看所有 MCP 工具
+curl http://127.0.0.1:8765/mcp/tools
+
+# 调用 MCP 工具
+curl -X POST http://127.0.0.1:8765/mcp/tools/call \
+  -H 'Content-Type: application/json' \
+  -d '{"server": "memory", "tool": "search_nodes", "arguments": {"query": "test"}}'
+```
+
+### 统一工具路由策略
+
+MCP 工具通过 **Unified Tool Router** 与内置工具无缝协作：
+
+1. **内置工具优先**：Agent 执行时始终优先使用 20+ 内置工具（file_tool、terminal_tool 等）
+2. **MCP 自动 Fallback**：当内置工具执行失败时，自动尝试同名 MCP 替代
+3. **MCP 独有工具直接暴露**：内置没有的 MCP 工具（如 `search_nodes`）直接以 `{server}_{tool}` 格式对 LLM 可见
+4. **LLM 无感知**：重名的 MCP 工具注册为 `mcp/` 前缀（隐藏），LLM 不会看到重复工具
 
 ---
 
@@ -174,6 +248,12 @@ MacAgent/
 │           ├── 聊天/              # ChatView, InputBar, MessageBubble, RichMarkdownView, ImageDisplayView...
 │           ├── Monitoring/        # MonitoringWindowView, ExecutionTimelineView, UsageStatisticsView...
 │           ├── SettingsView, ToolPanelView, SystemMessageView, TunnelView
+│           ├── MCPSettingsView    # MCP 服务管理（6 个内置 + 自定义添加）（v3.4）
+│           ├── FeatureFlagsSettingsView  # 功能开关热切换（v3.3）
+│           ├── AuditLogView       # 审计日志查看器（v3.3）
+│           ├── ContextVisualizationView  # 上下文可视化（v3.4）
+│           ├── RollbackPanelView  # 快照回滚面板（v3.4）
+│           ├── HITLOverlayView    # 人工审批弹窗（v3.3）
 │           └── ServiceManagerView, PermissionSettingsView
 │
 ├── iOSAgentApp/                   # iOS 客户端（可选）
@@ -206,11 +286,23 @@ MacAgent/
 │   │   ├── workspace.py          # POST /workspace（上报 cwd、open_files）
 │   │   ├── permissions.py        # /permissions/status
 │   │   ├── traces.py             # /traces（v3.2 新增）
-│   │   └── files.py              # /files/* 文件读写
+│   │   ├── files.py              # /files/* 文件读写
+│   │   ├── mcp.py                # /mcp/servers, /mcp/tools, /mcp/tools/call（v3.4）
+│   │   ├── rollback.py           # /rollback/snapshots, /rollback（v3.4）
+│   │   ├── context.py            # /context, /context/tokens, /context/files（v3.4）
+│   │   ├── feature_flags.py      # /feature-flags CRUD + reset（v3.3）
+│   │   ├── audit.py              # /audit, /audit/stats（v3.3）
+│   │   ├── hitl.py               # /hitl/pending, confirm, reject（v3.3）
+│   │   ├── sessions.py           # /sessions, resume, fork（v3.3）
+│   │   └── subagents.py          # /subagents 状态查询（v3.3）
 │   │
 │   ├── agent/                     # Agent 核心与周边
 │   │   ├── core.py                # AgentCore ReAct 循环
 │   │   ├── autonomous_agent.py    # 自主任务、反思、模型选择
+│   │   ├── exec_phases.py        # Gather→Act→Verify 三阶段（v3.4）
+│   │   ├── snapshot_manager.py   # 文件快照与回滚管理（v3.4）
+│   │   ├── mcp_client.py         # MCP 连接器（stdio/http 双传输）（v3.4）
+│   │   ├── model_selector.py     # 三级路由 Fast/Strong/Cheap（v3.4）
 │   │   ├── llm_client.py         # 统一 LLM 客户端（v3.2：extra_body/Extended Thinking）
 │   │   ├── local_llm_manager.py   # 本地模型检测
 │   │   ├── model_selector.py     # 任务→模型选择
@@ -238,6 +330,7 @@ MacAgent/
 │   │
 │   ├── tools/                    # 工具实现
 │   │   ├── base.py, registry.py, router.py, schema_registry.py, validator.py, middleware.py
+│   │   ├── mcp_adapter.py        # MCP→BaseTool 适配器、统一工具路由 fallback（v3.4）
 │   │   ├── file_tool, terminal_tool, app_tool, system_tool, clipboard_tool
 │   │   ├── script_tool, screenshot_tool, browser_tool, mail_tool, calendar_tool
 │   │   ├── notification_tool, docker_tool, network_tool, database_tool
@@ -245,7 +338,14 @@ MacAgent/
 │   │   ├── input_control_tool, request_tool_upgrade_tool, evomap_tool, capsule_tool
 │   │   └── generated/             # 动态加载（tunnel_monitor, tunnel_manager, interactive_mail 等）
 │   │
-│   ├── services/                  # tunnel_lifecycle 等
+│   ├── services/                  # 业务服务层
+│   │   ├── tunnel_lifecycle.py    # Cloudflared 隧道生命周期
+│   │   ├── feature_flag_service.py # FeatureFlag 管理与持久化（v3.3）
+│   │   ├── audit_service.py      # 审计日志记录与查询（v3.3）
+│   │   ├── hitl_service.py       # HITL 确认管理与超时（v3.3）
+│   │   ├── session_service.py    # 会话恢复与 Fork（v3.3）
+│   │   ├── subagent_service.py   # SubAgent 调度（v3.3）
+│   │   └── idempotent_service.py # 幂等任务去重（v3.3）
 │   ├── llm/                       # tool_parser_v2, json_repair
 │   ├── runtime/                   # RuntimeAdapter, mac_adapter, permission_checker, cg_event
 │   └── scripts/                   # run_benchmark.py（v3.2）, check_ollama.py 等
@@ -255,7 +355,11 @@ MacAgent/
     ├── backend-structure.md       # 后端目录与模块说明
     ├── 主线目标与路线图.md
     ├── 痛点分析与解决方案.md
-    ├── v3.2_PLAN.md               # v3.2 功能清单
+    ├── v3.2_PLAN.md               # v3.2 功能清单（可观测、Benchmark）
+    ├── v3.3_PLAN.md               # v3.3 功能清单（人机协同、安全增强）
+    ├── v3.4_PLAN.md               # v3.4 功能清单（MCP、回滚、模型路由）
+    ├── Mac-App-UI-Guide.md        # Mac App 全部设置页说明
+    ├── API-Endpoints.md           # REST API 完整端点参考
     ├── V3.1_PLAN.md
     ├── 测试与验收.md
     └── archive/                   # 历史与专项文档

@@ -7,20 +7,28 @@ struct WelcomeView: View {
             Spacer()
             
             Image(systemName: "sparkles")
-                .font(.system(size: 60))
+                .font(CyberFont.display(size: 60))
                 .foregroundStyle(.linearGradient(
-                    colors: [CyberColor.cyan, CyberColor.green],
+                    colors: [CyberColor.cyan, CyberColor.purple],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
-                .shadow(color: CyberColor.cyan.opacity(0.4), radius: 12)
+                .shadow(color: CyberColor.accentGlow, radius: 12)
+                .shadow(color: CyberColor.accentGlow, radius: 24)
+
+            Text("MACOS NATIVE AI AGENT")
+                .font(CyberFont.display(size: 12, weight: .medium))
+                .tracking(3)
+                .foregroundColor(CyberColor.cyan)
+                .neonGlow(color: CyberColor.accentGlow.opacity(0.6))
             
-            Text("MacAgent")
-                .font(.system(size: 34, weight: .bold, design: .monospaced))
-                .foregroundColor(CyberColor.textPrimary)
+            Text("Chow Duck")
+                .font(CyberFont.display(size: 34, weight: .bold))
+                .foregroundColor(.white)
+                .neonGlow(color: CyberColor.accentGlow, breathe: true)
             
             Text("你的 macOS 智能助手")
-                .font(.title3)
+                .font(CyberFont.body(size: 16))
                 .foregroundColor(CyberColor.textSecond)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -34,9 +42,10 @@ struct WelcomeView: View {
             .background(CyberColor.bg2)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(CyberColor.cyan.opacity(0.15), lineWidth: 0.5)
+                    .stroke(CyberColor.cyan.opacity(0.25), lineWidth: 0.5)
             )
             .cornerRadius(12)
+            .shadow(color: CyberColor.accentGlow.opacity(0.08), radius: 16)
             
             Spacer()
         }
@@ -52,16 +61,17 @@ struct FeatureRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(CyberFont.body(size: 15, weight: .semibold))
                 .foregroundColor(CyberColor.cyan)
+                .shadow(color: CyberColor.accentGlow.opacity(0.3), radius: 4)
                 .frame(width: 32)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .fontWeight(.medium)
+                    .font(CyberFont.body(size: 13, weight: .medium))
                     .foregroundColor(CyberColor.textPrimary)
                 Text(description)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(CyberColor.textSecond)
             }
         }

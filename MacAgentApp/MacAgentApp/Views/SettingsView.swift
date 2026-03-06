@@ -4,88 +4,133 @@ struct SettingsView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedTab = 0
-    
+
+    private struct NavItem {
+        let title: String
+        let icon: String
+        let index: Int
+    }
+
+    private let navItems: [NavItem] = [
+        NavItem(title: "服务",   icon: "server.rack",                        index: 0),
+        NavItem(title: "远程",   icon: "antenna.radiowaves.left.and.right",  index: 1),
+        NavItem(title: "模型",   icon: "cpu",                                index: 2),
+        NavItem(title: "通用",   icon: "gear",                               index: 3),
+        NavItem(title: "邮件",   icon: "envelope",                           index: 4),
+        NavItem(title: "工具",   icon: "wrench.and.screwdriver",             index: 5),
+        NavItem(title: "权限",   icon: "lock.shield",                        index: 6),
+        NavItem(title: "关于",   icon: "info.circle",                        index: 7),
+        NavItem(title: "MCP",    icon: "network",                            index: 8),
+        NavItem(title: "功能开关", icon: "slider.horizontal.3",              index: 9),
+        NavItem(title: "审计",   icon: "doc.text.magnifyingglass",           index: 10),
+        NavItem(title: "Context", icon: "chart.bar.xaxis",                  index: 11),
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
-            // 固定顶部 Tab 栏
-            HStack(spacing: 16) {
-                SettingsTabButton(title: "服务", icon: "server.rack", isSelected: selectedTab == 0) {
-                    selectedTab = 0
-                }
-                SettingsTabButton(title: "远程", icon: "antenna.radiowaves.left.and.right", isSelected: selectedTab == 1) {
-                    selectedTab = 1
-                }
-                SettingsTabButton(title: "模型", icon: "cpu", isSelected: selectedTab == 2) {
-                    selectedTab = 2
-                }
-                SettingsTabButton(title: "通用", icon: "gear", isSelected: selectedTab == 3) {
-                    selectedTab = 3
-                }
-                SettingsTabButton(title: "邮件", icon: "envelope", isSelected: selectedTab == 4) {
-                    selectedTab = 4
-                }
-                SettingsTabButton(title: "工具", icon: "wrench.and.screwdriver", isSelected: selectedTab == 5) {
-                    selectedTab = 5
-                }
-                SettingsTabButton(title: "权限", icon: "lock.shield", isSelected: selectedTab == 6) {
-                    selectedTab = 6
-                }
-                SettingsTabButton(title: "关于", icon: "info.circle", isSelected: selectedTab == 7) {
-                    selectedTab = 7
-                }
+            // 顶部标题栏
+            HStack {
+                Image(systemName: "gearshape.2.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(CyberColor.cyan)
+                Text("设置")
+                    .font(CyberFont.body(size: 15, weight: .semibold))
+                    .foregroundColor(CyberColor.cyan)
+                Spacer()
             }
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
             .background(CyberColor.bg1)
-            
+
             Rectangle().fill(CyberColor.cyan.opacity(0.2)).frame(height: 1)
-            
-            // 内容区域
-            Group {
-                switch selectedTab {
-                case 0:
-                    ServiceManagerView()
-                case 1:
-                    TunnelView()
-                case 2:
+
+            HStack(spacing: 0) {
+                // 左侧垂直导航栏
+                VStack(spacing: 0) {
                     ScrollView {
-                        ModelSettingsContent(onSave: closeSettings)
-                            .padding(20)
-                            .frame(minWidth: 580)
+                        VStack(spacing: 2) {
+                            ForEach(navItems, id: \.index) { item in
+                                SettingsSidebarRow(
+                                    title: item.title,
+                                    icon: item.icon,
+                                    isSelected: selectedTab == item.index
+                                ) {
+                                    selectedTab = item.index
+                                }
+                            }
+                        }
+                        .padding(.vertical, 8)
                     }
-                case 3:
-                    ScrollView {
-                        GeneralSettingsContent()
-                            .padding(20)
-                    }
-                case 4:
-                    ScrollView {
-                        MailSettingsContent()
-                            .padding(20)
-                            .frame(minWidth: 580)
-                    }
-                case 5:
-                    ScrollView {
-                        ToolSettingsContent()
-                            .padding(20)
-                    }
-                case 6:
-                    ScrollView {
-                        PermissionSettingsContent()
-                    }
-                case 7:
-                    ScrollView {
-                        AboutContent()
-                            .padding(20)
-                    }
-                default:
-                    ServiceManagerView()
+                    Spacer(minLength: 0)
                 }
+                .frame(width: 150)
+                .background(CyberColor.bg1)
+
+                Rectangle().fill(CyberColor.cyan.opacity(0.2)).frame(width: 1)
+
+                // 内容区域
+                Group {
+                    switch selectedTab {
+                    case 0:
+                        ServiceManagerView()
+                    case 1:
+                        TunnelView()
+                    case 2:
+                        ScrollView {
+                            ModelSettingsContent(onSave: closeSettings)
+                                .padding(20)
+                                .frame(minWidth: 580)
+                        }
+                    case 3:
+                        ScrollView {
+                            GeneralSettingsContent()
+                                .padding(20)
+                        }
+                    case 4:
+                        ScrollView {
+                            MailSettingsContent()
+                                .padding(20)
+                                .frame(minWidth: 580)
+                        }
+                    case 5:
+                        ScrollView {
+                            ToolSettingsContent()
+                                .padding(20)
+                        }
+                    case 6:
+                        ScrollView {
+                            PermissionSettingsContent()
+                        }
+                    case 7:
+                        ScrollView {
+                            AboutContent()
+                                .padding(20)
+                        }
+                    case 8:
+                        ScrollView {
+                            MCPSettingsContent()
+                                .padding(20)
+                                .frame(minWidth: 580)
+                        }
+                    case 9:
+                        ScrollView {
+                            FeatureFlagsSettingsContent()
+                                .padding(20)
+                        }
+                    case 10:
+                        AuditLogView()
+                    case 11:
+                        ContextVisualizationView()
+                    default:
+                        ServiceManagerView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+
             Rectangle().fill(CyberColor.cyan.opacity(0.2)).frame(height: 1)
-            
+
             // 固定底部按钮栏
             HStack {
                 Spacer()
@@ -98,7 +143,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
             .background(CyberColor.bg1)
         }
-        .frame(width: 720, height: 650)
+        .frame(width: 820, height: 700)
         .background(CyberColor.bg0)
     }
     
@@ -108,19 +153,48 @@ struct SettingsView: View {
     }
 }
 
+struct SettingsSidebarRow: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 15))
+                    .frame(width: 20)
+                Text(title)
+                    .font(CyberFont.body(size: 13))
+                Spacer()
+            }
+            .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? CyberColor.cyan.opacity(0.15) : Color.clear)
+            )
+            .padding(.horizontal, 8)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct SettingsTabButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(CyberFont.display(size: 20))
                 Text(title)
-                    .font(.system(size: 12))
+                    .font(CyberFont.body(size: 12))
             }
             .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
             .frame(width: 70, height: 50)
@@ -141,22 +215,22 @@ struct GeneralSettingsContent: View {
             // 使用 LangChain 进行对话
             VStack(alignment: .leading, spacing: 8) {
                 Text("对话引擎")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 // LangChain 说明：是什么、能提升什么能力
                 VStack(alignment: .leading, spacing: 6) {
                     Text("LangChain 是什么？")
-                        .font(.subheadline)
+                        .font(CyberFont.body(size: 13))
                         .fontWeight(.medium)
                     Text("LangChain 是业界常用的 AI 应用编排框架，提供统一的 Runnable 接口、LCEL 链式组合和标准 Agent 循环。开启后，对话将使用 LangChain 的 Agent 执行，与 Chow Duck 原生引擎并存、可随时切换。")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("能提升什么能力？")
-                        .font(.subheadline)
+                        .font(CyberFont.body(size: 13))
                         .fontWeight(.medium)
                         .padding(.top, 4)
                     Text("• 可观测性：便于接入 LangSmith / OpenTelemetry 做端到端追踪与调试\n• 工具链：工具以 Runnable 形式参与链式调用，支持统一重试与中间件\n• 标准 Agent 循环：与社区生态一致，便于扩展人工审核、多步推理等节点\n• 与现有能力兼容：仍使用同一套 LLM、工具与上下文，仅执行路径不同")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -170,11 +244,11 @@ struct GeneralSettingsContent: View {
                         Text("使用 LangChain 进行对话")
                         if viewModel.langchainInstalled {
                             Text("已安装可选依赖，可开启或关闭。")
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         } else {
                             Text("未安装 LangChain，请先点击「安装」；安装成功后将默认勾选。")
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -224,18 +298,18 @@ struct GeneralSettingsContent: View {
             // 语音 TTS / STT
             VStack(alignment: .leading, spacing: 12) {
                 Text("语音")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Toggle(isOn: $viewModel.ttsEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("朗读助手回复 (TTS)")
                         Text("开启后，助手回复会流式朗读（按句播放）")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("语音输入 (STT)")
-                        .font(.subheadline)
+                        .font(CyberFont.body(size: 13))
                         .fontWeight(.medium)
                     HStack(alignment: .firstTextBaseline, spacing: 16) {
                         HStack(spacing: 4) {
@@ -244,7 +318,7 @@ struct GeneralSettingsContent: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 44)
                             Text("秒后自动发送")
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         }
                         HStack(spacing: 4) {
@@ -253,12 +327,12 @@ struct GeneralSettingsContent: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 44)
                             Text("秒未说话强制发送")
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         }
                     }
                     Text("点击输入框旁麦克风开始语音输入；静音达到设定秒数自动发送，或一直未说话则超时发送。空内容不会发送。")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 .padding(10)
@@ -275,7 +349,7 @@ struct GeneralSettingsContent: View {
             // GitHub Token（开放技能源）
             VStack(alignment: .leading, spacing: 8) {
                 Text("GitHub Token")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -283,12 +357,12 @@ struct GeneralSettingsContent: View {
                             .textFieldStyle(.roundedBorder)
                         if viewModel.githubConfigured {
                             Text("已配置")
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         }
                     }
                     Text("未配置时从 GitHub 拉取技能会受频率限制；设置后限额更高。")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                     Button("保存") {
                         Task { await viewModel.syncGitHubConfig() }
@@ -305,7 +379,7 @@ struct GeneralSettingsContent: View {
             // 连接状态
             VStack(alignment: .leading, spacing: 8) {
                 Text("连接状态")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 HStack {
                     Circle()
@@ -362,7 +436,7 @@ struct ModelSettingsContent: View {
             // AI 提供商（合并到模型页，选择即对应当前使用的模型配置）
             VStack(alignment: .leading, spacing: 8) {
                 Text("AI 提供商")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Picker("", selection: $viewModel.provider) {
                     Text("DeepSeek").tag("deepseek")
                     Text("New API").tag("newapi")
@@ -405,9 +479,9 @@ struct ModelSettingsContent: View {
             // 远程回退策略：固定列出所有远程 LLM，用户显式选择“当使用远程模型时”调用哪个
             VStack(alignment: .leading, spacing: 8) {
                 Text("远程回退策略")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Text("自主任务在本地不可用时将使用远程模型，此处选择使用哪个云端提供商。")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                 Picker("当使用远程模型时调用：", selection: $viewModel.remoteFallbackProvider) {
                     Text("默认 (DeepSeek)").tag("")
@@ -454,7 +528,7 @@ struct ModelSettingsContent: View {
     private var deepSeekConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("DeepSeek 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -493,7 +567,7 @@ struct ModelSettingsContent: View {
                 }
                 
                 Link("获取 API Key →", destination: URL(string: "https://platform.deepseek.com/")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -505,9 +579,9 @@ struct ModelSettingsContent: View {
     private var newApiConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("New API 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             Text("统一 AI 模型网关，支持 OpenAI / Claude / Gemini 等格式转发。默认使用 cc1 地址，请按文档配置 API Key 与模型。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -547,7 +621,7 @@ struct ModelSettingsContent: View {
                 }
                 
                 Link("New API 配置说明文档（转发站通用）示例 →", destination: URL(string: "https://www.yuque.com/nicaisadasd/fwextu/ekk2q8nrf3ow4k9q")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -559,9 +633,9 @@ struct ModelSettingsContent: View {
     private var chatGPTConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("ChatGPT (OpenAI) 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             Text("使用 OpenAI 官方 API，模型如 gpt-5.2、gpt-coder 等。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -597,7 +671,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 280)
                 }
                 Link("OpenAI API 文档 →", destination: URL(string: "https://platform.openai.com/docs")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -609,9 +683,9 @@ struct ModelSettingsContent: View {
     private var geminiConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Gemini 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             Text("Google Gemini API。若使用 OpenAI 兼容网关，请填写对应 base_url 与模型名。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -647,7 +721,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 280)
                 }
                 Link("Google AI Studio →", destination: URL(string: "https://aistudio.google.com/")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -659,9 +733,9 @@ struct ModelSettingsContent: View {
     private var claudeApiConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Claude API 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             Text("Anthropic Claude API。若使用 OpenAI 兼容网关，请填写对应 base_url 与模型名。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -697,7 +771,7 @@ struct ModelSettingsContent: View {
                         .frame(width: 280)
                 }
                 Link("Anthropic 文档 →", destination: URL(string: "https://docs.anthropic.com/")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -709,7 +783,7 @@ struct ModelSettingsContent: View {
     private var ollamaConfig: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Ollama 配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -754,12 +828,12 @@ struct ModelSettingsContent: View {
                 
                 if !viewModel.availableLocalModels.isEmpty {
                     Text("已发现 \(viewModel.availableLocalModels.count) 个模型")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 
                 Link("Ollama 官网 →", destination: URL(string: "https://ollama.ai/")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -772,10 +846,10 @@ struct ModelSettingsContent: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("LM Studio 配置")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Spacer()
                 Text("本地多模型管理")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
@@ -787,7 +861,7 @@ struct ModelSettingsContent: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                     Text("默认 1234，多实例时可填 1235、1236…")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 HStack {
@@ -833,7 +907,7 @@ struct ModelSettingsContent: View {
                 
                 if !viewModel.availableLocalModels.isEmpty {
                     Text("已发现 \(viewModel.availableLocalModels.count) 个模型")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 
@@ -841,18 +915,18 @@ struct ModelSettingsContent: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("使用说明:")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .fontWeight(.medium)
                     Text("1. 下载并安装 LM Studio")
                     Text("2. 下载你需要的模型（如 Llama、Qwen、DeepSeek 等）")
                     Text("3. 在 LM Studio 中启动本地服务器")
                     Text("4. 点击刷新按钮获取可用模型")
                 }
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
                 
                 Link("下载 LM Studio →", destination: URL(string: "https://lmstudio.ai/")!)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -867,10 +941,10 @@ struct ToolSettingsContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("工具审批")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             Text("以下动态工具未通过签名校验，审批后将加入白名单并立即加载。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             if viewModel.pendingTools.isEmpty {
@@ -890,10 +964,10 @@ struct ToolSettingsContent: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(tool.toolName)
-                                    .font(.subheadline)
+                                    .font(CyberFont.body(size: 13))
                                     .fontWeight(.medium)
                                 Text(tool.filename)
-                                    .font(.caption)
+                                    .font(CyberFont.body(size: 11))
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
@@ -918,7 +992,7 @@ struct ToolSettingsContent: View {
             
             if let err = viewModel.errorMessage, !err.isEmpty {
                 Text(err)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.red)
             }
             
@@ -941,10 +1015,10 @@ struct MailSettingsContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("邮件发信配置")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             Text("通过 SMTP 系统级发送邮件，不依赖 Mail 程序。需在邮箱中开启 SMTP 并获取授权码。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -963,7 +1037,7 @@ struct MailSettingsContent: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
                     Text("465=SSL, 587=STARTTLS")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 
@@ -1000,7 +1074,7 @@ struct MailSettingsContent: View {
             
             if let msg = saveMessage {
                 Text(msg)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(msg.contains("失败") ? .red : .green)
             }
             
@@ -1021,12 +1095,12 @@ struct MailSettingsContent: View {
             
             VStack(alignment: .leading, spacing: 6) {
                 Text("常见邮箱:")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .fontWeight(.medium)
                 Text("QQ: smtp.qq.com:465 | 163: smtp.163.com:465 | Gmail: smtp.gmail.com:587")
                 Text("需在邮箱设置中开启 SMTP 并获取授权码，非登录密码")
             }
-            .font(.caption)
+            .font(CyberFont.body(size: 11))
             .foregroundColor(.secondary)
             
             Spacer()
@@ -1044,7 +1118,7 @@ struct AboutContent: View {
             Spacer()
             
             Image(systemName: "sparkles")
-                .font(.system(size: 50))
+                .font(CyberFont.display(size: 50))
                 .foregroundStyle(.linearGradient(
                     colors: [CyberColor.cyan, CyberColor.green],
                     startPoint: .topLeading,
@@ -1053,7 +1127,7 @@ struct AboutContent: View {
                 .shadow(color: CyberColor.cyan.opacity(0.4), radius: 10)
             
             Text("Chow Duck")
-                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                .font(CyberFont.mono(size: 32, weight: .bold))
                 .foregroundColor(CyberColor.textPrimary)
             
             Text("版本 1.0.0")
@@ -1087,10 +1161,10 @@ struct AboutFeature: View {
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(CyberFont.body(size: 18, weight: .semibold))
                 .foregroundColor(CyberColor.cyan)
             Text(text)
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(CyberColor.textSecond)
         }
     }

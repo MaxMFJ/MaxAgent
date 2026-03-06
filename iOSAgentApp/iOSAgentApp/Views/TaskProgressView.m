@@ -1,4 +1,5 @@
 #import "TaskProgressView.h"
+#import "TechTheme.h"
 
 static CGFloat const kHeaderHeight = 44.0;
 static CGFloat const kProgressBarHeight = 4.0;
@@ -23,25 +24,25 @@ static CGFloat const kCornerRadius = 12.0;
         self.selectionStyle = UITableViewCellSelectionStyleNone;
         
         _statusLabel = [[UILabel alloc] init];
-        _statusLabel.font = [UIFont systemFontOfSize:14];
+        _statusLabel.font = [TechTheme fontBodySize:14 weight:UIFontWeightRegular];
         _statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:_statusLabel];
         
         _iterationLabel = [[UILabel alloc] init];
-        _iterationLabel.font = [UIFont monospacedDigitSystemFontOfSize:11 weight:UIFontWeightMedium];
+        _iterationLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightMedium];
         _iterationLabel.textColor = [UIColor secondaryLabelColor];
         _iterationLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:_iterationLabel];
         
         _descriptionLabel = [[UILabel alloc] init];
-        _descriptionLabel.font = [UIFont systemFontOfSize:13];
+        _descriptionLabel.font = [TechTheme fontBodySize:13 weight:UIFontWeightRegular];
         _descriptionLabel.textColor = [UIColor labelColor];
         _descriptionLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _descriptionLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:_descriptionLabel];
         
         _timeLabel = [[UILabel alloc] init];
-        _timeLabel.font = [UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular];
+        _timeLabel.font = [TechTheme fontMonoSize:10 weight:UIFontWeightRegular];
         _timeLabel.textColor = [UIColor tertiaryLabelColor];
         _timeLabel.textAlignment = NSTextAlignmentRight;
         _timeLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -157,14 +158,14 @@ static CGFloat const kCornerRadius = 12.0;
     // Title label
     _titleLabel = [[UILabel alloc] init];
     _titleLabel.text = @"🤖 任务执行中";
-    _titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    _titleLabel.font = [TechTheme fontDisplaySize:14 weight:UIFontWeightSemibold];
     _titleLabel.textColor = [UIColor labelColor];
     _titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [_headerView addSubview:_titleLabel];
     
     // Status label (步骤 3/10)
     _statusLabel = [[UILabel alloc] init];
-    _statusLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
+    _statusLabel.font = [TechTheme fontMonoSize:12 weight:UIFontWeightMedium];
     _statusLabel.textColor = [UIColor secondaryLabelColor];
     _statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [_headerView addSubview:_statusLabel];
@@ -194,7 +195,7 @@ static CGFloat const kCornerRadius = 12.0;
     // LLM status label
     _llmStatusLabel = [[UILabel alloc] init];
     _llmStatusLabel.text = @"☁️ LLM 请求中...";
-    _llmStatusLabel.font = [UIFont systemFontOfSize:11];
+    _llmStatusLabel.font = [TechTheme fontBodySize:11 weight:UIFontWeightRegular];
     _llmStatusLabel.textColor = [UIColor systemBlueColor];
     _llmStatusLabel.hidden = YES;
     _llmStatusLabel.translatesAutoresizingMaskIntoConstraints = NO;

@@ -16,7 +16,7 @@ struct Base64ImageView: View {
                     Image(systemName: "photo")
                         .foregroundColor(.secondary)
                     Text("图片解码失败")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
                 .padding()

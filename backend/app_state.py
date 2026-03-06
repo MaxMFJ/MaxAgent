@@ -66,6 +66,24 @@ EXTENDED_THINKING_BUDGET_TOKENS: int = int(os.environ.get("MACAGENT_EXTENDED_THI
 # Subagent（可选多智能体）— v3.3+，占位
 ENABLE_SUBAGENT: bool = os.environ.get("MACAGENT_ENABLE_SUBAGENT", "false").lower() == "true"
 
+# ── v3.3 Feature flags ────────────────────────────────────────────────────────
+# HITL（人工审批）：关键动作需用户确认
+ENABLE_HITL: bool = os.environ.get("MACAGENT_ENABLE_HITL", "false").lower() == "true"
+# HITL 确认超时（秒）
+HITL_CONFIRMATION_TIMEOUT: int = int(os.environ.get("MACAGENT_HITL_CONFIRMATION_TIMEOUT", "120"))
+# 统一审计日志
+ENABLE_AUDIT_LOG: bool = os.environ.get("MACAGENT_ENABLE_AUDIT_LOG", "true").lower() == "true"
+# 审计日志最大磁盘占用（MB）
+AUDIT_LOG_MAX_SIZE_MB: int = int(os.environ.get("MACAGENT_AUDIT_LOG_MAX_SIZE_MB", "100"))
+# 幂等缓存 TTL（秒）
+IDEMPOTENT_CACHE_TTL: int = int(os.environ.get("MACAGENT_IDEMPOTENT_CACHE_TTL", "86400"))
+# Session Resume / Fork
+ENABLE_SESSION_RESUME: bool = os.environ.get("MACAGENT_ENABLE_SESSION_RESUME", "false").lower() == "true"
+# Subagent 最大并行数
+SUBAGENT_MAX_CONCURRENT: int = int(os.environ.get("MACAGENT_SUBAGENT_MAX_CONCURRENT", "3"))
+# Subagent 单任务超时（秒）
+SUBAGENT_TIMEOUT: int = int(os.environ.get("MACAGENT_SUBAGENT_TIMEOUT", "300"))
+
 # ── Skill 按需拉取（v3.2+）───────────────────────────────────────────────────
 # True（默认）= 按需拉取，只在 LLM 搜索技能时才从 GitHub 下载对应 SKILL.md
 # False = 旧行为：启动时全量同步所有已配置 GitHub 技能源

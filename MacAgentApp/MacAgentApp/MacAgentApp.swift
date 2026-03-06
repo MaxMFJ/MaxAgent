@@ -1,9 +1,14 @@
 import SwiftUI
+import CoreText
 
 @main
 struct MacAgentApp: App {
     @StateObject private var agentViewModel = AgentViewModel()
     @StateObject private var monitoringViewModel = MonitoringViewModel()
+
+    init() {
+        registerOrbitronFont()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -15,7 +20,7 @@ struct MacAgentApp: App {
                 }
         }
         .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified(showsTitle: true))
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("新建对话") {
@@ -46,5 +51,15 @@ struct MacAgentApp: App {
             SettingsView()
                 .environmentObject(agentViewModel)
         }
+    }
+
+    /// 启动时显式注册 Orbitron 字体，确保 NSFont/CTFont 能正确加载（避免回退到 PingFang）
+    private func registerOrbitronFont() {
+        let url = Bundle.main.url(forResource: "Orbitron-Variable", withExtension: "ttf", subdirectory: "Fonts")
+            ?? Bundle.main.url(forResource: "Orbitron-Variable", withExtension: "ttf")
+            ?? Bundle.main.resourceURL?.appendingPathComponent("Fonts/Orbitron-Variable.ttf")
+        guard let fontURL = url, FileManager.default.fileExists(atPath: fontURL.path) else { return }
+        let urls = [fontURL] as CFArray
+        CTFontManagerRegisterFontURLs(urls, .process, true) { _, _ in true }
     }
 }

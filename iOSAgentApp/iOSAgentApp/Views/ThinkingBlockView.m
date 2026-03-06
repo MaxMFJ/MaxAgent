@@ -43,7 +43,7 @@
     _headerButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _headerButton.translatesAutoresizingMaskIntoConstraints = NO;
     _headerButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    _headerButton.titleLabel.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightMedium];
+    _headerButton.titleLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightMedium];
     [_headerButton setTitleColor:[TechTheme.neonPurple colorWithAlphaComponent:0.9] forState:UIControlStateNormal];
     [_headerButton addTarget:self action:@selector(headerTapped) forControlEvents:UIControlEventTouchUpInside];
     _headerButton.backgroundColor = [TechTheme.neonPurple colorWithAlphaComponent:0.1];
@@ -69,7 +69,7 @@
 
     _contentLabel = [[UILabel alloc] init];
     _contentLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _contentLabel.font = [UIFont monospacedSystemFontOfSize:11.5 weight:UIFontWeightRegular];
+    _contentLabel.font = [TechTheme fontBodySize:11.5 weight:UIFontWeightRegular];
     _contentLabel.textColor = [TechTheme.neonPurple colorWithAlphaComponent:0.75];
     _contentLabel.numberOfLines = 0;
     _contentLabel.text = _thinkingContent;

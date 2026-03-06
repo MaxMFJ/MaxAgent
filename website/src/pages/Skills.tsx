@@ -4,31 +4,31 @@ import { BookOpen, Github, Package } from 'lucide-react'
 const skillSources = [
   {
     name: '本地 Capsule',
-    desc: 'backend/capsules/ 下的 JSON 文件，热重载',
+    desc: 'backend/capsules/ 下的 JSON 文件，热重载，无需重启',
     examples: ['example_screenshot', 'example_terminal', 'example_multi_step', 'stock_query_capsule'],
   },
   {
     name: 'anthropics/skills',
-    desc: 'Anthropic 官方示例',
+    desc: 'Anthropic 官方示例技能库',
     examples: ['PDF 处理', '文档分析', '设计辅助'],
   },
   {
     name: 'skillcreatorai/Ai-Agent-Skills',
-    desc: '社区技能库',
-    examples: ['47+ 技能'],
+    desc: '社区技能库，47+ 技能',
+    examples: ['多领域覆盖'],
   },
   {
     name: 'openclaw/skills',
-    desc: 'ClawHub 技能库',
-    examples: ['5700+ 技能'],
+    desc: 'ClawHub 开放技能源，5700+ 技能，v3.2 支持按需拉取',
+    examples: ['股票查询', '数据分析', '自动化流程'],
   },
 ]
 
 const capsuleCapabilities = [
   'list — 列出所有可用技能',
   'find — 按关键词搜索技能',
-  'get — 获取技能详情',
-  'execute — 执行技能',
+  'get — 获取技能详情与 schema',
+  'execute — 执行技能（Agent 按需调用）',
   'reload — 热重载技能',
   'sync — 从开放源同步',
   'stats — 统计信息',
@@ -41,6 +41,8 @@ const exampleSkills = [
   '并行步骤执行',
   '重试与回退',
   '股票查询',
+  '文档处理',
+  '数据分析',
 ]
 
 export default function Skills() {
@@ -52,9 +54,10 @@ export default function Skills() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-16"
         >
+          <p className="font-display text-sm tracking-[0.2em] text-[var(--accent)] uppercase mb-2">Capsule System</p>
           <h1 className="font-display text-4xl font-bold mb-4">技能实际能力</h1>
           <p className="text-lg text-[var(--text-muted)]">
-            Capsule 技能系统支持本地 + 开放源，可执行、可组合、可热重载。Agent 按需调用。
+            Capsule 技能系统支持本地 + 开放源（5700+），可执行、可组合、可热重载。Agent 按需调用，v3.2 支持按需拉取，启动不全量同步。
           </p>
         </motion.div>
 
@@ -76,15 +79,15 @@ export default function Skills() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
+                className="card-cyber rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6 transition-all duration-300"
               >
-                <h3 className="font-display text-lg font-semibold mb-2">{src.name}</h3>
+                <h3 className="font-display text-lg font-semibold mb-2 text-white">{src.name}</h3>
                 <p className="text-sm text-[var(--text-muted)] mb-4">{src.desc}</p>
                 <div className="flex flex-wrap gap-2">
                   {src.examples.map((ex) => (
                     <span
                       key={ex}
-                      className="rounded-md bg-[var(--accent)]/10 px-2 py-1 text-xs text-[var(--accent)]"
+                      className="rounded-md bg-[var(--accent)]/10 border border-[var(--accent)]/20 px-2 py-1 text-xs text-[var(--accent)]"
                     >
                       {ex}
                     </span>
@@ -105,10 +108,11 @@ export default function Skills() {
             <Package className="size-6 text-[var(--accent)]" />
             Capsule 工具能力
           </h2>
-          <ul className="space-y-2 font-mono text-sm text-[var(--text-muted)]">
+          <ul className="space-y-2 font-mono text-sm">
             {capsuleCapabilities.map((c) => (
-              <li key={c} className="flex items-center gap-2">
-                <span className="text-[var(--accent)]">$</span> {c}
+              <li key={c} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2">
+                <span className="text-[var(--accent)]">$</span>
+                <span className="text-[var(--text-muted)]">{c}</span>
               </li>
             ))}
           </ul>
@@ -127,7 +131,7 @@ export default function Skills() {
             {exampleSkills.map((s) => (
               <span
                 key={s}
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm hover:border-[var(--accent)]/30 transition-colors"
               >
                 {s}
               </span>

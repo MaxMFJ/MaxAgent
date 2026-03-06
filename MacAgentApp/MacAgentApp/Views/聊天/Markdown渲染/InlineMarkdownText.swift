@@ -70,7 +70,7 @@ struct InlineMarkdownText: View {
                 .textSelection(.enabled)
         case .code(let code):
             Text(code)
-                .font(.system(.body, design: .monospaced))
+                .font(CyberFont.mono(size: 14))
                 .foregroundColor(.orange)
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)

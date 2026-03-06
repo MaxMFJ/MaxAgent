@@ -9,7 +9,10 @@
 /* Begin PBXBuildFile section */
 		4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */; };
 		4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */; };
+		4DABE95099DB64A612AA7CF9 /* HITLOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */; };
 		512B129F2AC9980B6FFC7CF4 /* Pods_MacAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */; };
+		8CDA84FC8DE48AE55C228925 /* RollbackPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */; };
+		9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF865104315098FC6C97C17F /* AuditLogView.swift */; };
 		A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002234567890ABCDEF1 /* MacAgentApp.swift */; };
 		A1000003234567890ABCDEF1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004234567890ABCDEF1 /* ContentView.swift */; };
 		A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006234567890ABCDEF1 /* Assets.xcassets */; };
@@ -19,9 +22,9 @@
 		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
 		A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012234567890ABCDEF1 /* ToolPanelView.swift */; };
 		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
+		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
+		A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */; };
 		B1000001234567890ABCDEF1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002234567890ABCDEF1 /* ChatView.swift */; };
-		B1C1BE120100000000000001 /* CyberGridBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C1BE120200000000000001 /* CyberGridBackground.swift */; };
-		B1FADE0100000000000001A1 /* CyberGrid.metal in Sources */ = {isa = PBXBuildFile; fileRef = B1FADE0200000000000001A1 /* CyberGrid.metal */; };
 		B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004234567890ABCDEF1 /* MessageBubble.swift */; };
 		B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006234567890ABCDEF1 /* MessageAvatars.swift */; };
 		B1000007234567890ABCDEF1 /* UserMessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008234567890ABCDEF1 /* UserMessageContent.swift */; };
@@ -32,7 +35,6 @@
 		B1000011234567890ABCDEF1 /* RichMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012234567890ABCDEF1 /* RichMarkdownView.swift */; };
 		B1000013234567890ABCDEF1 /* InlineMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */; };
 		B1000015234567890ABCDEF1 /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000016234567890ABCDEF1 /* CodeBlockView.swift */; };
-		B1000041234567890ABCDEF1 /* ThinkingBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */; };
 		B1000017234567890ABCDEF1 /* MarkdownElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000018234567890ABCDEF1 /* MarkdownElements.swift */; };
 		B1000019234567890ABCDEF1 /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A234567890ABCDEF1 /* AsyncImageView.swift */; };
 		B100001B234567890ABCDEF1 /* Base64ImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001C234567890ABCDEF1 /* Base64ImageView.swift */; };
@@ -43,14 +45,20 @@
 		B1000025234567890ABCDEF1 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000026234567890ABCDEF1 /* WelcomeView.swift */; };
 		B1000027234567890ABCDEF1 /* TypingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000028234567890ABCDEF1 /* TypingIndicator.swift */; };
 		B1000029234567890ABCDEF1 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002A234567890ABCDEF1 /* ViewExtensions.swift */; };
+		B100002C234567890ABCDEF1 /* FileDownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002D234567890ABCDEF1 /* FileDownloadView.swift */; };
 		B1000036234567890ABCDEF1 /* RichMessageTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037234567890ABCDEF1 /* RichMessageTextView.swift */; };
+		B1000041234567890ABCDEF1 /* ThinkingBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */; };
+		B1C1BE120100000000000001 /* CyberGridBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C1BE120200000000000001 /* CyberGridBackground.swift */; };
+		B1FADE0100000000000001A1 /* CyberGrid.metal in Sources */ = {isa = PBXBuildFile; fileRef = B1FADE0200000000000001A1 /* CyberGrid.metal */; };
 		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
 		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
+		DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */; };
 		E1000001234567890ABCDEF1 /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002234567890ABCDEF1 /* TTSService.swift */; };
 		E1000003234567890ABCDEF1 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000004234567890ABCDEF1 /* VoiceInputService.swift */; };
 		E1000005234567890ABCDEF1 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000006234567890ABCDEF1 /* Speech.framework */; };
 		E1000007234567890ABCDEF1 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000008234567890ABCDEF1 /* AVFoundation.framework */; };
+		E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */; };
 		F1000001234567890ABCDEF1 /* MonitoringViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */; };
 		F1000003234567890ABCDEF1 /* MonitoringWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */; };
 		F1000005234567890ABCDEF1 /* ExecutionTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */; };
@@ -59,15 +67,19 @@
 		F100000B234567890ABCDEF1 /* LogStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000C234567890ABCDEF1 /* LogStreamView.swift */; };
 		F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */; };
 		F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */; };
-		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
-		A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */; };
-		B100002C234567890ABCDEF1 /* FileDownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100002D234567890ABCDEF1 /* FileDownloadView.swift */; };
+		F100011234567890ABCDEF3 /* TracesDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100011334567890ABCDEF3 /* TracesDashboardView.swift */; };
+		F2000001234567890ABCDEF1 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = F2000002234567890ABCDEF1 /* Fonts */; };
+		FDA6E3FEDCAFDC550744DA49 /* MCPSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlagsSettingsView.swift; sourceTree = "<group>"; };
+		3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RollbackPanelView.swift; sourceTree = "<group>"; };
 		4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
 		4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceManagerView.swift; sourceTree = "<group>"; };
 		5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.release.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.release.xcconfig"; sourceTree = "<group>"; };
+		6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextVisualizationView.swift; sourceTree = "<group>"; };
+		96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HITLOverlayView.swift; sourceTree = "<group>"; };
 		A1000000234567890ABCDEF1 /* MacAgentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacAgentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002234567890ABCDEF1 /* MacAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAgentApp.swift; sourceTree = "<group>"; };
 		A1000004234567890ABCDEF1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -79,9 +91,9 @@
 		A1000012234567890ABCDEF1 /* ToolPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolPanelView.swift; sourceTree = "<group>"; };
 		A1000014234567890ABCDEF1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
+		A2000002234567890ABCDEF1 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSettingsView.swift; sourceTree = "<group>"; };
 		B1000002234567890ABCDEF1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		B1C1BE120200000000000001 /* CyberGridBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberGridBackground.swift; sourceTree = "<group>"; };
-		B1FADE0200000000000001A1 /* CyberGrid.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CyberGrid.metal; sourceTree = "<group>"; };
 		B1000004234567890ABCDEF1 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
 		B1000006234567890ABCDEF1 /* MessageAvatars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAvatars.swift; sourceTree = "<group>"; };
 		B1000008234567890ABCDEF1 /* UserMessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageContent.swift; sourceTree = "<group>"; };
@@ -92,7 +104,6 @@
 		B1000012234567890ABCDEF1 /* RichMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMarkdownView.swift; sourceTree = "<group>"; };
 		B1000014234567890ABCDEF1 /* InlineMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineMarkdownText.swift; sourceTree = "<group>"; };
 		B1000016234567890ABCDEF1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
-		B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingBlockView.swift; sourceTree = "<group>"; };
 		B1000018234567890ABCDEF1 /* MarkdownElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownElements.swift; sourceTree = "<group>"; };
 		B100001A234567890ABCDEF1 /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncImageView.swift; sourceTree = "<group>"; };
 		B100001C234567890ABCDEF1 /* Base64ImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64ImageView.swift; sourceTree = "<group>"; };
@@ -105,15 +116,20 @@
 		B100002A234567890ABCDEF1 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
 		B100002D234567890ABCDEF1 /* FileDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadView.swift; sourceTree = "<group>"; };
 		B1000037234567890ABCDEF1 /* RichMessageTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichMessageTextView.swift; sourceTree = "<group>"; };
+		B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingBlockView.swift; sourceTree = "<group>"; };
+		B1C1BE120200000000000001 /* CyberGridBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberGridBackground.swift; sourceTree = "<group>"; };
+		B1FADE0200000000000001A1 /* CyberGrid.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CyberGrid.metal; sourceTree = "<group>"; };
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1000002234567890ABCDEF1 /* SystemMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageView.swift; sourceTree = "<group>"; };
+		D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MCPSettingsView.swift; sourceTree = "<group>"; };
 		E1000002234567890ABCDEF1 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		E1000004234567890ABCDEF1 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
 		E1000006234567890ABCDEF1 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Speech.framework; sourceTree = SDKROOT; };
 		E1000008234567890ABCDEF1 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AVFoundation.framework; sourceTree = SDKROOT; };
 		E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
+		EF865104315098FC6C97C17F /* AuditLogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuditLogView.swift; sourceTree = "<group>"; };
 		F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringViewModel.swift; sourceTree = "<group>"; };
 		F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringWindowView.swift; sourceTree = "<group>"; };
 		F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExecutionTimelineView.swift; sourceTree = "<group>"; };
@@ -122,8 +138,8 @@
 		F100000C234567890ABCDEF1 /* LogStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogStreamView.swift; sourceTree = "<group>"; };
 		F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberpunkTheme.swift; sourceTree = "<group>"; };
 		F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStatisticsView.swift; sourceTree = "<group>"; };
-		A2000002234567890ABCDEF1 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
-		A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSettingsView.swift; sourceTree = "<group>"; };
+		F100011334567890ABCDEF3 /* TracesDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracesDashboardView.swift; sourceTree = "<group>"; };
+		F2000002234567890ABCDEF1 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -196,17 +212,10 @@
 				A1000105234567890ABCDEF1 /* Models */,
 				B1FADE0300000000000001A1 /* Shaders */,
 				A1000006234567890ABCDEF1 /* Assets.xcassets */,
+				F2000003234567890ABCDEF1 /* Resources */,
 				A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */,
 			);
 			path = MacAgentApp;
-			sourceTree = "<group>";
-		};
-		B1FADE0300000000000001A1 /* Shaders */ = {
-			isa = PBXGroup;
-			children = (
-				B1FADE0200000000000001A1 /* CyberGrid.metal */,
-			);
-			path = Shaders;
 			sourceTree = "<group>";
 		};
 		A1000102234567890ABCDEF1 /* Views */ = {
@@ -221,6 +230,12 @@
 				A1000014234567890ABCDEF1 /* SettingsView.swift */,
 				D1000002234567890ABCDEF1 /* SystemMessageView.swift */,
 				A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */,
+				3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */,
+				D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */,
+				96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */,
+				251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */,
+				EF865104315098FC6C97C17F /* AuditLogView.swift */,
+				6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -327,6 +342,14 @@
 			path = "辅助组件";
 			sourceTree = "<group>";
 		};
+		B1FADE0300000000000001A1 /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				B1FADE0200000000000001A1 /* CyberGrid.metal */,
+			);
+			path = Shaders;
+			sourceTree = "<group>";
+		};
 		F100000D234567890ABCDEF1 /* Monitoring */ = {
 			isa = PBXGroup;
 			children = (
@@ -337,8 +360,17 @@
 				F100000A234567890ABCDEF1 /* HistoryAnalysisView.swift */,
 				F100000C234567890ABCDEF1 /* LogStreamView.swift */,
 				F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */,
+				F100011334567890ABCDEF3 /* TracesDashboardView.swift */,
 			);
 			path = Monitoring;
+			sourceTree = "<group>";
+		};
+		F2000003234567890ABCDEF1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F2000002234567890ABCDEF1 /* Fonts */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -405,13 +437,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */,
+				F2000001234567890ABCDEF1 /* Fonts in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		B5000001234567890ABCDEF1 /* Pre-install backend dependencies */ = {
+		B2000001234567890ABCDEF1 /* Strip venv and sensitive data from backend */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 0;
 			buildActionMask = 2147483647;
@@ -420,17 +453,17 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${PROJECT_DIR}/../backend/requirements-core.txt",
+				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/start.sh",
 			);
-			name = "Pre-install backend dependencies";
+			name = "Strip venv and sensitive data from backend";
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"${PROJECT_DIR}/../backend/lib/.installed",
+				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/.packaged",
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n# Pre-install 核心依赖（仅 Archive 时执行，Debug 用 venv 加快构建）\nBACKEND=\"${PROJECT_DIR}/../backend\"\nif [ ! -f \"$BACKEND/requirements-core.txt\" ]; then echo \"Skip: requirements-core.txt not found\"; exit 0; fi\n\nPY=\"$(which python3 2>/dev/null || which python 2>/dev/null)\"\nif [ -z \"$PY\" ]; then echo \"error: python3 not found\"; exit 1; fi\n\nVER=\"$($PY -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>/dev/null)\"\nMAJOR=\"${VER%% *}\"\nMINOR=\"${VER##* }\"\nif [ \"$MAJOR\" -lt 3 ] || { [ \"$MAJOR\" -eq 3 ] && [ \"$MINOR\" -lt 8 ]; }; then\n  echo \"error: Python 3.8+ required, got $($PY --version 2>&1)\"; exit 1\nfi\n\nLIB=\"$BACKEND/lib\"\nrm -rf \"$LIB\"\nmkdir -p \"$LIB\"\necho \"Installing core deps to $LIB (Python $VER, ~80MB)...\"\n\"$PY\" -m pip install --quiet --target \"$LIB\" -r \"$BACKEND/requirements-core.txt\"\n\"$PY\" -c \"import sys; open('$LIB/.python_version', 'w').write(f'{sys.version_info.major}.{sys.version_info.minor}')\"\ntouch \"$LIB/.installed\"\necho \"Backend core dependencies installed\"\n";
+			shellScript = "# 仅 Archive 时执行：Strip venv/敏感数据，Debug 保留 venv 加快开发\nBACKEND=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\nDATA=\"$BACKEND/data\"\n\nif [ -d \"$BACKEND\" ]; then\n  find \"$BACKEND\" -type d -name \"venv\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \"__pycache__\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \".git\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  touch \"$BACKEND/.packaged\"\nfi\n\nif [ -d \"$DATA\" ]; then\n  rm -rf \"$DATA/agent_config.json\" \"$DATA/contexts\" \"$DATA/episodes\" \"$DATA/evomap\" \"$DATA/model_selection\"\n  rm -rf \"$DATA/strategy_db.json\" \"$DATA/execution_guard_metrics.jsonl\" \"$DATA/query_classifier_metrics.jsonl\"\n  rm -rf \"$DATA/signatures.json\" \"$DATA/agent_evolved_rules.md\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		B4000001234567890ABCDEF1 /* Copy Backend to Resources */ = {
@@ -453,7 +486,7 @@
 			shellScript = "set -e\n# Copy backend into App Bundle (Debug uses symlink for speed, Release copies)\nBACKEND_DST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\n\n# Try multiple source paths (workspace vs project)\nBACKEND_SRC=\"\"\nfor CANDIDATE in \"${PROJECT_DIR}/../backend\" \"${SRCROOT}/../backend\" \"${WORKSPACE_DIR}/backend\" \"${PROJECT_DIR}/../../backend\"; do\n  if [ -n \"$CANDIDATE\" ] && [ -d \"$CANDIDATE\" ] && [ -f \"$CANDIDATE/start.sh\" ]; then\n    BACKEND_SRC=\"$(cd \"$CANDIDATE\" && pwd)\"\n    break\n  fi\ndone\n\nif [ -z \"$BACKEND_SRC\" ]; then\n  echo \"error: Backend not found. Tried PROJECT_DIR/../backend, SRCROOT/../backend, WORKSPACE_DIR/backend\" >&2\n  echo \"  PROJECT_DIR=$PROJECT_DIR\" >&2\n  echo \"  SRCROOT=$SRCROOT\" >&2\n  echo \"  WORKSPACE_DIR=$WORKSPACE_DIR\" >&2\n  exit 1\nfi\n\necho \"Copy Backend: SRC=$BACKEND_SRC -> DST=$BACKEND_DST  CONFIGURATION=$CONFIGURATION\"\n\nif [ \"$CONFIGURATION\" = \"Debug\" ]; then\n  # Debug: symlink for instant access, always current\n  rm -rf \"$BACKEND_DST\"\n  mkdir -p \"$(dirname \"$BACKEND_DST\")\"\n  ln -sfh \"$BACKEND_SRC\" \"$BACKEND_DST\"\n  echo \"Backend symlinked (Debug mode)\"\nelse\n  # Release/Archive: full copy for packaging\n  rm -rf \"$BACKEND_DST\"\n  mkdir -p \"$(dirname \"$BACKEND_DST\")\"\n  cp -R \"$BACKEND_SRC\" \"$BACKEND_DST\"\n  echo \"Backend copied (Release mode)\"\nfi\n\n# Verify\nif [ ! -f \"$BACKEND_DST/start.sh\" ]; then\n  echo \"error: Backend copy/link failed - start.sh missing\" >&2\n  exit 1\nfi\necho \"Backend ready at $BACKEND_DST\"\n";
 			showEnvVarsInLog = 1;
 		};
-		B2000001234567890ABCDEF1 /* Strip venv and sensitive data from backend */ = {
+		B5000001234567890ABCDEF1 /* Pre-install backend dependencies */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 0;
 			buildActionMask = 2147483647;
@@ -462,17 +495,17 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/start.sh",
+				"${PROJECT_DIR}/../backend/requirements-core.txt",
 			);
-			name = "Strip venv and sensitive data from backend";
+			name = "Pre-install backend dependencies";
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend/.packaged",
+				"${PROJECT_DIR}/../backend/lib/.installed",
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# 仅 Archive 时执行：Strip venv/敏感数据，Debug 保留 venv 加快开发\nBACKEND=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\nDATA=\"$BACKEND/data\"\n\nif [ -d \"$BACKEND\" ]; then\n  find \"$BACKEND\" -type d -name \"venv\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \"__pycache__\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  find \"$BACKEND\" -type d -name \".git\" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true\n  touch \"$BACKEND/.packaged\"\nfi\n\nif [ -d \"$DATA\" ]; then\n  rm -rf \"$DATA/agent_config.json\" \"$DATA/contexts\" \"$DATA/episodes\" \"$DATA/evomap\" \"$DATA/model_selection\"\n  rm -rf \"$DATA/strategy_db.json\" \"$DATA/execution_guard_metrics.jsonl\" \"$DATA/query_classifier_metrics.jsonl\"\n  rm -rf \"$DATA/signatures.json\" \"$DATA/agent_evolved_rules.md\"\nfi\n";
+			shellScript = "set -e\n# Pre-install 核心依赖（仅 Archive 时执行，Debug 用 venv 加快构建）\nBACKEND=\"${PROJECT_DIR}/../backend\"\nif [ ! -f \"$BACKEND/requirements-core.txt\" ]; then echo \"Skip: requirements-core.txt not found\"; exit 0; fi\n\nPY=\"$(which python3 2>/dev/null || which python 2>/dev/null)\"\nif [ -z \"$PY\" ]; then echo \"error: python3 not found\"; exit 1; fi\n\nVER=\"$($PY -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>/dev/null)\"\nMAJOR=\"${VER%% *}\"\nMINOR=\"${VER##* }\"\nif [ \"$MAJOR\" -lt 3 ] || { [ \"$MAJOR\" -eq 3 ] && [ \"$MINOR\" -lt 8 ]; }; then\n  echo \"error: Python 3.8+ required, got $($PY --version 2>&1)\"; exit 1\nfi\n\nLIB=\"$BACKEND/lib\"\nrm -rf \"$LIB\"\nmkdir -p \"$LIB\"\necho \"Installing core deps to $LIB (Python $VER, ~80MB)...\"\n\"$PY\" -m pip install --quiet --target \"$LIB\" -r \"$BACKEND/requirements-core.txt\"\n\"$PY\" -c \"import sys; open('$LIB/.python_version', 'w').write(f'{sys.version_info.major}.{sys.version_info.minor}')\"\ntouch \"$LIB/.installed\"\necho \"Backend core dependencies installed\"\n";
 			showEnvVarsInLog = 0;
 		};
 		D3EABD9E1004CB61024BFAF0 /* [CP] Check Pods Manifest.lock */ = {
@@ -553,8 +586,15 @@
 				F100000B234567890ABCDEF1 /* LogStreamView.swift in Sources */,
 				F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */,
 				F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */,
+				F100011234567890ABCDEF3 /* TracesDashboardView.swift in Sources */,
 				A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */,
 				A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */,
+				8CDA84FC8DE48AE55C228925 /* RollbackPanelView.swift in Sources */,
+				FDA6E3FEDCAFDC550744DA49 /* MCPSettingsView.swift in Sources */,
+				4DABE95099DB64A612AA7CF9 /* HITLOverlayView.swift in Sources */,
+				DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */,
+				9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */,
+				E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -706,6 +746,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -744,6 +785,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chow Duck";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

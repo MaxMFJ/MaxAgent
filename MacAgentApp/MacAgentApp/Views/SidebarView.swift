@@ -8,7 +8,7 @@ struct SidebarView: View {
             // Header
             HStack {
                 Text("对话历史")
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.display(size: 13, weight: .semibold))
                     .foregroundColor(CyberColor.cyan)
                     .tracking(1)
                 
@@ -16,7 +16,7 @@ struct SidebarView: View {
                 
                 Button(action: { viewModel.newConversation() }) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(CyberFont.body(size: 15, weight: .semibold))
                         .foregroundColor(CyberColor.cyan)
                 }
                 .buttonStyle(.plain)
@@ -32,15 +32,17 @@ struct SidebarView: View {
             if viewModel.conversations.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right")
-                        .font(.system(size: 40))
+                        .font(CyberFont.display(size: 40))
                         .foregroundColor(CyberColor.textSecond)
                     
                     Text("暂无对话")
+                        .font(CyberFont.body(size: 14))
                         .foregroundColor(CyberColor.textSecond)
                     
                     Button("开始新对话") {
                         viewModel.newConversation()
                     }
+                    .font(CyberFont.body(size: 13, weight: .semibold))
                     .buttonStyle(.borderedProminent)
                     .tint(CyberColor.cyan)
                 }
@@ -83,7 +85,7 @@ struct SidebarView: View {
                     .shadow(color: (viewModel.isConnected ? CyberColor.green : CyberColor.red).opacity(0.5), radius: 4)
                 
                 Text(viewModel.isConnected ? "已连接" : "未连接")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(CyberFont.mono(size: 11))
                     .foregroundColor(CyberColor.textSecond)
                 
                 Spacer()
@@ -92,7 +94,7 @@ struct SidebarView: View {
                     Button("重连") {
                         viewModel.connect()
                     }
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(CyberColor.cyan)
                     .buttonStyle(.link)
                 }
@@ -110,19 +112,19 @@ struct ConversationRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(conversation.title)
-                .font(.body)
+                .font(CyberFont.body(size: 13))
                 .foregroundColor(CyberColor.textPrimary)
                 .lineLimit(1)
             
             HStack {
                 Text(conversation.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.textSecond)
                 
                 Spacer()
                 
                 Text("\(conversation.messages.count) 条消息")
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.textSecond)
             }
         }

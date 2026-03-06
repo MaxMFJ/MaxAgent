@@ -32,14 +32,14 @@ struct AttachmentView: View {
         HStack(spacing: 8) {
             if let err = downloadError {
                 Text(err)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.red)
             } else if downloadDone {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
                     Text("已保存")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
             } else {
@@ -52,7 +52,7 @@ struct AttachmentView: View {
                             Image(systemName: "arrow.down.circle")
                         }
                         Text(isDownloading ? "下载中…" : "下载文件")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                     }
                     .foregroundColor(.secondary)
                 }

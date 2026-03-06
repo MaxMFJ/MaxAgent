@@ -35,16 +35,16 @@ struct InputBar: View {
             .padding(.vertical, 8)
             .background(viewModel.isVoiceInputActive ? CyberColor.red.opacity(0.12) : CyberColor.bg2)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(CyberColor.cyan.opacity(0.25), lineWidth: 0.5)
             )
-            .cornerRadius(20)
+            .cornerRadius(12)
             
             HStack(spacing: 10) {
                 // 语音输入
                 Button(action: toggleVoiceInput) {
                     Image(systemName: viewModel.isVoiceInputActive ? "mic.fill" : "mic")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(CyberFont.body(size: 18, weight: .medium))
                         .foregroundColor(viewModel.isVoiceInputActive ? .red : (viewModel.isLoading ? CyberColor.textSecond.opacity(0.5) : CyberColor.cyan))
                         .frame(width: 36, height: 36)
                         .background(viewModel.isVoiceInputActive ? Color.red.opacity(0.15) : Color.clear)
@@ -56,22 +56,35 @@ struct InputBar: View {
                 .help(viewModel.isVoiceInputActive ? "停止语音输入" : "语音输入（静音自动发送）")
                 
                 Button(action: sendAutonomousTask) {
-                    Image(systemName: "robot")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(canSend ? CyberColor.green : CyberColor.textSecond.opacity(0.5))
-                        .frame(width: 36, height: 36)
-                        .background(canSend ? CyberColor.green.opacity(0.15) : Color.clear)
-                        .clipShape(Circle())
-                        .contentShape(Rectangle())
+                    HStack(spacing: 3) {
+                        Image(systemName: "robot")
+                            .font(CyberFont.body(size: 20, weight: .medium))
+                        if viewModel.preferredModelTier != "auto" {
+                            Text(tierShortName(viewModel.preferredModelTier))
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(CyberColor.green)
+                        }
+                    }
+                    .foregroundColor(canSend ? CyberColor.green : CyberColor.textSecond.opacity(0.5))
+                    .frame(width: 36, height: 36)
+                    .background(canSend ? CyberColor.green.opacity(0.15) : Color.clear)
+                    .clipShape(Circle())
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend && !viewModel.isLoading)
-                .help("自主执行：自动选择本地/远程模型 (⌘⇧↵)")
+                .help("自主执行：按住可选择模型层级 (⌘⇧↵)")
                 .keyboardShortcut(.return, modifiers: [.command, .shift])
+                .contextMenu {
+                    Button("⚡ 自动选择（推荐）") { viewModel.preferredModelTier = "auto" }
+                    Button("🔍 快速 Fast（本地/轻量）") { viewModel.preferredModelTier = "fast" }
+                    Button("💪 强力 Strong（旗舰模型）") { viewModel.preferredModelTier = "strong" }
+                    Button("💰 经济 Cheap（高性价比）") { viewModel.preferredModelTier = "cheap" }
+                }
                 
                 Button(action: viewModel.isLoading ? { viewModel.stopTask() } : onSubmit) {
                     Image(systemName: viewModel.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 22))
+                        .font(CyberFont.body(size: 22))
                         .foregroundColor(viewModel.isLoading ? CyberColor.red : (canSendOrVoice ? CyberColor.cyan : CyberColor.textSecond.opacity(0.5)))
                         .frame(width: 36, height: 36)
                         .contentShape(Rectangle())
@@ -126,5 +139,14 @@ struct InputBar: View {
     private func sendAutonomousTask() {
         guard canSend else { return }
         viewModel.sendAutonomousTask()
+    }
+
+    private func tierShortName(_ tier: String) -> String {
+        switch tier {
+        case "fast": return "⚡"
+        case "strong": return "💪"
+        case "cheap": return "💰"
+        default: return ""
+        }
     }
 }

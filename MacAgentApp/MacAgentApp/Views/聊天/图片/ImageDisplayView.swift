@@ -28,21 +28,21 @@ struct ImageDisplayView: View {
                         HStack(spacing: 4) {
                             Button(action: copyImage) {
                                 Image(systemName: "doc.on.doc")
-                                    .font(.caption)
+                                    .font(CyberFont.body(size: 11))
                             }
                             .buttonStyle(.plain)
                             .help("复制图片")
                             
                             Button(action: saveImage) {
                                 Image(systemName: "square.and.arrow.down")
-                                    .font(.caption)
+                                    .font(CyberFont.body(size: 11))
                             }
                             .buttonStyle(.plain)
                             .help("保存图片")
                             
                             Button(action: { showFullScreen = true }) {
                                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                    .font(.caption)
+                                    .font(CyberFont.body(size: 11))
                             }
                             .buttonStyle(.plain)
                             .help("全屏查看")
@@ -60,9 +60,9 @@ struct ImageDisplayView: View {
             
             HStack {
                 Image(systemName: "photo")
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
                 Text("\(Int(image.size.width)) × \(Int(image.size.height))")
-                    .font(.caption2)
+                    .font(CyberFont.body(size: 10))
             }
             .foregroundColor(.secondary)
         }
@@ -134,7 +134,7 @@ struct FullScreenImageView: View {
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title)
+                            .font(CyberFont.display(size: 20))
                             .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)

@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import ScanLine from './components/ScanLine'
+import FloatingParticles from './components/FloatingParticles'
 import Home from './pages/Home'
 import Features from './pages/Features'
 import Technology from './pages/Technology'
@@ -8,10 +10,14 @@ import Skills from './pages/Skills'
 import Docs from './pages/Docs'
 import Help from './pages/Help'
 import Roadmap from './pages/Roadmap'
+import Test from './pages/Test'
 
 export default function App() {
   return (
-    <Layout>
+    <>
+      <ScanLine />
+      <FloatingParticles />
+      <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/features" element={<Features />} />
@@ -21,7 +27,9 @@ export default function App() {
         <Route path="/docs" element={<Docs />} />
         <Route path="/help" element={<Help />} />
         <Route path="/roadmap" element={<Roadmap />} />
+        <Route path="/test" element={<Test />} />
       </Routes>
     </Layout>
+    </>
   )
 }

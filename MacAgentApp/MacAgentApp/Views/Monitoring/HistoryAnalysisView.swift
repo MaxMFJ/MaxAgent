@@ -16,7 +16,7 @@ struct HistoryAnalysisView: View {
                         .scaleEffect(0.8)
                         .colorMultiply(CyberColor.cyan)
                     Text("正在加载历史记录...")
-                        .font(.system(size: 12))
+                        .font(CyberFont.body(size: 12))
                         .foregroundColor(CyberColor.textSecond)
                 }
             }
@@ -48,13 +48,13 @@ private struct EmptyHistoryView: View {
             FloatingParticlesView(particleCount: 14)
             VStack(spacing: 18) {
                 Image(systemName: "trophy")
-                    .font(.system(size: 48))
+                    .font(CyberFont.display(size: 48))
                     .foregroundColor(CyberColor.yellow.opacity(0.7))
                 Text("还没有战绩")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(CyberFont.body(size: 18, weight: .semibold))
                     .foregroundColor(CyberColor.textPrimary)
                 Text("完成几个自主任务，这里就会记录你的 AI 战绩")
-                    .font(.system(size: 13))
+                    .font(CyberFont.body(size: 13))
                     .foregroundColor(CyberColor.textSecond)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -62,7 +62,7 @@ private struct EmptyHistoryView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
                         Text("刷新")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(CyberFont.body(size: 11, weight: .semibold))
                     }
                     .foregroundColor(CyberColor.bg0)
                     .padding(.horizontal, 16)
@@ -94,7 +94,7 @@ private struct EpisodeListPanel: View {
                 }
                 Button(action: { Task { await vm.fetchHistory() } }) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(CyberColor.cyan)
                 }
                 .buttonStyle(.plain)
@@ -122,25 +122,25 @@ private struct EpisodeRow: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: ep.success ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundColor(ep.success ? CyberColor.green : CyberColor.red)
-                .font(.system(size: 16))
+                .font(CyberFont.body(size: 16))
                 .padding(.top, 1)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(ep.taskDescription)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(CyberFont.body(size: 11, weight: .semibold))
                     .lineLimit(2)
                     .foregroundColor(CyberColor.textPrimary)
 
                 HStack(spacing: 8) {
                     Label("\(ep.totalIterations) 轮", systemImage: "repeat")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                     Label("\(formatK(ep.tokenUsage.totalTokens)) t", systemImage: "bolt.fill")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                     if ep.executionTimeMs > 0 {
                         Label(formatMs(ep.executionTimeMs), systemImage: "clock")
-                            .font(.system(size: 10))
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(CyberColor.textSecond)
                     }
                 }
@@ -150,7 +150,7 @@ private struct EpisodeRow: View {
                         HStack(spacing: 4) {
                             ForEach(ep.toolsUsed.prefix(4), id: \.self) { tool in
                                 Text(tool)
-                                    .font(.system(size: 9))
+                                    .font(CyberFont.mono(size: 9))
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 2)
                                     .background(CyberColor.cyan.opacity(0.2))
@@ -162,7 +162,7 @@ private struct EpisodeRow: View {
                 }
 
                 Text(ep.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
-                    .font(.system(size: 10))
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.textSecond.opacity(0.8))
             }
         }
@@ -231,7 +231,7 @@ private struct BigStatCard: View {
         CyberCard(glowColor: color, padding: 12) {
             VStack(spacing: 3) {
                 Text(value)
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .font(CyberFont.mono(size: 22, weight: .bold))
                     .foregroundColor(color)
                 CyberLabel(text: label, color: CyberColor.textSecond, size: 9)
             }
@@ -247,7 +247,7 @@ private struct ToolRankRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(displayName(item.tool))
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textPrimary)
                 .frame(width: 100, alignment: .leading)
                 .lineLimit(1)
@@ -265,7 +265,7 @@ private struct ToolRankRow: View {
             .frame(height: 12)
 
             Text("\(item.count)")
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textSecond)
                 .frame(width: 28, alignment: .trailing)
         }

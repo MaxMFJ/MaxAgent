@@ -72,5 +72,14 @@
 		<string>audio</string>
 		<string>fetch</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Orbitron-Variable.ttf</string>
+		<string>Rajdhani-Regular.ttf</string>
+		<string>Rajdhani-Medium.ttf</string>
+		<string>Rajdhani-SemiBold.ttf</string>
+		<string>Rajdhani-Bold.ttf</string>
+		<string>Rajdhani-Variable.ttf</string>
+	</array>
 </dict>
 </plist>

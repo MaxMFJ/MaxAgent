@@ -37,16 +37,16 @@ private struct LogFilterBar: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(CyberColor.cyan)
-                    .font(.system(size: 11))
+                    .font(CyberFont.body(size: 11))
                 TextField("搜索日志...", text: $vm.logSearchText)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(CyberFont.mono(size: 11))
                     .foregroundColor(CyberColor.textPrimary)
                 if !vm.logSearchText.isEmpty {
                     Button(action: { vm.logSearchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(CyberColor.textSecond)
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                     }
                     .buttonStyle(.plain)
                 }
@@ -75,9 +75,9 @@ private struct LogFilterBar: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                     Text(vm.logLevelFilter ?? "全部级别")
-                        .font(.system(size: 11))
+                        .font(CyberFont.body(size: 11))
                 }
                 .foregroundColor(levelColor(vm.logLevelFilter))
             }
@@ -152,7 +152,7 @@ private struct ToolLogList: View {
             .overlay(alignment: .bottomTrailing) {
                 Toggle("自动滚动", isOn: $autoScroll)
                     .toggleStyle(.checkbox)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
                     .padding(8)
             }
@@ -194,7 +194,7 @@ private struct BackendLogList: View {
             .overlay(alignment: .bottomTrailing) {
                 Toggle("自动滚动", isOn: $autoScroll)
                     .toggleStyle(.checkbox)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
                     .padding(8)
             }
@@ -244,25 +244,25 @@ private struct TerminalLogRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(timestamp)
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.green.opacity(0.8))
                 .frame(width: 76, alignment: .leading)
 
             Text(level.uppercased())
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(CyberFont.mono(size: 9, weight: .bold))
                 .foregroundColor(levelColor)
                 .frame(width: 50, alignment: .leading)
 
             if !source.isEmpty {
                 Text(source)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.cyan)
                     .frame(width: 90, alignment: .leading)
                     .lineLimit(1)
             }
 
             Text(message)
-                .font(.system(size: 11, design: .monospaced))
+                .font(CyberFont.mono(size: 11))
                 .foregroundColor(CyberColor.textPrimary)
                 .lineLimit(3)
                 .textSelection(.enabled)
@@ -287,7 +287,7 @@ private struct TerminalNotificationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: notification.level.icon)
-                .font(.system(size: 12))
+                .font(CyberFont.body(size: 12))
                 .foregroundColor(levelColor)
                 .frame(width: 16)
                 .padding(.top, 1)
@@ -295,20 +295,20 @@ private struct TerminalNotificationRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(notification.title)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(CyberFont.body(size: 11, weight: .semibold))
                         .foregroundColor(CyberColor.textPrimary)
                     Spacer()
                     Text(notification.relativeTime)
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                 }
                 Text(notification.content)
-                    .font(.system(size: 10))
+                    .font(CyberFont.body(size: 10))
                     .foregroundColor(CyberColor.textSecond)
                     .lineLimit(3)
                 if !notification.source.isEmpty {
                     Text("来源: \(notification.source)")
-                        .font(.system(size: 9))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond.opacity(0.7))
                 }
             }
@@ -334,17 +334,17 @@ private struct LogStatusBar: View {
     var body: some View {
         HStack(spacing: 10) {
             Text("共 \(currentCount) 条")
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textSecond)
 
             if let filter = vm.logLevelFilter {
                 HStack(spacing: 4) {
                     Text("级别: \(filter)")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                     Button(action: { vm.logLevelFilter = nil }) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 8))
+                            .font(CyberFont.mono(size: 8))
                             .foregroundColor(CyberColor.textSecond)
                     }
                     .buttonStyle(.plain)
@@ -356,7 +356,7 @@ private struct LogStatusBar: View {
             if vm.logSourceFilter == "backend" {
                 Button(action: { vm.backendLogs.removeAll() }) {
                     Text("清空日志")
-                        .font(.system(size: 10))
+                        .font(CyberFont.body(size: 10))
                         .foregroundColor(CyberColor.cyan)
                 }
                 .buttonStyle(.plain)
@@ -377,10 +377,10 @@ private struct EmptyLogView: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 36))
+                .font(CyberFont.display(size: 36))
                 .foregroundColor(CyberColor.cyan.opacity(0.3))
             Text(message)
-                .font(.system(size: 12))
+                .font(CyberFont.body(size: 12))
                 .foregroundColor(CyberColor.textSecond)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

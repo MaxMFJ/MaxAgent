@@ -16,10 +16,10 @@ struct LocalFileImageView: View {
                         .foregroundColor(.secondary)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("图片加载失败")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                         Text(filePath)
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.secondary.opacity(0.7))
                             .lineLimit(1)
                     }

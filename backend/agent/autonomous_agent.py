@@ -29,6 +29,7 @@ from .stop_policy import (
 from .capsule_registry import get_capsule_registry
 from .safety import validate_action_safe
 from .prompt_loader import get_project_context_for_prompt
+from .exec_phases import PhaseTracker, infer_phase, auto_verify, build_verify_message, ExecutionPhase
 from tools.router import execute_tool
 
 # 任务持久化
@@ -736,8 +737,9 @@ class AutonomousAgent:
         Yields progress updates as the task executes
         """
         task_id = str(uuid.uuid4())[:8]
-        
-        # Initialize adaptive stop policy
+        # v3.4: store for file handlers (snapshot_manager, etc.)
+        self._current_task_id = task_id
+        self._current_session_id = session_id
         if self.enable_adaptive_stop:
             self._stop_policy = create_stop_policy(
                 task=task,
@@ -794,6 +796,9 @@ class AutonomousAgent:
         except Exception as e:
             logger.warning(f"User context collection failed: {e}")
 
+        # v3.4: Phase tracker (Gather → Act → Verify)
+        self._phase_tracker = PhaseTracker()
+
         # Per-task escalation state (layer 2 & 3)
         self._escalation_level: int = ESCALATION_NORMAL
         self._escalation_prompt: str = ""
@@ -818,6 +823,7 @@ class AutonomousAgent:
                 yield {
                     "type": "model_selected",
                     "model_type": self._current_selection.model_type.value,
+                    "tier": self._current_selection.tier.value,
                     "reason": self._current_selection.reason,
                     "task_type": self._current_selection.task_analysis.task_type.value,
                     "complexity": self._current_selection.task_analysis.complexity_score,
@@ -1025,7 +1031,8 @@ class AutonomousAgent:
                         "token_usage": token_usage,
                         "model_type": self._current_selection.model_type.value if self._current_selection else None,
                         "success_rate": context.get_success_rate(),
-                        "stop_policy_stats": stop_stats
+                        "stop_policy_stats": stop_stats,
+                        "phase_stats": self._phase_tracker.stats() if hasattr(self, "_phase_tracker") else {},
                     }
                     
                     if self.enable_reflection and self.reflect_llm:
@@ -1050,6 +1057,28 @@ class AutonomousAgent:
                 if state_machine and TaskState is not None:
                     state_machine.transition(TaskState.RUNNING)
                 context.add_action_log(action, result)
+
+                # v3.4: Phase tracking + automated Verify
+                try:
+                    verify_note = await auto_verify(action.action_type.value, action.params, result)
+                    phase_rec = self._phase_tracker.record(
+                        iteration=context.current_iteration,
+                        action_type=action.action_type.value,
+                        success=result.success,
+                        verify_note=verify_note,
+                    )
+                    if verify_note:
+                        phase_msg = build_verify_message(verify_note, phase_rec.phase)
+                        if phase_msg:
+                            messages.append(phase_msg)
+                        yield {
+                            "type": "phase_verify",
+                            "iteration": context.current_iteration,
+                            "phase": phase_rec.phase.value,
+                            "note": verify_note,
+                        }
+                except Exception as _phase_err:
+                    logger.debug("Phase tracking error: %s", _phase_err)
                 
                 # 保存检查点 - 每次 action 执行后
                 if get_persistence_manager is not None:
@@ -1630,16 +1659,76 @@ class AutonomousAgent:
             return None
     
     async def _execute_action(self, action: AgentAction) -> ActionResult:
-        """Execute a single action. v3.1: 统一安全校验在入口执行。"""
+        """Execute a single action. v3.1: 统一安全校验在入口执行。v3.3: +幂等+HITL+审计"""
         start_time = time.time()
         ok, err = validate_action_safe(action)
         if not ok:
+            # v3.3: 审计 — 安全拦截
+            try:
+                from services.audit_service import append_audit_event
+                append_audit_event(
+                    "action_blocked",
+                    task_id=getattr(self, "_current_task_id", ""),
+                    session_id=getattr(self, "_current_session_id", ""),
+                    action_type=action.action_type,
+                    params_summary=str(action.params)[:200],
+                    result="blocked",
+                    risk_level="high",
+                    details={"reason": err},
+                )
+            except Exception:
+                pass
             return ActionResult(
                 action_id=action.action_id,
                 success=False,
                 error=err or "安全校验未通过",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
+
+        # v3.3: 幂等缓存检查
+        try:
+            from services.idempotent_service import get_cached_result
+            cached = get_cached_result(action.action_type, action.params or {})
+            if cached is not None:
+                return ActionResult(
+                    action_id=action.action_id,
+                    success=cached.get("success", True),
+                    output=cached.get("output"),
+                    error=cached.get("error"),
+                    execution_time_ms=0,
+                )
+        except Exception:
+            pass
+
+        # v3.3: HITL 人工审批检查
+        try:
+            from services.hitl_service import should_require_confirmation, get_hitl_manager, HitlDecision
+            if should_require_confirmation(action.action_type, action.params or {}):
+                mgr = get_hitl_manager()
+                req = mgr.create_request(
+                    action_id=action.action_id,
+                    task_id=getattr(self, "_current_task_id", ""),
+                    session_id=getattr(self, "_current_session_id", ""),
+                    action_type=action.action_type,
+                    params=action.params or {},
+                )
+                # 广播确认请求到 WebSocket
+                try:
+                    from connection_manager import ConnectionManager
+                    # 此处不阻塞发送，仅尝试通知客户端
+                except Exception:
+                    pass
+                decision = await mgr.wait_for_decision(action.action_id)
+                if decision != HitlDecision.APPROVED:
+                    return ActionResult(
+                        action_id=action.action_id,
+                        success=False,
+                        error=f"HITL: 动作被{decision.value}",
+                        execution_time_ms=int((time.time() - start_time) * 1000),
+                    )
+        except ImportError:
+            pass
+
         handler = self._action_handlers.get(action.action_type)
         if not handler:
             return ActionResult(
@@ -1652,13 +1741,41 @@ class AutonomousAgent:
             result = await handler(action.params)
             execution_time = int((time.time() - start_time) * 1000)
             
-            return ActionResult(
+            action_result = ActionResult(
                 action_id=action.action_id,
                 success=result.get("success", True),
                 output=result.get("output"),
                 error=result.get("error"),
                 execution_time_ms=execution_time
             )
+
+            # v3.3: 审计 — 动作执行
+            try:
+                from services.audit_service import append_audit_event
+                append_audit_event(
+                    "action_execute",
+                    task_id=getattr(self, "_current_task_id", ""),
+                    session_id=getattr(self, "_current_session_id", ""),
+                    action_type=action.action_type,
+                    params_summary=str(action.params)[:200],
+                    result="success" if action_result.success else "failure",
+                    risk_level="low",
+                )
+            except Exception:
+                pass
+
+            # v3.3: 幂等缓存存储
+            try:
+                from services.idempotent_service import store_cached_result
+                store_cached_result(
+                    action.action_type,
+                    action.params or {},
+                    {"success": action_result.success, "output": action_result.output, "error": action_result.error},
+                )
+            except Exception:
+                pass
+
+            return action_result
         except Exception as e:
             execution_time = int((time.time() - start_time) * 1000)
             return ActionResult(
@@ -1924,6 +2041,16 @@ class AutonomousAgent:
         if not path:
             return {"success": False, "error": "Path is empty"}
         
+        # v3.4 snapshot before write
+        try:
+            from .snapshot_manager import get_snapshot_manager
+            get_snapshot_manager().capture(
+                "write", path,
+                task_id=getattr(self, "_current_task_id", ""),
+                session_id=getattr(self, "_current_session_id", ""),
+            )
+        except Exception:
+            pass
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             
@@ -1949,6 +2076,17 @@ class AutonomousAgent:
         if not os.path.exists(source):
             return {"success": False, "error": f"Source not found: {source}"}
         
+        # v3.4 snapshot before move
+        try:
+            from .snapshot_manager import get_snapshot_manager
+            get_snapshot_manager().capture(
+                "move", source,
+                task_id=getattr(self, "_current_task_id", ""),
+                session_id=getattr(self, "_current_session_id", ""),
+                destination=destination,
+            )
+        except Exception:
+            pass
         try:
             shutil.move(source, destination)
             return {"success": True, "output": f"Moved: {source} -> {destination}"}
@@ -1969,6 +2107,17 @@ class AutonomousAgent:
         if not os.path.exists(source):
             return {"success": False, "error": f"Source not found: {source}"}
         
+        # v3.4 snapshot before copy
+        try:
+            from .snapshot_manager import get_snapshot_manager
+            get_snapshot_manager().capture(
+                "copy", source,
+                task_id=getattr(self, "_current_task_id", ""),
+                session_id=getattr(self, "_current_session_id", ""),
+                destination=destination,
+            )
+        except Exception:
+            pass
         try:
             if os.path.isdir(source):
                 shutil.copytree(source, destination)

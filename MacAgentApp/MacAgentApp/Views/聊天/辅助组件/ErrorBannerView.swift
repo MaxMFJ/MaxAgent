@@ -36,7 +36,7 @@ struct ErrorBannerView: View {
             if isExpanded {
                 ScrollView {
                     Text(message)
-                        .font(.system(.caption, design: .monospaced))
+                        .font(CyberFont.mono(size: 11))
                         .foregroundColor(.white)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)

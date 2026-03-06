@@ -99,7 +99,7 @@
     // 文字输入
     _textView = [[UITextView alloc] init];
     _textView.translatesAutoresizingMaskIntoConstraints = NO;
-    _textView.font = [UIFont systemFontOfSize:15.5];
+    _textView.font = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
     _textView.backgroundColor = [UIColor clearColor];
     _textView.textColor = TechTheme.textPrimary;
     _textView.tintColor = TechTheme.neonCyan;
@@ -116,7 +116,7 @@
     _placeholderLabel = [[UILabel alloc] init];
     _placeholderLabel.translatesAutoresizingMaskIntoConstraints = NO;
     _placeholderLabel.text = NSLocalizedString(@"message_placeholder", nil);
-    _placeholderLabel.font = [UIFont systemFontOfSize:15.5];
+    _placeholderLabel.font = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
     _placeholderLabel.textColor = TechTheme.textDim;
     [_containerView addSubview:_placeholderLabel];
 

@@ -24,7 +24,7 @@
         appearance.backgroundColor = [TechTheme.backgroundSecondary colorWithAlphaComponent:0.92];
         appearance.titleTextAttributes = @{
             NSForegroundColorAttributeName: TechTheme.neonCyan,
-            NSFontAttributeName: [UIFont monospacedSystemFontOfSize:16 weight:UIFontWeightSemibold]
+            NSFontAttributeName: [TechTheme fontDisplaySize:16 weight:UIFontWeightSemibold]
         };
         self.navigationController.navigationBar.standardAppearance = appearance;
         self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
@@ -98,7 +98,7 @@
 
     cell.textLabel.text = conversation.title;
     cell.textLabel.textColor = isActive ? TechTheme.neonCyan : TechTheme.textPrimary;
-    cell.textLabel.font = [UIFont monospacedSystemFontOfSize:14 weight:isActive ? UIFontWeightSemibold : UIFontWeightRegular];
+    cell.textLabel.font = [TechTheme fontBodySize:14 weight:isActive ? UIFontWeightSemibold : UIFontWeightRegular];
 
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     formatter.dateStyle = NSDateFormatterShortStyle;
@@ -107,7 +107,7 @@
     NSString *timeStr = [formatter stringFromDate:conversation.updatedAt];
     cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@", messageCount, timeStr];
     cell.detailTextLabel.textColor = isActive ? [TechTheme.neonCyan colorWithAlphaComponent:0.6] : TechTheme.textDim;
-    cell.detailTextLabel.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
+    cell.detailTextLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightRegular];
 
     if (isActive) {
         UIImage *checkImg = [UIImage systemImageNamed:@"checkmark.circle.fill"];

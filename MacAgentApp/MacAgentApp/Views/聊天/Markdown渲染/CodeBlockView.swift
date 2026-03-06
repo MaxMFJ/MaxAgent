@@ -34,7 +34,7 @@ struct CodeBlockView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(language ?? "code")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                 
                 Spacer()
@@ -46,7 +46,7 @@ struct CodeBlockView: View {
                                 Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
                                 Text(isCollapsed ? "展开" : "收起")
                             }
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                         }
                         .buttonStyle(.plain)
@@ -57,7 +57,7 @@ struct CodeBlockView: View {
                             Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                             Text(isCopied ? "已复制" : "复制")
                         }
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(isCopied ? .green : .secondary)
                     }
                     .buttonStyle(.plain)
@@ -70,13 +70,13 @@ struct CodeBlockView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(displayedCode)
-                        .font(.system(.body, design: .monospaced))
+                        .font(CyberFont.mono(size: 14))
                         .foregroundColor(codeTextColor)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if shouldShowCollapseToggle && isCollapsed {
                         Text("… 共 \(lineCount) 行")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                             .padding(.top, 4)
                     }
@@ -120,7 +120,7 @@ struct InlineCodeView: View {
     
     var body: some View {
         Text(code)
-            .font(.system(.body, design: .monospaced))
+            .font(CyberFont.mono(size: 14))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Color(NSColor.separatorColor).opacity(0.3))

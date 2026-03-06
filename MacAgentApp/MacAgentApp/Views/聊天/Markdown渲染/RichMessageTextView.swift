@@ -85,12 +85,12 @@ struct RichMessageTextView: NSViewRepresentable {
     
     // MARK: - Build NSAttributedString from markdown content
     
-    private static let textFont = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-    private static let codeFont = NSFont.monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+    private static let textFont = CyberFont.nsBody(size: 13)
+    private static let codeFont = CyberFont.nsMono(size: 11)
     private static let headingFonts: [NSFont] = [
-        NSFont.systemFont(ofSize: 22, weight: .bold),
-        NSFont.systemFont(ofSize: 18, weight: .bold),
-        NSFont.systemFont(ofSize: 16, weight: .bold),
+        CyberFont.nsBodyBold(size: 22),
+        CyberFont.nsBodyBold(size: 18),
+        CyberFont.nsBodyBold(size: 16),
     ]
     
     /// 从完整 markdown 字符串构建（内部会 parse）

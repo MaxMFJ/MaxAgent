@@ -1,18 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #050508;
-  --bg-elevated: #0c0c10;
-  --bg-card: #12121a;
-  --text: #f4f4f5;
-  --text-muted: #a1a1aa;
-  --accent: #22d3ee;
-  --accent-dim: #0891b2;
-  --border: #27272a;
+  /* 赛博朋克主色 */
+  --bg: #0a0a0f;
+  --bg-elevated: #0f0f18;
+  --bg-card: #12121f;
+  --bg-card-hover: #1a1a2e;
+  --text: #e8e8f0;
+  --text-muted: #8b8ba3;
+  --accent: #00f5ff;
+  --accent-dim: #00b8c4;
+  --accent-glow: rgba(0, 245, 255, 0.4);
+  --neon-pink: #ff00ff;
+  --neon-purple: #bf00ff;
+  --neon-cyan: #00ffff;
+  --border: #2a2a3a;
+  --border-glow: rgba(0, 245, 255, 0.3);
+  --grid-color: rgba(0, 245, 255, 0.06);
 }
 
 * {
   box-sizing: border-box;
+}
+
+#root {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
 }
 
 html {
@@ -20,12 +34,159 @@ html {
 }
 
 body {
-  font-family: 'Noto Sans SC', 'Outfit', system-ui, sans-serif;
+  font-family: 'Rajdhani', 'Noto Sans SC', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 赛博朋克网格背景 - 静态底纹 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: 0 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  animation: grid-drift 20s linear infinite;
+}
+
+@keyframes grid-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+/* 扫描线效果 - 垂直扫描动画 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 扫描光带 - 自上而下扫描 */
+.scan-line {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent),
+    transparent
+  );
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 0 20px var(--accent-glow);
+  animation: scan-vertical 6s ease-in-out infinite;
+}
+
+@keyframes scan-vertical {
+  0% { top: 0; opacity: 0.1; }
+  50% { top: 100%; opacity: 0.25; }
+  100% { top: 0; opacity: 0.1; }
 }
 
 .font-display {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* 霓虹发光文字 */
+.neon-text {
+  text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow);
+}
+
+.neon-border {
+  box-shadow: 0 0 15px var(--accent-glow), inset 0 0 15px rgba(0, 245, 255, 0.05);
+}
+
+/* 卡片悬停霓虹效果 */
+.card-cyber:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 245, 255, 0.1);
+}
+
+/* 渐变霓虹按钮 */
+.btn-neon {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--neon-purple) 100%);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 30px var(--accent-glow), 0 0 50px rgba(191, 0, 255, 0.3);
+}
+
+/* 数据流动画 */
+@keyframes scan {
+  0%, 100% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.3; }
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+/* 标题霓虹呼吸 */
+@keyframes neon-breathe {
+  0%, 100% { filter: drop-shadow(0 0 10px var(--accent-glow)) drop-shadow(0 0 20px var(--accent-glow)); }
+  50% { filter: drop-shadow(0 0 15px var(--accent-glow)) drop-shadow(0 0 35px var(--accent-glow)); }
+}
+
+.neon-breathe {
+  animation: neon-breathe 3s ease-in-out infinite;
+}
+
+/* 卡片入场 - 用于增强滚动动画 */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.card-float:hover {
+  animation: card-float 2s ease-in-out infinite;
+}
+
+/* 减少动画偏好 - 尊重用户的无障碍设置 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .neon-breathe,
+  .scan-line,
+  .card-float {
+    animation: none !important;
+  }
 }

@@ -80,6 +80,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 移除脉冲动画
 + (void)removePulseAnimation:(UIView *)view;
 
+// MARK: - Cyber Fonts（与官网/Mac 赛博朋克风格一致）
+/// 标题/品牌 - Orbitron 几何科技感
++ (UIFont *)fontDisplaySize:(CGFloat)size weight:(UIFontWeight)weight;
+/// 正文 - Rajdhani
++ (UIFont *)fontBodySize:(CGFloat)size weight:(UIFontWeight)weight;
+/// 标签/数据/等宽 - Orbitron Medium
++ (UIFont *)fontMonoSize:(CGFloat)size weight:(UIFontWeight)weight;
+
 /// 消息气泡入场动画
 + (void)animateMessageBubbleEntrance:(UIView *)bubble fromUser:(BOOL)fromUser;
 

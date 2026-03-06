@@ -7,7 +7,13 @@ cd "$(dirname "$0")"
 BACKEND_ROOT="$(pwd)"
 
 # 确保 PATH 包含 Homebrew 和常用工具路径（从 App 启动时 PATH 可能非常有限）
-for _extra_path in /opt/homebrew/bin /opt/homebrew/sbin /usr/local/bin /usr/local/sbin; do
+# 包括 Homebrew 通过 keg-only 方式安装的 Node.js（如 node@22）
+_EXTRA_PATHS="/opt/homebrew/bin /opt/homebrew/sbin /usr/local/bin /usr/local/sbin"
+# 自动发现 Homebrew keg-only Node.js（如 /opt/homebrew/opt/node@22/bin）
+for _node_keg in /opt/homebrew/opt/node@*/bin /usr/local/opt/node@*/bin; do
+    [ -d "$_node_keg" ] && _EXTRA_PATHS="$_EXTRA_PATHS $_node_keg"
+done
+for _extra_path in $_EXTRA_PATHS; do
     case ":$PATH:" in
         *":$_extra_path:"*) ;;
         *) [ -d "$_extra_path" ] && PATH="$_extra_path:$PATH" ;;
@@ -98,22 +104,56 @@ MINOR=$("$PY" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
 
 # 优先使用 venv（环境完整、版本可控），其次 lib/
 USE_LIB=0
+
+# Helper: install dependencies into the currently activated venv.
+# If pip is missing inside the venv (e.g., venv created with --without-pip),
+# bootstrap it first with ensurepip.  Returns 0 on success.
+_venv_install_deps() {
+    local py_run="$1"
+    # Ensure pip exists in the venv (not system pip)
+    if ! "$py_run" -m pip --version 2>/dev/null; then
+        "$py_run" -m ensurepip --upgrade 2>/dev/null || {
+            echo "[WARN] ensurepip failed — venv may be broken"
+            return 1
+        }
+    fi
+    "$py_run" -m pip install --quiet --upgrade pip 2>/dev/null || true
+    "$py_run" -m pip install --quiet -r requirements.txt || return 1
+    if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
+        "$py_run" -m pip install --quiet sentence-transformers faiss-cpu numpy 2>/dev/null || true
+    fi
+    return 0
+}
+
+# Helper: delete and recreate venv from scratch, then install deps.
+_recreate_venv() {
+    echo "[INFO] Recreating venv from scratch using $PY ..."
+    deactivate 2>/dev/null || true
+    rm -rf venv
+    "$PY" -m venv venv
+    source venv/bin/activate
+    PY_RUN="$VIRTUAL_ENV/bin/python"
+    [ -x "$PY_RUN" ] || PY_RUN="$VIRTUAL_ENV/bin/python3"
+    _venv_install_deps "$PY_RUN"
+}
+
 if [ -d "venv" ] && [ -x "venv/bin/python" ]; then
     # venv 的 python 可能是软链接指向系统 python；验证存在且可执行
     if "venv/bin/python" -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" 2>/dev/null; then
         source venv/bin/activate
-        PY_RUN="python"
+        # Use explicit VIRTUAL_ENV path — immune to PATH / externally-managed-environment issues
+        PY_RUN="$VIRTUAL_ENV/bin/python"
+        [ -x "$PY_RUN" ] || PY_RUN="$VIRTUAL_ENV/bin/python3"
         # 依赖健康检查：venv 存在但核心包缺失时自动重装，避免损坏/不完整
         if ! $PY_RUN -c "import fastapi" 2>/dev/null; then
             echo "[INFO] venv incomplete, reinstalling dependencies..."
-            "$PY_RUN" -m pip install --quiet --upgrade pip 2>/dev/null || true
-            "$PY_RUN" -m pip install --quiet -r requirements.txt
-            if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
-                "$PY_RUN" -m pip install --quiet sentence-transformers faiss-cpu numpy 2>/dev/null || true
+            if ! _venv_install_deps "$PY_RUN"; then
+                echo "[INFO] Install failed (possibly broken venv), recreating..."
+                _recreate_venv
             fi
         fi
         USE_LIB=0
-        echo "[INFO] Using venv Python: $(which python) ($(python --version 2>&1))"
+        echo "[INFO] Using venv Python: $PY_RUN ($($PY_RUN --version 2>&1))"
     fi
 fi
 # 回退到打包时预装的 lib（无需 pip install，需 Python 版本匹配）
@@ -133,27 +173,16 @@ if [ "$USE_LIB" = "0" ] && [ -z "$VIRTUAL_ENV" ]; then
 fi
 if [ "$USE_LIB" = "0" ] && [ -z "$VIRTUAL_ENV" ]; then
     if [ -d "venv" ]; then
-        source venv/bin/activate
-        PY_RUN="python"
-        # 依赖健康检查：venv 存在但核心包缺失时自动重装，避免损坏/不完整
-        if ! $PY_RUN -c "import fastapi" 2>/dev/null; then
-            echo "[INFO] venv incomplete, reinstalling dependencies..."
-            "$PY_RUN" -m pip install --quiet --upgrade pip 2>/dev/null || true
-            "$PY_RUN" -m pip install --quiet -r requirements.txt
-            if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
-                "$PY_RUN" -m pip install --quiet sentence-transformers faiss-cpu numpy 2>/dev/null || true
-            fi
-        fi
+        # venv exists but Python check above may have failed (broken symlinks) — recreate
+        echo "[INFO] venv exists but may be broken, recreating..."
+        _recreate_venv
     else
         echo "[INFO] Creating virtual environment and installing dependencies..."
         "$PY" -m venv venv
         source venv/bin/activate
-        "$PY_RUN" -m pip install --quiet --upgrade pip 2>/dev/null || true
-        "$PY_RUN" -m pip install --quiet -r requirements.txt
-        if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
-            "$PY_RUN" -m pip install --quiet sentence-transformers faiss-cpu numpy 2>/dev/null || true
-        fi
-        PY_RUN="python"
+        PY_RUN="$VIRTUAL_ENV/bin/python"
+        [ -x "$PY_RUN" ] || PY_RUN="$VIRTUAL_ENV/bin/python3"
+        _venv_install_deps "$PY_RUN"
     fi
 fi
 

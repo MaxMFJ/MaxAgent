@@ -56,7 +56,7 @@ async def deep_health_check():
             t1 = time.time()
             # 发送最小请求探测连通性（max_tokens=1 降低成本）
             result = await asyncio.wait_for(
-                llm.client.chat.completions.create(
+                llm._client.chat.completions.create(
                     model=llm.config.model,
                     messages=[{"role": "user", "content": "ping"}],
                     max_tokens=1,

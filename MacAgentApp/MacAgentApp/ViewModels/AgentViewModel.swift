@@ -1,6 +1,24 @@
 import SwiftUI
 import Combine
 
+// MARK: - v3.4 Data Models
+
+struct HitlRequest: Identifiable, Equatable {
+    let id = UUID()
+    let actionId: String
+    let actionType: String
+    let description: String
+    let riskLevel: String
+
+    var riskColor: Color {
+        switch riskLevel {
+        case "high": return .red
+        case "medium": return .orange
+        default: return .yellow
+        }
+    }
+}
+
 @MainActor
 class AgentViewModel: ObservableObject {
     // MARK: - Published Properties
@@ -113,6 +131,37 @@ class AgentViewModel: ObservableObject {
     // 待审批工具（签名校验未通过）
     @Published var pendingTools: [PendingTool] = []
     @Published var approvingToolName: String? = nil
+    
+    // MARK: - v3.4 Integration: HITL
+    @Published var pendingHitlRequests: [HitlRequest] = []
+    @Published var showHitlAlert: Bool = false
+    
+    // MARK: - v3.4 Integration: MCP
+    @Published var mcpServers: [[String: Any]] = []
+    @Published var mcpTools: [[String: Any]] = []
+    @Published var isLoadingMCP: Bool = false
+    @Published var mcpError: String?
+    
+    // MARK: - v3.4 Integration: Snapshots / Rollback
+    @Published var snapshots: [[String: Any]] = []
+    @Published var isLoadingSnapshots: Bool = false
+    @Published var rollbackMessage: String?
+    
+    // MARK: - v3.4 Integration: Feature Flags
+    @Published var featureFlags: [[String: Any]] = []
+    @Published var isLoadingFeatureFlags: Bool = false
+    
+    // MARK: - v3.4 Integration: Audit Logs
+    @Published var auditLogs: [[String: Any]] = []
+    @Published var isLoadingAuditLogs: Bool = false
+    
+    // MARK: - v3.4 Integration: Context Visualization
+    @Published var contextData: [String: Any] = [:]
+    @Published var isLoadingContext: Bool = false
+
+    // MARK: - v3.4 Integration: Model Tier
+    /// 用户偏好的模型层级：auto（自动）/ fast / strong / cheap
+    @AppStorage("preferredModelTier") var preferredModelTier: String = "auto"
     
     // 本地可用模型列表
     @Published var availableLocalModels: [String] = []
@@ -706,6 +755,10 @@ class AgentViewModel: ObservableObject {
                 case .chatResumeResult:
                     // 仅用于 resumeChatStream，此处忽略
                     break
+                    
+                case .phaseVerify, .hitlRequest:
+                    // chat 模式不处理 v3.4 自主任务事件
+                    break
                 }
             }
             
@@ -895,7 +948,8 @@ class AgentViewModel: ObservableObject {
             do {
                 for try await chunk in backendService.sendAutonomousTask(
                     task,
-                    sessionId: sessionId
+                    sessionId: sessionId,
+                    preferredTier: preferredModelTier == "auto" ? nil : preferredModelTier
                 ) {
                     switch chunk {
                 case .modelSelected(let modelType, let reason, let taskType, let complexity):
@@ -1151,6 +1205,30 @@ class AgentViewModel: ObservableObject {
                     statusContent += "\n\n[已终止]"
                     updateAssistantMessage(content: statusContent, isStreaming: false)
                     
+                case .phaseVerify(let iteration, let phase, let note):
+                    // v3.4: 三阶段验证结果气泡
+                    let phaseIcon: String
+                    switch phase {
+                    case "gather": phaseIcon = "🔍"
+                    case "act": phaseIcon = "⚡"
+                    case "verify": phaseIcon = "✔️"
+                    default: phaseIcon = "🔄"
+                    }
+                    statusContent += "\(phaseIcon) [Verify #\(iteration)] \(note)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+                    
+                case .hitlRequest(let actionId, let actionType, let description, let riskLevel):
+                    // v3.4: HITL 人工审批请求 - 将请求存入 ViewModel，触发弹窗
+                    let request = HitlRequest(
+                        actionId: actionId,
+                        actionType: actionType,
+                        description: description,
+                        riskLevel: riskLevel
+                    )
+                    pendingHitlRequests.append(request)
+                    statusContent += "\n⚠️ [等待审批] \(actionType): \(description)\n"
+                    updateAssistantMessage(content: statusContent, isStreaming: true)
+
                 case .chatResumeResult:
                     // 仅用于 resumeChatStream，此处忽略
                     break
@@ -1193,6 +1271,123 @@ class AgentViewModel: ObservableObject {
     func clearExecutionLogs() {
         executionLogs = []
     }
+
+    // MARK: - v3.4: MCP
+    func loadMCPServers() async {
+        isLoadingMCP = true
+        mcpError = nil
+        defer { isLoadingMCP = false }
+        do {
+            mcpServers = try await backendService.fetchMCPServers()
+            mcpTools = try await backendService.fetchMCPTools()
+        } catch {
+            mcpError = error.localizedDescription
+        }
+    }
+
+    func addMCPServer(name: String, transport: String, command: [String]?, url: String?) async {
+        mcpError = nil
+        do {
+            try await backendService.addMCPServer(name: name, transport: transport, command: command, cmdUrl: url)
+            await loadMCPServers()
+        } catch {
+            mcpError = "添加 MCP 服务失败: \(error.localizedDescription)"
+        }
+    }
+
+    func deleteMCPServer(name: String) async {
+        mcpError = nil
+        do {
+            try await backendService.deleteMCPServer(name: name)
+            await loadMCPServers()
+        } catch {
+            mcpError = "删除失败: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - v3.4: Snapshots / Rollback
+    func loadSnapshots(taskId: String? = nil) async {
+        isLoadingSnapshots = true
+        defer { isLoadingSnapshots = false }
+        do {
+            snapshots = try await backendService.fetchSnapshots(taskId: taskId)
+        } catch {
+            // 静默失败
+        }
+    }
+
+    func rollback(snapshotId: String) async {
+        rollbackMessage = nil
+        do {
+            let msg = try await backendService.rollbackSnapshot(snapshotId: snapshotId)
+            rollbackMessage = "✅ \(msg)"
+            await loadSnapshots()
+        } catch {
+            rollbackMessage = "❌ 回滚失败: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - v3.4: HITL
+    func hitlConfirm(_ request: HitlRequest) async {
+        pendingHitlRequests.removeAll { $0.id == request.id }
+        do {
+            try await backendService.hitlConfirm(actionId: request.actionId)
+        } catch {
+            errorMessage = "审批确认失败: \(error.localizedDescription)"
+        }
+    }
+
+    func hitlReject(_ request: HitlRequest) async {
+        pendingHitlRequests.removeAll { $0.id == request.id }
+        do {
+            try await backendService.hitlReject(actionId: request.actionId)
+        } catch {
+            errorMessage = "审批拒绝失败: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - v3.4: Feature Flags
+    func loadFeatureFlags() async {
+        isLoadingFeatureFlags = true
+        defer { isLoadingFeatureFlags = false }
+        do {
+            featureFlags = try await backendService.fetchFeatureFlags()
+        } catch {
+            // 静默失败
+        }
+    }
+
+    func setFeatureFlag(name: String, value: Any) async {
+        do {
+            try await backendService.updateFeatureFlag(name: name, value: value)
+            await loadFeatureFlags()
+        } catch {
+            errorMessage = "FeatureFlag 更新失败: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - v3.4: Audit Logs
+    func loadAuditLogs(limit: Int = 50, logType: String? = nil) async {
+        isLoadingAuditLogs = true
+        defer { isLoadingAuditLogs = false }
+        do {
+            auditLogs = try await backendService.fetchAuditLogs(limit: limit, logType: logType)
+        } catch {
+            // 静默失败
+        }
+    }
+
+    // MARK: - v3.4: Context Visualization
+    func loadContext() async {
+        isLoadingContext = true
+        defer { isLoadingContext = false }
+        do {
+            contextData = try await backendService.fetchContext()
+        } catch {
+            // 静默失败
+        }
+    }
+
     
     // MARK: - Task Resume (断线重连恢复)
     

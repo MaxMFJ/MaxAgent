@@ -20,6 +20,14 @@ from .tunnel import router as tunnel_router
 from .permissions import router as permissions_router
 from .files import router as files_router
 from .traces import router as traces_router
+from .feature_flags import router as feature_flags_router
+from .audit import router as audit_router
+from .hitl import router as hitl_router
+from .sessions import router as sessions_router
+from .subagents import router as subagents_router
+from .mcp import router as mcp_router
+from .rollback import router as rollback_router
+from .context import router as context_router
 
 all_routers = [
     health_router,
@@ -40,4 +48,12 @@ all_routers = [
     permissions_router,
     files_router,
     traces_router,
+    feature_flags_router,
+    audit_router,
+    hitl_router,
+    sessions_router,
+    subagents_router,
+    mcp_router,
+    rollback_router,
+    context_router,
 ]

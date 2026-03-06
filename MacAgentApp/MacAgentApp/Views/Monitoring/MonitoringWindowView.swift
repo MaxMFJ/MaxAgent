@@ -17,15 +17,15 @@ struct MonitoringWindowView: View {
                     // Brand mark（有趣：AI 工作时脉动）
                     HStack(spacing: 6) {
                         Image(systemName: "brain.head.profile")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(CyberFont.display(size: 14, weight: .bold))
                             .foregroundColor(vm.isStreamingLLM ? CyberColor.purple : CyberColor.cyan)
                             .shadow(color: (vm.isStreamingLLM ? CyberColor.purple : CyberColor.cyan).opacity(0.8), radius: vm.isStreamingLLM ? 6 : 4)
                         Text("AI 监控中心")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(CyberFont.display(size: 12, weight: .bold))
                             .foregroundColor(CyberColor.textPrimary)
                         if vm.isStreamingLLM {
                             Text("· 思考中")
-                                .font(.system(size: 10))
+                                .font(CyberFont.body(size: 10))
                                 .foregroundColor(CyberColor.purple)
                         }
                     }
@@ -38,6 +38,7 @@ struct MonitoringWindowView: View {
                         CyberTabButton(title: "EXEC", icon: "timeline.selection.left", tag: 0, selected: $selectedTab)
                         CyberTabButton(title: "SYS",  icon: "chart.bar.fill",          tag: 1, selected: $selectedTab)
                         CyberTabButton(title: "STATS", icon: "chart.pie.fill",          tag: 4, selected: $selectedTab)
+                        CyberTabButton(title: "TRACE", icon: "waveform.path.ecg",       tag: 5, selected: $selectedTab)
                         CyberTabButton(title: "HIST", icon: "clock.arrow.circlepath",  tag: 2, selected: $selectedTab)
                         CyberTabButton(title: "LOGS", icon: "list.bullet.rectangle",   tag: 3, selected: $selectedTab)
                     }
@@ -65,6 +66,7 @@ struct MonitoringWindowView: View {
                     case 2: HistoryAnalysisView().environmentObject(vm)
                     case 3: LogStreamView().environmentObject(vm)
                     case 4: UsageStatisticsView().environmentObject(vm)
+                    case 5: TracesDashboardView().environmentObject(vm)
                     default: ExecutionTimelineView().environmentObject(vm)
                     }
                 }
@@ -95,11 +97,11 @@ private struct CyberTabButton: View {
 
     var body: some View {
         Button(action: { selected = tag }) {
-            HStack(spacing: 5) {
+                    HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(CyberFont.display(size: 11, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.display(size: 11, weight: .semibold))
                     .tracking(1)
             }
             .foregroundColor(isSelected ? CyberColor.bg0 : CyberColor.textSecond)
@@ -140,7 +142,7 @@ private struct CyberStatusBar: View {
             HStack(spacing: 5) {
                 NeonDot(color: vm.healthInfo.backendHealthy ? CyberColor.green : CyberColor.red, size: 5)
                 Text(vm.healthInfo.backendHealthy ? "ONLINE" : "OFFLINE")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 9, weight: .semibold))
                     .foregroundColor(vm.healthInfo.backendHealthy ? CyberColor.green : CyberColor.red)
                     .tracking(1)
             }
@@ -151,10 +153,10 @@ private struct CyberStatusBar: View {
             // WS connections
             HStack(spacing: 4) {
                 Image(systemName: "wifi")
-                    .font(.system(size: 9))
+                    .font(CyberFont.mono(size: 9))
                     .foregroundColor(CyberColor.cyanDim)
                 Text("\(vm.healthInfo.wsConnectionCount) CONN")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(CyberFont.mono(size: 9))
                     .foregroundColor(CyberColor.textSecond)
                     .tracking(1)
             }
@@ -166,8 +168,8 @@ private struct CyberStatusBar: View {
             if vm.isStreamingLLM {
                 HStack(spacing: 4) {
                     NeonDot(color: CyberColor.purple, size: 5)
-                    Text("NEURAL STREAM")
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        Text("NEURAL STREAM")
+                        .font(CyberFont.mono(size: 9, weight: .semibold))
                         .foregroundColor(CyberColor.purple)
                         .tracking(1)
                 }
@@ -176,9 +178,9 @@ private struct CyberStatusBar: View {
             }
 
             // Model
-            Text(vm.healthInfo.llmModel.isEmpty || vm.healthInfo.llmModel == "--"
+                Text(vm.healthInfo.llmModel.isEmpty || vm.healthInfo.llmModel == "--"
                  ? "MODEL: N/A" : "MDL: \(vm.healthInfo.llmModel)")
-                .font(.system(size: 9, design: .monospaced))
+                .font(CyberFont.mono(size: 9))
                 .foregroundColor(CyberColor.textSecond)
                 .lineLimit(1)
                 .padding(.horizontal, 12)
@@ -188,7 +190,7 @@ private struct CyberStatusBar: View {
             // Last update
             if let last = vm.lastPolledAt {
                 Text("UPD \(last, style: .relative)")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(CyberFont.mono(size: 9))
                     .foregroundColor(CyberColor.textSecond.opacity(0.6))
                     .padding(.trailing, 8)
             }

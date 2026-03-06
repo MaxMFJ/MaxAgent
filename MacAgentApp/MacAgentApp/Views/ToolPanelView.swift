@@ -12,6 +12,7 @@ struct ToolPanelView: View {
                 CyberTab(title: "历史", icon: "clock", index: 1, selected: $selectedTab)
                 CyberTab(title: "任务", icon: "bolt.fill", index: 2, selected: $selectedTab)
                 CyberTab(title: "日志", icon: "terminal", index: 3, selected: $selectedTab)
+                CyberTab(title: "快照", icon: "clock.arrow.circlepath", index: 4, selected: $selectedTab)
             }
             .padding(.horizontal, 8)
             .padding(.top, 10)
@@ -31,6 +32,8 @@ struct ToolPanelView: View {
                 AutonomousTaskView()
             case 3:
                 ExecutionLogsView()
+            case 4:
+                RollbackPanelView()
             default:
                 ToolMatrixView()
             }
@@ -54,9 +57,9 @@ private struct CyberTab: View {
         Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selected = index } }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(CyberFont.mono(size: 10))
                 Text(title)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(CyberFont.mono(size: 10, weight: .medium))
             }
             .foregroundColor(isSelected ? CyberColor.cyan : CyberColor.textSecond)
             .padding(.horizontal, 10)
@@ -103,7 +106,7 @@ struct ToolMatrixView: View {
                 }
                 
                 Text("LOADING TOOLS...")
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 10, weight: .semibold))
                     .foregroundColor(CyberColor.textSecond)
                     .tracking(2)
             }
@@ -163,17 +166,17 @@ private struct ToolSectionHeader: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(color)
             Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(CyberFont.mono(size: 9, weight: .bold))
                 .foregroundColor(color)
                 .tracking(2)
             
             Spacer()
             
             Text("\(count) UNITS")
-                .font(.system(size: 9, design: .monospaced))
+                .font(CyberFont.mono(size: 9))
                 .foregroundColor(CyberColor.textSecond)
         }
         .padding(.horizontal, 4)
@@ -261,7 +264,7 @@ private struct ToolMatrixCell: View {
                     }
                     
                     Image(systemName: iconForTool(tool.name))
-                        .font(.system(size: 20, weight: .light))
+                        .font(CyberFont.display(size: 20))
                         .foregroundColor(isSelected ? accentColor : accentColor.opacity(0.6))
                         .shadow(color: isSelected ? accentColor.opacity(0.5) : .clear, radius: 4)
                 }
@@ -269,7 +272,7 @@ private struct ToolMatrixCell: View {
                 
                 // Name
                 Text(displayNameForTool(tool.name))
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .font(CyberFont.mono(size: 9, weight: .medium))
                     .foregroundColor(isSelected ? CyberColor.textPrimary : CyberColor.textSecond)
                     .lineLimit(1)
                 
@@ -359,17 +362,17 @@ private struct ToolDetailPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: iconForTool(tool.name))
-                    .font(.system(size: 14))
+                    .font(CyberFont.body(size: 14))
                     .foregroundColor(accentColor)
                 
                 Text(displayNameForTool(tool.name))
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 12, weight: .semibold))
                     .foregroundColor(CyberColor.textPrimary)
                 
                 Spacer()
                 
                 Text(tool.isGenerated ? "DYNAMIC" : "ONLINE")
-                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .font(CyberFont.mono(size: 8, weight: .bold))
                     .foregroundColor(tool.isGenerated ? CyberColor.orange : CyberColor.green)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -382,7 +385,7 @@ private struct ToolDetailPanel: View {
                 .frame(height: 0.5)
             
             Text(tool.description)
-                .font(.system(size: 11, design: .monospaced))
+                .font(CyberFont.mono(size: 11))
                 .foregroundColor(CyberColor.textSecond)
                 .lineSpacing(3)
             
@@ -394,10 +397,10 @@ private struct ToolDetailPanel: View {
                 
                 HStack(spacing: 4) {
                     Image(systemName: "list.bullet")
-                        .font(.system(size: 9))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond)
                     Text("参数: \(tool.parameters.count)")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.textSecond)
                 }
             }
@@ -451,7 +454,7 @@ struct ToolHistoryView: View {
         if viewModel.recentToolCalls.isEmpty {
             VStack(spacing: 12) {
                 Image(systemName: "clock")
-                    .font(.system(size: 40))
+                    .font(CyberFont.display(size: 40))
                     .foregroundColor(CyberColor.textSecond)
                 
                 Text("暂无工具调用记录")
@@ -481,11 +484,11 @@ struct ToolCallRow: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("参数:")
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 10, weight: .semibold))
                     .foregroundColor(CyberColor.cyan)
                 
                 Text(formatArguments(toolCall.arguments))
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
                 
                 if let result = toolCall.result {
@@ -495,16 +498,16 @@ struct ToolCallRow: View {
                     
                     HStack {
                         Text("结果:")
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .font(CyberFont.mono(size: 10, weight: .semibold))
                             .foregroundColor(CyberColor.cyan)
                         
                         Image(systemName: result.success ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(result.success ? CyberColor.green : CyberColor.red)
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                     }
                     
                     Text(result.output)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .lineLimit(5)
                 }
@@ -519,7 +522,7 @@ struct ToolCallRow: View {
                                     toolCall.result?.success == false ? CyberColor.red : CyberColor.orange)
                 
                 Text(toolCall.name)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(CyberFont.mono(size: 11))
                     .foregroundColor(CyberColor.textPrimary)
             }
         }
@@ -565,7 +568,7 @@ struct AutonomousTaskView: View {
                     .frame(height: 1)
                 Button(action: { viewModel.clearActionLogs() }) {
                     Label("清除日志", systemImage: "trash")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(CyberFont.mono(size: 11))
                         .foregroundColor(CyberColor.red)
                 }
                 .buttonStyle(.plain)
@@ -589,18 +592,18 @@ struct TaskProgressHeader: View {
                     .shadow(color: statusColor.opacity(0.5), radius: 3)
                 
                 Text(statusText)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(CyberFont.mono(size: 13, weight: .semibold))
                     .foregroundColor(CyberColor.textPrimary)
                 
                 Spacer()
                 
                 Text(progress.formattedDuration)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(CyberFont.mono(size: 10))
                     .foregroundColor(CyberColor.textSecond)
             }
             
             Text(progress.taskDescription)
-                .font(.system(size: 11, design: .monospaced))
+                .font(CyberFont.mono(size: 11))
                 .foregroundColor(CyberColor.textSecond)
                 .lineLimit(2)
             
@@ -611,12 +614,12 @@ struct TaskProgressHeader: View {
                         .foregroundColor(modelType == "local" ? CyberColor.green : CyberColor.cyan)
                     
                     Text(modelType == "local" ? "本地模型" : "远程模型")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .font(CyberFont.mono(size: 10, weight: .medium))
                         .foregroundColor(CyberColor.textPrimary)
                     
                     if viewModel.taskComplexity > 0 {
                         Text("复杂度: \(viewModel.taskComplexity)/10")
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(CyberFont.mono(size: 9))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(complexityColor.opacity(0.15))
@@ -670,10 +673,10 @@ private struct CyberStatMini: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 9))
+                .font(CyberFont.mono(size: 9))
                 .foregroundColor(color)
             Text(value)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .font(CyberFont.mono(size: 10, weight: .semibold))
                 .foregroundColor(color)
         }
     }
@@ -685,16 +688,16 @@ struct EmptyTaskView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "bolt.circle")
-                .font(.system(size: 40, weight: .ultraLight))
+                .font(CyberFont.display(size: 40))
                 .foregroundColor(CyberColor.cyanDim)
             
             Text("AUTONOMOUS MODE")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(CyberFont.mono(size: 11, weight: .bold))
                 .foregroundColor(CyberColor.textPrimary)
                 .tracking(2)
             
             Text("在聊天框输入任务后点击 🤖 按钮\n自动选择本地/远程模型执行")
-                .font(.system(size: 10, design: .monospaced))
+                .font(CyberFont.mono(size: 10))
                 .foregroundColor(CyberColor.textSecond)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -714,10 +717,10 @@ struct ActionLogsList: View {
             HStack {
                 HStack(spacing: 4) {
                     Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 9))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.cyan)
                     Text("EXECUTION LOG")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 9, weight: .bold))
                         .foregroundColor(CyberColor.cyan)
                         .tracking(1)
                 }
@@ -726,7 +729,7 @@ struct ActionLogsList: View {
                 
                 Button(action: copyAllLogs) {
                     Label("复制", systemImage: "doc.on.doc")
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(CyberFont.mono(size: 9))
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(CyberColor.cyanDim)
@@ -743,7 +746,7 @@ struct ActionLogsList: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     Text(formattedLogs)
-                        .font(.system(.caption, design: .monospaced))
+                        .font(CyberFont.mono(size: 11))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -848,10 +851,10 @@ struct ExecutionLogsView: View {
             HStack {
                 HStack(spacing: 4) {
                     Image(systemName: "terminal")
-                        .font(.system(size: 9))
+                        .font(CyberFont.mono(size: 9))
                         .foregroundColor(CyberColor.cyan)
                     Text("RUNTIME LOG")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(CyberFont.mono(size: 9, weight: .bold))
                         .foregroundColor(CyberColor.cyan)
                         .tracking(1)
                 }
@@ -861,14 +864,14 @@ struct ExecutionLogsView: View {
                 if !viewModel.executionLogs.isEmpty {
                     Button(action: { viewModel.clearExecutionLogs() }) {
                         Label("清空", systemImage: "trash")
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(CyberFont.mono(size: 9))
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(CyberColor.textSecond)
                     
                     Button(action: copyAllLogs) {
                         Label("复制", systemImage: "doc.on.doc")
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(CyberFont.mono(size: 9))
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(CyberColor.cyanDim)
@@ -885,10 +888,10 @@ struct ExecutionLogsView: View {
             if viewModel.executionLogs.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "terminal")
-                        .font(.system(size: 36, weight: .ultraLight))
+                        .font(CyberFont.display(size: 36))
                         .foregroundColor(CyberColor.cyanDim)
                     Text("工具执行时，实时日志将显示在此")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
                         .multilineTextAlignment(.center)
                 }
@@ -901,21 +904,21 @@ struct ExecutionLogsView: View {
                             ForEach(viewModel.executionLogs) { log in
                                 HStack(alignment: .top, spacing: 6) {
                                     Text(formatTime(log.timestamp))
-                                        .font(.system(.caption2, design: .monospaced))
+                                        .font(CyberFont.mono(size: 10))
                                         .foregroundColor(CyberColor.textSecond)
                                     
                                     Text("[\(log.level.uppercased())]")
-                                        .font(.system(.caption2, design: .monospaced))
+                                        .font(CyberFont.mono(size: 10))
                                         .foregroundColor(colorForLevel(log.level))
                                     
                                     if !log.toolName.isEmpty {
                                         Text("\(log.toolName):")
-                                            .font(.system(.caption2, design: .monospaced))
+                                            .font(CyberFont.mono(size: 10))
                                             .foregroundColor(CyberColor.cyan)
                                     }
                                     
                                     Text(log.message)
-                                        .font(.system(.caption, design: .monospaced))
+                                        .font(CyberFont.mono(size: 11))
                                         .foregroundColor(CyberColor.textPrimary)
                                         .textSelection(.enabled)
                                 }

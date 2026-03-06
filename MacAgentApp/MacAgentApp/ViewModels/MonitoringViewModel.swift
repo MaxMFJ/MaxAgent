@@ -98,6 +98,82 @@ struct ModelConsumptionItem: Identifiable {
     let tokens: Int
 }
 
+// MARK: - 深度健康检查数据模型（/health/deep）
+
+struct DeepHealthCheck: Identifiable {
+    let id: String          // 子系统名称 (llm, disk, memory, vector_db, tools, task_tracker, traces, evomap)
+    let ok: Bool
+    let required: Bool
+    let detail: String
+    let latencyMs: Double?  // 仅 LLM 有
+}
+
+struct DeepHealthData {
+    var healthy: Bool = false
+    var requiredFailed: [String] = []
+    var checks: [DeepHealthCheck] = []
+    var checkDurationMs: Double = 0
+    var serverStatus: String = "normal"
+    var timestamp: Double = 0
+}
+
+// MARK: - Traces 数据模型
+
+struct TraceListItem: Identifiable {
+    let id: String          // task_id
+    let taskId: String
+    let sizeBytes: Int
+    let mtime: Double
+    let spanCount: Int
+}
+
+struct TraceSummaryData {
+    var taskId: String = ""
+    var exists: Bool = false
+    var totalSpans: Int = 0
+    var typeCounts: [String: Int] = [:]
+    var tokens: TraceTokenSummary = TraceTokenSummary()
+    var latency: TraceLatencyStats = TraceLatencyStats()
+    var toolCalls: TraceToolCallStats = TraceToolCallStats()
+    var timeline: TraceTimelineData = TraceTimelineData()
+    var recentErrors: [String] = []
+}
+
+struct TraceTokenSummary {
+    var prompt: Int = 0
+    var completion: Int = 0
+    var total: Int = 0
+}
+
+struct TraceLatencyStats {
+    var count: Int = 0
+    var minMs: Double = 0
+    var maxMs: Double = 0
+    var avgMs: Double = 0
+    var p90Ms: Double = 0
+}
+
+struct TraceToolCallStats {
+    var success: Int = 0
+    var failure: Int = 0
+}
+
+struct TraceTimelineData {
+    var firstTs: Double? = nil
+    var lastTs: Double? = nil
+    var durationS: Double? = nil
+}
+
+struct TraceSpanItem: Identifiable {
+    let id = UUID()
+    let type: String
+    let ts: Double
+    let latencyMs: Double?
+    let success: Bool?
+    let detail: String          // 简短描述
+    let rawJSON: [String: Any]  // 完整 span 数据
+}
+
 struct ModelCallItem: Identifiable {
     let id = UUID()
     let model: String
@@ -163,6 +239,14 @@ class MonitoringViewModel: ObservableObject {
     // MARK: Tab5 - 用户平台统计（HTTP 轮询）
     @Published var usageOverview: UsageOverviewData = UsageOverviewData()
     @Published var modelAnalysis: ModelAnalysisData = ModelAnalysisData()
+
+    // MARK: Tab6 - 深度健康 + Traces
+    @Published var deepHealth: DeepHealthData = DeepHealthData()
+    @Published var traceList: [TraceListItem] = []
+    @Published var selectedTraceSummary: TraceSummaryData? = nil
+    @Published var selectedTraceSpans: [TraceSpanItem] = []
+    @Published var isLoadingTraces: Bool = false
+    @Published var selectedTraceTaskId: String? = nil
 
     // MARK: 私有
     private var cancellables = Set<AnyCancellable>()
@@ -312,6 +396,8 @@ class MonitoringViewModel: ObservableObject {
                     await fetchModelSelectorStats()
                     await fetchUsageOverview()
                     await fetchModelAnalysis()
+                    await fetchDeepHealth()
+                    await fetchTraces()
                 }
                 isPolling = false
                 lastPolledAt = Date()
@@ -562,6 +648,153 @@ class MonitoringViewModel: ObservableObject {
                 modelAnalysis = m
             }
         } catch {}
+    }
+
+    // MARK: - Deep Health 拉取
+
+    private func fetchDeepHealth() async {
+        guard let url = URL(string: "\(baseURL)/health/deep") else { return }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var dh = DeepHealthData()
+                dh.healthy = json["healthy"] as? Bool ?? false
+                dh.requiredFailed = json["required_failed"] as? [String] ?? []
+                dh.checkDurationMs = json["check_duration_ms"] as? Double ?? 0
+                dh.serverStatus = json["server_status"] as? String ?? "unknown"
+                dh.timestamp = json["ts"] as? Double ?? 0
+
+                if let checks = json["checks"] as? [String: [String: Any]] {
+                    dh.checks = checks.map { key, val in
+                        DeepHealthCheck(
+                            id: key,
+                            ok: val["ok"] as? Bool ?? false,
+                            required: val["required"] as? Bool ?? false,
+                            detail: val["detail"] as? String ?? "",
+                            latencyMs: val["latency_ms"] as? Double
+                        )
+                    }.sorted { $0.id < $1.id }
+                }
+                deepHealth = dh
+            }
+        } catch {}
+    }
+
+    // MARK: - Traces 拉取
+
+    func fetchTraces() async {
+        guard let url = URL(string: "\(baseURL)/traces?limit=50") else { return }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let list = json["traces"] as? [[String: Any]] {
+                traceList = list.compactMap { d -> TraceListItem? in
+                    guard let taskId = d["task_id"] as? String else { return nil }
+                    return TraceListItem(
+                        id: taskId,
+                        taskId: taskId,
+                        sizeBytes: d["size_bytes"] as? Int ?? 0,
+                        mtime: d["mtime"] as? Double ?? 0,
+                        spanCount: d["span_count"] as? Int ?? 0
+                    )
+                }
+            }
+        } catch {}
+    }
+
+    func fetchTraceSummary(taskId: String) async {
+        guard let url = URL(string: "\(baseURL)/traces/\(taskId)") else { return }
+        isLoadingTraces = true
+        defer { isLoadingTraces = false }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var s = TraceSummaryData()
+                s.taskId = json["task_id"] as? String ?? taskId
+                s.exists = json["exists"] as? Bool ?? false
+                s.totalSpans = json["total_spans"] as? Int ?? 0
+                s.typeCounts = json["type_counts"] as? [String: Int] ?? [:]
+
+                if let tok = json["tokens"] as? [String: Any] {
+                    s.tokens.prompt = tok["prompt"] as? Int ?? 0
+                    s.tokens.completion = tok["completion"] as? Int ?? 0
+                    s.tokens.total = tok["total"] as? Int ?? 0
+                }
+                if let lat = json["latency"] as? [String: Any] {
+                    s.latency.count = lat["count"] as? Int ?? 0
+                    s.latency.minMs = lat["min_ms"] as? Double ?? 0
+                    s.latency.maxMs = lat["max_ms"] as? Double ?? 0
+                    s.latency.avgMs = lat["avg_ms"] as? Double ?? 0
+                    s.latency.p90Ms = lat["p90_ms"] as? Double ?? 0
+                }
+                if let tc = json["tool_calls"] as? [String: Any] {
+                    s.toolCalls.success = tc["success"] as? Int ?? 0
+                    s.toolCalls.failure = tc["failure"] as? Int ?? 0
+                }
+                if let tl = json["timeline"] as? [String: Any] {
+                    s.timeline.firstTs = tl["first_ts"] as? Double
+                    s.timeline.lastTs = tl["last_ts"] as? Double
+                    s.timeline.durationS = tl["duration_s"] as? Double
+                }
+                s.recentErrors = json["recent_errors"] as? [String] ?? []
+                selectedTraceSummary = s
+            }
+        } catch {}
+    }
+
+    func fetchTraceSpans(taskId: String, offset: Int = 0, limit: Int = 200) async {
+        guard let url = URL(string: "\(baseURL)/traces/\(taskId)/spans?offset=\(offset)&limit=\(limit)") else { return }
+        isLoadingTraces = true
+        defer { isLoadingTraces = false }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let spans = json["spans"] as? [[String: Any]] {
+                selectedTraceSpans = spans.map { d in
+                    let spanType = d["type"] as? String ?? "unknown"
+                    let ts = d["ts"] as? Double ?? 0
+                    let latMs = d["latency_ms"] as? Double ?? d["duration_ms"] as? Double
+                    let success = d["success"] as? Bool
+
+                    // 构建简短描述
+                    var desc = ""
+                    if spanType == "llm" {
+                        let model = d["model"] as? String ?? ""
+                        let usage = d["usage"] as? [String: Any]
+                        let totalTok = usage?["total_tokens"] as? Int ?? d["total_tokens"] as? Int ?? 0
+                        desc = "\(model) • \(totalTok)t"
+                    } else if spanType == "tool" {
+                        let toolName = d["tool"] as? String ?? d["name"] as? String ?? ""
+                        desc = toolName
+                    } else if spanType == "step" {
+                        let action = d["action_type"] as? String ?? ""
+                        desc = action
+                    } else {
+                        desc = d["message"] as? String ?? d["detail"] as? String ?? spanType
+                    }
+                    if let err = d["error"] as? String, !err.isEmpty {
+                        desc += " ⚠️ \(String(err.prefix(60)))"
+                    }
+
+                    return TraceSpanItem(
+                        type: spanType,
+                        ts: ts,
+                        latencyMs: latMs,
+                        success: success,
+                        detail: desc,
+                        rawJSON: d
+                    )
+                }
+            }
+        } catch {}
+    }
+
+    func selectTrace(_ taskId: String) {
+        selectedTraceTaskId = taskId
+        Task {
+            await fetchTraceSummary(taskId: taskId)
+            await fetchTraceSpans(taskId: taskId)
+        }
     }
 
     // MARK: - 计时器

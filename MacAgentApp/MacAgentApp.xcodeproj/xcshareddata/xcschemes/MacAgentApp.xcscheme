@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/lzz/Desktop/&#x672a;&#x547d;&#x540d;&#x6587;&#x4ef6;&#x5939;/MacAgent"
+      customWorkingDirectory = "/Users/lzz/Desktop/macagent/MacAgent"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"

@@ -43,7 +43,7 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Cloudflare Tunnel")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 Spacer()
                 
@@ -52,7 +52,7 @@ struct TunnelView: View {
                     .frame(width: 10, height: 10)
                 
                 Text(statusText)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
@@ -68,7 +68,7 @@ struct TunnelView: View {
                     .toggleStyle(.switch)
                     
                     Text("开启后，后端服务启动时将自动启动 Cloudflare Tunnel（异步，不影响后端启动速度）")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                     
                     Divider()
@@ -95,13 +95,13 @@ struct TunnelView: View {
                         }
                         
                         Text("将本地服务暴露到公网，供 iOS 设备远程访问")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                     
                     if tunnelManager.totalRestarts > 0 {
                         Text("累计自动重启: \(tunnelManager.totalRestarts) 次")
-                            .font(.caption2)
+                            .font(CyberFont.body(size: 10))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -135,7 +135,7 @@ struct TunnelView: View {
             }
             
             Text("请先安装 Cloudflare Tunnel CLI 工具")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             HStack {
@@ -159,7 +159,7 @@ struct TunnelView: View {
     private var installInstructionsSheet: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("安装 cloudflared")
-                .font(.title2)
+                .font(CyberFont.body(size: 18, weight: .semibold))
                 .fontWeight(.bold)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -168,7 +168,7 @@ struct TunnelView: View {
                 
                 HStack {
                     Text("brew install cloudflared")
-                        .font(.system(.body, design: .monospaced))
+                        .font(CyberFont.mono(size: 14))
                         .padding(8)
                         .background(Color(NSColor.textBackgroundColor))
                         .cornerRadius(4)
@@ -212,24 +212,24 @@ struct TunnelView: View {
             HStack {
                 Image(systemName: "wifi.exclamationmark")
                     .foregroundColor(.orange)
-                    .font(.title3)
+                    .font(CyberFont.body(size: 16, weight: .semibold))
                 Text("已切换为仅局域网模式")
                     .fontWeight(.medium)
                     .foregroundColor(.orange)
             }
             
             Text("Cloudflare Tunnel 连续 \(tunnelManager.consecutiveFailures) 次连接失败，可能因 IP 被暂时封禁或网络波动。系统将自动重试。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
             
             if let backoffStr = tunnelManager.backoffUntil {
                 Text("下次重试: \(backoffStr)")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
             Text("请使用局域网地址（见下方）连接，或等待自动恢复。")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
         }
         .padding()
@@ -248,10 +248,10 @@ struct TunnelView: View {
                     .foregroundColor(.yellow)
                 Text("连接中断，尝试重连中...")
                     .fontWeight(.medium)
-                    .font(.callout)
+                    .font(CyberFont.body(size: 14))
             }
             Text("连续失败 \(tunnelManager.consecutiveFailures) 次，退避 \(tunnelManager.currentBackoffSeconds)s 后重试")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .foregroundColor(.secondary)
         }
         .padding()
@@ -265,19 +265,19 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("局域网连接")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Spacer()
                 
                 if tunnelManager.isLanOnly {
                     Text("当前模式")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                         .background(Color.orange.opacity(0.2))
                         .cornerRadius(4)
                 } else {
                     Text("备用")
-                        .font(.caption)
+                        .font(CyberFont.body(size: 11))
                         .foregroundColor(.secondary)
                 }
             }
@@ -302,13 +302,13 @@ struct TunnelView: View {
                         ProgressView()
                             .controlSize(.small)
                         Text("获取局域网信息中...")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                 }
                 
                 Text("同一 Wi-Fi 下的设备可直接使用局域网地址连接，无需公网隧道。")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             .padding()
@@ -323,7 +323,7 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("远程连接指南")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 Spacer()
                 Button(action: { showUserGuide.toggle() }) {
                     Label(showUserGuide ? "收起" : "展开", systemImage: showUserGuide ? "chevron.up" : "chevron.down")
@@ -358,11 +358,11 @@ struct TunnelView: View {
                         Text("常见问题")
                             .fontWeight(.medium)
                         Text("• 地址变了？ — 每次 cloudflared 重启会获得新地址，开启邮件通知可自动接收。")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                         Text("• 连不上？ — 检查 Mac 是否在运行、后端是否启动、cloudflared 是否安装。")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                         Text("• IP 被封？ — 系统会自动退避重试，期间可用局域网连接。通常 10-30 分钟后恢复。")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                     }
                 }
                 .padding()
@@ -377,7 +377,7 @@ struct TunnelView: View {
     private var connectionInfoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("连接信息")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -385,7 +385,7 @@ struct TunnelView: View {
                         .foregroundColor(.secondary)
                     
                     Text(tunnelManager.tunnelURL)
-                        .font(.system(.body, design: .monospaced))
+                        .font(CyberFont.mono(size: 14))
                         .textSelection(.enabled)
                     
                     Spacer()
@@ -403,7 +403,7 @@ struct TunnelView: View {
                             .foregroundColor(.secondary)
                         
                         Text(String(tunnelManager.authToken.prefix(20)) + "...")
-                            .font(.system(.body, design: .monospaced))
+                            .font(CyberFont.mono(size: 14))
                         
                         Spacer()
                         
@@ -427,12 +427,12 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("扫码连接")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 Spacer()
                 
                 Text("使用 iOS App 扫描此二维码")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
@@ -449,14 +449,14 @@ struct TunnelView: View {
                             .cornerRadius(8)
                         
                         Text("包含: URL" + (tunnelManager.isAuthEnabled ? " + Token" : ""))
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                 } else {
                     VStack {
                         ProgressView()
                         Text("生成中...")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                     .frame(width: 180, height: 180)
@@ -476,12 +476,12 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("连接的客户端")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 Spacer()
                 
                 Text("\(tunnelManager.connectedClients.count) 个")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
             
@@ -506,7 +506,7 @@ struct TunnelView: View {
                             Spacer()
                             
                             Text(client.id)
-                                .font(.caption)
+                                .font(CyberFont.body(size: 11))
                                 .foregroundColor(.secondary)
                         }
                         .padding(.vertical, 4)
@@ -524,7 +524,7 @@ struct TunnelView: View {
     private var authSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("访问控制")
-                .font(.headline)
+                .font(CyberFont.body(size: 14, weight: .semibold))
             
             VStack(alignment: .leading, spacing: 12) {
                 Toggle("启用 Token 认证", isOn: Binding(
@@ -539,7 +539,7 @@ struct TunnelView: View {
                 ))
                 
                 Text("启用后，iOS 客户端需要提供正确的 Token 才能连接")
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
                 
                 if tunnelManager.isAuthEnabled {
@@ -551,7 +551,7 @@ struct TunnelView: View {
                         }
                         
                         Text("生成新 Token 后，需要重新扫码或手动更新 iOS 端配置")
-                            .font(.caption)
+                            .font(CyberFont.body(size: 11))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -568,7 +568,7 @@ struct TunnelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Tunnel 日志")
-                    .font(.headline)
+                    .font(CyberFont.body(size: 14, weight: .semibold))
                 
                 Spacer()
                 
@@ -590,7 +590,7 @@ struct TunnelView: View {
                     ForEach(tunnelManager.tunnelLogs.suffix(100)) { log in
                         HStack(alignment: .top, spacing: 8) {
                             Text(formatTime(log.timestamp))
-                                .font(.system(.caption, design: .monospaced))
+                                .font(CyberFont.mono(size: 11))
                                 .foregroundColor(.secondary)
                                 .frame(width: 70, alignment: .leading)
                             
@@ -600,7 +600,7 @@ struct TunnelView: View {
                                 .padding(.top, 4)
                             
                             Text(log.message)
-                                .font(.system(.caption, design: .monospaced))
+                                .font(CyberFont.mono(size: 11))
                                 .foregroundColor(logLevelColor(log.level))
                                 .textSelection(.enabled)
                         }
@@ -643,7 +643,7 @@ private struct InfoRow: View {
                 .foregroundColor(.secondary)
                 .frame(width: 80, alignment: .trailing)
             Text(value)
-                .font(.system(.body, design: .monospaced))
+                .font(CyberFont.mono(size: 14))
                 .textSelection(.enabled)
             Spacer()
         }
@@ -659,7 +659,7 @@ private struct GuideStep: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.caption)
+                .font(CyberFont.body(size: 11))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
                 .frame(width: 22, height: 22)
@@ -669,7 +669,7 @@ private struct GuideStep: View {
                 Text(title)
                     .fontWeight(.medium)
                 Text(desc)
-                    .font(.caption)
+                    .font(CyberFont.body(size: 11))
                     .foregroundColor(.secondary)
             }
         }

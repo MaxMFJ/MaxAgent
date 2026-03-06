@@ -150,14 +150,14 @@
     // --- 角色标签 ---
     _roleLabel = [[UILabel alloc] init];
     _roleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _roleLabel.font = [UIFont monospacedSystemFontOfSize:10 weight:UIFontWeightMedium];
+    _roleLabel.font = [TechTheme fontMonoSize:10 weight:UIFontWeightMedium];
     _roleLabel.textColor = TechTheme.textSecondary;
     [self.contentView addSubview:_roleLabel];
 
     // --- 内容标签 ---
     _contentLabel = [[UILabel alloc] init];
     _contentLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _contentLabel.font = [UIFont systemFontOfSize:15.5];
+    _contentLabel.font = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
     _contentLabel.numberOfLines = 0;
 
     // --- 思考块 StackView ---
@@ -315,7 +315,7 @@
                 [_contentStackView addArrangedSubview:tb];
             } else if (content.length > 0) {
                 UILabel *lbl = [[UILabel alloc] init];
-                lbl.font = [UIFont systemFontOfSize:15.5];
+                lbl.font = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
                 lbl.numberOfLines = 0;
                 lbl.text = content;
                 [_contentStackView addArrangedSubview:lbl];

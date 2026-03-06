@@ -231,7 +231,7 @@ static NSSet<NSString *> *_imageExtensions(void) {
     // 文件名
     _fileNameLabel = [[UILabel alloc] init];
     _fileNameLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _fileNameLabel.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightMedium];
+    _fileNameLabel.font = [TechTheme fontDisplaySize:14 weight:UIFontWeightMedium];
     _fileNameLabel.textColor = TechTheme.textPrimary;
     _fileNameLabel.text = self.filePath.lastPathComponent;
     _fileNameLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
@@ -240,7 +240,7 @@ static NSSet<NSString *> *_imageExtensions(void) {
     // 文件信息行
     _fileInfoLabel = [[UILabel alloc] init];
     _fileInfoLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _fileInfoLabel.font = [UIFont systemFontOfSize:11];
+    _fileInfoLabel.font = [TechTheme fontBodySize:11 weight:UIFontWeightRegular];
     _fileInfoLabel.textColor = TechTheme.textSecondary;
     _fileInfoLabel.text = @"加载中...";
     [self addSubview:_fileInfoLabel];
@@ -248,7 +248,7 @@ static NSSet<NSString *> *_imageExtensions(void) {
     // 文件路径
     _filePathLabel = [[UILabel alloc] init];
     _filePathLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _filePathLabel.font = [UIFont systemFontOfSize:10];
+    _filePathLabel.font = [TechTheme fontMonoSize:10 weight:UIFontWeightRegular];
     _filePathLabel.textColor = [TechTheme.textSecondary colorWithAlphaComponent:0.5];
     _filePathLabel.text = self.filePath;
     _filePathLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
@@ -276,7 +276,7 @@ static NSSet<NSString *> *_imageExtensions(void) {
     // 状态标签
     _statusLabel = [[UILabel alloc] init];
     _statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _statusLabel.font = [UIFont systemFontOfSize:11];
+    _statusLabel.font = [TechTheme fontBodySize:11 weight:UIFontWeightRegular];
     _statusLabel.textColor = TechTheme.neonGreen;
     _statusLabel.text = @"";
     _statusLabel.hidden = YES;

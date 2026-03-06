@@ -21,6 +21,51 @@ class ModelType(Enum):
     REMOTE = "remote"    # DeepSeek / OpenAI API
 
 
+class ModelTier(Enum):
+    """v3.4 三级模型路由 — 快 / 强 / 省"""
+    FAST   = "fast"    # 本地小模型 / 低延迟 API，用于简单操作
+    STRONG = "strong"  # 旗舰远程模型，用于复杂推理
+    CHEAP  = "cheap"   # 中等性价比远程模型，平衡质量与成本
+
+
+# 默认各级路由到的 provider/model（可通过 llm_config.json 中的 tier_models 覆盖）
+_DEFAULT_TIER_MODELS: Dict[str, Dict[str, str]] = {
+    ModelTier.FAST.value: {
+        "provider": "local",
+        "model": "",          # 运行时由 local_llm_manager 确定
+        "description": "本地模型 / 低延迟",
+    },
+    ModelTier.STRONG.value: {
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "description": "旗舰推理模型",
+    },
+    ModelTier.CHEAP.value: {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "description": "性价比模型",
+    },
+}
+
+
+def get_tier_for_task(analysis: "TaskAnalysis") -> ModelTier:
+    """
+    v3.4 三级路由规则：
+      FAST   — 简单操作、敏感数据（隐私保护）、本地脚本
+      STRONG — 复杂度≥7、多步规划、需知识查询
+      CHEAP  — 其余（代码生成、普通推理）
+    """
+    if analysis.is_sensitive:
+        return ModelTier.FAST
+    if analysis.complexity_score >= 7 or analysis.task_type.value in (
+        "complex_reasoning", "multi_step_planning", "knowledge_query"
+    ):
+        return ModelTier.STRONG
+    if analysis.task_type.value in ("simple_operation",):
+        return ModelTier.FAST
+    return ModelTier.CHEAP
+
+
 class TaskType(Enum):
     SIMPLE_OPERATION = "simple_operation"      # 简单文件/系统操作
     CODE_GENERATION = "code_generation"        # 代码/脚本生成
@@ -60,10 +105,12 @@ class ModelSelection:
     reason: str
     confidence: float  # 0-1
     task_analysis: TaskAnalysis
-    
+    tier: "ModelTier" = field(default_factory=lambda: ModelTier.CHEAP)  # v3.4
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "model_type": self.model_type.value,
+            "tier": self.tier.value,
             "reason": self.reason,
             "confidence": self.confidence,
             "task_analysis": self.task_analysis.to_dict()
@@ -353,10 +400,11 @@ class ModelSelector:
             model_type=model_type,
             reason="; ".join(reasons),
             confidence=confidence,
-            task_analysis=analysis
+            task_analysis=analysis,
+            tier=get_tier_for_task(analysis),  # v3.4 三级路由
         )
         
-        logger.info(f"Model selected: {model_type.value} for task type {analysis.task_type.value}")
+        logger.info(f"Model selected: {model_type.value} (tier={selection.tier.value}) for task type {analysis.task_type.value}")
         logger.debug(f"Selection details: {selection.to_dict()}")
         
         return selection
@@ -469,6 +517,27 @@ class ModelSelector:
         stats["strategy"] = self.strategy
         
         return stats
+
+    # ------------------------------------------------------------------
+    # v3.4 Tier model config helpers
+    # ------------------------------------------------------------------
+
+    def get_tier_config(self, tier: "ModelTier") -> Dict[str, str]:
+        """Return the model config dict for a given tier (merged with user overrides)."""
+        base = dict(_DEFAULT_TIER_MODELS.get(tier.value, {}))
+        try:
+            from config.llm_config import load_llm_config
+            cfg = load_llm_config() or {}
+            user_tiers = cfg.get("tier_models", {})
+            if tier.value in user_tiers:
+                base.update(user_tiers[tier.value])
+        except Exception:
+            pass
+        return base
+
+    def get_all_tier_configs(self) -> Dict[str, Dict[str, str]]:
+        """Return tier configs for all three tiers."""
+        return {t.value: self.get_tier_config(t) for t in ModelTier}
 
 
 # Global instance
