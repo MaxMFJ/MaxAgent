@@ -24,6 +24,7 @@ struct SettingsView: View {
         NavItem(title: "功能开关", icon: "slider.horizontal.3",              index: 9),
         NavItem(title: "审计",   icon: "doc.text.magnifyingglass",           index: 10),
         NavItem(title: "Context", icon: "chart.bar.xaxis",                  index: 11),
+        NavItem(title: "Chow Duck", icon: "bird",                           index: 12),
     ]
 
     var body: some View {
@@ -121,6 +122,11 @@ struct SettingsView: View {
                         AuditLogView()
                     case 11:
                         ContextVisualizationView()
+                    case 12:
+                        ScrollView {
+                            DuckSettingsContent()
+                                .padding(20)
+                        }
                     default:
                         ServiceManagerView()
                     }

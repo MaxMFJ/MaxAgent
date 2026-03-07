@@ -4,6 +4,15 @@
 #import "FileDownloadView.h"
 #import "ServerConfig.h"
 #import "TechTheme.h"
+#import "MessageTextDisplay.h"
+#import <YYText/YYText.h>
+#import <QuartzCore/QuartzCore.h>
+
+// 气泡：左 14pt，右 8pt，内容区左右各 14pt padding
+static CGFloat _MessageCellContentMaxWidth(CGFloat tableViewWidth) {
+    CGFloat w = tableViewWidth > 0 ? tableViewWidth : UIScreen.mainScreen.bounds.size.width;
+    return w - 14 - 8 - 28;  // 屏幕宽 - 左边距 - 右边距 - 气泡内边距
+}
 
 // MARK: - 三点打字动画视图
 
@@ -84,7 +93,7 @@
 
 @interface MessageCell () <ThinkingBlockViewDelegate>
 
-@property (nonatomic, strong) UILabel *contentLabel;
+@property (nonatomic, strong) YYLabel *contentLabel;
 @property (nonatomic, strong) UIStackView *contentStackView;
 @property (nonatomic, strong) UIView *contentContainerView;
 @property (nonatomic, strong) UILabel *roleLabel;
@@ -107,6 +116,9 @@
 @property (nonatomic, assign) MessageRole cachedRole;
 @property (nonatomic, assign) BOOL cachedHasThinking;
 
+// UILabel 高度约束：用 boundingRectWithSize 快速计算代替 intrinsicContentSize 慢计算
+@property (nonatomic, strong) NSLayoutConstraint *contentLabelHeightConstraint;
+
 @end
 
 @implementation MessageCell
@@ -125,6 +137,7 @@
     self.selectionStyle = UITableViewCellSelectionStyleNone;
     self.backgroundColor = [UIColor clearColor];
     self.contentView.backgroundColor = [UIColor clearColor];
+    self.contentView.layoutMargins = UIEdgeInsetsZero;  // 消除默认边距，让气泡贴边
 
     // --- 气泡容器 ---
     _bubbleView = [[UIView alloc] init];
@@ -154,11 +167,11 @@
     _roleLabel.textColor = TechTheme.textSecondary;
     [self.contentView addSubview:_roleLabel];
 
-    // --- 内容标签 ---
-    _contentLabel = [[UILabel alloc] init];
+    // --- 内容标签（YYLabel 高性能渲染，配合 MessageTextDisplay 中间层保证高度一致）---
+    _contentLabel = [[YYLabel alloc] init];
     _contentLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _contentLabel.font = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
     _contentLabel.numberOfLines = 0;
+    _contentLabel.lineBreakMode = NSLineBreakByWordWrapping;
 
     // --- 思考块 StackView ---
     _contentStackView = [[UIStackView alloc] init];
@@ -181,6 +194,13 @@
         [_contentStackView.trailingAnchor constraintEqualToAnchor:_contentContainerView.trailingAnchor],
         [_contentStackView.bottomAnchor constraintEqualToAnchor:_contentContainerView.bottomAnchor]
     ]];
+
+    // 高度约束：用 boundingRectWithSize 快速计算高度
+    _contentLabelHeightConstraint = [_contentLabel.heightAnchor constraintGreaterThanOrEqualToConstant:0];
+    _contentLabelHeightConstraint.priority = UILayoutPriorityDefaultHigh;
+    _contentLabelHeightConstraint.active = YES;
+    [_contentLabel setContentHuggingPriority:UILayoutPriorityDefaultLow - 1 forAxis:UILayoutConstraintAxisVertical];
+
 
     // --- 图片 ---
     _messageImageView = [[UIImageView alloc] init];
@@ -217,7 +237,7 @@
     _bubbleMinWidth.active = YES;
 
     _bubbleLeading  = [_bubbleView.leadingAnchor  constraintEqualToAnchor:self.contentView.leadingAnchor  constant:14];
-    _bubbleTrailing = [_bubbleView.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-14];
+    _bubbleTrailing = [_bubbleView.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-8];  // 距屏幕右边 8pt
 
     [NSLayoutConstraint activateConstraints:@[
         [_roleLabel.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:8],
@@ -226,7 +246,7 @@
 
         [_bubbleView.topAnchor constraintEqualToAnchor:_roleLabel.bottomAnchor constant:4],
         [_bubbleView.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-6],
-        [_bubbleView.widthAnchor constraintLessThanOrEqualToAnchor:self.contentView.widthAnchor multiplier:0.82],
+        [_bubbleView.widthAnchor constraintLessThanOrEqualToAnchor:self.contentView.widthAnchor multiplier:1 constant:-22],  // 左14+右8，最大宽度铺满
 
         [_bubbleStackView.topAnchor constraintEqualToAnchor:_bubbleInner.topAnchor constant:12],
         [_bubbleStackView.leadingAnchor constraintEqualToAnchor:_bubbleInner.leadingAnchor constant:14],
@@ -262,6 +282,71 @@
     }
 }
 
+// MARK: - 高度计算（类方法供 heightForRowAtIndexPath 使用）
+
++ (CGFloat)heightForMessage:(Message *)message tableViewWidth:(CGFloat)width {
+    if (message.cachedCellHeight > 0) {
+        return message.cachedCellHeight; // 复用缓存，避免重复 boundingRect 计算
+    }
+    CGFloat maxWidth = _MessageCellContentMaxWidth(width);
+    UIFont *bodyFont = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
+    UIFont *thinkingFont = [TechTheme fontBodySize:11.5 weight:UIFontWeightRegular];
+    
+    CGFloat contentHeight;
+    BOOL parseCacheValid = (message.cachedParsedParts != nil && message.cachedContentLength == message.content.length);
+    NSArray *parts = parseCacheValid ? message.cachedParsedParts : [ThinkingContentParser parseContent:message.content];
+    if (!parseCacheValid) {
+        message.cachedParsedParts = parts;
+        message.cachedContentLength = message.content.length;
+    }
+    
+    BOOL hasThinking = NO;
+    for (NSDictionary *part in parts) {
+        if ([part[@"type"] isEqualToString:@"thinking"]) {
+            hasThinking = YES;
+            break;
+        }
+    }
+    
+    if (!hasThinking) {
+        NSString *text = message.content.length > 0 ? message.content : @" ";
+        contentHeight = [MessageTextDisplay heightForText:text font:bodyFont textColor:TechTheme.textPrimary maxWidth:maxWidth];
+    } else {
+        contentHeight = 0;
+        UIColor *thinkingColor = [TechTheme.neonPurple colorWithAlphaComponent:0.75];
+        for (NSDictionary *part in parts) {
+            NSString *type = part[@"type"];
+            NSString *content = part[@"content"] ?: @"";
+            if ([type isEqualToString:@"thinking"]) {
+                contentHeight += 30 + 8 + [MessageTextDisplay heightForText:content font:thinkingFont textColor:thinkingColor maxWidth:maxWidth - 24] + 8;
+            } else if (content.length > 0) {
+                contentHeight += [MessageTextDisplay heightForText:content font:bodyFont textColor:TechTheme.textPrimary maxWidth:maxWidth];
+            }
+        }
+        contentHeight += (parts.count > 1) ? (parts.count - 1) * 8 : 0; // UIStackView spacing
+    }
+    
+    // 图片高度
+    if (message.imageBase64.length > 0) {
+        contentHeight += 8 + MIN(300, 280 * 0.75); // 最大 300 高，宽 280
+    }
+    
+    // FileDownloadView 每个约 60pt
+    NSArray *filePaths = message.cachedFilePaths;
+    if (!filePaths) {
+        filePaths = [FileDownloadView detectFilePathsInText:message.content];
+        message.cachedFilePaths = filePaths;
+    }
+    if (filePaths.count > 0) {
+        contentHeight += 8 + (CGFloat)filePaths.count * 60;
+    }
+    
+    // 固定部分：roleLabel(8+14+4) + bubble(12+12) + bottom(6) = 56
+    CGFloat total = 56 + contentHeight;
+    message.cachedCellHeight = total; // 缓存供 heightForRow 复用
+    return total;
+}
+
 // MARK: - Configure
 
 - (void)configureWithMessage:(Message *)message {
@@ -273,18 +358,56 @@
     BOOL isStreamingUpdate = !isFirst && !roleChanged && message.status == MessageStatusStreaming;
     
     if (isStreamingUpdate && !_cachedHasThinking) {
-        // 快速文本更新：跳过解析、样式、glow 等昂贵操作
-        _contentLabel.text = message.content.length > 0 ? message.content : @" ";
-        _cachedContent = message.content;
+        if (![_cachedContent isEqualToString:message.content]) {
+            NSString *text = message.content.length > 0 ? message.content : @" ";
+            CGFloat maxW = _MessageCellContentMaxWidth(0);
+            [MessageTextDisplay configureLabel:_contentLabel withText:text font:[TechTheme fontBodySize:15.5 weight:UIFontWeightRegular] textColor:TechTheme.textPrimary maxWidth:maxW];
+            _contentLabelHeightConstraint.constant = [MessageTextDisplay heightForText:text font:[TechTheme fontBodySize:15.5 weight:UIFontWeightRegular] textColor:TechTheme.textPrimary maxWidth:maxW];
+            _cachedContent = message.content;
+            // 流式更新时也检测文件路径并显示 FileDownloadView（如 AI 回复中已包含完整路径）
+            NSArray<NSString *> *filePaths = message.cachedFilePaths;
+            if (!filePaths) {
+                filePaths = [FileDownloadView detectFilePathsInText:message.content];
+                message.cachedFilePaths = filePaths;
+            }
+            if (filePaths.count > 0) {
+                for (UIView *v in [_bubbleStackView.arrangedSubviews copy]) {
+                    if ([v isKindOfClass:[FileDownloadView class]]) {
+                        [_bubbleStackView removeArrangedSubview:v];
+                        [v removeFromSuperview];
+                    }
+                }
+                NSString *baseURL = [ServerConfig sharedConfig].serverURL;
+                for (NSString *path in filePaths) {
+                    FileDownloadView *fdv = [[FileDownloadView alloc] initWithFilePath:path serverBaseURL:baseURL];
+                    [_bubbleStackView addArrangedSubview:fdv];
+                    [fdv.leadingAnchor constraintEqualToAnchor:_bubbleStackView.leadingAnchor].active = YES;
+                    [fdv.trailingAnchor constraintEqualToAnchor:_bubbleStackView.trailingAnchor].active = YES;
+                }
+            }
+        }
         return;
     }
 
     // === 完整配置路径 ===
+    CFTimeInterval t0 = CACurrentMediaTime();
     _cachedContent = message.content;
     _cachedRole = message.role;
 
-    // --- 解析思维块 ---
-    NSArray *parts = [ThinkingContentParser parseContent:message.content];
+    // 检查 Message 对象上的解析缓存是否有效（content 长度改变则失效）
+    BOOL parseCacheValid = (message.cachedParsedParts != nil && message.cachedContentLength == message.content.length);
+
+    CFTimeInterval tParse0 = CACurrentMediaTime();
+    // --- 解析思维块（使用 Message 缓存避免重复解析）---
+    NSArray *parts;
+    if (parseCacheValid) {
+        parts = message.cachedParsedParts;
+    } else {
+        parts = [ThinkingContentParser parseContent:message.content];
+        message.cachedParsedParts = parts;
+        message.cachedContentLength = message.content.length;
+        message.cachedFilePaths = nil; // 内容变化时清除文件路径缓存
+    }
     BOOL hasThinking = NO;
     for (NSDictionary *part in parts) {
         if ([part[@"type"] isEqualToString:@"thinking"]) {
@@ -293,11 +416,26 @@
         }
     }
     _cachedHasThinking = hasThinking;
+    CFTimeInterval tParse1 = CACurrentMediaTime();
+
+    CFTimeInterval tContent0 = CACurrentMediaTime();
 
     if (!hasThinking) {
         _contentLabel.hidden = NO;
         _contentStackView.hidden = YES;
-        _contentLabel.text = message.content.length > 0 ? message.content : @" ";
+        // 关键：复用 cell 时若之前是 thinking 模式，必须清空 contentStackView，否则隐藏的 subviews 仍参与 layout 导致卡顿
+        for (UIView *v in [_contentStackView.arrangedSubviews copy]) {
+            [_contentStackView removeArrangedSubview:v];
+            [v removeFromSuperview];
+        }
+        NSString *text = message.content.length > 0 ? message.content : @" ";
+        UIFont *bodyFont = [TechTheme fontBodySize:15.5 weight:UIFontWeightRegular];
+        UIColor *textColor = TechTheme.textPrimary;
+        CGFloat maxW = _MessageCellContentMaxWidth(0);
+        [UIView performWithoutAnimation:^{
+            [MessageTextDisplay configureLabel:_contentLabel withText:text font:bodyFont textColor:textColor maxWidth:maxW];
+            _contentLabelHeightConstraint.constant = [MessageTextDisplay heightForText:text font:bodyFont textColor:textColor maxWidth:maxW];
+        }];
     } else {
         _contentLabel.hidden = YES;
         _contentStackView.hidden = NO;
@@ -322,6 +460,7 @@
             }
         }
     }
+    CFTimeInterval tContent1 = CACurrentMediaTime();
 
     BOOL isUser       = (message.role == MessageRoleUser);
     BOOL isToolCall   = (message.role == MessageRoleToolCall);
@@ -343,37 +482,41 @@
         _bubbleInner.backgroundColor = [UIColor clearColor];
 
         if (isUser) {
-            _bubbleTrailing.active = YES;
+            _bubbleLeading.active = NO;
+            _bubbleTrailing.active = YES;  // 用户消息：气泡靠右
             _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
             _contentLabel.textColor    = TechTheme.textPrimary;
             _roleLabel.text            = NSLocalizedString(@"you", nil);
             _roleLabel.textAlignment   = NSTextAlignmentRight;
             _roleLabel.textColor       = [TechTheme.neonCyan colorWithAlphaComponent:0.7];
-            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonCyan radius:8];
+//            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonCyan radius:8];
         } else if (isToolCall) {
             _bubbleLeading.active = YES;
+            _bubbleTrailing.active = YES;  // AI/工具消息：气泡左右都固定，延伸到右边距 8pt
             _bubbleInner.backgroundColor = TechTheme.toolCallBubble;
             _contentLabel.textColor    = TechTheme.textPrimary;
             _roleLabel.text            = [NSString stringWithFormat:@"⚙ %@", message.toolName ?: NSLocalizedString(@"tool", nil)];
             _roleLabel.textAlignment   = NSTextAlignmentLeft;
             _roleLabel.textColor       = [TechTheme.neonOrange colorWithAlphaComponent:0.85];
-            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonOrange radius:6];
+//            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonOrange radius:6];
         } else if (isToolResult) {
             _bubbleLeading.active = YES;
+            _bubbleTrailing.active = YES;
             _bubbleInner.backgroundColor = TechTheme.toolResultBubble;
             _contentLabel.textColor    = TechTheme.textPrimary;
             _roleLabel.text            = [NSString stringWithFormat:@"✓ %@", NSLocalizedString(@"result", nil)];
             _roleLabel.textAlignment   = NSTextAlignmentLeft;
             _roleLabel.textColor       = [TechTheme.neonGreen colorWithAlphaComponent:0.85];
-            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonGreen radius:6];
+//            [TechTheme applyNeonGlow:_bubbleView color:TechTheme.neonGreen radius:6];
         } else {
             _bubbleLeading.active = YES;
+            _bubbleTrailing.active = YES;  // 助手消息：气泡延伸到右边距 8pt
             _bubbleInner.backgroundColor = TechTheme.aiBubbleBackground;
             _contentLabel.textColor    = TechTheme.textPrimary;
             _roleLabel.text            = message.modelName ?: NSLocalizedString(@"assistant", nil);
             _roleLabel.textAlignment   = NSTextAlignmentLeft;
             _roleLabel.textColor       = [TechTheme.neonPurple colorWithAlphaComponent:0.85];
-            [TechTheme applyNeonGlow:_bubbleView color:[TechTheme.neonCyan colorWithAlphaComponent:0.4] radius:10];
+//            [TechTheme applyNeonGlow:_bubbleView color:[TechTheme.neonCyan colorWithAlphaComponent:0.4] radius:10];
         }
     }
 
@@ -391,7 +534,7 @@
         [_typingDots stopAnimating];
     }
 
-    // --- 文件下载卡片 ---
+    // --- 文件下载卡片（使用 Message 缓存避免重复正则匹配）---
     // 先移除旧的 FileDownloadView
     for (UIView *v in [_bubbleStackView.arrangedSubviews copy]) {
         if ([v isKindOfClass:[FileDownloadView class]]) {
@@ -400,7 +543,11 @@
         }
     }
     // 检测文件路径并添加
-    NSArray<NSString *> *filePaths = [FileDownloadView detectFilePathsInText:message.content];
+    NSArray<NSString *> *filePaths = message.cachedFilePaths;
+    if (!filePaths) {
+        filePaths = [FileDownloadView detectFilePathsInText:message.content];
+        message.cachedFilePaths = filePaths;
+    }
     if (filePaths.count > 0) {
         NSString *baseURL = [ServerConfig sharedConfig].serverURL;
         for (NSString *path in filePaths) {
@@ -412,10 +559,14 @@
         }
     }
 
-    // --- 图片 ---
+    // --- 图片（使用 Message 缓存避免重复 base64 解码）---
     if (message.imageBase64.length > 0) {
-        NSData *imageData = [[NSData alloc] initWithBase64EncodedString:message.imageBase64 options:NSDataBase64DecodingIgnoreUnknownCharacters];
-        UIImage *image = [UIImage imageWithData:imageData];
+        UIImage *image = message.cachedDecodedImage;
+        if (!image) {
+            NSData *imageData = [[NSData alloc] initWithBase64EncodedString:message.imageBase64 options:NSDataBase64DecodingIgnoreUnknownCharacters];
+            image = [UIImage imageWithData:imageData];
+            message.cachedDecodedImage = image;
+        }
         if (image) {
             _messageImageView.image = image;
             _messageImageView.hidden = NO;
@@ -434,6 +585,14 @@
     if (isFirst) {
         [TechTheme animateMessageBubbleEntrance:_bubbleView fromUser:isUser];
     }
+
+    CFTimeInterval t1 = CACurrentMediaTime();
+    if ((t1 - t0) > 0.005) { // 仅记录超过 5ms 的配置
+        NSLog(@"[Cell perf] total=%.1fms parse=%.1fms content=%.1fms rest=%.1fms role=%ld changed=%d len=%luB cache=%d thinking=%d",
+              (t1 - t0) * 1000, (tParse1 - tParse0) * 1000, (tContent1 - tContent0) * 1000,
+              (t1 - tContent1) * 1000, (long)message.role, roleChanged,
+              (unsigned long)message.content.length, parseCacheValid, hasThinking);
+    }
 }
 
 - (void)prepareForReuse {
@@ -443,20 +602,22 @@
     _bubbleView.transform = CGAffineTransformIdentity;
     _bubbleView.alpha = 1.0;
     [_bubbleView.layer removeAllAnimations];
-    // 清理 shadow
-    _bubbleView.layer.shadowOpacity = 0;
-    _bubbleView.layer.shadowPath = nil;
-    _bubbleView.layer.shouldRasterize = NO;
-    // 移除文件下载卡片
+    // 保留 shadow 和 _cachedRole：configureWithMessage 的 roleChanged 检查
+    // 会在角色真正变化时重新应用样式和 glow，避免每次复用都走昂贵的样式路径。
+    // layoutSubviews 会自动更新 shadowPath 适配新 bounds。
+    // 清理 contentStackView：从长 cell（含 thinking 块）复用为短 cell 时，避免隐藏的 subviews 参与 layout 导致卡顿
+    for (UIView *v in [_contentStackView.arrangedSubviews copy]) {
+        [_contentStackView removeArrangedSubview:v];
+        [v removeFromSuperview];
+    }
+    // 清理 FileDownloadView，避免复用时残留上一条消息的文件下载按钮
     for (UIView *v in [_bubbleStackView.arrangedSubviews copy]) {
         if ([v isKindOfClass:[FileDownloadView class]]) {
             [_bubbleStackView removeArrangedSubview:v];
             [v removeFromSuperview];
         }
     }
-    // 重置缓存，确保复用后正确重新配置
     _cachedContent = nil;
-    _cachedRole = (MessageRole)NSIntegerMax; // sentinel：确保复用后触发完整样式配置
     _cachedHasThinking = NO;
 }
 

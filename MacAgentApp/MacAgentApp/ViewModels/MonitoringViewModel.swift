@@ -193,12 +193,69 @@ struct ModelAnalysisData {
     var callRanking: [ModelCallItem] = []
 }
 
+// MARK: - 多任务监控数据（按 task_id 分桶）
+
+struct TaskMonitorData: Identifiable {
+    let id: String
+    var taskProgress: TaskProgress?
+    var actionLogs: [ActionLogEntry]
+    var llmStreamingText: String
+    var isStreamingLLM: Bool
+    var sessionTokenUsage: TokenUsage
+    var currentIteration: Int
+    var selectedModelType: String?
+    var selectedModelReason: String?
+    var taskComplexity: Int
+    var taskElapsedSeconds: Int
+    var tokenHistory: [Int]
+    var sourceSession: String
+    var taskType: String
+    var lastUpdated: Date
+
+    init(taskId: String, sourceSession: String, taskType: String) {
+        self.id = taskId
+        self.taskProgress = nil
+        self.actionLogs = []
+        self.llmStreamingText = ""
+        self.isStreamingLLM = false
+        self.sessionTokenUsage = TokenUsage()
+        self.currentIteration = 0
+        self.selectedModelType = nil
+        self.selectedModelReason = nil
+        self.taskComplexity = 0
+        self.taskElapsedSeconds = 0
+        self.tokenHistory = []
+        self.sourceSession = sourceSession
+        self.taskType = taskType
+        self.lastUpdated = Date()
+    }
+}
+
+/// 来自 /monitor/active-tasks 的任务摘要
+struct ActiveTaskItem: Identifiable {
+    let id: String
+    let taskId: String
+    let sessionId: String
+    let taskType: String
+    let description: String
+    let status: String
+    let createdAt: Double
+    let finishedAt: Double?
+}
+
 // MARK: - MonitoringViewModel
 
 @MainActor
 class MonitoringViewModel: ObservableObject {
 
-    // MARK: Tab1 - AI 执行过程（镜像 AgentViewModel）
+    // MARK: Tab1 - 多任务执行过程
+    @Published var tasks: [String: TaskMonitorData] = [:]
+    @Published var selectedTaskId: String?
+    @Published var viewMode: ExecutionViewMode = .single  // .single 单任务 | .all 全部合并
+    @Published var activeTaskList: [ActiveTaskItem] = []
+    @Published var isLoadingActiveTasks: Bool = false
+
+    // MARK: 兼容旧逻辑（无多任务数据时回退）
     @Published var currentIteration: Int = 0
     @Published var actionLogs: [ActionLogEntry] = []
     @Published var taskProgress: TaskProgress?
@@ -213,6 +270,11 @@ class MonitoringViewModel: ObservableObject {
     // MARK: LLM Neural Stream
     @Published var llmStreamingText: String = ""
     @Published var isStreamingLLM: Bool = false
+
+    enum ExecutionViewMode: String, CaseIterable {
+        case single = "single"
+        case all = "all"
+    }
 
     // MARK: Tab2 - 系统状态（HTTP 轮询）
     @Published var healthInfo: SystemHealthInfo = SystemHealthInfo()
@@ -253,6 +315,7 @@ class MonitoringViewModel: ObservableObject {
     private var pollingTask: Task<Void, Never>?
     private var historyRefreshTask: Task<Void, Never>?
     private var elapsedTimer: Task<Void, Never>?
+    private var multiTaskElapsedTimer: Task<Void, Never>?
     private var nextLogIndex: Int = 0
     private let baseURL = "http://127.0.0.1:8765"
 
@@ -294,6 +357,335 @@ class MonitoringViewModel: ObservableObject {
     var currentTaskSuccessRate: Double {
         guard let p = taskProgress, p.totalActions > 0 else { return 0 }
         return Double(p.successfulActions) / Double(p.totalActions)
+    }
+
+    /// 当前选中任务的监控数据（多任务模式）
+    var currentTaskData: TaskMonitorData? {
+        if let id = selectedTaskId, let t = tasks[id] { return t }
+        if let running = tasks.values.first(where: { $0.taskProgress?.status == .running }) { return running }
+        return tasks.values.max(by: { $0.lastUpdated < $1.lastUpdated })
+    }
+
+    /// 全部视图下合并的时间轴（按时间排序，带任务标签）
+    var mergedActionLogs: [(taskId: String, taskDesc: String, entry: ActionLogEntry)] {
+        var result: [(String, String, ActionLogEntry)] = []
+        for (tid, data) in tasks {
+            let desc = data.taskProgress?.taskDescription ?? tid.prefix(8).description
+            for entry in data.actionLogs {
+                result.append((tid, String(desc), entry))
+            }
+        }
+        result.sort { $0.2.timestamp < $1.2.timestamp }
+        return result
+    }
+
+    /// 是否有任何任务数据可展示
+    var hasAnyTaskData: Bool {
+        !tasks.isEmpty || !actionLogs.isEmpty || taskProgress != nil
+    }
+
+    private static func buildParamsSummary(actionType: String, params: [String: Any]) -> String? {
+        let t = actionType.lowercased()
+        if t.contains("run_shell") || t.contains("shell") {
+            if let cmd = params["command"] as? String, !cmd.isEmpty {
+                return cmd.count > 80 ? String(cmd.prefix(77)) + "…" : cmd
+            }
+        }
+        if t.contains("read_file") || t.contains("write_file") || t.contains("delete_file") {
+            if let path = params["path"] as? String, !path.isEmpty { return path }
+        }
+        if t.contains("call_tool") {
+            if let name = params["tool_name"] as? String, !name.isEmpty {
+                if let args = params["args"] as? [String: Any], let action = args["action"] as? String {
+                    return "\(name) action=\(action)"
+                }
+                return name
+            }
+        }
+        if t.contains("create_and_run") {
+            if let code = params["code"] as? String, !code.isEmpty {
+                return code.count > 60 ? String(code.prefix(57)) + "…" : code
+            }
+        }
+        if let path = params["path"] as? String, !path.isEmpty { return path }
+        if let cmd = params["command"] as? String, !cmd.isEmpty { return cmd }
+        return nil
+    }
+
+    // MARK: - 多任务 monitor_event 处理
+
+    func applyMonitorEvent(taskId: String, sourceSession: String, event: [String: Any]) {
+        let taskType = event["task_type"] as? String ?? "autonomous"
+        if tasks[taskId] == nil {
+            tasks[taskId] = TaskMonitorData(taskId: taskId, sourceSession: sourceSession, taskType: taskType)
+            if selectedTaskId == nil { selectedTaskId = taskId }
+        }
+        guard var data = tasks[taskId] else { return }
+        data.lastUpdated = Date()
+
+        guard let eventType = event["type"] as? String else { tasks[taskId] = data; return }
+
+        switch eventType {
+        case "task_start":
+            let taskDesc = event["task"] as? String ?? ""
+            data.taskProgress = TaskProgress(
+                id: taskId,
+                taskDescription: taskDesc,
+                status: .running,
+                currentIteration: 0,
+                totalActions: 0,
+                successfulActions: 0,
+                failedActions: 0,
+                startTime: Date()
+            )
+            data.taskElapsedSeconds = 0
+
+        case "llm_request_start":
+            data.isStreamingLLM = true
+            let provider = event["provider"] as? String ?? "unknown"
+            let model = event["model"] as? String ?? ""
+            let iteration = event["iteration"] as? Int ?? 0
+            let llmId = "llm_\(iteration)_\(taskId)"
+            let logEntry = ActionLogEntry(
+                actionId: llmId,
+                actionType: "llm_request",
+                reasoning: "请求 \(provider)/\(model)",
+                status: .executing,
+                output: nil,
+                error: nil,
+                timestamp: Date(),
+                iteration: iteration
+            )
+            data.actionLogs.append(logEntry)
+
+        case "llm_request_end":
+            data.isStreamingLLM = false
+            let iteration = event["iteration"] as? Int ?? 0
+            let latencyMs = event["latency_ms"] as? Int ?? 0
+            let usage = event["usage"] as? [String: Any] ?? [:]
+            let error = event["error"] as? String
+            let llmId = "llm_\(iteration)_\(taskId)"
+            if let index = data.actionLogs.firstIndex(where: { $0.actionId == llmId }) {
+                let pt = usage["prompt_tokens"] as? Int ?? 0
+                let ct = usage["completion_tokens"] as? Int ?? 0
+                var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
+                if let err = error, !err.isEmpty { out += " | 错误: \(err)" }
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: llmId,
+                    actionType: "llm_request",
+                    reasoning: e.reasoning,
+                    status: error != nil ? .failed : .success,
+                    output: out,
+                    error: error,
+                    timestamp: e.timestamp,
+                    iteration: iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            }
+
+        case "action_plan":
+            let action = event["action"] as? [String: Any] ?? [:]
+            let iteration = event["iteration"] as? Int ?? 0
+            data.currentIteration = iteration
+            let actionType = action["action_type"] as? String ?? "unknown"
+            let reasoning = action["reasoning"] as? String ?? ""
+            let actionId = (action["action_id"] as? String ?? UUID().uuidString)
+            let params = action["params"] as? [String: Any] ?? [:]
+            let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
+            let logEntry = ActionLogEntry(
+                actionId: "\(taskId)_\(actionId)",
+                actionType: actionType,
+                reasoning: reasoning,
+                status: .pending,
+                output: nil,
+                error: nil,
+                timestamp: Date(),
+                iteration: iteration,
+                paramsSummary: paramsSummary
+            )
+            data.actionLogs.append(logEntry)
+
+        case "action_executing":
+            let actionId = event["action_id"] as? String ?? ""
+            let fullId = "\(taskId)_\(actionId)"
+            if let index = data.actionLogs.firstIndex(where: { $0.actionId == fullId }) {
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: fullId,
+                    actionType: e.actionType,
+                    reasoning: e.reasoning,
+                    status: .executing,
+                    output: nil,
+                    error: nil,
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            } else if let index = data.actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: e.actionId,
+                    actionType: e.actionType,
+                    reasoning: e.reasoning,
+                    status: .executing,
+                    output: nil,
+                    error: nil,
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            }
+
+        case "action_result":
+            let actionId = event["action_id"] as? String ?? ""
+            let success = event["success"] as? Bool ?? false
+            let output = event["output"] as? String
+            let error = event["error"] as? String
+            let fullId = "\(taskId)_\(actionId)"
+            var actionType = "unknown"
+            if let index = data.actionLogs.firstIndex(where: { $0.actionId == fullId }) {
+                actionType = data.actionLogs[index].actionType
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: fullId,
+                    actionType: actionType,
+                    reasoning: e.reasoning,
+                    status: success ? .success : .failed,
+                    output: output,
+                    error: error,
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            } else if let index = data.actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                actionType = data.actionLogs[index].actionType
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: e.actionId,
+                    actionType: actionType,
+                    reasoning: e.reasoning,
+                    status: success ? .success : .failed,
+                    output: output,
+                    error: error,
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            }
+            if var p = data.taskProgress {
+                if success {
+                    p.successfulActions += 1
+                } else {
+                    p.failedActions += 1
+                }
+                p.totalActions = p.successfulActions + p.failedActions
+                data.taskProgress = p
+            }
+
+        case "task_complete":
+            let success: Bool
+            if let s = event["success"] as? Bool {
+                success = s
+            } else if let status = event["status"] as? String {
+                success = (status == "completed")
+            } else {
+                success = false
+            }
+            let summary = event["summary"] as? String ?? ""
+            data.taskProgress?.status = success ? .completed : .failed
+            data.taskProgress?.endTime = Date()
+            data.taskProgress?.summary = summary
+            data.isStreamingLLM = false
+
+        case "task_stopped", "error":
+            data.taskProgress?.status = .failed
+            data.taskProgress?.endTime = Date()
+            data.isStreamingLLM = false
+            if let err = event["error"] as? String, !err.isEmpty {
+                data.taskProgress?.summary = err
+            } else if let msg = event["message"] as? String, !msg.isEmpty {
+                data.taskProgress?.summary = msg
+            }
+
+        case "tool_call":
+            // Chat 模式：工具调用开始
+            let toolName = event["tool_name"] as? String ?? "unknown"
+            let toolArgs = event["tool_args"] as? [String: Any] ?? [:]
+            let paramsSummary = Self.buildParamsSummary(actionType: toolName, params: toolArgs)
+            let actionId = "\(taskId)_tool_\(UUID().uuidString)"
+            let logEntry = ActionLogEntry(
+                actionId: actionId,
+                actionType: toolName,
+                reasoning: "调用 \(toolName)",
+                status: .executing,
+                output: nil,
+                error: nil,
+                timestamp: Date(),
+                iteration: data.currentIteration,
+                paramsSummary: paramsSummary
+            )
+            data.actionLogs.append(logEntry)
+
+        case "tool_result":
+            // Chat 模式：工具调用结果
+            let toolName = event["tool_name"] as? String ?? "unknown"
+            let success = event["success"] as? Bool ?? false
+            let result = event["result"] as? String
+            if let index = data.actionLogs.lastIndex(where: { $0.actionType == toolName && ($0.status == .executing || $0.status == .pending) }) {
+                let e = data.actionLogs[index]
+                data.actionLogs[index] = ActionLogEntry(
+                    actionId: e.actionId,
+                    actionType: toolName,
+                    reasoning: e.reasoning,
+                    status: success ? .success : .failed,
+                    output: result,
+                    error: success ? nil : result,
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
+                )
+            } else {
+                let actionId = "\(taskId)_tool_\(UUID().uuidString)"
+                let logEntry = ActionLogEntry(
+                    actionId: actionId,
+                    actionType: toolName,
+                    reasoning: "调用 \(toolName)",
+                    status: success ? .success : .failed,
+                    output: result,
+                    error: success ? nil : result,
+                    timestamp: Date(),
+                    iteration: data.currentIteration,
+                    paramsSummary: nil
+                )
+                data.actionLogs.append(logEntry)
+            }
+            if var p = data.taskProgress {
+                if success { p.successfulActions += 1 } else { p.failedActions += 1 }
+                p.totalActions = p.successfulActions + p.failedActions
+                data.taskProgress = p
+            }
+
+        default:
+            break
+        }
+
+        tasks[taskId] = data
+        _evictOldTasks()
+        if data.taskProgress?.status == .running {
+            _startMultiTaskElapsedTimer()
+        }
+    }
+
+    private func _evictOldTasks() {
+        let finished = tasks.filter { $0.value.taskProgress?.status != .running }
+        if finished.count > 20 {
+            let sorted = finished.sorted { ($0.value.lastUpdated) < ($1.value.lastUpdated) }
+            for (id, _) in sorted.prefix(finished.count - 20) {
+                tasks.removeValue(forKey: id)
+                if selectedTaskId == id { selectedTaskId = tasks.keys.first }
+            }
+        }
     }
 
     // MARK: - 订阅 AgentViewModel
@@ -398,6 +790,7 @@ class MonitoringViewModel: ObservableObject {
                     await fetchModelAnalysis()
                     await fetchDeepHealth()
                     await fetchTraces()
+                    await fetchActiveTasks()
                 }
                 isPolling = false
                 lastPolledAt = Date()
@@ -422,6 +815,30 @@ class MonitoringViewModel: ObservableObject {
         historyRefreshTask?.cancel()
         historyRefreshTask = nil
         stopElapsedTimer()
+        _stopMultiTaskElapsedTimer()
+    }
+
+    private func _startMultiTaskElapsedTimer() {
+        _stopMultiTaskElapsedTimer()
+        multiTaskElapsedTimer = Task {
+            while !Task.isCancelled {
+                let hasRunning = tasks.values.contains { $0.taskProgress?.status == .running }
+                if hasRunning {
+                    for (id, var data) in tasks {
+                        if data.taskProgress?.status == .running, let start = data.taskProgress?.startTime {
+                            data.taskElapsedSeconds = Int(Date().timeIntervalSince(start))
+                            tasks[id] = data
+                        }
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    private func _stopMultiTaskElapsedTimer() {
+        multiTaskElapsedTimer?.cancel()
+        multiTaskElapsedTimer = nil
     }
 
     // MARK: - HTTP 数据拉取
@@ -696,6 +1113,31 @@ class MonitoringViewModel: ObservableObject {
                         sizeBytes: d["size_bytes"] as? Int ?? 0,
                         mtime: d["mtime"] as? Double ?? 0,
                         spanCount: d["span_count"] as? Int ?? 0
+                    )
+                }
+            }
+        } catch {}
+    }
+
+    func fetchActiveTasks() async {
+        guard let url = URL(string: "\(baseURL)/monitor/active-tasks?recent_seconds=300") else { return }
+        isLoadingActiveTasks = true
+        defer { isLoadingActiveTasks = false }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let list = json["tasks"] as? [[String: Any]] {
+                activeTaskList = list.compactMap { d -> ActiveTaskItem? in
+                    guard let taskId = d["task_id"] as? String else { return nil }
+                    return ActiveTaskItem(
+                        id: taskId,
+                        taskId: taskId,
+                        sessionId: d["session_id"] as? String ?? "",
+                        taskType: d["task_type"] as? String ?? "autonomous",
+                        description: d["description"] as? String ?? "",
+                        status: d["status"] as? String ?? "unknown",
+                        createdAt: d["created_at"] as? Double ?? 0,
+                        finishedAt: d["finished_at"] as? Double
                     )
                 }
             }

@@ -89,7 +89,7 @@ static UIColor *UIColorFromHexA(UInt32 hex, CGFloat alpha) {
 }
 
 + (UIColor *)aiBubbleBackground {
-    return UIColorFromHexA(0x0F1E33, 0.92);
+    return UIColorFromHexA(0x0F1E33, 0.42);
 }
 
 + (UIColor *)toolCallBubble {

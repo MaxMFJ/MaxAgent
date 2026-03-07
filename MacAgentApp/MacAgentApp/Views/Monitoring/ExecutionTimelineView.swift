@@ -6,32 +6,162 @@ struct ExecutionTimelineView: View {
     @EnvironmentObject var vm: MonitoringViewModel
 
     var body: some View {
-        if vm.actionLogs.isEmpty && vm.taskProgress == nil {
+        if !vm.hasAnyTaskData {
             EmptyTimelineView()
         } else {
             HSplitView {
-                // 左侧：执行时间轴
+                // 左侧：任务列表 + 视图切换
+                TaskListSidebar()
+                    .environmentObject(vm)
+                    .frame(minWidth: 200, maxWidth: 260)
+
+                // 中间：执行时间轴
                 TimelineScrollView()
                     .environmentObject(vm)
-                    .frame(minWidth: 380)
+                    .frame(minWidth: 320)
 
-                // 中间/右侧：Neural Stream 面板 + 仪表盘
+                // 右侧：Neural Stream 面板 + 仪表盘
                 VStack(spacing: 0) {
-                    // Neural Stream 面板（LLM 流式输出）
-                    if vm.isStreamingLLM || !vm.llmStreamingText.isEmpty {
-                        NeuralStreamPanel(text: vm.llmStreamingText, isActive: vm.isStreamingLLM)
+                    if _showNeuralStream {
+                        NeuralStreamPanel(text: _neuralStreamText, isActive: _isStreaming)
                             .frame(minHeight: 120, maxHeight: 200)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
-
-                    // 右侧仪表盘
                     TimelineSidebar()
                         .environmentObject(vm)
                         .frame(maxWidth: .infinity)
                 }
-                .frame(minWidth: 220, maxWidth: 280)
+                .frame(minWidth: 200, maxWidth: 260)
             }
         }
+    }
+
+    private var _showNeuralStream: Bool { _isStreaming || !_neuralStreamText.isEmpty }
+    private var _isStreaming: Bool {
+        vm.isStreamingLLM || vm.currentTaskData?.isStreamingLLM == true
+    }
+    private var _neuralStreamText: String {
+        vm.currentTaskData?.llmStreamingText ?? vm.llmStreamingText
+    }
+}
+
+// MARK: - 左侧任务列表
+
+private struct TaskListSidebar: View {
+    @EnvironmentObject var vm: MonitoringViewModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 视图模式切换
+            HStack(spacing: 8) {
+                Picker("", selection: $vm.viewMode) {
+                    Text("单任务").tag(MonitoringViewModel.ExecutionViewMode.single)
+                    Text("全部").tag(MonitoringViewModel.ExecutionViewMode.all)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            .padding(12)
+
+            Rectangle().fill(CyberColor.border).frame(height: 1)
+
+            // 任务列表（优先用 tasks，否则用 activeTaskList）
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 4) {
+                    if !vm.tasks.isEmpty {
+                        ForEach(Array(vm.tasks.values).sorted { ($0.lastUpdated) > ($1.lastUpdated) }) { data in
+                            TaskListRow(
+                                data: data,
+                                isSelected: vm.selectedTaskId == data.id,
+                                onClick: { vm.selectedTaskId = data.id }
+                            )
+                        }
+                    } else if !vm.activeTaskList.isEmpty {
+                        ForEach(vm.activeTaskList) { item in
+                            ActiveTaskListRow(
+                                item: item,
+                                isSelected: vm.selectedTaskId == item.taskId,
+                                onClick: { vm.selectedTaskId = item.taskId }
+                            )
+                        }
+                    } else {
+                        Text("暂无任务")
+                            .font(CyberFont.mono(size: 10))
+                            .foregroundColor(CyberColor.textSecond)
+                            .padding(12)
+                    }
+                }
+                .padding(8)
+            }
+        }
+        .background(CyberColor.bg1)
+    }
+}
+
+private struct TaskListRow: View {
+    let data: TaskMonitorData
+    let isSelected: Bool
+    let onClick: () -> Void
+
+    var body: some View {
+        Button(action: onClick) {
+            HStack(spacing: 8) {
+                _statusDot
+                VStack(alignment: .leading, spacing: 2) {
+                    Text((data.taskProgress?.taskDescription ?? data.id).prefix(30).description + ((data.taskProgress?.taskDescription ?? "").count > 30 ? "…" : ""))
+                        .font(CyberFont.mono(size: 10))
+                        .foregroundColor(CyberColor.textPrimary)
+                        .lineLimit(2)
+                    Text("\(data.actionLogs.count) 步")
+                        .font(CyberFont.mono(size: 9))
+                        .foregroundColor(CyberColor.textSecond)
+                }
+                Spacer()
+            }
+            .padding(8)
+            .background(isSelected ? CyberColor.cyan.opacity(0.15) : Color.clear)
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var _statusDot: some View {
+        let color: Color = {
+            switch data.taskProgress?.status {
+            case .running: return CyberColor.orange
+            case .completed: return CyberColor.green
+            case .failed: return CyberColor.red
+            default: return CyberColor.textSecond
+            }
+        }()
+        return Circle()
+            .fill(color)
+            .frame(width: 6, height: 6)
+    }
+}
+
+private struct ActiveTaskListRow: View {
+    let item: ActiveTaskItem
+    let isSelected: Bool
+    let onClick: () -> Void
+
+    var body: some View {
+        Button(action: onClick) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(item.status == "running" ? CyberColor.orange : CyberColor.textSecond)
+                    .frame(width: 6, height: 6)
+                Text((item.description.isEmpty ? item.taskId : item.description).prefix(30).description + (item.description.count > 30 ? "…" : ""))
+                    .font(CyberFont.mono(size: 10))
+                    .foregroundColor(CyberColor.textPrimary)
+                    .lineLimit(2)
+                Spacer()
+            }
+            .padding(8)
+            .background(isSelected ? CyberColor.cyan.opacity(0.15) : Color.clear)
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -127,10 +257,23 @@ private struct TimelineScrollView: View {
     @EnvironmentObject var vm: MonitoringViewModel
     @State private var autoScroll = true
 
+    private var _progress: TaskProgress? {
+        vm.viewMode == .single ? vm.currentTaskData?.taskProgress : nil
+    }
+    private var _elapsed: Int {
+        vm.viewMode == .single ? (vm.currentTaskData?.taskElapsedSeconds ?? vm.taskElapsedSeconds) : 0
+    }
+    private var _logs: [ActionLogEntry] {
+        if vm.viewMode == .all {
+            return vm.mergedActionLogs.map { $0.2 }
+        }
+        return vm.currentTaskData?.actionLogs ?? vm.actionLogs
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if let progress = vm.taskProgress {
-                TaskHeaderBar(progress: progress, elapsed: vm.taskElapsedSeconds)
+            if let progress = _progress ?? vm.taskProgress {
+                TaskHeaderBar(progress: progress, elapsed: _elapsed)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                 Rectangle()
@@ -141,15 +284,22 @@ private struct TimelineScrollView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(vm.actionLogs) { entry in
-                            TimelineStepRow(entry: entry)
-                                .id(entry.id)
+                        if vm.viewMode == .all {
+                            ForEach(vm.mergedActionLogs, id: \.2.id) { item in
+                                TimelineStepRow(entry: item.2, taskLabel: item.1)
+                                    .id(item.2.id)
+                            }
+                        } else {
+                            ForEach(_logs) { entry in
+                                TimelineStepRow(entry: entry, taskLabel: nil)
+                                    .id(entry.id)
+                            }
                         }
                     }
                     .padding(.vertical, 8)
                 }
-                .onChange(of: vm.actionLogs.count) {
-                    if autoScroll, let last = vm.actionLogs.last {
+                .onChange(of: _logs.count) {
+                    if autoScroll, let last = _logs.last {
                         withAnimation(.easeOut(duration: 0.3)) {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
@@ -257,6 +407,7 @@ struct PulsingDot: View {
 
 private struct TimelineStepRow: View {
     let entry: ActionLogEntry
+    var taskLabel: String? = nil
 
     var statusColor: Color {
         switch entry.status {
@@ -299,6 +450,16 @@ private struct TimelineStepRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
+                    if let label = taskLabel, !label.isEmpty {
+                        Text(label)
+                            .font(CyberFont.mono(size: 9))
+                            .foregroundColor(CyberColor.cyan)
+                            .lineLimit(1)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(CyberColor.cyan.opacity(0.2))
+                            .cornerRadius(3)
+                    }
                     Text(entry.actionType == "llm_request" ? "LLM" : "步骤 \(entry.iteration)")
                         .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textSecond)
@@ -377,28 +538,35 @@ private struct SpinnerDot: View {
 private struct TimelineSidebar: View {
     @EnvironmentObject var vm: MonitoringViewModel
 
+    private var _data: TaskMonitorData? { vm.currentTaskData }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
-                TokenGaugeMeter(usage: vm.sessionTokenUsage, tokenHistory: vm.tokenHistory)
+                TokenGaugeMeter(
+                    usage: _data?.sessionTokenUsage ?? vm.sessionTokenUsage,
+                    tokenHistory: _data?.tokenHistory ?? vm.tokenHistory
+                )
 
                 Rectangle().fill(CyberColor.border).frame(height: 1)
 
-                IterationCounter(iteration: vm.currentIteration)
+                IterationCounter(iteration: _data?.currentIteration ?? vm.currentIteration)
 
                 Rectangle().fill(CyberColor.border).frame(height: 1)
 
                 ModelSelectionCard(
-                    modelType: vm.selectedModelType,
-                    reason: vm.selectedModelReason,
-                    complexity: vm.taskComplexity
+                    modelType: _data?.selectedModelType ?? vm.selectedModelType,
+                    reason: _data?.selectedModelReason ?? vm.selectedModelReason,
+                    complexity: _data?.taskComplexity ?? vm.taskComplexity
                 )
 
-                if let progress = vm.taskProgress, progress.totalActions > 0 {
+                if let progress = _data?.taskProgress ?? vm.taskProgress, progress.totalActions > 0 {
                     Rectangle().fill(CyberColor.border).frame(height: 1)
-                    SuccessRateGauge(rate: vm.currentTaskSuccessRate,
-                                     success: progress.successfulActions,
-                                     failed: progress.failedActions)
+                    SuccessRateGauge(
+                        rate: progress.totalActions > 0 ? Double(progress.successfulActions) / Double(progress.totalActions) : 0,
+                        success: progress.successfulActions,
+                        failed: progress.failedActions
+                    )
                 }
 
                 Spacer()

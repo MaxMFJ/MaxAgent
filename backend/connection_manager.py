@@ -69,6 +69,8 @@ class ConnectionManager:
             if client_id in self._connections:
                 conn = self._connections[client_id]
                 session_id = conn.session_id
+                # 清理 per-WebSocket 写锁
+                remove_ws_write_lock(conn.websocket)
                 del self._connections[client_id]
                 if session_id in self._session_connections:
                     self._session_connections[session_id].discard(client_id)
@@ -86,10 +88,7 @@ class ConnectionManager:
                 continue
             if client_id in self._connections:
                 conn = self._connections[client_id]
-                try:
-                    await conn.websocket.send_json(message)
-                except Exception as e:
-                    logger.warning(f"Failed to send to {client_id}: {e}")
+                if not await safe_send_json(conn.websocket, message):
                     disconnected.append(client_id)
         for client_id in disconnected:
             await self.disconnect(client_id)
@@ -112,10 +111,7 @@ class ConnectionManager:
                 continue
             if client_id in self._connections:
                 conn = self._connections[client_id]
-                try:
-                    await conn.websocket.send_json(message)
-                except Exception as e:
-                    logger.warning(f"Failed to send to {client_id}: {e}")
+                if not await safe_send_json(conn.websocket, message):
                     disconnected.append(client_id)
         for client_id in disconnected:
             await self.disconnect(client_id)
@@ -176,13 +172,34 @@ async def broadcast_upgrade_message(msg: dict):
     await connection_manager.broadcast_all(msg)
 
 
+# ============== Per-WebSocket 写锁注册表 ==============
+# 防止心跳任务、流式推送、广播等并发写入同一 WebSocket 导致帧损坏断线
+_ws_write_locks: Dict[int, asyncio.Lock] = {}
+
+
+def get_ws_write_lock(websocket: WebSocket) -> asyncio.Lock:
+    """获取 WebSocket 实例的写锁（不存在则创建）"""
+    ws_id = id(websocket)
+    if ws_id not in _ws_write_locks:
+        _ws_write_locks[ws_id] = asyncio.Lock()
+    return _ws_write_locks[ws_id]
+
+
+def remove_ws_write_lock(websocket: WebSocket):
+    """清理 WebSocket 写锁（断开连接时调用）"""
+    _ws_write_locks.pop(id(websocket), None)
+
+
 async def safe_send_json(websocket: WebSocket, message: dict) -> bool:
     """
-    安全发送 JSON，客户端已断开或服务端关闭时捕获异常。
+    安全发送 JSON，使用 per-WebSocket 写锁防止并发帧损坏。
+    客户端已断开或服务端关闭时捕获异常。
     返回 True 表示发送成功，False 表示连接已断开/不可用。
     """
+    lock = get_ws_write_lock(websocket)
     try:
-        await websocket.send_json(message)
+        async with lock:
+            await websocket.send_json(message)
         return True
     except WebSocketDisconnect:
         logger.debug("Client disconnected during send")

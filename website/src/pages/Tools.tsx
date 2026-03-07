@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Wrench, Zap, Cpu, Box } from 'lucide-react'
+import { Wrench, Zap, Cpu, Box, Network, GitMerge } from 'lucide-react'
 
 const coreTools = [
   { name: 'file_operations', desc: '文件读写、搜索、目录遍历' },
@@ -21,6 +21,7 @@ const extendedTools = [
   { name: 'database', desc: '数据库查询（SQL）' },
   { name: 'developer', desc: '开发工具、代码分析' },
   { name: 'web_search', desc: 'DuckDuckGo / 维基百科搜索' },
+  { name: 'dynamic_tool_generator', desc: '动态工具生成' },
   { name: 'vision', desc: '视觉理解、图像分析' },
   { name: 'input_control', desc: '鼠标键盘模拟（CGEvent、cliclick）' },
 ]
@@ -49,7 +50,7 @@ export default function Tools() {
           <p className="font-display text-sm tracking-[0.2em] text-[var(--accent)] uppercase mb-2">Tool Registry</p>
           <h1 className="font-display text-4xl font-bold mb-4">工具落地</h1>
           <p className="text-lg text-[var(--text-muted)]">
-            30+ 内置工具覆盖文件、终端、应用、网络、开发等场景。支持动态生成与 Self-Upgrade 自我升级，Agent 按需调用。
+            30+ 内置工具覆盖文件、终端、应用、网络、开发等场景。支持 MCP 生态扩展、动态生成与 Self-Upgrade 自我升级。统一工具路由：内置优先，MCP 自动 fallback，LLM 无感知切换。
           </p>
         </motion.div>
 
@@ -131,6 +132,49 @@ export default function Tools() {
                   <span className="text-[var(--text-muted)]">— {t.desc}</span>
                 </li>
               ))}
+            </ul>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
+          >
+            <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+              <Network className="size-5 text-[var(--accent)]" />
+              MCP 生态
+            </h2>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              通过 Model Context Protocol 连接外部 MCP 服务器，即插即用。内置目录支持 GitHub、Brave Search、Sequential Thinking、Puppeteer、Filesystem、Memory 等，支持自定义添加。
+            </p>
+            <div className="grid sm:grid-cols-2 gap-2 text-sm">
+              <div><code className="text-[var(--accent)] font-mono">@modelcontextprotocol/server-github</code> — 仓库/PR/Issues/代码搜索</div>
+              <div><code className="text-[var(--accent)] font-mono">@modelcontextprotocol/server-brave-search</code> — 隐私优先网页搜索</div>
+              <div><code className="text-[var(--accent)] font-mono">@modelcontextprotocol/server-sequential-thinking</code> — 增强推理</div>
+              <div><code className="text-[var(--accent)] font-mono">@modelcontextprotocol/server-filesystem</code> — 沙箱文件操作</div>
+              <div><code className="text-[var(--accent)] font-mono">@modelcontextprotocol/server-memory</code> — 知识图谱/跨会话记忆</div>
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
+          >
+            <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+              <GitMerge className="size-5 text-[var(--accent)]" />
+              统一工具路由（Unified Tool Router）
+            </h2>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              Agent → ToolRouter → Builtin Tools → MCP Fallback
+            </p>
+            <ul className="space-y-2 text-sm text-[var(--text-muted)]">
+              <li><span className="text-[var(--accent)]">内置工具优先</span> — Agent 执行时始终优先使用 20+ 内置工具</li>
+              <li><span className="text-[var(--accent)]">MCP 自动 Fallback</span> — 内置工具执行失败时，自动尝试同名 MCP 替代</li>
+              <li><span className="text-[var(--accent)]">MCP 独有工具</span> — 以 <code className="text-[var(--accent)]/80">{'{server}_{tool}'}</code> 格式对 LLM 可见</li>
+              <li><span className="text-[var(--accent)]">LLM 无感知</span> — 重名 MCP 工具注册为 mcp/ 前缀（隐藏），不重复暴露</li>
             </ul>
           </motion.section>
         </div>

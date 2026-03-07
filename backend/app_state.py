@@ -93,6 +93,25 @@ ON_DEMAND_SKILL_FETCH_TIMEOUT: float = float(os.environ.get("MACAGENT_ON_DEMAND_
 # 按需拉取：单次最多拉取几个新技能
 ON_DEMAND_SKILL_MAX_FETCH: int = int(os.environ.get("MACAGENT_ON_DEMAND_SKILL_MAX_FETCH", "3"))
 
+# ============== Duck / Egg Mode ==============
+# 是否以 Duck（子 Agent）模式运行
+IS_DUCK_MODE: bool = os.environ.get("DUCK_MODE", "0") == "1"
+# Duck 后端端口（仅 Duck 模式下有效）
+DUCK_PORT: int = int(os.environ.get("DUCK_PORT", "8766"))
+# 主 Agent 的 URL（Duck 模式下连接到主 Backend 的 WebSocket）
+DUCK_MAIN_AGENT_URL: str = os.environ.get("DUCK_MAIN_AGENT_URL", "")
+# Duck 认证 Token（由 Egg 颁发）
+DUCK_TOKEN: str = os.environ.get("DUCK_TOKEN", "")
+# Duck 身份 ID
+DUCK_ID: str = os.environ.get("DUCK_ID", "")
+# Duck 类型（general / coder / crawler / …）
+DUCK_TYPE: str = os.environ.get("DUCK_TYPE", "general")
+# Duck 名称（可选，用于展示）
+DUCK_NAME: str = os.environ.get("DUCK_NAME", "")
+# 允许执行的工具白名单（逗号分隔）；空集合=不限制
+_duck_perms_raw: str = os.environ.get("DUCK_PERMISSIONS", "")
+DUCK_PERMISSIONS: set = set(p.strip() for p in _duck_perms_raw.split(",") if p.strip()) if _duck_perms_raw else set()
+
 
 # ============== Task Tracker ==============
 
@@ -192,6 +211,10 @@ class TaskTracker:
 
     def get(self, task_id: str) -> Optional[TrackedTask]:
         return self._tasks.get(task_id)
+
+    def list_tasks(self) -> List[tuple]:
+        """返回 (task_id, TrackedTask) 列表，供监控面板等使用"""
+        return list(self._tasks.items())
 
     def get_buffered_chunks(self, task_id: str) -> List[dict]:
         tt = self._tasks.get(task_id)

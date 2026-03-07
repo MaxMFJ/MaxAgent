@@ -114,3 +114,72 @@ async def call_tool(req: CallToolRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"工具调用失败: {e}")
     return {"success": True, "result": result}
+
+
+# ---------------------------------------------------------------------------
+# MCP 目录（Catalog）接口
+# ---------------------------------------------------------------------------
+
+@router.get("/mcp/catalog")
+async def list_catalog(query: str = "", category: str = ""):
+    """搜索 MCP 目录。"""
+    from services.mcp_catalog_service import get_mcp_catalog
+    catalog = get_mcp_catalog()
+    if category:
+        results = catalog.search_by_category(category)
+    elif query:
+        results = catalog.search(query, limit=10)
+    else:
+        results = catalog.get_all()
+    return {
+        "results": [e.to_dict() for e in results],
+        "total": len(results),
+        "categories": catalog.list_categories(),
+    }
+
+
+@router.get("/mcp/catalog/{mcp_id}")
+async def get_catalog_entry(mcp_id: str):
+    """获取单个 MCP Server 条目信息。"""
+    from services.mcp_catalog_service import get_mcp_catalog
+    entry = get_mcp_catalog().get_entry(mcp_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"未找到 MCP: {mcp_id}")
+    return entry.to_dict()
+
+
+class InstallFromCatalogRequest(BaseModel):
+    mcp_id: str = Field(..., description="目录中的 MCP ID")
+    env: Dict[str, str] = Field(default_factory=dict, description="环境变量（如 API Key）")
+
+
+@router.post("/mcp/catalog/install")
+async def install_from_catalog(req: InstallFromCatalogRequest):
+    """从目录安装 MCP Server（跳过 HITL，用于前端直接操作）。"""
+    from services.mcp_catalog_service import get_mcp_catalog
+    catalog = get_mcp_catalog()
+    entry = catalog.get_entry(req.mcp_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"未找到 MCP: {req.mcp_id}")
+
+    # 构建配置
+    cfg = MCPServerConfig(
+        name=entry.id,
+        transport=entry.transport,
+        command=entry.command,
+        env=req.env,
+        url="",
+        headers={},
+        timeout=30.0,
+    )
+    try:
+        conn = await get_mcp_manager().add_server(cfg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"安装 MCP 失败: {e}")
+
+    _sync_mcp_to_registry()
+    return {
+        "status": "installed",
+        "name": entry.id,
+        "tools": [t.to_dict() for t in conn.tools],
+    }

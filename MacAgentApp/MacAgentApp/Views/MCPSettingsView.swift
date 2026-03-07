@@ -29,16 +29,16 @@ private struct BuiltinMCP {
             installHint: "需要 GITHUB_TOKEN 环境变量"
         ),
         BuiltinMCP(
-            id: "brave-search",
-            title: "Brave Search MCP",
-            subtitle: "隐私优先的网页搜索引擎",
-            icon: "magnifyingglass",
-            color: .orange,
+            id: "ai-vision",
+            title: "AI Vision MCP",
+            subtitle: "AI 图像与视频分析（Gemini/Vertex AI）",
+            icon: "eye",
+            color: .purple,
             transport: "stdio",
-            command: ["npx", "-y", "@modelcontextprotocol/server-brave-search"],
+            command: ["npx", "-y", "ai-vision-mcp"],
             url: "",
             requiresInstall: true,
-            installHint: "需要 BRAVE_API_KEY 环境变量"
+            installHint: "需要设置 GEMINI_API_KEY 环境变量"
         ),
         BuiltinMCP(
             id: "sequential-thinking",

@@ -287,6 +287,7 @@ class AutonomousAgent:
             ActionType.CLIPBOARD_READ: self._handle_clipboard_read,
             ActionType.CLIPBOARD_WRITE: self._handle_clipboard_write,
             ActionType.CALL_TOOL: self._handle_call_tool,
+            ActionType.DELEGATE_DUCK: self._handle_delegate_duck,
             ActionType.THINK: self._handle_think,
             ActionType.FINISH: self._handle_finish,
         }
@@ -1927,6 +1928,87 @@ class AutonomousAgent:
             }
         except Exception as e:
             return {"success": False, "output": None, "error": str(e)}
+
+    async def _handle_delegate_duck(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """委派子任务给 Duck 分身 Agent"""
+        from app_state import IS_DUCK_MODE
+        if IS_DUCK_MODE:
+            return {"success": False, "error": "Duck 模式下不允许再次委派子任务给其他 Duck"}
+
+        description = params.get("description", "").strip()
+        if not description:
+            return {"success": False, "error": "delegate_duck 缺少 description"}
+        duck_type = params.get("duck_type")
+        target_duck_id = params.get("duck_id")
+        strategy = params.get("strategy", "single")
+        timeout = params.get("timeout", 300)
+        task_params = params.get("params", {})
+
+        try:
+            from services.duck_task_scheduler import get_task_scheduler, ScheduleStrategy
+            from services.duck_protocol import DuckType
+
+            scheduler = get_task_scheduler()
+            await scheduler.initialize()
+
+            dt = None
+            if duck_type:
+                try:
+                    dt = DuckType(duck_type)
+                except ValueError:
+                    pass
+
+            # 使用 asyncio.Future 等待结果
+            loop = asyncio.get_event_loop()
+            future: asyncio.Future = loop.create_future()
+
+            async def on_result(task):
+                if not future.done():
+                    future.set_result(task)
+
+            task = await scheduler.submit(
+                description=description,
+                task_type=params.get("task_type", "general"),
+                params=task_params,
+                priority=params.get("priority", 0),
+                timeout=timeout,
+                strategy=strategy,
+                target_duck_id=target_duck_id,
+                target_duck_type=dt,
+                callback=on_result,
+            )
+
+            from services.duck_protocol import TaskStatus
+            if task.status == TaskStatus.PENDING:
+                return {
+                    "success": False,
+                    "output": None,
+                    "error": "No available duck to handle this task. Task queued as PENDING.",
+                    "task_id": task.task_id,
+                }
+
+            # 等待结果 (最长 timeout 秒)
+            try:
+                completed_task = await asyncio.wait_for(future, timeout=timeout)
+                return {
+                    "success": completed_task.status == TaskStatus.COMPLETED,
+                    "output": completed_task.output,
+                    "error": completed_task.error,
+                    "task_id": completed_task.task_id,
+                    "duck_id": completed_task.assigned_duck_id,
+                }
+            except asyncio.TimeoutError:
+                return {
+                    "success": False,
+                    "output": None,
+                    "error": f"Duck task timed out after {timeout}s",
+                    "task_id": task.task_id,
+                }
+
+        except ImportError:
+            return {"success": False, "error": "Duck task scheduler not available"}
+        except Exception as e:
+            return {"success": False, "error": f"delegate_duck error: {e}"}
     
     async def _handle_create_script(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle create_and_run_script action"""
@@ -1937,7 +2019,7 @@ class AutonomousAgent:
         language = params.get("language", "python")
         code = params.get("code", "")
         should_run = params.get("run", True)
-        working_dir = params.get("working_directory", os.path.expanduser("~"))
+        working_dir = params.get("working_directory", os.path.expanduser("~/Desktop"))
         
         if not code:
             return {"success": False, "error": "Code is empty"}

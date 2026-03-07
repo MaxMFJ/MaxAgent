@@ -6,6 +6,8 @@ Prompt Loader - 加载 System Prompt 与进化规则
 
 import logging
 import os
+import time as _time_mod
+from datetime import datetime
 from typing import Optional, List, Tuple
 
 from .query_classifier import Intent, QueryTier, classify
@@ -33,18 +35,27 @@ MACAGENT_CONTEXT_PATH = os.path.join(_PROMPTS_DIR, "MACAGENT.md")
 PROJECT_CONTEXT_MAX_CHARS = int(os.environ.get("MACAGENT_PROJECT_CONTEXT_MAX_CHARS", "2000"))
 
 # ── 内嵌兜底（Bootstrap 文件缺失时使用）────────────────────────────────────────
-SYSTEM_PROMPT_LITE_FALLBACK = """你是 Chow Duck，macOS 智能助手。
-核心能力：文件操作、终端命令、应用控制、系统信息、剪贴板、截图、鼠标键盘(input_control)、邮件、技能Capsule。
-规则：以用户目标为导向，简洁高效，用中文回复。截图完成后立即停止。
+SYSTEM_PROMPT_LITE_FALLBACK = """你是 Chow Duck，运行在 macOS 上的全能智能助手。你既是系统级操作执行者，也是多领域知识顾问（产品、开发、法律、生活、购物、出行、旅游、学习等）。
+核心能力：文件操作、终端命令、应用控制、系统信息、剪贴板、截图、鼠标键盘(input_control)、邮件、技能Capsule、知识咨询。
+规则：知识/咨询类问题直接回答无需工具；操作类任务用工具执行。以用户目标为导向，简洁高效，用中文回复。截图完成后立即停止。
 GUI 操作：键盘输入中文必须用 input_control 的 keyboard_type（严禁 osascript keystroke 输入中文）。每步操作后截图验证，finish 前截图确认任务完成。
 若用户只是追问「项目/文件在哪个目录」「做到哪一步了」等，根据对话历史直接回答，不要重新执行创建或命令。"""
 
-SYSTEM_PROMPT_FULL_FALLBACK = """你是 Chow Duck，macOS 智能助手，可帮用户完成各种电脑操作。
+SYSTEM_PROMPT_FULL_FALLBACK = """你是 Chow Duck，运行在 macOS 上的全能智能助手。你不仅能执行电脑操作，更是用户日常工作与生活中的全域知识顾问。
 
 ## 核心能力
-文件操作 | 终端命令 | 应用控制 | 系统信息 | 剪贴板 | 截图(screenshot+app_name) | 鼠标键盘(input_control)
+
+### 系统操作
+文件操作 | 终端命令 | 应用控制 | 系统信息 | 剪贴板 | 截图(screenshot+app_name) | 鼠标键盘(input_control) | 邮件(SMTP)
+
+### 知识咨询（直接回答，无需工具）
+产品设计 | 软件开发 | 法律常识 | 生活服务 | 购物消费 | 出行旅游 | 学习教育 | 财务理财 | 职场效率
+
+### 扩展能力
+技能Capsule（社区库数千个按需加载）| MCP Server（外部协议） | 工具自升级
 
 ## 行为准则
+- **先判断再行动**：知识/咨询类 → 直接回答；操作/执行类 → 用工具；混合类 → 先生成内容再执行
 - 以用户最终目标为导向，工具执行成功但目标未达成时继续尝试
 - **工具失败时**：必须明确告知用户失败原因，禁止谎称成功或完成。自动补救 → 引导用户 → 请求工具升级
 - 简洁高效，完成后简短报告。截图完成后立即停止。批量操作优先用终端。危险操作先确认
@@ -85,8 +96,15 @@ open_app → 截图 → keyboard_shortcut(Cmd+F) → 截图确认搜索框 → k
 
 ## 工具升级(request_tool_upgrade)
 - 用户需要新增Agent工具/能力时，**必须调用** request_tool_upgrade，等待完成后调用新工具
-- 工具只在 tools/generated/ 创建，禁止用 file_operations 在 ~/ 写脚本替代
-- 仅当用户明确要「一次性脚本」且不要求作为Agent工具时，才用 file_operations
+- 生成的工具文件**只能**写入 tools/generated/ 目录
+- 禁止用 file_operations 在 ~/ 或 ~/Desktop/ 创建替代 Agent 工具的脚本
+- 仅当用户明确要「一次性脚本」且不要求作为Agent工具时，才用 file_operations（输出到 ~/Desktop/）
+
+## 文件输出路径规则
+- 用户文档（方案、报告、笔记等）→ 默认保存到 ~/Desktop/
+- Agent 工具/技能扩展 → 只能写入 tools/generated/
+- 代码项目 → ~/Desktop/项目名/ 或用户指定路径
+- 禁止将用户文档写到 ~/（主目录根目录）
 
 ## 避免无效循环
 - 文件已存在 → 先 read 判断是否满足需求，满足则直接告知
@@ -159,11 +177,11 @@ def _get_full_prompt_from_bootstrap() -> Optional[str]:
 
 
 def _get_lite_prompt_from_bootstrap() -> Optional[str]:
-    """LITE 版：仅 identity + 追问规则"""
+    """LITE 版：identity（含能力矩阵）+ 追问规则"""
     identity_path = os.path.join(_PROMPTS_DIR, "identity.md")
     behavior_path = os.path.join(_PROMPTS_DIR, "behavior.md")
-    identity = _load_bootstrap_section(identity_path, 600)
-    behavior = _load_bootstrap_section(behavior_path, 400)
+    identity = _load_bootstrap_section(identity_path, 2000)
+    behavior = _load_bootstrap_section(behavior_path, 600)
     if not identity and not behavior:
         return None
     query_hint = "若用户只是追问「项目/文件在哪个目录」「做到哪一步了」等，根据对话历史直接回答，不要重新执行创建或命令。"
@@ -239,6 +257,35 @@ def get_full_system_prompt() -> str:
     return base + evolved
 
 
+# 时间相关关键词：检测到时自动注入当前系统时间
+_TIME_KEYWORDS = (
+    '当前', '现在', '目前', '此刻', '今天', '今日', '明天', '昨天', '后天', '前天',
+    '今年', '去年', '明年', '本月', '上月', '下月', '本周', '上周', '下周',
+    '最新', '最近', '这几天', '近期', '眼下',
+    '几点', '什么时候', '多久', '时间', '日期', '星期',
+    '早上', '上午', '中午', '下午', '晚上', '凌晨', '今早', '今晚',
+    'today', 'now', 'current', 'latest', 'this week', 'this month', 'this year',
+    'yesterday', 'tomorrow', 'recent',
+)
+
+_WEEKDAY_NAMES = ('周一', '周二', '周三', '周四', '周五', '周六', '周日')
+
+
+def _needs_time_injection(query: str) -> bool:
+    """检测用户查询是否涉及时间相关概念"""
+    q = query.lower()
+    return any(kw in q for kw in _TIME_KEYWORDS)
+
+
+def _build_time_hint() -> str:
+    """构建当前系统时间提示"""
+    now = datetime.now()
+    weekday = _WEEKDAY_NAMES[now.weekday()]
+    time_str = now.strftime(f"%Y-%m-%d %H:%M:%S ({weekday})")
+    tz_name = _time_mod.strftime("%Z") or "Local"
+    return f"\n\n[系统时间：{time_str}，时区：{tz_name}。请基于此精确时间回答用户关于时间的问题。]"
+
+
 def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) -> str:
     """企业级分层 Prompt：由 query_classifier 分级，并注入 intent 提示"""
     from .context_manager import context_manager
@@ -251,10 +298,15 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
         base = project_ctx + "\n\n---\n\n" + base
     logger.info("prompt_tier=%s intent=%s query_preview=%s", result.tier.value, result.intent.value, result.query_preview[:30])
 
-    # Intent 注入：纯追问时显式提示模型仅根据历史回答
+    # Intent 注入：根据分类结果指导模型行为
     intent_hint = ""
     if result.intent == Intent.INFORMATION:
-        intent_hint = "\n\n[当前判定：用户为信息追问，请仅根据对话历史回答，不要执行创建/写入/运行等操作。]"
+        if result.tier == QueryTier.COMPLEX:
+            # 知识咨询型：COMPLEX tier + INFORMATION intent（如分析、方案、攻略等）
+            intent_hint = "\n\n[当前判定：知识咨询类问题，请充分运用你的多领域知识直接给出高质量回答。如无必要不调用工具，除非用户明确要求保存/执行。]"
+        else:
+            # 纯追问型：SIMPLE tier + INFORMATION intent（如"文件在哪"）
+            intent_hint = "\n\n[当前判定：用户为信息追问，请仅根据对话历史回答，不要执行创建/写入/运行等操作。]"
     elif result.intent == Intent.GREETING:
         intent_hint = "\n\n[当前判定：简单问候，简洁回复即可。]"
 
@@ -269,9 +321,9 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
         except Exception as e:
             logger.debug(f"Failed to inject created_files hint: {e}")
 
-    # 匹配的 Capsule 技能注入：LLM 明确知道有哪些技能可用，提高调用率
+    # 匹配的 Capsule 技能注入：仅对需要执行的请求注入，知识咨询跳过以减少延迟
     capsule_hint = ""
-    if result.tier != QueryTier.SIMPLE and query:
+    if result.tier != QueryTier.SIMPLE and result.intent == Intent.EXECUTION and query:
         try:
             from .capsule_registry import get_capsule_registry
             reg = get_capsule_registry()
@@ -325,7 +377,11 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
             logger.debug(f"Failed to inject terminal hint: {e}")
 
     evolved = _load_evolved_rules()
-    return base + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + evolved
+
+    # 时间感知注入：检测到时间相关查询时，注入当前系统时间
+    time_hint = _build_time_hint() if _needs_time_injection(query) else ""
+
+    return base + time_hint + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + evolved
 
 
 # 向后兼容

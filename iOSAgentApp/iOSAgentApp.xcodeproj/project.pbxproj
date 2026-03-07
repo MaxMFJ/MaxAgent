@@ -8,7 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		4C47421F2F5406A700B528B2 /* TaskProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C47421E2F5406A700B528B2 /* TaskProgressView.m */; };
+		A1B2C3D62F5406A700B528B2 /* AgentLiveView.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D52F5406A700B528B2 /* AgentLiveView.m */; };
 		4C4742222F5406CD00B528B2 /* ActionLogEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C4742212F5406CD00B528B2 /* ActionLogEntry.m */; };
+		DUCK_BF1 /* Duck.m in Sources */ = {isa = PBXBuildFile; fileRef = DUCK002 /* Duck.m */; };
+		DUCK_BF2 /* DuckApiService.m in Sources */ = {isa = PBXBuildFile; fileRef = DUCK004 /* DuckApiService.m */; };
+		DUCK_BF3 /* DuckTargetSelectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DUCK006 /* DuckTargetSelectorViewController.m */; };
 		97CDC1CBC125030C68B28F0D /* Pods_iOSAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */; };
 		APP001 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* AppDelegate.m */; };
 		APP002 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.m */; };
@@ -34,6 +38,7 @@
 		SVC003 /* VoiceInputService.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC016 /* VoiceInputService.m */; };
 		UTIL001 /* ThinkingContentParser.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* ThinkingContentParser.m */; };
 		UTIL002 /* TechTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC019 /* TechTheme.m */; };
+		UTIL003 /* MessageTextDisplay.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC021 /* MessageTextDisplay.m */; };
 		VCT001 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC007 /* ChatViewController.m */; };
 		VCT002 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC008 /* SettingsViewController.m */; };
 		VCT003 /* ImageZoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC011 /* ImageZoomViewController.m */; };
@@ -48,6 +53,8 @@
 /* Begin PBXFileReference section */
 		4C47421D2F5406A700B528B2 /* TaskProgressView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TaskProgressView.h; sourceTree = "<group>"; };
 		4C47421E2F5406A700B528B2 /* TaskProgressView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TaskProgressView.m; sourceTree = "<group>"; };
+		A1B2C3D42F5406A700B528B2 /* AgentLiveView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AgentLiveView.h; sourceTree = "<group>"; };
+		A1B2C3D52F5406A700B528B2 /* AgentLiveView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AgentLiveView.m; sourceTree = "<group>"; };
 		4C4742202F5406CD00B528B2 /* ActionLogEntry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionLogEntry.h; sourceTree = "<group>"; };
 		4C4742212F5406CD00B528B2 /* ActionLogEntry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionLogEntry.m; sourceTree = "<group>"; };
 		73227959D2076D16078D836B /* Pods_iOSAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iOSAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +108,8 @@
 		SRC016H /* VoiceInputService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceInputService.h; sourceTree = "<group>"; };
 		SRC017 /* ThinkingContentParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingContentParser.m; sourceTree = "<group>"; };
 		SRC017H /* ThinkingContentParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingContentParser.h; sourceTree = "<group>"; };
+		SRC021 /* MessageTextDisplay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MessageTextDisplay.m; sourceTree = "<group>"; };
+		SRC021H /* MessageTextDisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessageTextDisplay.h; sourceTree = "<group>"; };
 		SRC018 /* ThinkingBlockView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThinkingBlockView.m; sourceTree = "<group>"; };
 		SRC018H /* ThinkingBlockView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThinkingBlockView.h; sourceTree = "<group>"; };
 		SRC019 /* TechTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TechTheme.m; sourceTree = "<group>"; };
@@ -109,6 +118,12 @@
 		SRC020H /* FileDownloadView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileDownloadView.h; sourceTree = "<group>"; };
 		VOICE002 /* VoiceRainbowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoiceRainbowView.m; sourceTree = "<group>"; };
 		VOICE003 /* VoiceRainbowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoiceRainbowView.h; sourceTree = "<group>"; };
+		DUCK001 /* Duck.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Duck.h; sourceTree = "<group>"; };
+		DUCK002 /* Duck.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Duck.m; sourceTree = "<group>"; };
+		DUCK003 /* DuckApiService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DuckApiService.h; sourceTree = "<group>"; };
+		DUCK004 /* DuckApiService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DuckApiService.m; sourceTree = "<group>"; };
+		DUCK005 /* DuckTargetSelectorViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DuckTargetSelectorViewController.h; sourceTree = "<group>"; };
+		DUCK006 /* DuckTargetSelectorViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DuckTargetSelectorViewController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +204,8 @@
 				SRC012 /* Conversation.m */,
 				SRC013H /* ConversationManager.h */,
 				SRC013 /* ConversationManager.m */,
+				DUCK001 /* Duck.h */,
+				DUCK002 /* Duck.m */,
 				4C4742202F5406CD00B528B2 /* ActionLogEntry.h */,
 				4C4742212F5406CD00B528B2 /* ActionLogEntry.m */,
 			);
@@ -229,6 +246,8 @@
 			children = (
 				SRC004H /* WebSocketService.h */,
 				SRC004 /* WebSocketService.m */,
+				DUCK003 /* DuckApiService.h */,
+				DUCK004 /* DuckApiService.m */,
 				SRC015H /* TTSService.h */,
 				SRC015 /* TTSService.m */,
 				SRC016H /* VoiceInputService.h */,
@@ -242,6 +261,8 @@
 			children = (
 				SRC017H /* ThinkingContentParser.h */,
 				SRC017 /* ThinkingContentParser.m */,
+				SRC021H /* MessageTextDisplay.h */,
+				SRC021 /* MessageTextDisplay.m */,
 				SRC019H /* TechTheme.h */,
 				SRC019 /* TechTheme.m */,
 			);
@@ -253,6 +274,8 @@
 			children = (
 				SRC007H /* ChatViewController.h */,
 				SRC007 /* ChatViewController.m */,
+				DUCK005 /* DuckTargetSelectorViewController.h */,
+				DUCK006 /* DuckTargetSelectorViewController.m */,
 				SRC008H /* SettingsViewController.h */,
 				SRC008 /* SettingsViewController.m */,
 				SRC011H /* ImageZoomViewController.h */,
@@ -268,6 +291,8 @@
 			children = (
 				4C47421D2F5406A700B528B2 /* TaskProgressView.h */,
 				4C47421E2F5406A700B528B2 /* TaskProgressView.m */,
+				A1B2C3D42F5406A700B528B2 /* AgentLiveView.h */,
+				A1B2C3D52F5406A700B528B2 /* AgentLiveView.m */,
 				SRC009H /* MessageCell.h */,
 				SRC009 /* MessageCell.m */,
 				SRC010H /* InputView.h */,
@@ -293,6 +318,7 @@
 				SOURCES /* Sources */,
 				FRAMEWORKS /* Frameworks */,
 				RESOURCES_PHASE /* Resources */,
+				D5513650E934BF3A6EA8CB7C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -356,6 +382,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D5513650E934BF3A6EA8CB7C /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iOSAgentApp/Pods-iOSAgentApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		FA624F195F9C683C607DF711 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -402,12 +445,17 @@
 				VIW001 /* MessageCell.m in Sources */,
 				VIW002 /* InputView.m in Sources */,
 				UTIL001 /* ThinkingContentParser.m in Sources */,
+				UTIL003 /* MessageTextDisplay.m in Sources */,
 				4C4742222F5406CD00B528B2 /* ActionLogEntry.m in Sources */,
 				4C47421F2F5406A700B528B2 /* TaskProgressView.m in Sources */,
+				A1B2C3D62F5406A700B528B2 /* AgentLiveView.m in Sources */,
 				VIW003 /* ThinkingBlockView.m in Sources */,
 				VIW004 /* FileDownloadView.m in Sources */,
 				UTIL002 /* TechTheme.m in Sources */,
 				VOICE001 /* VoiceRainbowView.m in Sources */,
+				DUCK_BF1 /* Duck.m in Sources */,
+				DUCK_BF2 /* DuckApiService.m in Sources */,
+				DUCK_BF3 /* DuckTargetSelectorViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -463,7 +511,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -551,7 +599,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

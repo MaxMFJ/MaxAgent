@@ -136,27 +136,15 @@ static NSCharacterSet *sentenceEndChars(void) {
         }
     }
 
-    // 4. 过滤所有不可朗读字符（只保留中日韩文字、ASCII字母数字、常用标点）
-    //    使用正则白名单：不在以下范围内的字符一律删除
+    // 4. 过滤所有不可朗读字符（Emoji、装饰符号等）
+    //    使用 Unicode 属性白名单：只保留字母、数字、标点、空格、数学/货币符号
+    //    \\p{L}=字母(含CJK), \\p{N}=数字, \\p{P}=标点, \\p{Zs}=空格, \\p{Sm}=数学符号, \\p{Sc}=货币符号
     {
         static NSRegularExpression *nonReadable;
         static dispatch_once_t emojiOnce;
         dispatch_once(&emojiOnce, ^{
             nonReadable = [NSRegularExpression regularExpressionWithPattern:
-                @"[^"
-                @"\\u0020-\\u007E"  // ASCII printable (space ~ tilde)
-                @"\\u00A0-\\u024F"  // Latin Extended (accented chars)
-                @"\\u2010-\\u2027"  // Dashes, quotes, leaders, ellipsis
-                @"\\u2030-\\u205E"  // Per mille, prime, brackets (skip 2028-202F bidi/separators)
-                @"\\u3000-\\u303F"  // CJK Symbols & Punctuation (、。「」等)
-                @"\\u3040-\\u30FF"  // Hiragana & Katakana
-                @"\\u3400-\\u4DBF"  // CJK Extension A
-                @"\\u4E00-\\u9FFF"  // CJK Unified Ideographs
-                @"\\uAC00-\\uD7AF"  // Hangul Syllables
-                @"\\uF900-\\uFAFF"  // CJK Compatibility Ideographs
-                @"\\uFE30-\\uFE4F"  // CJK Compatibility Forms (︰︱等)
-                @"\\uFF00-\\uFFEF"  // Fullwidth Forms (！？等)
-                @"]+"
+                @"[^\\p{L}\\p{N}\\p{P}\\p{Zs}\\p{Sm}\\p{Sc}]+"
                 options:0 error:nil];
         });
         [nonReadable replaceMatchesInString:result options:0 range:NSMakeRange(0, result.length) withTemplate:@""];

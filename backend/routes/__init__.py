@@ -28,6 +28,8 @@ from .subagents import router as subagents_router
 from .mcp import router as mcp_router
 from .rollback import router as rollback_router
 from .context import router as context_router
+from .duck_api import router as duck_api_router
+from .duck_ws import router as duck_ws_router
 
 all_routers = [
     health_router,
@@ -56,4 +58,6 @@ all_routers = [
     mcp_router,
     rollback_router,
     context_router,
+    duck_api_router,
+    duck_ws_router,
 ]

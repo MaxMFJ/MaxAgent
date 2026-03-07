@@ -22,6 +22,12 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didReceiveUserMessage:(NSString *)content fromClient:(NSString *)clientId clientType:(NSString *)clientType;
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(nullable NSString *)modelName tokenUsage:(nullable NSDictionary<NSString *, NSNumber *> *)tokenUsage;
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage;
+/// chat_to_duck 失败（Duck 离线/忙碌等）
+- (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckError:(NSString *)errorMessage duckId:(nullable NSString *)duckId;
+/// chat_to_duck 已被接受（Duck 开始处理）
+- (void)webSocketService:(WebSocketService *)service didAcceptChatToDuck:(NSString *)duckId taskId:(NSString *)taskId;
+/// chat_to_duck 结果返回
+- (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckResult:(nullable NSString *)output duckId:(NSString *)duckId taskId:(NSString *)taskId success:(BOOL)success error:(nullable NSString *)errorMessage;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat hasBufferedChat:(BOOL)hasBufferedChat bufferedChatCount:(NSInteger)bufferedChatCount;
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;
@@ -43,6 +49,8 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk;
 /// LLM 操作状态（llm_request_start, llm_request_end）- 用于显示 chat 进度
 - (void)webSocketService:(WebSocketService *)service didReceiveLLMStatus:(NSDictionary *)status;
+/// 监控事件（chat/自主任务均会广播，含 task_start、llm_request_start、tool_call 等）
+- (void)webSocketService:(WebSocketService *)service didReceiveMonitorEvent:(NSDictionary *)event sessionId:(NSString *)sessionId taskId:(NSString *)taskId taskType:(NSString *)taskType;
 
 @end
 
@@ -59,6 +67,8 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)disconnect;
 
 - (void)sendChatMessage:(NSString *)content sessionId:(NSString *)sessionId;
+/// 发送给子 Duck 的直聊消息（主 Backend 转发）
+- (void)sendChatToDuck:(NSString *)content duckId:(NSString *)duckId sessionId:(NSString *)sessionId;
 - (void)sendAutonomousTask:(NSString *)task sessionId:(NSString *)sessionId;
 - (void)createNewSession:(NSString *)sessionId;
 - (void)clearSession:(NSString *)sessionId;

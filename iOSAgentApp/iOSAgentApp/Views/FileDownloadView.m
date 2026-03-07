@@ -168,6 +168,20 @@ static NSSet<NSString *> *_imageExtensions(void) {
         }
     }
 
+    // 策略4：宽松匹配含中文/Unicode 的路径（如 /Users/xxx/Desktop/Agent开发2026技能需求报告.html）
+    NSRegularExpression *unicodePathRegex = [NSRegularExpression
+        regularExpressionWithPattern:@"/(?:[^/\\n]+/)+[^/\\n]+\\.[a-zA-Z0-9]{1,10}"
+        options:0
+        error:nil];
+    for (NSTextCheckingResult *match in [unicodePathRegex matchesInString:text options:0 range:NSMakeRange(0, text.length)]) {
+        NSRange r = match.range;
+        if (r.location == NSNotFound) continue;
+        NSString *path = [text substringWithRange:r];
+        if ([self validateFilePath:path imageRegex:imageRegex] && ![paths containsObject:path]) {
+            [paths addObject:path];
+        }
+    }
+
     return paths;
 }
 
@@ -191,12 +205,32 @@ static NSSet<NSString *> *_imageExtensions(void) {
     self = [super initWithFrame:CGRectZero];
     if (self) {
         _filePath = [filePath copy];
-        _serverBaseURL = [serverBaseURL copy];
+        _serverBaseURL = [[self class] httpBaseURLFrom:serverBaseURL];
         _isDownloading = NO;
         [self setupUI];
         [self loadFileInfo];
     }
     return self;
+}
+
+/// 将 WebSocket URL 转换为 HTTP URL（去掉 wss→https, ws→http, 移除 /ws 后缀）
++ (NSString *)httpBaseURLFrom:(NSString *)url {
+    NSString *result = [url copy];
+    // 协议转换
+    if ([result hasPrefix:@"wss://"]) {
+        result = [result stringByReplacingCharactersInRange:NSMakeRange(0, 6) withString:@"https://"];
+    } else if ([result hasPrefix:@"ws://"]) {
+        result = [result stringByReplacingCharactersInRange:NSMakeRange(0, 5) withString:@"http://"];
+    }
+    // 移除 /ws 后缀
+    if ([result hasSuffix:@"/ws"]) {
+        result = [result substringToIndex:result.length - 3];
+    }
+    // 移除尾部斜杠
+    while ([result hasSuffix:@"/"]) {
+        result = [result substringToIndex:result.length - 1];
+    }
+    return result;
 }
 
 // MARK: - UI Setup
@@ -323,8 +357,12 @@ static NSSet<NSString *> *_imageExtensions(void) {
         [_statusLabel.centerXAnchor constraintEqualToAnchor:_downloadButton.centerXAnchor],
         [_statusLabel.centerYAnchor constraintEqualToAnchor:_downloadButton.centerYAnchor],
 
-        // 整体高度
-        [self.heightAnchor constraintGreaterThanOrEqualToConstant:64],
+        // 整体高度（降低优先级避免与 cell 外部约束冲突）
+        ({
+            NSLayoutConstraint *c = [self.heightAnchor constraintGreaterThanOrEqualToConstant:64];
+            c.priority = UILayoutPriorityDefaultHigh;
+            c;
+        }),
     ]];
 }
 
@@ -332,21 +370,31 @@ static NSSet<NSString *> *_imageExtensions(void) {
 // MARK: - 加载文件信息
 
 - (void)loadFileInfo {
+    NSLog(@"[FileDownload] loadFileInfo: filePath='%@' serverBaseURL='%@'", self.filePath, self.serverBaseURL);
     if (self.serverBaseURL.length == 0) {
+        NSLog(@"[FileDownload] serverBaseURL is empty, skipping info load");
         self.fileInfoLabel.text = self.filePath.pathExtension.uppercaseString;
         return;
     }
 
-    NSString *encoded = [self.filePath stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-    NSString *urlStr = [NSString stringWithFormat:@"%@/files/info?path=%@", self.serverBaseURL, encoded];
-    NSURL *url = [NSURL URLWithString:urlStr];
+    NSURLComponents *comp = [NSURLComponents componentsWithString:
+        [NSString stringWithFormat:@"%@/files/info", self.serverBaseURL]];
+    comp.queryItems = @[[NSURLQueryItem queryItemWithName:@"path" value:self.filePath]];
+    NSURL *url = comp.URL;
+    NSLog(@"[FileDownload] info URL: %@", url);
     if (!url) {
+        NSLog(@"[FileDownload] ERROR: NSURLComponents produced nil URL");
         self.fileInfoLabel.text = self.filePath.pathExtension.uppercaseString;
         return;
     }
 
     __weak typeof(self) weakSelf = self;
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
+        NSLog(@"[FileDownload] info response: status=%ld error=%@ dataLen=%lu", (long)(httpResp ? httpResp.statusCode : 0), error, (unsigned long)data.length);
+        if (httpResp.statusCode != 200 && data) {
+            NSLog(@"[FileDownload] info response body: %@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             __strong typeof(weakSelf) sSelf = weakSelf;
             if (!sSelf) return;
@@ -375,23 +423,36 @@ static NSSet<NSString *> *_imageExtensions(void) {
 // MARK: - 下载
 
 - (void)downloadTapped {
-    if (self.isDownloading) return;
+    NSLog(@"[FileDownload] downloadTapped: filePath='%@' serverBaseURL='%@'", self.filePath, self.serverBaseURL);
+    if (self.isDownloading) {
+        NSLog(@"[FileDownload] already downloading, skip");
+        return;
+    }
     self.isDownloading = YES;
 
     self.downloadButton.hidden = YES;
     [self.spinner startAnimating];
 
-    NSString *encoded = [self.filePath stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-    NSString *urlStr = [NSString stringWithFormat:@"%@/files/download?path=%@", self.serverBaseURL, encoded];
-    NSURL *url = [NSURL URLWithString:urlStr];
+    NSURLComponents *comp = [NSURLComponents componentsWithString:
+        [NSString stringWithFormat:@"%@/files/download", self.serverBaseURL]];
+    comp.queryItems = @[[NSURLQueryItem queryItemWithName:@"path" value:self.filePath]];
+    NSURL *url = comp.URL;
+    NSLog(@"[FileDownload] download URL: %@", url);
 
     if (!url) {
+        NSLog(@"[FileDownload] ERROR: NSURLComponents produced nil URL for download");
         [self showError:@"无效路径"];
         return;
     }
 
     __weak typeof(self) weakSelf = self;
     NSURLSessionDownloadTask *downloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:url completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
+        NSLog(@"[FileDownload] download response: status=%ld error=%@ location=%@", (long)(httpResp ? httpResp.statusCode : 0), error, location);
+        if (httpResp.statusCode != 200 && location) {
+            NSData *body = [NSData dataWithContentsOfURL:location];
+            NSLog(@"[FileDownload] download error body: %@", [[NSString alloc] initWithData:body encoding:NSUTF8StringEncoding]);
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             __strong typeof(weakSelf) sSelf = weakSelf;
             if (!sSelf) return;
@@ -399,7 +460,16 @@ static NSSet<NSString *> *_imageExtensions(void) {
             [sSelf.spinner stopAnimating];
 
             if (error || !location) {
+                NSLog(@"[FileDownload] download failed: error=%@ location=%@", error, location);
                 [sSelf showError:@"下载失败"];
+                return;
+            }
+
+            // 检查 HTTP 状态码
+            if (httpResp && httpResp.statusCode != 200) {
+                NSString *msg = httpResp.statusCode == 404 ? @"文件不存在" : [NSString stringWithFormat:@"服务器错误 (%ld)", (long)httpResp.statusCode];
+                NSLog(@"[FileDownload] HTTP error: %ld", (long)httpResp.statusCode);
+                [sSelf showError:msg];
                 return;
             }
 

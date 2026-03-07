@@ -5,19 +5,14 @@ platform :ios, '15.0'
 use_frameworks!
 
 target 'iOSAgentApp' do
-  # 可按需添加更多依赖，例如:
-  # pod 'Masonry'             # Auto Layout DSL
-  # pod 'AFNetworking'        # 网络请求
-  # pod 'SDWebImage'          # 图片加载与缓存
-  # pod 'CocoaLumberjack'     # 日志
-  # pod 'MBProgressHUD'       # 加载指示
-  # pod 'MJRefresh'           # 下拉刷新
+  pod 'YYText'   # 高性能富文本，解决长文 cell 卡顿
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     end
   end
 end

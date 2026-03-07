@@ -39,6 +39,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app_state import (
     ENABLE_EVOMAP, AUTO_TOOL_UPGRADE,
+    IS_DUCK_MODE, DUCK_PORT, DUCK_PERMISSIONS,
     set_llm_client, set_cloud_llm_client, set_local_llm_client,
     set_agent_core, set_autonomous_agent, set_reflect_llm,
     get_llm_client, get_local_llm_client, get_agent_core,
@@ -419,6 +420,35 @@ async def lifespan(app: FastAPI):
         logger.info("MCP manager initialized (config: %s, synced %d tools)", _mcp_cfg, len(synced))
     except Exception as e:
         logger.warning("MCP manager init skipped: %s", e)
+
+    # ── Duck 模式初始化 ────────────────────────────────────────────────────────
+    if IS_DUCK_MODE:
+        # 注册工具权限过滤 pre-hook（DUCK_PERMISSIONS 非空时才过滤）
+        if DUCK_PERMISSIONS:
+            from tools.middleware import register_pre_hook
+            from tools.base import ToolResult as _ToolResult
+
+            async def _duck_permission_pre_hook(name: str, args: dict) -> dict:
+                if name not in DUCK_PERMISSIONS:
+                    raise PermissionError(
+                        f"[Duck] Tool '{name}' is not in the allowed permissions list"
+                    )
+                return args
+
+            register_pre_hook(_duck_permission_pre_hook)
+            logger.info("[Duck] Permission filter registered: %s", sorted(DUCK_PERMISSIONS))
+        else:
+            logger.info("[Duck] No permission restrictions (DUCK_PERMISSIONS is empty)")
+
+        # 启动 Duck WebSocket 客户端（连接主 Agent）
+        try:
+            from services.duck_client_ws import start_duck_client
+            asyncio.create_task(start_duck_client())
+            logger.info("[Duck] Duck mode enabled — WebSocket client task started")
+        except Exception as e:
+            logger.warning("[Duck] Failed to start duck client: %s", e)
+    # ─────────────────────────────────────────────────────────────────────────
+
     yield
     # MCP manager shutdown
     try:
@@ -466,10 +496,11 @@ app.include_router(ws_router)
 if __name__ == "__main__":
     import uvicorn
 
+    _run_port = DUCK_PORT if IS_DUCK_MODE else 8765
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
-        port=8765,
+        port=_run_port,
         reload=True,
         reload_excludes=["venv", "models", "data", "__pycache__", ".git"],
         log_level="info",

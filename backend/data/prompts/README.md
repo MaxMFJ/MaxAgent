@@ -6,10 +6,12 @@
 
 | 文件 | 用途 | 可编辑 |
 |------|------|--------|
-| identity.md | 身份、核心能力、输出风格 | ✓ |
-| behavior.md | 行为准则、工具失败处理、追问规则 | ✓ |
-| tools.md | 各工具使用规则（terminal/mail/升级等） | ✓ |
-| capsule.md | 技能 Capsule 规则 | ✓ |
+| identity.md | 身份、多领域能力矩阵、输出风格 | ✓ |
+| behavior.md | 响应策略（先判断再行动）、工具失败处理、追问规则 | ✓ |
+| tools.md | 三层工具体系（知识→内置→扩展）、GUI 操作规范 | ✓ |
+| capsule.md | Capsule/MCP/工具三者关系与调用流程 | ✓ |
+| constraints.md | 能力边界（能做/局限/不能做）、安全约束 | ✓ |
+| MACAGENT.md | 项目上下文注入（类 CLAUDE.md） | ✓ |
 | agent_evolved_rules.md | 自升级追加规则（位于 data/） | 自升级可写 |
 
 ## 配置
@@ -17,6 +19,11 @@
 - `prompt_loader.py` 中 `BOOTSTRAP_MAX_CHARS`：单文件最大字符数（默认 8000）
 - `BOOTSTRAP_TOTAL_MAX_CHARS`：总注入上限（默认 20000）
 - 缺失文件会跳过，不影响其他文件加载
+
+## 查询分层
+
+- **SIMPLE**（LITE prompt）：问候、纯追问 → 仅加载 identity + behavior
+- **COMPLEX**（FULL prompt）：操作执行、知识咨询 → 加载全部模块 + 动态注入
 
 ## 扩展
 

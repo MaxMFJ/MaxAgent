@@ -18,8 +18,7 @@
 		A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006234567890ABCDEF1 /* Assets.xcassets */; };
 		A1000007234567890ABCDEF1 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008234567890ABCDEF1 /* Message.swift */; };
 		A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A234567890ABCDEF1 /* AgentViewModel.swift */; };
-		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };
-		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
+		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };			EE000001234567890ABCDEF1 /* EggModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002234567890ABCDEF1 /* EggModeManager.swift */; };		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
 		A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012234567890ABCDEF1 /* ToolPanelView.swift */; };
 		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
 		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
@@ -54,6 +53,7 @@
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
 		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
 		DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */; };
+		DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA100020000000000DUCK01 /* DuckSettingsView.swift */; };
 		E1000001234567890ABCDEF1 /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002234567890ABCDEF1 /* TTSService.swift */; };
 		E1000003234567890ABCDEF1 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000004234567890ABCDEF1 /* VoiceInputService.swift */; };
 		E1000005234567890ABCDEF1 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000006234567890ABCDEF1 /* Speech.framework */; };
@@ -68,12 +68,14 @@
 		F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */; };
 		F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */; };
 		F100011234567890ABCDEF3 /* TracesDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100011334567890ABCDEF3 /* TracesDashboardView.swift */; };
+		F1000116234567890ABCDEF4 /* AgentLiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000117234567890ABCDEF4 /* AgentLiveView.swift */; };
 		F2000001234567890ABCDEF1 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = F2000002234567890ABCDEF1 /* Fonts */; };
 		FDA6E3FEDCAFDC550744DA49 /* MCPSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlagsSettingsView.swift; sourceTree = "<group>"; };
+		DDA100020000000000DUCK01 /* DuckSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuckSettingsView.swift; sourceTree = "<group>"; };
 		3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RollbackPanelView.swift; sourceTree = "<group>"; };
 		4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
 		4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceManagerView.swift; sourceTree = "<group>"; };
@@ -86,8 +88,7 @@
 		A1000006234567890ABCDEF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000008234567890ABCDEF1 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		A100000A234567890ABCDEF1 /* AgentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViewModel.swift; sourceTree = "<group>"; };
-		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };
-		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };			EE000002234567890ABCDEF1 /* EggModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EggModeManager.swift; sourceTree = "<group>"; };		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		A1000012234567890ABCDEF1 /* ToolPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolPanelView.swift; sourceTree = "<group>"; };
 		A1000014234567890ABCDEF1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
@@ -139,6 +140,7 @@
 		F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberpunkTheme.swift; sourceTree = "<group>"; };
 		F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStatisticsView.swift; sourceTree = "<group>"; };
 		F100011334567890ABCDEF3 /* TracesDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracesDashboardView.swift; sourceTree = "<group>"; };
+		F1000117234567890ABCDEF4 /* AgentLiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLiveView.swift; sourceTree = "<group>"; };
 		F2000002234567890ABCDEF1 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -236,6 +238,7 @@
 				251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */,
 				EF865104315098FC6C97C17F /* AuditLogView.swift */,
 				6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */,
+				DDA100020000000000DUCK01 /* DuckSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -255,6 +258,7 @@
 				4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */,
 				C1000004234567890ABCDEF1 /* TunnelManager.swift */,
 				A100000C234567890ABCDEF1 /* BackendService.swift */,
+				EE000002234567890ABCDEF1 /* EggModeManager.swift */,
 				E1000002234567890ABCDEF1 /* TTSService.swift */,
 				E1000004234567890ABCDEF1 /* VoiceInputService.swift */,
 				A2000002234567890ABCDEF1 /* PermissionManager.swift */,
@@ -353,6 +357,7 @@
 		F100000D234567890ABCDEF1 /* Monitoring */ = {
 			isa = PBXGroup;
 			children = (
+				F1000117234567890ABCDEF4 /* AgentLiveView.swift */,
 				F100000E234567890ABCDEF2 /* CyberpunkTheme.swift */,
 				F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */,
 				F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */,
@@ -543,6 +548,7 @@
 				4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */,
 				A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */,
 				A100000B234567890ABCDEF1 /* BackendService.swift in Sources */,
+				EE000001234567890ABCDEF1 /* EggModeManager.swift in Sources */,
 				4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */,
 				B1000001234567890ABCDEF1 /* ChatView.swift in Sources */,
 				B1C1BE120100000000000001 /* CyberGridBackground.swift in Sources */,
@@ -587,6 +593,7 @@
 				F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */,
 				F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */,
 				F100011234567890ABCDEF3 /* TracesDashboardView.swift in Sources */,
+				F1000116234567890ABCDEF4 /* AgentLiveView.swift in Sources */,
 				A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */,
 				A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */,
 				8CDA84FC8DE48AE55C228925 /* RollbackPanelView.swift in Sources */,
@@ -595,6 +602,7 @@
 				DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */,
 				9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */,
 				E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */,
+				DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

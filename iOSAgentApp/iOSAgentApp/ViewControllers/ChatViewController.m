@@ -1,6 +1,8 @@
 #import "ChatViewController.h"
 #import "SettingsViewController.h"
 #import "ConversationListViewController.h"
+#import "DuckTargetSelectorViewController.h"
+#import "Duck.h"
 #import "WebSocketService.h"
 #import "ServerConfig.h"
 #import "Message.h"
@@ -12,10 +14,10 @@
 #import "VoiceInputService.h"
 #import "TechTheme.h"
 #import "VoiceRainbowView.h"
-#import "TaskProgressView.h"
+#import "AgentLiveView.h"
 #import "ActionLogEntry.h"
 
-@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate, TaskProgressViewDelegate>
+@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate, AgentLiveViewDelegate, DuckTargetSelectorDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) InputView *inputView;
@@ -31,9 +33,9 @@
 // 用于消息去重（避免重连时重复显示已有消息）
 @property (nonatomic, strong) NSMutableSet<NSString *> *displayedMessageIds;
 
-// 任务进度面板
-@property (nonatomic, strong) TaskProgressView *taskProgressView;
-@property (nonatomic, strong) NSLayoutConstraint *taskProgressHeightConstraint;
+// Agent Live 面板（赛博朋克风格，内嵌在 Chat 页面）
+@property (nonatomic, strong) AgentLiveView *agentLiveView;
+@property (nonatomic, strong) NSLayoutConstraint *agentLiveHeightConstraint;
 @property (nonatomic, strong) NSLayoutConstraint *tableViewBottomConstraint;
 
 // 网格背景图层（用于动态更新颜色）
@@ -45,11 +47,13 @@
 // 流式输出节流：避免每个 chunk 都触发 cell reload，减少主线程阻塞
 @property (nonatomic, strong, nullable) NSDate *lastStreamingUIUpdateTime;
 @property (nonatomic, assign) BOOL hasPendingStreamingUpdate;
+@property (nonatomic, assign) NSInteger streamingHeightUpdateCounter;
 
 @end
 
 @implementation ChatViewController
-static const NSTimeInterval kStreamingThrottleInterval = 0.12; // 120ms，与 Mac 端一致
+static const NSTimeInterval kStreamingThrottleInterval = 0.18; // 180ms，降低 CPU 占用
+static const NSInteger kStreamingHeightUpdateDivisor = 6;      // 每 6 次节流更新才刷新行高（约 1s）
 
 static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
@@ -116,8 +120,13 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)updateTitle {
     ConversationManager *manager = [ConversationManager sharedManager];
-    if (manager.currentConversation) {
-        self.title = manager.currentConversation.title;
+    Conversation *conv = manager.currentConversation;
+    if (conv) {
+        if (conv.targetType == ConversationTargetTypeDuck && conv.targetDuckId.length > 0) {
+            self.title = [NSString stringWithFormat:@"🦆 %@", conv.title.length > 0 ? conv.title : @"Duck 对话"];
+        } else {
+            self.title = conv.title;
+        }
     } else {
         self.title = NSLocalizedString(@"app_title", nil);
     }
@@ -269,8 +278,10 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     }
 
     UIBarButtonItem *newChatButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"square.and.pencil"] style:UIBarButtonItemStylePlain target:self action:@selector(createNewConversation)];
+    UIBarButtonItem *duckTargetButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"bird"] style:UIBarButtonItemStylePlain target:self action:@selector(showDuckTargetSelector)];
+    duckTargetButton.accessibilityLabel = @"选择对话对象";
     UIBarButtonItem *settingsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gear"] style:UIBarButtonItemStylePlain target:self action:@selector(showSettings)];
-    self.navigationItem.rightBarButtonItems = @[settingsButton, newChatButton];
+    self.navigationItem.rightBarButtonItems = @[settingsButton, duckTargetButton, newChatButton];
 
     UIBarButtonItem *conversationsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"text.bubble"] style:UIBarButtonItemStylePlain target:self action:@selector(showConversationList)];
     UIBarButtonItem *clearButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"trash"] style:UIBarButtonItemStylePlain target:self action:@selector(clearChat)];
@@ -331,7 +342,11 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     _tableView.backgroundColor = [UIColor clearColor];
     _tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
-    [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"MessageCell"];
+    // 按角色注册不同的复用标识，避免 assistant↔user 复用时触发昂贵的样式重配置
+    [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"UserCell"];
+    [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"AssistantCell"];
+    [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"ToolCallCell"];
+    [_tableView registerClass:[MessageCell class] forCellReuseIdentifier:@"ToolResultCell"];
 
     UITapGestureRecognizer *dismissTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
     dismissTap.cancelsTouchesInView = NO;
@@ -344,16 +359,16 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     _inputView.delegate = self;
     [self.view addSubview:_inputView];
     
-    // 任务进度面板（在输入框上方）
-    _taskProgressView = [[TaskProgressView alloc] init];
-    _taskProgressView.translatesAutoresizingMaskIntoConstraints = NO;
-    _taskProgressView.delegate = self;
-    _taskProgressView.hidden = YES;
-    [self.view addSubview:_taskProgressView];
+    // Agent Live 面板（在输入框上方，赛博朋克 2077 风格）
+    _agentLiveView = [[AgentLiveView alloc] init];
+    _agentLiveView.translatesAutoresizingMaskIntoConstraints = NO;
+    _agentLiveView.delegate = self;
+    _agentLiveView.hidden = YES;
+    [self.view addSubview:_agentLiveView];
     
     _inputViewBottomConstraint = [_inputView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
-    _taskProgressHeightConstraint = [_taskProgressView.heightAnchor constraintEqualToConstant:0];
-    _tableViewBottomConstraint = [_tableView.bottomAnchor constraintEqualToAnchor:_taskProgressView.topAnchor];
+    _agentLiveHeightConstraint = [_agentLiveView.heightAnchor constraintEqualToConstant:0];
+    _tableViewBottomConstraint = [_tableView.bottomAnchor constraintEqualToAnchor:_agentLiveView.topAnchor];
     
     [NSLayoutConstraint activateConstraints:@[
         [_statusBar.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
@@ -372,11 +387,11 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         [_tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         _tableViewBottomConstraint,
         
-        // 任务进度面板
-        [_taskProgressView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:8],
-        [_taskProgressView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-8],
-        [_taskProgressView.bottomAnchor constraintEqualToAnchor:_inputView.topAnchor constant:-8],
-        _taskProgressHeightConstraint,
+        // Agent Live 面板
+        [_agentLiveView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:8],
+        [_agentLiveView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-8],
+        [_agentLiveView.bottomAnchor constraintEqualToAnchor:_inputView.topAnchor constant:-8],
+        _agentLiveHeightConstraint,
         
         [_inputView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [_inputView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
@@ -448,6 +463,30 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     [self presentViewController:nav animated:YES completion:nil];
 }
 
+- (void)showDuckTargetSelector {
+    DuckTargetSelectorViewController *vc = [[DuckTargetSelectorViewController alloc] initWithStyle:UITableViewStyleInsetGrouped];
+    vc.delegate = self;
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+    [self presentViewController:nav animated:YES completion:nil];
+}
+
+#pragma mark - DuckTargetSelectorDelegate
+
+- (void)duckTargetSelectorDidSelectMain {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *conv = [manager createNewConversation];
+    [self switchToConversation:conv];
+    [self updateTitle];
+}
+
+- (void)duckTargetSelectorDidSelectDuck:(Duck *)duck {
+    ConversationManager *manager = [ConversationManager sharedManager];
+    Conversation *conv = [manager createNewConversationWithDuckId:duck.duckId];
+    conv.title = [NSString stringWithFormat:@"与 %@ 对话", duck.name];
+    [self switchToConversation:conv];
+    [self updateTitle];
+}
+
 - (void)clearChat {
     [[TTSService sharedService] stop];
     ConversationManager *manager = [ConversationManager sharedManager];
@@ -515,10 +554,31 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 }
 
 - (void)scrollToBottom {
-    NSMutableArray<Message *> *messages = [self currentMessages];
-    if (messages.count > 0) {
-        NSIndexPath *lastIndexPath = [NSIndexPath indexPathForRow:messages.count - 1 inSection:0];
+    NSInteger rowCount = [self.tableView numberOfRowsInSection:0];
+    if (rowCount > 0) {
+        NSIndexPath *lastIndexPath = [NSIndexPath indexPathForRow:rowCount - 1 inSection:0];
         [self.tableView scrollToRowAtIndexPath:lastIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:YES];
+    }
+}
+
+/// 流式输出期间的自动滚动：仅当用户在底部附近且未手动滚动时触发
+- (void)scrollToBottomDuringStreaming {
+    // 用户正在手动滚动时不干预
+    if (self.tableView.isDragging || self.tableView.isDecelerating) return;
+
+    CGFloat contentHeight = self.tableView.contentSize.height;
+    CGFloat frameHeight = self.tableView.bounds.size.height;
+    if (contentHeight <= frameHeight) return;
+
+    CGFloat offsetY = self.tableView.contentOffset.y;
+    CGFloat distFromBottom = contentHeight - offsetY - frameHeight;
+
+    // 用户在底部 50pt 范围内才自动滚动（避免打断手动上滑浏览）
+    if (distFromBottom < 50) {
+        CGFloat maxOffsetY = contentHeight - frameHeight + self.tableView.contentInset.bottom;
+        if (maxOffsetY > 0) {
+            self.tableView.contentOffset = CGPointMake(0, maxOffsetY);
+        }
     }
 }
 
@@ -589,19 +649,45 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MessageCell" forIndexPath:indexPath];
     NSMutableArray<Message *> *messages = [self currentMessages];
-    if (indexPath.row < (NSInteger)messages.count) {
-        Message *message = messages[indexPath.row];
-        cell.delegate = self;
-        [cell configureWithMessage:message];
+    if (indexPath.row >= (NSInteger)messages.count) {
+        return [tableView dequeueReusableCellWithIdentifier:@"AssistantCell" forIndexPath:indexPath];
     }
+    Message *message = messages[indexPath.row];
+    NSString *reuseId;
+    switch (message.role) {
+        case MessageRoleUser:       reuseId = @"UserCell"; break;
+        case MessageRoleToolCall:   reuseId = @"ToolCallCell"; break;
+        case MessageRoleToolResult: reuseId = @"ToolResultCell"; break;
+        default:                    reuseId = @"AssistantCell"; break;
+    }
+    MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseId forIndexPath:indexPath];
+    cell.delegate = self;
+    [cell configureWithMessage:message];
     return cell;
 }
 
 #pragma mark - UITableViewDelegate
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    if (indexPath.row >= (NSInteger)messages.count) return 80;
+    Message *message = messages[indexPath.row];
+    return [MessageCell heightForMessage:message tableViewWidth:tableView.bounds.size.width];
+}
+
 - (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    // 根据消息内容长度估算行高，减少滚动时的高度跳变
+    NSMutableArray<Message *> *messages = [self currentMessages];
+    if (indexPath.row < (NSInteger)messages.count) {
+        Message *message = messages[indexPath.row];
+        NSUInteger len = message.content.length;
+        if (message.role == MessageRoleUser) {
+            return MAX(60, MIN(len * 0.4 + 60, 300));
+        }
+        // assistant / tool 消息通常更长
+        return MAX(80, MIN(len * 0.3 + 80, 600));
+    }
     return 80;
 }
 
@@ -748,7 +834,14 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
         [[TTSService sharedService] resetStreamState];
     }
-    [[WebSocketService sharedService] sendChatMessage:message sessionId:currentConv.conversationId];
+    // 远端 LLM 聊天也显示 Agent Live（与自主任务一致）
+    [self showAgentLiveViewForChat];
+    
+    if (currentConv.targetType == ConversationTargetTypeDuck && currentConv.targetDuckId.length > 0) {
+        [[WebSocketService sharedService] sendChatToDuck:message duckId:currentConv.targetDuckId sessionId:currentConv.conversationId];
+    } else {
+        [[WebSocketService sharedService] sendChatMessage:message sessionId:currentConv.conversationId];
+    }
 }
 
 - (void)inputViewDidRequestVoiceInput:(InputView *)inputView {
@@ -949,10 +1042,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.currentAssistantMessage) {
             [self.currentAssistantMessage appendContent:content];
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
-                NSString *full = self.currentAssistantMessage.content ?: @"";
-                [[TTSService sharedService] appendAndSpeakStreamedContent:full];
-            }
+            // TTS 已移至 flushStreamingCellUpdate 节流路径，不再每个 chunk 都处理
             [self throttledUpdateStreamingCell];
         }
     });
@@ -979,12 +1069,35 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)flushStreamingCellUpdate {
     self.lastStreamingUIUpdateTime = [NSDate date];
     if (!self.currentAssistantMessage) return;
+
+    // TTS 处理移到节流路径，每 ~120ms 最多处理一次（而非每个 chunk）
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsTTSEnabled]) {
+        NSString *full = self.currentAssistantMessage.content ?: @"";
+        [[TTSService sharedService] appendAndSpeakStreamedContent:full];
+    }
+
     NSMutableArray<Message *> *messages = [self currentMessages];
     NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
-    if (index != NSNotFound) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
-        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    if (index == NSNotFound) return;
+
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+    MessageCell *cell = (MessageCell *)[self.tableView cellForRowAtIndexPath:indexPath];
+    if (cell) {
+        // 直接更新 cell 内容，避免 reloadRows 触发 prepareForReuse 丢失缓存
+        [cell configureWithMessage:self.currentAssistantMessage];
     }
+
+    // 每 N 次节流更新才刷新行高，减少 beginUpdates 触发的 layout 开销
+    self.streamingHeightUpdateCounter++;
+    if (self.streamingHeightUpdateCounter % kStreamingHeightUpdateDivisor == 0) {
+        [UIView performWithoutAnimation:^{
+            [self.tableView beginUpdates];
+            [self.tableView endUpdates];
+        }];
+    }
+
+    // 流式输出时自动滚动到底部
+    [self scrollToBottomDuringStreaming];
 }
 
 - (void)webSocketService:(WebSocketService *)service didReceiveToolCall:(NSString *)toolName callId:(NSString *)callId arguments:(NSString *)arguments {
@@ -1050,7 +1163,10 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         // 重置流式节流状态
         self.lastStreamingUIUpdateTime = nil;
         self.hasPendingStreamingUpdate = NO;
+        self.streamingHeightUpdateCounter = 0;
         self.inputView.loading = NO;
+        // 远端 LLM 完成，延迟隐藏 Agent Live
+        [self scheduleHideAgentLiveIfNotRunning];
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.status = MessageStatusComplete;
             self.currentAssistantMessage.modelName = modelName;
@@ -1087,6 +1203,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     dispatch_async(dispatch_get_main_queue(), ^{
         [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
+        [self scheduleHideAgentLiveIfNotRunning];
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:@"\n\n[已终止]"];
             self.currentAssistantMessage.status = MessageStatusComplete;
@@ -1110,6 +1227,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.inputView.loading = NO;
+        [self hideAgentLiveView];
         
         ConversationManager *manager = [ConversationManager sharedManager];
         Conversation *currentConv = manager.currentConversation;
@@ -1125,10 +1243,59 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     });
 }
 
+- (void)webSocketService:(WebSocketService *)service didReceiveMonitorEvent:(NSDictionary *)event sessionId:(NSString *)sessionId taskId:(NSString *)taskId taskType:(NSString *)taskType {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ConversationManager *manager = [ConversationManager sharedManager];
+        NSString *currentSessionId = manager.currentConversation.conversationId ?: @"";
+        if (sessionId.length > 0 && currentSessionId.length > 0 && ![sessionId isEqualToString:currentSessionId]) {
+            return;  // 非当前会话的监控事件，忽略
+        }
+        NSString *evType = event[@"type"];
+        if ([taskType isEqualToString:@"chat"]) {
+            // 远端 LLM 聊天的 monitor_event
+            if ([evType isEqualToString:@"task_start"]) {
+                [self showAgentLiveView];
+                NSMutableDictionary *taskStartData = [event mutableCopy];
+                if (taskId.length) taskStartData[@"task_id"] = taskId;
+                if (!self.agentLiveView.taskProgress) {
+                    self.agentLiveView.taskProgress = [TaskProgress progressWithTaskId:taskId ?: @"chat" description:event[@"task"] ?: @"LLM 思考中"];
+                }
+                [self.agentLiveView.taskProgress handleTaskStart:taskStartData];
+                [self updateAgentLiveViewHeight];
+            } else if ([evType isEqualToString:@"llm_request_start"]) {
+                if (self.agentLiveView.taskProgress) {
+                    [self.agentLiveView handleLLMRequestStart:event];
+                }
+            } else if ([evType isEqualToString:@"llm_request_end"]) {
+                if (self.agentLiveView.taskProgress) {
+                    [self.agentLiveView handleLLMRequestEnd:event];
+                }
+            } else if ([evType isEqualToString:@"tool_call"]) {
+                NSString *toolName = event[@"name"] ?: event[@"tool_name"];
+                if (toolName && self.agentLiveView.taskProgress) {
+                    [self.agentLiveView.taskProgress recordToolCallForDisplay:toolName];
+                    [self.agentLiveView updateWithTaskProgress:self.agentLiveView.taskProgress];
+                    [self updateAgentLiveViewHeight];
+                }
+            } else if ([evType isEqualToString:@"task_complete"] || [evType isEqualToString:@"task_stopped"] || [evType isEqualToString:@"error"]) {
+                if (self.agentLiveView.taskProgress) {
+                    if ([evType isEqualToString:@"task_complete"]) {
+                        [self.agentLiveView handleTaskComplete:event];
+                    } else if ([evType isEqualToString:@"task_stopped"]) {
+                        [self.agentLiveView handleTaskStopped:event];
+                    }
+                    [self scheduleHideAgentLiveIfNotRunning];
+                }
+            }
+        }
+    });
+}
+
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage {
     dispatch_async(dispatch_get_main_queue(), ^{
         [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
+        [self scheduleHideAgentLiveIfNotRunning];
         if (self.currentAssistantMessage) {
             self.currentAssistantMessage.content = [NSString stringWithFormat:NSLocalizedString(@"error_format", nil), errorMessage];
             self.currentAssistantMessage.status = MessageStatusError;
@@ -1148,6 +1315,80 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 [manager saveConversations];
             }
         }
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckError:(NSString *)errorMessage duckId:(NSString *)duckId {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
+        [self scheduleHideAgentLiveIfNotRunning];
+        if (self.currentAssistantMessage) {
+            self.currentAssistantMessage.content = [NSString stringWithFormat:@"❌ %@", errorMessage];
+            self.currentAssistantMessage.status = MessageStatusError;
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
+            if (index != NSNotFound) {
+                [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
+            }
+            self.currentAssistantMessage = nil;
+        }
+        ConversationManager *manager = [ConversationManager sharedManager];
+        if (manager.currentConversation) {
+            manager.currentConversation.updatedAt = [NSDate date];
+            [manager saveConversations];
+        }
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Duck 不可用"
+                                                                       message:errorMessage
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didAcceptChatToDuck:(NSString *)duckId taskId:(NSString *)taskId {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Duck 已接受任务，更新占位消息提示正在处理
+        if (self.currentAssistantMessage && self.currentAssistantMessage.status == MessageStatusStreaming) {
+            self.currentAssistantMessage.content = @"🦆 Duck 正在处理中…";
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
+            if (index != NSNotFound) {
+                [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
+            }
+        }
+        NSLog(@"[Chat] chat_to_duck_accepted: duck_id=%@ task_id=%@", duckId, taskId);
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckResult:(NSString *)output duckId:(NSString *)duckId taskId:(NSString *)taskId success:(BOOL)success error:(NSString *)errorMessage {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.inputView.loading = NO;
+        [self scheduleHideAgentLiveIfNotRunning];
+
+        if (self.currentAssistantMessage) {
+            if (success && output.length > 0) {
+                self.currentAssistantMessage.content = output;
+                self.currentAssistantMessage.status = MessageStatusDone;
+            } else {
+                NSString *msg = errorMessage.length > 0 ? errorMessage : @"Duck 未返回结果";
+                self.currentAssistantMessage.content = [NSString stringWithFormat:@"❌ %@", msg];
+                self.currentAssistantMessage.status = MessageStatusError;
+            }
+            NSMutableArray<Message *> *messages = [self currentMessages];
+            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
+            if (index != NSNotFound) {
+                [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
+            }
+            self.currentAssistantMessage = nil;
+        }
+
+        ConversationManager *manager = [ConversationManager sharedManager];
+        if (manager.currentConversation) {
+            manager.currentConversation.updatedAt = [NSDate date];
+            [manager saveConversations];
+        }
+        [self scrollToBottom];
+        NSLog(@"[Chat] chat_to_duck_result: duck_id=%@ success=%d", duckId, success);
     });
 }
 
@@ -1276,37 +1517,37 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         NSString *type = chunk[@"type"];
         NSMutableString *append = [NSMutableString string];
         
-        // 同时更新 TaskProgressView
+        // 同时更新 AgentLiveView
         if ([type isEqualToString:@"task_start"]) {
-            [self showTaskProgressView];
+            [self showAgentLiveView];
             NSString *taskId = chunk[@"task_id"] ?: @"";
             NSString *taskDesc = chunk[@"task"] ?: @"";
-            self.taskProgressView.taskProgress = [TaskProgress progressWithTaskId:taskId description:taskDesc];
-            [self.taskProgressView.taskProgress handleTaskStart:chunk];
-            [self updateTaskProgressViewHeight];
+            self.agentLiveView.taskProgress = [TaskProgress progressWithTaskId:taskId description:taskDesc];
+            [self.agentLiveView.taskProgress handleTaskStart:chunk];
+            [self updateAgentLiveViewHeight];
             [append appendString:@"🚀 任务开始执行...\n"];
         } else if ([type isEqualToString:@"model_selected"]) {
             NSString *modelType = chunk[@"model_type"] ?: @"";
             NSString *reason = chunk[@"reason"] ?: @"";
             NSString *icon = [modelType isEqualToString:@"local"] ? @"🏠" : @"☁️";
             NSString *name = [modelType isEqualToString:@"local"] ? NSLocalizedString(@"model_local", nil) : NSLocalizedString(@"model_remote", nil);
-            [self.taskProgressView.taskProgress handleModelSelected:chunk];
+            [self.agentLiveView.taskProgress handleModelSelected:chunk];
             [append appendFormat:@"%@ 选择模型: %@\n", icon, name];
             if (reason.length) [append appendFormat:@"💡 %@\n\n", reason];
         } else if ([type isEqualToString:@"action_plan"]) {
-            [self.taskProgressView handleActionPlan:chunk];
-            [self updateTaskProgressViewHeight];
+            [self.agentLiveView handleActionPlan:chunk];
+            [self updateAgentLiveViewHeight];
             NSDictionary *action = chunk[@"action"];
             NSString *actionType = ([action isKindOfClass:[NSDictionary class]] ? action[@"action_type"] : nil) ?: @"unknown";
             NSString *reasoning = ([action isKindOfClass:[NSDictionary class]] ? action[@"reasoning"] : nil) ?: @"";
             NSNumber *iter = chunk[@"iteration"];
             [append appendFormat:@"\n📋 步骤 %@: %@\n   → %@\n", iter ? iter.stringValue : @"?", actionType, reasoning];
         } else if ([type isEqualToString:@"action_executing"]) {
-            [self.taskProgressView handleActionExecuting:chunk];
+            [self.agentLiveView handleActionExecuting:chunk];
             NSString *actionType = chunk[@"action_type"] ?: @"";
             [append appendFormat:@"⏳ 执行中: %@\n", actionType];
         } else if ([type isEqualToString:@"action_result"]) {
-            [self.taskProgressView handleActionResult:chunk];
+            [self.agentLiveView handleActionResult:chunk];
             id succ = chunk[@"success"];
             BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
             NSString *output = chunk[@"output"] ?: @"";
@@ -1314,25 +1555,25 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             if (success && output.length) [append appendFormat:@"   ✓ %@\n", output];
             else if (err.length) [append appendFormat:@"   ✗ %@\n", err];
         } else if ([type isEqualToString:@"llm_request_start"]) {
-            [self.taskProgressView handleLLMRequestStart:chunk];
+            [self.agentLiveView handleLLMRequestStart:chunk];
         } else if ([type isEqualToString:@"llm_request_end"]) {
-            [self.taskProgressView handleLLMRequestEnd:chunk];
+            [self.agentLiveView handleLLMRequestEnd:chunk];
         } else if ([type isEqualToString:@"reflect_start"]) {
             [append appendString:@"\n🔄 反思中...\n"];
         } else if ([type isEqualToString:@"reflect_result"]) {
             NSString *ref = chunk[@"reflection"] ?: chunk[@"error"] ?: @"";
             if (ref.length) [append appendFormat:@"   %@\n", ref];
         } else if ([type isEqualToString:@"task_complete"]) {
-            [self.taskProgressView handleTaskComplete:chunk];
+            [self.agentLiveView handleTaskComplete:chunk];
             id succ = chunk[@"success"];
             BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
             NSString *summary = chunk[@"summary"] ?: @"";
             [append appendFormat:@"\n%@ 任务完成\n%@\n", success ? @"✅" : @"⚠️", summary];
         } else if ([type isEqualToString:@"task_stopped"]) {
-            [self.taskProgressView handleTaskStopped:chunk];
+            [self.agentLiveView handleTaskStopped:chunk];
             [append appendFormat:@"\n⏹ %@\n", chunk[@"message"] ?: chunk[@"reason"] ?: NSLocalizedString(@"autonomous_stopped", nil)];
         } else if ([type isEqualToString:@"progress_update"]) {
-            [self.taskProgressView.taskProgress handleProgressUpdate:chunk];
+            [self.agentLiveView.taskProgress handleProgressUpdate:chunk];
             NSString *msg = chunk[@"message"] ?: @"";
             if (msg.length) [append appendFormat:@"%@\n", msg];
         }
@@ -1356,58 +1597,76 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 [manager saveConversations];
             }
             self.currentAssistantMessage = nil;
-            // 延迟隐藏任务进度面板
+            // 延迟隐藏 Agent Live 面板
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (!self.taskProgressView.isRunning) {
-                    [self hideTaskProgressView];
+                if (!self.agentLiveView.isRunning) {
+                    [self hideAgentLiveView];
                 }
             });
         }
     });
 }
 
-#pragma mark - Task Progress View
+#pragma mark - Agent Live View
 
-- (void)showTaskProgressView {
-    self.taskProgressView.hidden = NO;
-    [self updateTaskProgressViewHeight];
+- (void)showAgentLiveView {
+    self.agentLiveView.hidden = NO;
+    [self updateAgentLiveViewHeight];
     [UIView animateWithDuration:0.3 animations:^{
         [self.view layoutIfNeeded];
     }];
 }
 
-- (void)hideTaskProgressView {
+/// 远端 LLM 聊天开始时显示 Agent Live（无 task_start 时先展示占位）
+- (void)showAgentLiveViewForChat {
+    if (!self.agentLiveView.taskProgress) {
+        self.agentLiveView.taskProgress = [TaskProgress progressWithTaskId:@"chat" description:@"LLM 思考中"];
+        self.agentLiveView.taskProgress.isRunning = YES;
+    }
+    [self showAgentLiveView];
+}
+
+/// 延迟隐藏 Agent Live（任务/聊天结束后 3 秒）
+- (void)scheduleHideAgentLiveIfNotRunning {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (!self.agentLiveView.isRunning) {
+            [self hideAgentLiveView];
+        }
+    });
+}
+
+- (void)hideAgentLiveView {
     [UIView animateWithDuration:0.3 animations:^{
-        self.taskProgressHeightConstraint.constant = 0;
+        self.agentLiveHeightConstraint.constant = 0;
         [self.view layoutIfNeeded];
     } completion:^(BOOL finished) {
-        self.taskProgressView.hidden = YES;
-        [self.taskProgressView reset];
+        self.agentLiveView.hidden = YES;
+        [self.agentLiveView reset];
     }];
 }
 
-- (void)updateTaskProgressViewHeight {
-    CGFloat height = [self.taskProgressView requiredHeight];
-    self.taskProgressHeightConstraint.constant = height;
+- (void)updateAgentLiveViewHeight {
+    CGFloat height = [self.agentLiveView requiredHeight];
+    self.agentLiveHeightConstraint.constant = height;
     [self.view layoutIfNeeded];
 }
 
-#pragma mark - TaskProgressViewDelegate
+#pragma mark - AgentLiveViewDelegate
 
-- (void)taskProgressViewDidToggle:(TaskProgressView *)view {
-    [self updateTaskProgressViewHeight];
+- (void)agentLiveViewDidToggle:(AgentLiveView *)view {
+    [self updateAgentLiveViewHeight];
     [UIView animateWithDuration:0.2 animations:^{
         [self.view layoutIfNeeded];
     }];
 }
 
-- (void)taskProgressViewDidRequestStop:(TaskProgressView *)view {
+- (void)agentLiveViewDidRequestStop:(AgentLiveView *)view {
     ConversationManager *manager = [ConversationManager sharedManager];
     NSString *sessionId = manager.currentConversation.conversationId ?: @"default";
     [[WebSocketService sharedService] sendStopStream:sessionId];
 }
 
-- (void)taskProgressView:(TaskProgressView *)view didSelectActionLog:(ActionLogEntry *)entry {
+- (void)agentLiveView:(AgentLiveView *)view didSelectActionLog:(ActionLogEntry *)entry {
     // 显示 action 详情（可选：弹出 alert 或跳转到详情页）
     NSString *detail = [NSString stringWithFormat:@"类型: %@\n状态: %@\n", entry.actionType, [entry statusIcon]];
     if (entry.reasoning.length) {
@@ -1442,11 +1701,11 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             [self scrollToBottom];
             self.inputView.loading = YES;
             
-            // 显示任务进度面板
-            [self showTaskProgressView];
-            self.taskProgressView.taskProgress = [TaskProgress progressWithTaskId:taskId description:@"恢复中..."];
-            self.taskProgressView.taskProgress.isRunning = YES;
-            [self updateTaskProgressViewHeight];
+            // 显示 Agent Live 面板
+            [self showAgentLiveView];
+            self.agentLiveView.taskProgress = [TaskProgress progressWithTaskId:taskId description:@"恢复中..."];
+            self.agentLiveView.taskProgress.isRunning = YES;
+            [self updateAgentLiveViewHeight];
             
             // 发送恢复请求
             [[WebSocketService sharedService] resumeTask:currentConv.conversationId];

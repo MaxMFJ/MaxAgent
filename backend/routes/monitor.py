@@ -1,13 +1,16 @@
 """
 Monitor 路由 - 为前端监控仪表板提供 HTTP API
-提供：执行历史记录、统计摘要数据
+提供：执行历史记录、统计摘要数据、运行中任务列表
 """
 import os
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Query
+
+from app_state import get_task_tracker, AutoTaskStatus, TaskType
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/monitor")
@@ -20,6 +23,33 @@ def _get_episodes_dir() -> Path:
     d = DATA_DIR / "episodes"
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+@router.get("/active-tasks")
+async def get_active_tasks(recent_seconds: int = Query(default=300, ge=60, le=3600)):
+    """
+    返回当前运行中及最近完成的任务列表，供监控面板多任务展示。
+    recent_seconds: 已完成任务保留时长（秒），默认 5 分钟。
+    """
+    tracker = get_task_tracker()
+    now = time.time()
+    tasks = []
+    for task_id, tt in tracker.list_tasks():
+        is_running = tt.status == AutoTaskStatus.RUNNING
+        is_recent = tt.finished_at and (now - tt.finished_at) < recent_seconds
+        if is_running or is_recent:
+            tasks.append({
+                "task_id": task_id,
+                "session_id": tt.session_id,
+                "task_type": tt.task_type.value,
+                "description": tt.task_description or "",
+                "status": tt.status.value,
+                "created_at": tt.created_at,
+                "finished_at": tt.finished_at,
+            })
+    # 运行中优先，再按创建时间倒序
+    tasks.sort(key=lambda t: (0 if t["status"] == "running" else 1, -t["created_at"]))
+    return {"tasks": tasks}
 
 
 @router.get("/episodes")

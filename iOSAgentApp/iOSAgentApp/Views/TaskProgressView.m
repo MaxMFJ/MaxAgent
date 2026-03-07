@@ -215,12 +215,18 @@ static CGFloat const kCornerRadius = 12.0;
     // Constraints
     _tableHeightConstraint = [_actionLogsTable.heightAnchor constraintEqualToConstant:0];
     
+    // 内部子视图高度约束使用非必要优先级，避免与外部 height=0 约束冲突
+    NSLayoutConstraint *headerHeight = [_headerView.heightAnchor constraintEqualToConstant:kHeaderHeight];
+    headerHeight.priority = UILayoutPriorityDefaultHigh; // 750
+    NSLayoutConstraint *progressHeight = [_progressBar.heightAnchor constraintEqualToConstant:kProgressBarHeight];
+    progressHeight.priority = UILayoutPriorityDefaultHigh;
+    
     [NSLayoutConstraint activateConstraints:@[
         // Header
         [_headerView.topAnchor constraintEqualToAnchor:self.topAnchor],
         [_headerView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
         [_headerView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-        [_headerView.heightAnchor constraintEqualToConstant:kHeaderHeight],
+        headerHeight,
         
         // Loading indicator
         [_loadingIndicator.leadingAnchor constraintEqualToAnchor:_headerView.leadingAnchor constant:kPadding],
@@ -250,7 +256,7 @@ static CGFloat const kCornerRadius = 12.0;
         [_progressBar.topAnchor constraintEqualToAnchor:_headerView.bottomAnchor],
         [_progressBar.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
         [_progressBar.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-        [_progressBar.heightAnchor constraintEqualToConstant:kProgressBarHeight],
+        progressHeight,
         
         // LLM status
         [_llmStatusLabel.topAnchor constraintEqualToAnchor:_progressBar.bottomAnchor constant:4],
@@ -260,9 +266,13 @@ static CGFloat const kCornerRadius = 12.0;
         [_actionLogsTable.topAnchor constraintEqualToAnchor:_progressBar.bottomAnchor constant:4],
         [_actionLogsTable.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
         [_actionLogsTable.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-        [_actionLogsTable.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
         _tableHeightConstraint,
     ]];
+    
+    // table bottom 约束降低优先级，避免外部 height=0 时冲突
+    NSLayoutConstraint *tableBottom = [_actionLogsTable.bottomAnchor constraintEqualToAnchor:self.bottomAnchor];
+    tableBottom.priority = UILayoutPriorityDefaultHigh;
+    tableBottom.active = YES;
     
     [self updateToggleButtonIcon];
 }
@@ -396,8 +406,9 @@ static CGFloat const kCornerRadius = 12.0;
 }
 
 - (void)scrollToLatestAction {
-    if (_taskProgress.actionLogs.count > 0 && _isExpanded) {
-        NSIndexPath *lastRow = [NSIndexPath indexPathForRow:_taskProgress.actionLogs.count - 1 inSection:0];
+    NSInteger rowCount = [_actionLogsTable numberOfRowsInSection:0];
+    if (rowCount > 0 && _isExpanded) {
+        NSIndexPath *lastRow = [NSIndexPath indexPathForRow:rowCount - 1 inSection:0];
         [_actionLogsTable scrollToRowAtIndexPath:lastRow atScrollPosition:UITableViewScrollPositionBottom animated:YES];
     }
 }

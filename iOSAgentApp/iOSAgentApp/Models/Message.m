@@ -51,9 +51,19 @@
     return message;
 }
 
+- (void)setContent:(NSString *)content {
+    if (_content != content && ![_content isEqualToString:content]) {
+        _content = [content copy];
+        _cachedCellHeight = 0;
+        _cachedParsedParts = nil;
+        _cachedContentLength = 0;
+    }
+}
+
 - (void)appendContent:(NSString *)content {
     if (content) {
         _content = [_content stringByAppendingString:content];
+        _cachedCellHeight = 0; // 流式更新时使高度缓存失效，下次 heightForRow 会重算
     }
 }
 

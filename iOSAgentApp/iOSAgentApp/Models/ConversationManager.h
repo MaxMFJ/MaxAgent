@@ -11,6 +11,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)sharedManager;
 
 - (Conversation *)createNewConversation;
+/// 创建以子 Duck 为目标的会话
+- (Conversation *)createNewConversationWithDuckId:(NSString *)duckId;
 - (void)selectConversation:(Conversation *)conversation;
 - (void)deleteConversation:(Conversation *)conversation;
 - (void)saveConversations;

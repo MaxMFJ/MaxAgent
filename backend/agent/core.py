@@ -322,8 +322,11 @@ class AgentCore:
         
         logger.info(f"Context: {len(context_messages)} messages for query, local_mode={use_local_mode}, provider={provider}, model={model_name}")
         
-        # 按任务类型动态 max_tokens：简单对话 4096，复杂生成 16384，减少截断
-        stream_max_tokens = 4096 if intent_result.tier == QueryTier.SIMPLE else 16384
+        # 按任务类型动态 max_tokens：简单对话 4096，复杂生成 32768，长指南/报告类避免截断
+        # 若用户在配置中设置了更高的 max_tokens，则取较大值
+        base_max = 4096 if intent_result.tier == QueryTier.SIMPLE else 32768
+        cfg_max = getattr(self.llm.config, "max_tokens", None) or 0
+        stream_max_tokens = max(base_max, cfg_max) if cfg_max > 0 else base_max
         logger.info(f"Query tier={intent_result.tier.value} -> max_tokens={stream_max_tokens}")
         
         # 本地模型不传递 tools（通过 prompt 描述工具）

@@ -33,9 +33,9 @@ def get_cloudflared_restart_command() -> str:
     if cf:
         log_path = os.path.expanduser("~/cloudflared.log")
         plist_path = os.path.expanduser("~/Library/LaunchAgents/com.macagent.cloudflared.plist")
-        # 使用 heredoc 写入 plist，再 launchctl load（避免 nohup 子进程被父进程退出时杀死）
+        # 只杀 quick tunnel（--url 参数），不影响 named tunnel（--config）
         return (
-            f"pkill -f cloudflared 2>/dev/null; sleep 2; "
+            f"pkill -f 'cloudflared tunnel --url' 2>/dev/null; sleep 2; "
             f"mkdir -p ~/Library/LaunchAgents; "
             f'cf="{cf}"; log="{log_path}"; plist="{plist_path}"; '
             f'cat > "$plist" << "PLIST_END"\n'
@@ -63,7 +63,7 @@ def get_cloudflared_restart_command() -> str:
             f'PLIST_END\n'
             f'launchctl unload "$plist" 2>/dev/null; launchctl load "$plist"'
         )
-    return "pkill -f cloudflared 2>/dev/null; sleep 2; nohup cloudflared tunnel --url http://localhost:8765 --metrics 127.0.0.1:4040 >> ~/cloudflared.log 2>&1 &"
+    return "pkill -f 'cloudflared tunnel --url' 2>/dev/null; sleep 2; nohup cloudflared tunnel --url http://localhost:8765 --metrics 127.0.0.1:4040 >> ~/cloudflared.log 2>&1 &"
 
 
 # LaunchAgent 标识，供 tunnel_manager 使用

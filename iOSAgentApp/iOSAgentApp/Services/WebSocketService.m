@@ -107,6 +107,28 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
     [self sendJSONMessage:message];
 }
 
+- (void)sendChatToDuck:(NSString *)content duckId:(NSString *)duckId sessionId:(NSString *)sessionId {
+    if (self.connectionState != WebSocketConnectionStateConnected) {
+        NSLog(@"[WebSocket] Not connected, cannot send chat_to_duck");
+        return;
+    }
+    
+    if (!duckId || duckId.length == 0) {
+        NSLog(@"[WebSocket] chat_to_duck requires duck_id");
+        return;
+    }
+    
+    NSDictionary *message = @{
+        @"type": @"chat_to_duck",
+        @"content": content,
+        @"duck_id": duckId,
+        @"session_id": sessionId
+    };
+    
+    [self sendJSONMessage:message];
+    NSLog(@"[WebSocket] Sent chat_to_duck to duck_id=%@", duckId);
+}
+
 - (void)sendAutonomousTask:(NSString *)task sessionId:(NSString *)sessionId {
     if (self.connectionState != WebSocketConnectionStateConnected) {
         NSLog(@"[WebSocket] Not connected, cannot send task");
@@ -396,6 +418,34 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
             [self.delegate webSocketService:self didReceiveError:errorMessage];
         }
     }
+    else if ([type isEqualToString:@"chat_to_duck_error"]) {
+        NSString *errorMessage = _StringFromJSON(json[@"message"]) ?: @"该 Duck 不可用";
+        NSString *duckId = _StringFromJSON(json[@"duck_id"]);
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveChatToDuckError:duckId:)]) {
+            [self.delegate webSocketService:self didReceiveChatToDuckError:errorMessage duckId:duckId];
+        } else if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveError:)]) {
+            [self.delegate webSocketService:self didReceiveError:errorMessage];
+        }
+    }
+    else if ([type isEqualToString:@"chat_to_duck_accepted"]) {
+        NSString *duckId = _StringFromJSON(json[@"duck_id"]) ?: @"";
+        NSString *taskId = _StringFromJSON(json[@"task_id"]) ?: @"";
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didAcceptChatToDuck:taskId:)]) {
+            [self.delegate webSocketService:self didAcceptChatToDuck:duckId taskId:taskId];
+        }
+        NSLog(@"[WebSocket] chat_to_duck_accepted: duck_id=%@ task_id=%@", duckId, taskId);
+    }
+    else if ([type isEqualToString:@"chat_to_duck_result"]) {
+        NSString *duckId = _StringFromJSON(json[@"duck_id"]) ?: @"";
+        NSString *taskId = _StringFromJSON(json[@"task_id"]) ?: @"";
+        BOOL success = [json[@"success"] isKindOfClass:[NSNumber class]] ? [json[@"success"] boolValue] : NO;
+        NSString *output = _StringFromJSON(json[@"output"]);
+        NSString *errorMessage = _StringFromJSON(json[@"error"]);
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveChatToDuckResult:duckId:taskId:success:error:)]) {
+            [self.delegate webSocketService:self didReceiveChatToDuckResult:output duckId:duckId taskId:taskId success:success error:errorMessage];
+        }
+        NSLog(@"[WebSocket] chat_to_duck_result: duck_id=%@ task_id=%@ success=%d", duckId, taskId, success);
+    }
     else if ([type isEqualToString:@"pong"]) {
         // Heartbeat response
     }
@@ -518,6 +568,16 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
              [type isEqualToString:@"progress_update"]) {
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveAutonomousChunk:)]) {
             [self.delegate webSocketService:self didReceiveAutonomousChunk:json];
+        }
+    }
+    else if ([type isEqualToString:@"monitor_event"]) {
+        NSDictionary *event = json[@"event"];
+        NSString *sourceSession = _StringFromJSON(json[@"source_session"]);
+        NSString *taskId = _StringFromJSON(json[@"task_id"]);
+        NSString *taskType = _StringFromJSON(json[@"task_type"]) ?: @"chat";
+        if (event && [event isKindOfClass:[NSDictionary class]] &&
+            [self.delegate respondsToSelector:@selector(webSocketService:didReceiveMonitorEvent:sessionId:taskId:taskType:)]) {
+            [self.delegate webSocketService:self didReceiveMonitorEvent:event sessionId:sourceSession ?: @"" taskId:taskId ?: @"" taskType:taskType];
         }
     }
     else {

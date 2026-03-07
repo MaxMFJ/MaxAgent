@@ -40,6 +40,7 @@ struct ContentView: View {
         .frame(minWidth: 800, minHeight: 500)
         .toolbar(.hidden, for: .windowToolbar)
         .navigationTitle("")
+        .background(WindowButtonHider())
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsView()
         }
@@ -85,6 +86,69 @@ struct ContentView: View {
     }
 }
 
+/// 自定义窗口控制按钮（关闭、最小化、放大）
+private struct WindowTrafficLightButtons: View {
+    var body: some View {
+#if os(macOS)
+        HStack(spacing: 8) {
+            TrafficLightButton(color: .red) {
+                NSApplication.shared.keyWindow?.close()
+            }
+            .help("关闭")
+            TrafficLightButton(color: .yellow) {
+                NSApplication.shared.keyWindow?.miniaturize(nil)
+            }
+            .help("最小化")
+            TrafficLightButton(color: .green) {
+                NSApplication.shared.keyWindow?.zoom(nil)
+            }
+            .help("放大")
+        }
+        .padding(.trailing, 12)
+#endif
+    }
+}
+
+#if os(macOS)
+/// 隐藏系统默认交通灯，使用自定义按钮
+private struct WindowButtonHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let v = NSView()
+        DispatchQueue.main.async {
+            v.window?.standardWindowButton(.closeButton)?.isHidden = true
+            v.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            v.window?.standardWindowButton(.zoomButton)?.isHidden = true
+        }
+        return v
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.window?.standardWindowButton(.closeButton)?.isHidden = true
+        nsView.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        nsView.window?.standardWindowButton(.zoomButton)?.isHidden = true
+    }
+}
+
+private struct TrafficLightButton: View {
+    let color: Color
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(color.opacity(isHovered ? 1 : 0.85))
+                .frame(width: 12, height: 12)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+#endif
+
 /// 自定义顶部栏：无系统边框，完全自控样式
 private struct CustomToolbarView: View {
     @ObservedObject var processManager: ProcessManager
@@ -93,8 +157,9 @@ private struct CustomToolbarView: View {
 
     var body: some View {
         HStack {
-            // 左侧：服务状态 + 铃铛
+            // 左侧：窗口控制 + 服务状态 + 铃铛
             HStack(spacing: 10) {
+                WindowTrafficLightButtons()
                 ServiceStatusIndicator(
                     label: "后端",
                     isRunning: processManager.isBackendRunning,

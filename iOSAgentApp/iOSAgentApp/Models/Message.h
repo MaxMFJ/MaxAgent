@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -30,6 +31,13 @@ typedef NS_ENUM(NSInteger, MessageStatus) {
 @property (nonatomic, copy, nullable) NSString *toolCallId;
 @property (nonatomic, copy, nullable) NSString *modelName;
 @property (nonatomic, copy, nullable) NSString *imageBase64;
+
+// 缓存：避免滚动时重复执行昂贵的解析操作
+@property (nonatomic, strong, nullable) NSArray<NSDictionary<NSString *, NSString *> *> *cachedParsedParts;
+@property (nonatomic, strong, nullable) NSArray<NSString *> *cachedFilePaths;
+@property (nonatomic, strong, nullable) UIImage *cachedDecodedImage;
+@property (nonatomic, assign) NSUInteger cachedContentLength; // 用于判断缓存是否过期
+@property (nonatomic, assign) CGFloat cachedCellHeight; // 预计算的 cell 高度缓存（0 = 未计算）
 
 + (instancetype)userMessageWithContent:(NSString *)content;
 + (instancetype)assistantMessage;

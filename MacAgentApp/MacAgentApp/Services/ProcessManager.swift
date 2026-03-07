@@ -538,6 +538,124 @@ class ProcessManager: ObservableObject {
             ollamaLogs.removeAll()
         }
     }
+
+    // MARK: - Duck Backend
+
+    /// Start the backend in Duck mode on the specified port.
+    /// The backend process reads DUCK_MODE=1 / DUCK_PORT / DUCK_CONFIG_PATH from env.
+    func startDuckBackend(port: Int, config: DuckConfig) {
+        guard !isBackendRunning else {
+            addLog(to: &backendLogs, message: "[Duck] Backend already running, skipping duck backend start", level: .warning)
+            return
+        }
+
+        addLog(to: &backendLogs, message: "[Duck] Starting duck backend on port \(port)…", level: .info)
+
+        let backendPath = getBackendPath()
+        guard FileManager.default.fileExists(atPath: backendPath) else {
+            addLog(to: &backendLogs, message: "[Duck] Backend not found at: \(backendPath)", level: .error)
+            return
+        }
+
+        let startScript = (backendPath as NSString).appendingPathComponent("start.sh")
+        guard FileManager.default.fileExists(atPath: startScript) else {
+            addLog(to: &backendLogs, message: "[Duck] start.sh not found at: \(backendPath)", level: .error)
+            return
+        }
+
+        // Write duck config to a temporary path so the backend can read it
+        let configPath = (backendPath as NSString).appendingPathComponent("duck_runtime_config.json")
+        if let data = try? JSONEncoder().encode(config) {
+            try? data.write(to: URL(fileURLWithPath: configPath))
+        }
+
+        var env = ProcessInfo.processInfo.environment
+        if let dataDir = getWritableDataDir(backendPath: backendPath) {
+            env["MACAGENT_DATA_DIR"] = dataDir
+        }
+        env["DUCK_MODE"] = "1"
+        env["DUCK_PORT"] = "\(port)"
+        env["DUCK_CONFIG_PATH"] = configPath
+        env["DUCK_MAIN_AGENT_URL"] = config.mainAgentUrl
+        env["DUCK_TOKEN"] = config.token
+        env["DUCK_ID"] = config.duckId
+        env["DUCK_TYPE"] = config.duckType
+        env["DUCK_PERMISSIONS"] = config.permissions.joined(separator: ",")
+
+        // Ensure Homebrew paths
+        let extraPaths = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin"]
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        let pathComponents = Set(currentPath.components(separatedBy: ":"))
+        let missingPaths = extraPaths.filter { !pathComponents.contains($0) && FileManager.default.fileExists(atPath: $0) }
+        if !missingPaths.isEmpty {
+            env["PATH"] = (missingPaths + [currentPath]).joined(separator: ":")
+        }
+
+        let process = Process()
+        let pipe = Pipe()
+        let errorPipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", "cd '\(backendPath)' && bash start.sh"]
+        process.standardOutput = pipe
+        process.standardError = errorPipe
+        process.environment = env
+
+        pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    self.parseAndAddLog(output, to: &self.backendLogs)
+                }
+            }
+        }
+
+        errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    self.parseAndAddLog(output, to: &self.backendLogs, defaultLevel: .error)
+                }
+            }
+        }
+
+        process.terminationHandler = { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.isBackendRunning = false
+                self.addLog(to: &self.backendLogs, message: "[Duck] Duck backend stopped", level: .warning)
+            }
+        }
+
+        do {
+            try process.run()
+            backendProcess = process
+            backendPipe = pipe
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                await checkDuckBackendStatus(port: port)
+            }
+        } catch {
+            addLog(to: &backendLogs, message: "[Duck] Failed to start duck backend: \(error.localizedDescription)", level: .error)
+        }
+    }
+
+    private func checkDuckBackendStatus(port: Int) async {
+        do {
+            let url = URL(string: "http://127.0.0.1:\(port)/health")!
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 2
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                isBackendRunning = true
+                addLog(to: &backendLogs, message: "[Duck] Duck backend running on port \(port)", level: .info)
+            }
+        } catch {
+            addLog(to: &backendLogs, message: "[Duck] Duck backend health check failed on port \(port): \(error.localizedDescription)", level: .warning)
+        }
+    }
 }
 
 extension Notification.Name {

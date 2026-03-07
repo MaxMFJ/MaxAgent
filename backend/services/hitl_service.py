@@ -62,7 +62,7 @@ class HitlRequest:
 # 高危动作关键词
 _HIGH_RISK_COMMANDS = frozenset({"sudo", "rm ", "rm\t", "chmod", "chown", "kill", "pkill", "shutdown", "reboot"})
 # 需要确认的动作类型
-_CONFIRM_ACTION_TYPES = frozenset({"run_shell", "create_and_run_script", "delete_file", "move_file"})
+_CONFIRM_ACTION_TYPES = frozenset({"run_shell", "create_and_run_script", "delete_file", "move_file", "mcp_install"})
 
 
 def _classify_risk(action_type: str, params: Dict[str, Any]) -> str:
@@ -89,6 +89,8 @@ def _classify_risk(action_type: str, params: Dict[str, Any]) -> str:
             if any(kw in cmd for kw in _HIGH_RISK_COMMANDS):
                 return "high"
             return "medium"
+    if action_type == "mcp_install":
+        return "medium"
     return "safe"
 
 
@@ -221,6 +223,10 @@ def _build_params_summary(action_type: str, params: Dict[str, Any]) -> str:
         tool = params.get("tool_name", "")
         args_keys = list((params.get("args") or {}).keys())
         return f"{tool}({', '.join(args_keys[:5])})"
+    if action_type == "mcp_install":
+        name = params.get("name", params.get("mcp_id", ""))
+        reason = params.get("reason", "")[:100]
+        return f"安装 MCP: {name} — {reason}"
     return str(params)[:200]
 
 

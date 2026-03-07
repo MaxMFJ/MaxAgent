@@ -1,8 +1,11 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct MonitoringWindowView: View {
     @EnvironmentObject var agentViewModel: AgentViewModel
-    @StateObject private var vm = MonitoringViewModel()
+    @EnvironmentObject var vm: MonitoringViewModel
     @State private var selectedTab = 0
 
     var body: some View {
@@ -14,6 +17,10 @@ struct MonitoringWindowView: View {
             VStack(spacing: 0) {
                 // ── Top bar ────────────────────────────────────────────────
                 HStack(spacing: 0) {
+                    // 窗口控制按钮
+                    MonitoringWindowTrafficLights()
+                        .padding(.leading, 12)
+
                     // Brand mark（有趣：AI 工作时脉动）
                     HStack(spacing: 6) {
                         Image(systemName: "brain.head.profile")
@@ -35,7 +42,8 @@ struct MonitoringWindowView: View {
 
                     // Tabs
                     HStack(spacing: 2) {
-                        CyberTabButton(title: "EXEC", icon: "timeline.selection.left", tag: 0, selected: $selectedTab)
+                        CyberTabButton(title: "LIVE", icon: "waveform.path",            tag: 6, selected: $selectedTab)
+                        CyberTabButton(title: "EXEC", icon: "play.circle", tag: 0, selected: $selectedTab)
                         CyberTabButton(title: "SYS",  icon: "chart.bar.fill",          tag: 1, selected: $selectedTab)
                         CyberTabButton(title: "STATS", icon: "chart.pie.fill",          tag: 4, selected: $selectedTab)
                         CyberTabButton(title: "TRACE", icon: "waveform.path.ecg",       tag: 5, selected: $selectedTab)
@@ -61,13 +69,14 @@ struct MonitoringWindowView: View {
                 // ── Content ────────────────────────────────────────────────
                 Group {
                     switch selectedTab {
+                    case 6: AgentLiveView().environmentObject(vm)
                     case 0: ExecutionTimelineView().environmentObject(vm)
                     case 1: SystemStatusDashboardView().environmentObject(vm)
                     case 2: HistoryAnalysisView().environmentObject(vm)
                     case 3: LogStreamView().environmentObject(vm)
                     case 4: UsageStatisticsView().environmentObject(vm)
                     case 5: TracesDashboardView().environmentObject(vm)
-                    default: ExecutionTimelineView().environmentObject(vm)
+                    default: AgentLiveView().environmentObject(vm)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,6 +86,7 @@ struct MonitoringWindowView: View {
             }
         }
         .frame(minWidth: 900, minHeight: 580)
+        .background(MonitoringWindowButtonHider())
         .onAppear {
             vm.subscribeToAgentViewModel(agentViewModel)
             vm.startPolling()
@@ -84,6 +94,67 @@ struct MonitoringWindowView: View {
         .onDisappear { vm.stopPolling() }
     }
 }
+
+// MARK: - 窗口控制按钮（监控仪表板）
+
+#if os(macOS)
+/// 隐藏监控窗口的系统默认交通灯
+private struct MonitoringWindowButtonHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let v = NSView()
+        DispatchQueue.main.async {
+            v.window?.standardWindowButton(.closeButton)?.isHidden = true
+            v.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            v.window?.standardWindowButton(.zoomButton)?.isHidden = true
+        }
+        return v
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.window?.standardWindowButton(.closeButton)?.isHidden = true
+        nsView.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        nsView.window?.standardWindowButton(.zoomButton)?.isHidden = true
+    }
+}
+
+private struct MonitoringWindowTrafficLights: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            MonitoringTrafficLightButton(color: .red) {
+                NSApplication.shared.keyWindow?.close()
+            }
+            .help("关闭")
+            MonitoringTrafficLightButton(color: .yellow) {
+                NSApplication.shared.keyWindow?.miniaturize(nil)
+            }
+            .help("最小化")
+            MonitoringTrafficLightButton(color: .green) {
+                NSApplication.shared.keyWindow?.zoom(nil)
+            }
+            .help("放大")
+        }
+    }
+}
+
+private struct MonitoringTrafficLightButton: View {
+    let color: Color
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(color.opacity(isHovered ? 1 : 0.85))
+                .frame(width: 12, height: 12)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+#endif
 
 // MARK: - Cyber Tab Button
 

@@ -94,9 +94,8 @@ FILE_ICONS = {
 
 def _validate_path(path: str) -> str:
     """验证并规范化文件路径，防止目录穿越攻击"""
-    # URL 解码
-    path = unquote(path)
-    # 规范化路径（消除 ../ ./ 等）
+    original = path
+    # 规范化路径（消除 ../ ./ 等，解析符号链接）
     path = os.path.realpath(path)
     
     # 检查被禁路径
@@ -109,6 +108,7 @@ def _validate_path(path: str) -> str:
     
     # 检查文件是否存在
     if not os.path.exists(path):
+        logger.warning(f"File not found. original='{original}', resolved='{path}'")
         raise HTTPException(status_code=404, detail=f"File not found: {path}")
     
     return path
@@ -137,6 +137,7 @@ async def file_info(path: str = Query(..., description="文件绝对路径")):
     获取文件元信息（大小、类型、图标等）。
     用于前端在下载前展示文件信息。
     """
+    logger.info(f"[info] raw path param: '{path}' (repr: {repr(path)})")
     validated = _validate_path(path)
     
     is_dir = os.path.isdir(validated)
@@ -186,6 +187,7 @@ async def download_file(path: str = Query(..., description="文件绝对路径")
     """
     下载文件。返回文件内容，支持浏览器直接下载。
     """
+    logger.info(f"[download] raw path param: '{path}' (repr: {repr(path)})")
     validated = _validate_path(path)
     
     if os.path.isdir(validated):

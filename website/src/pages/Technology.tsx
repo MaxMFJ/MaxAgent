@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Server, Database, Cpu, Layers, GitBranch, Zap } from 'lucide-react'
+import { Server, Database, Cpu, Layers, GitBranch, Zap, Route } from 'lucide-react'
 
 const techStack = [
   { layer: '后端', tech: 'Python 3.10+, FastAPI, uvicorn, websockets', icon: Server },
@@ -14,6 +14,9 @@ const architecture = [
   '三阶段 Prompt：Gather → Act → Verify，可选 Plan-and-Execute',
   '上下文优化：Token 上限 2000，工具 schema 按查询语义裁剪（最多 8 个），LITE/FULL system prompt 按复杂度切换',
   'Trace 可观测：v3.2 span 级 token 统计、工具调用记录、REST API 查询',
+  '三级模型路由（v3.4）：Fast（本地/低延迟）/ Strong（旗舰远程）/ Cheap（性价比），按任务复杂度自动选择',
+  '统一工具路由：Agent → ToolRouter → Builtin Tools → MCP Fallback，内置优先、MCP 自动 fallback',
+  'v3.3 人机协同：FeatureFlag 热切换、HITL 人工审批、统一审计日志、会话恢复/分支、SubAgent 并行',
 ]
 
 export default function Technology() {
@@ -66,6 +69,7 @@ export default function Technology() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
+          className="mb-16"
         >
           <h2 className="font-display text-2xl font-semibold mb-6 flex items-center gap-2">
             <GitBranch className="size-6 text-[var(--accent)]" />
@@ -86,6 +90,21 @@ export default function Technology() {
               </motion.li>
             ))}
           </ul>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="font-display text-2xl font-semibold mb-6 flex items-center gap-2">
+            <Route className="size-6 text-[var(--accent)]" />
+            模型路由与 MCP
+          </h2>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6 space-y-4 text-sm text-[var(--text-muted)]">
+            <p><strong className="text-white">三级模型路由</strong>：按任务复杂度自动选择 Fast（本地/低延迟）、Strong（旗舰远程）、Cheap（性价比）模型。</p>
+            <p><strong className="text-white">MCP 生态</strong>：支持 stdio（npx 子进程）和 HTTP 两种传输；配置持久化，启动自动重连。Unified Tool Router 实现内置工具优先、MCP 自动 fallback。</p>
+          </div>
         </motion.section>
       </div>
     </div>

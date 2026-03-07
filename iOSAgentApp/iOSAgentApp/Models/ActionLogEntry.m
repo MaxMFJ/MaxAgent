@@ -241,6 +241,17 @@
     self.isLLMRequesting = NO;
 }
 
+- (void)recordToolCallForDisplay:(NSString *)toolName {
+    if (!toolName || toolName.length == 0) return;
+    ActionLogEntry *entry = [[ActionLogEntry alloc] init];
+    entry.actionType = toolName;
+    entry.actionId = [[NSUUID UUID] UUIDString];
+    entry.iteration = 1;
+    entry.status = ActionLogStatusExecuting;
+    entry.timestamp = [NSDate date];
+    [self.actionLogs addObject:entry];
+}
+
 - (CGFloat)progressPercentage {
     if (self.maxIterations <= 0) return 0.0;
     return MIN(1.0, (CGFloat)self.currentIteration / (CGFloat)self.maxIterations);

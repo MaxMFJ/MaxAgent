@@ -35,6 +35,18 @@ static NSString * const kConversationsKey = @"SavedConversations";
 
 - (Conversation *)createNewConversation {
     Conversation *conversation = [[Conversation alloc] init];
+    conversation.targetType = ConversationTargetTypeMain;
+    conversation.targetDuckId = nil;
+    [self.conversations insertObject:conversation atIndex:0];
+    self.currentConversation = conversation;
+    [self saveConversations];
+    return conversation;
+}
+
+- (Conversation *)createNewConversationWithDuckId:(NSString *)duckId {
+    Conversation *conversation = [[Conversation alloc] init];
+    conversation.targetType = ConversationTargetTypeDuck;
+    conversation.targetDuckId = [duckId copy];
     [self.conversations insertObject:conversation atIndex:0];
     self.currentConversation = conversation;
     [self saveConversations];

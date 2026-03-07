@@ -26,6 +26,7 @@ from .input_control_tool import InputControlTool
 from .request_tool_upgrade_tool import RequestToolUpgradeTool
 from .evomap_tool import EvoMapTool
 from .capsule_tool import CapsuleTool
+from .mcp_catalog_tool import MCPCatalogTool, RequestMCPInstallTool
 
 __all__ = [
     "BaseTool",
@@ -55,6 +56,8 @@ __all__ = [
     "RequestToolUpgradeTool",
     "EvoMapTool",
     "CapsuleTool",
+    "MCPCatalogTool",
+    "RequestMCPInstallTool",
 ]
 
 def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
@@ -88,4 +91,6 @@ def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
         RequestToolUpgradeTool(runtime_adapter),
         EvoMapTool(runtime_adapter),
         CapsuleTool(runtime_adapter),
+        MCPCatalogTool(runtime_adapter),
+        RequestMCPInstallTool(runtime_adapter),
     ]

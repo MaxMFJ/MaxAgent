@@ -29,7 +29,7 @@ export default function Home() {
               Chow Duck
             </h1>
             <p className="mt-6 text-lg md:text-xl text-[var(--text-muted)] max-w-2xl mx-auto leading-relaxed">
-              本地部署的智能体引擎 · ReAct 推理链 · 自主多步执行 · 5700+ 技能 Capsule · 工具自进化
+              本地部署的智能体引擎 · ReAct 推理链 · 自主多步执行 · MCP 生态 · 5700+ 技能 Capsule · 工具自进化
             </p>
             <p className="mt-3 text-sm text-[var(--text-muted)]/80 max-w-xl mx-auto">
               不是简单的聊天机器人，而是能理解意图、规划步骤、调用工具、自我修复的 <span className="text-[var(--accent)]">AI Agent</span>

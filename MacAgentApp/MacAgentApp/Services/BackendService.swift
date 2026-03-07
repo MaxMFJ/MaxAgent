@@ -36,8 +36,10 @@ enum StreamChunk {
 
 @MainActor
 class BackendService: ObservableObject {
-    private let baseURL = "http://127.0.0.1:8765"
-    private let wsURL = "ws://127.0.0.1:8765/ws"
+    private var port: Int = 8765
+    // Stored so that nonisolated functions can read them safely.
+    nonisolated(unsafe) private var baseURL: String = "http://127.0.0.1:8765"
+    nonisolated(unsafe) private var wsURL: String = "ws://127.0.0.1:8765/ws"
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession
     private var pingTask: Task<Void, Never>?
@@ -61,16 +63,27 @@ class BackendService: ObservableObject {
     var onChatResumeDetected: ((String) -> Void)?
     /// 收到全局监控事件（来自任意客户端的任务执行事件）时回调
     var onMonitorEvent: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
-    
-    init() {
+
+    init(port: Int = 8765) {
+        self.port = port
+        self.baseURL = "http://127.0.0.1:\(port)"
+        self.wsURL = "ws://127.0.0.1:\(port)/ws"
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 300
         config.timeoutIntervalForResource = 600
         self.urlSession = URLSession(configuration: config)
     }
-    
+
+    /// Update the port and reconnect (used when switching to duck mode at startup).
+    func updatePort(_ newPort: Int) async {
+        port = newPort
+        baseURL = "http://127.0.0.1:\(newPort)"
+        wsURL = "ws://127.0.0.1:\(newPort)/ws"
+        await reconnect()
+    }
+
     // MARK: - Connection
-    
+
     func connect() async {
         disconnect()
         
@@ -697,6 +710,15 @@ class BackendService: ObservableObject {
                                         await cb()
                                     }
                                     continue
+
+                                case "monitor_event":
+                                    let sourceSession = json["source_session"] as? String ?? ""
+                                    let taskId = json["task_id"] as? String ?? ""
+                                    let event = json["event"] as? [String: Any] ?? [:]
+                                    await MainActor.run {
+                                        self.onMonitorEvent?(sourceSession, taskId, event)
+                                    }
+                                    continue
                                     
                                 default:
                                     continue
@@ -740,6 +762,25 @@ class BackendService: ObservableObject {
     }
     
     // MARK: - Session Management
+    
+    /// 同步本地会话 ID 到后端（断线重连时，后端默认 session 为 "default"，需要切换到本地实际会话 ID）
+    func syncSessionId(_ sessionId: String) async {
+        guard let webSocket = webSocketTask else { return }
+        
+        let message: [String: Any] = [
+            "type": "new_session",
+            "session_id": sessionId
+        ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message)
+            let jsonString = String(data: jsonData, encoding: .utf8)!
+            try await webSocket.send(.string(jsonString))
+            print("[BackendService] Synced session ID: \(sessionId)")
+        } catch {
+            print("Failed to sync session: \(error)")
+        }
+    }
     
     func clearSession(_ sessionId: String) async {
         guard let webSocket = webSocketTask else { return }
@@ -918,6 +959,15 @@ class BackendService: ObservableObject {
                                     startIdleReceiveLoop()
                                     continuation.finish()
                                     return
+
+                                case "monitor_event":
+                                    let sourceSessionResume = json["source_session"] as? String ?? ""
+                                    let taskIdResume = json["task_id"] as? String ?? ""
+                                    let eventResume = json["event"] as? [String: Any] ?? [:]
+                                    await MainActor.run {
+                                        self.onMonitorEvent?(sourceSessionResume, taskIdResume, eventResume)
+                                    }
+                                    continue
                                     
                                 default:
                                     continue
@@ -1087,6 +1137,15 @@ class BackendService: ObservableObject {
                                                 }
                                             } catch {}
                                         }
+                                    }
+                                    continue
+
+                                case "monitor_event":
+                                    let sourceSessionChat = json["source_session"] as? String ?? ""
+                                    let taskIdChat = json["task_id"] as? String ?? ""
+                                    let eventChat = json["event"] as? [String: Any] ?? [:]
+                                    await MainActor.run {
+                                        self.onMonitorEvent?(sourceSessionChat, taskIdChat, eventChat)
                                     }
                                     continue
                                     
@@ -1329,6 +1388,15 @@ class BackendService: ObservableObject {
                                         await cb()
                                     }
                                     continue
+
+                                case "monitor_event":
+                                    let sourceSessionAuto = json["source_session"] as? String ?? ""
+                                    let taskIdAuto = json["task_id"] as? String ?? ""
+                                    let eventAuto = json["event"] as? [String: Any] ?? [:]
+                                    await MainActor.run {
+                                        self.onMonitorEvent?(sourceSessionAuto, taskIdAuto, eventAuto)
+                                    }
+                                    continue
                                     
                                 default:
                                     continue
@@ -1498,6 +1566,101 @@ class BackendService: ObservableObject {
         guard let url = URL(string: "\(baseURL)/context") else { throw URLError(.badURL) }
         let (data, _) = try await urlSession.data(from: url)
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    // MARK: - Chow Duck API
+
+    nonisolated func fetchDuckList() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/duck/list") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let ducks = json["ducks"] as? [[String: Any]] else { return [] }
+        return ducks
+    }
+
+    nonisolated func fetchDuckStats() async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/duck/stats") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    nonisolated func fetchDuckTemplates() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/duck/templates") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let templates = json["templates"] as? [[String: Any]] else { return [] }
+        return templates
+    }
+
+    nonisolated func createLocalDuck(name: String, duckType: String, skills: [String]) async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/duck/create-local") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = ["name": name, "duck_type": duckType, "skills": skills]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    nonisolated func destroyLocalDuck(duckId: String) async throws {
+        guard let url = URL(string: "\(baseURL)/duck/local/\(duckId)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func removeDuck(duckId: String) async throws {
+        guard let url = URL(string: "\(baseURL)/duck/remove/\(duckId)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func fetchEggs() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/duck/eggs") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let eggs = json["eggs"] as? [[String: Any]] else { return [] }
+        return eggs
+    }
+
+    nonisolated func createEgg(duckType: String, name: String?) async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/duck/create-egg") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: Any] = ["duck_type": duckType]
+        if let name = name, !name.isEmpty { body["name"] = name }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    nonisolated func deleteEgg(eggId: String) async throws {
+        guard let url = URL(string: "\(baseURL)/duck/egg/\(eggId)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    func eggDownloadURL(eggId: String) -> URL? {
+        URL(string: "\(baseURL)/duck/egg/\(eggId)/download")
     }
 }
 

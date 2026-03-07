@@ -22,6 +22,7 @@ from app_state import (
 from task_persistence import get_persistence_manager, PersistentTaskStatus
 from connection_manager import (
     connection_manager, safe_send_json, ClientType,
+    remove_ws_write_lock,
 )
 from auth import verify_token
 
@@ -44,6 +45,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 HEARTBEAT_INTERVAL = 30  # 服务端心跳间隔（秒）
+
+# ─── chat_to_duck 直聊回调映射 ──────────────────────────────────────────────
+# task_id → WebSocket  （主 Backend 将 Duck 结果路由给请求发起方）
+_duck_direct_chat_callbacks: dict[str, WebSocket] = {}
 
 
 # ============== Monitor Event Helper ==============
@@ -939,6 +944,164 @@ async def _handle_analyze_task(message: dict, websocket: WebSocket):
         await safe_send_json(websocket, {"type": "error", "message": str(e)})
 
 
+async def _handle_chat_to_duck(message: dict, websocket: WebSocket, current_session_id: str):
+    """
+    用户直聊子 Duck：向本地 Duck (内存队列) 或远程 Duck (WebSocket) 转发任务。
+    结果通过 _duck_direct_chat_callbacks 路由回发起方的 WebSocket。
+    """
+    import uuid as _uuid
+    duck_id = message.get("duck_id", "").strip()
+    content = message.get("content", "").strip()
+    session_id = message.get("session_id") or current_session_id
+
+    if not duck_id or not content:
+        await safe_send_json(websocket, {
+            "type": "chat_to_duck_error",
+            "duck_id": duck_id,
+            "error": "duck_id 和 content 均不能为空",
+        })
+        return
+
+    from services.duck_registry import DuckRegistry
+    from services.duck_protocol import DuckStatus, DuckMessage, DuckMessageType, DuckTaskPayload
+
+    registry = DuckRegistry.get_instance()
+    await registry.initialize()
+    duck = await registry.get(duck_id)
+
+    if not duck:
+        await safe_send_json(websocket, {
+            "type": "chat_to_duck_error",
+            "duck_id": duck_id,
+            "error": "该 Duck 不存在",
+        })
+        return
+
+    if duck.status == DuckStatus.OFFLINE:
+        await safe_send_json(websocket, {
+            "type": "chat_to_duck_error",
+            "duck_id": duck_id,
+            "error": "该 Duck 已离线",
+        })
+        return
+
+    if duck.status == DuckStatus.BUSY:
+        await safe_send_json(websocket, {
+            "type": "chat_to_duck_error",
+            "duck_id": duck_id,
+            "error": f"该 Duck 正在执行任务（{duck.busy_reason or 'busy'}），请稍后或选择其他 Duck",
+        })
+        return
+
+    task_id = f"dctask_{_uuid.uuid4().hex[:8]}"
+
+    # 建立结果回调映射
+    _duck_direct_chat_callbacks[task_id] = websocket
+
+    # 通知客户端：任务已接受
+    await safe_send_json(websocket, {
+        "type": "chat_to_duck_accepted",
+        "duck_id": duck_id,
+        "task_id": task_id,
+        "session_id": session_id,
+    })
+
+    # 标记 Duck 忙碌（direct_chat）
+    await registry.set_current_task(duck_id, task_id, busy_reason="direct_chat")
+
+    async def _on_task_done(task):
+        """scheduler 回调：结果路由回用户 WebSocket"""
+        target_ws = _duck_direct_chat_callbacks.pop(task_id, None)
+        # 无论回调 WebSocket 是否存在，都要解除 Duck 的 busy 状态
+        await registry.set_current_task(duck_id, None)
+        if target_ws is None:
+            return
+        from services.duck_protocol import TaskStatus
+        payload = {
+            "type": "chat_to_duck_result",
+            "duck_id": duck_id,
+            "task_id": task_id,
+            "session_id": session_id,
+            "is_direct_chat": True,
+            "success": task.status == TaskStatus.COMPLETED,
+            "output": task.output,
+            "error": task.error,
+        }
+        await safe_send_json(target_ws, payload)
+
+    try:
+        if duck.is_local:
+            # 本地 Duck：通过调度器提交（内存队列）
+            from services.duck_task_scheduler import get_task_scheduler, ScheduleStrategy
+            scheduler = get_task_scheduler()
+            await scheduler.initialize()
+            await scheduler.submit(
+                description=content,
+                task_type="chat",
+                timeout=600,
+                strategy=ScheduleStrategy.DIRECT,
+                target_duck_id=duck_id,
+                callback=_on_task_done,
+            )
+        else:
+            # 远程 Duck：通过 WebSocket 发送 TASK 消息
+            from routes.duck_ws import send_to_duck
+            from services.duck_task_scheduler import get_task_scheduler
+            payload_model = DuckTaskPayload(
+                task_id=task_id,
+                description=content,
+                task_type="chat",
+                timeout=600,
+            )
+            msg = DuckMessage(
+                type=DuckMessageType.TASK,
+                duck_id=duck_id,
+                payload=payload_model.model_dump(),
+            )
+            ok = await send_to_duck(duck_id, msg)
+            if not ok:
+                # 发送失败，恢复状态并通知
+                await registry.set_current_task(duck_id, None)
+                _duck_direct_chat_callbacks.pop(task_id, None)
+                await safe_send_json(websocket, {
+                    "type": "chat_to_duck_error",
+                    "duck_id": duck_id,
+                    "task_id": task_id,
+                    "error": "无法连接到该 Duck，WebSocket 通道不可用",
+                })
+                return
+            # 注册到调度器回调，等待 duck_ws._handle_result 触发
+            scheduler = get_task_scheduler()
+            await scheduler.initialize()
+            # 直接将 on_task_done 注册到全局回调字典
+            scheduler._callbacks[task_id] = _on_task_done
+            # 同时将任务写入调度器使其能超时
+            from services.duck_protocol import DuckTask
+            stub_task = DuckTask(
+                task_id=task_id,  # type: ignore[call-arg]
+                description=content,
+                task_type="chat",
+                timeout=600,
+                assigned_duck_id=duck_id,
+            )
+            scheduler._tasks[task_id] = stub_task
+            scheduler._persist_task(stub_task)
+            # 启动超时
+            handle = asyncio.create_task(scheduler._timeout_watcher(task_id, 600))
+            scheduler._timeout_handles[task_id] = handle
+
+    except Exception as e:
+        await registry.set_current_task(duck_id, None)
+        _duck_direct_chat_callbacks.pop(task_id, None)
+        logger.exception("chat_to_duck error")
+        await safe_send_json(websocket, {
+            "type": "chat_to_duck_error",
+            "duck_id": duck_id,
+            "task_id": task_id,
+            "error": str(e),
+        })
+
+
 # ============== Server-side Heartbeat ==============
 
 async def _heartbeat_loop(websocket: WebSocket, client_id: str):
@@ -1121,6 +1284,9 @@ async def websocket_endpoint(
             elif msg_type == "analyze_task":
                 await _handle_analyze_task(message, websocket)
 
+            elif msg_type == "chat_to_duck":
+                await _handle_chat_to_duck(message, websocket, current_session_id)
+
             else:
                 # 未知消息类型，通知客户端
                 logger.warning(f"Unknown message type received: {msg_type}")
@@ -1132,7 +1298,8 @@ async def websocket_endpoint(
                         "stop", "chat", "ping", "pong", "new_session", "clear_session",
                         "autonomous_task", "resume_task", "resume_chat", "get_episodes",
                         "get_statistics", "get_system_messages", "mark_system_message_read",
-                        "mark_all_system_messages_read", "get_model_stats", "analyze_task"
+                        "mark_all_system_messages_read", "get_model_stats", "analyze_task",
+                        "chat_to_duck"
                     ]
                 })
 
@@ -1157,6 +1324,8 @@ async def websocket_endpoint(
         except asyncio.CancelledError:
             pass
         await connection_manager.disconnect(actual_client_id)
+        # 清理 per-WebSocket 写锁，防止内存泄漏
+        remove_ws_write_lock(websocket)
 
         remaining = connection_manager.get_session_client_count(current_session_id)
         if remaining == 0:

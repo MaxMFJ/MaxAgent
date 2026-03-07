@@ -95,6 +95,9 @@ typedef NS_ENUM(NSInteger, ActionLogStatus) {
 /// 处理 llm_request_end 消息
 - (void)handleLLMRequestEnd:(NSDictionary *)data;
 
+/// 记录 chat 工具调用（用于 monitor_event 中的 tool_call，供 Agent Live 展示）
+- (void)recordToolCallForDisplay:(NSString *)toolName;
+
 /// 获取进度百分比 (0.0 - 1.0)
 - (CGFloat)progressPercentage;
 

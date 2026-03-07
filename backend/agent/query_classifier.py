@@ -67,6 +67,15 @@ ACTION_KEYWORDS = [
     "执行", "命令", "终端", "截图", "截屏", "发送", "邮件", "搜索", "下载", "安装",
     "监控", "升级", "部署", "编译", "构建", "docker", "git", "brew", "npm", "pip",
     "鼠标", "键盘", "点击", "输入", "粘贴", "剪贴板", "capsule", "技能",
+    "保存到", "导出", "生成文件", "写到",
+]
+
+# 知识/咨询型关键词（触发 COMPLEX tier 以获得完整回答，但不需要工具执行）
+KNOWLEDGE_KEYWORDS = [
+    "分析", "方案", "策略", "建议", "规划", "推荐", "对比", "比较", "评测",
+    "讲解", "解释", "说明", "总结", "梳理", "归纳", "攻略", "指南",
+    "怎么样", "什么是", "为什么", "如何理解", "区别是", "优缺点",
+    "帮我写", "帮我做", "帮我想", "帮我列",
 ]
 
 # 纯追问信息（无操作性动词时判为 information）
@@ -81,7 +90,7 @@ def _classify_static(query: str) -> IntentResult:
     """静态规则分类"""
     q = (query or "").strip()
     q_lower = q.lower()
-    features = {"len": len(q), "has_action_kw": False, "has_info_pattern": False}
+    features = {"len": len(q), "has_action_kw": False, "has_info_pattern": False, "has_knowledge_kw": False}
 
     # 短问候
     if len(q) < 15:
@@ -105,7 +114,16 @@ def _classify_static(query: str) -> IntentResult:
             query_preview=q[:80],
             features={**features, "rule": "action_keyword"},
         )
-
+    # 知识/咨询型关键词 → COMPLEX tier（需要完整能力定义来生成好回答）
+    if any(kw in q_lower for kw in KNOWLEDGE_KEYWORDS):
+        features["has_knowledge_kw"] = True
+        return IntentResult(
+            intent=Intent.INFORMATION,
+            tier=QueryTier.COMPLEX,
+            source="static",
+            query_preview=q[:80],
+            features={**features, "rule": "knowledge_keyword"},
+        )
     # 问号结尾且非“怎么/如何/帮我” → 倾向 information/simple
     if q_lower.endswith("?") or q_lower.endswith("？"):
         if not any(kw in q_lower for kw in ["怎么", "如何", "帮我"]):

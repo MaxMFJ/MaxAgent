@@ -36,9 +36,6 @@
     self.layer.borderWidth = 1.0;
     self.layer.borderColor = [TechTheme.neonPurple colorWithAlphaComponent:0.35].CGColor;
 
-    // 发光效果
-    [TechTheme applyNeonGlow:self color:[TechTheme.neonPurple colorWithAlphaComponent:0.3] radius:5];
-
     // --- Header 按钮 ---
     _headerButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _headerButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -72,7 +69,10 @@
     _contentLabel.font = [TechTheme fontBodySize:11.5 weight:UIFontWeightRegular];
     _contentLabel.textColor = [TechTheme.neonPurple colorWithAlphaComponent:0.75];
     _contentLabel.numberOfLines = 0;
-    _contentLabel.text = _thinkingContent;
+    // 折叠状态下不设置文本，避免昂贵的隐藏文本 layout 计算
+    if (!_isCollapsed) {
+        _contentLabel.text = _thinkingContent;
+    }
     [_contentContainer addSubview:_contentLabel];
 
     [NSLayoutConstraint activateConstraints:@[
@@ -162,6 +162,10 @@
         _contentContainerHeightConstraint.constant = 0;
         _contentContainerHeightConstraint.active = YES;
     } else {
+        // 展开时才设置文本（延迟加载，避免折叠状态的 layout 开销）
+        if (_contentLabel.text.length == 0 && _thinkingContent.length > 0) {
+            _contentLabel.text = _thinkingContent;
+        }
         _contentContainerHeightConstraint.active = NO;
     }
 }

@@ -17,6 +17,9 @@ struct MacAgentApp: App {
                 .frame(minWidth: 900, minHeight: 600)
                 .onAppear {
                     monitoringViewModel.subscribeToAgentViewModel(agentViewModel)
+                    agentViewModel.onMonitorEventToMonitor = { [weak monitoringViewModel] session, taskId, event in
+                        monitoringViewModel?.applyMonitorEvent(taskId: taskId, sourceSession: session, event: event)
+                    }
                 }
         }
         .windowStyle(.titleBar)
@@ -37,14 +40,13 @@ struct MacAgentApp: App {
             }
         }
 
-        // 监控仪表板窗口
+        // 监控仪表板窗口（hiddenTitleBar 使自定义头部成为唯一标题区，与主体风格一致）
         WindowGroup("监控仪表板", id: "monitoring") {
             MonitoringWindowView()
                 .environmentObject(agentViewModel)
                 .environmentObject(monitoringViewModel)
         }
-        .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified(showsTitle: true))
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 920, height: 600)
 
         Settings {

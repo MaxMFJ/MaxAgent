@@ -58,5 +58,85 @@
     "category": "evolution",
     "timestamp": "2026-03-06T09:13:11.751899",
     "read": true
+  },
+  {
+    "id": "21312381-76a6-454f-9033-4b110568ea06",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "达到最大迭代次数",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-06T17:49:54.846726",
+    "read": true
+  },
+  {
+    "id": "1a85a344-463b-47ba-98fd-96587c399b7a",
+    "level": "error",
+    "title": "自主任务被停止",
+    "content": "任务: 浏览器打开 从书签找到newapi 打开截图给我\n原因: 达到最大迭代次数 (5)\n建议: 考虑分解任务或提高复杂度估计",
+    "source": "autonomous_task",
+    "category": "system_error",
+    "timestamp": "2026-03-06T20:46:44.066776",
+    "read": true
+  },
+  {
+    "id": "9a3f92ab-549e-470e-841f-c38a6a9e92a3",
+    "level": "info",
+    "title": "任务完成",
+    "content": "任务: web访问https://chowduck.cn 截图给我\n总结: ✅ 任务完成！https://chowduck.cn 已成功访问并截图。\n\n📸 截图文件：/tmp/chowduck_webpage.png\n• 分辨率：1920×1080\n• 格式：PNG\n• 大小：778KB\n\n截图已保存，可直接使用。\n动作数: 10",
+    "source": "autonomous_task",
+    "category": "task",
+    "timestamp": "2026-03-06T20:50:18.282386",
+    "read": true
+  },
+  {
+    "id": "d3245623-e258-4d8f-a3b4-ce9d1a6db0ae",
+    "level": "info",
+    "title": "进化/升级完成",
+    "content": "问题诊断：web_search 工具采用标准 HTTP 请求，无法绕过反爬机制；方案分为两部分：(1) 创建诊断脚本检查当前 web_search 工具的失败原因，收集 HTTP 状态码、响应头信息；(2) 创建新的 legal_documents_fetcher 工具，集成 Playwright 或 Selenium 引擎，支持浏览器头伪装、JavaScript 渲染、Cookie 管理、自动重试等机制，专门针对裁判文书网等法律类网站进行文件爬取和数据提取，返回结构化的案例信息",
+    "source": "upgrade",
+    "category": "evolution",
+    "timestamp": "2026-03-07T08:40:40.681409",
+    "read": true
+  },
+  {
+    "id": "83faf8f0-cdcf-498d-ad94-9e4932ea2c9f",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T09:51:23.132354",
+    "read": true
+  },
+  {
+    "id": "a56fcf67-593e-4bab-aa5d-f1affe6784f8",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T14:10:55.980326",
+    "read": true
+  },
+  {
+    "id": "e0b5f4fd-b546-41f5-a5d8-fb56a0c4676a",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T15:12:12.476195",
+    "read": true
+  },
+  {
+    "id": "e217d6d2-0989-4a3e-b004-e9ccbd036c26",
+    "level": "warning",
+    "title": "意图分析超时",
+    "content": "本地 LLM 意图分析超时，已使用默认关键词匹配。如持续超时将自动跳过。",
+    "source": "context_enhancer",
+    "category": "info",
+    "timestamp": "2026-03-07T16:26:59.390859",
+    "read": true
   }
 ]

@@ -2,7 +2,7 @@
 Cloudflare Tunnel 管理路由
 提供 Tunnel 状态查询、启动/停止/重启、局域网信息、自动启动配置
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
@@ -12,6 +12,13 @@ router = APIRouter(tags=["tunnel"])
 def _get_svc():
     from services.tunnel_lifecycle import get_tunnel_lifecycle
     return get_tunnel_lifecycle()
+
+
+def _check_not_duck_mode():
+    """Duck 模式下禁止操作 Tunnel"""
+    from app_state import IS_DUCK_MODE
+    if IS_DUCK_MODE:
+        raise HTTPException(status_code=403, detail="Duck 模式下禁止操作 Tunnel")
 
 
 # ── 数据模型 ────────────────────────────────────
@@ -32,6 +39,7 @@ async def tunnel_status():
 @router.post("/tunnel/start")
 async def tunnel_start():
     """手动启动 Tunnel"""
+    _check_not_duck_mode()
     svc = _get_svc()
     result = await svc.start_tunnel()
     return result
@@ -40,6 +48,7 @@ async def tunnel_start():
 @router.post("/tunnel/stop")
 async def tunnel_stop():
     """手动停止 Tunnel"""
+    _check_not_duck_mode()
     svc = _get_svc()
     result = await svc.stop_tunnel()
     return result
@@ -48,6 +57,7 @@ async def tunnel_stop():
 @router.post("/tunnel/restart")
 async def tunnel_restart():
     """手动重启 Tunnel（停止后再启动）"""
+    _check_not_duck_mode()
     svc = _get_svc()
     result = await svc.restart_tunnel()
     return result

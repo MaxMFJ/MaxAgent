@@ -203,13 +203,20 @@ fi
 # 立即输出日志，便于确认启动进度（避免“卡住”的错觉）
 export PYTHONUNBUFFERED=1
 
-# 启动前释放 8765 端口，避免 Address already in use
-PORT=8765
-if lsof -ti:$PORT >/dev/null 2>&1; then
-    echo "Port $PORT in use, stopping existing process..."
-    lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
-    sleep 1
+# Duck 模式下使用 DUCK_PORT，普通模式使用固定的 8765
+if [ "${DUCK_MODE:-0}" = "1" ]; then
+    PORT="${DUCK_PORT:-8766}"
+    echo "[Duck] Duck mode enabled, using port $PORT"
+else
+    PORT=8765
+    # 启动前释放 8765 端口，避免 Address already in use
+    if lsof -ti:$PORT >/dev/null 2>&1; then
+        echo "Port $PORT in use, stopping existing process..."
+        lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
+        sleep 1
+    fi
 fi
+export DUCK_PORT="$PORT"
 
 echo "Starting Chow Duck backend..."
 if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then

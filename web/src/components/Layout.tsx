@@ -12,6 +12,7 @@ const ToolPanel = lazy(() => import('./ToolPanel'));
 const NotificationPanel = lazy(() => import('./NotificationPanel'));
 const SettingsModal = lazy(() => import('./SettingsModal'));
 const MonitorDashboard = lazy(() => import('./MonitorDashboard'));
+const DuckManagement = lazy(() => import('./DuckManagement'));
 
 const Layout: React.FC = () => {
   const sidebarWidth = useSettingsStore((s) => s.sidebarWidth);
@@ -32,6 +33,7 @@ const Layout: React.FC = () => {
   const [rightTab, setRightTab] = useState<'tools' | 'notifications'>('tools');
   const [showSettings, setShowSettings] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
+  const [showDuck, setShowDuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dragging = useRef<'sidebar' | 'right' | null>(null);
@@ -111,6 +113,7 @@ const Layout: React.FC = () => {
           onRightTabChange={handleRightTabChange}
           onOpenSettings={() => setShowSettings(true)}
           onOpenMonitor={() => setShowMonitor(true)}
+          onOpenDuck={() => setShowDuck(true)}
           isMobile
         />
         {error && <ErrorBanner message={error} type="warning" onDismiss={() => setError(null)} />}
@@ -162,6 +165,7 @@ const Layout: React.FC = () => {
         <Suspense fallback={null}>
           {showSettings && <SettingsModal onClose={() => setShowSettings(false)} isMobile />}
           {showMonitor && <MonitorDashboard onClose={() => setShowMonitor(false)} isMobile />}
+          {showDuck && <DuckManagement onClose={() => setShowDuck(false)} isMobile />}
         </Suspense>
       </div>
     );
@@ -179,6 +183,7 @@ const Layout: React.FC = () => {
         onRightTabChange={handleRightTabChange}
         onOpenSettings={() => setShowSettings(true)}
         onOpenMonitor={() => setShowMonitor(true)}
+        onOpenDuck={() => setShowDuck(true)}
       />
       {error && <ErrorBanner message={error} type="warning" onDismiss={() => setError(null)} />}
       <div className="flex flex-1 overflow-hidden">
@@ -204,6 +209,7 @@ const Layout: React.FC = () => {
       <Suspense fallback={null}>
         {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
         {showMonitor && <MonitorDashboard onClose={() => setShowMonitor(false)} />}
+        {showDuck && <DuckManagement onClose={() => setShowDuck(false)} />}
       </Suspense>
     </div>
   );

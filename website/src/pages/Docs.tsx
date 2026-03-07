@@ -2,14 +2,18 @@ import { motion } from 'framer-motion'
 import { FileText } from 'lucide-react'
 
 const docs = [
-  { name: 'README', path: 'README.md', desc: '项目概览、快速开始、系统要求、主要 API、环境变量' },
+  { name: 'README', path: 'README.md', desc: '项目概览、快速开始、系统要求、主要 API、环境变量、MCP 管理、扩展工具' },
   { name: '后端结构', path: 'docs/backend-structure.md', desc: '模块说明、数据流、核心组件' },
+  { name: 'API 端点参考', path: 'docs/API-Endpoints.md', desc: 'REST API 完整端点参考' },
+  { name: 'Mac App UI 指南', path: 'docs/Mac-App-UI-Guide.md', desc: 'Mac App 全部设置页说明' },
   { name: '新环境部署指南', path: 'docs/新环境部署指南.md', desc: '新机器部署、依赖安装、环境配置' },
   { name: '自愈功能测试指南', path: 'docs/自愈功能测试指南.md', desc: '自愈诊断与修复流程测试' },
   { name: '后台功能清单', path: 'docs/后台功能清单-人工测试审核.md', desc: 'API 与功能人工测试清单' },
   { name: '主线目标与路线图', path: 'docs/主线目标与路线图.md', desc: '2026 标杆、Phase A/B/C 里程碑' },
   { name: 'Web 端功能拆分', path: 'docs/Web端功能拆分文档.md', desc: 'Web 端模块与功能拆分' },
   { name: 'v3.2 功能清单', path: 'docs/v3.2_PLAN.md', desc: 'Trace、可观测、可评估、Benchmark 自动化' },
+  { name: 'v3.3 功能清单', path: 'docs/v3.3_PLAN.md', desc: '人机协同、安全增强、FeatureFlag、HITL、审计日志' },
+  { name: 'v3.4 功能清单', path: 'docs/v3.4_PLAN.md', desc: 'MCP 生态、可回滚、三级模型路由、统一工具路由' },
 ]
 
 export default function Docs() {

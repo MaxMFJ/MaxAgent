@@ -18,6 +18,8 @@
         _messages = [NSMutableArray array];
         _createdAt = [NSDate date];
         _updatedAt = [NSDate date];
+        _targetType = ConversationTargetTypeMain;
+        _targetDuckId = nil;
     }
     return self;
 }
@@ -38,6 +40,8 @@
         
         _createdAt = [coder decodeObjectOfClass:[NSDate class] forKey:@"createdAt"];
         _updatedAt = [coder decodeObjectOfClass:[NSDate class] forKey:@"updatedAt"];
+        _targetType = (ConversationTargetType)[coder decodeIntegerForKey:@"targetType"];
+        _targetDuckId = [coder decodeObjectOfClass:[NSString class] forKey:@"targetDuckId"];
         
         if (!_conversationId) {
             _conversationId = [[NSUUID UUID] UUIDString];
@@ -58,6 +62,8 @@
     [coder encodeObject:_messages forKey:@"messages"];
     [coder encodeObject:_createdAt forKey:@"createdAt"];
     [coder encodeObject:_updatedAt forKey:@"updatedAt"];
+    [coder encodeInteger:(NSInteger)_targetType forKey:@"targetType"];
+    [coder encodeObject:_targetDuckId forKey:@"targetDuckId"];
 }
 
 @end

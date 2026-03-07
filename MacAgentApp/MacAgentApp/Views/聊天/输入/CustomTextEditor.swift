@@ -42,7 +42,8 @@ struct CustomTextEditor: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
         
-        if textView.string != text {
+        // 输入法（IME）正在组合时不要覆盖，否则会清空用户正在输入的拼音/候选
+        if !textView.hasMarkedText(), textView.string != text {
             let selectedRanges = textView.selectedRanges
             textView.string = text
             textView.selectedRanges = selectedRanges

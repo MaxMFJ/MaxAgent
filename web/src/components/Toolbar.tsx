@@ -10,6 +10,7 @@ import {
   Settings,
   BarChart3,
   Zap,
+  Bird,
 } from 'lucide-react';
 
 interface Props {
@@ -17,10 +18,11 @@ interface Props {
   onRightTabChange: (tab: 'tools' | 'notifications') => void;
   onOpenSettings: () => void;
   onOpenMonitor: () => void;
+  onOpenDuck: () => void;
   isMobile?: boolean;
 }
 
-const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, onOpenMonitor, isMobile }) => {
+const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, onOpenMonitor, onOpenDuck, isMobile }) => {
   const status = useWSStore((s) => s.status);
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel);
   const showRightPanel = useSettingsStore((s) => s.showRightPanel);
@@ -68,6 +70,7 @@ const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, 
         </div>
 
         <div className="flex items-center gap-0.5">
+          <IconButton variant="ghost" onClick={onOpenDuck} title="Duck 分身" className="mobile-touch-target" aria-label="Duck 分身管理"><Bird size={17} /></IconButton>
           <IconButton variant="ghost" onClick={onOpenMonitor} title="监控" className="mobile-touch-target" aria-label="监控仪表板"><BarChart3 size={17} /></IconButton>
           <IconButton variant="ghost" onClick={() => setMobilePanelOpen(true, 'tools')} title="工具" className="mobile-touch-target" aria-label="工具面板"><Wrench size={17} /></IconButton>
           <IconButton variant="ghost" onClick={() => setMobilePanelOpen(true, 'notifications')} title="通知" badge={unreadCount} className="mobile-touch-target" aria-label="通知面板"><Bell size={17} /></IconButton>
@@ -115,6 +118,7 @@ const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, 
       </div>
 
       <div className="flex items-center gap-1">
+        <IconButton variant="subtle" size="sm" onClick={onOpenDuck} title="Duck 分身" aria-label="Duck 分身管理"><Bird size={14} /></IconButton>
         <IconButton variant="subtle" size="sm" onClick={onOpenMonitor} title="监控仪表板" aria-label="监控仪表板"><BarChart3 size={14} /></IconButton>
         <IconButton variant="subtle" size="sm" active={showRightPanel && rightTab === 'tools'} onClick={() => { if (!showRightPanel) toggleRightPanel(); onRightTabChange('tools'); }} title="工具面板" aria-label="工具面板"><Wrench size={14} /></IconButton>
         <IconButton variant="subtle" size="sm" active={showRightPanel && rightTab === 'notifications'} badge={unreadCount} onClick={() => { if (!showRightPanel) toggleRightPanel(); onRightTabChange('notifications'); }} title="系统消息" aria-label="系统消息"><Bell size={14} /></IconButton>

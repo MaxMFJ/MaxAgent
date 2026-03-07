@@ -1,0 +1,19 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 3631, "success": true, "ts": 1772801278.147132}
+{"iteration": 1, "type": "tool", "action_type": "open_app", "latency_ms": 120, "success": true, "error": null, "ts": 1772801278.269519}
+{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 6278, "success": true, "ts": 1772801286.548948}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 0, "success": false, "error": "需要提供按键", "ts": 1772801286.551671}
+{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5195, "success": true, "ts": 1772801293.748847}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 954, "success": true, "error": null, "ts": 1772801294.7144918}
+{"iteration": 4, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 18017, "success": true, "ts": 1772801314.82658}
+{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 0, "success": false, "error": "需要提供按键", "ts": 1772801314.8353732}
+{"iteration": 5, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 14432, "success": true, "ts": 1772801331.307422}
+{"iteration": 5, "type": "tool", "action_type": "run_shell", "latency_ms": 4450, "success": true, "error": null, "ts": 1772801335.762304}
+{"iteration": 6, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 19252, "success": true, "ts": 1772801358.253791}
+{"iteration": 6, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": false, "error": "'utf-8' codec can't decode byte 0x89 in position 0: invalid start byte", "ts": 1772801358.26389}
+{"iteration": 7, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 7793, "success": true, "ts": 1772801368.096235}
+{"iteration": 7, "type": "tool", "action_type": "run_shell", "latency_ms": 242, "success": true, "error": null, "ts": 1772801368.341867}
+{"iteration": 8, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 21014, "success": true, "ts": 1772801391.376152}
+{"iteration": 8, "type": "tool", "action_type": "create_and_run_script", "latency_ms": 150, "success": true, "error": null, "ts": 1772801391.52995}
+{"iteration": 9, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 12317, "success": true, "ts": 1772801405.8656151}
+{"iteration": 9, "type": "tool", "action_type": "open_app", "latency_ms": 93, "success": false, "error": "Unable to find application named 'Google Chrome'", "ts": 1772801405.963062}
+{"iteration": 10, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 10280, "success": true, "ts": 1772801418.2633631}

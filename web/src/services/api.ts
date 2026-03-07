@@ -68,3 +68,62 @@ export async function getTasks(): Promise<{ tasks: unknown[] }> {
 export async function cancelTask(taskId: string): Promise<void> {
   await request(`/tasks/${taskId}/cancel`, { method: 'POST' });
 }
+
+/* ===== Duck 管理 ===== */
+export async function getDuckList(duckType?: string, status?: string): Promise<{ ducks: any[] }> {
+  const params = new URLSearchParams();
+  if (duckType) params.set('duck_type', duckType);
+  if (status) params.set('status', status);
+  const qs = params.toString();
+  return request(`/duck/list${qs ? '?' + qs : ''}`);
+}
+
+export async function getDuckStats(): Promise<{
+  total: number; online: number; busy: number; offline: number;
+  total_completed: number; total_failed: number; by_type: Record<string, number>;
+}> {
+  return request('/duck/stats');
+}
+
+export async function getDuckTemplates(): Promise<{ count: number; templates: any[] }> {
+  return request('/duck/templates');
+}
+
+export async function createLocalDuck(name: string, duckType: string, skills: string[] = []): Promise<{ status: string; duck: any }> {
+  return request('/duck/create-local', {
+    method: 'POST',
+    body: JSON.stringify({ name, duck_type: duckType, skills }),
+  });
+}
+
+export async function destroyLocalDuck(duckId: string): Promise<void> {
+  await request(`/duck/local/${duckId}`, { method: 'DELETE' });
+}
+
+export async function getLocalDucks(): Promise<{ count: number; ducks: any[] }> {
+  return request('/duck/local/list');
+}
+
+export async function removeDuck(duckId: string): Promise<void> {
+  await request(`/duck/remove/${duckId}`, { method: 'DELETE' });
+}
+
+/* ===== Egg 管理 ===== */
+export async function createEgg(duckType: string, name?: string, mainAgentUrl?: string): Promise<{ status: string; egg: any }> {
+  return request('/duck/create-egg', {
+    method: 'POST',
+    body: JSON.stringify({ duck_type: duckType, name, main_agent_url: mainAgentUrl }),
+  });
+}
+
+export async function getEggs(): Promise<{ count: number; eggs: any[] }> {
+  return request('/duck/eggs');
+}
+
+export function getEggDownloadUrl(eggId: string): string {
+  return `${API_BASE}/duck/egg/${eggId}/download`;
+}
+
+export async function deleteEgg(eggId: string): Promise<void> {
+  await request(`/duck/egg/${eggId}`, { method: 'DELETE' });
+}

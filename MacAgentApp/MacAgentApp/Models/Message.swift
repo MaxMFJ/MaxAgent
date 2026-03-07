@@ -339,7 +339,7 @@ struct ExecutionLogEntry: Identifiable {
 }
 
 struct ActionLogEntry: Identifiable {
-    let id = UUID()
+    let id: UUID
     let actionId: String
     let actionType: String
     let reasoning: String
@@ -348,7 +348,22 @@ struct ActionLogEntry: Identifiable {
     let error: String?
     let timestamp: Date
     let iteration: Int
-    
+    /// 参数摘要（如命令、路径），来自 action_plan 的 params
+    let paramsSummary: String?
+
+    init(actionId: String, actionType: String, reasoning: String, status: ActionStatus, output: String?, error: String?, timestamp: Date, iteration: Int, paramsSummary: String? = nil) {
+        self.id = UUID()
+        self.actionId = actionId
+        self.actionType = actionType
+        self.reasoning = reasoning
+        self.status = status
+        self.output = output
+        self.error = error
+        self.timestamp = timestamp
+        self.iteration = iteration
+        self.paramsSummary = paramsSummary
+    }
+
     enum ActionStatus: String {
         case pending = "pending"
         case executing = "executing"

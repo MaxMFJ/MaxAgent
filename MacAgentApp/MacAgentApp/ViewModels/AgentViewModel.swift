@@ -64,7 +64,10 @@ class AgentViewModel: ObservableObject {
 
     /// Chat 模式下 LLM 请求计数，用于生成唯一 actionId（避免第二次消息覆盖第一次）
     private var chatLlmRequestCounter: Int = 0
-    
+
+    /// 转发 monitor_event 到 MonitoringViewModel（多任务分桶）
+    var onMonitorEventToMonitor: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
+
     // MARK: - Settings
     
     @AppStorage("provider") var provider: String = "deepseek"
@@ -159,6 +162,23 @@ class AgentViewModel: ObservableObject {
     @Published var contextData: [String: Any] = [:]
     @Published var isLoadingContext: Bool = false
 
+    // MARK: - Chow Duck
+    @AppStorage("chowDuckEnabled") var chowDuckEnabled: Bool = false
+    @Published var duckList: [[String: Any]] = []
+    @Published var duckTemplates: [[String: Any]] = []
+    @Published var duckEggs: [[String: Any]] = []
+    @Published var duckStats: [String: Any] = [:]
+    @Published var isLoadingDucks: Bool = false
+    @Published var duckError: String?
+
+    // MARK: - Egg / Duck Mode
+    /// Shared Egg mode manager — exposes isDuckMode, config, assignedPort
+    let eggModeManager = EggModeManager.shared
+    /// True when this device is running as a sub-Duck (not main agent)
+    var isDuckMode: Bool { eggModeManager.isDuckMode }
+    /// The backend port to connect to (8765 for main, 8766+ for duck)
+    var backendPort: Int { eggModeManager.assignedPort }
+
     // MARK: - v3.4 Integration: Model Tier
     /// 用户偏好的模型层级：auto（自动）/ fast / strong / cheap
     @AppStorage("preferredModelTier") var preferredModelTier: String = "auto"
@@ -188,6 +208,34 @@ class AgentViewModel: ObservableObject {
     /// 流式期间定期保存部分内容，断线/崩溃时保留本地数据
 
     /// 格式化自动步骤输出，便于阅读：保留换行、步骤分隔符换行、仅截断时加省略号
+    private static func buildParamsSummary(actionType: String, params: [String: Any]) -> String? {
+        let t = actionType.lowercased()
+        if t.contains("run_shell") || t.contains("shell") {
+            if let cmd = params["command"] as? String, !cmd.isEmpty {
+                return cmd.count > 80 ? String(cmd.prefix(77)) + "…" : cmd
+            }
+        }
+        if t.contains("read_file") || t.contains("write_file") || t.contains("delete_file") {
+            if let path = params["path"] as? String, !path.isEmpty { return path }
+        }
+        if t.contains("call_tool") {
+            if let name = params["tool_name"] as? String, !name.isEmpty {
+                if let args = params["args"] as? [String: Any], let action = args["action"] as? String {
+                    return "\(name) action=\(action)"
+                }
+                return name
+            }
+        }
+        if t.contains("create_and_run") {
+            if let code = params["code"] as? String, !code.isEmpty {
+                return code.count > 60 ? String(code.prefix(57)) + "…" : code
+            }
+        }
+        if let path = params["path"] as? String, !path.isEmpty { return path }
+        if let cmd = params["command"] as? String, !cmd.isEmpty { return cmd }
+        return nil
+    }
+
     private func formatActionOutput(_ output: String?, maxChars: Int = 500) -> String {
         guard let out = output, !out.isEmpty else { return "" }
         let truncated = out.count > maxChars ? String(out.prefix(maxChars)) + "..." : out
@@ -217,6 +265,19 @@ class AgentViewModel: ObservableObject {
                 newConversation()
             }
         }
+    }
+
+    /// Called at startup: if duck mode is detected, find available port, start duck backend,
+    /// then point BackendService at the duck port.
+    func applyDuckModeIfNeeded() async {
+        guard eggModeManager.isDuckMode, let config = eggModeManager.config else { return }
+        await eggModeManager.resolvePort()
+        let port = eggModeManager.assignedPort
+        // Start duck backend on the assigned port
+        ProcessManager.shared.startDuckBackend(port: port, config: config)
+        // Give it a moment to start, then update the port
+        try? await Task.sleep(nanoseconds: 2_500_000_000)
+        await backendService.updatePort(port)
     }
     
     private func setupVoiceInput() {
@@ -255,14 +316,29 @@ class AgentViewModel: ObservableObject {
             guard let self = self, hasRunningTask, let conversation = self.currentConversation else { return }
             
             Task { @MainActor in
-                await self.resumeAutonomousTask(sessionId: conversation.id.uuidString, taskId: taskId)
+                // 先同步 session_id，确保后端知道当前 session
+                let localSessionId = conversation.id.uuidString
+                await self.backendService.syncSessionId(localSessionId)
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                await self.resumeAutonomousTask(sessionId: localSessionId, taskId: taskId)
             }
         }
         
-        backendService.onChatResumeDetected = { [weak self] sessionId in
+        backendService.onChatResumeDetected = { [weak self] serverSessionId in
             guard let self = self else { return }
             Task { @MainActor in
-                await self.resumeChatStream(sessionId: sessionId)
+                // 参考 iOS 端逻辑：使用本地会话 UUID 而非服务端默认 session_id
+                // 服务端连接后默认 session 为 "default"，但 chat 任务注册在本地 UUID 下
+                guard let conversation = self.currentConversation else { return }
+                let localSessionId = conversation.id.uuidString
+                
+                if localSessionId != serverSessionId {
+                    // 先同步 session_id 到后端，再恢复 chat 流
+                    await self.backendService.syncSessionId(localSessionId)
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s 等待后端完成 session 切换
+                }
+                
+                await self.resumeChatStream(sessionId: localSessionId)
             }
         }
         
@@ -277,6 +353,8 @@ class AgentViewModel: ObservableObject {
     
     func connect() {
         Task {
+            // In duck mode: start duck backend and point to duck port before connecting
+            await applyDuckModeIfNeeded()
             await backendService.connect()
             await loadTools()
             await syncConfig()
@@ -776,6 +854,9 @@ class AgentViewModel: ObservableObject {
                 await backendService.reconnect()
                 
                 if isConnected {
+                    // 重连后同步本地 session_id 到后端（参考 iOS 端逻辑）
+                    await backendService.syncSessionId(sessionId)
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s 等待后端完成 session 切换
                     errorMessage = "已重连，正在恢复对话..."
                     await resumeChatStream(sessionId: sessionId)
                 } else {
@@ -1032,7 +1113,9 @@ class AgentViewModel: ObservableObject {
                     let actionType = action["action_type"] as? String ?? "unknown"
                     let reasoning = action["reasoning"] as? String ?? ""
                     let actionId = action["action_id"] as? String ?? UUID().uuidString
-                    
+                    let params = action["params"] as? [String: Any] ?? [:]
+                    let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
+
                     let logEntry = ActionLogEntry(
                         actionId: actionId,
                         actionType: actionType,
@@ -1041,10 +1124,11 @@ class AgentViewModel: ObservableObject {
                         output: nil,
                         error: nil,
                         timestamp: Date(),
-                        iteration: iteration
+                        iteration: iteration,
+                        paramsSummary: paramsSummary
                     )
                     actionLogs.append(logEntry)
-                    
+
                     // 工具历史：call_tool 映射到 recentToolCalls
                     if actionType == "call_tool" {
                         let params = action["params"] as? [String: Any] ?? [:]
@@ -1061,15 +1145,17 @@ class AgentViewModel: ObservableObject {
                     
                 case .actionExecuting(let actionId, let actionType):
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        let e = actionLogs[index]
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
-                            actionType: actionLogs[index].actionType,
-                            reasoning: actionLogs[index].reasoning,
+                            actionType: e.actionType,
+                            reasoning: e.reasoning,
                             status: .executing,
                             output: nil,
                             error: nil,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: actionLogs[index].iteration
+                            timestamp: e.timestamp,
+                            iteration: e.iteration,
+                            paramsSummary: e.paramsSummary
                         )
                     }
                     statusContent += "   ⏳ 执行中: \(actionType)...\n"
@@ -1078,16 +1164,18 @@ class AgentViewModel: ObservableObject {
                 case .actionResult(let actionId, let success, let output, let error):
                     var actionType = "unknown"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        actionType = actionLogs[index].actionType
+                        let e = actionLogs[index]
+                        actionType = e.actionType
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
                             actionType: actionType,
-                            reasoning: actionLogs[index].reasoning,
+                            reasoning: e.reasoning,
                             status: success ? .success : .failed,
                             output: output,
                             error: error,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: actionLogs[index].iteration
+                            timestamp: e.timestamp,
+                            iteration: e.iteration,
+                            paramsSummary: e.paramsSummary
                         )
                     }
                     // 工具历史：更新 recentToolCalls 的 result
@@ -1246,6 +1334,9 @@ class AgentViewModel: ObservableObject {
                     updateAssistantMessage(content: statusContent + "\n\n连接断开，正在重连...", isStreaming: true)
                     await backendService.reconnect()
                     if isConnected {
+                        // 重连后同步本地 session_id 到后端
+                        await backendService.syncSessionId(sessionId)
+                        try? await Task.sleep(nanoseconds: 300_000_000)
                         updateAssistantMessage(content: statusContent + "\n已重连，正在重新执行...", isStreaming: true)
                         continue retryLoop
                     }
@@ -1482,6 +1573,8 @@ class AgentViewModel: ObservableObject {
                     let actionType = action["action_type"] as? String ?? "unknown"
                     let reasoning = action["reasoning"] as? String ?? ""
                     let actionId = action["action_id"] as? String ?? UUID().uuidString
+                    let params = action["params"] as? [String: Any] ?? [:]
+                    let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
                     
                     let logEntry = ActionLogEntry(
                         actionId: actionId,
@@ -1491,7 +1584,8 @@ class AgentViewModel: ObservableObject {
                         output: nil,
                         error: nil,
                         timestamp: Date(),
-                        iteration: iteration
+                        iteration: iteration,
+                        paramsSummary: paramsSummary
                     )
                     actionLogs = actionLogs + [logEntry]
                     
@@ -1511,15 +1605,17 @@ class AgentViewModel: ObservableObject {
                     
                 case .actionExecuting(let actionId, let actionType):
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        let e = actionLogs[index]
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
-                            actionType: actionLogs[index].actionType,
-                            reasoning: actionLogs[index].reasoning,
+                            actionType: e.actionType,
+                            reasoning: e.reasoning,
                             status: .executing,
                             output: nil,
                             error: nil,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: actionLogs[index].iteration
+                            timestamp: e.timestamp,
+                            iteration: e.iteration,
+                            paramsSummary: e.paramsSummary
                         )
                     }
                     statusContent += "   ⏳ 执行中: \(actionType)...\n"
@@ -1528,16 +1624,18 @@ class AgentViewModel: ObservableObject {
                 case .actionResult(let actionId, let success, let output, let error):
                     var actionType = "unknown"
                     if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        actionType = actionLogs[index].actionType
+                        let e = actionLogs[index]
+                        actionType = e.actionType
                         actionLogs[index] = ActionLogEntry(
                             actionId: actionId,
                             actionType: actionType,
-                            reasoning: actionLogs[index].reasoning,
+                            reasoning: e.reasoning,
                             status: success ? .success : .failed,
                             output: output,
                             error: error,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: actionLogs[index].iteration
+                            timestamp: e.timestamp,
+                            iteration: e.iteration,
+                            paramsSummary: e.paramsSummary
                         )
                     }
                     // 工具历史：更新 recentToolCalls 的 result
@@ -1661,6 +1759,27 @@ class AgentViewModel: ObservableObject {
     
     private func resumeChatStream(sessionId: String) async {
         guard var conversation = currentConversation else { return }
+        
+        // 参考 iOS 端：先结束之前 assistant 消息的 streaming 状态，避免多个气泡同时旋转
+        endPreviousResumeMessageStreaming()
+        // 重新读取 conversation（endPreviousResumeMessageStreaming 可能已更新）
+        guard var conv = currentConversation else { return }
+        conversation = conv
+        
+        // 仅当确实有未完成的 streaming 消息时才添加恢复占位消息
+        let lastAssistant = conversation.messages.last(where: { $0.role == .assistant })
+        let hasActiveStreaming = lastAssistant?.isStreaming == true
+        
+        if hasActiveStreaming {
+            // 上一条消息本身就在 streaming，标记结束并追加恢复消息
+            if let idx = conversation.messages.lastIndex(where: { $0.role == .assistant }) {
+                conversation.messages[idx].isStreaming = false
+                updateCurrentConversation(conversation, shouldSave: false)
+                // 需要重新读取
+                guard let c = currentConversation else { return }
+                conversation = c
+            }
+        }
         
         let resumeMessage = Message(role: .assistant, content: "正在恢复对话...", isStreaming: true)
         conversation.messages.append(resumeMessage)
@@ -1934,6 +2053,8 @@ class AgentViewModel: ObservableObject {
     
     /// 处理来自任意客户端的全局监控事件
     private func handleMonitorEvent(sourceSession: String, taskId: String, event: [String: Any]) {
+        onMonitorEventToMonitor?(sourceSession, taskId, event)
+
         guard let eventType = event["type"] as? String else { return }
         
         print("[Monitor] Received event: type=\(eventType), taskId=\(taskId), session=\(sourceSession)")
@@ -2006,7 +2127,9 @@ class AgentViewModel: ObservableObject {
             let actionType = action["action_type"] as? String ?? "unknown"
             let reasoning = action["reasoning"] as? String ?? ""
             let actionId = action["action_id"] as? String ?? UUID().uuidString
-            
+            let params = action["params"] as? [String: Any] ?? [:]
+            let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
+
             let logEntry = ActionLogEntry(
                 actionId: actionId,
                 actionType: actionType,
@@ -2015,25 +2138,28 @@ class AgentViewModel: ObservableObject {
                 output: nil,
                 error: nil,
                 timestamp: Date(),
-                iteration: iteration
+                iteration: iteration,
+                paramsSummary: paramsSummary
             )
             actionLogs.append(logEntry)
-            
+
         case "action_executing":
             let actionId = event["action_id"] as? String ?? ""
             if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                let e = actionLogs[index]
                 actionLogs[index] = ActionLogEntry(
                     actionId: actionId,
-                    actionType: actionLogs[index].actionType,
-                    reasoning: actionLogs[index].reasoning,
+                    actionType: e.actionType,
+                    reasoning: e.reasoning,
                     status: .executing,
                     output: nil,
                     error: nil,
-                    timestamp: actionLogs[index].timestamp,
-                    iteration: actionLogs[index].iteration
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
                 )
             }
-            
+
         case "action_result":
             let actionId = event["action_id"] as? String ?? ""
             let success = event["success"] as? Bool ?? false
@@ -2042,19 +2168,21 @@ class AgentViewModel: ObservableObject {
             
             var actionType = "unknown"
             if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                actionType = actionLogs[index].actionType
+                let e = actionLogs[index]
+                actionType = e.actionType
                 actionLogs[index] = ActionLogEntry(
                     actionId: actionId,
                     actionType: actionType,
-                    reasoning: actionLogs[index].reasoning,
+                    reasoning: e.reasoning,
                     status: success ? .success : .failed,
                     output: output,
                     error: error,
-                    timestamp: actionLogs[index].timestamp,
-                    iteration: actionLogs[index].iteration
+                    timestamp: e.timestamp,
+                    iteration: e.iteration,
+                    paramsSummary: e.paramsSummary
                 )
             }
-            
+
             // 更新任务进度
             if success {
                 taskProgress?.successfulActions = (taskProgress?.successfulActions ?? 0) + 1
@@ -2087,5 +2215,76 @@ class AgentViewModel: ObservableObject {
         default:
             break
         }
+    }
+
+    // MARK: - Chow Duck
+
+    func loadDuckData() async {
+        isLoadingDucks = true
+        defer { isLoadingDucks = false }
+        do {
+            async let listResult = backendService.fetchDuckList()
+            async let templatesResult = backendService.fetchDuckTemplates()
+            async let eggsResult = backendService.fetchEggs()
+            async let statsResult = backendService.fetchDuckStats()
+            duckList = try await listResult
+            duckTemplates = try await templatesResult
+            duckEggs = try await eggsResult
+            duckStats = try await statsResult
+            duckError = nil
+        } catch {
+            duckError = "加载 Duck 数据失败: \(error.localizedDescription)"
+        }
+    }
+
+    func createLocalDuck(name: String, duckType: String, skills: [String]) async {
+        do {
+            _ = try await backendService.createLocalDuck(name: name, duckType: duckType, skills: skills)
+            await loadDuckData()
+        } catch {
+            duckError = "创建本地 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func destroyLocalDuck(duckId: String) async {
+        do {
+            try await backendService.destroyLocalDuck(duckId: duckId)
+            await loadDuckData()
+        } catch {
+            duckError = "销毁本地 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func removeDuck(duckId: String) async {
+        do {
+            try await backendService.removeDuck(duckId: duckId)
+            await loadDuckData()
+        } catch {
+            duckError = "移除 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func createEgg(duckType: String, name: String?) async -> [String: Any]? {
+        do {
+            let result = try await backendService.createEgg(duckType: duckType, name: name)
+            await loadDuckData()
+            return result
+        } catch {
+            duckError = "生成 Egg 失败: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    func deleteEgg(eggId: String) async {
+        do {
+            try await backendService.deleteEgg(eggId: eggId)
+            await loadDuckData()
+        } catch {
+            duckError = "删除 Egg 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func eggDownloadURL(eggId: String) -> URL? {
+        backendService.eggDownloadURL(eggId: eggId)
     }
 }
