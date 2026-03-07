@@ -52,6 +52,7 @@ class DuckTaskScheduler:
     def __init__(self):
         self._tasks: Dict[str, DuckTask] = {}
         self._callbacks: Dict[str, ResultCallback] = {}    # task_id → callback
+        self._task_sessions: Dict[str, str] = {}           # task_id → source_session_id（委派来源会话，用于完成后主动通知）
         self._timeout_handles: Dict[str, asyncio.Task] = {}
         self._lock = asyncio.Lock()
 
@@ -105,6 +106,7 @@ class DuckTaskScheduler:
         target_duck_type: Optional[DuckType] = None,
         parent_task_id: Optional[str] = None,
         callback: Optional[ResultCallback] = None,
+        source_session_id: Optional[str] = None,
     ) -> DuckTask:
         """提交一个新任务, 返回任务对象"""
         task = DuckTask(
@@ -119,6 +121,8 @@ class DuckTaskScheduler:
             self._tasks[task.task_id] = task
             if callback:
                 self._callbacks[task.task_id] = callback
+            if source_session_id:
+                self._task_sessions[task.task_id] = source_session_id
             self._persist_task(task)
 
         logger.info(f"Task submitted: {task.task_id} strategy={strategy}")
@@ -289,7 +293,65 @@ class DuckTaskScheduler:
             except Exception as e:
                 logger.error(f"Task callback error: {e}")
 
+        # 委派来源会话：子 Duck 完成后主动通知用户（主 Agent 接入对话）
+        session_id = self._task_sessions.pop(result.task_id, None)
+        if session_id:
+            await self._notify_session_duck_complete(session_id, task, result)
+
         logger.info(f"Task {task.task_id} completed: success={result.success}")
+
+    async def _notify_session_duck_complete(
+        self, session_id: str, task: DuckTask, result: DuckResultPayload
+    ):
+        """
+        子 Duck 完成后，向委派来源会话广播 duck_task_complete，主 Agent 主动联系用户。
+        同时将结果写入对话上下文，便于后续对话引用。
+        """
+        try:
+            from connection_manager import connection_manager
+            from agent.context_manager import context_manager
+
+            registry = DuckRegistry.get_instance()
+            duck_label = "Duck"
+            if task.assigned_duck_id:
+                duck_info = await registry.get(task.assigned_duck_id)
+                if duck_info:
+                    duck_label = f"{duck_info.duck_type.value} Duck"
+
+            desc_preview = (task.description or "")[:80]
+            if len((task.description or "")) > 80:
+                desc_preview += "..."
+
+            if result.success:
+                output_str = str(task.output) if task.output is not None else ""
+                if len(output_str) > 500:
+                    output_str = output_str[:500] + "..."
+                content = (
+                    f"{duck_label} 已完成任务：{desc_preview}\n\n"
+                    f"**执行结果：**\n{output_str}"
+                )
+            else:
+                content = (
+                    f"{duck_label} 任务失败：{desc_preview}\n\n"
+                    f"**错误信息：** {task.error or '未知错误'}"
+                )
+
+            msg = {
+                "type": "duck_task_complete",
+                "task_id": task.task_id,
+                "success": result.success,
+                "content": content,
+                "session_id": session_id,
+                "duck_id": task.assigned_duck_id,
+            }
+
+            await connection_manager.broadcast_to_session(session_id, msg)
+
+            # 写入对话上下文，便于后续对话引用
+            ctx_mgr = context_manager.get_or_create(session_id)
+            ctx_mgr.add_message("assistant", content)
+        except Exception as e:
+            logger.warning(f"Failed to notify session for duck task complete: {e}")
 
     # ─── 结果聚合 ────────────────────────────────────
 
@@ -382,6 +444,18 @@ class DuckTaskScheduler:
                 await cb(task)
             except Exception as e:
                 logger.error(f"Task fail callback error: {e}")
+
+        # 委派来源会话：任务失败时也主动通知用户
+        session_id = self._task_sessions.pop(task.task_id, None)
+        if session_id:
+            result = DuckResultPayload(
+                task_id=task.task_id,
+                success=False,
+                output=None,
+                error=error,
+                duration=0,
+            )
+            await self._notify_session_duck_complete(session_id, task, result)
 
     # ─── 取消任务 ────────────────────────────────────
 

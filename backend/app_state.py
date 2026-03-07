@@ -3,17 +3,33 @@
 集中管理 LLM clients、agent_core、autonomous_agent、server_status 等全局单例。
 所有模块通过此文件的 getter/setter 访问共享状态，避免循环 import。
 """
+import contextvars
 import os
 import logging
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict, List, Deque
+from typing import Optional, Dict, List, Deque, Any
 
 import asyncio
 
 logger = logging.getLogger(__name__)
+
+# Local Duck 执行时的身份上下文（name/duck_type/skills），供 autonomous_agent 注入 prompt
+_duck_context_var: contextvars.ContextVar[Optional[Dict[str, Any]]] = contextvars.ContextVar(
+    "duck_context", default=None
+)
+
+
+def set_duck_context(ctx: Optional[Dict[str, Any]]) -> None:
+    """设置当前任务所属 Duck 的身份（Local Duck worker 调用）"""
+    _duck_context_var.set(ctx)
+
+
+def get_duck_context() -> Optional[Dict[str, Any]]:
+    """获取当前 Duck 身份，无则返回 None"""
+    return _duck_context_var.get()
 
 
 # ============== Server Status ==============

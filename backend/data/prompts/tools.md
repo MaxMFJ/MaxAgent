@@ -25,6 +25,7 @@
 ## 内置工具
 
 ### 文件 (file_operations)
+- **路径格式**：桌面用 `~/Desktop/`，禁止用 `$(whoami)`（会变成字面量无法打开）。向用户报告路径时用 `~/Desktop/xxx` 或实际绝对路径
 - 修改/覆盖前：先 read 确认内容
 - 删除前：先 info 确认路径
 - 用户指代不明时：从 created_files 或对话历史推断
@@ -43,6 +44,13 @@
 - 找到合适的 MCP 后，调用 `request_mcp_install` 提交安装请求（需用户审批）
 - 用户在审批中心确认后，系统自动完成安装，新工具立即可用
 - 典型场景：需要浏览器自动化 → 搜索 playwright MCP；需要数据库操作 → 搜索 postgres MCP
+
+### Chow Duck 分身 (duck_status / delegate_duck)
+- **duck_status**：查询 Duck 分身状态。用户问「Duck 在线吗」「有哪些分身」时，先调用 duck_status 获取在线/忙碌/离线列表
+- **delegate_duck**：委派任务给分身。制作 HTML、编写代码、爬虫、设计等任务，可先 duck_status 确认有可用 Duck，再 delegate_duck
+- 委派参数：description（必填，路径用 `~/Desktop/`）、duck_type（可选，coder/designer/crawler）
+- 若 duck_status 显示无在线 Duck 或委派失败，再自行用 file_operations、terminal 完成
+- **向用户报告路径**：delegate_duck 返回的 result 中有 `actual_desktop_path`，必须用它向用户报告文件路径
 
 ### 工具升级 (request_tool_upgrade)
 - 用户需要新增 Agent 工具/能力时，**必须调用** request_tool_upgrade，等待完成后调用新工具

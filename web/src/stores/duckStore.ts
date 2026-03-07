@@ -13,6 +13,9 @@ export interface DuckInfo {
   completed_tasks: number;
   failed_tasks: number;
   current_task_id: string | null;
+  llm_api_key?: string;
+  llm_base_url?: string;
+  llm_model?: string;
 }
 
 export interface DuckTemplate {
@@ -58,6 +61,8 @@ interface DuckState {
   fetchAll: () => Promise<void>;
   createLocalDuck: (name: string, duckType: string, skills?: string[]) => Promise<void>;
   destroyLocalDuck: (duckId: string) => Promise<void>;
+  startLocalDuck: (duckId: string) => Promise<void>;
+  updateDuckLLMConfig: (duckId: string, apiKey: string, baseUrl: string, model: string) => Promise<void>;
   removeDuck: (duckId: string) => Promise<void>;
   createEgg: (duckType: string, name?: string) => Promise<EggRecord>;
   deleteEgg: (eggId: string) => Promise<void>;
@@ -134,6 +139,25 @@ export const useDuckStore = create<DuckState>((set, get) => ({
       await api.destroyLocalDuck(duckId);
       await get().fetchDucks();
       await get().fetchStats();
+    } catch (e: any) {
+      set({ error: e.message });
+    }
+  },
+
+  async startLocalDuck(duckId) {
+    try {
+      await api.startLocalDuck(duckId);
+      await get().fetchDucks();
+      await get().fetchStats();
+    } catch (e: any) {
+      set({ error: e.message });
+    }
+  },
+
+  async updateDuckLLMConfig(duckId, apiKey, baseUrl, model) {
+    try {
+      await api.updateDuckLLMConfig(duckId, apiKey, baseUrl, model);
+      await get().fetchDucks();
     } catch (e: any) {
       set({ error: e.message });
     }

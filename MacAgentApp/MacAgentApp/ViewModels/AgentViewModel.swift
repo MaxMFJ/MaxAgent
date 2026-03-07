@@ -347,8 +347,29 @@ class AgentViewModel: ObservableObject {
             guard let self = self else { return }
             self.handleMonitorEvent(sourceSession: sourceSession, taskId: taskId, event: event)
         }
+
+        // 子 Duck 任务完成：主 Agent 主动联系用户，将结果作为 assistant 消息展示
+        backendService.onDuckTaskComplete = { [weak self] content, success, taskId, sessionId in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.handleDuckTaskComplete(content: content, success: success, taskId: taskId, sessionId: sessionId)
+            }
+        }
     }
-    
+
+    private func handleDuckTaskComplete(content: String, success: Bool, taskId: String, sessionId: String) {
+        guard let conversation = currentConversation else { return }
+        let localSessionId = conversation.id.uuidString
+        guard sessionId == localSessionId else { return }
+        let msg = Message(role: .assistant, content: content, modelName: "Duck")
+        if let idx = conversations.firstIndex(where: { $0.id == conversation.id }) {
+            conversations[idx].messages.append(msg)
+            conversations[idx].updatedAt = Date()
+        }
+        currentConversation?.messages.append(msg)
+        currentConversation?.updatedAt = Date()
+    }
+
     // MARK: - Connection
     
     func connect() {
@@ -2252,6 +2273,25 @@ class AgentViewModel: ObservableObject {
             await loadDuckData()
         } catch {
             duckError = "销毁本地 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func startLocalDuck(duckId: String) async {
+        do {
+            _ = try await backendService.startLocalDuck(duckId: duckId)
+            await loadDuckData()
+        } catch {
+            duckError = "启动本地 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    /// 更新分身 LLM 配置（用户手动填写 api_key、base_url、model，用于专项任务更有效运用大模型。空字符串会清空该字段）
+    func updateDuckLLMConfig(duckId: String, apiKey: String, baseUrl: String, model: String) async {
+        do {
+            _ = try await backendService.updateDuckLLMConfig(duckId: duckId, apiKey: apiKey, baseUrl: baseUrl, model: model)
+            await loadDuckData()
+        } catch {
+            duckError = "更新分身 LLM 配置失败: \(error.localizedDescription)"
         }
     }
 

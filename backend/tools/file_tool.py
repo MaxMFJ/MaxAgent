@@ -5,11 +5,22 @@ Provides file system operations: read, write, create, delete, move, list
 
 import os
 import shutil
+import getpass
 import glob as glob_module
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .base import BaseTool, ToolResult, ToolCategory
+
+
+def _normalize_path(path: str) -> str:
+    """展开 ~、$(whoami)、$HOME 等为实际路径"""
+    path = os.path.expanduser(path)
+    # $(whoami) 和 ${whoami} 在 shell 中会执行，Python 需显式替换
+    username = getpass.getuser()
+    path = path.replace("$(whoami)", username).replace("${whoami}", username)
+    path = os.path.expandvars(path)
+    return path
 
 
 class FileTool(BaseTool):
@@ -74,8 +85,8 @@ class FileTool(BaseTool):
         
         if not path:
             return ToolResult(success=False, error="缺少路径参数")
-        
-        path = os.path.expanduser(path)
+
+        path = _normalize_path(path)
         
         try:
             if action == "read":
@@ -94,12 +105,12 @@ class FileTool(BaseTool):
                 dest = kwargs.get("destination")
                 if not dest:
                     return ToolResult(success=False, error="移动操作需要 destination 参数")
-                return await self._move(path, os.path.expanduser(dest))
+                return await self._move(path, _normalize_path(dest))
             elif action == "copy":
                 dest = kwargs.get("destination")
                 if not dest:
                     return ToolResult(success=False, error="复制操作需要 destination 参数")
-                return await self._copy(path, os.path.expanduser(dest))
+                return await self._copy(path, _normalize_path(dest))
             elif action == "list":
                 return await self._list(path)
             elif action == "search":

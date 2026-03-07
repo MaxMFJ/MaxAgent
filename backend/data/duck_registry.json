@@ -1,1 +1,99 @@
-[]
+[
+  {
+    "duck_id": "local_a3734407",
+    "name": "Coder Duck",
+    "duck_type": "coder",
+    "status": "online",
+    "skills": [
+      "code_write",
+      "code_review",
+      "debug",
+      "refactor",
+      "test_write"
+    ],
+    "hostname": "Mac-mini.local",
+    "platform": "darwin",
+    "is_local": true,
+    "registered_at": 1772878850.278347,
+    "last_heartbeat": 1772882074.97123,
+    "current_task_id": null,
+    "busy_reason": null,
+    "completed_tasks": 2,
+    "failed_tasks": 0,
+    "llm_api_key": null,
+    "llm_base_url": null,
+    "llm_model": null
+  },
+  {
+    "duck_id": "local_74226f94",
+    "name": "Designer Duck",
+    "duck_type": "designer",
+    "status": "online",
+    "skills": [
+      "ui_design",
+      "ux_review",
+      "prototype",
+      "style_guide"
+    ],
+    "hostname": "Mac-mini.local",
+    "platform": "darwin",
+    "is_local": true,
+    "registered_at": 1772879579.0544598,
+    "last_heartbeat": 1772882019.976656,
+    "current_task_id": null,
+    "busy_reason": null,
+    "completed_tasks": 3,
+    "failed_tasks": 1,
+    "llm_api_key": null,
+    "llm_base_url": null,
+    "llm_model": null
+  },
+  {
+    "duck_id": "local_28289918",
+    "name": "Crawler Duck",
+    "duck_type": "crawler",
+    "status": "online",
+    "skills": [
+      "web_crawl",
+      "data_extract",
+      "html_parse",
+      "api_fetch"
+    ],
+    "hostname": "Mac-mini.local",
+    "platform": "darwin",
+    "is_local": true,
+    "registered_at": 1772879587.767031,
+    "last_heartbeat": 1772882074.9713368,
+    "current_task_id": null,
+    "busy_reason": null,
+    "completed_tasks": 0,
+    "failed_tasks": 0,
+    "llm_api_key": null,
+    "llm_base_url": null,
+    "llm_model": null
+  },
+  {
+    "duck_id": "local_413b6339",
+    "name": "Tester Duck",
+    "duck_type": "tester",
+    "status": "online",
+    "skills": [
+      "test_write",
+      "test_run",
+      "bug_report",
+      "performance_test"
+    ],
+    "hostname": "Mac-mini.local",
+    "platform": "darwin",
+    "is_local": true,
+    "registered_at": 1772879596.16182,
+    "last_heartbeat": 1772882074.971363,
+    "current_task_id": null,
+    "busy_reason": null,
+    "completed_tasks": 0,
+    "failed_tasks": 0,
+    "llm_api_key": null,
+    "llm_base_url": null,
+    "llm_model": null
+  }
+]

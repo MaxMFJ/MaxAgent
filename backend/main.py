@@ -254,6 +254,31 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Task persistence manager init failed: {e}")
 
+    # 本地 Duck 自动恢复：服务器重启时发现并启动已注册的本地分身
+    if not IS_DUCK_MODE and os.environ.get("AUTO_START_LOCAL_DUCKS", "true").lower() == "true":
+        try:
+            from services.duck_registry import DuckRegistry
+            from services.local_duck_worker import get_local_duck_manager
+
+            registry = DuckRegistry.get_instance()
+            await registry.initialize()
+            all_ducks = await registry.list_all()
+            local_ducks = [d for d in all_ducks if d.is_local]
+            manager = get_local_duck_manager()
+            started = 0
+            for duck in local_ducks:
+                try:
+                    info = await manager.start_local_duck(duck.duck_id)
+                    if info:
+                        started += 1
+                        logger.info("Local Duck auto-started: %s (%s)", duck.duck_id, duck.name)
+                except Exception as e:
+                    logger.warning("Local Duck auto-start failed for %s: %s", duck.duck_id, e)
+            if started > 0:
+                logger.info("Local Duck recovery: %d/%d started", started, len(local_ducks))
+        except Exception as e:
+            logger.warning("Local Duck auto-recovery skipped: %s", e)
+
     # BGE 向量模型预加载
     if os.environ.get("ENABLE_VECTOR_SEARCH", "true").lower() == "true":
         try:

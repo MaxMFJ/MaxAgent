@@ -1,0 +1,17 @@
+{
+  "task_id": "dtask_09dfedd8",
+  "description": "为我设计并输出一张现代化的 app 登录界面设计图，包括登录表单、输入框、登录按钮、忘记密码链接、注册链接等元素。设计风格要现代、美观、用户友好。输出为 PNG 或 JPG 图片格式，保存到 ~/Desktop/ 目录。\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "created_at": 1772881534.245503,
+  "assigned_at": 1772881534.2462962,
+  "started_at": null,
+  "completed_at": null
+}

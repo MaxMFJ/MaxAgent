@@ -114,7 +114,7 @@ class LangChainChatRunner:
             self.registry,
             query=user_message,
             max_tools=8,
-            always_include=["terminal", "file_operations", "app_control"],
+            always_include=["terminal", "file_operations", "app_control", "delegate_duck", "duck_status"],
             bind_target_fn=self._bind_target_fn,
         )
         llm_with_tools = llm.bind_tools(tools)

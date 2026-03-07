@@ -580,6 +580,10 @@ ACTION_SCHEMAS = {
         "required": ["tool_name", "args"],
         "optional": []
     },
+    ActionType.DELEGATE_DUCK: {
+        "required": ["description"],
+        "optional": ["duck_type", "duck_id", "strategy", "timeout", "task_type", "params", "priority"]
+    },
     ActionType.THINK: {
         "required": ["thought"],
         "optional": []

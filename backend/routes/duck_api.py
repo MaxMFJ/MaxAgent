@@ -114,6 +114,17 @@ class CreateLocalDuckRequest(BaseModel):
     name: str = "Local Duck"
     duck_type: str = "general"
     skills: list[str] = Field(default_factory=list)
+    # 分身独立 LLM（用户手动填写，适配专项工作）
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
+    llm_model: Optional[str] = None
+
+
+class UpdateDuckLLMConfigRequest(BaseModel):
+    """分身 LLM 配置（用户手动填写）"""
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
 
 
 @router.post("/create-local")
@@ -131,6 +142,9 @@ async def create_local_duck(req: CreateLocalDuckRequest):
         name=req.name,
         duck_type=dt,
         skills=req.skills,
+        llm_api_key=req.llm_api_key,
+        llm_base_url=req.llm_base_url,
+        llm_model=req.llm_model,
     )
     return {"status": "ok", "duck": info.model_dump()}
 
@@ -145,6 +159,34 @@ async def destroy_local_duck(duck_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="Local duck not found")
     return {"status": "ok", "duck_id": duck_id}
+
+
+@router.post("/local/{duck_id}/start")
+async def start_local_duck(duck_id: str):
+    """启动离线的本地 Duck（后端重启后，本地 Duck 会离线，需用户手动启动）"""
+    from services.local_duck_worker import get_local_duck_manager
+
+    manager = get_local_duck_manager()
+    info = await manager.start_local_duck(duck_id)
+    if not info:
+        raise HTTPException(status_code=404, detail="Local duck not found or not a local duck")
+    return {"status": "ok", "message": "Started", "duck": info.model_dump()}
+
+
+@router.put("/local/{duck_id}/llm-config")
+async def update_duck_llm_config(duck_id: str, req: UpdateDuckLLMConfigRequest):
+    """更新分身 LLM 配置（api_key、base_url、model 用户手动填写，用于专项任务更有效运用大模型）"""
+    registry = DuckRegistry.get_instance()
+    await registry.initialize()
+    duck = await registry.get(duck_id)
+    if not duck or not duck.is_local:
+        raise HTTPException(status_code=404, detail="Local duck not found")
+    updates = {k: (v or None) for k, v in req.model_dump(exclude_unset=True).items()}
+    ok = await registry.update_llm_config(duck_id, **updates)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Update failed")
+    info = await registry.get(duck_id)
+    return {"status": "ok", "duck": info.model_dump()}
 
 
 @router.get("/local/list")

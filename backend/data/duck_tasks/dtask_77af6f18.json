@@ -1,0 +1,17 @@
+{
+  "task_id": "dtask_77af6f18",
+  "description": "制作一个简单的 HTML 页面，包含标题、导航栏、简介部分和页脚，保存到 ~/Desktop/simple.html\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "failed",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": "local_74226f94",
+  "parent_task_id": null,
+  "output": null,
+  "error": "任务涉及文件创建，但 Agent 执行失败（'AutonomousAgent' object has no attribute 'run'）。请重试或由主 Agent 直接处理。",
+  "created_at": 1772880224.2594821,
+  "assigned_at": 1772880224.2599092,
+  "started_at": null,
+  "completed_at": 1772880224.260791
+}

@@ -100,6 +100,17 @@ export async function destroyLocalDuck(duckId: string): Promise<void> {
   await request(`/duck/local/${duckId}`, { method: 'DELETE' });
 }
 
+export async function startLocalDuck(duckId: string): Promise<{ status: string; duck: any }> {
+  return request(`/duck/local/${duckId}/start`, { method: 'POST' });
+}
+
+export async function updateDuckLLMConfig(duckId: string, apiKey: string, baseUrl: string, model: string): Promise<{ status: string; duck: any }> {
+  return request(`/duck/local/${duckId}/llm-config`, {
+    method: 'PUT',
+    body: JSON.stringify({ api_key: apiKey, base_url: baseUrl, model }),
+  });
+}
+
 export async function getLocalDucks(): Promise<{ count: number; ducks: any[] }> {
   return request('/duck/local/list');
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Plus, Download, Trash2, RefreshCw, Egg, Bird } from 'lucide-react';
+import { X, Plus, Download, Trash2, RefreshCw, Egg, Bird, Cpu } from 'lucide-react';
 import { IconButton, Badge, StatusDot } from './ui';
 import ChowDuckAnimation from './ChowDuckAnimation';
 import { useDuckStore } from '../stores/duckStore';
@@ -18,9 +18,11 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
   const [tab, setTab] = useState<TabId>('ducks');
   const {
     ducks, templates, eggs, stats, loading, error,
-    fetchAll, createLocalDuck, destroyLocalDuck, removeDuck,
+    fetchAll, createLocalDuck, destroyLocalDuck, startLocalDuck, updateDuckLLMConfig, removeDuck,
     createEgg, deleteEgg, clearError,
   } = useDuckStore();
+
+  const [llmConfigDuck, setLlmConfigDuck] = useState<DuckInfo | null>(null);
 
   // ─── Chow Duck state ─────────────────────────────
   const [selectedTemplate, setSelectedTemplate] = useState<string>('general');
@@ -164,14 +166,35 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                         {duck.current_task_id && <span className="ml-2" style={{ color: 'var(--color-warning, #f59e0b)' }}>执行中: {duck.current_task_id}</span>}
                       </div>
                     </div>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => duck.is_local ? destroyLocalDuck(duck.duck_id) : removeDuck(duck.duck_id)}
-                      title="删除"
-                    >
-                      <Trash2 size={13} />
-                    </IconButton>
+                    <div className="flex items-center gap-1">
+                      {duck.is_local && (
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setLlmConfigDuck(duck)}
+                          title="LLM 配置"
+                        >
+                          <Cpu size={13} />
+                        </IconButton>
+                      )}
+                      {duck.is_local && duck.status === 'offline' && (
+                        <button
+                          onClick={() => startLocalDuck(duck.duck_id)}
+                          className="px-2 py-1 rounded-lg text-xs font-medium"
+                          style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
+                        >
+                          启动
+                        </button>
+                      )}
+                      <IconButton
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => duck.is_local ? destroyLocalDuck(duck.duck_id) : removeDuck(duck.duck_id)}
+                        title="删除"
+                      >
+                        <Trash2 size={13} />
+                      </IconButton>
+                    </div>
                   </div>
                 ))
               )}
@@ -360,8 +383,98 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
           </div>
         )}
       </motion.div>
+
+      {/* LLM 配置弹窗 */}
+      {llmConfigDuck && (
+        <DuckLLMConfigModal
+          duck={llmConfigDuck}
+          onSave={async (apiKey, baseUrl, model) => {
+            await updateDuckLLMConfig(llmConfigDuck.duck_id, apiKey, baseUrl, model);
+            setLlmConfigDuck(null);
+          }}
+          onClose={() => setLlmConfigDuck(null)}
+        />
+      )}
     </div>
   );
 };
+
+function DuckLLMConfigModal({ duck, onSave, onClose }: {
+  duck: DuckInfo;
+  onSave: (apiKey: string, baseUrl: string, model: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [apiKey, setApiKey] = useState(duck.llm_api_key ?? '');
+  const [baseUrl, setBaseUrl] = useState(duck.llm_base_url ?? '');
+  const [model, setModel] = useState(duck.llm_model ?? '');
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+      <div
+        className="rounded-xl p-4 w-[360px]"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>分身 LLM 配置</h3>
+          <button onClick={onClose} className="text-xs" style={{ color: 'var(--text-secondary)' }}>关闭</button>
+        </div>
+        <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>
+          为 {duck.name} 配置独立 LLM，使分身更有效运用大模型完成专项任务。
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>API Key</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-xxx"
+              className="w-full px-3 py-2 rounded-lg text-xs"
+              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Base URL</label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://api.example.com/v1"
+              className="w-full px-3 py-2 rounded-lg text-xs"
+              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>模型名称</label>
+            <input
+              type="text"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="gpt-4o / deepseek-chat"
+              className="w-full px-3 py-2 rounded-lg text-xs"
+              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={async () => {
+              setSaving(true);
+              await onSave(apiKey, baseUrl, model);
+              setSaving(false);
+            }}
+            disabled={saving}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium"
+            style={{ background: 'var(--accent)', color: '#fff' }}
+          >
+            {saving ? '保存中…' : '保存'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default DuckManagement;

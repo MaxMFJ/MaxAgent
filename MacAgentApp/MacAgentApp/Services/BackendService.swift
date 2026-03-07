@@ -63,6 +63,8 @@ class BackendService: ObservableObject {
     var onChatResumeDetected: ((String) -> Void)?
     /// 收到全局监控事件（来自任意客户端的任务执行事件）时回调
     var onMonitorEvent: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
+    /// 子 Duck 任务完成时回调（主 Agent 主动联系用户，将结果作为 assistant 消息展示）
+    var onDuckTaskComplete: ((_ content: String, _ success: Bool, _ taskId: String, _ sessionId: String) -> Void)?
 
     init(port: Int = 8765) {
         self.port = port
@@ -225,6 +227,15 @@ class BackendService: ObservableObject {
                                 print("[BackendService] Received monitor_event: type=\(eventType), taskId=\(taskId), session=\(sourceSession)")
                                 await MainActor.run {
                                     self.onMonitorEvent?(sourceSession, taskId, event)
+                                }
+                            case "duck_task_complete":
+                                // 子 Duck 任务完成，主 Agent 主动联系用户
+                                let content = json["content"] as? String ?? ""
+                                let success = json["success"] as? Bool ?? false
+                                let taskId = json["task_id"] as? String ?? ""
+                                let sessionId = json["session_id"] as? String ?? ""
+                                await MainActor.run {
+                                    self.onDuckTaskComplete?(content, success, taskId, sessionId)
                                 }
                             case "client_disconnected":
                                 break
@@ -698,6 +709,14 @@ class BackendService: ObservableObject {
                                         }
                                     }
                                     continue
+
+                                case "duck_task_complete":
+                                    let contentDtc = json["content"] as? String ?? ""
+                                    let successDtc = json["success"] as? Bool ?? false
+                                    let taskIdDtc = json["task_id"] as? String ?? ""
+                                    let sessionIdDtc = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(contentDtc, successDtc, taskIdDtc, sessionIdDtc) }
+                                    continue
                                 
                                 case "system_notification":
                                     await MainActor.run { [weak self] in
@@ -1140,6 +1159,14 @@ class BackendService: ObservableObject {
                                     }
                                     continue
 
+                                case "duck_task_complete":
+                                    let contentDtc2 = json["content"] as? String ?? ""
+                                    let successDtc2 = json["success"] as? Bool ?? false
+                                    let taskIdDtc2 = json["task_id"] as? String ?? ""
+                                    let sessionIdDtc2 = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(contentDtc2, successDtc2, taskIdDtc2, sessionIdDtc2) }
+                                    continue
+
                                 case "monitor_event":
                                     let sourceSessionChat = json["source_session"] as? String ?? ""
                                     let taskIdChat = json["task_id"] as? String ?? ""
@@ -1356,6 +1383,14 @@ class BackendService: ObservableObject {
                                             } catch {}
                                         }
                                     }
+                                    continue
+
+                                case "duck_task_complete":
+                                    let contentDtc3 = json["content"] as? String ?? ""
+                                    let successDtc3 = json["success"] as? Bool ?? false
+                                    let taskIdDtc3 = json["task_id"] as? String ?? ""
+                                    let sessionIdDtc3 = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(contentDtc3, successDtc3, taskIdDtc3, sessionIdDtc3) }
                                     continue
                                 
                                 case "autonomous_task_accepted":
@@ -1614,6 +1649,32 @@ class BackendService: ObservableObject {
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw URLError(.badServerResponse)
         }
+    }
+
+    nonisolated func startLocalDuck(duckId: String) async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/duck/local/\(duckId)/start") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    /// 更新分身 LLM 配置（api_key、base_url、model 用户手动填写，用于专项任务更有效运用大模型。空字符串会清空该字段）
+    nonisolated func updateDuckLLMConfig(duckId: String, apiKey: String, baseUrl: String, model: String) async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/duck/local/\(duckId)/llm-config") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = ["api_key": apiKey, "base_url": baseUrl, "model": model]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
 
     nonisolated func removeDuck(duckId: String) async throws {

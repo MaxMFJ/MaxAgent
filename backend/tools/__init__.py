@@ -27,6 +27,8 @@ from .request_tool_upgrade_tool import RequestToolUpgradeTool
 from .evomap_tool import EvoMapTool
 from .capsule_tool import CapsuleTool
 from .mcp_catalog_tool import MCPCatalogTool, RequestMCPInstallTool
+from .delegate_duck_tool import DelegateDuckTool
+from .duck_status_tool import DuckStatusTool
 
 __all__ = [
     "BaseTool",
@@ -58,6 +60,8 @@ __all__ = [
     "CapsuleTool",
     "MCPCatalogTool",
     "RequestMCPInstallTool",
+    "DelegateDuckTool",
+    "DuckStatusTool",
 ]
 
 def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
@@ -93,4 +97,6 @@ def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
         CapsuleTool(runtime_adapter),
         MCPCatalogTool(runtime_adapter),
         RequestMCPInstallTool(runtime_adapter),
+        DelegateDuckTool(runtime_adapter),
+        DuckStatusTool(runtime_adapter),
     ]

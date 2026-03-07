@@ -36,11 +36,17 @@ class LocalDuckWorker:
         name: str,
         duck_type: DuckType = DuckType.GENERAL,
         skills: list[str] | None = None,
+        llm_api_key: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_model: Optional[str] = None,
     ):
         self.duck_id = duck_id
         self.name = name
         self.duck_type = duck_type
         self.skills = skills or []
+        self.llm_api_key = llm_api_key
+        self.llm_base_url = llm_base_url
+        self.llm_model = llm_model
 
         self._task_queue: asyncio.Queue[DuckTaskPayload] = asyncio.Queue()
         self._running = False
@@ -65,6 +71,9 @@ class LocalDuckWorker:
             hostname=socket.gethostname(),
             platform=platform.system().lower(),
             is_local=True,
+            llm_api_key=self.llm_api_key,
+            llm_base_url=self.llm_base_url,
+            llm_model=self.llm_model,
         )
         await registry.register(info)
 
@@ -121,6 +130,9 @@ class LocalDuckWorker:
         registry = DuckRegistry.get_instance()
         await registry.set_current_task(self.duck_id, payload.task_id)
 
+        desc_preview = (payload.description or "")[:80]
+        logger.info(f"[Local Duck] {self.duck_id} executing task {payload.task_id}: {desc_preview}...")
+
         start_time = time.time()
         success = False
         output: Any = None
@@ -146,24 +158,66 @@ class LocalDuckWorker:
         scheduler = get_task_scheduler()
         await scheduler.handle_result(self.duck_id, result)
 
+    def _create_duck_llm_client(self) -> Optional[Any]:
+        """若分身配置了独立 LLM，创建 LLMClient"""
+        if not all([self.llm_api_key, self.llm_base_url, self.llm_model]):
+            return None
+        try:
+            from agent.llm_client import LLMClient, LLMConfig
+            config = LLMConfig(
+                provider="openai",
+                api_key=self.llm_api_key,
+                base_url=self.llm_base_url,
+                model=self.llm_model,
+            )
+            return LLMClient(config)
+        except Exception as e:
+            logger.warning("Duck LLM client creation failed: %s", e)
+            return None
+
     async def _do_work(self, payload: DuckTaskPayload) -> Any:
         """
         实际执行任务逻辑。
         使用本地 AutonomousAgent 执行，使其拥有截图、终端、文件等全套工具。
+        注入 Duck 身份（name/duck_type/skills）到 prompt，使 Agent 知晓专项技能。
+        若分身配置了独立 LLM（api_key/base_url/model），优先使用以更有效运用大模型。
         """
+        from app_state import get_autonomous_agent, set_duck_context
+
+        # 从 registry 获取最新配置（用户可能已更新 llm_config）
+        registry = DuckRegistry.get_instance()
+        duck = await registry.get(self.duck_id)
+        if duck:
+            self.llm_api_key = duck.llm_api_key
+            self.llm_base_url = duck.llm_base_url
+            self.llm_model = duck.llm_model
+
+        duck_ctx = {
+            "name": self.name,
+            "duck_type": self.duck_type.value,
+            "skills": self.skills,
+        }
+        set_duck_context(duck_ctx)
+        override_llm = self._create_duck_llm_client()
         try:
-            from app_state import get_autonomous_agent
             agent = get_autonomous_agent()
             if agent is None:
                 raise RuntimeError("AutonomousAgent not initialized")
             result = await asyncio.wait_for(
-                agent.run(payload.description),
+                agent.run(payload.description, override_llm=override_llm),
                 timeout=float(payload.timeout),
             )
             return result
         except asyncio.TimeoutError:
             raise RuntimeError(f"Local Duck task timed out after {payload.timeout}s")
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Local Duck agent.run failed, attempting LLM fallback: {e}")
+            # 若任务涉及文件创建，LLM 无法真正写文件，不降级
+            desc = (payload.description or "").lower()
+            if any(k in desc for k in ("保存", "创建", "写入", "write", "create", ".html", ".md")):
+                raise RuntimeError(
+                    f"任务涉及文件创建，但 Agent 执行失败（{e}）。请重试或由主 Agent 直接处理。"
+                )
             # 降级：直接用 LLM 补全（无工具）
             try:
                 from app_state import get_llm_client
@@ -179,6 +233,8 @@ class LocalDuckWorker:
                 return content
             except Exception as llm_err:
                 raise RuntimeError(f"Local Duck fallback LLM failed: {llm_err}")
+        finally:
+            set_duck_context(None)
 
     def _build_prompt(self, payload: DuckTaskPayload) -> str:
         """根据任务构建 LLM 提示"""
@@ -215,6 +271,9 @@ class LocalDuckManager:
         name: str,
         duck_type: DuckType = DuckType.GENERAL,
         skills: list[str] | None = None,
+        llm_api_key: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_model: Optional[str] = None,
     ) -> DuckInfo:
         """创建并启动一个新的本地 Duck"""
         duck_id = f"local_{uuid.uuid4().hex[:8]}"
@@ -224,6 +283,9 @@ class LocalDuckManager:
             name=name,
             duck_type=duck_type,
             skills=skills,
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url,
+            llm_model=llm_model,
         )
         await worker.start()
         self._workers[duck_id] = worker
@@ -252,6 +314,29 @@ class LocalDuckManager:
 
     def get_worker(self, duck_id: str) -> Optional[LocalDuckWorker]:
         return self._workers.get(duck_id)
+
+    async def start_local_duck(self, duck_id: str) -> Optional[DuckInfo]:
+        """启动离线的本地 Duck（从 Registry 恢复，用于后端重启后）"""
+        registry = DuckRegistry.get_instance()
+        await registry.initialize()
+        duck = await registry.get(duck_id)
+        if not duck or not duck.is_local:
+            return None
+        if self.get_worker(duck_id):
+            return duck  # 已在运行
+
+        worker = LocalDuckWorker(
+            duck_id=duck_id,
+            name=duck.name,
+            duck_type=duck.duck_type,
+            skills=duck.skills or [],
+            llm_api_key=duck.llm_api_key,
+            llm_base_url=duck.llm_base_url,
+            llm_model=duck.llm_model,
+        )
+        await worker.start()
+        self._workers[duck_id] = worker
+        return await registry.get(duck_id)
 
     def list_local_ducks(self) -> list[str]:
         return list(self._workers.keys())

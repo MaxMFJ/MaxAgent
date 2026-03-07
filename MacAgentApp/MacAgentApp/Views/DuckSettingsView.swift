@@ -17,6 +17,8 @@ struct DuckSettingsContent: View {
     @State private var showClearConfirm: Bool = false
     // Tab
     @State private var selectedTab: DuckTab = .chow
+    // LLM 配置 sheet（用 item 确保弹窗打开时数据已就绪）
+    @State private var llmConfigDuck: LLMConfigDuckItem? = nil
 
     private enum ChowPhase {
         case idle, eating, digesting, done
@@ -145,6 +147,22 @@ struct DuckSettingsContent: View {
             if enabled {
                 Task { await viewModel.loadDuckData() }
             }
+        }
+        .sheet(item: $llmConfigDuck) { item in
+            DuckLLMConfigSheet(
+                duckId: item.duckId,
+                duckName: item.duckName,
+                apiKey: item.apiKey,
+                baseUrl: item.baseUrl,
+                model: item.model,
+                onSave: { apiKey, baseUrl, model in
+                    Task {
+                        await viewModel.updateDuckLLMConfig(duckId: item.duckId, apiKey: apiKey, baseUrl: baseUrl, model: model)
+                        llmConfigDuck = nil
+                    }
+                },
+                onDismiss: { llmConfigDuck = nil }
+            )
         }
     }
 
@@ -287,7 +305,7 @@ struct DuckSettingsContent: View {
                     .padding()
             } else {
                 ForEach(viewModel.duckList, id: \.self.hashableKey) { duck in
-                    DuckRowView(duck: duck) { duckId, isLocal in
+                    DuckRowView(duck: duck, onDelete: { duckId, isLocal in
                         Task {
                             if isLocal {
                                 await viewModel.destroyLocalDuck(duckId: duckId)
@@ -295,7 +313,19 @@ struct DuckSettingsContent: View {
                                 await viewModel.removeDuck(duckId: duckId)
                             }
                         }
-                    }
+                    }, onStart: { duckId in
+                        Task { await viewModel.startLocalDuck(duckId: duckId) }
+                    }, onLLMConfig: { duckId in
+                        if let duck = viewModel.duckList.first(where: { ($0["duck_id"] as? String) == duckId }) {
+                            llmConfigDuck = LLMConfigDuckItem(
+                                duckId: duckId,
+                                duckName: duck["name"] as? String ?? duckId,
+                                apiKey: duck["llm_api_key"] as? String ?? "",
+                                baseUrl: duck["llm_base_url"] as? String ?? "",
+                                model: duck["llm_model"] as? String ?? ""
+                            )
+                        }
+                    })
                 }
             }
         }
@@ -598,9 +628,30 @@ private struct StatBadge: View {
     }
 }
 
+/// 分身 LLM 配置弹窗的数据项（Identifiable 供 sheet(item:) 使用）
+private struct LLMConfigDuckItem: Identifiable {
+    let id: String
+    let duckId: String
+    let duckName: String
+    let apiKey: String
+    let baseUrl: String
+    let model: String
+
+    init(duckId: String, duckName: String, apiKey: String, baseUrl: String, model: String) {
+        self.id = duckId
+        self.duckId = duckId
+        self.duckName = duckName
+        self.apiKey = apiKey
+        self.baseUrl = baseUrl
+        self.model = model
+    }
+}
+
 private struct DuckRowView: View {
     let duck: [String: Any]
     let onDelete: (String, Bool) -> Void
+    var onStart: ((String) -> Void)? = nil
+    var onLLMConfig: ((String) -> Void)? = nil
 
     var body: some View {
         let duckId = duck["duck_id"] as? String ?? ""
@@ -611,6 +662,7 @@ private struct DuckRowView: View {
         let completed = duck["completed_tasks"] as? Int ?? 0
         let failed = duck["failed_tasks"] as? Int ?? 0
         let hostname = duck["hostname"] as? String ?? ""
+        let showStartButton = isLocal && status == "offline"
 
         HStack(spacing: 10) {
             Circle()
@@ -643,6 +695,27 @@ private struct DuckRowView: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
+            if isLocal, let onLLM = onLLMConfig {
+                Button {
+                    onLLM(duckId)
+                } label: {
+                    Image(systemName: "cpu")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("LLM 配置")
+            }
+            if showStartButton, let start = onStart {
+                Button {
+                    start(duckId)
+                } label: {
+                    Text("启动")
+                        .font(CyberFont.body(size: 11, weight: .medium))
+                        .foregroundColor(CyberColor.cyan)
+                }
+                .buttonStyle(.plain)
+            }
             Button {
                 onDelete(duckId, isLocal)
             } label: {
@@ -655,6 +728,70 @@ private struct DuckRowView: View {
         .padding(10)
         .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
         .cornerRadius(6)
+    }
+}
+
+/// 分身 LLM 配置弹窗（用户手动填写 api_key、base_url、model）
+private struct DuckLLMConfigSheet: View {
+    let duckId: String
+    let duckName: String
+    let apiKey: String
+    let baseUrl: String
+    let model: String
+    let onSave: (String, String, String) -> Void
+    let onDismiss: () -> Void
+
+    @State private var editApiKey: String = ""
+    @State private var editBaseUrl: String = ""
+    @State private var editModel: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("分身 LLM 配置")
+                    .font(CyberFont.body(size: 16, weight: .semibold))
+                Spacer()
+                Button("关闭") { onDismiss() }
+                    .buttonStyle(.plain)
+            }
+            Text("为 \(duckName) 配置独立 LLM，使分身更有效运用大模型完成专项任务。")
+                .font(CyberFont.body(size: 12))
+                .foregroundColor(.secondary)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("API Key")
+                    .font(CyberFont.body(size: 11, weight: .medium))
+                TextField("sk-xxx", text: $editApiKey)
+                    .textFieldStyle(.roundedBorder)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Base URL")
+                    .font(CyberFont.body(size: 11, weight: .medium))
+                TextField("https://api.example.com/v1", text: $editBaseUrl)
+                    .textFieldStyle(.roundedBorder)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("模型名称")
+                    .font(CyberFont.body(size: 11, weight: .medium))
+                TextField("gpt-4o / deepseek-chat", text: $editModel)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            HStack {
+                Spacer()
+                Button("保存") {
+                    onSave(editApiKey, editBaseUrl, editModel)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(24)
+        .frame(minWidth: 360)
+        .onAppear {
+            editApiKey = apiKey
+            editBaseUrl = baseUrl
+            editModel = model
+        }
     }
 }
 

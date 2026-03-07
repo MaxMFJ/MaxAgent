@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from services.duck_protocol import (
     DuckInfo,
@@ -83,10 +83,16 @@ class DuckRegistry:
             info.status = DuckStatus.ONLINE
             existing = self._ducks.get(info.duck_id)
             if existing:
-                # 保留统计
+                # 保留统计与 LLM 配置（worker 重连时可能不携带 llm_config）
                 info.completed_tasks = existing.completed_tasks
                 info.failed_tasks = existing.failed_tasks
                 info.registered_at = existing.registered_at
+                if info.llm_api_key is None and existing.llm_api_key:
+                    info.llm_api_key = existing.llm_api_key
+                if info.llm_base_url is None and existing.llm_base_url:
+                    info.llm_base_url = existing.llm_base_url
+                if info.llm_model is None and existing.llm_model:
+                    info.llm_model = existing.llm_model
             self._ducks[info.duck_id] = info
             self._save_to_disk()
             logger.info(f"Duck registered: {info.duck_id} ({info.name})")
@@ -143,6 +149,22 @@ class DuckRegistry:
             duck.current_task_id = task_id
             duck.busy_reason = busy_reason if task_id else None
             duck.status = DuckStatus.BUSY if task_id else DuckStatus.ONLINE
+
+    async def update_llm_config(self, duck_id: str, **kwargs: Any) -> bool:
+        """更新分身 LLM 配置（用户手动填写），仅更新传入的字段。空字符串会清空该字段。"""
+        async with self._lock:
+            duck = self._ducks.get(duck_id)
+            if not duck:
+                return False
+            if "api_key" in kwargs:
+                duck.llm_api_key = kwargs["api_key"] or None
+            if "base_url" in kwargs:
+                duck.llm_base_url = kwargs["base_url"] or None
+            if "model" in kwargs:
+                duck.llm_model = kwargs["model"] or None
+            self._save_to_disk()
+            logger.info(f"Duck {duck_id} LLM config updated")
+            return True
 
     async def increment_completed(self, duck_id: str):
         duck = self._ducks.get(duck_id)
