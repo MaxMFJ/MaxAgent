@@ -30,6 +30,7 @@ from .rollback import router as rollback_router
 from .context import router as context_router
 from .duck_api import router as duck_api_router
 from .duck_ws import router as duck_ws_router
+from .runbooks import router as runbooks_router
 
 all_routers = [
     health_router,
@@ -60,4 +61,5 @@ all_routers = [
     context_router,
     duck_api_router,
     duck_ws_router,
+    runbooks_router,
 ]

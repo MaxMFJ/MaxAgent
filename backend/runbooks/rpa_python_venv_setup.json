@@ -1,0 +1,53 @@
+{
+  "id": "rpa_python_venv_setup",
+  "name": "Python 虚拟环境初始化",
+  "description": "在指定项目目录创建 Python 虚拟环境并安装 requirements.txt 依赖",
+  "category": "development",
+  "tags": ["python", "venv", "setup", "pip"],
+  "version": "1.0.0",
+  "author": "MaxAgent",
+  "source": "builtin",
+  "inputs": {
+    "project_path": {
+      "type": "string",
+      "description": "项目目录路径",
+      "default": "."
+    },
+    "venv_name": {
+      "type": "string",
+      "description": "虚拟环境名称",
+      "default": "venv"
+    }
+  },
+  "outputs": {
+    "venv_path": "创建的虚拟环境路径",
+    "activation_cmd": "激活命令"
+  },
+  "prerequisites": {
+    "python_version": ">=3.9"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "description": "创建 Python 虚拟环境",
+      "tool": "terminal",
+      "args": {
+        "action": "execute",
+        "command": "python3 -m venv {{inputs.project_path}}/{{inputs.venv_name}}"
+      },
+      "retry": 1,
+      "on_error": "abort"
+    },
+    {
+      "id": "step_2",
+      "description": "检查并安装 requirements.txt 依赖",
+      "tool": "terminal",
+      "args": {
+        "action": "execute",
+        "command": "[ -f {{inputs.project_path}}/requirements.txt ] && source {{inputs.project_path}}/{{inputs.venv_name}}/bin/activate && pip install -r {{inputs.project_path}}/requirements.txt || echo 'No requirements.txt found, skipping'"
+      },
+      "retry": 1,
+      "on_error": "continue"
+    }
+  ]
+}

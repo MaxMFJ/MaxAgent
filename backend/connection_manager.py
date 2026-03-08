@@ -78,6 +78,26 @@ class ConnectionManager:
                         del self._session_connections[session_id]
                 logger.info(f"Client disconnected: {client_id}")
 
+    async def update_session(self, client_id: str, new_session_id: str) -> bool:
+        """将指定客户端迁移到新 session，并更新 _session_connections 索引。
+        Returns True if the session was actually changed."""
+        async with self._lock:
+            if client_id not in self._connections:
+                return False
+            old_session_id = self._connections[client_id].session_id
+            if old_session_id == new_session_id:
+                return False
+            self._connections[client_id].session_id = new_session_id
+            if old_session_id in self._session_connections:
+                self._session_connections[old_session_id].discard(client_id)
+                if not self._session_connections[old_session_id]:
+                    del self._session_connections[old_session_id]
+            if new_session_id not in self._session_connections:
+                self._session_connections[new_session_id] = set()
+            self._session_connections[new_session_id].add(client_id)
+            logger.info(f"Client {client_id} session updated: {old_session_id} → {new_session_id}")
+            return True
+
     async def broadcast_to_session(self, session_id: str, message: dict, exclude_client: str = None):
         if session_id not in self._session_connections:
             return

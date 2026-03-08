@@ -1,0 +1,54 @@
+{
+  "id": "rpa_wechat_export_chat",
+  "name": "微信聊天记录导出",
+  "description": "通过 WeChatMsg 工具将微信聊天记录导出为 HTML/CSV（需要先在 Mac 端运行微信并开启 WeChatMsg）。",
+  "category": "wechat",
+  "tags": ["微信", "WeChat", "聊天记录", "导出", "backup"],
+  "inputs": [
+    {"name": "output_dir", "type": "string", "default": "~/Desktop/WeChat_Export", "description": "导出目录"}
+  ],
+  "outputs": [
+    {"name": "export_dir", "description": "导出文件所在目录"}
+  ],
+  "prerequisites": ["Mac 端微信已安装并登录，WeChatMsg 工具（自动安装）"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "检查微信数据库位置",
+      "description": "定位微信本地数据库文件",
+      "tool": "terminal",
+      "command": "ls ~/Library/Containers/com.tencent.xinWeChat/Data/Library/Application\\ Support/com.tencent.xinWeChat/2.0b4.0.9/Accounts/ 2>/dev/null | head -5 && echo '微信账户目录已找到'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "安装 WeChatMsg",
+      "description": "安装开源微信记录导出工具",
+      "tool": "terminal",
+      "command": "pip install WeChatMsg -q 2>/dev/null || pip3 install WeChatMsg -q 2>/dev/null; echo '如需使用 WeChatMsg 请参考：https://github.com/LC044/WeChatMsg'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_3",
+      "name": "创建导出目录",
+      "description": "创建导出目录",
+      "tool": "terminal",
+      "command": "mkdir -p $output_dir && echo '导出目录已就绪：$output_dir'",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_4",
+      "name": "说明手动步骤",
+      "description": "输出操作提示（微信需要手动授权）",
+      "tool": "terminal",
+      "command": "echo '===== 微信聊天记录导出说明 =====' && echo '1. 确保 Mac 微信已登录' && echo '2. 运行：python3 -m WeChatMsg（或使用 WeChatMsg GUI）' && echo '3. 导出结果将保存到：$output_dir' && echo '4. 注意：需要微信数据库访问权限（系统偏好设置 → 隐私 → 完全磁盘访问权限）'",
+      "on_error": "continue",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

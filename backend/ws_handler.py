@@ -17,7 +17,7 @@ from app_state import (
     get_server_status, get_agent_core, get_autonomous_agent,
     get_llm_client, session_stream_tasks,
     get_task_tracker, AutoTaskStatus, TaskType,
-    get_chat_runner,
+    get_chat_runner, AUTO_DELEGATE_WHEN_MAIN_BUSY,
 )
 from task_persistence import get_persistence_manager, PersistentTaskStatus
 from connection_manager import (
@@ -51,27 +51,333 @@ HEARTBEAT_INTERVAL = 30  # 服务端心跳间隔（秒）
 _duck_direct_chat_callbacks: dict[str, WebSocket] = {}
 
 
-# ============== Monitor Event Helper ==============
+# ─── Duck 完成自动续步钩子 ───────────────────────────────────────────────────
 
-async def broadcast_monitor_event(session_id: str, task_id: str, event: dict, task_type: str = "chat"):
+async def _run_agent_and_broadcast_result(
+    session_id: str,
+    prompt: str,
+    chat_runner,
+    task_id: str,
+    label: str = "Duck",
+) -> None:
+    """
+    运行主 Agent（带工具执行能力），收集完整响应后作为 duck_task_complete 广播。
+    解决：run_stream 产生的 chunk 消息在客户端空闲 WS 循环中无法被处理的问题。
+    agent 可在此过程中使用 write_file / terminal 等工具实际执行任务。
+    """
+    try:
+        full_text = ""
+        tool_calls_used: list[str] = []
+
+        async for chunk in chat_runner.run_stream(prompt, session_id=session_id):
+            ctype = chunk.get("type", "")
+            if ctype == "chunk":
+                full_text += chunk.get("content", "")
+            elif ctype == "tool_call":
+                tool_calls_used.append(chunk.get("tool_name", chunk.get("action_type", "")))
+            elif ctype in ("stream_end", "error"):
+                # 出错时保留已有文本
+                if ctype == "error":
+                    full_text += f"\n\n[错误：{chunk.get('error', '')}]"
+
+        # 生成广播内容
+        if not full_text.strip():
+            full_text = f"{label} 任务处理完成。"
+        if tool_calls_used:
+            tools_note = "（使用了工具：" + "、".join(dict.fromkeys(tool_calls_used)) + "）"
+            summary_content = f"{full_text}\n\n{tools_note}"
+        else:
+            summary_content = full_text
+
+        # 作为 duck_task_complete 发送（Mac 客户端在 idle 状态时能正确接收）
+        await connection_manager.broadcast_to_session(session_id, {
+            "type": "duck_task_complete",
+            "task_id": task_id,
+            "success": True,
+            "content": summary_content,
+            "session_id": session_id,
+            "duck_id": label,
+        })
+        logger.info(
+            f"[duck_hook] Broadcast final response for session {session_id} "
+            f"task {task_id} ({len(full_text)} chars, tools={tool_calls_used})"
+        )
+    except Exception as e:
+        logger.warning(f"[duck_hook] _run_agent_and_broadcast_result failed for {session_id}: {e}")
+
+
+async def _on_duck_task_complete(session_id: str, task) -> None:
+    """
+    Duck 子任务完成后的自动续步钩子。
+    主 Agent 根据上下文判断是否需要继续后续工作（如：设计师完成后交给 coder）。
+    条件：仅在 Duck 成功且主 Agent 当前不忙时触发。
+    注意：自主模式（_handle_delegate_duck）的任务有 callback，scheduler 层已跳过
+          _notify_session_duck_complete，故本钩子不会被自主模式触发。
+    """
+    from services.duck_protocol import TaskStatus
+
+    chat_runner = get_chat_runner()
+    if not chat_runner:
+        return  # Agent 未初始化
+
+    # 若主 Agent 正在忙于该 session 的其他任务，不插队
+    if is_main_agent_busy(session_id, "chat"):
+        return
+
+    duck_name = getattr(task, "assigned_duck_id", "Duck") or "Duck"
+    # 优先显示原始任务描述（而非 retry 增强描述）
+    original_desc = getattr(task, "original_description", None) or getattr(task, "description", "") or ""
+    desc_preview = original_desc[:80]
+
+    # ── 任务失败：通知主 Agent 亲自处理 ──────────────────────────────────────
+    if task.status == TaskStatus.FAILED:
+        error_msg = str(task.error or "未知错误")
+        try:
+            from agent.context_manager import context_manager as ctx_mgr_mod
+            ctx = ctx_mgr_mod.get_or_create(session_id)
+            workspace_hint = ctx.get_duck_workspace_hint()
+
+            failure_msg = (
+                f"[系统通知] Duck 子任务执行失败\n"
+                f"失败的 Duck：{duck_name}\n"
+                f"任务描述：{desc_preview}\n"
+                f"失败原因：{error_msg[:400]}\n"
+            )
+            if workspace_hint:
+                failure_msg += f"\n{workspace_hint}\n"
+            failure_msg += (
+                "\n⚡ **你现在必须亲自处理此任务**（Duck 已多次尝试失败）：\n"
+                "1. 如果是创建 HTML/代码/文档文件：**直接用 `write_file` 工具写入文件**，"
+                "不要再委派 Duck。HTML 文件可以用纯 `write_file` 创建，不需要任何库。\n"
+                "2. 如果需要运行脚本：用 `terminal` 直接执行 Python/Shell 命令。\n"
+                "3. 完成后向用户汇报实际文件路径。\n"
+                "⚠️ 禁止再次 delegate_duck 相同内容，必须用 write_file 或 terminal 完成。"
+            )
+
+            # 运行主 Agent（带工具执行），完成后广播最终响应给客户端
+            await _run_agent_and_broadcast_result(
+                session_id, failure_msg, chat_runner, task.task_id, label=duck_name
+            )
+        except Exception as e:
+            logger.warning(f"[duck_complete_hook] Failure notification failed for session {session_id}: {e}")
+        return
+
+    # ── 任务成功：自动续步 ───────────────────────────────────────────────────
+    if task.status != TaskStatus.COMPLETED:
+        return  # CANCELLED 等状态不处理
+
+    try:
+        # 从工作区获取所有 Duck 任务的产出（含当前已完成的）
+        from agent.context_manager import context_manager as ctx_mgr_mod
+        ctx = ctx_mgr_mod.get_or_create(session_id)
+        workspace_hint = ctx.get_duck_workspace_hint()
+
+        # 从输出中获取文件路径（方便后续步骤引用）
+        from services.duck_task_scheduler import get_task_scheduler
+        scheduler = get_task_scheduler()
+        file_paths = scheduler._extract_file_paths_from_output(task.output) if hasattr(scheduler, "_extract_file_paths_from_output") else []
+        paths_hint = ""
+        if file_paths:
+            paths_hint = "\n本次产出文件：" + ", ".join(f"`{p}`" for p in file_paths[:5])
+
+        # 检查是否有配套的设计规格文件（Designer Duck 会同时生成 _design_spec.md）
+        import os
+        design_spec_content = ""
+        for fp in file_paths:
+            spec_path = os.path.splitext(fp)[0] + "_design_spec.md"
+            if os.path.exists(spec_path):
+                try:
+                    with open(spec_path, "r", encoding="utf-8") as f:
+                        design_spec_content = f.read()[:2000]
+                    paths_hint += f"\n设计规格文件：`{spec_path}`"
+                except Exception:
+                    pass
+            # 也检查同目录下的 _design_spec.md
+            dir_spec = os.path.join(os.path.dirname(fp), "_design_spec.md")
+            if os.path.exists(dir_spec) and not design_spec_content:
+                try:
+                    with open(dir_spec, "r", encoding="utf-8") as f:
+                        design_spec_content = f.read()[:2000]
+                    paths_hint += f"\n设计规格文件：`{dir_spec}`"
+                except Exception:
+                    pass
+
+        output_str = str(task.output or "")
+
+        continuation_msg = (
+            f"[系统自动续步] {duck_name} 子任务已完成：{desc_preview}{paths_hint}\n"
+            f"输出摘要：{output_str[:300]}{'...' if len(output_str) > 300 else ''}\n"
+        )
+
+        # 如果有设计规格内容，注入续步消息让 Coder Duck 直接使用
+        if design_spec_content:
+            continuation_msg += (
+                f"\n📐 **设计规格（供 Coder Duck 直接使用，无需截图看设计图）：**\n"
+                f"{design_spec_content}\n"
+            )
+
+        if workspace_hint:
+            continuation_msg += f"\n{workspace_hint}\n"
+        continuation_msg += (
+            "\n请根据上述工作区产出和对话上下文判断：\n"
+            "1. 若还有待执行的下一步任务（如把设计图交给 coder Duck 制作 HTML），"
+            "请**立即调用 delegate_duck** 并在 description 中：\n"
+            "   - 明确引用相关文件的完整路径\n"
+            "   - 如果有设计规格内容，必须将完整的设计规格（配色、布局、组件等）附在 description 中，"
+            "这样 Coder Duck 无需截图即可直接实现\n"
+            "2. 若所有步骤均已完成，向用户汇报最终产出（列出所有文件路径）。\n"
+            "⚠️ 在 delegate_duck 的 description 中，必须明确写出需要参考的文件完整路径，"
+            "不能只说「参考设计图」，要说「参考 /Users/xxx/Desktop/xxx.png」。"
+        )
+
+        # 运行主 Agent（带工具执行），完成后广播最终响应给客户端
+        await _run_agent_and_broadcast_result(
+            session_id, continuation_msg, chat_runner, task.task_id, label=duck_name
+        )
+    except Exception as e:
+        logger.warning(f"[duck_complete_hook] Auto-resume failed for session {session_id}: {e}")
+
+
+# ─── 注册钩子（模块加载时执行）────────────────────────────────────────────────
+def _register_duck_hooks():
+    try:
+        from services.duck_task_scheduler import register_duck_complete_hook
+        register_duck_complete_hook(_on_duck_task_complete)
+        logger.info("Registered duck_complete auto-resume hook")
+    except Exception as e:
+        logger.warning(f"Failed to register duck_complete hook: {e}")
+
+_register_duck_hooks()
+
+
+# ============== Busy Check Helper ==============
+
+def is_main_agent_busy(session_id: str, task_type: Optional[str] = None) -> bool:
+    """
+    判断主 Agent 当前是否正在执行该 session 的任务。
+
+    task_type:
+        "chat"       — 仅检查 chat 流任务
+        "autonomous" — 仅检查 autonomous 任务
+        None         — 两者均检查（任一忙即返回 True）
+    """
+    tracker = get_task_tracker()
+
+    if task_type in (None, "chat"):
+        stream_task = session_stream_tasks.get(session_id)
+        if stream_task and not stream_task.done():
+            return True
+        chat_tt = tracker.get_by_session(session_id, task_type=TaskType.CHAT)
+        if chat_tt and chat_tt.status == AutoTaskStatus.RUNNING:
+            return True
+
+    if task_type in (None, "autonomous"):
+        auto_tt = tracker.get_by_session(session_id, task_type=TaskType.AUTONOMOUS)
+        if auto_tt and auto_tt.status == AutoTaskStatus.RUNNING:
+            return True
+
+    return False
+
+
+async def _try_auto_delegate(
+    description: str,
+    session_id: str,
+    websocket: WebSocket,
+    notify_type: str,
+) -> bool:
+    """
+    若 AUTO_DELEGATE_WHEN_MAIN_BUSY 已开启且有空闲 Duck，
+    将任务自动委派给 Duck 并通知前端。
+
+    返回 True 表示已成功委派（调用方应跳过主 Agent 执行）；
+    返回 False 表示无法委派（调用方继续走原有逻辑）。
+    """
+    if not AUTO_DELEGATE_WHEN_MAIN_BUSY:
+        return False
+    try:
+        from services.duck_registry import DuckRegistry
+        from services.duck_task_scheduler import get_task_scheduler, ScheduleStrategy
+        registry = DuckRegistry.get_instance()
+        await registry.initialize()
+        available = await registry.list_available()
+        if not available:
+            logger.info(
+                f"AUTO_DELEGATE: main busy but no available Duck for session={session_id}, "
+                "falling back to cancelling current task"
+            )
+            return False
+        scheduler = get_task_scheduler()
+        duck_task = await scheduler.submit(
+            description=description,
+            task_type="general",
+            strategy=ScheduleStrategy.SINGLE,
+            source_session_id=session_id,
+        )
+        logger.info(
+            f"AUTO_DELEGATE: new {notify_type} task auto-delegated to Duck "
+            f"(duck_task_id={duck_task.task_id}, session={session_id})"
+        )
+        await safe_send_json(websocket, {
+            "type": "auto_delegated_to_duck",
+            "notify_type": notify_type,
+            "duck_task_id": duck_task.task_id,
+            "session_id": session_id,
+            "message": "主 Agent 正忙，任务已自动转交给分身 Duck 执行",
+            "auto_delegated": True,
+        })
+        return True
+    except Exception as e:
+        logger.warning(f"AUTO_DELEGATE: failed to delegate, falling back: {e}")
+        return False
+
+
+
+
+async def broadcast_monitor_event(
+    session_id: str,
+    task_id: str,
+    event: dict,
+    task_type: str = "chat",
+    worker_type: str = "main",
+    worker_id: str = "main",
+):
     """
     广播监控事件给所有客户端（用于全局监控面板）。
-    
+
     Args:
         session_id: 会话 ID
         task_id: 任务 ID
         event: 事件数据 (包含 type 字段)
-        task_type: 任务类型 ("chat" 或 "autonomous")
+        task_type: 任务类型 ("chat" / "autonomous" / "duck" / "runbook")
+        worker_type: 执行者类型 ("main" / "local_duck" / "remote_duck")
+        worker_id: 执行者 ID ("main" 或 duck_id)
     """
+    # 向 inner event 注入执行者信息，前端通过 event["_worker_type"] 等字段展示"谁在做"
+    enriched_event = dict(event)
+    enriched_event["_worker_type"] = worker_type
+    enriched_event["_worker_id"] = worker_id
+    enriched_event["task_type"] = task_type  # 注入 task_type，让前端 applyMonitorEvent 能识别 duck task
+    if worker_type == "main":
+        enriched_event["_worker_label"] = "主Agent"
+    elif worker_type in ("local_duck", "remote_duck"):
+        enriched_event["_worker_label"] = f"Duck[{worker_id}]"
+    else:
+        enriched_event["_worker_label"] = worker_id
+
     monitor_event = {
         "type": "monitor_event",
         "source_session": session_id,
         "task_id": task_id,
         "task_type": task_type,
-        "event": event,
+        "worker_type": worker_type,
+        "worker_id": worker_id,
+        "event": enriched_event,
     }
     event_type = event.get("type", "unknown")
-    logger.debug(f"Broadcasting monitor_event: type={event_type}, task_id={task_id}, task_type={task_type}")
+    logger.debug(
+        f"Broadcasting monitor_event: type={event_type}, task_id={task_id}, "
+        f"task_type={task_type}, worker={worker_type}:{worker_id}"
+    )
     await connection_manager.broadcast_all(monitor_event)
 
 
@@ -206,6 +512,13 @@ async def _handle_chat(
         except Exception as _e:
             logger.warning(f"Failed to push error notification: {_e}")
         return session_id
+
+    # ── 主 Agent 忙时自动委派给 Duck（缺陷修复：5.1）────────────────────────
+    if is_main_agent_busy(session_id, "chat"):
+        delegated = await _try_auto_delegate(content, session_id, websocket, "chat")
+        if delegated:
+            return session_id
+        # 无可用 Duck：回退到旧行为（cancel 旧 chat 任务，由主 Agent 执行新任务）
 
     if session_id in session_stream_tasks:
         old_task = session_stream_tasks[session_id]
@@ -470,7 +783,10 @@ async def _autonomous_task_worker(
             await connection_manager.broadcast_to_session(session_id, chunk)
             
             # 广播监控事件给所有客户端（用于全局监控面板）
-            await broadcast_monitor_event(session_id, task_id, chunk, task_type="autonomous")
+            # 跳过已经通过 session 广播的 llm_request_end 事件，避免客户端重复显示
+            chunk_type = chunk.get("type", "")
+            if chunk_type not in ("llm_request_start", "llm_request_end"):
+                await broadcast_monitor_event(session_id, task_id, chunk, task_type="autonomous")
 
             chunk_type = chunk.get("type")
             if chunk_type == "error":
@@ -640,6 +956,13 @@ async def _handle_autonomous_task(
         except Exception as _e:
             logger.warning(f"Failed to push error notification: {_e}")
         return
+
+    # ── 主 Agent 忙时自动委派给 Duck（缺陷修复：5.1）────────────────────────
+    if is_main_agent_busy(session_id, "autonomous"):
+        delegated = await _try_auto_delegate(task, session_id, websocket, "autonomous")
+        if delegated:
+            return
+        # 无可用 Duck：回退到旧行为（TaskTracker.register 会自动 cancel 旧任务）
 
     task_id = str(uuid.uuid4())[:8]
     tracker = get_task_tracker()
@@ -1239,7 +1562,12 @@ async def websocket_endpoint(
 
             elif msg_type == "chat":
                 new_sid = await _handle_chat(message, websocket, current_session_id, actual_client_id, actual_client_type)
-                if new_sid:
+                if new_sid and new_sid != current_session_id:
+                    # 当 chat 消息携带不同 session_id 时，同步更新 connection_manager 的 session 注册，
+                    # 确保 broadcast_to_session 能正确路由 duck_task_complete 等异步通知
+                    await connection_manager.update_session(actual_client_id, new_sid)
+                    current_session_id = new_sid
+                elif new_sid:
                     current_session_id = new_sid
 
             elif msg_type == "ping":

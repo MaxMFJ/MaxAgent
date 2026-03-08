@@ -112,9 +112,13 @@ private struct TaskListRow: View {
                         .font(CyberFont.mono(size: 10))
                         .foregroundColor(CyberColor.textPrimary)
                         .lineLimit(2)
-                    Text("\(data.actionLogs.count) 步")
-                        .font(CyberFont.mono(size: 9))
-                        .foregroundColor(CyberColor.textSecond)
+                    HStack(spacing: 4) {
+                        // 执行者标签
+                        ActorBadge(workerType: data.workerType, workerLabel: data.workerLabel)
+                        Text("\(data.actionLogs.count) 步")
+                            .font(CyberFont.mono(size: 9))
+                            .foregroundColor(CyberColor.textSecond)
+                    }
                 }
                 Spacer()
             }
@@ -151,10 +155,15 @@ private struct ActiveTaskListRow: View {
                 Circle()
                     .fill(item.status == "running" ? CyberColor.orange : CyberColor.textSecond)
                     .frame(width: 6, height: 6)
-                Text((item.description.isEmpty ? item.taskId : item.description).prefix(30).description + (item.description.count > 30 ? "…" : ""))
-                    .font(CyberFont.mono(size: 10))
-                    .foregroundColor(CyberColor.textPrimary)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text((item.description.isEmpty ? item.taskId : item.description).prefix(30).description + (item.description.count > 30 ? "…" : ""))
+                        .font(CyberFont.mono(size: 10))
+                        .foregroundColor(CyberColor.textPrimary)
+                        .lineLimit(2)
+                    if let workerLabel = item.workerLabel, !workerLabel.isEmpty {
+                        ActorBadge(workerType: item.workerType ?? "main", workerLabel: workerLabel)
+                    }
+                }
                 Spacer()
             }
             .padding(8)
@@ -162,6 +171,49 @@ private struct ActiveTaskListRow: View {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - 执行者徽章（Actor Badge）
+
+/// 显示"谁在做"的小标签：主Agent / Duck[xxx] / RPA
+struct ActorBadge: View {
+    let workerType: String
+    let workerLabel: String
+
+    private var badgeColor: Color {
+        switch workerType {
+        case "local_duck", "remote_duck": return CyberColor.purple
+        case "runbook": return CyberColor.orange
+        default: return CyberColor.cyan
+        }
+    }
+
+    private var iconName: String {
+        switch workerType {
+        case "local_duck", "remote_duck": return "bird"
+        case "runbook": return "doc.text.fill"
+        default: return "brain.head.profile"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: iconName)
+                .font(.system(size: 7))
+                .foregroundColor(badgeColor)
+            Text(workerLabel)
+                .font(CyberFont.mono(size: 8))
+                .foregroundColor(badgeColor)
+        }
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(badgeColor.opacity(0.15))
+        .cornerRadius(3)
+        .overlay(
+            RoundedRectangle(cornerRadius: 3)
+                .stroke(badgeColor.opacity(0.4), lineWidth: 0.5)
+        )
     }
 }
 

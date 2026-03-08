@@ -43,6 +43,15 @@ class ScheduleStrategy:
 # ─── 结果回调类型 ──────────────────────────────────────
 ResultCallback = Callable[[DuckTask], Coroutine[Any, Any, None]]
 
+# ─── 全局 Duck 完成钩子（由 ws_handler 注册，避免循环导入）──────────────────
+# 签名：async def hook(session_id: str, task: DuckTask) -> None
+_duck_complete_hooks: list[Callable] = []
+
+def register_duck_complete_hook(hook: Callable) -> None:
+    """注册 Duck 任务完成后的全局钩子（如 ws_handler 用于触发主 Agent 续步）"""
+    if hook not in _duck_complete_hooks:
+        _duck_complete_hooks.append(hook)
+
 
 class DuckTaskScheduler:
     """Duck 任务调度引擎 (单例)"""
@@ -191,6 +200,7 @@ class DuckTaskScheduler:
         """把任务发送给指定 Duck（自动识别本地/远程）"""
         task.assigned_duck_id = duck_id
         task.assigned_at = time.time()
+        task.last_activity = time.time()
         task.status = TaskStatus.ASSIGNED
         self._persist_task(task)
 
@@ -221,8 +231,9 @@ class DuckTaskScheduler:
             self._persist_task(task)
             return
 
-        # 启动超时计时
-        handle = asyncio.create_task(self._timeout_watcher(task.task_id, task.timeout))
+        # 启动超时计时（留出 120s 缓冲，避免与 worker 内部 smart-timeout 竞争）
+        watcher_timeout = task.timeout + 120
+        handle = asyncio.create_task(self._timeout_watcher(task.task_id, watcher_timeout))
         self._timeout_handles[task.task_id] = handle
 
         logger.info(f"Task {task.task_id} assigned to duck {duck_id}")
@@ -271,13 +282,29 @@ class DuckTaskScheduler:
         if handle:
             handle.cancel()
 
-        # 更新 registry
+        # ── 自动重试判断（在释放 Duck 之前决定，避免 UI 状态闪烁）──────────────────
+        should_retry = not result.success and task.retry_count < task.max_retries
+
+        # 更新 Duck 注册表
         registry = DuckRegistry.get_instance()
-        await registry.set_current_task(duck_id, None)
         if result.success:
+            await registry.set_current_task(duck_id, None)   # 成功：释放 Duck
             await registry.increment_completed(duck_id)
+        elif should_retry:
+            await registry.increment_failed(duck_id)          # 重试：保持 BUSY，不释放
         else:
+            await registry.set_current_task(duck_id, None)   # 最终失败：释放 Duck
             await registry.increment_failed(duck_id)
+
+        # ── 工作流级自动重试 ──────────────────────────────────────────────────────
+        if should_retry:
+            session_id_for_retry = self._task_sessions.get(result.task_id)
+            await self._auto_retry_task(task, result, duck_id, session_id_for_retry)
+            logger.info(
+                f"Task {task.task_id} scheduled for auto-retry "
+                f"({task.retry_count}/{task.max_retries}), duck_id={duck_id}"
+            )
+            return  # 跳过 callback / notify，等待重试结果
 
         self._persist_task(task)
 
@@ -285,8 +312,9 @@ class DuckTaskScheduler:
         if task.parent_task_id:
             await self._check_parent_completion(task.parent_task_id)
 
-        # 触发回调
+        # 触发回调（自主模式通过 Future 回调驱动续步）
         cb = self._callbacks.pop(result.task_id, None)
+        has_callback = cb is not None
         if cb:
             try:
                 await cb(task)
@@ -294,11 +322,187 @@ class DuckTaskScheduler:
                 logger.error(f"Task callback error: {e}")
 
         # 委派来源会话：子 Duck 完成后主动通知用户（主 Agent 接入对话）
+        # 有 callback 的任务由自主模式 Future 驱动续步，跳过 webhook 续步避免重复执行
         session_id = self._task_sessions.pop(result.task_id, None)
-        if session_id:
+        if session_id and not has_callback:
             await self._notify_session_duck_complete(session_id, task, result)
 
         logger.info(f"Task {task.task_id} completed: success={result.success}")
+
+    async def _auto_retry_task(
+        self,
+        task: DuckTask,
+        result: DuckResultPayload,
+        failed_duck_id: str,
+        session_id: Optional[str],
+    ):
+        """
+        调度器层面的工作流自动重试。
+        - 每次用更具体的执行指令增强任务描述
+        - 重新调度给同类型的可用 Duck
+        - 最多重试 task.max_retries 次，耗尽后由主 Agent 接管
+        """
+        import os
+        # ── 检查前一次执行是否已经产出了目标文件 ──────────────────────────────
+        # 如果上次执行虽然超时/失败但已经写入了文件，视为部分成功，不再重试
+        prev_output = str(result.output or "")
+        prev_files = self._extract_file_paths_from_output(prev_output)
+        if prev_files:
+            # 有实际产出文件存在，将任务标记为成功完成
+            logger.info(
+                f"Task {task.task_id} failed but output files exist: {prev_files}, "
+                "treating as success (partial completion)"
+            )
+            task.output = prev_output
+            task.error = None
+            task.status = TaskStatus.COMPLETED
+            self._persist_task(task)
+
+            # 释放 Duck
+            registry = DuckRegistry.get_instance()
+            await registry.set_current_task(failed_duck_id, None)
+            await registry.increment_completed(failed_duck_id)
+
+            # 触发回调和通知
+            cb = self._callbacks.pop(task.task_id, None)
+            has_callback = cb is not None
+            if cb:
+                try:
+                    await cb(task)
+                except Exception as e:
+                    logger.error(f"Task callback error (partial completion): {e}")
+
+            sid = self._task_sessions.pop(task.task_id, None)
+            if sid and not has_callback:
+                fake_result = DuckResultPayload(
+                    task_id=task.task_id, success=True,
+                    output=prev_output, error=None,
+                )
+                await self._notify_session_duck_complete(sid, task, fake_result)
+            return
+
+        # 保存原始任务描述（仅第一次）
+        if task.original_description is None:
+            task.original_description = task.description
+
+        # 记录本次失败
+        task.retry_errors.append((task.error or "未知错误")[:400])
+        task.retry_count += 1
+
+        error_summary = " → ".join(task.retry_errors)
+
+        if task.retry_count == 1:
+            retry_instruction = (
+                "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，"
+                "不要先描述计划。必须使用 write_file 或 run_shell 完成任务。"
+            )
+        else:
+            retry_instruction = (
+                f"【第{task.retry_count}次自动重试】已多次失败，请彻底换一种方式：\n"
+                "① run_shell 安装所需依赖（pip install xxx）；\n"
+                "② write_file 把脚本写到 /tmp/retry_task.py；\n"
+                "③ run_shell 执行脚本并确认输出文件存在。\n"
+                "禁止再次只输出描述/分析，必须通过工具调用完成。"
+            )
+
+        enhanced_desc = (
+            f"{retry_instruction}\n"
+            f"历史失败原因：{error_summary[:300]}\n\n"
+            f"原始任务：{task.original_description}"
+        )
+
+        # 重置任务状态（准备重新调度）
+        task.status = TaskStatus.PENDING
+        task.assigned_duck_id = None
+        task.output = None
+        task.error = None
+        task.description = enhanced_desc
+        task.assigned_at = None
+        self._persist_task(task)
+
+        # 保留 session_id 以供重试结果通知使用
+        if session_id:
+            self._task_sessions[task.task_id] = session_id
+
+        logger.info(
+            f"Auto-retry: task={task.task_id} attempt={task.retry_count}/{task.max_retries} "
+            f"duck={failed_duck_id} session={session_id}"
+        )
+
+        # 第1次重试时：异步通知主 Agent（fire-and-forget，不阻塞重试流程）
+        if task.retry_count == 1 and session_id:
+            asyncio.create_task(
+                self._notify_main_agent_retry(session_id, task, failed_duck_id, error_summary)
+            )
+
+        # 直接重新分配给同一 Duck（duck 保持 BUSY，不再搜索空闲 duck）
+        await self._assign_to_duck(task, failed_duck_id)
+
+    async def _notify_main_agent_retry(
+        self,
+        session_id: str,
+        task: "DuckTask",
+        duck_id: str,
+        error_summary: str,
+    ):
+        """
+        第1次自动重试时通知主 Agent（信息性，不中断重试流程）。
+        主 Agent 可继续等待，也可主动 delegate_duck 覆盖本次自动重试。
+        """
+        try:
+            from connection_manager import connection_manager
+            desc_preview = (task.original_description or task.description or "")[:80]
+            notify_content = (
+                f"[系统通知] 🔄 自动重试中（第{task.retry_count}次/共{task.max_retries}次）\n"
+                f"Duck：{duck_id}\n"
+                f"任务：{desc_preview}...\n"
+                f"失败原因：{error_summary[:200]}\n"
+                f"已用更强的执行指令自动重新委派，请等待结果。\n"
+                f"如有更具体方案（如指定依赖版本、脚本路径），可直接 delegate_duck 重新委派以覆盖本次重试。"
+            )
+            msg = {
+                "type": "duck_task_retry",
+                "task_id": task.task_id,
+                "retry_count": task.retry_count,
+                "max_retries": task.max_retries,
+                "content": notify_content,
+                "session_id": session_id,
+            }
+            await connection_manager.broadcast_to_session(session_id, msg)
+        except Exception as e:
+            logger.warning(f"[auto_retry] Failed to notify main agent: {e}")
+
+    @staticmethod
+    def _extract_file_paths_from_output(output: any) -> list:
+        """
+        从 Duck 输出中提取文件路径列表。
+        扫描字符串中绝对路径（/Users/、/tmp/ 等），兼容 dict/str 输出。
+        """
+        import re
+        text = ""
+        if isinstance(output, str):
+            text = output
+        elif isinstance(output, dict):
+            import json
+            try:
+                text = json.dumps(output, ensure_ascii=False)
+            except Exception:
+                text = str(output)
+        elif output is not None:
+            text = str(output)
+
+        # 匹配绝对路径，支持常见文件扩展名
+        pattern = r'(/(?:Users|tmp|var|home)/[^\s"\'\\,，；；、\]\)>]+\.(?:html?|py|md|txt|json|png|jpg|jpeg|gif|webp|pdf|csv|js|ts|css|sh|yaml|yml|xml|zip))'
+        paths = re.findall(pattern, text, re.IGNORECASE)
+        # 去重 + 校验文件真实存在（避免误报 action plan 中「计划」路径）
+        import os
+        seen: set = set()
+        result = []
+        for p in paths:
+            if p not in seen and os.path.exists(p):
+                seen.add(p)
+                result.append(p)
+        return result
 
     async def _notify_session_duck_complete(
         self, session_id: str, task: DuckTask, result: DuckResultPayload
@@ -306,6 +510,7 @@ class DuckTaskScheduler:
         """
         子 Duck 完成后，向委派来源会话广播 duck_task_complete，主 Agent 主动联系用户。
         同时将结果写入对话上下文，便于后续对话引用。
+        Duck 创建的文件路径自动注入主 session 的 created_files，确保后续对话系统提示包含路径。
         """
         try:
             from connection_manager import connection_manager
@@ -318,22 +523,57 @@ class DuckTaskScheduler:
                 if duck_info:
                     duck_label = f"{duck_info.duck_type.value} Duck"
 
-            desc_preview = (task.description or "")[:80]
-            if len((task.description or "")) > 80:
+            # 优先使用原始任务描述（避免展示 retry 增强描述）
+            original_desc = task.original_description or task.description or ""
+            desc_preview = original_desc[:80]
+            if len(original_desc) > 80:
                 desc_preview += "..."
+
+            ctx_mgr = context_manager.get_or_create(session_id)
 
             if result.success:
                 output_str = str(task.output) if task.output is not None else ""
-                if len(output_str) > 500:
-                    output_str = output_str[:500] + "..."
+                # 提取 Duck 创建的文件路径，注入主 session created_files（让系统提示携带路径）
+                created_paths = self._extract_file_paths_from_output(task.output)
+                for p in created_paths:
+                    ctx_mgr.add_created_file(p)
+                    logger.info(f"Duck task: registered created file to session {session_id}: {p}")
+
+                # 将 Duck 产出写入工作区（供后续 Duck/主 Agent 引用）
+                ctx_mgr.add_duck_output(
+                    task_id=task.task_id,
+                    duck_type=duck_label,
+                    duck_id=task.assigned_duck_id or "",
+                    description_preview=desc_preview,
+                    file_paths=created_paths,
+                    summary=output_str[:300],
+                )
+
+                # 构建通知内容，优先显示文件路径
+                if created_paths:
+                    paths_hint = "\n".join(f"- `{p}`" for p in created_paths)
+                    output_display = (
+                        f"已创建以下文件：\n{paths_hint}\n\n"
+                        + (output_str[:800] + "...[已截断]" if len(output_str) > 800 else output_str)
+                    )
+                else:
+                    output_display = output_str[:1000] + ("...[已截断]" if len(output_str) > 1000 else "")
+
                 content = (
                     f"{duck_label} 已完成任务：{desc_preview}\n\n"
-                    f"**执行结果：**\n{output_str}"
+                    f"**执行结果：**\n{output_display}"
                 )
             else:
+                retry_hint = ""
+                if task.retry_count > 0:
+                    retry_hint = f"（已自动重试 {task.retry_count} 次）"
                 content = (
-                    f"{duck_label} 任务失败：{desc_preview}\n\n"
-                    f"**错误信息：** {task.error or '未知错误'}"
+                    f"{duck_label} 任务失败{retry_hint}：{desc_preview}\n\n"
+                    f"**错误信息：** {task.error or '未知错误'}\n\n"
+                    f"**建议处理方式：**\n"
+                    f"- Duck 已多次尝试仍失败，请**自己使用工具**直接完成此任务\n"
+                    f"- 对于 HTML/代码文件：直接用 `write_file` 创建，无需依赖外部库\n"
+                    f"- 原始任务：{original_desc[:200]}"
                 )
 
             msg = {
@@ -348,8 +588,14 @@ class DuckTaskScheduler:
             await connection_manager.broadcast_to_session(session_id, msg)
 
             # 写入对话上下文，便于后续对话引用
-            ctx_mgr = context_manager.get_or_create(session_id)
             ctx_mgr.add_message("assistant", content)
+
+            # 触发全局 Duck 完成钩子（如 ws_handler 自动续步逻辑）
+            for hook in _duck_complete_hooks:
+                try:
+                    await hook(session_id, task)
+                except Exception as _hook_err:
+                    logger.warning(f"duck_complete_hook error: {_hook_err}")
         except Exception as e:
             logger.warning(f"Failed to notify session for duck task complete: {e}")
 
@@ -490,6 +736,12 @@ class DuckTaskScheduler:
 
     async def get_task(self, task_id: str) -> Optional[DuckTask]:
         return self._tasks.get(task_id)
+
+    def update_task_activity(self, task_id: str) -> None:
+        """更新任务最后活跃时间（由 worker 在每个 chunk 产出时调用）"""
+        task = self._tasks.get(task_id)
+        if task and task.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING):
+            task.last_activity = time.time()
 
     async def list_tasks(
         self,

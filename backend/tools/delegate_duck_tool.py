@@ -64,6 +64,22 @@ class DelegateDuckTool(BaseTool):
             from services.duck_task_scheduler import get_task_scheduler
             from services.duck_protocol import DuckType, TaskStatus
 
+            # ── 串行保护：同一会话如果已有活跃 Duck 任务，拒绝新的委派 ──
+            from agent.terminal_session import get_current_session_id as _get_sid
+            _cur_session = _get_sid() or "default"
+            scheduler_pre = get_task_scheduler()
+            for _tid, _sid in list(scheduler_pre._task_sessions.items()):
+                if _sid == _cur_session:
+                    _t = scheduler_pre._tasks.get(_tid)
+                    if _t and _t.status in (TaskStatus.PENDING, TaskStatus.ASSIGNED):
+                        return ToolResult(
+                            success=False,
+                            error=(
+                                f"当前会话已有活跃 Duck 任务（{_t.task_id[:8]}…），请等待其完成后再委派新任务。"
+                                "Duck 完成后系统会自动通知你，届时可继续委派下一步。"
+                            ),
+                        )
+
             duck_type = kwargs.get("duck_type")
             dt = None
             if duck_type:
@@ -91,7 +107,7 @@ class DelegateDuckTool(BaseTool):
                 task_type="general",
                 params={},
                 priority=0,
-                timeout=300,
+                timeout=1800,
                 strategy="single",
                 target_duck_id=None,
                 target_duck_type=dt,

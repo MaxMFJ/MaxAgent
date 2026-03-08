@@ -172,14 +172,36 @@ class ScreenshotTool(BaseTool):
     async def _encode_and_return(
         self, save_path: str, area: str = "full", app_name: Optional[str] = None
     ) -> ToolResult:
-        """读取图片、转 base64 并返回结果"""
+        """读取图片、压缩并转 base64 返回结果（限制 base64 < 900KB 防止 WebSocket 超限）"""
         if not os.path.exists(save_path):
             return ToolResult(success=False, error="截图文件不存在")
         file_size = os.path.getsize(save_path)
         image_base64 = None
+        mime_type = "image/png"
         try:
-            with open(save_path, "rb") as f:
-                image_base64 = base64.b64encode(f.read()).decode("utf-8")
+            import io
+            try:
+                from PIL import Image
+                with Image.open(save_path) as img:
+                    # 限制最大边长 1920px，避免 Retina 超大分辨率
+                    max_side = 1920
+                    if img.width > max_side or img.height > max_side:
+                        img.thumbnail((max_side, max_side), Image.LANCZOS)
+                    # 转 JPEG 大幅减小体积（质量 75 通常比原始 PNG 小 70-80%）
+                    buf = io.BytesIO()
+                    img.convert("RGB").save(buf, format="JPEG", quality=75, optimize=True)
+                    compressed_bytes = buf.getvalue()
+                    image_base64 = base64.b64encode(compressed_bytes).decode("utf-8")
+                    mime_type = "image/jpeg"
+                    logger.info(
+                        f"Screenshot compressed: PNG {file_size/1024:.0f}KB → JPEG {len(compressed_bytes)/1024:.0f}KB "
+                        f"(base64 {len(image_base64)/1024:.0f}KB)"
+                    )
+            except ImportError:
+                # Pillow 未安装，回退使用原始 PNG
+                with open(save_path, "rb") as f:
+                    image_base64 = base64.b64encode(f.read()).decode("utf-8")
+                logger.warning("Pillow not installed; using uncompressed PNG for screenshot")
         except Exception as e:
             logger.warning(f"Failed to encode screenshot: {e}")
         result_data = {
@@ -190,7 +212,7 @@ class ScreenshotTool(BaseTool):
             result_data["app_name"] = app_name
         if image_base64:
             result_data["image_base64"] = image_base64
-            result_data["mime_type"] = "image/png"
+            result_data["mime_type"] = mime_type
         return ToolResult(success=True, data=result_data)
     
     async def _ocr(self, image_path: str) -> ToolResult:

@@ -327,6 +327,19 @@ class AgentCore:
         base_max = 4096 if intent_result.tier == QueryTier.SIMPLE else 32768
         cfg_max = getattr(self.llm.config, "max_tokens", None) or 0
         stream_max_tokens = max(base_max, cfg_max) if cfg_max > 0 else base_max
+        # 按模型实际上限收窄（避免超出模型限制导致 400 错误）
+        _MODEL_MAX_TOKENS: dict = {
+            "deepseek-chat": 8192,
+            "deepseek-reasoner": 8000,
+            "deepseek-coder": 8192,
+        }
+        _current_model = (self.llm.config.model or "").lower()
+        for _model_key, _model_limit in _MODEL_MAX_TOKENS.items():
+            if _model_key in _current_model:
+                if stream_max_tokens > _model_limit:
+                    logger.info(f"Capping max_tokens from {stream_max_tokens} to {_model_limit} for model {_current_model}")
+                    stream_max_tokens = _model_limit
+                break
         logger.info(f"Query tier={intent_result.tier.value} -> max_tokens={stream_max_tokens}")
         
         # 本地模型不传递 tools（通过 prompt 描述工具）

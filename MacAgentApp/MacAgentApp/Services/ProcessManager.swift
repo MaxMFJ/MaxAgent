@@ -18,6 +18,8 @@ class ProcessManager: ObservableObject {
     @Published var isOllamaRunning = false
     @Published var backendLogs: [LogEntry] = []
     @Published var ollamaLogs: [LogEntry] = []
+    /// 首次启动时 Homebrew 未安装，需要提示用户手动安装（仅当未与服务器连接时展示）
+    @Published var showHomebrewAlert: Bool = false
     
     var onBackendStarted: (() -> Void)?
     
@@ -213,6 +215,16 @@ class ProcessManager: ObservableObject {
         guard FileManager.default.fileExists(atPath: startScript) else {
             addLog(to: &backendLogs, message: "start.sh not found at: \(backendPath)", level: .error)
             return
+        }
+        
+        // Homebrew 检测：若未安装且首次运行（无 .backend_setup_done），弹窗提示
+        let brewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
+        let brewAvailable = brewPaths.contains { FileManager.default.fileExists(atPath: $0) }
+        let setupDoneMarker = (backendPath as NSString).appendingPathComponent(".backend_setup_done")
+        let isFirstRun = !FileManager.default.fileExists(atPath: setupDoneMarker)
+        if !brewAvailable && isFirstRun {
+            addLog(to: &backendLogs, message: "[SETUP] Homebrew 未安装，MCP服务器/Node.js/cliclick 将无法自动安装。请先在终端运行 install.sh。", level: .warning)
+            showHomebrewAlert = true
         }
         
         var env = ProcessInfo.processInfo.environment

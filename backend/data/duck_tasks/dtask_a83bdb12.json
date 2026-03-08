@@ -1,0 +1,17 @@
+{
+  "task_id": "dtask_a83bdb12",
+  "description": "设计一个《无畏契约》战绩分析网页的主页设计图（PNG格式）。设计要求：\n1. 该网页是一个游戏战绩分析平台\n2. 主要功能：玩家账号、战斗统计（胜率、KDA、击杀数等）、英雄使用率、排位等级\n3. 风格：现代游戏主题，深蓝色、紫色、霓虹灯效配色，科技感十足\n4. 布局：顶部导航栏、左侧玩家卡片、右侧数据面板、中间战绩图表\n5. 包含一些示例数据和图表视觉化\n保存到 ~/Desktop/valorant_design.png\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "created_at": 1772939035.464979,
+  "assigned_at": 1772939035.465299,
+  "started_at": null,
+  "completed_at": null
+}

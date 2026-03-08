@@ -24,6 +24,8 @@ build/
 backend/venv/
 backend/lib/
 backend/.packaged
+backend/.backend_setup_done
+backend/.start.lock
 backend/__pycache__/
 **/__pycache__/
 *.pyc

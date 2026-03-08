@@ -187,28 +187,45 @@ private struct TaskTabButton: View {
 
     private var statusColor: Color {
         switch task.taskProgress?.status {
-        case .running: return CyberColor.cyan
+        case .running: return actorAccentColor
         case .completed: return CyberColor.green
         case .failed: return CyberColor.red
         default: return CyberColor.textSecond
         }
     }
 
+    /// Duck 任务用橙色，RPA 用紫色，主 Agent 用青色
+    private var actorAccentColor: Color {
+        switch task.workerType {
+        case "local_duck", "remote_duck": return CyberColor.purple
+        case "runbook": return CyberColor.orange
+        default: return CyberColor.cyan
+        }
+    }
+
     var body: some View {
         Button(action: onTap) {
-            Text(labelText)
-                .font(CyberFont.mono(size: 9))
-                .foregroundColor(isExpanded ? CyberColor.cyan : statusColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(isExpanded ? CyberColor.cyan.opacity(0.15) : CyberColor.bg1.opacity(0.6))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(isExpanded ? CyberColor.cyan.opacity(0.5) : CyberColor.border.opacity(0.5), lineWidth: 1)
-                        )
-                )
+            HStack(spacing: 4) {
+                // Duck / RPA 任务显示小图标
+                if task.workerType != "main" {
+                    Image(systemName: task.workerType.contains("duck") ? "bird" : "doc.text.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(actorAccentColor)
+                }
+                Text(labelText)
+                    .font(CyberFont.mono(size: 9))
+                    .foregroundColor(isExpanded ? actorAccentColor : statusColor)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isExpanded ? actorAccentColor.opacity(0.15) : CyberColor.bg1.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(isExpanded ? actorAccentColor.opacity(0.5) : CyberColor.border.opacity(0.5), lineWidth: 1)
+                    )
+            )
         }
         .buttonStyle(.plain)
     }
@@ -251,7 +268,9 @@ private struct TaskLiveColumn: View {
         } else {
             statusStr = "--"
         }
-        return "\(String(desc.prefix(20)))\(desc.count > 20 ? "…" : "") (\(statusStr))"
+        // 在标题中插入执行者标签（Duck[xxx] 或主 Agent）
+        let actorPrefix = data.workerType != "main" ? "\(data.workerLabel) · " : ""
+        return "\(actorPrefix)\(String(desc.prefix(16)))\(desc.count > 16 ? "…" : "") (\(statusStr))"
     }
 }
 
@@ -428,7 +447,7 @@ private struct CornerBrackets: View {
     }
 }
 
-// MARK: - 双层网格背景（ bounded 绘制防 CPU 爆满 + 30fps）
+// MARK: - 网格背景（ bounded 绘制防 CPU 爆满 + 30fps）
 
 private struct CyberdeckBackground: View {
     let size: CGSize
@@ -442,7 +461,7 @@ private struct CyberdeckBackground: View {
     }
 }
 
-/// 双层网格：层1向左上快移，层2向右下慢移。offset 取模 + 仅绘制可见区域，避免 CPU 100%。
+/// 单层网格：从左上向右下缓慢移动。offset 取模 + 仅绘制可见区域，避免 CPU 100%。
 private struct DualAnimatedGridView: View {
     private let gridSize: CGFloat = 24
     private let lineColor = CyberColor.cyan.opacity(0.12)
@@ -452,12 +471,13 @@ private struct DualAnimatedGridView: View {
         TimelineView(.animation(minimumInterval: 1/30)) { ctx in
             let t = ctx.date.timeIntervalSinceReferenceDate
             // offset 取模，保证绘制数量有界
-            let offset1 = CGFloat((t * 18).truncatingRemainder(dividingBy: Double(gridSize)))
-            let offset2 = CGFloat((t * 4).truncatingRemainder(dividingBy: Double(gridSize)))
-            ZStack {
-                GridLayer(offset: -offset1, gridSize: gridSize, lineColor: lineColor, accentLineColor: accentLineColor)
-                GridLayer(offset: offset2, gridSize: gridSize, lineColor: lineColor.opacity(0.8), accentLineColor: accentLineColor.opacity(0.8))
-            }
+            let offset = CGFloat((t * 4).truncatingRemainder(dividingBy: Double(gridSize)))
+            GridLayer(
+                offset: offset,
+                gridSize: gridSize,
+                lineColor: lineColor.opacity(0.8),
+                accentLineColor: accentLineColor.opacity(0.8)
+            )
         }
         .opacity(0.7)
     }

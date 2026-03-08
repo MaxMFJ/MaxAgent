@@ -7,6 +7,7 @@ import json
 import logging
 import uuid
 
+from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
 from auth import verify_token
@@ -32,7 +33,7 @@ _duck_websockets: dict[str, WebSocket] = {}
 HEARTBEAT_INTERVAL = 30
 
 
-def get_duck_websocket(duck_id: str) -> WebSocket | None:
+def get_duck_websocket(duck_id: str) -> Optional[WebSocket]:
     """获取指定 Duck 的 WebSocket 连接"""
     return _duck_websockets.get(duck_id)
 

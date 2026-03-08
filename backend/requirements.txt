@@ -23,3 +23,6 @@ tiktoken>=0.5.0
 # macOS GUI 自动化 (Quartz CGEvent)
 pyobjc-framework-Quartz>=10.0; sys_platform=="darwin"
 pyobjc-framework-ApplicationServices>=10.0; sys_platform=="darwin"
+# 图像处理（截图压缩 + Duck 设计图生成）
+Pillow>=10.0.0
+matplotlib>=3.7.0

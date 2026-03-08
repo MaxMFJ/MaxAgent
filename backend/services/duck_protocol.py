@@ -157,8 +157,15 @@ class DuckTask(BaseModel):
     output: Any = None
     error: Optional[str] = None
 
+    # 重试机制
+    retry_count: int = 0                            # 当前已重试次数（调度器层面）
+    max_retries: int = 2                            # 最大自动重试次数
+    original_description: Optional[str] = None     # 保存原始任务描述（重试时增强用）
+    retry_errors: List[str] = Field(default_factory=list)  # 每次失败的错误摘要
+
     # 时间
     created_at: float = Field(default_factory=time.time)
     assigned_at: Optional[float] = None
     started_at: Optional[float] = None
     completed_at: Optional[float] = None
+    last_activity: Optional[float] = None  # 最后一次活跃时间（chunk 产出时更新）

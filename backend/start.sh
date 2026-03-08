@@ -21,6 +21,38 @@ for _extra_path in $_EXTRA_PATHS; do
 done
 export PATH
 
+# ──────────────────────────────────────────────
+# 首次运行检测：自动调用 install.sh 完成全量依赖安装
+# - 有 Homebrew → 全程非交互，自动安装 Node.js / cliclick / venv / .env
+# - 无 Homebrew → 提示用户手动运行一次 install.sh
+# 安装完成后创建 .backend_setup_done 标记，后续启动跳过此流程
+# ──────────────────────────────────────────────
+SETUP_MARKER="$BACKEND_ROOT/.backend_setup_done"
+if [ ! -f "$SETUP_MARKER" ]; then
+    echo "[INFO] 检测到首次启动，开始自动安装依赖..."
+    if command -v brew >/dev/null 2>&1; then
+        # Homebrew 可用：install.sh 完全非交互，自动完成
+        echo "[INFO] 正在运行一键安装脚本（首次运行约需 3-10 分钟，仅此一次）..."
+        if bash "$BACKEND_ROOT/install.sh"; then
+            echo "$$ $(date)" > "$SETUP_MARKER"
+            echo "[INFO] 首次安装完成，后续启动将直接跳过此步骤。"
+        else
+            echo "[WARN] install.sh 执行中出现警告，将继续尝试启动..."
+        fi
+    else
+        # 无 Homebrew：无法非交互安装，提示用户手动运行
+        echo ""
+        echo "[SETUP REQUIRED] ════════════════════════════════════════"
+        echo "[SETUP REQUIRED]  首次使用需完成一次性环境安装："
+        echo "[SETUP REQUIRED]  1. 打开终端 (Terminal)"
+        echo "[SETUP REQUIRED]  2. 运行: bash '$BACKEND_ROOT/install.sh'"
+        echo "[SETUP REQUIRED]  3. 安装完成后重新启动应用"
+        echo "[SETUP REQUIRED] ════════════════════════════════════════"
+        echo ""
+        echo "[WARN] 将尝试以当前环境启动，部分功能（MCP/GUI控制）可能不可用。"
+    fi
+fi
+
 # 单实例锁：同一 backend 目录只允许一个后端进程，避免重复启动冲突
 START_LOCK="$BACKEND_ROOT/.start.lock"
 START_LOCK_FD=200
@@ -38,6 +70,33 @@ try_acquire_lock() {
 release_lock() { rm -f "$START_LOCK"; }
 trap release_lock EXIT
 try_acquire_lock
+
+# 首次运行：自动创建 .env 配置文件（避免用户不知道需要配置）
+_ENV_TARGET=""
+if [ -n "$MACAGENT_DATA_DIR" ]; then
+    mkdir -p "$MACAGENT_DATA_DIR"
+    _ENV_TARGET="$MACAGENT_DATA_DIR/.env"
+else
+    _ENV_TARGET="$BACKEND_ROOT/.env"
+fi
+if [ ! -f "$_ENV_TARGET" ]; then
+    echo "[INFO] 首次运行：自动创建配置文件 $_ENV_TARGET"
+    cat > "$_ENV_TARGET" << 'EOF'
+# MaxAgent / Chow Duck 配置
+# 必填: AI 模型 API Key（至少填一个）
+DEEPSEEK_API_KEY=
+
+# 可选: GitHub Token（用于 MCP GitHub 工具）
+# 获取地址: https://github.com/settings/tokens
+GITHUB_TOKEN=
+
+# 可选: 其他 LLM
+# OPENAI_API_KEY=
+# OPENAI_BASE_URL=
+# ANTHROPIC_API_KEY=
+EOF
+    echo "[INFO] 请在应用设置页面填写 DEEPSEEK_API_KEY 等 API Key，或直接编辑: $_ENV_TARGET"
+fi
 
 # 加载 .env（优先 MACAGENT_DATA_DIR，便于应用内配置）
 if [ -n "$MACAGENT_DATA_DIR" ] && [ -f "$MACAGENT_DATA_DIR/.env" ]; then
@@ -199,7 +258,30 @@ if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
 elif [ "$ENABLE_VECTOR_SEARCH" != "true" ]; then
     echo "[INFO] ENABLE_VECTOR_SEARCH=false: RAG disabled. Add ENABLE_VECTOR_SEARCH=true to .env for semantic search."
 fi
+# 自动安装 cliclick（GUI 自动化鼠标控制依赖）
+if ! command -v cliclick >/dev/null 2>&1; then
+    if command -v brew >/dev/null 2>&1; then
+        echo "[INFO] cliclick not found, installing via Homebrew (GUI automation support)..."
+        brew install cliclick 2>/dev/null && echo "[INFO] cliclick installed successfully." || echo "[WARN] cliclick install failed, mouse automation may not work."
+    else
+        echo "[WARN] cliclick not found and Homebrew not available. Mouse automation will not work. Install manually: brew install cliclick"
+    fi
+fi
 
+# 自动安装 Node.js（MCP stdio 服务器依赖 npx/node）
+if ! command -v npx >/dev/null 2>&1; then
+    if command -v brew >/dev/null 2>&1; then
+        echo "[INFO] npx/Node.js not found, installing via Homebrew (MCP server support)..."
+        brew install node 2>/dev/null && echo "[INFO] Node.js installed successfully." || echo "[WARN] Node.js install failed, MCP stdio servers may not work."
+        # 重新刷新 PATH（Homebrew 新安装的 Node 可能还未加入当前 shell PATH）
+        for _node_keg in /opt/homebrew/opt/node@*/bin /opt/homebrew/bin; do
+            [ -d "$_node_keg" ] && PATH="$_node_keg:$PATH"
+        done
+        export PATH
+    else
+        echo "[WARN] npx not found and Homebrew not available. MCP stdio servers will not work. Install Node.js manually."
+    fi
+fi
 # 立即输出日志，便于确认启动进度（避免“卡住”的错觉）
 export PYTHONUNBUFFERED=1
 

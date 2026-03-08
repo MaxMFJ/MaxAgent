@@ -1,0 +1,57 @@
+{
+  "id": "rpa_pdf_compress",
+  "name": "PDF 压缩",
+  "description": "压缩 PDF 文件以减小文件体积，适合发送邮件或上传。",
+  "category": "pdf",
+  "tags": ["PDF", "压缩", "reduce", "体积", "优化"],
+  "inputs": [
+    {"name": "input_file", "type": "string", "required": true, "description": "源 PDF 文件路径"},
+    {"name": "output_file", "type": "string", "default": "compressed.pdf", "description": "压缩后输出路径"},
+    {"name": "quality", "type": "string", "default": "screen", "description": "压缩质量：screen（最小）/ ebook / printer / prepress（最高质量）"}
+  ],
+  "outputs": [
+    {"name": "output_file", "description": "压缩后的文件路径"},
+    {"name": "size_reduction", "description": "体积减少量"}
+  ],
+  "prerequisites": ["ghostscript（自动安装）"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "显示原始大小",
+      "description": "记录原文件大小",
+      "tool": "terminal",
+      "command": "echo '原始大小：' && ls -lh $input_file | awk '{print $5}'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "确保 ghostscript 可用",
+      "description": "安装 gs（如未安装）",
+      "tool": "terminal",
+      "command": "which gs || brew install ghostscript",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_3",
+      "name": "压缩 PDF",
+      "description": "使用 ghostscript 压缩 PDF",
+      "tool": "terminal",
+      "command": "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/$quality -dNOPAUSE -dBATCH -dQUIET -sOutputFile=$output_file $input_file && echo '压缩完成'",
+      "on_error": "abort",
+      "retry": 1
+    },
+    {
+      "id": "step_4",
+      "name": "对比文件大小",
+      "description": "显示压缩后文件大小和节省比例",
+      "tool": "terminal",
+      "command": "orig=$(stat -f%z $input_file); comp=$(stat -f%z $output_file); saved=$(( (orig - comp) * 100 / orig )); echo \"压缩后大小：$(ls -lh $output_file | awk '{print $5}')\"; echo \"节省：${saved}%\"",
+      "on_error": "continue",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

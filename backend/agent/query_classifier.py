@@ -7,6 +7,7 @@
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -68,6 +69,15 @@ ACTION_KEYWORDS = [
     "监控", "升级", "部署", "编译", "构建", "docker", "git", "brew", "npm", "pip",
     "鼠标", "键盘", "点击", "输入", "粘贴", "剪贴板", "capsule", "技能",
     "保存到", "导出", "生成文件", "写到",
+    # 任务委派 / 创作类动词
+    "制作", "设计一个", "设计一款", "帮我做", "帮我制作", "帮我设计",
+    "coder duck", "delegate_duck",
+    "开发网页", "做一个网页", "做一个页面", "做网页", "做页面",
+]
+
+# 需要 re.search 匹配的 ACTION 模式（支持通配符）
+ACTION_PATTERNS = [
+    r"让.*?duck",  # 如 "让 coder duck 去做"
 ]
 
 # 知识/咨询型关键词（触发 COMPLEX tier 以获得完整回答，但不需要工具执行）
@@ -75,7 +85,7 @@ KNOWLEDGE_KEYWORDS = [
     "分析", "方案", "策略", "建议", "规划", "推荐", "对比", "比较", "评测",
     "讲解", "解释", "说明", "总结", "梳理", "归纳", "攻略", "指南",
     "怎么样", "什么是", "为什么", "如何理解", "区别是", "优缺点",
-    "帮我写", "帮我做", "帮我想", "帮我列",
+    "帮我写", "帮我想", "帮我列",
 ]
 
 # 纯追问信息（无操作性动词时判为 information）
@@ -105,7 +115,7 @@ def _classify_static(query: str) -> IntentResult:
                 )
 
     # 操作性关键词 → execution
-    if any(kw in q_lower for kw in ACTION_KEYWORDS):
+    if any(kw in q_lower for kw in ACTION_KEYWORDS) or any(re.search(p, q_lower) for p in ACTION_PATTERNS):
         features["has_action_kw"] = True
         return IntentResult(
             intent=Intent.EXECUTION,
@@ -114,15 +124,16 @@ def _classify_static(query: str) -> IntentResult:
             query_preview=q[:80],
             features={**features, "rule": "action_keyword"},
         )
-    # 知识/咨询型关键词 → COMPLEX tier（需要完整能力定义来生成好回答）
+    # 知识/咨询型关键词 → EXECUTION（知识问答可能仍需写文件、委派 Duck, 应获得 FULL prompt）
+    # 注意：INFORMATION 只保留给"纯追问位置/结果"（INFO_ONLY_PATTERNS）
     if any(kw in q_lower for kw in KNOWLEDGE_KEYWORDS):
         features["has_knowledge_kw"] = True
         return IntentResult(
-            intent=Intent.INFORMATION,
+            intent=Intent.EXECUTION,
             tier=QueryTier.COMPLEX,
             source="static",
             query_preview=q[:80],
-            features={**features, "rule": "knowledge_keyword"},
+            features={**features, "rule": "knowledge_keyword_as_execution"},
         )
     # 问号结尾且非“怎么/如何/帮我” → 倾向 information/simple
     if q_lower.endswith("?") or q_lower.endswith("？"):

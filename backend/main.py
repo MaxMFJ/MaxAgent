@@ -331,6 +331,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Capsule bootstrap setup skipped: {e}")
 
+    # RPA Runbook 注册中心初始化
+    try:
+        from agent.runbook_registry import get_runbook_registry
+        rb_reg = get_runbook_registry()
+        logger.info(f"Runbook registry initialized: {len(rb_reg.list_all())} runbooks loaded")
+    except Exception as e:
+        logger.warning(f"Runbook registry init skipped: {e}")
+
     # EvoMap 进化网络
     if ENABLE_EVOMAP:
         try:

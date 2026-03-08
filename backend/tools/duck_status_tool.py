@@ -24,7 +24,8 @@ class DuckStatusTool(BaseTool):
     name = "duck_status"
     description = (
         "查询 Duck 分身 Agent 状态。返回所有已注册 Duck 的在线/忙碌/离线情况、类型、名称等。"
-        "在委派任务前可先调用此工具，确认是否有可用 Duck 再决定是否 delegate_duck。"
+        "【重要】仅在委派任务前调用一次，用于确认可用 Duck。"
+        "委派 delegate_duck 后禁止反复调用此工具轮询进度——任务完成后系统会自动推送通知。"
     )
     category = ToolCategory.CUSTOM
     parameters = {
@@ -87,6 +88,11 @@ class DuckStatusTool(BaseTool):
                 "offline": len(offline),
                 "available_for_delegate": len(online),  # 空闲可接任务的 Duck 数
                 "ducks": [_duck_summary(d) for d in all_ducks],
+                "_reminder": (
+                    "⚠️ 查询完成。如果你即将调用 delegate_duck，调用后请勿反复轮询本工具检查进度。"
+                    "系统采用推送机制，任务完成后会自动发送 [系统自动续步] 通知。"
+                    "委派后直接结束本轮回复，等待系统通知即可。"
+                ),
             }
 
             return ToolResult(success=True, data=summary)

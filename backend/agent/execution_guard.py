@@ -30,7 +30,10 @@ BLOCKED_TOOLS_FOR_INFORMATION_INTENT = frozenset({
 READ_ONLY_TOOLS = frozenset({
     "read_file", "list_directory", "get_system_info", "terminal",  # terminal 仍可能写，可按需收紧
 })
-
+# 任务委派/胶囊工具：无论意图如何，始终放行（阻拦 delegate_duck 会导致合法任务委派无法启动）
+ALWAYS_ALLOWED_TOOLS = frozenset({
+    "delegate_duck", "capsule_call", "capsule_run", "run_capsule",
+})
 
 @dataclass
 class GuardResult:
@@ -68,6 +71,13 @@ def check(
             intent=intent.value,
             tool_name=tool_name or "",
         )
+
+    # 委派/胶囊类工具始终放行，不受意图分类限制
+    if tool_lower in ALWAYS_ALLOWED_TOOLS:
+        result = GuardResult(allowed=True, reason="always_allowed_delegation_tool", intent=intent.value, tool_name=tool_lower)
+        if ENABLE_GUARD_METRICS_LOG and session_id:
+            _append_guard_log(session_id, result)
+        return result
 
     if intent == Intent.INFORMATION:
         if tool_lower in BLOCKED_TOOLS_FOR_INFORMATION_INTENT or any(
@@ -125,8 +135,13 @@ def _append_guard_log(session_id: str, result: GuardResult) -> None:
 
 
 def get_guard_fallback_message(tool_name: str) -> str:
-    """被拦截时注入给模型的说明，引导其根据历史回答"""
+    """被拦截时注入给模型的说明。
+    注意：措辞须谨慎——过于强制的"从历史回答"指令会导致 LLM 幻觉（假装已完成任务）。
+    应提示 LLM 说明意图被误判，并引导用户重新描述任务而非强行从历史捏造答案。
+    """
     return (
-        f"[系统] 当前用户意图被识别为「仅追问信息」。已阻止执行工具「{tool_name}」。"
-        "请根据上述对话历史直接回答用户（如项目/文件位置、完成步骤等），不要再次尝试创建或执行操作。"
+        f"[系统提示] 工具「{tool_name}」本次未执行（系统检测到当前请求可能是追问信息而非新建任务）。"
+        "如果你确实需要执行该操作，请告知用户：可以重新发送指令并明确说明「请创建/执行/生成」，"
+        "系统将重新识别为执行任务。如果用户只是询问之前任务的结果，请根据对话历史直接回答，"
+        "不要重新执行写入或创建操作。"
     )
