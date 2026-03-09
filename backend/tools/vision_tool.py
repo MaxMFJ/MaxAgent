@@ -28,15 +28,17 @@ class VisionTool(BaseTool):
     """
     
     name = "vision"
-    description = """视觉工具，用于截图、OCR、查找元素。截图会自动显示在聊天窗口中。
+    description = """视觉工具，用于截图、OCR、查找元素，也可直接读取本地图片文件并分析。
 
 支持的操作：
 - capture_and_analyze: 截图（使用 app_name 指定应用）
+- analyze_local_image: 读取本地图片文件（PNG/JPG/JPEG）并返回图像内容+OCR文字，供视觉模型分析设计图
 - find_element: 查找 UI 元素位置
 - read_screen: 读取屏幕文字
 - get_qrcode: 截图并识别二维码
 
 使用 app_name 参数指定应用：WeChat、Safari、Finder 等
+使用 analyze_local_image 读取本地设计图文件：{"action": "analyze_local_image", "file_path": "/path/to/design.png"}
 
 【重要】如果用户只是要截图，用 screenshot 工具更简单。截图完成后立即结束，不要做额外分析。"""
     
@@ -46,9 +48,13 @@ class VisionTool(BaseTool):
         "properties": {
             "action": {
                 "type": "string",
-                "enum": ["capture_and_analyze", "find_element", "read_screen", 
+                "enum": ["capture_and_analyze", "analyze_local_image", "find_element", "read_screen", 
                         "describe_window", "get_qrcode"],
                 "description": "要执行的操作"
+            },
+            "file_path": {
+                "type": "string",
+                "description": "本地图片文件路径（analyze_local_image 动作使用）"
             },
             "app_name": {
                 "type": "string",
@@ -82,6 +88,8 @@ class VisionTool(BaseTool):
         
         if action == "capture_and_analyze":
             return await self._capture_and_analyze(kwargs)
+        elif action == "analyze_local_image":
+            return await self._analyze_local_image(kwargs)
         elif action == "find_element":
             return await self._find_element(kwargs)
         elif action == "read_screen":
@@ -482,3 +490,57 @@ end tell
                     "suggestion": "尝试调整截图区域，或确保二维码完整显示在屏幕上"
                 }
             )
+
+    async def _analyze_local_image(self, kwargs: Dict[str, Any]) -> ToolResult:
+        """读取本地图片文件并返回 image_base64（供 LLM 视觉分析）+ OCR 文字。
+        适用于 Coder Duck 分析 Designer Duck 生成的设计图，无需截图。
+        """
+        file_path = (kwargs.get("file_path") or "").strip()
+        if not file_path:
+            return ToolResult(success=False, error="需要提供 file_path 参数（本地图片路径）")
+
+        if not os.path.exists(file_path):
+            return ToolResult(success=False, error=f"文件不存在: {file_path}")
+
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext not in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"):
+            return ToolResult(success=False, error=f"不支持的图片格式: {ext}")
+
+        try:
+            with open(file_path, "rb") as f:
+                raw = f.read()
+            image_base64 = base64.b64encode(raw).decode()
+        except Exception as e:
+            return ToolResult(success=False, error=f"读取图片失败: {e}")
+
+        # 尝试 OCR（提取图中文字，增强 LLM 的分析能力）
+        ocr_text = ""
+        try:
+            ocr_text = await self._ocr_image(file_path)
+        except Exception:
+            pass
+
+        mime = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+            ".bmp": "image/bmp",
+        }.get(ext, "image/png")
+
+        size_kb = round(len(raw) / 1024, 1)
+        return ToolResult(
+            success=True,
+            data={
+                "screenshot_path": file_path,   # 兼容 image_extractor，展示给前端
+                "image_base64": image_base64,
+                "mime_type": mime,
+                "ocr_text": ocr_text,
+                "file_size_kb": size_kb,
+                "message": (
+                    f"已读取本地图片 {os.path.basename(file_path)}（{size_kb}KB），图像已传给视觉模型。"
+                    + (f" OCR文字: {ocr_text[:200]}" if ocr_text else "")
+                ),
+            }
+        )

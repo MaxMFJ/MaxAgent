@@ -1,0 +1,6 @@
+{"iteration": 1, "type": "llm", "model": "custom/GLM-5", "latency_ms": 7384, "success": true, "ts": 1773020801.122889}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": false, "error": "'utf-8' codec can't decode byte 0x89 in position 0: invalid start byte", "ts": 1773020801.125937}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 7394, "success": true, "ts": 1773020810.523081}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 543, "success": true, "error": null, "ts": 1773020811.068293}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 73354, "success": false, "error": "parse_failed", "ts": 1773020886.4250271}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 69381, "success": false, "error": "parse_failed", "ts": 1773020959.813421}

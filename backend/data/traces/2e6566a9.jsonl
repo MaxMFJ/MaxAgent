@@ -1,0 +1,13 @@
+{"iteration": 1, "type": "llm", "model": "custom/GLM-5", "latency_ms": 9604, "success": true, "ts": 1773020139.870898}
+{"iteration": 1, "type": "tool", "action_type": "run_shell", "latency_ms": 190, "success": true, "error": null, "ts": 1773020140.062582}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 81222, "success": false, "error": "parse_failed", "ts": 1773020223.286952}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 8482, "success": true, "ts": 1773020235.77295}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 208, "success": true, "error": null, "ts": 1773020235.983586}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 68946, "success": false, "error": "parse_failed", "ts": 1773020306.932168}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 73898, "success": true, "ts": 1773020384.837246}
+{"iteration": 3, "type": "tool", "action_type": "create_and_run_script", "latency_ms": 304, "success": true, "error": null, "ts": 1773020385.145261}
+{"iteration": 4, "type": "llm", "model": "custom/GLM-5", "latency_ms": 59114, "success": true, "ts": 1773020446.263792}
+{"iteration": 4, "type": "tool", "action_type": "create_and_run_script", "latency_ms": 231, "success": true, "error": null, "ts": 1773020446.496872}
+{"iteration": 5, "type": "llm", "model": "custom/GLM-5", "latency_ms": 9061, "success": true, "ts": 1773020457.5621939}
+{"iteration": 5, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773020457.566601}
+{"iteration": 6, "type": "llm", "model": "custom/GLM-5", "latency_ms": 14487, "success": true, "ts": 1773020475.4543302}

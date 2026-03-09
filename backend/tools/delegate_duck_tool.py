@@ -121,7 +121,7 @@ class DelegateDuckTool(BaseTool):
                     data={"task_id": task.task_id},
                 )
 
-            # 已分配 Duck，立即返回成功，告知用户任务已委派、完成后会通知
+            # 已分配 Duck，立即返回成功。主 Agent 本轮结束，等待 Duck 完成时由系统触发续步
             duck_type_label = dt.value if dt else "通用"
             desktop_path = os.path.realpath(os.path.expanduser("~/Desktop"))
             return ToolResult(
@@ -130,7 +130,7 @@ class DelegateDuckTool(BaseTool):
                     "task_id": task.task_id,
                     "duck_id": task.assigned_duck_id,
                     "duck_type": duck_type_label,
-                    "message": f"任务已委派给 {duck_type_label} Duck，完成后会主动通知你。",
+                    "message": f"任务已委派给 {duck_type_label} Duck，完成后会主动通知你。请稍候。",
                     "actual_desktop_path": desktop_path,
                 },
             )

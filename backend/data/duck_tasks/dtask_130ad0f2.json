@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_130ad0f2",
+  "description": "根据设计稿 /Users/lzz/Desktop/diet_design.png 开发一个功能完整的饮食管理网页。要求：\n1. HTML5 + CSS + JavaScript 完整代码\n2. 实现所有功能模块：顶部导航、左侧菜单、仪表板、今日进食、食物库、营养分析、目标设置\n3. 仪表板展示卡路里/蛋白质/脂肪/碳水的进度条和百分比\n4. 食物管理：支持添加食物、显示食物列表、删除食物\n5. 数据可视化：使用 Chart.js 绘制营养分析图表\n6. 响应式设计，绿色主题配色\n7. 保存为 HTML 文件到 ~/Desktop/diet_management.html，支持双击打开即用\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 1800,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773025249.2765372,
+  "assigned_at": 1773025249.277472,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773025249.277473
+}

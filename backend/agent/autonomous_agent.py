@@ -959,45 +959,72 @@ class AutonomousAgent:
                     yield evt
 
                 if action is None:
-                    context.retry_count += 1
-                    # 解析失败不应消耗正常迭代次数，撤销迭代计数
-                    context.current_iteration -= 1
-                    
-                    backoff_seconds = min(2 ** context.retry_count, 30)
-                    # 解析重试：用 retry 类型，前端显示「正在重试…」而非「错误」
-                    yield {
-                        "type": "retry",
-                        "message": f"正在重试解析… ({context.retry_count}/{context.max_retries}，{backoff_seconds}s 后)",
-                        "retry_count": context.retry_count,
-                        "max_retries": context.max_retries,
-                        "backoff_seconds": backoff_seconds,
-                    }
-                    
-                    if self._stop_policy:
-                        self._stop_policy.record_iteration(
-                            iteration=context.current_iteration,
-                            action_type="parse_error",
-                            action_params={},
-                            output=None,
-                            success=False,
-                            execution_time_ms=0
+                    # 若已有多次成功步骤且产出文件存在，直接视为完成，避免 token 超限后无意义重试
+                    steps = len(context.action_logs)
+                    success_count = sum(1 for log in context.action_logs if log.result.success)
+                    if steps >= 5 and success_count >= 3:
+                        from services.duck_task_scheduler import DuckTaskScheduler
+                        combined_output = " ".join(
+                            str(log.result.output or "") for log in context.action_logs if log.result.output
                         )
-                    
-                    if context.retry_count >= context.max_retries:
-                        context.status = "parse_error"
-                        context.stop_reason = "consecutive_parse_failures"
-                        context.stop_message = f"LLM 连续 {context.retry_count} 次返回无法解析的内容，请检查模型配置或简化任务描述"
+                        existing_files = DuckTaskScheduler._extract_file_paths_from_output(combined_output)
+                        if existing_files:
+                            logger.info(
+                                f"Parse failed but output files exist: {existing_files}, treating as success"
+                            )
+                            action = AgentAction(
+                                action_type=ActionType.FINISH,
+                                params={
+                                    "summary": f"任务已完成，产出文件：{', '.join(existing_files[:3])}",
+                                    "success": True,
+                                },
+                                reasoning="已产出目标文件，视为完成。",
+                            )
+                    if action is None:
+                        # 若为 write_file 截断场景触发的「再试一次」，不增加 retry_count
+                        allow_one_more = getattr(context, "_allow_one_more_retry", False)
+                        if allow_one_more:
+                            context._allow_one_more_retry = False
+                        else:
+                            context.retry_count += 1
+                        # 解析失败不应消耗正常迭代次数，撤销迭代计数
+                        context.current_iteration -= 1
+                        
+                        backoff_seconds = min(2 ** context.retry_count, 30)
+                        # 解析重试：用 retry 类型，前端显示「正在重试…」而非「错误」
                         yield {
-                            "type": "task_stopped",
-                            "task_id": context.task_id,
-                            "reason": "parse_error",
-                            "message": context.stop_message,
-                            "recommendation": "请尝试：1) 简化任务描述 2) 检查 API 配额 3) 切换模型",
+                            "type": "retry",
+                            "message": f"正在重试解析… ({context.retry_count}/{context.max_retries}，{backoff_seconds}s 后)",
+                            "retry_count": context.retry_count,
+                            "max_retries": context.max_retries,
+                            "backoff_seconds": backoff_seconds,
                         }
-                        break
-                    
-                    await asyncio.sleep(backoff_seconds)
-                    continue
+                        
+                        if self._stop_policy:
+                            self._stop_policy.record_iteration(
+                                iteration=context.current_iteration,
+                                action_type="parse_error",
+                                action_params={},
+                                output=None,
+                                success=False,
+                                execution_time_ms=0
+                            )
+                        
+                        if context.retry_count >= context.max_retries:
+                            context.status = "parse_error"
+                            context.stop_reason = "consecutive_parse_failures"
+                            context.stop_message = f"LLM 连续 {context.retry_count} 次返回无法解析的内容，请检查模型配置或简化任务描述"
+                            yield {
+                                "type": "task_stopped",
+                                "task_id": context.task_id,
+                                "reason": "parse_error",
+                                "message": context.stop_message,
+                                "recommendation": "请尝试：1) 简化任务描述 2) 检查 API 配额 3) 切换模型",
+                            }
+                            break
+                        
+                        await asyncio.sleep(backoff_seconds)
+                        continue
                 
                 context.retry_count = 0  # 解析成功，重置解析失败计数
                 
@@ -1434,23 +1461,35 @@ class AutonomousAgent:
         system_prompt = AUTONOMOUS_SYSTEM_PROMPT.replace(
             "{user_context}", user_ctx if user_ctx else ""
         )
-        # 注入 Duck 分身身份（Local Duck 执行时）：专项类型与技能
+        # 注入 Duck 分身身份与专项规范（Local Duck 执行时）
         try:
             from app_state import get_duck_context
+            from services.duck_protocol import DuckType
+            from services.duck_template import get_template
             duck_ctx = get_duck_context()
             if duck_ctx:
+                duck_type_str = duck_ctx.get("duck_type", "general")
+                try:
+                    dt = DuckType(duck_type_str)
+                    template = get_template(dt)
+                    # 注入 Duck 模板的完整 system_prompt（含 _design_spec.md、analyze_local_image 等专项规范）
+                    template_prompt = template.system_prompt.strip()
+                except (ValueError, ImportError):
+                    template_prompt = ""
                 parts = [
-                    f"【分身身份】你是 {duck_ctx.get('name', 'Duck')}，专项类型：{duck_ctx.get('duck_type', 'general')}。"
+                    f"【分身身份】你是 {duck_ctx.get('name', 'Duck')}，专项类型：{duck_type_str}。"
                 ]
+                if template_prompt:
+                    parts.append(f"\n【专项规范】\n{template_prompt}")
                 if duck_ctx.get("skills"):
-                    parts.append(f"你的专项技能：{', '.join(duck_ctx['skills'])}。请优先运用这些技能完成任务。")
+                    parts.append(f"\n你的专项技能：{', '.join(duck_ctx['skills'])}。请优先运用这些技能完成任务。")
                 parts.append(
                     "\n【重要执行规则】你是执行者，不是规划者。你必须：\n"
                     "1. 直接使用工具（run_shell、write_file、call_tool 等）执行任务，而非描述或规划任务。\n"
                     "2. 如果任务要求创建文件，必须输出 write_file 或 create_and_run_script 动作来实际创建文件。\n"
                     "3. 绝对不要只输出任务分析或执行策略的文字说明。每一步都必须是可执行的 JSON 动作。\n"
                     "4. 不要在第一步就 finish，除非任务已经被真正完成（文件已创建、命令已执行等）。\n"
-                    "5. 如果任务需要编写代码/HTML/文件，直接在 write_file 的 content 中写出完整内容。"
+                    "5. 如果任务需要编写代码/HTML/文件，直接用 create_and_run_script 生成（禁止在 write_file 的 content 中放超长内容）。"
                 )
                 duck_block = "\n".join(parts)
                 system_prompt = duck_block + "\n\n---\n\n" + system_prompt
@@ -1468,7 +1507,11 @@ class AutonomousAgent:
             USE_SUMMARIZED_CONTEXT = True
             GOAL_RESTATE_EVERY_N = 6
         if USE_SUMMARIZED_CONTEXT and hasattr(context, "summarize_history_for_llm"):
-            context_str = context.summarize_history_for_llm(max_recent=5, max_chars=3500)
+            # 按 token 预算分配：默认 4000 tokens 给任务上下文
+            _ctx_tokens = getattr(self.llm.config, "max_tokens", 4096) or 4096
+            context_str = context.summarize_history_for_llm(
+                max_recent=5, max_chars=5000, max_context_tokens=min(6000, _ctx_tokens * 2)
+            )
         else:
             context_str = context.get_context_for_llm()
         if GOAL_RESTATE_EVERY_N and context.current_iteration > 0 and context.current_iteration % GOAL_RESTATE_EVERY_N == 0:
@@ -1503,7 +1546,21 @@ class AutonomousAgent:
             last_log = context.action_logs[-1]
             result_summary = ""
             if last_log.result.success:
-                result_summary = f"上一步执行成功。输出: {str(last_log.result.output)[:300]}"
+                out = last_log.result.output
+                out_str = (
+                    out.get("content", out.get("output", ""))
+                    if isinstance(out, dict) else str(out)
+                )
+                # read_file / file_operations read 结果需完整传递，避免 Agent 反复读取
+                is_read = (
+                    last_log.action.action_type == ActionType.READ_FILE
+                    or (
+                        last_log.action.action_type == ActionType.CALL_TOOL
+                        and (last_log.action.params.get("args") or {}).get("action") == "read"
+                    )
+                )
+                out_limit = 10000 if is_read else 300
+                result_summary = f"上一步执行成功。输出: {out_str[:out_limit]}{'...[已截断]' if len(out_str) > out_limit else ''}"
                 # 截图类任务：一旦截图成功，强制要求立即 finish，避免重复截图
                 task_desc = getattr(context, "task_description", "") or ""
                 if any(k in task_desc for k in ("截图", "截屏", "screenshot", "屏幕")):
@@ -1524,6 +1581,22 @@ class AutonomousAgent:
                 result_summary += f"\n\n【中途反思建议】{mid_hint}"
                 self._mid_reflection_hint = ""
 
+            # 重复验证检测：create_and_run_script 成功后已多次 read_file/run_shell 验证 → 提示可直接 finish
+            logs = context.action_logs
+            if len(logs) >= 4:
+                script_success_idx = None
+                for i, log in enumerate(logs):
+                    if log.action.action_type == ActionType.CREATE_AND_RUN_SCRIPT and log.result.success:
+                        script_success_idx = i
+                verify_actions = (ActionType.READ_FILE, ActionType.RUN_SHELL)
+                if script_success_idx is not None:
+                    verify_count = sum(
+                        1 for log in logs[script_success_idx + 1:]
+                        if log.action.action_type in verify_actions
+                    )
+                    if verify_count >= 2:
+                        result_summary += "\n\n【避免重复验证】你已多次 read_file/run_shell 验证，若文件已确认存在且内容正确，请直接 finish 完成任务。"
+
             next_prompt = f"{result_summary}\n\n请分析结果并输出下一步动作的 JSON。"
             # 注入截断提示（若上轮 JSON 因 token 限制被截断）
             truncation_hint = getattr(context, "_truncation_hint", "")
@@ -1537,7 +1610,32 @@ class AutonomousAgent:
             # 解析失败重试时，若已有较多步骤，提示简化输出
             if getattr(context, "retry_count", 0) > 0:
                 next_prompt += "\n\n【重试提示】上轮输出可能被截断。请只输出一个简洁的 JSON 动作，报告内容不要全部内嵌在 content 中；可先 finish 简要总结，或分步 write_file。"
-            messages.append({"role": "user", "content": next_prompt})
+
+            # ── 多模态注入：若上一步结果含图像（如 analyze_local_image / capture_and_analyze），
+            #    将图像 base64 注入到消息中供视觉模型分析，避免 Agent 反复截图
+            _last_output = last_log.result.output if last_log.result.success else None
+            _image_base64 = None
+            _image_mime = "image/png"
+            if isinstance(_last_output, dict):
+                _image_base64 = _last_output.get("image_base64")
+                _image_mime = _last_output.get("mime_type", "image/png")
+            if _image_base64:
+                # 构建多模态消息
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": next_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{_image_mime};base64,{_image_base64}",
+                                "detail": "high",
+                            },
+                        },
+                    ],
+                })
+            else:
+                messages.append({"role": "user", "content": next_prompt})
         
         llm_start = time.time()
         try:
@@ -1552,15 +1650,16 @@ class AutonomousAgent:
                     "iteration": context.current_iteration,
                 })
             # 多步任务后易输出长 JSON（如报告），提高 max_tokens 避免截断
+            # 从第 1 步起即用 8192，避免 write_file 内容（如 HTML）因默认 4096 被截断
             steps = len(context.action_logs)
             if steps >= 8:
                 extra_tokens = 16384
             elif steps >= 5:
                 extra_tokens = 12288
-            elif steps >= 3:
+            elif steps >= 1:
                 extra_tokens = 8192
             else:
-                extra_tokens = None
+                extra_tokens = 8192  # 首步也用 8192，为可能的长 JSON 预留空间
 
             # Phase C：Extended Thinking / CoT 支持
             chat_extra_body: Optional[Dict[str, Any]] = None
@@ -1654,7 +1753,18 @@ class AutonomousAgent:
                 # 兜底1：疑似截断的 JSON（finish_reason=length）+ 多步成功 → 视为任务完成，避免无限重试
                 steps = len(context.action_logs)
                 success_count = sum(1 for log in context.action_logs if log.result.success)
-                is_truncated = finish_reason == "length"
+                # 部分 API 网关（如 newapi/claude-haiku）不正确上报 finish_reason=length，
+                # 补充检测：completion_tokens 达到本次 max_tokens 上限也视为截断
+                completion_tokens = usage.get("completion_tokens", 0)
+                _effective_max_tokens = extra_tokens or self.llm.config.max_tokens or 4096
+                is_truncated = (finish_reason == "length") or (
+                    completion_tokens > 0 and completion_tokens >= _effective_max_tokens - 10
+                )
+                if is_truncated and finish_reason != "length":
+                    logger.info(
+                        "Supplementary truncation detection: completion_tokens=%d >= max_tokens=%d",
+                        completion_tokens, _effective_max_tokens,
+                    )
                 # 条件放宽：截断时 ≥5 步且 ≥3 成功即视为完成；或最后一次重试且 ≥8 步 ≥6 成功（任务已基本完成）
                 retry_count = getattr(context, "retry_count", 0)
                 is_last_retry = retry_count >= context.max_retries - 1
@@ -1693,13 +1803,50 @@ class AutonomousAgent:
                                 len(text),
                             )
                             action = None
-                    else:
-                        logger.info("Treating plain-text LLM response as finish (summary)")
-                        action = AgentAction(
-                            action_type=ActionType.FINISH,
-                            params={"summary": text, "success": True},
-                            reasoning="LLM 返回了纯文本回复，已作为最终回复。"
-                        )
+                    elif text and _looks_like_json_or_code(content):
+                        # 内容含 JSON 标记但解析失败（GLM/部分模型把 JSON 包在 markdown 代码块里，
+                        # 或 max_tokens 截断导致 JSON 不完整）→ 注入格式提示后重试，不当作 finish
+                        retry_count = getattr(context, "retry_count", 0)
+                        is_last_retry = retry_count >= context.max_retries - 1
+                        if not is_last_retry:
+                            logger.info(
+                                "Content looks like JSON/code but failed to parse (len=%d, finish_reason=%s), injecting format reminder",
+                                len(text), finish_reason,
+                            )
+                            context._truncation_hint = (
+                                "【JSON 格式错误】你的上一步输出包含了代码块或 JSON，但系统无法正确解析。"
+                                "请直接输出一个纯 JSON 对象，不要用 ```json 代码块包裹，不要在 JSON 前后添加任何说明文字。"
+                                '{"action_type": "write_file", "params": {"path": "/path/to/file", "content": "..."}, "reasoning": "..."}'
+                            )
+                            action = None  # 触发重试
+                        else:
+                            # 最后一次重试：若内容疑似 write_file 被截断（含 path、content、html 等），
+                            # 注入 create_and_run_script 提示并允许再试一次，避免「显示成功但 HTML 为空」
+                            has_write_file_indicators = (
+                                '"write_file"' in content and '"path"' in content
+                                and ('"content"' in content or "'content'" in content)
+                                and ("<!DOCTYPE" in content or "<html" in content or "html" in content.lower())
+                            )
+                            if has_write_file_indicators and len(content) > 2000:
+                                logger.info(
+                                    "Last retry: content looks like truncated write_file (len=%d), "
+                                    "injecting create_and_run_script hint for one more attempt",
+                                    len(content),
+                                )
+                                context._truncation_hint = (
+                                    "【输出被截断】你上次尝试在 write_file 的 content 中放入超长 HTML，导致 JSON 被截断无法解析。"
+                                    "**必须**改用 create_and_run_script：编写 Python 脚本，在脚本中用变量存储 HTML 字符串，"
+                                    "然后 with open(path,'w') as f: f.write(html) 写入文件。禁止在 JSON 的 content 中直接放超长内容。"
+                                )
+                                context._allow_one_more_retry = True  # 允许再试一次
+                                action = None
+                            else:
+                                logger.info("Last retry: treating JSON-like but unparseable content as finish")
+                                action = AgentAction(
+                                    action_type=ActionType.FINISH,
+                                    params={"summary": text, "success": True},
+                                    reasoning="LLM 返回了纯文本回复，已作为最终回复。"
+                                )
             
             if action:
                 validation_error = validate_action(action)
@@ -2198,26 +2345,52 @@ class AutonomousAgent:
                     pass  # 忽略清理失败，不影响主逻辑
     
     async def _handle_read_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle read_file action"""
+        """Handle read_file action, supports offset/limit for chunked reading"""
         import os
-        
+
         path = os.path.expanduser(params.get("path", ""))
         encoding = params.get("encoding", "utf-8")
-        
+        offset = int(params.get("offset", 0) or 0)
+        limit = int(params.get("limit", 0) or 15000)
+        if limit <= 0:
+            limit = 15000
+
         if not path:
             return {"success": False, "error": "Path is empty"}
-        
+
         if not os.path.exists(path):
             return {"success": False, "error": f"File not found: {path}"}
-        
+
+        # 检测二进制文件（PNG/JPG/PDF 等），避免 UnicodeDecodeError
+        BINARY_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp',
+                             '.pdf', '.zip', '.tar', '.gz', '.exe', '.bin',
+                             '.mp3', '.mp4', '.mov', '.avi', '.ico', '.tiff'}
+        ext = os.path.splitext(path)[1].lower()
+        if ext in BINARY_EXTENSIONS:
+            size = os.path.getsize(path)
+            return {
+                "success": False,
+                "error": f"该文件是二进制文件（{ext}），无法用 read_file 读取文本内容。"
+                         f"文件大小：{size} 字节。请使用 run_shell + python 或 screenshot 等工具处理此类文件。"
+            }
+
         try:
-            with open(path, "r", encoding=encoding) as f:
-                content = f.read()
-            
-            if len(content) > 10000:
-                content = content[:10000] + "\n... (truncated)"
-            
-            return {"success": True, "output": content}
+            with open(path, "r", encoding=encoding, errors="replace") as f:
+                full_content = f.read()
+            total = len(full_content)
+
+            if offset > 0 or limit < total:
+                content = full_content[offset : offset + limit]
+                truncated = offset + limit < total
+                hint = f"共 {total} 字符，已读 {offset}–{offset + len(content)}。若需后续内容可 read_file offset={offset + len(content)} limit={limit}" if truncated else None
+                return {
+                    "success": True,
+                    "output": content + (f"\n\n[分段提示] {hint}" if hint else ""),
+                    "content": content,
+                    "total_size": total,
+                    "truncated": truncated,
+                }
+            return {"success": True, "output": full_content, "content": full_content}
         except Exception as e:
             return {"success": False, "error": str(e)}
     

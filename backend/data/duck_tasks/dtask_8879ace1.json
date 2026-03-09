@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_8879ace1",
+  "description": "设计一个赛博朋克2077游戏介绍网页的UI设计稿。设计风格要求：1) 深色主题，以黑色、深紫色、荧光绿、荧光蓝为主色调；2) 包含游戏logo、hero section（大封面图+标题）、游戏特色（4-6个卡片展示核心玩法）、角色展示区、系统要求、下载按钮等版块；3) 使用未来科技感的字体和layout（横条纹、数字雨背景、网格元素）；4) 响应式设计示意；5) 可以AI生成赛博朋克风格的配图或用合成的素材。设计稿保存到 ~/Desktop/ 为PNG格式。\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 1800,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773027298.266913,
+  "assigned_at": 1773027298.267566,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773027298.267585
+}

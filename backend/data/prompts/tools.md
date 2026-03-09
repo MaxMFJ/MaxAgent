@@ -60,6 +60,7 @@
 #### 🚫 严禁轮询（核心规则，违反会消耗大量 token）
 
 **delegate_duck 调用后绝对禁止轮询。** 系统采用纯推送机制，任务完成时自动触发 [系统自动续步] 消息。
+**委派成功后你必须立即结束本轮对话**，不要调用 duck_status、list_directory 等检查进度。
 
 ❌ 禁止：
 - 调用 `delegate_duck` 后反复调用 `duck_status` 检查进度

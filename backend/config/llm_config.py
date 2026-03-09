@@ -165,3 +165,79 @@ def get_cloud_providers_configured() -> list:
                 "has_api_key": bool((slot.get("api_key") or "").strip()),
             })
     return out
+
+
+# ─────────────────────────────────────────────
+# 多自定义模型管理
+# ─────────────────────────────────────────────
+
+def get_custom_providers() -> list:
+    """返回所有用户配置的自定义模型提供商列表。"""
+    cfg = load_llm_config()
+    return cfg.get("custom_providers") or []
+
+
+def save_custom_provider(
+    provider_id: str,
+    name: str,
+    api_key: str = "",
+    base_url: str = "",
+    model: str = "",
+) -> dict:
+    """新建或更新一个自定义提供商。provider_id 为唯一标识符（如 'glm5' 或 UUID）。"""
+    import uuid as _uuid
+    cfg = load_llm_config()
+    providers: list = cfg.get("custom_providers") or []
+    # 查找已存在的
+    for i, p in enumerate(providers):
+        if p.get("id") == provider_id:
+            providers[i] = {
+                "id": provider_id,
+                "name": name,
+                "api_key": api_key,
+                "base_url": base_url,
+                "model": model,
+            }
+            break
+    else:
+        # 新增
+        providers.append({
+            "id": provider_id or str(_uuid.uuid4())[:8],
+            "name": name,
+            "api_key": api_key,
+            "base_url": base_url,
+            "model": model,
+        })
+    cfg["custom_providers"] = providers
+    os.makedirs(DATA_DIR, exist_ok=True)
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to save custom provider: {e}")
+    return next((p for p in providers if p.get("id") == provider_id), {})
+
+
+def delete_custom_provider(provider_id: str) -> bool:
+    """删除指定 ID 的自定义提供商，返回是否成功找到并删除。"""
+    cfg = load_llm_config()
+    providers: list = cfg.get("custom_providers") or []
+    new_providers = [p for p in providers if p.get("id") != provider_id]
+    if len(new_providers) == len(providers):
+        return False
+    cfg["custom_providers"] = new_providers
+    os.makedirs(DATA_DIR, exist_ok=True)
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to delete custom provider: {e}")
+    return True
+
+
+def get_custom_provider_by_id(provider_id: str) -> Optional[dict]:
+    """根据 ID 返回自定义提供商配置，找不到返回 None。"""
+    for p in get_custom_providers():
+        if p.get("id") == provider_id:
+            return p
+    return None

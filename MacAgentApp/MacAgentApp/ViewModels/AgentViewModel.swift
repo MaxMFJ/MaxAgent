@@ -107,6 +107,10 @@ class AgentViewModel: ObservableObject {
     @AppStorage("anthropicBaseUrl") var anthropicBaseUrl: String = ""
     @AppStorage("anthropicModel") var anthropicModel: String = ""
     @AppStorage("anthropicApiKey") var anthropicApiKey: String = ""
+    /// 自定义模型（任意 OpenAI 兼容端点）
+    @AppStorage("customApiKey") var customApiKey: String = ""
+    @AppStorage("customBaseUrl") var customBaseUrl: String = ""
+    @AppStorage("customModelName") var customModelName: String = ""
     
     // 邮件 SMTP 配置（用于系统级发信，不依赖 Mail.app）
     @AppStorage("smtpServer") var smtpServer: String = "smtp.qq.com"
@@ -130,6 +134,10 @@ class AgentViewModel: ObservableObject {
     @Published var isInstallingLangChain: Bool = false
     /// 安装依赖失败时的错误信息（用于设置页弹窗）
     @Published var langchainInstallError: String?
+
+    // 多自定义模型提供商列表
+    @Published var customProviders: [CustomProviderModel] = []
+    @Published var isLoadingCustomProviders: Bool = false
     
     // 待审批工具（签名校验未通过）
     @Published var pendingTools: [PendingTool] = []
@@ -373,6 +381,7 @@ class AgentViewModel: ObservableObject {
         }
         currentConversation?.messages.append(msg)
         currentConversation?.updatedAt = Date()
+        saveConversations()  // 持久化，避免重新打开 App 后 Duck 任务结果丢失
         // Duck 任务完成后即时刷新状态（Duck 应回到空闲状态）
         Task { await self.refreshDuckStatus() }
     }
@@ -385,6 +394,7 @@ class AgentViewModel: ObservableObject {
             await applyDuckModeIfNeeded()
             await backendService.connect()
             await loadTools()
+            await loadCustomProviders()
             await syncConfig()
             await loadGitHubConfig()
             loadSystemMessages()
@@ -431,10 +441,29 @@ class AgentViewModel: ObservableObject {
             configApiKey = anthropicApiKey
             configBaseUrl = anthropicBaseUrl
             configModel = anthropicModel
+        case "custom":
+            configApiKey = customApiKey
+            configBaseUrl = customBaseUrl
+            configModel = customModelName
         default:
-            configApiKey = apiKey
-            configBaseUrl = baseUrl
-            configModel = model
+            // custom.{id} 格式：从 customProviders 列表找到对应项
+            if provider.hasPrefix("custom.") {
+                let pid = String(provider.dropFirst("custom.".count))
+                if let slot = customProviders.first(where: { $0.id == pid }) {
+                    configApiKey = slot.rawApiKey
+                    configBaseUrl = slot.baseUrl
+                    configModel = slot.model
+                    // provider 就是 "custom.{id}"，直接传给后端
+                } else {
+                    configApiKey = apiKey
+                    configBaseUrl = baseUrl
+                    configModel = model
+                }
+            } else {
+                configApiKey = apiKey
+                configBaseUrl = baseUrl
+                configModel = model
+            }
         }
         
         do {
@@ -504,6 +533,9 @@ class AgentViewModel: ObservableObject {
             case "anthropic":
                 anthropicBaseUrl = cfg.baseUrl ?? anthropicBaseUrl
                 anthropicModel = cfg.model
+            case "custom":
+                customBaseUrl = cfg.baseUrl ?? customBaseUrl
+                customModelName = cfg.model
             default:
                 break
             }
@@ -512,9 +544,58 @@ class AgentViewModel: ObservableObject {
         }
     }
 
+    // MARK: - 自定义模型提供商管理
+
+    func loadCustomProviders() async {
+        isLoadingCustomProviders = true
+        defer { isLoadingCustomProviders = false }
+        do {
+            let providers = try await backendService.fetchCustomProviders()
+            await MainActor.run { customProviders = providers }
+        } catch {
+            // 连接失败时保留本地列表
+        }
+    }
+
+    func saveCustomProvider(_ item: CustomProviderModel) async {
+        do {
+            let saved = try await backendService.upsertCustomProvider(
+                id: item.id.isEmpty ? nil : item.id,
+                name: item.name,
+                apiKey: item.rawApiKey,
+                baseUrl: item.baseUrl,
+                model: item.model
+            )
+            await MainActor.run {
+                if let idx = customProviders.firstIndex(where: { $0.id == saved.id }) {
+                    customProviders[idx] = saved
+                } else {
+                    customProviders.append(saved)
+                }
+            }
+        } catch {
+            errorMessage = "保存失败: \(error.localizedDescription)"
+        }
+    }
+
+    func deleteCustomProvider(id: String) async {
+        do {
+            try await backendService.deleteCustomProvider(id: id)
+            await MainActor.run {
+                customProviders.removeAll { $0.id == id }
+                // 若当前选择的就是被删除的提供商，切换回 deepseek
+                if provider.hasPrefix("custom.") {
+                    let pid = String(provider.dropFirst("custom.".count))
+                    if pid == id { provider = "deepseek" }
+                }
+            }
+        } catch {
+            errorMessage = "删除失败: \(error.localizedDescription)"
+        }
+    }
+
     /// 仅保存 LangChain 开关状态（不执行安装，用于用户勾选/取消勾选时）
-    func setLangChainCompat(_ enabled: Bool) async {
-        langchainInstallError = nil
+    func setLangChainCompat(_ enabled: Bool) async {        langchainInstallError = nil
         do {
             try await backendService.updateLangChainCompat(enabled: enabled)
             langchainCompat = enabled
@@ -1270,9 +1351,10 @@ class AgentViewModel: ObservableObject {
                     taskProgress?.summary = summary
                     
                     let statusIcon = success ? "✅" : "⚠️"
-                    statusContent += "\n\(statusIcon) 任务完成\n"
+                    statusContent += "\n\(statusIcon) \(success ? "任务完成" : "任务未完成")\n"
                     statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
-                    statusContent += "📝 总结: \(summary)\n"
+                    let displaySummary = summary.isEmpty ? (success ? "已完成" : "请查看上方失败步骤的错误信息") : summary
+                    statusContent += "📝 总结: \(displaySummary)\n"
                     // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
                     updateAssistantMessage(content: statusContent, isStreaming: false)
                     
@@ -1730,9 +1812,10 @@ class AgentViewModel: ObservableObject {
                     taskProgress?.summary = summary
                     
                     let statusIcon = success ? "✅" : "⚠️"
-                    statusContent += "\n\(statusIcon) 任务完成\n"
+                    statusContent += "\n\(statusIcon) \(success ? "任务完成" : "任务未完成")\n"
                     statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
-                    statusContent += "📝 总结: \(summary)\n"
+                    let displaySummary = summary.isEmpty ? (success ? "已完成" : "请查看上方失败步骤的错误信息") : summary
+                    statusContent += "📝 总结: \(displaySummary)\n"
                     // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
                     updateAssistantMessage(content: statusContent, isStreaming: false)
                     
@@ -2299,6 +2382,15 @@ class AgentViewModel: ObservableObject {
             await loadDuckData()
         } catch {
             duckError = "启动本地 Duck 失败: \(error.localizedDescription)"
+        }
+    }
+
+    /// 获取主 Agent 已配置的在线 LLM 列表，供子 Duck 配置时一键导入
+    func fetchMainAgentLLMProviders() async -> [[String: Any]] {
+        do {
+            return try await backendService.fetchMainAgentLLMProviders()
+        } catch {
+            return []
         }
     }
 

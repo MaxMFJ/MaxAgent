@@ -66,6 +66,21 @@ class LLMConfig:
             # 通常需使用 OpenAI 兼容网关，由用户配置
             self.base_url = self.base_url or ""
             self.model = self.model or ""
+        elif self.provider == "custom":
+            # 旧格式：单一自定义提供商，key/base_url/model 全由用户手动填写
+            pass
+        elif self.provider.startswith("custom."):
+            # 新格式：custom.<id>，从 llm_config.custom_providers 列表中查找配置
+            provider_id = self.provider[len("custom."):]
+            try:
+                from config.llm_config import get_custom_provider_by_id
+                slot = get_custom_provider_by_id(provider_id)
+                if slot:
+                    self.api_key = slag if (slag := (slot.get("api_key") or "").strip()) else self.api_key
+                    self.base_url = slot.get("base_url") or self.base_url
+                    self.model = slot.get("model") or self.model
+            except Exception as _e:
+                logger.warning(f"Failed to load custom provider '{provider_id}': {_e}")
 
 
 class LLMClient:

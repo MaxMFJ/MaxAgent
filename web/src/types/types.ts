@@ -207,6 +207,8 @@ export type WSMessageType =
   | 'screenshot'
   /* 系统通知 */
   | 'system_notification'
+  /* Duck 任务完成 */
+  | 'duck_task_complete'
   /* 心跳 */
   | 'server_ping'
   /* 监控 */

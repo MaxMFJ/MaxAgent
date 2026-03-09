@@ -1,0 +1,8 @@
+{"iteration": 1, "type": "llm", "model": "custom/GLM-5", "latency_ms": 9177, "success": true, "ts": 1773022237.019705}
+{"iteration": 1, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773022237.023547}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 12364, "success": true, "ts": 1773022251.390553}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 276, "success": true, "error": null, "ts": 1773022251.6689532}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 6760, "success": true, "ts": 1773022260.432367}
+{"iteration": 3, "type": "tool", "action_type": "run_shell", "latency_ms": 328, "success": true, "error": null, "ts": 1773022260.76273}
+{"iteration": 4, "type": "llm", "model": "custom/GLM-5", "latency_ms": 12137, "success": true, "ts": 1773022274.903073}
+{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 322, "success": true, "error": null, "ts": 1773022275.22891}

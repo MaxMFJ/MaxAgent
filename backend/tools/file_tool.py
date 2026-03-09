@@ -71,6 +71,14 @@ class FileTool(BaseTool):
                 "type": "boolean",
                 "description": "是否递归操作",
                 "default": False
+            },
+            "offset": {
+                "type": "integer",
+                "description": "（仅 read）从第 N 字符开始读取，用于分段读取大文件，默认 0"
+            },
+            "limit": {
+                "type": "integer",
+                "description": "（仅 read）最多读取字符数，默认 15000。超长文件可配合 offset 分段读取"
             }
         },
         "required": ["action", "path"]
@@ -90,7 +98,11 @@ class FileTool(BaseTool):
         
         try:
             if action == "read":
-                return await self._read(path)
+                offset = int(kwargs.get("offset", 0) or 0)
+                limit = int(kwargs.get("limit", 0) or 15000)
+                if limit <= 0:
+                    limit = 15000
+                return await self._read(path, offset=offset, limit=limit)
             elif action == "write":
                 content = kwargs.get("content", "")
                 return await self._write(path, content)
@@ -125,17 +137,33 @@ class FileTool(BaseTool):
         except Exception as e:
             return ToolResult(success=False, error=str(e))
     
-    async def _read(self, path: str) -> ToolResult:
-        """Read file content"""
+    async def _read(self, path: str, offset: int = 0, limit: int = 15000) -> ToolResult:
+        """Read file content, supports offset/limit for chunked reading of large files"""
         if not os.path.exists(path):
             return ToolResult(success=False, error=f"文件不存在: {path}")
         if os.path.isdir(path):
             return ToolResult(success=False, error=f"路径是目录，不是文件: {path}")
-        
+
         with open(path, "r", encoding="utf-8", errors="replace") as f:
-            content = f.read()
-        
-        return ToolResult(success=True, data={"path": path, "content": content, "size": len(content)})
+            full_content = f.read()
+        total_size = len(full_content)
+
+        if offset > 0 or limit < total_size:
+            content = full_content[offset : offset + limit]
+            truncated = offset + limit < total_size
+            hint = f"\n\n[分段提示] 共 {total_size} 字符，已读 {offset}–{offset + len(content)}。若需后续内容可 read offset={offset + len(content)} limit={limit}" if truncated else ""
+            return ToolResult(
+                success=True,
+                data={
+                    "path": path,
+                    "content": content + hint,
+                    "size": len(content),
+                    "total_size": total_size,
+                    "offset": offset,
+                    "truncated": truncated,
+                },
+            )
+        return ToolResult(success=True, data={"path": path, "content": full_content, "size": total_size})
     
     async def _write(self, path: str, content: str) -> ToolResult:
         """Write content to file"""

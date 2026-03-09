@@ -202,3 +202,135 @@ async def install_langchain_dependencies():
         return {"success": False, "message": "安装超时（120 秒）。请在后端目录自行执行: pip install -r requirements-langchain.txt", "stderr": ""}
     except Exception as e:
         return {"success": False, "message": str(e), "stderr": ""}
+
+
+# ─────────────────────────────────────────────
+# 多自定义模型提供商 CRUD
+# ─────────────────────────────────────────────
+
+class CustomProviderUpdate(BaseModel):
+    id: Optional[str] = None          # 留空时后端自动生成 UUID 短串
+    name: str                          # 厂商/模型别名，用于 UI 展示
+    api_key: Optional[str] = ""
+    base_url: Optional[str] = ""
+    model: Optional[str] = ""
+
+
+@router.get("/config/custom-providers")
+async def list_custom_providers():
+    """返回所有用户自定义模型提供商列表（api_key 脱敏）。"""
+    from config.llm_config import get_custom_providers
+    providers = get_custom_providers()
+    return {
+        "providers": [
+            {
+                "id": p.get("id"),
+                "name": p.get("name") or "",
+                "base_url": p.get("base_url") or "",
+                "model": p.get("model") or "",
+                "has_api_key": bool((p.get("api_key") or "").strip()),
+            }
+            for p in providers
+        ]
+    }
+
+
+@router.post("/config/custom-providers")
+async def upsert_custom_provider(body: CustomProviderUpdate):
+    """新建或更新自定义模型提供商。id 不存在时自动新建。"""
+    import uuid as _uuid
+    from config.llm_config import save_custom_provider
+    provider_id = (body.id or "").strip() or str(_uuid.uuid4())[:8]
+    result = save_custom_provider(
+        provider_id=provider_id,
+        name=body.name.strip(),
+        api_key=(body.api_key or "").strip(),
+        base_url=(body.base_url or "").strip(),
+        model=(body.model or "").strip(),
+    )
+    return {
+        "status": "ok",
+        "id": result.get("id"),
+        "name": result.get("name"),
+        "base_url": result.get("base_url"),
+        "model": result.get("model"),
+        "has_api_key": bool((result.get("api_key") or "").strip()),
+    }
+
+
+@router.delete("/config/custom-providers/{provider_id}")
+async def remove_custom_provider(provider_id: str):
+    """删除指定 ID 的自定义模型提供商。"""
+    from config.llm_config import delete_custom_provider
+    deleted = delete_custom_provider(provider_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Custom provider '{provider_id}' not found")
+    return {"status": "deleted", "id": provider_id}
+
+
+@router.get("/config/llm-providers-for-import")
+async def get_llm_providers_for_import():
+    """
+    返回主 Agent 已配置的在线 LLM 列表，供子 Duck 配置时一键导入。
+    包含：当前主模型、云端提供商（DeepSeek/OpenAI/Gemini 等）、自定义提供商。
+    每个条目含 provider/name, api_key, base_url, model。
+    """
+    from config.llm_config import (
+        load_llm_config,
+        get_persisted_api_key,
+        get_custom_providers,
+        CLOUD_PROVIDERS,
+    )
+    cfg = load_llm_config()
+    persisted_key = get_persisted_api_key() or ""
+    providers: list[dict] = []
+
+    # 1. 当前主模型（主 Agent 正在使用的配置，仅在线 LLM）
+    main_provider = (cfg.get("provider") or "deepseek").strip().lower()
+    if main_provider not in ("ollama", "lmstudio"):
+        main_base = (cfg.get("base_url") or "").strip()
+        main_model = (cfg.get("model") or "").strip()
+        main_key = (cfg.get("api_key") or "").strip() or persisted_key
+        if main_base and main_model:
+            providers.append({
+                "provider": main_provider,
+                "name": f"主模型 ({main_provider})",
+                "api_key": main_key,
+                "base_url": main_base,
+                "model": main_model,
+            })
+
+    # 2. 云端提供商（providers 中已配置的）
+    slots = cfg.get("providers") or {}
+    for p in CLOUD_PROVIDERS:
+        slot = slots.get(p) if isinstance(slots, dict) else None
+        if not slot or not isinstance(slot, dict):
+            continue
+        base_url = (slot.get("base_url") or "").strip()
+        model = (slot.get("model") or "").strip()
+        api_key = (slot.get("api_key") or "").strip() or persisted_key
+        if base_url and model:
+            providers.append({
+                "provider": p,
+                "name": p,
+                "api_key": api_key,
+                "base_url": base_url,
+                "model": model,
+            })
+
+    # 3. 自定义提供商
+    for p in get_custom_providers():
+        if not isinstance(p, dict):
+            continue
+        base_url = (p.get("base_url") or "").strip()
+        model = (p.get("model") or "").strip()
+        if base_url and model:
+            providers.append({
+                "provider": "custom",
+                "name": (p.get("name") or p.get("id") or "自定义").strip(),
+                "api_key": (p.get("api_key") or "").strip(),
+                "base_url": base_url,
+                "model": model,
+            })
+
+    return {"providers": providers}

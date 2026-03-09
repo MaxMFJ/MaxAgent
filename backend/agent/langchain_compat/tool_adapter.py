@@ -39,7 +39,8 @@ def _tool_result_to_str(success: bool, data: Any = None, error: Optional[str] = 
         text = json.dumps(data, ensure_ascii=False, indent=2)
     else:
         text = str(data) if data else "操作成功"
-    max_chars = 3000
+    # 含 content 的 read 结果（设计规格等）保留更多，避免 Agent 反复读取
+    max_chars = 15000 if isinstance(data, dict) and "content" in data else 3000
     if len(text) > max_chars:
         text = text[:max_chars] + f"\n...[结果已截断，原始长度 {len(text)} 字符]"
     return text
@@ -52,9 +53,11 @@ def _make_langchain_tool(
     execute_fn: Any,
     registry: Any,
     bind_target_fn: Optional[Any] = None,
+    return_direct: bool = False,
 ) -> "LCBaseTool":
     """
     为单个 MacAgent 工具创建一个 LangChain StructuredTool，执行时委托 router.execute_tool。
+    return_direct: 为 True 时，工具执行后立即结束本轮对话，不再调用 LLM（用于 delegate_duck 等）
     """
     if not _HAS_LC:
         raise RuntimeError("langchain-core is required. Install with: pip install -r requirements-langchain.txt")
@@ -89,6 +92,13 @@ def _make_langchain_tool(
             registry=registry,
             bind_target_fn=bind_target_fn,
         )
+        # delegate_duck 成功时返回用户友好的结束语（return_direct 会直接展示给用户）
+        if name == "delegate_duck" and result.success and isinstance(result.data, dict):
+            msg = result.data.get("message", "")
+            duck_type = result.data.get("duck_type", "Duck")
+            if msg:
+                return msg
+            return f"任务已委派给 {duck_type} Duck，完成后会主动通知你。请稍候。"
         return _tool_result_to_str(result.success, result.data, result.error)
 
     return StructuredTool.from_function(
@@ -96,6 +106,7 @@ def _make_langchain_tool(
         description=description,
         func=_arun,
         args_schema=args_schema,
+        return_direct=return_direct,
     )
 
 
@@ -130,6 +141,8 @@ def mac_tools_to_langchain(
         t = registry.get(name)
         if not t:
             continue
+        # delegate_duck 成功后必须立即结束本轮，等待 Duck 完成时由系统触发续步
+        return_direct = name == "delegate_duck"
         lc_tool = _make_langchain_tool(
             name=name,
             description=desc,
@@ -137,6 +150,7 @@ def mac_tools_to_langchain(
             execute_fn=t.execute,
             registry=registry,
             bind_target_fn=bind_target_fn,
+            return_direct=return_direct,
         )
         tools.append(lc_tool)
     return tools

@@ -64,7 +64,20 @@ async def _run_agent_and_broadcast_result(
     运行主 Agent（带工具执行能力），收集完整响应后作为 duck_task_complete 广播。
     解决：run_stream 产生的 chunk 消息在客户端空闲 WS 循环中无法被处理的问题。
     agent 可在此过程中使用 write_file / terminal 等工具实际执行任务。
+    同时向监控面板广播 monitor_event，使主 Agent 执行过程可见。
     """
+    # 生成一个钩子内任务 ID，用于监控面板追踪
+    hook_task_id = f"duck_hook_{task_id}_{uuid.uuid4().hex[:6]}"
+
+    # 广播任务开始事件到监控面板
+    await broadcast_monitor_event(
+        session_id, hook_task_id,
+        {"type": "task_start", "task": prompt[:120], "timestamp": datetime.now().isoformat()},
+        task_type="chat",
+        worker_type="main",
+        worker_id="main",
+    )
+
     try:
         full_text = ""
         tool_calls_used: list[str] = []
@@ -76,9 +89,27 @@ async def _run_agent_and_broadcast_result(
             elif ctype == "tool_call":
                 tool_calls_used.append(chunk.get("tool_name", chunk.get("action_type", "")))
             elif ctype in ("stream_end", "error"):
-                # 出错时保留已有文本
                 if ctype == "error":
                     full_text += f"\n\n[错误：{chunk.get('error', '')}]"
+
+            # ── 向监控面板广播执行过程 ──────────────────────────────────────
+            if ctype in ("llm_request_start", "llm_request_end", "tool_call", "tool_result",
+                         "thinking", "chunk", "error"):
+                await broadcast_monitor_event(
+                    session_id, hook_task_id, chunk,
+                    task_type="chat",
+                    worker_type="main",
+                    worker_id="main",
+                )
+
+        # 广播任务完成事件到监控面板
+        await broadcast_monitor_event(
+            session_id, hook_task_id,
+            {"type": "task_complete", "status": "completed", "timestamp": datetime.now().isoformat()},
+            task_type="chat",
+            worker_type="main",
+            worker_id="main",
+        )
 
         # 生成广播内容
         if not full_text.strip():
@@ -104,6 +135,13 @@ async def _run_agent_and_broadcast_result(
         )
     except Exception as e:
         logger.warning(f"[duck_hook] _run_agent_and_broadcast_result failed for {session_id}: {e}")
+        await broadcast_monitor_event(
+            session_id, hook_task_id,
+            {"type": "error", "error": str(e), "timestamp": datetime.now().isoformat()},
+            task_type="chat",
+            worker_type="main",
+            worker_id="main",
+        )
 
 
 async def _on_duck_task_complete(session_id: str, task) -> None:
@@ -218,6 +256,43 @@ async def _on_duck_task_complete(session_id: str, task) -> None:
 
         if workspace_hint:
             continuation_msg += f"\n{workspace_hint}\n"
+
+        # 检测是否有 PNG/JPG 但缺少 _design_spec.md，给出更具体的指引
+        image_files = [fp for fp in file_paths if any(fp.lower().endswith(e) for e in (".png", ".jpg", ".jpeg"))]
+        if image_files and not design_spec_content:
+            # Designer Duck 生成了图片但没有设计规格——委派 Coder 时必须在 description 中写明设计图路径
+            img_paths_hint = ", ".join(f"`{p}`" for p in image_files[:3])
+            first_img = image_files[0]
+            continuation_msg += (
+                f"\n⚠️ **注意**：Designer Duck 生成了设计图（{img_paths_hint}）但未发现 `_design_spec.md`。\n"
+                f"委派 Coder Duck 时，**必须在 description 中**写明：\n"
+                f"1. 设计图完整路径：`{first_img}`\n"
+                f"2. 明确要求：使用 call_tool(vision, action=analyze_local_image, file_path=\"{first_img}\") 直接读取设计图，"
+                "**禁止**用 open+截图 或 screenshot 看设计。\n"
+                "这样 Coder Duck 会直接读取图片文件进行分析，无需截图。\n"
+            )
+
+        # Duck 上下文注入：若有设计产出（Designer→Coder 串行），提供可直接复制的 delegate description
+        suggested_delegate_desc = ""
+        if duck_name and "designer" in duck_name.lower() and (design_spec_content or image_files):
+            parts = []
+            if image_files:
+                _first_img = image_files[0]
+                parts.append(f"设计图路径：{_first_img}")
+                parts.append(f"必须用 call_tool(vision, action=analyze_local_image, file_path=\"{_first_img}\") 读取，禁止截图。")
+            if design_spec_content:
+                spec_preview = design_spec_content[:1500] + ("..." if len(design_spec_content) > 1500 else "")
+                parts.append(f"设计规格：\n{spec_preview}")
+            parts.append("任务：根据上述设计完成 HTML/CSS 实现，输出到工作区。")
+            suggested_delegate_desc = "\n".join(parts)
+
+        if suggested_delegate_desc:
+            continuation_msg += (
+                "\n\n📋 **【可直接使用的 delegate_duck description】**\n"
+                "若需委派 Coder Duck，请将以下整段复制到 delegate_duck 的 description 参数中：\n"
+                "```\n" + suggested_delegate_desc + "\n```\n"
+            )
+
         continuation_msg += (
             "\n请根据上述工作区产出和对话上下文判断：\n"
             "1. 若还有待执行的下一步任务（如把设计图交给 coder Duck 制作 HTML），"

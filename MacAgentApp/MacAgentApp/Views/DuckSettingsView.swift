@@ -155,6 +155,7 @@ struct DuckSettingsContent: View {
                 apiKey: item.apiKey,
                 baseUrl: item.baseUrl,
                 model: item.model,
+                onFetchMainAgentProviders: { await viewModel.fetchMainAgentLLMProviders() },
                 onSave: { apiKey, baseUrl, model in
                     Task {
                         await viewModel.updateDuckLLMConfig(duckId: item.duckId, apiKey: apiKey, baseUrl: baseUrl, model: model)
@@ -731,19 +732,23 @@ private struct DuckRowView: View {
     }
 }
 
-/// 分身 LLM 配置弹窗（用户手动填写 api_key、base_url、model）
+/// 分身 LLM 配置弹窗（用户手动填写 api_key、base_url、model，支持从主 Agent 配置一键导入）
 private struct DuckLLMConfigSheet: View {
     let duckId: String
     let duckName: String
     let apiKey: String
     let baseUrl: String
     let model: String
+    let onFetchMainAgentProviders: () async -> [[String: Any]]
     let onSave: (String, String, String) -> Void
     let onDismiss: () -> Void
 
     @State private var editApiKey: String = ""
     @State private var editBaseUrl: String = ""
     @State private var editModel: String = ""
+    @State private var mainAgentProviders: [[String: Any]] = []
+    @State private var isLoadingProviders: Bool = false
+    @State private var providersError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -757,6 +762,60 @@ private struct DuckLLMConfigSheet: View {
             Text("为 \(duckName) 配置独立 LLM，使分身更有效运用大模型完成专项任务。")
                 .font(CyberFont.body(size: 12))
                 .foregroundColor(.secondary)
+
+            // 从主 Agent 已配置的在线 LLM 一键导入
+            VStack(alignment: .leading, spacing: 8) {
+                Text("主 Agent 配置")
+                    .font(CyberFont.body(size: 11, weight: .medium))
+                HStack(spacing: 8) {
+                    Button {
+                        Task {
+                            isLoadingProviders = true
+                            providersError = nil
+                            mainAgentProviders = await onFetchMainAgentProviders()
+                            providersError = mainAgentProviders.isEmpty ? "主 Agent 暂无已配置的在线 LLM" : nil
+                            isLoadingProviders = false
+                        }
+                    } label: {
+                        if isLoadingProviders {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "arrow.down.circle")
+                            Text("获取主 Agent 配置")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isLoadingProviders)
+                    if let err = providersError {
+                        Text(err)
+                            .font(CyberFont.body(size: 10))
+                            .foregroundColor(.orange)
+                    }
+                }
+                if !mainAgentProviders.isEmpty {
+                    List {
+                        ForEach(mainAgentProviders.indices, id: \.self) { i in
+                            let m = mainAgentProviders[i]
+                            let name = m["name"] as? String ?? m["provider"] as? String ?? ""
+                            let mod = m["model"] as? String ?? ""
+                            Button {
+                                applyProvider(m)
+                            } label: {
+                                HStack {
+                                    Text("\(name): \(mod)")
+                                        .font(CyberFont.body(size: 12))
+                                    Spacer()
+                                    Image(systemName: "arrow.right.circle")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(maxHeight: 140)
+                }
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("API Key")
@@ -792,6 +851,12 @@ private struct DuckLLMConfigSheet: View {
             editBaseUrl = baseUrl
             editModel = model
         }
+    }
+
+    private func applyProvider(_ m: [String: Any]) {
+        editApiKey = m["api_key"] as? String ?? ""
+        editBaseUrl = m["base_url"] as? String ?? ""
+        editModel = m["model"] as? String ?? ""
     }
 }
 

@@ -446,6 +446,15 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
         }
         NSLog(@"[WebSocket] chat_to_duck_result: duck_id=%@ task_id=%@ success=%d", duckId, taskId, success);
     }
+    else if ([type isEqualToString:@"duck_task_complete"]) {
+        NSString *content = _StringFromJSON(json[@"content"]) ?: @"";
+        NSString *sessionId = _StringFromJSON(json[@"session_id"]) ?: @"";
+        BOOL success = [json[@"success"] isKindOfClass:[NSNumber class]] ? [json[@"success"] boolValue] : NO;
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveDuckTaskComplete:success:sessionId:)]) {
+            [self.delegate webSocketService:self didReceiveDuckTaskComplete:content success:success sessionId:sessionId];
+        }
+        NSLog(@"[WebSocket] duck_task_complete: session_id=%@ success=%d", sessionId, success);
+    }
     else if ([type isEqualToString:@"pong"]) {
         // Heartbeat response
     }

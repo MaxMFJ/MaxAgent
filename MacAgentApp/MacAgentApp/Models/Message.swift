@@ -295,6 +295,30 @@ struct BackendConfig: Codable {
     }
 }
 
+// MARK: - 自定义模型提供商
+
+/// 单个用户自定义模型（服务端 custom_providers 列表中的一项）
+struct CustomProviderModel: Identifiable, Codable, Equatable {
+    var id: String          // 唯一标识符（UUID 短串）
+    var name: String        // 厂商/别名，例如 "智谱 GLM"
+    var baseUrl: String
+    var model: String
+    var hasApiKey: Bool     // 服务端脱敏标志；本地编辑时存 rawApiKey
+
+    /// 本地编辑专用：填写或修改时暂存明文 API Key
+    var rawApiKey: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, model
+        case baseUrl = "base_url"
+        case hasApiKey = "has_api_key"
+    }
+}
+
+struct CustomProvidersResponse: Codable {
+    let providers: [CustomProviderModel]
+}
+
 struct SmtpConfig: Codable {
     let smtpServer: String
     let smtpPort: Int

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 优先使用「单 NSTextView」富文本：整条消息可跨段/跨代码块选择复制，链接可点击。
-/// 支持 <thinking>...</thinking> 块：流式时展开，输出完成后默认折叠（类似 Cursor）。
+/// 支持 <thinking>...</thinking> 块：chat 回复优先展示，thinking 块收在回复后、默认折叠。
 struct MarkdownText: View {
     let content: String
     /// 是否正在流式输出；用于控制 thinking 块默认折叠状态
@@ -12,14 +12,17 @@ struct MarkdownText: View {
         if parts.count == 1, case .text(let only) = parts.first! {
             UnifiedMarkdownView(content: only)
         } else {
+            // 回复优先：先展示所有 text，再展示 thinking（收在回复后）
+            let textParts = parts.filter { if case .text = $0 { return true }; return false }
+            let thinkingParts = parts.filter { if case .thinking = $0 { return true }; return false }
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
-                    switch part {
-                    case .text(let s):
-                        if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            UnifiedMarkdownView(content: s)
-                        }
-                    case .thinking(let s):
+                ForEach(Array(textParts.enumerated()), id: \.offset) { _, part in
+                    if case .text(let s) = part, !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        UnifiedMarkdownView(content: s)
+                    }
+                }
+                ForEach(Array(thinkingParts.enumerated()), id: \.offset) { _, part in
+                    if case .thinking(let s) = part {
                         ThinkingBlockView(thinkingContent: s, isStreaming: isStreaming)
                     }
                 }

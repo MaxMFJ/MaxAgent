@@ -343,10 +343,14 @@ class DuckTaskScheduler:
         - 最多重试 task.max_retries 次，耗尽后由主 Agent 接管
         """
         import os
+        import glob
         # ── 检查前一次执行是否已经产出了目标文件 ──────────────────────────────
         # 如果上次执行虽然超时/失败但已经写入了文件，视为部分成功，不再重试
         prev_output = str(result.output or "")
         prev_files = self._extract_file_paths_from_output(prev_output)
+        # 当 output 为空（如超时/异常）时，根据任务描述推断并检查常见输出位置
+        if not prev_files and (task.description or ""):
+            prev_files = self._find_likely_output_files(task)
         if prev_files:
             # 有实际产出文件存在，将任务标记为成功完成
             logger.info(
@@ -473,6 +477,46 @@ class DuckTaskScheduler:
             logger.warning(f"[auto_retry] Failed to notify main agent: {e}")
 
     @staticmethod
+    def _find_likely_output_files(task: "DuckTask") -> list:
+        """
+        当 output 为空（超时/异常）时，根据任务描述推断可能产出的文件并检查是否存在。
+        避免「任务已完成但超时导致重试」时重复创建已存在的文件。
+        """
+        import os
+        import re
+        import time
+        import glob as glob_module
+        desc = (task.original_description or task.description or "").lower()
+        if not desc or not any(k in desc for k in ("网页", "html", "设计", "design", "创建", "create", "保存", "save")):
+            return []
+        candidates = []
+        # 从描述中提取参考路径（如设计图），检查同目录下是否有 .html 产出
+        raw_desc = task.original_description or task.description or ""
+        ref_paths = re.findall(
+            r'(/(?:Users|tmp|var|home)/[^\s"\'\\,，；；、\]\)>]+\.(?:html?|png|jpg|jpeg|md|txt))',
+            raw_desc,
+            re.IGNORECASE,
+        )
+        for p in ref_paths:
+            if os.path.exists(p):
+                base_dir = os.path.dirname(p)
+                for f in glob_module.glob(os.path.join(base_dir, "*.html")) + glob_module.glob(os.path.join(base_dir, "*.htm")):
+                    if os.path.isfile(f):
+                        candidates.append(f)
+        # 检查 Desktop 下最近 15 分钟内修改的 .html
+        desktop = os.path.expanduser("~/Desktop")
+        if os.path.isdir(desktop):
+            cutoff = time.time() - 900
+            for p in glob_module.glob(os.path.join(desktop, "*.html")) + glob_module.glob(os.path.join(desktop, "*.htm")):
+                try:
+                    if os.path.isfile(p) and os.path.getmtime(p) >= cutoff:
+                        candidates.append(p)
+                except OSError:
+                    pass
+        seen = set()
+        return [p for p in candidates if p not in seen and not seen.add(p)]
+
+    @staticmethod
     def _extract_file_paths_from_output(output: any) -> list:
         """
         从 Duck 输出中提取文件路径列表。
@@ -589,6 +633,8 @@ class DuckTaskScheduler:
 
             # 写入对话上下文，便于后续对话引用
             ctx_mgr.add_message("assistant", content)
+            # 持久化到磁盘（data/contexts/{session_id}.json），避免重启后端后 Duck 结果丢失
+            context_manager.save_session(session_id)
 
             # 触发全局 Duck 完成钩子（如 ws_handler 自动续步逻辑）
             for hook in _duck_complete_hooks:

@@ -1,0 +1,13 @@
+{
+  "task_id": "1e3434d9",
+  "session_id": "E04A8BDA-4F10-40E1-B706-A6FB43D2F1C7",
+  "task_description": "设计一个饮食管理的网页 然后把网页开发出来",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 50,
+  "action_checkpoints": [],
+  "created_at": "2026-03-09T10:30:22.049301",
+  "updated_at": "2026-03-09T10:47:27.836865",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

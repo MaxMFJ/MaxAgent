@@ -28,6 +28,8 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)webSocketService:(WebSocketService *)service didAcceptChatToDuck:(NSString *)duckId taskId:(NSString *)taskId;
 /// chat_to_duck 结果返回
 - (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckResult:(nullable NSString *)output duckId:(NSString *)duckId taskId:(NSString *)taskId success:(BOOL)success error:(nullable NSString *)errorMessage;
+/// duck_task_complete：主 Agent 委派给 Duck 后，Duck 完成时广播（需持久化到会话）
+- (void)webSocketService:(WebSocketService *)service didReceiveDuckTaskComplete:(NSString *)content success:(BOOL)success sessionId:(NSString *)sessionId;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat;
 - (void)webSocketService:(WebSocketService *)service didConnectWithClientId:(NSString *)clientId sessionId:(NSString *)sessionId hasRunningTask:(BOOL)hasRunningTask runningTaskId:(nullable NSString *)runningTaskId hasRunningChat:(BOOL)hasRunningChat hasBufferedChat:(BOOL)hasBufferedChat bufferedChatCount:(NSInteger)bufferedChatCount;
 - (void)webSocketServiceDidClearSession:(WebSocketService *)service;

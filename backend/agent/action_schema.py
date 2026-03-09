@@ -459,30 +459,39 @@ class TaskContext:
 
     def summarize_history_for_llm(
         self,
-        max_recent: int = 8,
+        max_recent: int = 5,
         max_chars: int = 5000,
+        max_context_tokens: Optional[int] = None,
     ) -> str:
         """
         在控制 token 的前提下生成给 LLM 的历史上下文。
-        最近 max_recent 条完整保留，更早的每 5 步合并为一行摘要；总长度约 max_chars。
-        v3.1 增强：包含 key_artifacts，保留更多关键信息。
+        分层压缩：
+        - 最近 max_recent 条完整保留
+        - 中间步骤：规则摘要（类型、成功数、关键路径/URL）
+        - 更早步骤：每 5 步合并为一行
+        当 max_context_tokens 提供时，优先按 token 预算截断；否则用 max_chars。
         """
+        try:
+            from .token_counter import count_tokens
+        except ImportError:
+            count_tokens = None
+
         structured = self.get_structured_history()
         lines = [f"任务: {self.task_description}", ""]
-        
+
         # 首先输出关键产物（最重要的上下文）
         if self.key_artifacts:
             lines.append("【关键产物 - 已完成的成果，请勿重复执行】")
             for artifact in self.key_artifacts:
                 lines.append(f"  • [{artifact['type']}] 步骤{artifact['step']}: {artifact['value']}")
             lines.append("")
-        
+
         if not structured:
             lines.append(f"当前迭代: {self.current_iteration}/{self.adaptive_max_iterations}")
             return "\n".join(lines)
 
         n = len(structured)
-        # 较早部分：每 5 步合并，但保留关键路径/URL信息
+        # 分层：更早部分每 5 步合并
         if n > max_recent:
             older = structured[: n - max_recent]
             lines.append("历史步骤摘要:")
@@ -491,11 +500,9 @@ class TaskContext:
                 successes = sum(1 for s in chunk if s["success"])
                 types = ", ".join(dict.fromkeys(s["action_type"] for s in chunk))
                 lines.append(f"  步骤 {chunk[0]['iteration']}–{chunk[-1]['iteration']}: {types}（成功 {successes}/{len(chunk)}）")
-                # 提取关键路径/URL信息
                 for s in chunk:
                     obs = s.get("observation_summary", "")
                     if "/Users/" in obs or "http" in obs.lower() or ":" in obs:
-                        # 保留包含路径或URL的关键信息
                         key_info = obs[:200] if len(obs) > 200 else obs
                         if key_info.strip():
                             lines.append(f"    → {key_info}")
@@ -506,7 +513,6 @@ class TaskContext:
             status = "✓" if s["success"] else "✗"
             lines.append(f"  [{status}] {s['action_type']}: {s['thought'][:80]}")
             if s["observation_summary"]:
-                # 对包含路径/URL的输出保留更多内容
                 obs = s["observation_summary"]
                 if "/Users/" in obs or "http" in obs.lower():
                     lines.append(f"      结果: {obs[:400]}")
@@ -517,9 +523,49 @@ class TaskContext:
         if self.get_success_rate() < 0.5:
             lines.append(f"⚠️ 成功率较低: {self.get_success_rate():.1%}，请仔细分析错误原因")
         result = "\n".join(lines)
-        if len(result) > max_chars:
+
+        # Token 预算截断：超预算时保留末尾（最近步骤+当前迭代），截断中间历史
+        if max_context_tokens and count_tokens:
+            current_tokens = count_tokens(result)
+            if current_tokens > max_context_tokens:
+                # 保留后 60% 内容（最近步骤、当前迭代），前部用摘要替代
+                keep_ratio = 0.6
+                keep_start = int(len(result) * (1 - keep_ratio))
+                candidate = "(前文已按 token 预算压缩)\n" + result[keep_start:]
+                if count_tokens(candidate) <= max_context_tokens:
+                    result = candidate
+                else:
+                    # 再压缩：只保留最近步骤和当前迭代
+                    for start in ["最近步骤详情:", "当前迭代:"]:
+                        idx = result.rfind(start)
+                        if idx >= 0:
+                            candidate = "(前文已省略)\n" + result[idx:]
+                            if count_tokens(candidate) <= max_context_tokens:
+                                result = candidate
+                                break
+                    else:
+                        result = result[-max_context_tokens * 3 :] + "\n...(已截断)"
+        elif len(result) > max_chars:
             result = result[: max_chars] + "\n...(已截断)"
         return result
+
+    def get_structured_context_for_llm(self) -> Dict[str, Any]:
+        """
+        返回结构化任务状态，便于 LLM 解析与压缩。
+        用于需要 JSON 格式上下文的场景。
+        """
+        structured = self.get_structured_history()
+        return {
+            "task": self.task_description,
+            "current_iteration": self.current_iteration,
+            "max_iterations": self.adaptive_max_iterations,
+            "success_rate": self.get_success_rate(),
+            "key_artifacts": self.key_artifacts,
+            "recent_steps": structured[-5:] if structured else [],
+            "older_summary": (
+                f"共 {len(structured) - 5} 步" if len(structured) > 5 else None
+            ),
+        }
 
 
 # Action parameter schemas for validation
@@ -534,7 +580,7 @@ ACTION_SCHEMAS = {
     },
     ActionType.READ_FILE: {
         "required": ["path"],
-        "optional": ["encoding"]
+        "optional": ["encoding", "offset", "limit"]
     },
     ActionType.WRITE_FILE: {
         "required": ["path", "content"],

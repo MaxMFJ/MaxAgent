@@ -1360,6 +1360,35 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     });
 }
 
+- (void)webSocketService:(WebSocketService *)service didReceiveDuckTaskComplete:(NSString *)content success:(BOOL)success sessionId:(NSString *)sessionId {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!content.length) return;
+        ConversationManager *manager = [ConversationManager sharedManager];
+        Conversation *conv = nil;
+        for (Conversation *c in manager.conversations) {
+            if ([c.conversationId isEqualToString:sessionId]) {
+                conv = c;
+                break;
+            }
+        }
+        if (!conv) return;
+        Message *msg = [Message assistantMessage];
+        msg.content = content;
+        msg.status = success ? MessageStatusComplete : MessageStatusError;
+        msg.modelName = @"Duck";
+        msg.timestamp = [NSDate date];
+        msg.messageId = [[NSUUID UUID] UUIDString];
+        [conv.messages addObject:msg];
+        conv.updatedAt = [NSDate date];
+        [manager saveConversations];
+        if (manager.currentConversation == conv) {
+            [self.tableView reloadData];
+            [self scrollToBottom];
+        }
+        NSLog(@"[Chat] duck_task_complete: session=%@ success=%d", sessionId, success);
+    });
+}
+
 - (void)webSocketService:(WebSocketService *)service didReceiveChatToDuckResult:(NSString *)output duckId:(NSString *)duckId taskId:(NSString *)taskId success:(BOOL)success error:(NSString *)errorMessage {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.inputView.loading = NO;
@@ -1368,7 +1397,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         if (self.currentAssistantMessage) {
             if (success && output.length > 0) {
                 self.currentAssistantMessage.content = output;
-                self.currentAssistantMessage.status = MessageStatusDone;
+                self.currentAssistantMessage.status = MessageStatusError;
             } else {
                 NSString *msg = errorMessage.length > 0 ? errorMessage : @"Duck 未返回结果";
                 self.currentAssistantMessage.content = [NSString stringWithFormat:@"❌ %@", msg];

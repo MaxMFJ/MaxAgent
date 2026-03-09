@@ -1,0 +1,7 @@
+{"iteration": 1, "type": "llm", "model": "custom/GLM-5", "latency_ms": 4480, "success": true, "ts": 1773020498.143659}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 0, "success": false, "error": "ScreenshotTool.execute() got an unexpected keyword argument 'file_path'. Did you mean 'save_path'?", "ts": 1773020498.14673}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 10739, "success": false, "error": "parse_failed", "ts": 1773020510.888413}
+{"iteration": 2, "type": "llm", "model": "custom/GLM-5", "latency_ms": 12343, "success": true, "ts": 1773020527.234782}
+{"iteration": 2, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773020527.238055}
+{"iteration": 3, "type": "llm", "model": "custom/GLM-5", "latency_ms": 62635, "success": true, "ts": 1773020591.875541}
+{"iteration": 3, "type": "tool", "action_type": "write_file", "latency_ms": 4, "success": true, "error": null, "ts": 1773020591.883512}

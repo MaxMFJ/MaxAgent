@@ -44,8 +44,10 @@ class ToolResult:
             result["error"] = self.error
         return result
     
-    # 发送给 LLM 的工具结果最大字符数（约 1500 token）
+    # 发送给 LLM 的工具结果最大字符数
     MAX_RESULT_CHARS = 3000
+    # 含 content 的 read 类结果：设计规格等需完整传递，提高上限
+    MAX_RESULT_CHARS_READ = 15000
 
     def to_string(self) -> str:
         """Convert result to string for LLM consumption (excludes large/binary data)"""
@@ -64,8 +66,14 @@ class ToolResult:
             else:
                 text = str(self.data) if self.data else "操作成功"
 
-            if len(text) > self.MAX_RESULT_CHARS:
-                text = text[: self.MAX_RESULT_CHARS] + f"\n...[结果已截断，原始长度 {len(text)} 字符]"
+            # 含 content 的 read 结果使用更高上限
+            max_chars = (
+                self.MAX_RESULT_CHARS_READ
+                if isinstance(self.data, dict) and "content" in self.data
+                else self.MAX_RESULT_CHARS
+            )
+            if len(text) > max_chars:
+                text = text[:max_chars] + f"\n...[结果已截断，原始长度 {len(text)} 字符]"
             return text
         return f"错误: {self.error}"
 
@@ -74,6 +82,8 @@ class ToolResult:
         "image_base64", "base64", "screenshot_data", "binary",
         "raw_data", "encoded", "audio_base64",
     }
+    # 高价值文本字段（如 file read 的 content、design_spec）：保留更多字符供 LLM 使用
+    _TEXT_CONTENT_KEYS = {"content"}
 
     def _filter_large_data(self, data: Dict) -> Dict:
         """Filter out binary blobs and oversized string values from tool results"""
@@ -85,11 +95,14 @@ class ToolResult:
             if isinstance(value, str):
                 # 已知二进制字段或任何超长字符串
                 is_known_binary = key in self._BINARY_FIELD_NAMES
-                is_oversized = len(value) > 1500
+                is_text_content = key in self._TEXT_CONTENT_KEYS
+                # content 字段（如 read_file 结果）保留 12000 字符，便于设计规格等完整传递
+                max_str = 12000 if is_text_content else 1500
+                is_oversized = len(value) > max_str
                 if is_known_binary and len(value) > 200:
                     filtered[key] = f"[二进制数据，{len(value)} 字符，已省略]"
                 elif is_oversized:
-                    filtered[key] = value[:1500] + f"...[截断，共 {len(value)} 字符]"
+                    filtered[key] = value[:max_str] + f"...[截断，共 {len(value)} 字符]"
                 else:
                     filtered[key] = value
             elif isinstance(value, dict):

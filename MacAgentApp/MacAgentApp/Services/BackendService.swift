@@ -49,6 +49,8 @@ class BackendService: ObservableObject {
     
     // 断线重连状态追踪
     private var currentSessionId: String?
+    /// 空闲收包循环连续失败次数，用于退避：3 次失败后休眠 10 分钟再试
+    private var idleReceiveConsecutiveFailures: Int = 0
     private var hasRunningTask: Bool = false
     private var runningTaskId: String?
     private var hasRunningChat: Bool = false
@@ -88,6 +90,7 @@ class BackendService: ObservableObject {
 
     func connect() async {
         disconnect()
+        idleReceiveConsecutiveFailures = 0  // 主动连接时重置失败计数
         
         guard let url = URL(string: wsURL) else { return }
         
@@ -201,6 +204,7 @@ class BackendService: ObservableObject {
                 guard let ws = ws, connected else { break }
                 do {
                     let result = try await ws.receive()
+                    await MainActor.run { self.idleReceiveConsecutiveFailures = 0 }  // 收包成功，重置失败计数
                     switch result {
                     case .string(let text):
                         if let data = text.data(using: .utf8),
@@ -260,8 +264,20 @@ class BackendService: ObservableObject {
                 } catch is CancellationError {
                     return
                 } catch {
-                    await MainActor.run { self.disconnect() }
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    let shouldSleep10Min = await MainActor.run {
+                        self.disconnect()
+                        self.idleReceiveConsecutiveFailures += 1
+                        let count = self.idleReceiveConsecutiveFailures
+                        if count >= 3 {
+                            self.idleReceiveConsecutiveFailures = 0
+                        }
+                        return count >= 3
+                    }
+                    if shouldSleep10Min {
+                        try? await Task.sleep(nanoseconds: 600_000_000_000)  // 3 次失败后休眠 10 分钟
+                    } else {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)  // 2 秒后重试
+                    }
                     Task { @MainActor in await self.reconnect() }
                     return
                 }
@@ -323,6 +339,51 @@ class BackendService: ObservableObject {
             throw URLError(.badServerResponse)
         }
     }
+
+    // MARK: - 多自定义模型提供商
+
+    nonisolated func fetchCustomProviders() async throws -> [CustomProviderModel] {
+        guard let url = URL(string: "\(baseURL)/config/custom-providers") else {
+            throw URLError(.badURL)
+        }
+        let (data, _) = try await urlSession.data(from: url)
+        let resp = try JSONDecoder().decode(CustomProvidersResponse.self, from: data)
+        return resp.providers
+    }
+
+    /// 新建或更新一个自定义提供商；id 为空时后端自动生成
+    nonisolated func upsertCustomProvider(id: String?, name: String, apiKey: String, baseUrl: String, model: String) async throws -> CustomProviderModel {
+        guard let url = URL(string: "\(baseURL)/config/custom-providers") else {
+            throw URLError(.badURL)
+        }
+        var body: [String: Any] = [
+            "name": name,
+            "api_key": apiKey,
+            "base_url": baseUrl,
+            "model": model,
+        ]
+        if let pid = id, !pid.isEmpty { body["id"] = pid }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, _) = try await urlSession.data(for: request)
+        return try JSONDecoder().decode(CustomProviderModel.self, from: data)
+    }
+
+    nonisolated func deleteCustomProvider(id: String) async throws {
+        guard let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(baseURL)/config/custom-providers/\(encodedId)") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     
     nonisolated func fetchPendingTools() async throws -> [PendingTool] {
         guard let url = URL(string: "\(baseURL)/tools/pending") else {
@@ -948,7 +1009,15 @@ class BackendService: ObservableObject {
                                     let summary = json["summary"] as? String ?? ""
                                     let totalActions = json["total_actions"] as? Int ?? 0
                                     continuation.yield(.taskComplete(taskId: taskId, success: success, summary: summary, totalActions: totalActions))
-                                    
+
+                                case "task_stopped":
+                                    let taskIdStopped = json["task_id"] as? String ?? ""
+                                    let msg = json["message"] as? String ?? json["reason"] as? String ?? "任务已停止"
+                                    let rec = json["recommendation"] as? String ?? ""
+                                    let summaryStopped = rec.isEmpty ? msg : "\(msg)\n\n建议: \(rec)"
+                                    let totalStopped = json["iterations"] as? Int ?? 0
+                                    continuation.yield(.taskComplete(taskId: taskIdStopped, success: false, summary: summaryStopped, totalActions: totalStopped))
+
                                 case "content":
                                     if let content = json["content"] as? String {
                                         continuation.yield(.content(content))
@@ -1326,6 +1395,14 @@ class BackendService: ObservableObject {
                                     let summary = json["summary"] as? String ?? ""
                                     let totalActions = json["total_actions"] as? Int ?? 0
                                     continuation.yield(.taskComplete(taskId: taskId, success: success, summary: summary, totalActions: totalActions))
+
+                                case "task_stopped":
+                                    let taskIdStopped = json["task_id"] as? String ?? ""
+                                    let msg = json["message"] as? String ?? json["reason"] as? String ?? "任务已停止"
+                                    let rec = json["recommendation"] as? String ?? ""
+                                    let summaryStopped = rec.isEmpty ? msg : "\(msg)\n\n建议: \(rec)"
+                                    let totalStopped = json["iterations"] as? Int ?? 0
+                                    continuation.yield(.taskComplete(taskId: taskIdStopped, success: false, summary: summaryStopped, totalActions: totalStopped))
                                     
                                 case "execution_log":
                                     if let toolName = json["tool_name"] as? String,
@@ -1690,6 +1767,18 @@ class BackendService: ObservableObject {
             throw URLError(.badServerResponse)
         }
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    /// 获取主 Agent 已配置的在线 LLM 列表，供子 Duck 配置时一键导入
+    nonisolated func fetchMainAgentLLMProviders() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/config/llm-providers-for-import") else { throw URLError(.badURL) }
+        let (data, response) = try await urlSession.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let providers = json["providers"] as? [[String: Any]] else { return [] }
+        return providers
     }
 
     nonisolated func removeDuck(duckId: String) async throws {

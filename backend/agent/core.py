@@ -670,6 +670,25 @@ class AgentCore:
                                     payload={"tool": tc["name"], "args": tc.get("arguments", {}), "error": result.error},
                                     priority=PRIORITY_TOOL_FAILED,
                                 ))
+                    # delegate_duck 成功后立即结束本轮，等待 Duck 完成时由系统触发续步（本地/远程模式通用）
+                    _delegate_ok = any(
+                        tc.get("name") == "delegate_duck"
+                        and (tool_results[i] if i < len(tool_results) else None)
+                        and getattr(tool_results[i], "success", False)
+                        for i, tc in enumerate(tool_calls)
+                    )
+                    if _delegate_ok:
+                        _msg = None
+                        for tc, res in zip(tool_calls, tool_results):
+                            if tc.get("name") == "delegate_duck" and res.success and isinstance(getattr(res, "data", None), dict):
+                                _msg = res.data.get("message") or f"任务已委派给 {res.data.get('duck_type', 'Duck')} Duck，完成后会主动通知你。请稍候。"
+                                break
+                        if _msg:
+                            context.add_message("assistant", _msg)
+                            self.context_manager.save_session(session_id)
+                            yield {"type": "content", "content": _msg}
+                            yield {"type": "stream_end", "usage": total_usage}
+                            return
                 else:
                     # 检查是否收到空响应
                     if not current_content.strip():

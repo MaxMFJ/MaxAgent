@@ -441,6 +441,8 @@ private func remoteFallbackDisplayName(_ provider: String) -> String {
 struct ModelSettingsContent: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @State private var showApiKey = false
+    @State private var showCustomProviderSheet = false
+    @State private var editingCustomProvider: CustomProviderModel? = nil
     var onSave: () -> Void
     
     var body: some View {
@@ -449,22 +451,44 @@ struct ModelSettingsContent: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AI 提供商")
                     .font(CyberFont.body(size: 14, weight: .semibold))
-                Picker("", selection: $viewModel.provider) {
-                    Text("DeepSeek").tag("deepseek")
-                    Text("New API").tag("newapi")
-                    Text("ChatGPT").tag("openai")
-                    Text("Gemini").tag("gemini")
-                    Text("Claude").tag("anthropic")
-                    Text("Ollama").tag("ollama")
-                    Text("LM Studio").tag("lmstudio")
-                }
-                .pickerStyle(.menu)
-                .onChange(of: viewModel.provider) { _, newValue in
-                    Task {
-                        if newValue == "ollama" || newValue == "lmstudio" {
-                            await viewModel.fetchLocalModels()
+                HStack {
+                    Picker("", selection: $viewModel.provider) {
+                        Text("DeepSeek").tag("deepseek")
+                        Text("New API").tag("newapi")
+                        Text("ChatGPT").tag("openai")
+                        Text("Gemini").tag("gemini")
+                        Text("Claude").tag("anthropic")
+                        Text("Ollama").tag("ollama")
+                        Text("LM Studio").tag("lmstudio")
+                        // 多自定义模型：每个自定义提供商动态显示
+                        if !viewModel.customProviders.isEmpty {
+                            Divider()
+                            ForEach(viewModel.customProviders) { cp in
+                                Text(cp.name.isEmpty ? "自定义模型" : cp.name).tag("custom.\(cp.id)")
+                            }
                         }
-                        await viewModel.syncConfig()
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: viewModel.provider) { _, newValue in
+                        Task {
+                            if newValue == "ollama" || newValue == "lmstudio" {
+                                await viewModel.fetchLocalModels()
+                            }
+                            await viewModel.syncConfig()
+                        }
+                    }
+                    // 管理自定义模型按钮
+                    Button {
+                        editingCustomProvider = nil
+                        showCustomProviderSheet = true
+                    } label: {
+                        Label("管理自定义模型", systemImage: "slider.horizontal.3")
+                            .labelStyle(.iconOnly)
+                    }
+                    .help("管理自定义模型提供商")
+                    .sheet(isPresented: $showCustomProviderSheet) {
+                        CustomProvidersManagerView(editingOnOpen: editingCustomProvider)
+                            .environmentObject(viewModel)
                     }
                 }
             }
@@ -484,8 +508,19 @@ struct ModelSettingsContent: View {
                 ollamaConfig
             case "lmstudio":
                 lmStudioConfig
+            case "custom":
+                customModelConfig
             default:
-                deepSeekConfig
+                // custom.{id} 格式：从 customProviders 列表展示对应的内联配置
+                if viewModel.provider.hasPrefix("custom."),
+                   let slot = viewModel.customProviders.first(where: { "custom.\($0.id)" == viewModel.provider }) {
+                    CustomProviderInlineConfig(provider: slot) {
+                        editingCustomProvider = slot
+                        showCustomProviderSheet = true
+                    }
+                } else {
+                    deepSeekConfig
+                }
             }
 
             // 远程回退策略：固定列出所有远程 LLM，用户显式选择“当使用远程模型时”调用哪个
@@ -943,6 +978,264 @@ struct ModelSettingsContent: View {
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(8)
+        }
+    }
+    
+    // MARK: - 自定义模型配置
+    private var customModelConfig: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("自定义模型配置")
+                    .font(CyberFont.body(size: 14, weight: .semibold))
+                Spacer()
+                Text("OpenAI 兼容接口")
+                    .font(CyberFont.body(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("API Key:")
+                        .frame(width: 90, alignment: .leading)
+                    SecureField("输入 API Key", text: $viewModel.customApiKey)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                HStack {
+                    Text("Base URL:")
+                        .frame(width: 90, alignment: .leading)
+                    TextField("https://your-api.example.com/v1", text: $viewModel.customBaseUrl)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                HStack {
+                    Text("模型名称:")
+                        .frame(width: 90, alignment: .leading)
+                    TextField("如 gpt-4o、claude-3-opus 等", text: $viewModel.customModelName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 280)
+                }
+                
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("使用说明:")
+                        .font(CyberFont.body(size: 11))
+                        .fontWeight(.medium)
+                    Text("支持任何兼容 OpenAI Chat Completions API 的服务")
+                    Text("填写完整的 Base URL（含 /v1 路径）、API Key 和模型名称")
+                    Text("保存后立即生效，无需重启")
+                }
+                .font(CyberFont.body(size: 11))
+                .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+        }
+    }
+}
+
+// MARK: - 已选中的自定义提供商：内联只读摘要 + 编辑入口
+
+struct CustomProviderInlineConfig: View {
+    let provider: CustomProviderModel
+    let onEdit: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(provider.name.isEmpty ? "自定义模型" : provider.name)
+                    .font(.headline)
+                Spacer()
+                Button("编辑配置", action: onEdit)
+                    .buttonStyle(.borderless)
+                    .font(.caption)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                LabeledRow(label: "Base URL:", value: provider.baseUrl.isEmpty ? "（未设置）" : provider.baseUrl)
+                LabeledRow(label: "模型名称:", value: provider.model.isEmpty ? "（未设置）" : provider.model)
+                LabeledRow(label: "API Key:", value: provider.hasApiKey ? "已保存 ●●●●●●" : "（未设置）")
+            }
+            .font(CyberFont.body(size: 11))
+        }
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+    }
+}
+
+private struct LabeledRow: View {
+    let label: String
+    let value: String
+    var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            Text(label).foregroundColor(.secondary).frame(width: 80, alignment: .leading)
+            Text(value).lineLimit(2)
+        }
+    }
+}
+
+// MARK: - 自定义模型提供商管理 Sheet
+
+struct CustomProvidersManagerView: View {
+    @EnvironmentObject var viewModel: AgentViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var editingOnOpen: CustomProviderModel?
+
+    @State private var showingEditor = false
+    @State private var editTarget: CustomProviderModel? = nil
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 标题栏
+            HStack {
+                Text("自定义模型管理")
+                    .font(.headline)
+                Spacer()
+                Button("完成") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding()
+            Divider()
+
+            if viewModel.customProviders.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "cpu")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    Text("尚未添加自定义模型")
+                        .foregroundColor(.secondary)
+                    Button("添加自定义模型") { startNew() }
+                        .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(viewModel.customProviders) { cp in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(cp.name.isEmpty ? "未命名" : cp.name)
+                                    .fontWeight(.medium)
+                                Text(cp.model.isEmpty ? cp.baseUrl : "\(cp.model)  ·  \(cp.baseUrl)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Button("编辑") { editTarget = cp; showingEditor = true }
+                                .buttonStyle(.borderless)
+                            Button(role: .destructive) {
+                                Task { await viewModel.deleteCustomProvider(id: cp.id) }
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+
+            Divider()
+            HStack {
+                Button { startNew() } label: {
+                    Label("添加自定义模型", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                Spacer()
+            }
+            .padding()
+        }
+        .frame(width: 500, height: 380)
+        .sheet(isPresented: $showingEditor) {
+            if let target = editTarget {
+                CustomProviderEditorView(existing: target)
+                    .environmentObject(viewModel)
+            }
+        }
+        .onAppear {
+            if let e = editingOnOpen {
+                editTarget = e
+                showingEditor = true
+            }
+        }
+    }
+
+    private func startNew() {
+        editTarget = CustomProviderModel(id: "", name: "", baseUrl: "", model: "", hasApiKey: false)
+        showingEditor = true
+    }
+}
+
+// MARK: - 编辑/新建单个自定义模型
+
+struct CustomProviderEditorView: View {
+    @EnvironmentObject var viewModel: AgentViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    let existing: CustomProviderModel
+
+    @State private var name: String = ""
+    @State private var apiKey: String = ""
+    @State private var baseUrl: String = ""
+    @State private var model: String = ""
+    @State private var isSaving = false
+
+    private var isNew: Bool { existing.id.isEmpty }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text(isNew ? "添加自定义模型" : "编辑自定义模型")
+                .font(.headline)
+
+            Form {
+                TextField("厂商 / 别名（如：智谱 GLM、Moonshot）", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                SecureField("API Key", text: $apiKey)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Base URL（如：https://api.example.com/v1）", text: $baseUrl)
+                    .textFieldStyle(.roundedBorder)
+                TextField("模型名称（如：glm-4、moonshot-v1-8k）", text: $model)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            HStack {
+                Spacer()
+                Button("取消") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(isSaving ? "保存中…" : "保存") {
+                    save()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+            }
+        }
+        .padding(24)
+        .frame(width: 460)
+        .onAppear {
+            name = existing.name
+            baseUrl = existing.baseUrl
+            model = existing.model
+            // API Key 服务端不返回明文，本地 rawApiKey 是用户本次会话输入的
+            apiKey = existing.rawApiKey
+        }
+    }
+
+    private func save() {
+        isSaving = true
+        var item = existing
+        item.name = name.trimmingCharacters(in: .whitespaces)
+        item.baseUrl = baseUrl.trimmingCharacters(in: .whitespaces)
+        item.model = model.trimmingCharacters(in: .whitespaces)
+        item.rawApiKey = apiKey
+        Task {
+            await viewModel.saveCustomProvider(item)
+            await MainActor.run {
+                isSaving = false
+                dismiss()
+            }
         }
     }
 }

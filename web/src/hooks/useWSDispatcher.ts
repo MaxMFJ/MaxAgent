@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { v4 as uuid } from 'uuid';
 import { useWSStore } from '../stores/wsStore';
 import { useChatStore } from '../stores/chatStore';
 import { useMonitorStore } from '../stores/monitorStore';
@@ -410,6 +411,25 @@ export function useWSDispatcher() {
         summary,
         endTime: Date.now(),
       });
+    }));
+
+    /* Duck 任务完成（主 Agent 委派给 Duck 后，Duck 完成时广播） */
+    unsubs.push(onMessage('duck_task_complete', (msg: WSMessage) => {
+      const content = (msg.content as string) ?? '';
+      const sessionId = (msg.session_id as string) ?? '';
+      if (!content) return;
+      const store = useChatStore.getState();
+      const conv = store.conversations.find((c) => c.id === sessionId || (c as any).sessionId === sessionId)
+        ?? store.getActiveConversation();
+      if (conv) {
+        store.addMessage(conv.id, {
+          id: uuid(),
+          role: 'assistant',
+          content,
+          timestamp: Date.now(),
+          modelName: 'Duck',
+        });
+      }
     }));
 
     /* 系统通知 */
