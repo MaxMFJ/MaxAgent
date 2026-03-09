@@ -138,5 +138,15 @@
     "category": "info",
     "timestamp": "2026-03-07T16:26:59.390859",
     "read": true
+  },
+  {
+    "id": "57b8b022-6113-42a0-badd-f4c3ff7d4b71",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "未知错误",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-07T21:41:25.477050",
+    "read": false
   }
 ]

@@ -1,0 +1,2 @@
+{"ts": 1772901374.6140249, "dt": "2026-03-07T16:36:14.614025+00:00", "model": "claude-haiku-4-5-20251001-thinking", "provider": "newapi", "prompt_tokens": 16339, "completion_tokens": 235, "total_tokens": 16574, "success": true, "latency_ms": 0, "error": null}
+{"ts": 1772901382.213332, "dt": "2026-03-07T16:36:22.213332+00:00", "model": "claude-haiku-4-5-20251001-thinking", "provider": "newapi", "prompt_tokens": 16490, "completion_tokens": 43, "total_tokens": 16533, "success": true, "latency_ms": 0, "error": null}
