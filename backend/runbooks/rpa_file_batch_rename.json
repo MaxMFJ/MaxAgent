@@ -1,0 +1,50 @@
+{
+  "id": "rpa_file_batch_rename",
+  "name": "文件批量重命名",
+  "description": "对目录内的文件进行批量重命名，支持添加前缀/后缀、日期、序号，或按正则替换。",
+  "category": "file",
+  "tags": ["批量重命名", "rename", "文件管理", "序号", "前缀"],
+  "inputs": [
+    {"name": "target_dir", "type": "string", "required": true, "description": "目标目录路径"},
+    {"name": "pattern", "type": "string", "default": "*", "description": "文件匹配模式，如 *.jpg"},
+    {"name": "prefix", "type": "string", "default": "", "description": "添加的前缀"},
+    {"name": "add_sequence", "type": "boolean", "default": true, "description": "是否添加序号（001, 002 ...）"}
+  ],
+  "outputs": [
+    {"name": "renamed_count", "description": "重命名文件数量"}
+  ],
+  "prerequisites": ["macOS shell"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "预览将要重命名的文件",
+      "description": "列出符合条件的文件",
+      "tool": "terminal",
+      "command": "ls $target_dir/$pattern 2>/dev/null | head -20 && echo '...' && echo '共：' $(ls $target_dir/$pattern 2>/dev/null | wc -l | tr -d ' ') '个文件'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "执行批量重命名（带序号）",
+      "description": "以序号 + 前缀的方式重命名文件",
+      "tool": "terminal",
+      "command": "cd $target_dir && count=1; for f in $pattern; do [ -f \"$f\" ] || continue; ext=\"${f##*.}\"; newname=$(printf '${prefix}%03d.%s' $count $ext); mv \"$f\" \"$newname\" && echo \"$f → $newname\"; count=$((count+1)); done && echo \"完成，共重命名 $((count-1)) 个文件\"",
+      "condition": "add_sequence == true",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_3",
+      "name": "执行批量重命名（仅添加前缀）",
+      "description": "仅在文件名前添加前缀",
+      "tool": "terminal",
+      "command": "cd $target_dir && count=0; for f in $pattern; do [ -f \"$f\" ] || continue; mv \"$f\" \"${prefix}${f}\" && count=$((count+1)); done && echo \"完成，共重命名 $count 个文件\"",
+      "condition": "add_sequence == false",
+      "on_error": "abort",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

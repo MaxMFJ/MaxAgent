@@ -1,0 +1,72 @@
+{
+  "id": "rpa_mac_file_organize",
+  "name": "Mac 文件自动整理",
+  "description": "按文件类型自动将指定目录（如下载文件夹）中的文件分类整理到子文件夹：图片、视频、文档、压缩包、其他。",
+  "category": "mac",
+  "tags": ["整理文件", "自动分类", "下载", "mac", "文件管理"],
+  "inputs": [
+    {"name": "source_dir", "type": "string", "default": "~/Downloads", "description": "要整理的目录"}
+  ],
+  "outputs": [
+    {"name": "summary", "description": "整理结果摘要"}
+  ],
+  "prerequisites": ["macOS 系统"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "创建分类目录",
+      "description": "在源目录下创建分类子文件夹",
+      "tool": "terminal",
+      "command": "mkdir -p ~/Downloads/{Pictures,Videos,Documents,Archives,Others}",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "整理图片",
+      "description": "移动图片文件到 Pictures 目录",
+      "tool": "terminal",
+      "command": "cd ~/Downloads && find . -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.webp' -o -iname '*.heic' -o -iname '*.tiff' \\) -exec mv {} Pictures/ \\; && echo '图片整理完成'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_3",
+      "name": "整理视频",
+      "description": "移动视频文件到 Videos 目录",
+      "tool": "terminal",
+      "command": "cd ~/Downloads && find . -maxdepth 1 -type f \\( -iname '*.mp4' -o -iname '*.mov' -o -iname '*.avi' -o -iname '*.mkv' -o -iname '*.wmv' -o -iname '*.flv' -o -iname '*.m4v' \\) -exec mv {} Videos/ \\; && echo '视频整理完成'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_4",
+      "name": "整理文档",
+      "description": "移动文档文件到 Documents 目录",
+      "tool": "terminal",
+      "command": "cd ~/Downloads && find . -maxdepth 1 -type f \\( -iname '*.pdf' -o -iname '*.doc' -o -iname '*.docx' -o -iname '*.xls' -o -iname '*.xlsx' -o -iname '*.ppt' -o -iname '*.pptx' -o -iname '*.txt' -o -iname '*.md' -o -iname '*.pages' -o -iname '*.numbers' \\) -exec mv {} Documents/ \\; && echo '文档整理完成'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_5",
+      "name": "整理压缩包",
+      "description": "移动压缩文件到 Archives 目录",
+      "tool": "terminal",
+      "command": "cd ~/Downloads && find . -maxdepth 1 -type f \\( -iname '*.zip' -o -iname '*.tar' -o -iname '*.gz' -o -iname '*.rar' -o -iname '*.7z' -o -iname '*.dmg' -o -iname '*.pkg' \\) -exec mv {} Archives/ \\; && echo '压缩包整理完成'",
+      "on_error": "continue",
+      "retry": 0
+    },
+    {
+      "id": "step_6",
+      "name": "生成整理报告",
+      "description": "统计各分类文件数量",
+      "tool": "terminal",
+      "command": "echo '=== 整理结果 ===' && for d in Pictures Videos Documents Archives; do count=$(ls ~/Downloads/$d 2>/dev/null | wc -l | tr -d ' '); echo \"$d: $count 个文件\"; done",
+      "on_error": "continue",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

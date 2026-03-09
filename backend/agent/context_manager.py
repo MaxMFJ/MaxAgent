@@ -137,6 +137,55 @@ class ConversationContext:
         if abs_path not in self.created_files:
             self.created_files.append(abs_path)
             logger.info(f"Session {self.session_id}: recorded created file {abs_path}")
+
+    def add_duck_output(
+        self,
+        task_id: str,
+        duck_type: str,
+        duck_id: str,
+        description_preview: str,
+        file_paths: list,
+        summary: str,
+    ) -> None:
+        """
+        记录 Duck 子任务的产出（文件路径 + 摘要）到 Duck 工作区。
+        主 Agent 再次运行时可通过 get_duck_workspace_hint() 获取所有已完成 Duck 的产出，
+        用于在后续任务中引用（如把设计图路径传给 coder Duck）。
+        """
+        if not hasattr(self, "_duck_workspace"):
+            self._duck_workspace: list = []
+        entry = {
+            "task_id": task_id,
+            "duck_type": duck_type,
+            "duck_id": duck_id,
+            "description_preview": description_preview[:80],
+            "file_paths": file_paths,
+            "summary": summary[:300],
+        }
+        self._duck_workspace.append(entry)
+        # 同时注册到 created_files，确保系统提示携带路径
+        for p in file_paths:
+            self.add_created_file(p)
+
+    def get_duck_workspace_hint(self) -> str:
+        """
+        返回当前会话中所有 Duck 子任务产出的摘要字符串，用于注入主 Agent 的续步提示。
+        """
+        workspace = getattr(self, "_duck_workspace", [])
+        if not workspace:
+            return ""
+        lines = ["[Duck 任务工作区 — 以下是本次对话中所有 Duck 完成的任务产出：]"]
+        for i, entry in enumerate(workspace, 1):
+            dt = entry.get("duck_type", "?")
+            paths = entry.get("file_paths", [])
+            summary = entry.get("summary", "")
+            desc = entry.get("description_preview", "")
+            paths_str = ", ".join(f"`{p}`" for p in paths) if paths else "（无文件产出）"
+            lines.append(f"{i}. [{dt} Duck] 任务：{desc}")
+            lines.append(f"   产出文件：{paths_str}")
+            if summary:
+                lines.append(f"   摘要：{summary[:150]}")
+        return "\n".join(lines)
     
     def get_context_messages(self, current_query: str = "") -> List[Dict[str, Any]]:
         """

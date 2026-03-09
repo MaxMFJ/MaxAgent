@@ -30,10 +30,13 @@ async def get_active_tasks(recent_seconds: int = Query(default=300, ge=60, le=36
     """
     返回当前运行中及最近完成的任务列表，供监控面板多任务展示。
     recent_seconds: 已完成任务保留时长（秒），默认 5 分钟。
+    包含主 Agent 任务和 Duck 子任务（含 worker_type/worker_id 字段）。
     """
     tracker = get_task_tracker()
     now = time.time()
     tasks = []
+
+    # ── 主 Agent 任务 ─────────────────────────────────
     for task_id, tt in tracker.list_tasks():
         is_running = tt.status == AutoTaskStatus.RUNNING
         is_recent = tt.finished_at and (now - tt.finished_at) < recent_seconds
@@ -46,9 +49,61 @@ async def get_active_tasks(recent_seconds: int = Query(default=300, ge=60, le=36
                 "status": tt.status.value,
                 "created_at": tt.created_at,
                 "finished_at": tt.finished_at,
+                "worker_type": "main",
+                "worker_id": "main",
+                "worker_label": "主Agent",
             })
+
+    # ── Duck 子任务 ───────────────────────────────────
+    try:
+        from services.duck_task_scheduler import get_task_scheduler
+        from services.duck_registry import DuckRegistry
+        from services.duck_protocol import TaskStatus as DuckTaskStatus
+
+        scheduler = get_task_scheduler()
+        registry = DuckRegistry.get_instance()
+
+        for duck_task_id, duck_task in list(scheduler._tasks.items()):
+            is_active = duck_task.status in (
+                DuckTaskStatus.PENDING,
+                DuckTaskStatus.ASSIGNED,
+                DuckTaskStatus.RUNNING,
+            )
+            is_recent_duck = duck_task.completed_at and (now - duck_task.completed_at) < recent_seconds
+            if is_active or is_recent_duck:
+                duck_id = duck_task.assigned_duck_id or ""
+                duck_name = duck_id
+                if duck_id:
+                    duck_info = await registry.get(duck_id)
+                    if duck_info:
+                        duck_name = duck_info.name or duck_id
+
+                # 状态映射
+                status_map = {
+                    DuckTaskStatus.PENDING: "pending",
+                    DuckTaskStatus.ASSIGNED: "running",
+                    DuckTaskStatus.RUNNING: "running",
+                    DuckTaskStatus.COMPLETED: "completed",
+                    DuckTaskStatus.FAILED: "error",
+                    DuckTaskStatus.CANCELLED: "stopped",
+                }
+                tasks.append({
+                    "task_id": duck_task_id,
+                    "session_id": scheduler._task_sessions.get(duck_task_id, ""),
+                    "task_type": "duck",
+                    "description": duck_task.description or "",
+                    "status": status_map.get(duck_task.status, duck_task.status.value),
+                    "created_at": duck_task.created_at,
+                    "finished_at": duck_task.completed_at,
+                    "worker_type": "local_duck",
+                    "worker_id": duck_id,
+                    "worker_label": f"Duck[{duck_name}]",
+                })
+    except Exception as e:
+        logger.debug(f"Failed to load duck tasks for active-tasks: {e}")
+
     # 运行中优先，再按创建时间倒序
-    tasks.sort(key=lambda t: (0 if t["status"] == "running" else 1, -t["created_at"]))
+    tasks.sort(key=lambda t: (0 if t["status"] == "running" else 1, -(t["created_at"] or 0)))
     return {"tasks": tasks}
 
 

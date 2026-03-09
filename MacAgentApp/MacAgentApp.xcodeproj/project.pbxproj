@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,7 +18,8 @@
 		A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006234567890ABCDEF1 /* Assets.xcassets */; };
 		A1000007234567890ABCDEF1 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008234567890ABCDEF1 /* Message.swift */; };
 		A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A234567890ABCDEF1 /* AgentViewModel.swift */; };
-		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };			EE000001234567890ABCDEF1 /* EggModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002234567890ABCDEF1 /* EggModeManager.swift */; };		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
+		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };
+		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
 		A1000011234567890ABCDEF1 /* ToolPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012234567890ABCDEF1 /* ToolPanelView.swift */; };
 		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
 		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
@@ -52,6 +53,7 @@
 		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
 		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
+		DD0000010000000000RAP001 /* RPASettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000020000000000RAP001 /* RPASettingsView.swift */; };
 		DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */; };
 		DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA100020000000000DUCK01 /* DuckSettingsView.swift */; };
 		E1000001234567890ABCDEF1 /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002234567890ABCDEF1 /* TTSService.swift */; };
@@ -59,6 +61,7 @@
 		E1000005234567890ABCDEF1 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000006234567890ABCDEF1 /* Speech.framework */; };
 		E1000007234567890ABCDEF1 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1000008234567890ABCDEF1 /* AVFoundation.framework */; };
 		E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */; };
+		EE000001234567890ABCDEF1 /* EggModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002234567890ABCDEF1 /* EggModeManager.swift */; };
 		F1000001234567890ABCDEF1 /* MonitoringViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */; };
 		F1000003234567890ABCDEF1 /* MonitoringWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */; };
 		F1000005234567890ABCDEF1 /* ExecutionTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000006234567890ABCDEF1 /* ExecutionTimelineView.swift */; };
@@ -75,7 +78,6 @@
 
 /* Begin PBXFileReference section */
 		251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlagsSettingsView.swift; sourceTree = "<group>"; };
-		DDA100020000000000DUCK01 /* DuckSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuckSettingsView.swift; sourceTree = "<group>"; };
 		3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RollbackPanelView.swift; sourceTree = "<group>"; };
 		4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
 		4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceManagerView.swift; sourceTree = "<group>"; };
@@ -88,7 +90,8 @@
 		A1000006234567890ABCDEF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000008234567890ABCDEF1 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		A100000A234567890ABCDEF1 /* AgentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViewModel.swift; sourceTree = "<group>"; };
-		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };			EE000002234567890ABCDEF1 /* EggModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EggModeManager.swift; sourceTree = "<group>"; };		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };
+		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		A1000012234567890ABCDEF1 /* ToolPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolPanelView.swift; sourceTree = "<group>"; };
 		A1000014234567890ABCDEF1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
@@ -125,11 +128,14 @@
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1000002234567890ABCDEF1 /* SystemMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageView.swift; sourceTree = "<group>"; };
 		D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MCPSettingsView.swift; sourceTree = "<group>"; };
+		DD0000020000000000RAP001 /* RPASettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RPASettingsView.swift; sourceTree = "<group>"; };
+		DDA100020000000000DUCK01 /* DuckSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuckSettingsView.swift; sourceTree = "<group>"; };
 		E1000002234567890ABCDEF1 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		E1000004234567890ABCDEF1 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
 		E1000006234567890ABCDEF1 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Speech.framework; sourceTree = SDKROOT; };
 		E1000008234567890ABCDEF1 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AVFoundation.framework; sourceTree = SDKROOT; };
 		E2831BE2E22BD476FC5BB8B4 /* Pods-MacAgentApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.debug.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.debug.xcconfig"; sourceTree = "<group>"; };
+		EE000002234567890ABCDEF1 /* EggModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EggModeManager.swift; sourceTree = "<group>"; };
 		EF865104315098FC6C97C17F /* AuditLogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuditLogView.swift; sourceTree = "<group>"; };
 		F1000002234567890ABCDEF1 /* MonitoringViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringViewModel.swift; sourceTree = "<group>"; };
 		F1000004234567890ABCDEF1 /* MonitoringWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringWindowView.swift; sourceTree = "<group>"; };
@@ -239,6 +245,7 @@
 				EF865104315098FC6C97C17F /* AuditLogView.swift */,
 				6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */,
 				DDA100020000000000DUCK01 /* DuckSettingsView.swift */,
+				DD0000020000000000RAP001 /* RPASettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -427,6 +434,7 @@
 				"zh-Hans",
 			);
 			mainGroup = A10000F7234567890ABCDEF1;
+			minimizedProjectReferenceProxies = 1;
 			productRefGroup = A1000100234567890ABCDEF1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -451,7 +459,6 @@
 /* Begin PBXShellScriptBuildPhase section */
 		B2000001234567890ABCDEF1 /* Strip venv and sensitive data from backend */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 0;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -489,11 +496,9 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\n# Copy backend into App Bundle (Debug uses symlink for speed, Release copies)\nBACKEND_DST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/backend\"\n\n# Try multiple source paths (workspace vs project)\nBACKEND_SRC=\"\"\nfor CANDIDATE in \"${PROJECT_DIR}/../backend\" \"${SRCROOT}/../backend\" \"${WORKSPACE_DIR}/backend\" \"${PROJECT_DIR}/../../backend\"; do\n  if [ -n \"$CANDIDATE\" ] && [ -d \"$CANDIDATE\" ] && [ -f \"$CANDIDATE/start.sh\" ]; then\n    BACKEND_SRC=\"$(cd \"$CANDIDATE\" && pwd)\"\n    break\n  fi\ndone\n\nif [ -z \"$BACKEND_SRC\" ]; then\n  echo \"error: Backend not found. Tried PROJECT_DIR/../backend, SRCROOT/../backend, WORKSPACE_DIR/backend\" >&2\n  echo \"  PROJECT_DIR=$PROJECT_DIR\" >&2\n  echo \"  SRCROOT=$SRCROOT\" >&2\n  echo \"  WORKSPACE_DIR=$WORKSPACE_DIR\" >&2\n  exit 1\nfi\n\necho \"Copy Backend: SRC=$BACKEND_SRC -> DST=$BACKEND_DST  CONFIGURATION=$CONFIGURATION\"\n\nif [ \"$CONFIGURATION\" = \"Debug\" ]; then\n  # Debug: symlink for instant access, always current\n  rm -rf \"$BACKEND_DST\"\n  mkdir -p \"$(dirname \"$BACKEND_DST\")\"\n  ln -sfh \"$BACKEND_SRC\" \"$BACKEND_DST\"\n  echo \"Backend symlinked (Debug mode)\"\nelse\n  # Release/Archive: full copy for packaging\n  rm -rf \"$BACKEND_DST\"\n  mkdir -p \"$(dirname \"$BACKEND_DST\")\"\n  cp -R \"$BACKEND_SRC\" \"$BACKEND_DST\"\n  echo \"Backend copied (Release mode)\"\nfi\n\n# Verify\nif [ ! -f \"$BACKEND_DST/start.sh\" ]; then\n  echo \"error: Backend copy/link failed - start.sh missing\" >&2\n  exit 1\nfi\necho \"Backend ready at $BACKEND_DST\"\n";
-			showEnvVarsInLog = 1;
 		};
 		B5000001234567890ABCDEF1 /* Pre-install backend dependencies */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 0;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -603,6 +608,7 @@
 				9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */,
 				E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */,
 				DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */,
+				DD0000010000000000RAP001 /* RPASettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

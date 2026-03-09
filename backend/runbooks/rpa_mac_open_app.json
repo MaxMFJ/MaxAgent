@@ -1,0 +1,46 @@
+{
+  "id": "rpa_mac_open_app",
+  "name": "Mac 打开应用程序",
+  "description": "通过应用名称或路径打开 Mac 应用程序，支持等待应用启动完成。",
+  "category": "mac",
+  "tags": ["打开应用", "open app", "mac", "启动"],
+  "inputs": [
+    {"name": "app_name", "type": "string", "required": true, "description": "应用名称，如 Safari、微信、VS Code"}
+  ],
+  "outputs": [
+    {"name": "pid", "description": "应用进程 ID"}
+  ],
+  "prerequisites": ["macOS 系统，应用已安装"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "打开应用",
+      "description": "使用 open 命令启动应用",
+      "tool": "terminal",
+      "command": "open -a \"$app_name\" && echo '已启动 $app_name'",
+      "on_error": "fallback",
+      "fallback_step": "step_1_path",
+      "retry": 0
+    },
+    {
+      "id": "step_1_path",
+      "name": "通过路径打开",
+      "description": "在 /Applications 中搜索应用并打开",
+      "tool": "terminal",
+      "command": "open /Applications/$app_name.app 2>/dev/null || open ~/Applications/$app_name.app",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "等待应用启动",
+      "description": "等待 2 秒钟让应用完成启动",
+      "tool": "terminal",
+      "command": "sleep 2 && pgrep -x \"$app_name\" || echo '应用已在运行'",
+      "on_error": "continue",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

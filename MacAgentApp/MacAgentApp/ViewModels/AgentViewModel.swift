@@ -171,6 +171,11 @@ class AgentViewModel: ObservableObject {
     @Published var isLoadingDucks: Bool = false
     @Published var duckError: String?
 
+    // MARK: - RPA Runbook
+    @Published var runbookList: [[String: Any]] = []
+    @Published var isLoadingRunbooks: Bool = false
+    @Published var runbookError: String?
+
     // MARK: - Egg / Duck Mode
     /// Shared Egg mode manager — exposes isDuckMode, config, assignedPort
     let eggModeManager = EggModeManager.shared
@@ -368,6 +373,8 @@ class AgentViewModel: ObservableObject {
         }
         currentConversation?.messages.append(msg)
         currentConversation?.updatedAt = Date()
+        // Duck 任务完成后即时刷新状态（Duck 应回到空闲状态）
+        Task { await self.refreshDuckStatus() }
     }
 
     // MARK: - Connection
@@ -2258,6 +2265,16 @@ class AgentViewModel: ObservableObject {
         }
     }
 
+    /// 轻量刷新：仅更新 duckList，供顶部状态栏定期轮询使用
+    func refreshDuckStatus() async {
+        guard chowDuckEnabled else { return }
+        do {
+            duckList = try await backendService.fetchDuckList()
+        } catch {
+            // 静默失败，不影响主界面
+        }
+    }
+
     func createLocalDuck(name: String, duckType: String, skills: [String]) async {
         do {
             _ = try await backendService.createLocalDuck(name: name, duckType: duckType, skills: skills)
@@ -2326,5 +2343,36 @@ class AgentViewModel: ObservableObject {
 
     func eggDownloadURL(eggId: String) -> URL? {
         backendService.eggDownloadURL(eggId: eggId)
+    }
+
+    // MARK: - RPA Runbook
+
+    func loadRunbooks() async {
+        isLoadingRunbooks = true
+        runbookError = nil
+        defer { isLoadingRunbooks = false }
+        do {
+            runbookList = try await backendService.fetchRunbooks()
+        } catch {
+            runbookError = "加载 Runbook 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func deleteRunbook(id: String) async {
+        do {
+            try await backendService.deleteRunbook(id: id)
+            await loadRunbooks()
+        } catch {
+            runbookError = "删除 Runbook 失败: \(error.localizedDescription)"
+        }
+    }
+
+    func uploadRunbookFile(data: Data, filename: String) async {
+        do {
+            _ = try await backendService.uploadRunbookFile(data: data, filename: filename)
+            await loadRunbooks()
+        } catch {
+            runbookError = "导入 Runbook 失败: \(error.localizedDescription)"
+        }
     }
 }

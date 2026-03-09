@@ -59,7 +59,19 @@ BUILTIN_TEMPLATES: Dict[DuckType, DuckTemplate] = {
             "- Debug and fix issues\n"
             "- Refactor code for better maintainability\n"
             "- Write unit tests\n"
-            "Follow best practices. Write concise, correct code."
+            "Follow best practices. Write concise, correct code.\n\n"
+            "【重要：大文件创建策略】\n"
+            "当需要创建较大的文件（如完整的 HTML 网页、长代码文件）时，"
+            "**禁止**使用 write_file 直接写入（会因 token 限制被截断）。\n"
+            "必须使用 `create_and_run_script` 动作，编写一个 Python 脚本来生成目标文件：\n"
+            "```python\n"
+            "html_content = '''完整的HTML内容'''\n"
+            "with open('/目标路径/index.html', 'w', encoding='utf-8') as f:\n"
+            "    f.write(html_content)\n"
+            "print('✓ 文件已保存到 /目标路径/index.html')\n"
+            "```\n"
+            "这样可以避免 JSON 输出被截断导致任务失败。\n"
+            "如果有设计规格文件（_design_spec.md），优先读取其中的配色、布局信息来实现。"
         ),
         required_tools=["file_edit", "terminal", "code_search"],
         icon="💻",
@@ -127,7 +139,15 @@ BUILTIN_TEMPLATES: Dict[DuckType, DuckTemplate] = {
             "- Review and improve user experience\n"
             "- Build interactive prototypes\n"
             "- Maintain design systems and style guides\n"
-            "Focus on usability, accessibility, and aesthetic quality."
+            "Focus on usability, accessibility, and aesthetic quality.\n\n"
+            "【重要输出规范】当你生成设计图（PNG/JPG）时，必须同时在相同目录生成一个 `_design_spec.md` 文件，"
+            "内容包含以下设计规格（用 Markdown 格式）：\n"
+            "1. **配色方案**：列出所有使用的颜色 HEX 值及其用途（背景、文字、强调色等）\n"
+            "2. **布局结构**：从上到下描述每个区域的功能和位置（导航栏、主横幅、卡片区、页脚等）\n"
+            "3. **组件清单**：列出页面包含的所有 UI 组件及其样式描述\n"
+            "4. **字体与间距**：推荐的字体、字号、间距参数\n"
+            "5. **交互说明**：悬停效果、动画、响应式断点等\n"
+            "这个规格文件会被 Coder Duck 直接读取来实现 HTML/CSS，不需要 Coder 再去看 PNG 图片。"
         ),
         required_tools=["image_gen", "file_edit"],
         icon="🎯",

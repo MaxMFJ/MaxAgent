@@ -1,0 +1,37 @@
+{
+  "id": "rpa_wechat_send_message",
+  "name": "微信发送消息（AppleScript）",
+  "description": "通过 AppleScript 控制 Mac 微信 App 发送消息给指定联系人（需要 Mac 微信已登录）。",
+  "category": "wechat",
+  "tags": ["微信", "WeChat", "发消息", "AppleScript", "自动发送"],
+  "inputs": [
+    {"name": "contact_name", "type": "string", "required": true, "description": "联系人姓名（微信备注名或昵称）"},
+    {"name": "message", "type": "string", "required": true, "description": "要发送的消息内容"}
+  ],
+  "outputs": [
+    {"name": "status", "description": "发送状态"}
+  ],
+  "prerequisites": ["Mac 微信已安装并登录，macOS 自动化权限已开启"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "激活微信",
+      "description": "打开并激活 Mac 微信",
+      "tool": "terminal",
+      "command": "open -a 微信 && sleep 2 && echo '微信已激活'",
+      "on_error": "abort",
+      "retry": 0
+    },
+    {
+      "id": "step_2",
+      "name": "搜索联系人并发送",
+      "description": "用 AppleScript 搜索联系人发送消息",
+      "tool": "terminal",
+      "command": "osascript -e 'tell application \"WeChat\" to activate' -e 'delay 1' && osascript << 'EOF'\ntell application \"System Events\"\n    tell process \"WeChat\"\n        -- 打开搜索框\n        key code 7 using {command down}\n        delay 0.5\n        keystroke \"$contact_name\"\n        delay 1\n        key code 36\n        delay 0.5\n        key code 36\n        delay 0.3\n        -- 发送消息\n        keystroke \"$message\"\n        delay 0.3\n        key code 36\n    end tell\nend tell\nEOF\necho '消息已发送给 $contact_name'",
+      "on_error": "abort",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

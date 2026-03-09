@@ -212,7 +212,16 @@ struct TaskMonitorData: Identifiable {
     var taskType: String
     var lastUpdated: Date
 
-    init(taskId: String, sourceSession: String, taskType: String) {
+    // MARK: - 执行者（Actor）信息
+    /// 执行者类型："main" / "local_duck" / "remote_duck" / "runbook"
+    var workerType: String
+    /// 执行者 ID："main" 或 duck_id
+    var workerId: String
+    /// 执行者显示标签："主Agent" / "Duck[xxx]"
+    var workerLabel: String
+
+    init(taskId: String, sourceSession: String, taskType: String,
+         workerType: String = "main", workerId: String = "main", workerLabel: String = "主Agent") {
         self.id = taskId
         self.taskProgress = nil
         self.actionLogs = []
@@ -227,6 +236,9 @@ struct TaskMonitorData: Identifiable {
         self.tokenHistory = []
         self.sourceSession = sourceSession
         self.taskType = taskType
+        self.workerType = workerType
+        self.workerId = workerId
+        self.workerLabel = workerLabel
         self.lastUpdated = Date()
     }
 }
@@ -241,6 +253,10 @@ struct ActiveTaskItem: Identifiable {
     let status: String
     let createdAt: Double
     let finishedAt: Double?
+    // 执行者信息（当 taskType == "duck" 时填充）
+    let workerType: String?
+    let workerId: String?
+    let workerLabel: String?
 }
 
 // MARK: - MonitoringViewModel
@@ -416,12 +432,31 @@ class MonitoringViewModel: ObservableObject {
 
     func applyMonitorEvent(taskId: String, sourceSession: String, event: [String: Any]) {
         let taskType = event["task_type"] as? String ?? "autonomous"
+
+        // 提取执行者（actor）信息（由后端注入到 inner event）
+        let workerType = event["_worker_type"] as? String ?? "main"
+        let workerId = event["_worker_id"] as? String ?? "main"
+        let workerLabel = event["_worker_label"] as? String ?? "主Agent"
+
         if tasks[taskId] == nil {
-            tasks[taskId] = TaskMonitorData(taskId: taskId, sourceSession: sourceSession, taskType: taskType)
+            tasks[taskId] = TaskMonitorData(
+                taskId: taskId,
+                sourceSession: sourceSession,
+                taskType: taskType,
+                workerType: workerType,
+                workerId: workerId,
+                workerLabel: workerLabel
+            )
             if selectedTaskId == nil { selectedTaskId = taskId }
         }
         guard var data = tasks[taskId] else { return }
         data.lastUpdated = Date()
+        // 更新 actor 信息（Duck 可能在任务进行中首次出现）
+        if workerType != "main" {
+            data.workerType = workerType
+            data.workerId = workerId
+            data.workerLabel = workerLabel
+        }
 
         guard let eventType = event["type"] as? String else { tasks[taskId] = data; return }
 
@@ -665,6 +700,25 @@ class MonitoringViewModel: ObservableObject {
                 p.totalActions = p.successfulActions + p.failedActions
                 data.taskProgress = p
             }
+
+        case "runbook_executed":
+            // RPA Runbook 触发记录
+            let runbookId = event["runbook_id"] as? String ?? ""
+            let runbookName = event["runbook_name"] as? String ?? runbookId
+            let runbookCategory = event["runbook_category"] as? String ?? "general"
+            let actionId = "\(taskId)_rpa_\(runbookId)"
+            let logEntry = ActionLogEntry(
+                actionId: actionId,
+                actionType: "runbook_execute",
+                reasoning: "执行 RPA Runbook: \(runbookName) [\(runbookCategory)]",
+                status: .success,
+                output: "Runbook \(runbookName) 已触发",
+                error: nil,
+                timestamp: Date(),
+                iteration: data.currentIteration,
+                paramsSummary: runbookId
+            )
+            data.actionLogs.append(logEntry)
 
         default:
             break
@@ -1137,7 +1191,10 @@ class MonitoringViewModel: ObservableObject {
                         description: d["description"] as? String ?? "",
                         status: d["status"] as? String ?? "unknown",
                         createdAt: d["created_at"] as? Double ?? 0,
-                        finishedAt: d["finished_at"] as? Double
+                        finishedAt: d["finished_at"] as? Double,
+                        workerType: d["worker_type"] as? String,
+                        workerId: d["worker_id"] as? String,
+                        workerLabel: d["worker_label"] as? String
                     )
                 }
             }

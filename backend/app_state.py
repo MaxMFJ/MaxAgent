@@ -128,6 +128,11 @@ DUCK_NAME: str = os.environ.get("DUCK_NAME", "")
 _duck_perms_raw: str = os.environ.get("DUCK_PERMISSIONS", "")
 DUCK_PERMISSIONS: set = set(p.strip() for p in _duck_perms_raw.split(",") if p.strip()) if _duck_perms_raw else set()
 
+# ── 自动委派：主 Agent 忙时将新任务自动交给空闲 Duck ─────────────────────────
+# True = 当主 Agent 对该 session 正在执行任务且有空闲 Duck 时，自动委派新任务给 Duck
+# False（默认）= 保持旧行为：新任务 cancel 旧任务并由主 Agent 执行
+AUTO_DELEGATE_WHEN_MAIN_BUSY: bool = os.environ.get("AUTO_DELEGATE_WHEN_MAIN_BUSY", "false").lower() == "true"
+
 
 # ============== Task Tracker ==============
 

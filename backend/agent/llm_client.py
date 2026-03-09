@@ -110,6 +110,26 @@ class LLMClient:
         """Update configuration and reinitialize client"""
         self.config = config
         self._init_client()
+
+    # 各模型的最大输出 tokens 上限，超过会导致 API 400 错误
+    _MODEL_OUTPUT_LIMITS: dict = {
+        "deepseek-chat": 8192,
+        "deepseek-reasoner": 8000,
+        "deepseek-coder": 8192,
+        "gpt-4o-mini": 16384,
+        "gpt-3.5-turbo": 4096,
+    }
+
+    def _clamp_max_tokens(self, max_tokens: int) -> int:
+        """按模型实际输出上限收窄 max_tokens，避免超限导致 400 错误。"""
+        model = (self.config.model or "").lower()
+        for key, limit in self._MODEL_OUTPUT_LIMITS.items():
+            if key in model:
+                if max_tokens > limit:
+                    logger.debug(f"Clamping max_tokens {max_tokens} → {limit} for model '{model}'")
+                    return limit
+                return max_tokens
+        return max_tokens
     
     async def chat(
         self,
@@ -134,11 +154,12 @@ class LLMClient:
         Returns:
             Response dict with 'content' and optional 'tool_calls'
         """
+        _mt = max_tokens if max_tokens is not None else self.config.max_tokens
         kwargs: Dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
             "temperature": self.config.temperature,
-            "max_tokens": max_tokens if max_tokens is not None else self.config.max_tokens,
+            "max_tokens": self._clamp_max_tokens(_mt),
         }
         
         if tools:
@@ -262,7 +283,7 @@ class LLMClient:
             "model": self.config.model,
             "messages": messages,
             "temperature": self.config.temperature,
-            "max_tokens": max_tokens if max_tokens is not None else self.config.max_tokens,
+            "max_tokens": self._clamp_max_tokens(max_tokens if max_tokens is not None else self.config.max_tokens),
             "stream": True,
         }
         # stream_options 仅 DeepSeek/OpenAI 原生 API 支持；New API 等兼容网关可能不支持，会导致空响应

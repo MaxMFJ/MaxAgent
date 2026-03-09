@@ -92,6 +92,7 @@ class BackendService: ObservableObject {
         guard let url = URL(string: wsURL) else { return }
         
         webSocketTask = urlSession.webSocketTask(with: url)
+        webSocketTask?.maximumMessageSize = 20 * 1024 * 1024  // 20MB，支持大截图传输
         webSocketTask?.resume()
         
         isConnected = true
@@ -236,6 +237,14 @@ class BackendService: ObservableObject {
                                 let sessionId = json["session_id"] as? String ?? ""
                                 await MainActor.run {
                                     self.onDuckTaskComplete?(content, success, taskId, sessionId)
+                                }
+                            case "duck_task_retry":
+                                // Duck 任务自动重试通知（信息性）
+                                let retryContent = json["content"] as? String ?? ""
+                                let retryTaskId = json["task_id"] as? String ?? ""
+                                let retrySessionId = json["session_id"] as? String ?? ""
+                                await MainActor.run {
+                                    self.onDuckTaskComplete?(retryContent, false, retryTaskId, retrySessionId)
                                 }
                             case "client_disconnected":
                                 break
@@ -612,20 +621,8 @@ class BackendService: ObservableObject {
                                        let success = json["success"] as? Bool,
                                        let resultStr = json["result"] as? String {
                                         continuation.yield(.toolResult(name: name, success: success, result: resultStr))
-                                        
-                                        if let resultData = resultStr.data(using: .utf8),
-                                           let resultJson = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] {
-                                            if let imageBase64 = resultJson["image_base64"] as? String {
-                                                let mimeType = resultJson["mime_type"] as? String ?? "image/png"
-                                                let path = resultJson["screenshot_path"] as? String ?? resultJson["path"] as? String
-                                                continuation.yield(.imageData(base64: imageBase64, mimeType: mimeType, path: path))
-                                            } else if let screenshotPath = resultJson["screenshot_path"] as? String {
-                                                continuation.yield(.localImage(path: screenshotPath))
-                                            } else if let path = resultJson["path"] as? String,
-                                                      path.hasSuffix(".png") || path.hasSuffix(".jpg") || path.hasSuffix(".jpeg") {
-                                                continuation.yield(.localImage(path: path))
-                                            }
-                                        }
+                                        // 注意：图片数据由后端单独发送的 "image" 消息处理，
+                                        // 不再从 tool_result 的 result 字符串中提取，避免解析占位符导致"解析失败"
                                     }
                                     
                                 case "image":
@@ -716,6 +713,12 @@ class BackendService: ObservableObject {
                                     let taskIdDtc = json["task_id"] as? String ?? ""
                                     let sessionIdDtc = json["session_id"] as? String ?? ""
                                     await MainActor.run { self.onDuckTaskComplete?(contentDtc, successDtc, taskIdDtc, sessionIdDtc) }
+                                    continue
+                                case "duck_task_retry":
+                                    let retryContentDtc = json["content"] as? String ?? ""
+                                    let retryTaskIdDtc = json["task_id"] as? String ?? ""
+                                    let retrySessionIdDtc = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(retryContentDtc, false, retryTaskIdDtc, retrySessionIdDtc) }
                                     continue
                                 
                                 case "system_notification":
@@ -1166,6 +1169,12 @@ class BackendService: ObservableObject {
                                     let sessionIdDtc2 = json["session_id"] as? String ?? ""
                                     await MainActor.run { self.onDuckTaskComplete?(contentDtc2, successDtc2, taskIdDtc2, sessionIdDtc2) }
                                     continue
+                                case "duck_task_retry":
+                                    let retryContentDtc2 = json["content"] as? String ?? ""
+                                    let retryTaskIdDtc2 = json["task_id"] as? String ?? ""
+                                    let retrySessionIdDtc2 = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(retryContentDtc2, false, retryTaskIdDtc2, retrySessionIdDtc2) }
+                                    continue
 
                                 case "monitor_event":
                                     let sourceSessionChat = json["source_session"] as? String ?? ""
@@ -1391,6 +1400,12 @@ class BackendService: ObservableObject {
                                     let taskIdDtc3 = json["task_id"] as? String ?? ""
                                     let sessionIdDtc3 = json["session_id"] as? String ?? ""
                                     await MainActor.run { self.onDuckTaskComplete?(contentDtc3, successDtc3, taskIdDtc3, sessionIdDtc3) }
+                                    continue
+                                case "duck_task_retry":
+                                    let retryContentDtc3 = json["content"] as? String ?? ""
+                                    let retryTaskIdDtc3 = json["task_id"] as? String ?? ""
+                                    let retrySessionIdDtc3 = json["session_id"] as? String ?? ""
+                                    await MainActor.run { self.onDuckTaskComplete?(retryContentDtc3, false, retryTaskIdDtc3, retrySessionIdDtc3) }
                                     continue
                                 
                                 case "autonomous_task_accepted":
@@ -1722,6 +1737,46 @@ class BackendService: ObservableObject {
 
     func eggDownloadURL(eggId: String) -> URL? {
         URL(string: "\(baseURL)/duck/egg/\(eggId)/download")
+    }
+
+    // MARK: - RPA Runbook API
+
+    nonisolated func fetchRunbooks() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/runbooks") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return json?["runbooks"] as? [[String: Any]] ?? []
+    }
+
+    nonisolated func deleteRunbook(id: String) async throws {
+        guard let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(baseURL)/runbooks/\(encoded)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func uploadRunbookFile(data: Data, filename: String) async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/runbooks/upload") else { throw URLError(.badURL) }
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+        let (responseData, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: responseData) as? [String: Any]) ?? [:]
     }
 }
 

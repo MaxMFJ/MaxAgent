@@ -140,6 +140,7 @@
     "read": true
   },
   {
+<<<<<<< HEAD
     "id": "57b8b022-6113-42a0-badd-f4c3ff7d4b71",
     "level": "error",
     "title": "对话执行错误",
@@ -147,6 +148,255 @@
     "source": "chat_stream",
     "category": "system_error",
     "timestamp": "2026-03-07T21:41:25.477050",
+=======
+    "id": "b3253b7f-09ce-48be-9c76-1e27f4af2319",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T20:42:48.360338",
+    "read": true
+  },
+  {
+    "id": "167af7b8-c7a2-4bb1-a5dd-c91ef60d4ae3",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T20:42:48.360678",
+    "read": true
+  },
+  {
+    "id": "9146b1b9-515b-4e81-824d-07a2dffea717",
+    "level": "warning",
+    "title": "启动检查: 4 条未分类错误",
+    "content": "发现 4 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T20:42:48.360959",
+    "read": true
+  },
+  {
+    "id": "0e7ad403-8be3-4175-a1d9-5198665c0f7b",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: agent.mcp_client - Failed to connect MCP server 'github': [Errno 2] No such file or directory",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T20:43:40.835374",
+    "read": true
+  },
+  {
+    "id": "7e80fc5c-c5b9-4db8-bba2-fad175728318",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "Error code: 400 - {'error': {'message': 'Invalid max_tokens value, the valid range of max_tokens is [1, 8192]', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-07T22:17:57.349912",
+    "read": true
+  },
+  {
+    "id": "496edcf4-be4f-43e1-9014-3057c8f8fd1b",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T22:34:10.489304",
+    "read": true
+  },
+  {
+    "id": "41ec8b70-1eee-45e9-b45a-a2c197f6c304",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T22:34:10.490308",
+    "read": true
+  },
+  {
+    "id": "ee24cd60-788a-48d9-a78e-378e081037ba",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-07T23:28:30.895277",
+    "read": true
+  },
+  {
+    "id": "7c2bcf7e-6185-47ca-a990-561129401cab",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T08:59:33.494226",
+    "read": true
+  },
+  {
+    "id": "5f4f01c3-2e1c-4bdc-a0a2-765f4f4dfb34",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T08:59:33.494827",
+    "read": true
+  },
+  {
+    "id": "394efee7-fdef-47ae-8950-0668b7de3243",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 8 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping tunnel_monitor: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T10:04:50.246812",
+    "read": true
+  },
+  {
+    "id": "ba23ebc7-7b46-4082-8c25-ae467fd7a6ce",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T10:04:50.250078",
+    "read": true
+  },
+  {
+    "id": "af823e29-03e2-4834-8e87-09df9db75f61",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T10:43:28.511041",
+    "read": true
+  },
+  {
+    "id": "befb9add-e673-4603-a7f2-abed502c1a21",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping example_generated: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T11:04:59.018798",
+    "read": true
+  },
+  {
+    "id": "7862d7ae-a880-4c5c-984d-92d23808cfee",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T11:04:59.019549",
+    "read": true
+  },
+  {
+    "id": "105f1ee8-b552-4c94-afa4-ebb81613596a",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping example_generated: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T12:09:27.442430",
+    "read": true
+  },
+  {
+    "id": "284e6b22-96ee-4b8f-984e-088e1b8debc9",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T12:09:27.444206",
+    "read": true
+  },
+  {
+    "id": "8314fb7a-934d-4eae-bb74-ba5db94a2558",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping example_generated: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T14:37:37.745995",
+    "read": true
+  },
+  {
+    "id": "bd2d7ff9-47e5-4182-be9a-1d820f942ce0",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T14:37:37.747630",
+    "read": true
+  },
+  {
+    "id": "c83c9016-6138-470f-b0f6-db2eea6b83de",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T15:11:52.186196",
+    "read": true
+  },
+  {
+    "id": "53734592-82db-4a51-94b2-db568546e21b",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T15:43:25.276630",
+    "read": true
+  },
+  {
+    "id": "ad4abf20-8729-4032-a6c2-5481cff6daeb",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping example_generated: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T15:54:28.842194",
+    "read": true
+  },
+  {
+    "id": "8a095de8-cea0-4ab8-bd0b-a7d211c610fa",
+    "level": "warning",
+    "title": "启动检查: 工具加载被跳过（安全校验）",
+    "content": "检测到 2 次工具加载被跳过（安全校验）。\n部分动态工具未通过安全校验，如需使用请通过 /tools/approve 审批\n\n最近一条: tools.registry - Skipping example_generated: signature not verified",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T17:58:08.837595",
+    "read": true
+  },
+  {
+    "id": "8f0f5d67-a8c7-4c38-bd23-67e8f86a52f1",
+    "level": "warning",
+    "title": "启动检查: 模块初始化异常",
+    "content": "检测到 2 次模块初始化异常。\n部分模块启动失败，可能影响相关功能，请查看详细日志\n\n最近一条: main - Capsule bootstrap failed (non-blocking): Invalid pattern: '**' can only be an entire path component",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T17:58:08.841066",
+    "read": true
+  },
+  {
+    "id": "82123d53-8e3a-49a1-a774-73e7fabcfbfb",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-08T18:55:58.104534",
+>>>>>>> 3b19f0a34112fecc3396f3b4b7c2528175002d08
     "read": false
   }
 ]

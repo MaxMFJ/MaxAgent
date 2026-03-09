@@ -25,6 +25,7 @@ struct SettingsView: View {
         NavItem(title: "审计",   icon: "doc.text.magnifyingglass",           index: 10),
         NavItem(title: "Context", icon: "chart.bar.xaxis",                  index: 11),
         NavItem(title: "Chow Duck", icon: "bird",                           index: 12),
+        NavItem(title: "RPA 流程",   icon: "list.bullet.rectangle",           index: 13),
     ]
 
     var body: some View {
@@ -125,6 +126,11 @@ struct SettingsView: View {
                     case 12:
                         ScrollView {
                             DuckSettingsContent()
+                                .padding(20)
+                        }
+                    case 13:
+                        ScrollView {
+                            RPASettingsContent()
                                 .padding(20)
                         }
                     default:

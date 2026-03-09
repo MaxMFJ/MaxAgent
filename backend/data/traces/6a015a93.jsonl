@@ -1,0 +1,10 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 11088, "success": true, "ts": 1772955458.186423}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": false, "error": "'utf-8' codec can't decode byte 0x89 in position 0: invalid start byte", "ts": 1772955458.1882188}
+{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 9390, "success": true, "ts": 1772955469.580075}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 28, "success": true, "error": null, "ts": 1772955469.610154}
+{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 8303, "success": true, "ts": 1772955479.915036}
+{"iteration": 3, "type": "tool", "action_type": "run_shell", "latency_ms": 501, "success": true, "error": null, "ts": 1772955480.4181812}
+{"iteration": 4, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 30507, "success": true, "ts": 1772955512.927181}
+{"iteration": 4, "type": "tool", "action_type": "write_file", "latency_ms": 1, "success": true, "error": null, "ts": 1772955512.930846}
+{"iteration": 5, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 6458, "success": true, "ts": 1772955521.3911328}
+{"iteration": 5, "type": "tool", "action_type": "run_shell", "latency_ms": 82, "success": true, "error": null, "ts": 1772955521.475483}

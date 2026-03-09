@@ -1,0 +1,48 @@
+{
+  "id": "rpa_mac_screenshot",
+  "name": "Mac 截图",
+  "description": "对 Mac 屏幕进行截图，支持全屏、窗口、区域三种模式，结果保存到桌面或指定路径。",
+  "category": "mac",
+  "tags": ["截图", "screenshot", "mac", "屏幕"],
+  "inputs": [
+    {"name": "mode", "type": "string", "default": "fullscreen", "description": "截图模式：fullscreen（全屏）/ window（窗口）/ area（区域）"},
+    {"name": "output_path", "type": "string", "default": "~/Desktop/screenshot_$(date +%Y%m%d_%H%M%S).png", "description": "保存路径"}
+  ],
+  "outputs": [
+    {"name": "file_path", "description": "截图文件路径"}
+  ],
+  "prerequisites": ["macOS 系统"],
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "全屏截图",
+      "description": "使用 screencapture 命令截取全屏",
+      "tool": "terminal",
+      "command": "screencapture -x ~/Desktop/screenshot_$(date +%Y%m%d_%H%M%S).png && echo '截图已保存到桌面'",
+      "condition": "mode == 'fullscreen'",
+      "on_error": "fallback",
+      "fallback_step": "step_1_alt",
+      "retry": 0
+    },
+    {
+      "id": "step_1_alt",
+      "name": "备用截图方式",
+      "description": "使用系统快捷键截图（如 screencapture 失败）",
+      "tool": "terminal",
+      "command": "screencapture ~/Desktop/screenshot.png",
+      "on_error": "abort",
+      "retry": 1
+    },
+    {
+      "id": "step_2",
+      "name": "验证截图文件",
+      "description": "确认截图文件已生成",
+      "tool": "terminal",
+      "command": "ls -lh ~/Desktop/screenshot*.png | tail -1",
+      "on_error": "continue",
+      "retry": 0
+    }
+  ],
+  "version": "1.0",
+  "source": "built-in"
+}

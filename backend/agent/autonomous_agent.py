@@ -1444,6 +1444,14 @@ class AutonomousAgent:
                 ]
                 if duck_ctx.get("skills"):
                     parts.append(f"你的专项技能：{', '.join(duck_ctx['skills'])}。请优先运用这些技能完成任务。")
+                parts.append(
+                    "\n【重要执行规则】你是执行者，不是规划者。你必须：\n"
+                    "1. 直接使用工具（run_shell、write_file、call_tool 等）执行任务，而非描述或规划任务。\n"
+                    "2. 如果任务要求创建文件，必须输出 write_file 或 create_and_run_script 动作来实际创建文件。\n"
+                    "3. 绝对不要只输出任务分析或执行策略的文字说明。每一步都必须是可执行的 JSON 动作。\n"
+                    "4. 不要在第一步就 finish，除非任务已经被真正完成（文件已创建、命令已执行等）。\n"
+                    "5. 如果任务需要编写代码/HTML/文件，直接在 write_file 的 content 中写出完整内容。"
+                )
                 duck_block = "\n".join(parts)
                 system_prompt = duck_block + "\n\n---\n\n" + system_prompt
         except Exception:
@@ -1479,6 +1487,11 @@ class AutonomousAgent:
             task_guidance = getattr(self, "_task_guidance", "").strip()
             if task_guidance:
                 first_content = f"{task_guidance}\n\n"
+            # 注入截断提示（若上轮 JSON 因 token 限制被截断）
+            truncation_hint = getattr(context, "_truncation_hint", "")
+            if truncation_hint:
+                first_content += f"{truncation_hint}\n\n"
+                context._truncation_hint = ""  # 只用一次
             first_content += "开始执行任务。请分析任务并输出第一步动作的 JSON。"
             if getattr(context, "retry_count", 0) > 0:
                 first_content += "\n\n【重要】你必须只输出一个 JSON 动作（例如 run_shell、call_tool、read_file 等），不要输出大段自然语言说明。即使你认为任务难以完成，也请先输出一个尝试性动作的 JSON。"
@@ -1512,6 +1525,11 @@ class AutonomousAgent:
                 self._mid_reflection_hint = ""
 
             next_prompt = f"{result_summary}\n\n请分析结果并输出下一步动作的 JSON。"
+            # 注入截断提示（若上轮 JSON 因 token 限制被截断）
+            truncation_hint = getattr(context, "_truncation_hint", "")
+            if truncation_hint:
+                next_prompt += f"\n\n{truncation_hint}"
+                context._truncation_hint = ""  # 只用一次
             # 多步且任务含报告/生成时，提示避免单次 JSON 过长被截断
             task_desc = getattr(context, "task_description", "") or ""
             if len(context.action_logs) >= 5 and any(k in task_desc for k in ("报告", "生成", "Markdown", "保存")):
@@ -1650,6 +1668,18 @@ class AutonomousAgent:
                             params={"summary": "任务已执行多步。请检查桌面或目标路径是否已有生成内容。", "success": True},
                             reasoning="基于已成功步骤视为完成。",
                         )
+                # 兜底1.5：截断的 JSON action（首步 write_file 等被截断）→ 注入文件拆分提示并重试
+                if action is None and is_truncated and '"action_type"' in content:
+                    logger.info(
+                        "Truncated JSON action detected at step %d, injecting split-file hint",
+                        steps,
+                    )
+                    # 不创建 finish action，让重试机制加入拆分提示
+                    context._truncation_hint = (
+                        "【输出被截断警告】你上次尝试输出了过大的 JSON，导致被截断。"
+                        "请将大文件内容拆分：使用 create_and_run_script 编写 Python 脚本生成文件，"
+                        "或使用 run_shell 通过 cat << 'HEREDOC' 写入。禁止在 write_file 中放入超长内容。"
+                    )
                 # 兜底2：LLM 返回了纯自然语言（如打招呼回复）时，视为 finish，把整段内容作为 summary 返回
                 if action is None:
                     text = content.strip()[:4000]
@@ -2050,21 +2080,38 @@ class AutonomousAgent:
                     "task_id": task.task_id,
                 }
 
-            # 等待结果 (最长 timeout 秒)
-            try:
-                completed_task = await asyncio.wait_for(future, timeout=timeout)
-                return {
-                    "success": completed_task.status == TaskStatus.COMPLETED,
-                    "output": completed_task.output,
-                    "error": completed_task.error,
-                    "task_id": completed_task.task_id,
-                    "duck_id": completed_task.assigned_duck_id,
-                }
-            except asyncio.TimeoutError:
+            # ─── 自适应超时等待 ───────────────────────────────
+            # 初始检查间隔 90s，到时检查 Duck 是否仍在活跃产出 chunk：
+            #   - 若活跃（last_activity 在最近 90s 内更新过）→ 继续等待
+            #   - 若不活跃 → 超时失败
+            # 直到 Future 被 resolve（Duck 完成/失败）才返回结果
+            CHECK_INTERVAL = 90  # 每 90 秒检查一次 Duck 活跃状态
+            INACTIVITY_THRESHOLD = 90  # Duck 超过 90s 无 chunk 产出则认为卡死
+
+            while True:
+                done, _ = await asyncio.wait({future}, timeout=CHECK_INTERVAL)
+                if future in done:
+                    completed_task = future.result()
+                    return {
+                        "success": completed_task.status == TaskStatus.COMPLETED,
+                        "output": completed_task.output,
+                        "error": completed_task.error,
+                        "task_id": completed_task.task_id,
+                        "duck_id": completed_task.assigned_duck_id,
+                    }
+
+                # Future 未完成，检查 Duck 是否仍在活跃工作
+                current_task = await scheduler.get_task(task.task_id)
+                if current_task and current_task.last_activity:
+                    idle_time = time.time() - current_task.last_activity
+                    if idle_time < INACTIVITY_THRESHOLD:
+                        # Duck 仍在活跃产出 chunk，继续等待
+                        continue
+                # Duck 已不活跃或任务状态异常 → 超时
                 return {
                     "success": False,
                     "output": None,
-                    "error": f"Duck task timed out after {timeout}s",
+                    "error": f"Duck task inactive for >{INACTIVITY_THRESHOLD}s, likely stuck",
                     "task_id": task.task_id,
                 }
 

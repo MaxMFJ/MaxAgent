@@ -5,12 +5,12 @@ Permission Checker - macOS 辅助功能权限检测与引导
 
 import logging
 import subprocess
-from typing import Tuple
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # 权限状态缓存
-_cached_trusted: bool | None = None
+_cached_trusted: Optional[bool] = None
 
 
 def check_accessibility_permission(prompt: bool = False) -> bool:

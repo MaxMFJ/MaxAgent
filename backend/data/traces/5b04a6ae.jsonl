@@ -1,0 +1,2 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 3863, "success": true, "ts": 1772967629.439657}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": false, "error": "'utf-8' codec can't decode byte 0x89 in position 0: invalid start byte", "ts": 1772967629.443475}
