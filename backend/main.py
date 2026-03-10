@@ -331,14 +331,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Capsule bootstrap setup skipped: {e}")
 
-    # RPA Runbook 注册中心初始化
-    try:
-        from agent.runbook_registry import get_runbook_registry
-        rb_reg = get_runbook_registry()
-        logger.info(f"Runbook registry initialized: {len(rb_reg.list_all())} runbooks loaded")
-    except Exception as e:
-        logger.warning(f"Runbook registry init skipped: {e}")
-
     # EvoMap 进化网络
     if ENABLE_EVOMAP:
         try:
@@ -527,9 +519,21 @@ app.include_router(ws_router)
 # ============== Entry Point ==============
 
 if __name__ == "__main__":
+    import json
+    import tempfile
     import uvicorn
 
-    _run_port = DUCK_PORT if IS_DUCK_MODE else 8765
+    def _read_backend_port() -> int:
+        """从共享配置文件读取后端端口，回退到默认值"""
+        config_path = os.path.join(tempfile.gettempdir(), "macagent_ports.json")
+        try:
+            with open(config_path, "r") as f:
+                cfg = json.load(f)
+                return int(cfg.get("backend_port", 8765))
+        except (FileNotFoundError, ValueError, json.JSONDecodeError):
+            return 8765
+
+    _run_port = DUCK_PORT if IS_DUCK_MODE else _read_backend_port()
     uvicorn.run(
         "main:app",
         host="127.0.0.1",

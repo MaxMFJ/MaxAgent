@@ -3,6 +3,7 @@ import { useChatStore } from '../stores/chatStore';
 import MessageBubble from './MessageBubble';
 import InputBar from './InputBar';
 import WelcomeView from './WelcomeView';
+import { Button, Card } from './ui';
 import { ChevronDown } from 'lucide-react';
 
 const ChatView: React.FC = () => {
@@ -48,7 +49,7 @@ const ChatView: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative" style={{ background: 'var(--bg-base)' }}>
+    <div className="chat-view-fill relative" style={{ background: 'var(--bg-base)' }}>
       {/* Subtle gradient overlay at top */}
       <div
         className="absolute top-0 left-0 right-0 h-8 pointer-events-none z-10"
@@ -58,18 +59,15 @@ const ChatView: React.FC = () => {
       {/* 消息列表 */}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-4 sm:py-6"
+        className="chat-view-scroll px-4 sm:px-6 py-4 sm:py-6"
         onScroll={handleScroll}
       >
-        <div className="w-full max-w-3xl mx-auto min-w-0">
+        <div className="chat-view-inner">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div
-                className="text-sm px-5 py-3 rounded-[var(--radius-xl)]"
-                style={{ color: 'var(--text-tertiary)', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-              >
+              <Card padding="md" className="text-sm text-[var(--text-tertiary)]">
                 开始输入消息吧…
-              </div>
+              </Card>
             </div>
           ) : (
             messages.map((msg) => (
@@ -87,23 +85,18 @@ const ChatView: React.FC = () => {
       {/* 用户上滚时显示"回到底部"按钮 */}
       {userScrolledUp && messages.length > 0 && (
         <div className="absolute bottom-[80px] left-1/2 -translate-x-1/2 z-20 animate-fade-in-up">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<ChevronDown size={14} />}
             onClick={() => {
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
               setUserScrolledUp(false);
             }}
-            className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-[var(--radius-full)] cursor-pointer transition-all duration-200 hover:scale-105"
-            style={{
-              background: 'var(--bg-elevated)',
-              color: 'var(--accent)',
-              border: '1px solid var(--border)',
-              boxShadow: 'var(--shadow-md)',
-              backdropFilter: 'blur(12px)',
-            }}
+            className="shadow-md backdrop-blur-[12px] hover:scale-105 text-[var(--accent)] border-[var(--border)] bg-[var(--bg-elevated)]"
           >
-            <ChevronDown size={14} />
             回到底部
-          </button>
+          </Button>
         </div>
       )}
 

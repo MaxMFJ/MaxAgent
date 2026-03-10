@@ -21,13 +21,12 @@ _PROMPTS_DIR = os.path.join(_DATA_DIR, "prompts")
 BOOTSTRAP_MAX_CHARS = int(os.environ.get("MACAGENT_BOOTSTRAP_MAX_CHARS", "8000"))
 BOOTSTRAP_TOTAL_MAX_CHARS = int(os.environ.get("MACAGENT_BOOTSTRAP_TOTAL_MAX_CHARS", "20000"))
 
-# 加载顺序：identity → behavior → tools → capsule → runbook → constraints（evolved 单独追加）
+# 加载顺序：identity → behavior → tools → capsule → constraints（evolved 单独追加）
 BOOTSTRAP_FILES = [
     ("identity", os.path.join(_PROMPTS_DIR, "identity.md")),
     ("behavior", os.path.join(_PROMPTS_DIR, "behavior.md")),
     ("tools", os.path.join(_PROMPTS_DIR, "tools.md")),
     ("capsule", os.path.join(_PROMPTS_DIR, "capsule.md")),
-    ("runbook", os.path.join(_PROMPTS_DIR, "runbook.md")),
     ("constraints", os.path.join(_PROMPTS_DIR, "constraints.md")),
 ]
 
@@ -39,7 +38,9 @@ PROJECT_CONTEXT_MAX_CHARS = int(os.environ.get("MACAGENT_PROJECT_CONTEXT_MAX_CHA
 SYSTEM_PROMPT_LITE_FALLBACK = """你是 Chow Duck，运行在 macOS 上的全能智能助手。你既是系统级操作执行者，也是多领域知识顾问（产品、开发、法律、生活、购物、出行、旅游、学习等）。
 核心能力：文件操作、终端命令、应用控制、系统信息、剪贴板、截图、鼠标键盘(input_control)、邮件、技能Capsule、知识咨询。
 规则：知识/咨询类问题直接回答无需工具；操作类任务用工具执行。以用户目标为导向，简洁高效，用中文回复。截图完成后立即停止。
-GUI 操作：键盘输入中文必须用 input_control 的 keyboard_type（严禁 osascript keystroke 输入中文）。每步操作后截图验证，finish 前截图确认任务完成。
+
+{__GUI_RULES_PLACEHOLDER__}
+
 若用户只是追问「项目/文件在哪个目录」「做到哪一步了」等，根据对话历史直接回答，不要重新执行创建或命令。"""
 
 SYSTEM_PROMPT_FULL_FALLBACK = """你是 Chow Duck，运行在 macOS 上的全能智能助手。你不仅能执行电脑操作，更是用户日常工作与生活中的全域知识顾问。
@@ -64,31 +65,8 @@ SYSTEM_PROMPT_FULL_FALLBACK = """你是 Chow Duck，运行在 macOS 上的全能
 - **工具失败时**：必须明确告知用户失败原因，禁止谎称成功或完成。自动补救 → 引导用户 → 请求工具升级
 - 简洁高效，完成后简短报告。截图完成后立即停止。批量操作优先用终端。危险操作先确认
 
-## GUI 操作规范（操作微信、Safari 等应用的界面）
-### 工具选择（强制）
-- **键盘输入文字**（尤其中文）：必须使用 input_control 的 keyboard_type。**严禁**用 terminal 运行 osascript 的 `keystroke "中文"` — keystroke 只支持 ASCII，中文会变成乱码
-- **鼠标点击**：使用 input_control 的 mouse_click（传 x, y 坐标）
-- **快捷键**：使用 input_control 的 keyboard_shortcut（如 Cmd+F 搜索）
-- **单个按键**（回车/Tab/Esc）：使用 input_control 的 keyboard_key
-- 仅在无替代方案时才用 terminal 执行 osascript
-
-### GUI 操作流程（必须遵循）
-1. 每步操作后必须截图（screenshot），根据截图判断当前状态再决定下一步
-2. 不要在一个 osascript 里塞多步操作（搜索+输入+回车），拆成单步并逐步验证
-3. 点击/输入前先截图确认目标位置，根据截图的 UI 元素坐标点击
-4. finish 前必须截图确认任务真正完成，不要凭假设宣布完成
-
-### 微信/聊天应用典型流程
-open_app → 截图 → keyboard_shortcut(Cmd+F) → 截图确认搜索框 → keyboard_type("联系人名") → 截图 → keyboard_key(return)选中结果 → 截图确认进入对话 → mouse_click(点击输入框) → keyboard_type("消息内容") → keyboard_key(return)发送 → 截图验证消息已发送 → finish
-
-### 常见应用快捷键坑（必须遵守）
-- **微信发送消息**：用 `keyboard_key(key="return")`。
-  • 绝对禁止用 keyboard_shortcut 发送消息！keyboard_shortcut 会附加 command 修饰键，Cmd+Return 在微信中不是发送
-  • 也禁止 shift+return（那是换行）
-  • 只有纯 Return 才是发送，不需要任何修饰键
-- **搜索确认**：keyboard_key(key="return")
-- **关闭搜索/对话框**：keyboard_key(key="escape")
-- **重要区分**：keyboard_key = 纯按键（无修饰键）；keyboard_shortcut = 带修饰键的快捷键。发送消息必须用 keyboard_key
+## GUI 操作规范（⚠️ 强制规则 — 必须遵循）
+{__GUI_RULES_PLACEHOLDER__}
 
 ## 启动长期运行进程（Flask/后端/开发服务器）
 - 启动 Flask、Node 开发服务器等**不会自动退出的进程**时，必须使用 terminal 的 `background: true` 参数
@@ -202,6 +180,14 @@ _bootstrap_lite_cache: Optional[Tuple[float, str]] = None
 _CACHE_TTL = 60.0  # 秒
 
 
+def _inject_shared_rules(prompt: str) -> str:
+    """注入共享规则模块（single source of truth for GUI/tool rules）"""
+    if "{__GUI_RULES_PLACEHOLDER__}" in prompt:
+        from .shared_rules import GUI_RULES
+        prompt = prompt.replace("{__GUI_RULES_PLACEHOLDER__}", GUI_RULES)
+    return prompt
+
+
 def _get_cached_bootstrap_full() -> str:
     """带缓存的 FULL bootstrap"""
     global _bootstrap_full_cache
@@ -211,9 +197,10 @@ def _get_cached_bootstrap_full() -> str:
         return _bootstrap_full_cache[1]
     content = _get_full_prompt_from_bootstrap()
     if content:
+        content = _inject_shared_rules(content)
         _bootstrap_full_cache = (now, content)
         return content
-    return SYSTEM_PROMPT_FULL_FALLBACK
+    return _inject_shared_rules(SYSTEM_PROMPT_FULL_FALLBACK)
 
 
 def _get_cached_bootstrap_lite() -> str:
@@ -225,9 +212,10 @@ def _get_cached_bootstrap_lite() -> str:
         return _bootstrap_lite_cache[1]
     content = _get_lite_prompt_from_bootstrap()
     if content:
+        content = _inject_shared_rules(content)
         _bootstrap_lite_cache = (now, content)
         return content
-    return SYSTEM_PROMPT_LITE_FALLBACK
+    return _inject_shared_rules(SYSTEM_PROMPT_LITE_FALLBACK)
 
 
 def _load_evolved_rules() -> str:
@@ -386,34 +374,7 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
     # 时间感知注入：检测到时间相关查询时，注入当前系统时间
     time_hint = _build_time_hint() if _needs_time_injection(query) else ""
 
-    # RPA Runbook 提示注入：仅对执行类请求注入，且仅当匹配分数达到阈值时注入，减少无关流程干扰
-    runbook_hint = ""
-    if result.tier != QueryTier.SIMPLE and result.intent == Intent.EXECUTION and query:
-        try:
-            from .runbook_registry import get_runbook_registry
-            rb_reg = get_runbook_registry()
-            inject_min = float(os.environ.get("MACAGENT_RUNBOOK_INJECT_MIN_SCORE", "0.45"))
-            inject_categories_raw = os.environ.get("MACAGENT_RUNBOOK_INJECT_CATEGORIES", "")
-            inject_categories = [c.strip() for c in inject_categories_raw.split(",") if c.strip()] or None
-            scored_list = rb_reg.find_by_query_with_scores(
-                query, limit=5, min_score=0.35, categories=inject_categories
-            )
-            above_threshold = [(rb, s) for rb, s in scored_list if s >= inject_min][:3]
-            if above_threshold:
-                runbooks = [rb for rb, _ in above_threshold]
-                lines = "\n".join(
-                    f"- {rb.id} [{rb.category}]: {rb.description[:80]}"
-                    + ("（可委派 Duck）" if getattr(rb, "prefer_duck", False) else "")
-                    for rb in runbooks
-                )
-                runbook_hint = (
-                    f"\n\n[可用 RPA 自动化流程（Runbook）：以下标准化流程与当前请求匹配，"
-                    f"优先推荐用户直接执行；调用方式：告知用户或直接按步骤执行。\n{lines}\n]"
-                )
-        except Exception as e:
-            logger.debug(f"Failed to inject runbook hint: {e}")
-
-    return base + time_hint + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + runbook_hint + evolved
+    return base + time_hint + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + evolved
 
 
 # 向后兼容

@@ -26,3 +26,7 @@ pyobjc-framework-ApplicationServices>=10.0; sys_platform=="darwin"
 # 图像处理（截图压缩 + Duck 设计图生成）
 Pillow>=10.0.0
 matplotlib>=3.7.0
+# OCR 视觉管道依赖
+opencv-python-headless>=4.8.0; sys_platform=="darwin"
+# RapidOCR (ONNX) 按需安装（~50MB），详见 start.sh；兼容 Python 3.14+
+# 回退: paddleocr 需要 Python ≤3.12

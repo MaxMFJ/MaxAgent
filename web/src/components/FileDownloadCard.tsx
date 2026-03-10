@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getFileInfo, getFileDownloadUrl } from '../services/api';
 import { getFileIcon } from '../utils/filePaths';
 import type { FileInfo } from '../types';
+import { Card, Skeleton } from './ui';
 
 interface Props {
   filePath: string;
@@ -44,27 +45,23 @@ const FileDownloadCard: React.FC<Props> = ({ filePath }) => {
 
   if (loading) {
     return (
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] my-1 animate-pulse"
-        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
-      >
-        <div className="w-10 h-10 rounded-[var(--radius-lg)]" style={{ background: 'var(--bg-overlay)' }} />
+      <Card padding="md" className="flex items-center gap-3 my-1 animate-pulse bg-[var(--bg-elevated)]">
+        <Skeleton className="w-10 h-10 rounded-[var(--radius-lg)]" />
         <div className="flex-1">
-          <div className="h-3 w-32 rounded-[var(--radius-sm)]" style={{ background: 'var(--bg-overlay)' }} />
-          <div className="h-2 w-48 rounded-[var(--radius-sm)] mt-1.5" style={{ background: 'var(--bg-overlay)' }} />
+          <Skeleton className="h-3 w-32 rounded-[var(--radius-sm)]" />
+          <Skeleton className="h-2 w-48 rounded-[var(--radius-sm)] mt-1.5" />
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div
-      className="flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] my-1 cursor-pointer transition-all duration-200"
-      style={{
-        background: hover ? 'var(--bg-overlay)' : 'var(--bg-elevated)',
-        border: `1px solid ${hover ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'var(--border-subtle)'}`,
-        boxShadow: hover ? 'var(--shadow-glow-accent)' : 'none',
-      }}
+    <Card
+      padding="md"
+      hover
+      className={`flex items-center gap-3 my-1 cursor-pointer transition-all duration-200 ${
+        hover ? 'border-[color-mix(in_srgb,var(--accent)_15%,transparent)] shadow-[var(--shadow-glow-accent)]' : 'bg-[var(--bg-elevated)]'
+      }`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={handleDownload}
@@ -99,7 +96,7 @@ const FileDownloadCard: React.FC<Props> = ({ filePath }) => {
       >
         <span style={{ color: 'var(--accent)', fontSize: '1.1em' }}>⬇</span>
       </div>
-    </div>
+    </Card>
   );
 };
 

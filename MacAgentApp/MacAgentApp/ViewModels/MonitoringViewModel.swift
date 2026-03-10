@@ -213,7 +213,7 @@ struct TaskMonitorData: Identifiable {
     var lastUpdated: Date
 
     // MARK: - 执行者（Actor）信息
-    /// 执行者类型："main" / "local_duck" / "remote_duck" / "runbook"
+    /// 执行者类型："main" / "local_duck" / "remote_duck"
     var workerType: String
     /// 执行者 ID："main" 或 duck_id
     var workerId: String
@@ -333,7 +333,7 @@ class MonitoringViewModel: ObservableObject {
     private var elapsedTimer: Task<Void, Never>?
     private var multiTaskElapsedTimer: Task<Void, Never>?
     private var nextLogIndex: Int = 0
-    private let baseURL = "http://127.0.0.1:8765"
+    private var baseURL: String { "http://127.0.0.1:\(PortConfiguration.shared.backendPort)" }
 
     private let httpSession: URLSession = {
         let config = URLSessionConfiguration.default
@@ -701,25 +701,6 @@ class MonitoringViewModel: ObservableObject {
                 data.taskProgress = p
             }
 
-        case "runbook_executed":
-            // RPA Runbook 触发记录
-            let runbookId = event["runbook_id"] as? String ?? ""
-            let runbookName = event["runbook_name"] as? String ?? runbookId
-            let runbookCategory = event["runbook_category"] as? String ?? "general"
-            let actionId = "\(taskId)_rpa_\(runbookId)"
-            let logEntry = ActionLogEntry(
-                actionId: actionId,
-                actionType: "runbook_execute",
-                reasoning: "执行 RPA Runbook: \(runbookName) [\(runbookCategory)]",
-                status: .success,
-                output: "Runbook \(runbookName) 已触发",
-                error: nil,
-                timestamp: Date(),
-                iteration: data.currentIteration,
-                paramsSummary: runbookId
-            )
-            data.actionLogs.append(logEntry)
-
         default:
             break
         }
@@ -732,6 +713,14 @@ class MonitoringViewModel: ObservableObject {
     }
 
     private func _evictOldTasks() {
+        // 截断每个任务的 actionLogs，避免无限增长导致 UI 卡顿
+        let maxLogsPerTask = 200
+        for (id, var data) in tasks {
+            if data.actionLogs.count > maxLogsPerTask {
+                data.actionLogs = Array(data.actionLogs.suffix(maxLogsPerTask))
+                tasks[id] = data
+            }
+        }
         let finished = tasks.filter { $0.value.taskProgress?.status != .running }
         if finished.count > 20 {
             let sorted = finished.sorted { ($0.value.lastUpdated) < ($1.value.lastUpdated) }

@@ -7,10 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D5721C55EFA396606272D0F /* PortConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6116C58605B732EAC12A9C /* PortConfiguration.swift */; };
+		2FA4151906D65558C507569B /* PortSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F634291F3212FD31A180945 /* PortSettingsView.swift */; };
+		4899F0E9F0C96B7CAE6CBBCB /* PortSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */; };
 		4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */; };
 		4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */; };
 		4DABE95099DB64A612AA7CF9 /* HITLOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */; };
 		512B129F2AC9980B6FFC7CF4 /* Pods_MacAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */; };
+		899E06CE2CC66AEFFABA4A57 /* PortConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */; };
 		8CDA84FC8DE48AE55C228925 /* RollbackPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */; };
 		9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF865104315098FC6C97C17F /* AuditLogView.swift */; };
 		A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002234567890ABCDEF1 /* MacAgentApp.swift */; };
@@ -24,6 +28,14 @@
 		A1000013234567890ABCDEF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014234567890ABCDEF1 /* SettingsView.swift */; };
 		A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002234567890ABCDEF1 /* PermissionManager.swift */; };
 		A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */; };
+		AB00000100000000A11Y001 /* AccessibilityMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000A11Y001 /* AccessibilityMonitorView.swift */; };
+		AB00000100000000ACTBX01 /* ActionBatchExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000ACTBX01 /* ActionBatchExecutor.swift */; };
+		AB00000100000000AX5ERV01 /* AccessibilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000AX5ERV01 /* AccessibilityService.swift */; };
+		AB00000100000000AXBRDG01 /* AccessibilityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000AXBRDG01 /* AccessibilityBridge.swift */; };
+		AB00000100000000AXOBSV01 /* AXObserverManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000AXOBSV01 /* AXObserverManager.swift */; };
+		AB00000100000000GUSST01 /* GUIStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000GUSST01 /* GUIStateStore.swift */; };
+		AB00000100000000IPCSR01 /* IPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000IPCSR01 /* IPCService.swift */; };
+		AB00000100000000VIS00001 /* VisionFallbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000200000000VIS00001 /* VisionFallbackService.swift */; };
 		B1000001234567890ABCDEF1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002234567890ABCDEF1 /* ChatView.swift */; };
 		B1000003234567890ABCDEF1 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004234567890ABCDEF1 /* MessageBubble.swift */; };
 		B1000005234567890ABCDEF1 /* MessageAvatars.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006234567890ABCDEF1 /* MessageAvatars.swift */; };
@@ -53,7 +65,6 @@
 		C1000001234567890ABCDEF1 /* TunnelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002234567890ABCDEF1 /* TunnelView.swift */; };
 		C1000003234567890ABCDEF1 /* TunnelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004234567890ABCDEF1 /* TunnelManager.swift */; };
 		D1000001234567890ABCDEF1 /* SystemMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1000002234567890ABCDEF1 /* SystemMessageView.swift */; };
-		DD0000010000000000RAP001 /* RPASettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000020000000000RAP001 /* RPASettingsView.swift */; };
 		DD8600D102F41BB40F368F23 /* FeatureFlagsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B79292F132B058FE6EE19 /* FeatureFlagsSettingsView.swift */; };
 		DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA100020000000000DUCK01 /* DuckSettingsView.swift */; };
 		E1000001234567890ABCDEF1 /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002234567890ABCDEF1 /* TTSService.swift */; };
@@ -83,6 +94,7 @@
 		4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceManagerView.swift; sourceTree = "<group>"; };
 		5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.release.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.release.xcconfig"; sourceTree = "<group>"; };
 		6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextVisualizationView.swift; sourceTree = "<group>"; };
+		6F634291F3212FD31A180945 /* PortSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortSettingsView.swift; sourceTree = "<group>"; };
 		96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HITLOverlayView.swift; sourceTree = "<group>"; };
 		A1000000234567890ABCDEF1 /* MacAgentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacAgentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002234567890ABCDEF1 /* MacAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAgentApp.swift; sourceTree = "<group>"; };
@@ -97,6 +109,14 @@
 		A1000016234567890ABCDEF1 /* MacAgentApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacAgentApp.entitlements; sourceTree = "<group>"; };
 		A2000002234567890ABCDEF1 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		A2000004234567890ABCDEF1 /* PermissionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSettingsView.swift; sourceTree = "<group>"; };
+		AB00000200000000A11Y001 /* AccessibilityMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityMonitorView.swift; sourceTree = "<group>"; };
+		AB00000200000000ACTBX01 /* ActionBatchExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionBatchExecutor.swift; sourceTree = "<group>"; };
+		AB00000200000000AX5ERV01 /* AccessibilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityService.swift; sourceTree = "<group>"; };
+		AB00000200000000AXBRDG01 /* AccessibilityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityBridge.swift; sourceTree = "<group>"; };
+		AB00000200000000AXOBSV01 /* AXObserverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXObserverManager.swift; sourceTree = "<group>"; };
+		AB00000200000000GUSST01 /* GUIStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GUIStateStore.swift; sourceTree = "<group>"; };
+		AB00000200000000IPCSR01 /* IPCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCService.swift; sourceTree = "<group>"; };
+		AB00000200000000VIS00001 /* VisionFallbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionFallbackService.swift; sourceTree = "<group>"; };
 		B1000002234567890ABCDEF1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		B1000004234567890ABCDEF1 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
 		B1000006234567890ABCDEF1 /* MessageAvatars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAvatars.swift; sourceTree = "<group>"; };
@@ -123,12 +143,14 @@
 		B1000042234567890ABCDEF1 /* ThinkingBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingBlockView.swift; sourceTree = "<group>"; };
 		B1C1BE120200000000000001 /* CyberGridBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberGridBackground.swift; sourceTree = "<group>"; };
 		B1FADE0200000000000001A1 /* CyberGrid.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CyberGrid.metal; sourceTree = "<group>"; };
+		BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortConfiguration.swift; sourceTree = "<group>"; };
+		BD6116C58605B732EAC12A9C /* PortConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortConfiguration.swift; sourceTree = "<group>"; };
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1000002234567890ABCDEF1 /* SystemMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageView.swift; sourceTree = "<group>"; };
 		D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MCPSettingsView.swift; sourceTree = "<group>"; };
-		DD0000020000000000RAP001 /* RPASettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RPASettingsView.swift; sourceTree = "<group>"; };
+		DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortSettingsView.swift; sourceTree = "<group>"; };
 		DDA100020000000000DUCK01 /* DuckSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuckSettingsView.swift; sourceTree = "<group>"; };
 		E1000002234567890ABCDEF1 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		E1000004234567890ABCDEF1 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
@@ -245,7 +267,8 @@
 				EF865104315098FC6C97C17F /* AuditLogView.swift */,
 				6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */,
 				DDA100020000000000DUCK01 /* DuckSettingsView.swift */,
-				DD0000020000000000RAP001 /* RPASettingsView.swift */,
+				6F634291F3212FD31A180945 /* PortSettingsView.swift */,
+				DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -269,6 +292,15 @@
 				E1000002234567890ABCDEF1 /* TTSService.swift */,
 				E1000004234567890ABCDEF1 /* VoiceInputService.swift */,
 				A2000002234567890ABCDEF1 /* PermissionManager.swift */,
+				AB00000200000000AX5ERV01 /* AccessibilityService.swift */,
+				AB00000200000000AXBRDG01 /* AccessibilityBridge.swift */,
+				AB00000200000000AXOBSV01 /* AXObserverManager.swift */,
+				AB00000200000000GUSST01 /* GUIStateStore.swift */,
+				AB00000200000000ACTBX01 /* ActionBatchExecutor.swift */,
+				AB00000200000000IPCSR01 /* IPCService.swift */,
+				AB00000200000000VIS00001 /* VisionFallbackService.swift */,
+				BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */,
+				BD6116C58605B732EAC12A9C /* PortConfiguration.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -373,6 +405,7 @@
 				F100000C234567890ABCDEF1 /* LogStreamView.swift */,
 				F1000010234567890ABCDEF2 /* UsageStatisticsView.swift */,
 				F100011334567890ABCDEF3 /* TracesDashboardView.swift */,
+				AB00000200000000A11Y001 /* AccessibilityMonitorView.swift */,
 			);
 			path = Monitoring;
 			sourceTree = "<group>";
@@ -598,6 +631,8 @@
 				F100000D234567890ABCDEF2 /* CyberpunkTheme.swift in Sources */,
 				F100000F234567890ABCDEF2 /* UsageStatisticsView.swift in Sources */,
 				F100011234567890ABCDEF3 /* TracesDashboardView.swift in Sources */,
+				AB00000100000000A11Y001 /* AccessibilityMonitorView.swift in Sources */,
+				AB00000100000000VIS00001 /* VisionFallbackService.swift in Sources */,
 				F1000116234567890ABCDEF4 /* AgentLiveView.swift in Sources */,
 				A2000001234567890ABCDEF1 /* PermissionManager.swift in Sources */,
 				A2000003234567890ABCDEF1 /* PermissionSettingsView.swift in Sources */,
@@ -608,7 +643,16 @@
 				9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */,
 				E257D71DCE99CD064B107948 /* ContextVisualizationView.swift in Sources */,
 				DDA100010000000000DUCK01 /* DuckSettingsView.swift in Sources */,
-				DD0000010000000000RAP001 /* RPASettingsView.swift in Sources */,
+				AB00000100000000AX5ERV01 /* AccessibilityService.swift in Sources */,
+				AB00000100000000AXBRDG01 /* AccessibilityBridge.swift in Sources */,
+				AB00000100000000AXOBSV01 /* AXObserverManager.swift in Sources */,
+				AB00000100000000GUSST01 /* GUIStateStore.swift in Sources */,
+				AB00000100000000ACTBX01 /* ActionBatchExecutor.swift in Sources */,
+				AB00000100000000IPCSR01 /* IPCService.swift in Sources */,
+				899E06CE2CC66AEFFABA4A57 /* PortConfiguration.swift in Sources */,
+				2FA4151906D65558C507569B /* PortSettingsView.swift in Sources */,
+				2D5721C55EFA396606272D0F /* PortConfiguration.swift in Sources */,
+				4899F0E9F0C96B7CAE6CBBCB /* PortSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -107,7 +107,7 @@ const Layout: React.FC = () => {
   // ---- 移动端布局 ----
   if (isMobile) {
     return (
-      <div className="flex flex-col h-screen-safe overflow-hidden" style={{ background: 'var(--bg-base)' }}>
+      <div className="app-shell app-shell-mobile" style={{ background: 'var(--bg-base)' }}>
         <Toolbar
           rightTab={mobilePanelTab}
           onRightTabChange={handleRightTabChange}
@@ -118,8 +118,8 @@ const Layout: React.FC = () => {
         />
         {error && <ErrorBanner message={error} type="warning" onDismiss={() => setError(null)} />}
 
-        {/* 聊天区域（全宽） */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* 聊天区域：可收缩 + 内部滚动 */}
+        <div className="app-main app-main-mobile">
           <ChatView />
         </div>
 
@@ -175,9 +175,9 @@ const Layout: React.FC = () => {
   const effectiveSidebarWidth = isTablet ? Math.min(sidebarWidth, 220) : sidebarWidth;
   const effectiveRightWidth = isTablet ? Math.min(rightPanelWidth, 280) : rightPanelWidth;
 
-  // ---- 桌面端布局 ----
+  // ---- 桌面端布局：三栏可收缩，避免截断 ----
   return (
-    <div className="flex flex-col h-screen-safe overflow-hidden" style={{ background: 'var(--bg-base)', minWidth: 800, minHeight: 500 }}>
+    <div className="app-shell app-shell-desktop" style={{ background: 'var(--bg-base)' }}>
       <Toolbar
         rightTab={rightTab}
         onRightTabChange={handleRightTabChange}
@@ -186,18 +186,18 @@ const Layout: React.FC = () => {
         onOpenDuck={() => setShowDuck(true)}
       />
       {error && <ErrorBanner message={error} type="warning" onDismiss={() => setError(null)} />}
-      <div className="flex flex-1 overflow-hidden">
-        <div style={{ width: effectiveSidebarWidth, minWidth: 180 }} className="flex-shrink-0 overflow-hidden">
+      <div className="app-main app-main-desktop">
+        <div className="app-sidebar" style={{ width: effectiveSidebarWidth, minWidth: 180 }}>
           <Sidebar />
         </div>
         <div className="resizer" onMouseDown={onSidebarDragStart} />
-        <div className="flex-1 overflow-hidden">
+        <div className="app-content">
           <ChatView />
         </div>
         {showRightPanel && (
           <>
             <div className="resizer" onMouseDown={onRightDragStart} />
-            <div style={{ width: effectiveRightWidth, minWidth: 250 }} className="flex-shrink-0 overflow-hidden">
+            <div className="app-right-panel" style={{ width: effectiveRightWidth, minWidth: 250 }}>
               <Suspense fallback={<div className="p-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>加载中…</div>}>
                 {rightTab === 'tools' ? <ToolPanel /> : <NotificationPanel />}
               </Suspense>

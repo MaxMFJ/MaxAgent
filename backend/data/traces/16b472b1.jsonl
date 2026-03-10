@@ -1,5 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 10411, "success": true, "ts": 1772939055.434806}
-{"iteration": 1, "type": "tool", "action_type": "run_shell", "latency_ms": 20, "success": false, "error": "ls: /Users/lzz/Desktop/valorant_design.png: No such file or directory", "ts": 1772939055.456553}
-{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5867, "success": true, "ts": 1772939063.326473}
-{"iteration": 2, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1772939063.3277261}
-{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 23319, "success": true, "ts": 1772939088.6486459}

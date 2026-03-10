@@ -179,17 +179,12 @@ class AgentViewModel: ObservableObject {
     @Published var isLoadingDucks: Bool = false
     @Published var duckError: String?
 
-    // MARK: - RPA Runbook
-    @Published var runbookList: [[String: Any]] = []
-    @Published var isLoadingRunbooks: Bool = false
-    @Published var runbookError: String?
-
     // MARK: - Egg / Duck Mode
     /// Shared Egg mode manager — exposes isDuckMode, config, assignedPort
     let eggModeManager = EggModeManager.shared
     /// True when this device is running as a sub-Duck (not main agent)
     var isDuckMode: Bool { eggModeManager.isDuckMode }
-    /// The backend port to connect to (8765 for main, 8766+ for duck)
+    /// The backend port to connect to (configurable via PortConfiguration)
     var backendPort: Int { eggModeManager.assignedPort }
 
     // MARK: - v3.4 Integration: Model Tier
@@ -2153,6 +2148,33 @@ class AgentViewModel: ObservableObject {
             }
         }
     }
+
+    @Published var clearCacheMessage: String?
+    @Published var isClearingCache = false
+
+    /// 清理缓存：清除 traces、任务检查点、chat 会话数据等，保留配置文件
+    func clearCache() {
+        guard !isClearingCache else { return }
+        isClearingCache = true
+        clearCacheMessage = nil
+        Task {
+            do {
+                let (deleted, message) = try await backendService.clearCache()
+                await MainActor.run {
+                    clearCacheMessage = "✅ \(message)"
+                    isClearingCache = false
+                }
+                // 3 秒后清除提示
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await MainActor.run { clearCacheMessage = nil }
+            } catch {
+                await MainActor.run {
+                    clearCacheMessage = "❌ 清理失败: \(error.localizedDescription)"
+                    isClearingCache = false
+                }
+            }
+        }
+    }
     
     // MARK: - UI
     
@@ -2437,34 +2459,4 @@ class AgentViewModel: ObservableObject {
         backendService.eggDownloadURL(eggId: eggId)
     }
 
-    // MARK: - RPA Runbook
-
-    func loadRunbooks() async {
-        isLoadingRunbooks = true
-        runbookError = nil
-        defer { isLoadingRunbooks = false }
-        do {
-            runbookList = try await backendService.fetchRunbooks()
-        } catch {
-            runbookError = "加载 Runbook 失败: \(error.localizedDescription)"
-        }
-    }
-
-    func deleteRunbook(id: String) async {
-        do {
-            try await backendService.deleteRunbook(id: id)
-            await loadRunbooks()
-        } catch {
-            runbookError = "删除 Runbook 失败: \(error.localizedDescription)"
-        }
-    }
-
-    func uploadRunbookFile(data: Data, filename: String) async {
-        do {
-            _ = try await backendService.uploadRunbookFile(data: data, filename: filename)
-            await loadRunbooks()
-        } catch {
-            runbookError = "导入 Runbook 失败: \(error.localizedDescription)"
-        }
-    }
 }

@@ -1,52 +1,32 @@
 [
   {
-    "id": "023a8be0-bcc7-4573-b288-77886272a053",
-    "level": "error",
-    "title": "对话执行错误",
-    "content": "Error code: 404 - {'timestamp': '2026-03-09T01:09:01.068+00:00', 'status': 404, 'error': 'Not Found', 'path': '/v4/chat/completions/chat/completions'}",
-    "source": "chat_stream",
-    "category": "system_error",
-    "timestamp": "2026-03-09T09:09:01.056604",
-    "read": true
-  },
-  {
-    "id": "406fcafa-5afd-49cd-b12a-9fc7f7440913",
+    "id": "331b3e8e-b708-48df-8fa6-3f9582f8d869",
     "level": "warning",
     "title": "启动检查: 2 条未分类错误",
     "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
     "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-03-09T09:52:44.732609",
+    "timestamp": "2026-03-10T16:43:27.580755",
     "read": true
   },
   {
-    "id": "f9a8ff4d-274e-4be7-903e-708d859a535c",
-    "level": "error",
-    "title": "自主任务被停止",
-    "content": "任务: 设计一个饮食管理的网页 然后把网页开发出来\n原因: Token limit exceeded: 108746/100000\n建议: 任务可能过于复杂，考虑分步执行",
+    "id": "3378961c-9b33-40a7-8f8e-ebb7cf2d5cd4",
+    "level": "info",
+    "title": "任务完成",
+    "content": "任务: 在 企业微信 发送 吃啦吗 给 文件传输助手\n总结: <think>\n用户要求在企业微信发送\"吃啦吗\"给\"文件传输助手\"。\n\n根据上下文，上一步已经获取了企业微信的界面状态。现在需要：\n1. 先找到\"文件传输助手\"这个联系人\n2. 点击进入聊天窗口\n3. 输入消息\"吃啦吗\"\n4. 发送消息\n\n根据 GUI 交互规范，我需要：\n1. 先用 gui_automation(get_gui_state, app_name=\"企业微信\") 获取界面状态\n2. 用 gui_automation(find_elements, app_name=\"企业微信\", element_name=\"文件传输助手\") 查找元素\n3. 用 gui_automation(click_element, app_name=\"企业微信\", element_name=\"文件传输助手\") 点击元素\n4. 用 gui_automation(type_text, app_name=\"企业微信\", text=\"吃啦吗\") 输入文字\n5. 用 input_control(keyboard_key, key=\"return\") 发送消息\n6. 最后截图验证\n\n让我先获取企业微信的界面状态。\n</think>\n\n```json\n{\"action_type\": \"gui_automation\", \"params\": {\"action\": \"get_gui_state\", \"app_name\": \"企业微信\"}, \"reasoning\": \"获取企业微信当前界面状态，了解窗口布局和元素\"}\n```\n动作数: 2",
     "source": "autonomous_task",
-    "category": "system_error",
-    "timestamp": "2026-03-09T10:34:56.708582",
+    "category": "task",
+    "timestamp": "2026-03-10T16:47:23.090946",
     "read": true
   },
   {
-    "id": "b6c33085-4e03-42fc-8c2c-aabbcc7cdc8a",
+    "id": "fe2bdb8d-9176-48d1-b306-d5e7c7a9a835",
     "level": "warning",
     "title": "启动检查: 2 条未分类错误",
     "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
     "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-03-09T11:12:11.531255",
-    "read": true
-  },
-  {
-    "id": "f8dbe7ac-c952-4195-8ec2-6cc5c8a4dd6b",
-    "level": "error",
-    "title": "对话执行错误",
-    "content": "达到最大迭代次数",
-    "source": "chat_stream",
-    "category": "system_error",
-    "timestamp": "2026-03-09T12:24:45.014999",
-    "read": true
+    "timestamp": "2026-03-10T17:54:13.168473",
+    "read": false
   }
 ]

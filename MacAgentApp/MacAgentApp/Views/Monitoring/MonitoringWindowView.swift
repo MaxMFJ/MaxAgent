@@ -49,6 +49,7 @@ struct MonitoringWindowView: View {
                         CyberTabButton(title: "TRACE", icon: "waveform.path.ecg",       tag: 5, selected: $selectedTab)
                         CyberTabButton(title: "HIST", icon: "clock.arrow.circlepath",  tag: 2, selected: $selectedTab)
                         CyberTabButton(title: "LOGS", icon: "list.bullet.rectangle",   tag: 3, selected: $selectedTab)
+                        CyberTabButton(title: "A11Y", icon: "accessibility.fill",      tag: 7, selected: $selectedTab)
                     }
                     .padding(.trailing, 12)
                 }
@@ -76,6 +77,7 @@ struct MonitoringWindowView: View {
                     case 3: LogStreamView().environmentObject(vm)
                     case 4: UsageStatisticsView().environmentObject(vm)
                     case 5: TracesDashboardView().environmentObject(vm)
+                    case 7: AccessibilityMonitorView().environmentObject(vm)
                     default: AgentLiveView().environmentObject(vm)
                     }
                 }

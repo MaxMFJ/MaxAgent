@@ -502,21 +502,20 @@ class GUIAutomationTool(BaseTool):
     """
     
     name = "gui_automation"
-    description = """GUI 自动化工具，用于控制 macOS 应用程序界面。
+    description = """【必须优先使用】macOS GUI 操作的主工具 — 查找和操作应用程序的窗口、按钮、输入框等 UI 元素。
+内部自动降级：AX 原生 API → OCR 视觉定位 → AppleScript，无需手动处理。
 
-支持的操作：
-- get_window_info: 获取应用窗口信息（位置、大小）
-- get_ui_elements: 获取窗口内的 UI 元素列表
-- click_element: 点击指定元素
-- click_position: 点击指定坐标
-- type_text: 输入文本
-- screenshot_window: 截取应用窗口
-- screenshot_region: 截取指定区域
+⚠️ 点击必须用 click_element（不要用 input_control mouse_click），输入文字必须用 type_text（不要用 input_control keyboard_type）。
 
-使用场景：
-- 控制特定应用的界面
-- 自动化 GUI 操作
-- 截取应用特定区域"""
+核心操作（按顺序使用）：
+1. get_gui_state → 获取应用界面状态（窗口数、焦点元素）
+2. find_elements → 按名称查找 UI 元素（element_name 参数）
+3. click_element → 点击找到的元素（element_name 参数，无需指定坐标）
+4. type_text → 在焦点元素中输入文本（text 参数，使用 AXSetValue 原生输入）
+
+典型流程: get_gui_state → find_elements("搜索") → click_element("搜索") → type_text("内容")
+
+辅助操作：batch(批量)、get_window_info、get_ui_elements、click_position(仅 OCR fallback)"""
     
     category = ToolCategory.APPLICATION
     parameters = {
@@ -525,7 +524,8 @@ class GUIAutomationTool(BaseTool):
             "action": {
                 "type": "string",
                 "enum": ["get_window_info", "get_ui_elements", "click_element", 
-                        "click_position", "type_text", "screenshot_window", "screenshot_region"],
+                        "click_position", "type_text", "screenshot_window", "screenshot_region",
+                        "get_gui_state", "find_elements", "batch"],
                 "description": "要执行的操作"
             },
             "app_name": {
@@ -563,6 +563,23 @@ class GUIAutomationTool(BaseTool):
             "save_path": {
                 "type": "string",
                 "description": "截图保存路径"
+            },
+            "role": {
+                "type": "string",
+                "description": "UI 元素的 AX Role (如 AXButton, AXTextField)"
+            },
+            "title": {
+                "type": "string",
+                "description": "UI 元素标题或标签"
+            },
+            "batch_actions": {
+                "type": "array",
+                "description": "批量操作列表 [{\"actionType\": \"focus_app\", \"parameters\": {...}}, ...]",
+                "items": {"type": "object"}
+            },
+            "atomic": {
+                "type": "boolean",
+                "description": "批量操作是否为原子事务（默认 true）"
             }
         },
         "required": ["action"]
@@ -586,6 +603,12 @@ class GUIAutomationTool(BaseTool):
             return await self._screenshot_window(app_name, kwargs.get("save_path"))
         elif action == "screenshot_region":
             return await self._screenshot_region(kwargs)
+        elif action == "get_gui_state":
+            return await self._get_gui_state(app_name)
+        elif action == "find_elements":
+            return await self._find_elements(app_name, kwargs)
+        elif action == "batch":
+            return await self._execute_batch(kwargs)
         else:
             return ToolResult(success=False, error=f"未知操作: {action}")
     
@@ -600,10 +623,48 @@ class GUIAutomationTool(BaseTool):
         return process.returncode, stdout.decode(), stderr.decode()
     
     async def _get_window_info(self, app_name: str) -> ToolResult:
-        """获取应用窗口信息"""
+        """获取应用窗口信息 — 优先 IPC → Swift Bridge → pyobjc AX → AppleScript"""
         if not app_name:
             return ToolResult(success=False, error="需要提供 app_name")
         
+        # ---- 1) 优先使用 IPC (Swift 端执行) ----
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            windows = await client.query_windows(app_name)
+            if windows is not None:
+                return ToolResult(success=True, data={"windows": windows, "source": "ipc"})
+        except Exception as e:
+            logger.debug("IPC get_window_info 失败: %s", e)
+        
+        # ---- 2) 尝试 Swift Bridge (HTTP) ----
+        try:
+            from runtime.accessibility_bridge_client import get_windows
+            windows = await get_windows(app_name)
+            if windows:
+                return ToolResult(success=True, data={"windows": windows, "source": "swift_bridge"})
+        except Exception as e:
+            logger.debug("Swift Bridge get_window_info 失败: %s", e)
+        
+        # ---- 3) 尝试 pyobjc 原生 AX ----
+        try:
+            from runtime.ax_utils import HAS_AX, get_pid_for_app, get_app_element, get_element_info
+            if HAS_AX:
+                from runtime.ax_utils import _ax_get_attr
+                pid = get_pid_for_app(app_name)
+                if pid:
+                    ax_app = get_app_element(pid)
+                    ok, windows = _ax_get_attr(ax_app, "AXWindows")
+                    if ok and windows:
+                        result_windows = []
+                        for w in windows:
+                            winfo = get_element_info(w)
+                            result_windows.append(winfo)
+                        return ToolResult(success=True, data={"windows": result_windows, "source": "pyobjc_ax"})
+        except Exception as e:
+            logger.debug("pyobjc AX get_window_info 失败: %s", e)
+        
+        # ---- 3) AppleScript 回退 ----
         script = f'''
 tell application "System Events"
     tell process "{app_name}"
@@ -619,16 +680,11 @@ tell application "System Events"
     end tell
 end tell
 '''
-        
         code, stdout, stderr = await self._run_applescript(script)
-        
         if code != 0:
             return ToolResult(success=False, error=f"获取窗口信息失败: {stderr}")
-        
         if stdout.strip() == "no_window":
             return ToolResult(success=False, error=f"应用 {app_name} 没有打开的窗口")
-        
-        # 解析输出
         parts = stdout.strip().split("|")
         info = {}
         for part in parts:
@@ -639,14 +695,62 @@ end tell
                     info[key] = {"x": int(x), "y": int(y)} if key == "pos" else {"width": int(x), "height": int(y)}
                 else:
                     info[key] = value
-        
+        info["source"] = "applescript"
         return ToolResult(success=True, data=info)
     
     async def _get_ui_elements(self, app_name: str) -> ToolResult:
-        """获取窗口内的 UI 元素"""
+        """获取窗口内的 UI 元素 — 优先 IPC → Swift Bridge → pyobjc AX → AppleScript"""
         if not app_name:
             return ToolResult(success=False, error="需要提供 app_name")
         
+        # ---- 1) 优先使用 IPC (Swift 端执行) ----
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            result = await client.query_elements(app_name, max_depth=5)
+            if result is not None:
+                return ToolResult(success=True, data={
+                    "elements": result.get("elements", [])[:100],
+                    "total_count": result.get("total", 0),
+                    "source": "ipc"
+                })
+        except Exception as e:
+            logger.debug("IPC get_ui_elements 失败: %s", e)
+        
+        # ---- 2) 尝试 Swift Bridge (HTTP) ----
+        try:
+            from runtime.accessibility_bridge_client import get_flat_elements
+            elements, total = await get_flat_elements(app_name, max_depth=5, max_count=200)
+            if elements:
+                return ToolResult(success=True, data={
+                    "elements": elements[:100],
+                    "total_count": total,
+                    "source": "swift_bridge"
+                })
+        except Exception as e:
+            logger.debug("Swift Bridge get_ui_elements 失败: %s", e)
+        
+        # ---- 3) 尝试 pyobjc 原生 AX ----
+        try:
+            from runtime.ax_utils import HAS_AX, get_pid_for_app, get_app_element, find_elements as ax_find
+            if HAS_AX:
+                pid = get_pid_for_app(app_name)
+                if pid:
+                    ax_app = get_app_element(pid)
+                    elements = ax_find(ax_app, max_depth=5, max_results=200)
+                    clean = []
+                    for e in elements:
+                        entry = {k: v for k, v in e.items() if not k.startswith("_")}
+                        clean.append(entry)
+                    return ToolResult(success=True, data={
+                        "elements": clean[:100],
+                        "total_count": len(clean),
+                        "source": "pyobjc_ax"
+                    })
+        except Exception as e:
+            logger.debug("pyobjc AX get_ui_elements 失败: %s", e)
+        
+        # ---- 3) AppleScript 回退 ----
         script = f'''
 tell application "System Events"
     tell process "{app_name}"
@@ -670,35 +774,104 @@ tell application "System Events"
     end tell
 end tell
 '''
-        
         code, stdout, stderr = await self._run_applescript(script)
-        
         if code != 0:
             return ToolResult(success=False, error=f"获取 UI 元素失败: {stderr}")
-        
-        # 解析元素列表
         elements = []
         for item in stdout.strip().split(", "):
             if ":" in item:
                 elem_type, elem_name = item.split(":", 1)
                 elements.append({"type": elem_type, "name": elem_name})
-        
-        return ToolResult(
-            success=True,
-            data={
-                "elements": elements[:50],  # 限制返回数量
-                "total_count": len(elements)
-            }
-        )
+        return ToolResult(success=True, data={
+            "elements": elements[:50],
+            "total_count": len(elements),
+            "source": "applescript"
+        })
     
     async def _click_element(self, app_name: str, kwargs: Dict[str, Any]) -> ToolResult:
-        """点击指定元素"""
+        """点击指定元素 — 优先 IPC → Swift Bridge → pyobjc AX → AppleScript → TuriX → OCR"""
         element_name = kwargs.get("element_name", "")
-        element_type = kwargs.get("element_type", "button")
+        element_type = kwargs.get("element_type", "")
         
         if not app_name or not element_name:
             return ToolResult(success=False, error="需要提供 app_name 和 element_name")
+
+        # 检查是否强制使用 TuriX 视觉模式（跳过 AX）
+        force_vision = False
+        try:
+            from config.agent_config import load_agent_config
+            force_vision = bool(load_agent_config().get("turix_force_vision", False))
+        except Exception:
+            pass
+        if force_vision:
+            return await self._click_element_vision(app_name, element_name)
         
+        type_to_role = {
+            "button": "AXButton", "text field": "AXTextField", "checkbox": "AXCheckBox",
+            "radio button": "AXRadioButton", "menu item": "AXMenuItem",
+            "static text": "AXStaticText", "link": "AXLink",
+        }
+        ax_role = type_to_role.get(element_type.lower(), None)
+        
+        # ---- 1) 优先使用 IPC (Swift 端执行) ----
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            await client.ensure_subscribed()  # 在点击前确保已订阅事件
+            ok = await client.click_element(app_name, role=ax_role, title=element_name)
+            if ok:
+                # 等待 AX 事件确认（焦点变化/值变化），500ms 超时
+                event = await client.wait_for_ax_event(
+                    event_types=["AXFocusedUIElementChanged", "AXFocusedWindowChanged"],
+                    app_name=app_name,
+                    timeout_ms=500,
+                )
+                result_data = {"clicked": element_name, "source": "ipc"}
+                if event:
+                    result_data["ax_event_confirmed"] = event.get("eventType", "")
+                    result_data["new_focus"] = event.get("payload", {}).get("element_title", "")
+                else:
+                    # AXPress 事件超时 — 通过 AX 树坐标做 CGEvent 补充点击
+                    logger.debug("click_element: AXPress 事件超时，尝试 AX 坐标 fallback")
+                    elements = await client.find_elements(app_name, role=ax_role, title=element_name, max_count=5)
+                    if elements:
+                        for elem in elements:
+                            cx = elem.get("center_x") or elem.get("x")
+                            cy = elem.get("center_y") or elem.get("y")
+                            if cx and cy:
+                                await client.click_position(float(cx), float(cy))
+                                result_data["source"] = "ipc_ax_coordinate"
+                                result_data["click_position"] = {"x": cx, "y": cy}
+                                break
+                    result_data["ax_event_confirmed"] = None
+                return ToolResult(success=True, data=result_data)
+        except Exception as e:
+            logger.debug("IPC click_element 失败: %s", e)
+        
+        # ---- 2) 尝试 Swift Bridge (HTTP) ----
+        try:
+            from runtime.accessibility_bridge_client import perform_action
+            ok, err = await perform_action(app_name, role=ax_role, title=element_name)
+            if ok:
+                return ToolResult(success=True, data={"clicked": element_name, "source": "swift_bridge"})
+            logger.debug("Swift Bridge click_element 失败: %s", err)
+        except Exception as e:
+            logger.debug("Swift Bridge click_element 异常: %s", e)
+        
+        # ---- 3) 尝试 pyobjc 原生 AX ----
+        try:
+            from runtime.ax_utils import HAS_AX, get_pid_for_app, find_and_click
+            if HAS_AX:
+                pid = get_pid_for_app(app_name)
+                if pid:
+                    ok, err = find_and_click(pid, role=ax_role or "AXButton", title=element_name)
+                    if ok:
+                        return ToolResult(success=True, data={"clicked": element_name, "source": "pyobjc_ax"})
+                    logger.debug("pyobjc click_element 失败: %s", err)
+        except Exception as e:
+            logger.debug("pyobjc AX click_element 异常: %s", e)
+        
+        # ---- 4) AppleScript 回退 ----
         script = f'''
 tell application "System Events"
     tell process "{app_name}"
@@ -711,22 +884,111 @@ tell application "System Events"
     end tell
 end tell
 '''
-        
         code, stdout, stderr = await self._run_applescript(script)
-        
-        if stdout.startswith("error:"):
-            return ToolResult(success=False, error=stdout)
-        
-        return ToolResult(success=True, data={"clicked": element_name})
+        if not stdout.startswith("error:"):
+            return ToolResult(success=True, data={"clicked": element_name, "source": "applescript"})
+
+        # ---- 5) TuriX Actor 视觉定位（VLM 精准坐标预测） ----
+        try:
+            from runtime.turix_actor import get_turix_actor
+            turix = get_turix_actor()
+            if turix.is_available():
+                result = await turix.locate_element(element_name)
+                if result.get("found"):
+                    click_result = await self._click_position(result["x"], result["y"])
+                    if click_result.success:
+                        click_result.data["source"] = "turix_actor"
+                        click_result.data["raw_coords"] = result.get("raw_coords")
+                        return click_result
+        except Exception as e:
+            logger.debug("TuriX Actor click_element 降级失败: %s", e)
+
+        # ---- 6) PaddleOCR 视觉降级：截屏 → OCR 定位 → 坐标点击 ----
+        try:
+            from runtime.paddle_ocr import is_available as ocr_available, run_paddle_ocr, resolve_target
+            if ocr_available():
+                import subprocess
+                screenshot_path = f"/tmp/gui_click_{int(datetime.now().timestamp())}.png"
+                subprocess.run(["screencapture", "-x", "-C", screenshot_path], check=True, timeout=5)
+                layout = await run_paddle_ocr(screenshot_path, preprocess=False)
+                if layout and layout.items:
+                    match = resolve_target(layout, element_name)
+                    if match and match.score >= 0.4:
+                        click_result = await self._click_position(match.item.center_x, match.item.center_y)
+                        if click_result.success:
+                            click_result.data["source"] = "paddleocr_vision"
+                            click_result.data["matched_text"] = match.item.text
+                            click_result.data["match_score"] = round(match.score, 2)
+                            return click_result
+                try:
+                    os.remove(screenshot_path)
+                except OSError:
+                    pass
+        except Exception as e:
+            logger.debug("PaddleOCR click_element 降级失败: %s", e)
+
+        return ToolResult(success=False, error=f"无法点击元素 '{element_name}'：AX 和视觉定位均失败")
+
+    async def _click_element_vision(self, app_name: str, element_name: str) -> ToolResult:
+        """纯视觉模式点击 — 仅使用 TuriX Actor + PaddleOCR（跳过 AX）"""
+        # TuriX Actor
+        try:
+            from runtime.turix_actor import get_turix_actor
+            turix = get_turix_actor()
+            if turix.is_available():
+                result = await turix.locate_element(element_name)
+                if result.get("found"):
+                    click_result = await self._click_position(result["x"], result["y"])
+                    if click_result.success:
+                        click_result.data["source"] = "turix_actor"
+                        click_result.data["raw_coords"] = result.get("raw_coords")
+                        return click_result
+                logger.debug("TuriX Actor 未找到 '%s': %s", element_name, result.get("error", ""))
+        except Exception as e:
+            logger.debug("TuriX Actor click_element_vision 异常: %s", e)
+
+        # PaddleOCR fallback
+        try:
+            from runtime.paddle_ocr import is_available as ocr_available, run_paddle_ocr, resolve_target
+            if ocr_available():
+                import subprocess
+                screenshot_path = f"/tmp/gui_click_v_{int(datetime.now().timestamp())}.png"
+                subprocess.run(["screencapture", "-x", "-C", screenshot_path], check=True, timeout=5)
+                layout = await run_paddle_ocr(screenshot_path, preprocess=False)
+                if layout and layout.items:
+                    match = resolve_target(layout, element_name)
+                    if match and match.score >= 0.4:
+                        click_result = await self._click_position(match.item.center_x, match.item.center_y)
+                        if click_result.success:
+                            click_result.data["source"] = "paddleocr_vision"
+                            return click_result
+                try:
+                    os.remove(screenshot_path)
+                except OSError:
+                    pass
+        except Exception as e:
+            logger.debug("PaddleOCR click_element_vision 异常: %s", e)
+
+        return ToolResult(success=False, error=f"视觉模式无法点击 '{element_name}'")
     
     async def _click_position(self, x: float, y: float) -> ToolResult:
-        """点击指定坐标"""
+        """点击指定坐标 — 优先 IPC → CGEvent → cliclick"""
         if x is None or y is None:
             return ToolResult(success=False, error="需要提供 x 和 y 坐标")
         
         ix, iy = int(x), int(y)
 
-        # 优先使用进程内 CGEvent
+        # ---- 1) 优先使用 IPC (Swift 端 CGEvent) ----
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            ok = await client.click_position(float(ix), float(iy))
+            if ok:
+                return ToolResult(success=True, data={"clicked_at": {"x": ix, "y": iy}, "source": "ipc"})
+        except Exception as e:
+            logger.debug("IPC click_position 失败: %s", e)
+
+        # ---- 2) 进程内 CGEvent ----
         try:
             from runtime import cg_event as _cg
             if _cg.HAS_QUARTZ:
@@ -761,22 +1023,83 @@ do shell script "cliclick c:{ix},{iy}"
         return ToolResult(success=False, error=f"点击 ({ix}, {iy}) 失败：CGEvent 和 cliclick 均不可用。{stderr}")
     
     async def _type_text(self, app_name: str, text: str) -> ToolResult:
-        """输入文本"""
+        """输入文本 — 优先 IPC → Swift Bridge → pyobjc AX → CGEvent → AppleScript"""
         if not text:
             return ToolResult(success=False, error="需要提供 text")
         
+        # ---- 1) 优先使用 IPC (Swift 端输入) ----
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            # 如果有 app_name，先尝试 set_value (AXSetValue 原生)
+            if app_name:
+                await client.ensure_subscribed()  # 在输入前确保已订阅事件
+                ok = await client.set_value(app_name, text, role="AXTextField")
+                if ok:
+                    # 等待 AXValueChanged 事件确认
+                    event = await client.wait_for_ax_event(
+                        event_types=["AXValueChanged", "AXSelectedTextChanged"],
+                        app_name=app_name,
+                        timeout_ms=500,
+                    )
+                    result_data = {"typed": text, "source": "ipc_set_value"}
+                    if event:
+                        result_data["ax_event_confirmed"] = event.get("eventType", "")
+                    return ToolResult(success=True, data=result_data)
+            # 回退到键盘输入
+            ok = await client.type_text(text)
+            if ok:
+                return ToolResult(success=True, data={"typed": text, "source": "ipc_key_press"})
+        except Exception as e:
+            logger.debug("IPC type_text 失败: %s", e)
+        
+        # ---- 2) 尝试 pyobjc 原生 AX：设置焦点元素的值 ----
+        if app_name:
+            try:
+                from runtime.ax_utils import HAS_AX, get_pid_for_app, get_app_element, get_focused_element, set_element_value
+                if HAS_AX:
+                    pid = get_pid_for_app(app_name)
+                    if pid:
+                        ax_app = get_app_element(pid)
+                        focused = get_focused_element(ax_app)
+                        if focused:
+                            ok, err = set_element_value(focused, text)
+                            if ok:
+                                return ToolResult(success=True, data={"typed": text, "source": "pyobjc_ax"})
+            except Exception as e:
+                logger.debug("pyobjc AX type_text 失败: %s", e)
+            
+            # ---- 2) 尝试 Swift Bridge: set-value 到焦点元素 ----
+            try:
+                from runtime.accessibility_bridge_client import set_value
+                ok, err = await set_value(app_name, value=text, role="AXTextField")
+                if ok:
+                    return ToolResult(success=True, data={"typed": text, "source": "swift_bridge"})
+            except Exception as e:
+                logger.debug("Swift Bridge type_text 失败: %s", e)
+        
+        # ---- 3) CGEvent 键盘输入 ----
+        try:
+            from runtime.cg_event import HAS_QUARTZ, type_text as cg_type_text
+            if HAS_QUARTZ:
+                ok, err = await cg_type_text(text)
+                if ok:
+                    return ToolResult(success=True, data={"typed": text, "source": "cg_event"})
+        except Exception:
+            pass
+        
+        # ---- 4) AppleScript 回退 ----
+        # 安全地对文本中的特殊字符进行转义
+        safe_text = text.replace("\\", "\\\\").replace('"', '\\"')
         script = f'''
 tell application "System Events"
-    keystroke "{text}"
+    keystroke "{safe_text}"
 end tell
 '''
-        
         code, stdout, stderr = await self._run_applescript(script)
-        
         if code != 0:
             return ToolResult(success=False, error=f"输入文本失败: {stderr}")
-        
-        return ToolResult(success=True, data={"typed": text})
+        return ToolResult(success=True, data={"typed": text, "source": "applescript"})
     
     async def _screenshot_window(self, app_name: str, save_path: Optional[str]) -> ToolResult:
         """截取应用窗口（自动，无需用户交互）"""
@@ -956,3 +1279,194 @@ end tell
             return ToolResult(success=True, data=result_data)
         else:
             return ToolResult(success=False, error="截图失败")
+    
+    async def _get_gui_state(self, app_name: str = "") -> ToolResult:
+        """获取 GUI 状态 — 针对目标应用返回窗口数、焦点信息、UI 元素摘要"""
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            await client.ensure_subscribed()
+
+            result: Dict[str, Any] = {}
+
+            # 如果指定了 app_name，返回该应用的具体信息
+            if app_name:
+                # 获取应用窗口信息
+                windows = await client.query_windows(app_name)
+                result["app_name"] = app_name
+                result["window_count"] = len(windows) if windows else 0
+                result["windows"] = windows[:5] if windows else []
+
+                # 获取前 20 个 UI 元素摘要
+                elements = await client.find_elements(app_name, max_count=20)
+                if elements:
+                    result["ui_elements_sample"] = [
+                        {k: v for k, v in e.items() if k in ("title", "role", "value", "enabled")}
+                        for e in elements[:20]
+                    ]
+                    result["total_elements"] = len(elements)
+
+                return ToolResult(success=True, data=result)
+
+            # 无 app_name 时返回全局焦点信息
+            focused = await client.query_focused()
+            if focused:
+                result["focused"] = focused
+            state = await client.query_state()
+            if state:
+                result.update(state)
+            return ToolResult(success=True, data=result) if result else ToolResult(success=False, error="无法获取 GUI 状态")
+        except Exception as e:
+            logger.debug("IPC get_gui_state 失败: %s", e)
+        return ToolResult(success=False, error="IPC 不可用，无法获取 GUI 状态")
+    
+    async def _find_elements(self, app_name: str, kwargs: Dict[str, Any]) -> ToolResult:
+        """按条件搜索 UI 元素 — AX 优先，自动降级 TuriX / PaddleOCR 视觉定位"""
+        if not app_name:
+            return ToolResult(success=False, error="需要提供 app_name")
+        role = kwargs.get("role")
+        title = kwargs.get("title") or kwargs.get("element_name")
+
+        # 检查是否强制使用 TuriX 视觉模式
+        force_vision = False
+        try:
+            from config.agent_config import load_agent_config
+            force_vision = bool(load_agent_config().get("turix_force_vision", False))
+        except Exception:
+            pass
+        if force_vision and title:
+            return await self._find_elements_vision(title)
+
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            elements = await client.find_elements(app_name, role=role, title=title)
+            if elements is not None and len(elements) > 0:
+                return ToolResult(success=True, data={"elements": elements, "count": len(elements), "source": "ipc"})
+        except Exception as e:
+            logger.debug("IPC find_elements 失败: %s", e)
+
+        # AX 降级：全量 UI 元素
+        ax_result = await self._get_ui_elements(app_name)
+        if ax_result.success and title:
+            # 在 AX 结果中按名称过滤
+            elems = ax_result.data.get("elements", [])
+            matched = [e for e in elems if title.lower() in str(e.get("name", "")).lower() or title.lower() in str(e.get("title", "")).lower()]
+            if matched:
+                return ToolResult(success=True, data={"elements": matched, "count": len(matched), "source": ax_result.data.get("source", "ax")})
+
+        # ---- TuriX Actor 视觉定位（VLM fallback） ----
+        if title:
+            try:
+                from runtime.turix_actor import get_turix_actor
+                turix = get_turix_actor()
+                if turix.is_available():
+                    turix_elements = await turix.find_elements(title)
+                    if turix_elements:
+                        return ToolResult(success=True, data={
+                            "elements": turix_elements,
+                            "count": len(turix_elements),
+                            "source": "turix_actor",
+                        })
+            except Exception as e:
+                logger.debug("TuriX Actor find_elements 降级失败: %s", e)
+
+        # ---- PaddleOCR 视觉降级（AX 找不到时自动截屏 + OCR 定位） ----
+        if title:
+            try:
+                from runtime.paddle_ocr import is_available as ocr_available, run_paddle_ocr, resolve_target, find_all_matches
+                if ocr_available():
+                    import subprocess, tempfile
+                    screenshot_path = f"/tmp/gui_find_{int(datetime.now().timestamp())}.png"
+                    subprocess.run(["screencapture", "-x", "-C", screenshot_path], check=True, timeout=5)
+                    layout = await run_paddle_ocr(screenshot_path, preprocess=False)
+                    if layout and layout.items:
+                        matches = find_all_matches(layout, title, min_score=0.4)
+                        if matches:
+                            elements = []
+                            for m in matches[:10]:
+                                elements.append({
+                                    "name": m.item.text,
+                                    "role": "OCRText",
+                                    "center": {"x": int(m.item.center_x), "y": int(m.item.center_y)},
+                                    "bbox": [int(v) for v in m.item.bbox],
+                                    "confidence": round(m.item.confidence, 2),
+                                    "match_score": round(m.score, 2),
+                                    "match_method": m.method,
+                                })
+                            return ToolResult(success=True, data={
+                                "elements": elements,
+                                "count": len(elements),
+                                "source": "paddleocr_vision",
+                                "hint": "元素通过 OCR 视觉定位，可用 center 坐标进行 click_position"
+                            })
+                    # 清理
+                    try:
+                        os.remove(screenshot_path)
+                    except OSError:
+                        pass
+            except Exception as e:
+                logger.debug("PaddleOCR find_elements 降级失败: %s", e)
+
+        return ax_result
+
+    async def _find_elements_vision(self, title: str) -> ToolResult:
+        """纯视觉模式查找元素 — 仅使用 TuriX Actor + PaddleOCR"""
+        # TuriX Actor
+        try:
+            from runtime.turix_actor import get_turix_actor
+            turix = get_turix_actor()
+            if turix.is_available():
+                elements = await turix.find_elements(title)
+                if elements:
+                    return ToolResult(success=True, data={
+                        "elements": elements,
+                        "count": len(elements),
+                        "source": "turix_actor",
+                    })
+        except Exception as e:
+            logger.debug("TuriX Actor find_elements_vision 异常: %s", e)
+
+        # PaddleOCR fallback
+        try:
+            from runtime.paddle_ocr import is_available as ocr_available, run_paddle_ocr, find_all_matches
+            if ocr_available():
+                import subprocess
+                screenshot_path = f"/tmp/gui_find_v_{int(datetime.now().timestamp())}.png"
+                subprocess.run(["screencapture", "-x", "-C", screenshot_path], check=True, timeout=5)
+                layout = await run_paddle_ocr(screenshot_path, preprocess=False)
+                if layout and layout.items:
+                    matches = find_all_matches(layout, title, min_score=0.4)
+                    if matches:
+                        elements = [{
+                            "name": m.item.text,
+                            "role": "OCRText",
+                            "center": {"x": int(m.item.center_x), "y": int(m.item.center_y)},
+                            "confidence": round(m.item.confidence, 2),
+                            "source": "paddleocr_vision",
+                        } for m in matches[:10]]
+                        return ToolResult(success=True, data={"elements": elements, "count": len(elements), "source": "paddleocr_vision"})
+                try:
+                    os.remove(screenshot_path)
+                except OSError:
+                    pass
+        except Exception as e:
+            logger.debug("PaddleOCR find_elements_vision 异常: %s", e)
+
+        return ToolResult(success=False, error=f"视觉模式未找到 '{title}'")
+    
+    async def _execute_batch(self, kwargs: Dict[str, Any]) -> ToolResult:
+        """批量执行多个 GUI 操作（原子事务）"""
+        actions = kwargs.get("batch_actions", [])
+        atomic = kwargs.get("atomic", True)
+        if not actions:
+            return ToolResult(success=False, error="需要提供 batch_actions")
+        try:
+            from runtime.ipc_client import get_ipc_client
+            client = get_ipc_client()
+            result = await client.execute_batch(actions, atomic=atomic)
+            if result is not None:
+                return ToolResult(success=True, data=result)
+        except Exception as e:
+            logger.debug("IPC batch 失败: %s", e)
+        return ToolResult(success=False, error="IPC 不可用，无法执行批量操作")

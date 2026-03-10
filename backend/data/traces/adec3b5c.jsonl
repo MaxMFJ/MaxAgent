@@ -1,3 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "lmstudio/qwen/qwen3-vl-4b", "latency_ms": 12513, "success": true}
-{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 219, "success": true, "error": null}
-{"iteration": 2, "type": "llm", "model": "lmstudio/qwen/qwen3-vl-4b", "latency_ms": 10765, "success": true}

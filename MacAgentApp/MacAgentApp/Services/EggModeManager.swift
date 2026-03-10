@@ -38,7 +38,7 @@ class EggModeManager: ObservableObject {
 
     @Published private(set) var config: DuckConfig?
     @Published private(set) var isDuckMode: Bool = false
-    @Published private(set) var assignedPort: Int = 8765  // 8765 for main, 8766+ for duck
+    @Published private(set) var assignedPort: Int = Int(PortConfiguration.defaultBackendPort)  // main default, duckStartPort+ for duck
     @Published var importError: String?
     @Published var importSuccess: Bool = false
 
@@ -61,7 +61,7 @@ class EggModeManager: ObservableObject {
         guard let url = configFileURL, FileManager.default.fileExists(atPath: url.path) else {
             config = nil
             isDuckMode = false
-            assignedPort = 8765
+            assignedPort = Int(PortConfiguration.shared.backendPort)
             return
         }
         do {
@@ -133,23 +133,24 @@ class EggModeManager: ObservableObject {
         try? FileManager.default.removeItem(at: url)
         config = nil
         isDuckMode = false
-        assignedPort = 8765
+        assignedPort = Int(PortConfiguration.shared.backendPort)
     }
 
     // MARK: - Port Discovery
 
     /// Find first available TCP port starting from `startPort`.
     /// Runs on a background thread, returns the free port.
-    func findAvailablePort(startPort: Int = 8766, maxTries: Int = 100) async -> Int {
+    func findAvailablePort(startPort: Int? = nil, maxTries: Int = 100) async -> Int {
+        let start = startPort ?? Int(PortConfiguration.shared.duckStartPort)
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .utility).async {
-                for port in startPort ..< (startPort + maxTries) {
+                for port in start ..< (start + maxTries) {
                     if Self.isPortFree(port: port) {
                         continuation.resume(returning: port)
                         return
                     }
                 }
-                continuation.resume(returning: startPort)  // fallback
+                continuation.resume(returning: start)  // fallback
             }
         }
     }
@@ -176,9 +177,9 @@ class EggModeManager: ObservableObject {
     /// Resolve and assign the duck backend port. Call this at app startup when in duck mode.
     func resolvePort() async {
         if isDuckMode {
-            assignedPort = await findAvailablePort(startPort: 8766)
+            assignedPort = await findAvailablePort()
         } else {
-            assignedPort = 8765
+            assignedPort = Int(PortConfiguration.shared.backendPort)
         }
     }
 

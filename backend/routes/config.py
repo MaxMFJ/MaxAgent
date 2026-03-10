@@ -334,3 +334,57 @@ async def get_llm_providers_for_import():
             })
 
     return {"providers": providers}
+
+
+# ─────────────────────────────────────────────
+# TuriX Actor 视觉模型配置
+# ─────────────────────────────────────────────
+
+class TurixConfigUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
+    force_vision: Optional[bool] = None  # 强制视觉模式（跳过 AX），用于测试
+
+
+@router.get("/config/turix")
+async def get_turix_config():
+    """获取 TuriX Actor 视觉模型配置（api_key 脱敏）。"""
+    from config.agent_config import load_agent_config
+    cfg = load_agent_config()
+    return {
+        "enabled": cfg.get("turix_enabled", False),
+        "has_api_key": bool((cfg.get("turix_api_key") or "").strip()),
+        "base_url": cfg.get("turix_base_url", "https://turixapi.io/v1"),
+        "model": cfg.get("turix_model", "turix-actor"),
+        "force_vision": cfg.get("turix_force_vision", False),
+    }
+
+
+@router.post("/config/turix")
+async def update_turix_config(body: TurixConfigUpdate):
+    """更新 TuriX Actor 视觉模型配置。"""
+    from config.agent_config import save_agent_config
+    updates = {}
+    if body.enabled is not None:
+        updates["turix_enabled"] = body.enabled
+    if body.api_key is not None:
+        updates["turix_api_key"] = body.api_key.strip()
+    if body.base_url is not None:
+        updates["turix_base_url"] = body.base_url.strip()
+    if body.model is not None:
+        updates["turix_model"] = body.model.strip()
+    if body.force_vision is not None:
+        updates["turix_force_vision"] = body.force_vision
+    if updates:
+        save_agent_config(updates)
+        # 重置 TuriX Actor 单例以加载新配置
+        try:
+            from runtime.turix_actor import get_turix_actor
+            actor = get_turix_actor()
+            actor._config = None
+            actor._client = None
+        except Exception:
+            pass
+    return {"status": "updated"}

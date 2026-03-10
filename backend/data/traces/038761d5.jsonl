@@ -1,2 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "custom/GLM-5", "latency_ms": 8968, "success": true, "ts": 1773021766.383405}
-{"iteration": 1, "type": "tool", "action_type": "run_shell", "latency_ms": 187, "success": true, "error": null, "ts": 1773021766.572431}

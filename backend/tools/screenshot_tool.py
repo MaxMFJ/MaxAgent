@@ -286,7 +286,25 @@ try? handler.perform([request])
             return await self._ocr_fallback(image_path)
     
     async def _ocr_fallback(self, image_path: str) -> ToolResult:
-        """备用 OCR 方法：使用 shortcuts 或 tesseract"""
+        """备用 OCR 方法：PaddleOCR → tesseract"""
+        
+        # 优先尝试 PaddleOCR（中文识别精度更高）
+        try:
+            from runtime.paddle_ocr import ocr_full_text, is_available
+            if is_available():
+                text = await ocr_full_text(image_path, preprocess=True)
+                if text:
+                    return ToolResult(
+                        success=True,
+                        data={
+                            "text": text,
+                            "image_path": image_path,
+                            "char_count": len(text),
+                            "method": "paddleocr"
+                        }
+                    )
+        except Exception as e:
+            logger.debug(f"PaddleOCR fallback failed: {e}")
         
         # 尝试使用 tesseract（如果安装了的话）
         try:

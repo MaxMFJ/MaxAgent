@@ -36,10 +36,10 @@ enum StreamChunk {
 
 @MainActor
 class BackendService: ObservableObject {
-    private var port: Int = 8765
+    private var port: Int = Int(PortConfiguration.defaultBackendPort)
     // Stored so that nonisolated functions can read them safely.
-    nonisolated(unsafe) private var baseURL: String = "http://127.0.0.1:8765"
-    nonisolated(unsafe) private var wsURL: String = "ws://127.0.0.1:8765/ws"
+    nonisolated(unsafe) private var baseURL: String = "http://127.0.0.1:\(PortConfiguration.defaultBackendPort)"
+    nonisolated(unsafe) private var wsURL: String = "ws://127.0.0.1:\(PortConfiguration.defaultBackendPort)/ws"
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession
     private var pingTask: Task<Void, Never>?
@@ -68,7 +68,7 @@ class BackendService: ObservableObject {
     /// 子 Duck 任务完成时回调（主 Agent 主动联系用户，将结果作为 assistant 消息展示）
     var onDuckTaskComplete: ((_ content: String, _ success: Bool, _ taskId: String, _ sessionId: String) -> Void)?
 
-    init(port: Int = 8765) {
+    init(port: Int = Int(PortConfiguration.defaultBackendPort)) {
         self.port = port
         self.baseURL = "http://127.0.0.1:\(port)"
         self.wsURL = "ws://127.0.0.1:\(port)/ws"
@@ -574,6 +574,26 @@ class BackendService: ObservableObject {
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw URLError(.badServerResponse)
         }
+    }
+
+    /// 清理缓存：清除 traces、任务检查点、chat 会话数据等，保留配置文件
+    nonisolated func clearCache() async throws -> (deleted: Int, message: String) {
+        guard let url = URL(string: "\(baseURL)/cache/clear") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        struct ClearResponse: Codable {
+            let ok: Bool
+            let deleted: Int
+            let message: String
+        }
+        let result = try JSONDecoder().decode(ClearResponse.self, from: data)
+        return (result.deleted, result.message)
     }
     
     private func handleSystemNotification(_ json: [String: Any]) {
@@ -1828,44 +1848,5 @@ class BackendService: ObservableObject {
         URL(string: "\(baseURL)/duck/egg/\(eggId)/download")
     }
 
-    // MARK: - RPA Runbook API
-
-    nonisolated func fetchRunbooks() async throws -> [[String: Any]] {
-        guard let url = URL(string: "\(baseURL)/runbooks") else { throw URLError(.badURL) }
-        let (data, _) = try await urlSession.data(from: url)
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return json?["runbooks"] as? [[String: Any]] ?? []
-    }
-
-    nonisolated func deleteRunbook(id: String) async throws {
-        guard let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let url = URL(string: "\(baseURL)/runbooks/\(encoded)") else { throw URLError(.badURL) }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        let (_, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw URLError(.badServerResponse)
-        }
-    }
-
-    nonisolated func uploadRunbookFile(data: Data, filename: String) async throws -> [String: Any] {
-        guard let url = URL(string: "\(baseURL)/runbooks/upload") else { throw URLError(.badURL) }
-        let boundary = "Boundary-\(UUID().uuidString)"
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
-        body.append(data)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        request.httpBody = body
-        let (responseData, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw URLError(.badServerResponse)
-        }
-        return (try? JSONSerialization.jsonObject(with: responseData) as? [String: Any]) ?? [:]
-    }
 }
 

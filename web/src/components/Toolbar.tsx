@@ -47,9 +47,11 @@ const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, 
       <div
         className="flex items-center justify-between px-3 h-13 flex-shrink-0 select-none"
         style={{
-          background: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border-subtle)',
-          backdropFilter: 'blur(12px)',
+          background: 'var(--glass-bg)',
+          backdropFilter: 'var(--glass-blur)',
+          WebkitBackdropFilter: 'var(--glass-blur)',
+          borderBottom: '1px solid var(--border)',
+          boxShadow: '0 0 24px rgba(0,245,255,0.06)',
         }}
       >
         <IconButton variant="ghost" size="md" onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)} title="会话列表" className="mobile-touch-target" aria-label="打开会话列表">
@@ -60,11 +62,11 @@ const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, 
           <div className="flex items-center gap-2">
             <div
               className="w-7 h-7 rounded-[var(--radius-md)] flex items-center justify-center"
-              style={{ background: 'var(--gradient-accent)' }}
+              style={{ background: 'var(--gradient-accent)', boxShadow: '0 0 12px var(--accent-glow)' }}
             >
               <Zap size={14} style={{ color: '#fff' }} />
             </div>
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Mac Agent</span>
+            <span className="font-display text-sm font-semibold tracking-wider" style={{ color: 'var(--accent)' }}>Mac Agent</span>
           </div>
           <StatusDot status={wsStatus} size="sm" />
         </div>
@@ -80,33 +82,33 @@ const Toolbar: React.FC<Props> = ({ rightTab, onRightTabChange, onOpenSettings, 
     );
   }
 
-  // ---- 桌面端工具栏 ----
+  // ---- 桌面端工具栏 (与官方站 header 风格一致) ----
   return (
     <div
       className="flex items-center justify-between px-4 h-13 flex-shrink-0 select-none"
       style={{
-        background: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border-subtle)',
+        background: 'var(--glass-bg)',
+        backdropFilter: 'var(--glass-blur)',
+        WebkitBackdropFilter: 'var(--glass-blur)',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: '0 0 30px rgba(0,245,255,0.08)',
       }}
     >
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-[var(--radius-md)] flex items-center justify-center"
-            style={{ background: 'var(--gradient-accent)' }}
+            style={{ background: 'var(--gradient-accent)', boxShadow: '0 0 12px var(--accent-glow)' }}
           >
             <Zap size={14} style={{ color: '#fff' }} />
           </div>
-          <span
-            className="text-sm font-semibold"
-            style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
-          >
+          <span className="font-display text-sm font-bold tracking-wider" style={{ color: 'var(--accent)' }}>
             Mac Agent
           </span>
         </div>
         <span
-          className="text-[10px] font-semibold px-2 py-0.5 rounded-[var(--radius-full)]"
-          style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
+          className="font-display text-[10px] font-semibold px-2 py-0.5 rounded-[var(--radius-full)] tracking-wider"
+          style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid rgba(0,245,255,0.2)' }}
         >
           WEB
         </span>

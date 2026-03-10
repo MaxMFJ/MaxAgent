@@ -2,66 +2,80 @@
 @import "highlight.js/styles/github-dark.css";
 
 /* ================================================================
-   Mac Agent — Design System 2026
-   Organic · Warm · Human-Centric · Performance-First
+   Mac Agent Web — 与官方站 (Chow Duck) 风格同步
+   Cyber · Neon · 赛博朋克 · 与 website 一致
    ================================================================ */
 
 :root {
-  /* ---- Color Tokens — Warm Dark Palette ---- */
-  --bg-base:      #0B0D12;
-  --bg-surface:   #11131A;
-  --bg-elevated:  #181B25;
-  --bg-overlay:   #1E2230;
-  --bg-hover:     #242838;
-  --bg-active:    #2B3044;
+  /* ---- 官方赛博朋克主色 (与 website 一致) ---- */
+  --bg: #0a0a0f;
+  --bg-elevated: #0f0f18;
+  --bg-card: #12121f;
+  --bg-card-hover: #1a1a2e;
+  --text: #e8e8f0;
+  --text-muted: #8b8ba3;
+  --accent: #00f5ff;
+  --accent-glow: rgba(0, 245, 255, 0.4);
+  --neon-pink: #ff00ff;
+  --neon-purple: #bf00ff;
+  --neon-cyan: #00ffff;
+  --border: #2a2a3a;
+  --border-glow: rgba(0, 245, 255, 0.3);
+  --grid-color: rgba(0, 245, 255, 0.06);
 
-  --accent:       #7C9CFF;
-  --accent-hover: #9BB4FF;
-  --accent-dim:   rgba(124, 156, 255, 0.12);
-  --accent-glow:  rgba(124, 156, 255, 0.20);
-  --accent-solid: #5B7FFF;
+  /* ---- 映射到现有变量 (兼容组件) ---- */
+  --bg-base: var(--bg);
+  --bg-surface: var(--bg-elevated);
+  --bg-recessed: var(--bg-card);
+  --bg-overlay: #16162a;
+  --bg-hover: var(--bg-card-hover);
+  --bg-active: #1e1e35;
 
-  --green:        #4ADE80;
-  --green-dim:    rgba(74, 222, 128, 0.10);
-  --red:          #FB7185;
-  --red-dim:      rgba(251, 113, 133, 0.10);
-  --orange:       #FBBF24;
-  --orange-dim:   rgba(251, 191, 36, 0.10);
-  --purple:       #B197FC;
-  --purple-dim:   rgba(177, 151, 252, 0.10);
-  --teal:         #5EEAD4;
-  --teal-dim:     rgba(94, 234, 212, 0.10);
+  --accent-hover: #33f7ff;
+  --accent-dim: rgba(0, 245, 255, 0.12);
+  --accent-solid: var(--accent);
 
-  --text-primary:   #ECEEF4;
-  --text-secondary: #8A91A8;
-  --text-tertiary:  #555D75;
-  --text-inverse:   #0B0D12;
+  --green: #4ADE80;
+  --green-dim: rgba(74, 222, 128, 0.10);
+  --red: #FB7185;
+  --red-dim: rgba(251, 113, 133, 0.10);
+  --orange: #FBBF24;
+  --orange-dim: rgba(251, 191, 36, 0.10);
+  --purple: var(--neon-purple);
+  --purple-dim: rgba(191, 0, 255, 0.10);
+  --teal: var(--neon-cyan);
+  --teal-dim: rgba(0, 255, 255, 0.10);
 
-  --border:       rgba(139, 146, 168, 0.08);
-  --border-hover: rgba(139, 146, 168, 0.15);
-  --border-focus: rgba(124, 156, 255, 0.35);
-  --border-subtle: rgba(139, 146, 168, 0.05);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --text-tertiary: #6b6b85;
+  --text-inverse: var(--bg);
 
-  --shadow-xs:    0 1px 2px rgba(0,0,0,0.20);
-  --shadow-sm:    0 2px 6px rgba(0,0,0,0.25);
-  --shadow-md:    0 4px 16px rgba(0,0,0,0.30);
-  --shadow-lg:    0 12px 40px rgba(0,0,0,0.35);
-  --shadow-glow:  0 0 24px rgba(124, 156, 255, 0.06);
-  --shadow-glow-accent: 0 0 32px rgba(124, 156, 255, 0.12);
+  --border-hover: rgba(0, 245, 255, 0.2);
+  --border-focus: var(--border-glow);
+  --border-subtle: rgba(42, 42, 58, 0.6);
 
-  /* ---- Gradients ---- */
-  --gradient-accent: linear-gradient(135deg, #7C9CFF, #B197FC);
-  --gradient-surface: linear-gradient(180deg, var(--bg-surface), var(--bg-base));
-  --gradient-warm: linear-gradient(135deg, rgba(124,156,255,0.08), rgba(177,151,252,0.04));
-  --gradient-hero: linear-gradient(135deg, rgba(124,156,255,0.12), rgba(94,234,212,0.06), rgba(177,151,252,0.08));
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 24px var(--accent-glow);
+  --shadow-glow-accent: 0 0 32px var(--accent-glow);
+
+  /* ---- Gradients (霓虹) ---- */
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--neon-purple) 100%);
+  --gradient-surface: linear-gradient(180deg, var(--bg-elevated), var(--bg));
+  --gradient-warm: linear-gradient(135deg, rgba(0,245,255,0.08), rgba(191,0,255,0.04));
+  --gradient-hero: linear-gradient(135deg, rgba(0,245,255,0.12), rgba(0,255,255,0.06), rgba(191,0,255,0.08));
   --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  --gradient-user-bubble: linear-gradient(135deg, rgba(0,245,255,0.18) 0%, rgba(191,0,255,0.12) 100%);
 
-  /* ---- Typography ---- */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  /* ---- Typography (与官网一致) ---- */
+  --font-sans: 'Rajdhani', 'Noto Sans SC', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Menlo', monospace;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Orbitron', sans-serif;
 
-  /* ---- Spacing Scale ---- */
+  /* ---- Spacing ---- */
   --space-0: 0;
   --space-1: 4px;
   --space-2: 8px;
@@ -73,7 +87,6 @@
   --space-10: 40px;
   --space-12: 48px;
 
-  /* ---- Radius — Organic & Soft ---- */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -81,7 +94,6 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* ---- Motion — 2026 Spring-Based ---- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -90,12 +102,11 @@
   --duration-slow: 400ms;
   --duration-gentle: 600ms;
 
-  /* ---- Glass effect ---- */
-  --glass-bg: rgba(17, 19, 26, 0.72);
+  --glass-bg: rgba(15, 15, 24, 0.85);
   --glass-blur: blur(20px);
-  --glass-border: rgba(139, 146, 168, 0.06);
+  --glass-border: rgba(0, 245, 255, 0.08);
 
-  /* Legacy compat aliases */
+  /* Legacy / 组件别名 */
   --cyber-bg0: var(--bg-base);
   --cyber-bg1: var(--bg-surface);
   --cyber-bg2: var(--bg-elevated);
@@ -110,6 +121,56 @@
   --cyber-text-primary: var(--text-primary);
   --cyber-text-second: var(--text-secondary);
   --cyber-border: var(--border);
+
+  /* shadcn/ui 兼容变量 (映射赛博朋克主题) */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-card);
+  --card-foreground: var(--text);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: #0a0a0f;
+  --secondary: var(--bg-card);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-card);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: var(--text);
+  --destructive: var(--red);
+  --destructive-foreground: #fff;
+  --input: var(--border);
+  --ring: var(--accent);
+  --radius: var(--radius-md);
+}
+
+/* ---- 官方风格实用类 (与 website 一致) ---- */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+.neon-text {
+  text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow);
+}
+.neon-border {
+  box-shadow: 0 0 15px var(--accent-glow), inset 0 0 15px rgba(0, 245, 255, 0.05);
+}
+.card-cyber {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card-cyber:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 245, 255, 0.1);
+}
+.btn-neon {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--neon-purple) 100%);
+  box-shadow: 0 0 20px var(--accent-glow);
+  color: #fff;
+}
+.btn-neon:hover {
+  box-shadow: 0 0 30px var(--accent-glow), 0 0 50px rgba(191, 0, 255, 0.3);
 }
 
 /* ---- Global Reset ---- */
@@ -139,15 +200,145 @@ html, body, #root {
   html, body, #root { height: 100dvh; }
 }
 
+/* ================================================================
+   App Shell 布局框架 — 防止截断、正确滚动
+   - 所有可滚动区域需 min-height: 0 / min-width: 0 以便 flex 收缩
+   - 仅在一层内使用 overflow: auto，避免双重滚动条
+   ================================================================ */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell-mobile {
+  min-width: 0;
+}
+
+.app-shell-desktop {
+  min-width: 0;
+  width: 100%;
+}
+
+.app-main {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.app-main-mobile {
+  flex-direction: column;
+}
+
+.app-main-desktop {
+  flex-direction: row;
+}
+
+.app-sidebar {
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-right-panel {
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 聊天区域：填满 + 中部可滚动 */
+.chat-view-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+.chat-view-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.chat-view-inner {
+  width: 100%;
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 0;
+}
+
+/* 侧栏/右栏内滚动面板 */
+.panel-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+.panel-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+/* 欢迎页：填满 + 内容可滚动，避免截断 */
+.welcome-view-fill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* 轻量网格底纹 (与官网一致，透明度降低) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: 0 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+
 /* ---- Scrollbar (Thinner & Subtler) ---- */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(139,146,168,0.12);
+  background: rgba(0, 245, 255, 0.15);
   border-radius: var(--radius-full);
   transition: background 0.2s;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(139,146,168,0.25); }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 245, 255, 0.35); }
 
 /* ---- Focus Ring (Accessible) ---- */
 :focus-visible {
@@ -158,7 +349,7 @@ html, body, #root {
 
 /* ---- Selection ---- */
 ::selection {
-  background: rgba(124, 156, 255, 0.25);
+  background: rgba(0, 245, 255, 0.25);
   color: var(--text-primary);
 }
 
@@ -242,9 +433,17 @@ html, body, #root {
 }
 
 /* ================================================================
-   Markdown Content
+   Markdown Content — 列表缩进、对齐、防止文字截断
    ================================================================ */
-.markdown-content { line-height: 1.8; word-break: break-word; overflow-wrap: anywhere; color: var(--text-primary); max-width: 100%; overflow: hidden; }
+.markdown-content {
+  line-height: 1.75;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  color: var(--text-primary);
+  max-width: 100%;
+  min-width: 0;
+  padding-right: 0.25em;
+}
 .markdown-content p { margin-bottom: 0.75em; }
 .markdown-content p:last-child { margin-bottom: 0; }
 .markdown-content h1, .markdown-content h2, .markdown-content h3 {
@@ -257,9 +456,38 @@ html, body, #root {
 .markdown-content h1 { font-size: 1.4em; }
 .markdown-content h2 { font-size: 1.2em; }
 .markdown-content h3 { font-size: 1.08em; }
-.markdown-content ul, .markdown-content ol { padding-left: 1.5em; margin: 0.5em 0; }
-.markdown-content li { margin: 0.3em 0; }
-.markdown-content li::marker { color: var(--text-tertiary); }
+/* 列表：统一缩进、图标与文字对齐、不截断 */
+.markdown-content ul, .markdown-content ol {
+  padding-left: 1.75em;
+  margin: 0.6em 0;
+  list-style-position: outside;
+}
+.markdown-content li {
+  margin: 0.4em 0;
+  padding-left: 0.25em;
+  padding-right: 0.15em;
+  line-height: 1.7;
+  display: list-item;
+  list-style-position: outside;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.markdown-content li::marker {
+  color: var(--text-tertiary);
+}
+/* 列表内首行与图标/序号对齐 */
+.markdown-content ul li, .markdown-content ol li {
+  text-indent: 0;
+}
+.markdown-content li > *:first-child {
+  display: inline;
+}
+.markdown-content li p {
+  margin: 0.25em 0 0 0;
+}
+.markdown-content li p + p {
+  margin-top: 0.35em;
+}
 .markdown-content blockquote {
   border-left: 3px solid var(--accent);
   padding: 0.5em 1em;
@@ -432,8 +660,9 @@ html, body, #root {
   .markdown-content { font-size: 0.95rem; }
 }
 
+/* 桌面端不再强制 800px 最小宽，避免 iframe/小窗口截断 */
 @media (min-width: 768px) {
-  html, body, #root { min-width: 800px; min-height: 500px; }
+  html, body, #root { min-height: 500px; }
 }
 
 /* ---- Reduced Motion ---- */

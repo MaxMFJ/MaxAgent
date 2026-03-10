@@ -69,7 +69,8 @@ private struct TaskListSidebar: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 4) {
                     if !vm.tasks.isEmpty {
-                        ForEach(Array(vm.tasks.values).sorted { ($0.lastUpdated) > ($1.lastUpdated) }) { data in
+                        let sortedTasks = Array(vm.tasks.values).sorted { $0.lastUpdated > $1.lastUpdated }
+                        ForEach(sortedTasks) { data in
                             TaskListRow(
                                 data: data,
                                 isSelected: vm.selectedTaskId == data.id,
@@ -176,7 +177,7 @@ private struct ActiveTaskListRow: View {
 
 // MARK: - 执行者徽章（Actor Badge）
 
-/// 显示"谁在做"的小标签：主Agent / Duck[xxx] / RPA
+/// 显示"谁在做"的小标签：主Agent / Duck[xxx]
 struct ActorBadge: View {
     let workerType: String
     let workerLabel: String
@@ -184,7 +185,6 @@ struct ActorBadge: View {
     private var badgeColor: Color {
         switch workerType {
         case "local_duck", "remote_duck": return CyberColor.purple
-        case "runbook": return CyberColor.orange
         default: return CyberColor.cyan
         }
     }
@@ -192,7 +192,6 @@ struct ActorBadge: View {
     private var iconName: String {
         switch workerType {
         case "local_duck", "remote_duck": return "bird"
-        case "runbook": return "doc.text.fill"
         default: return "brain.head.profile"
         }
     }

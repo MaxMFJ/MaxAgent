@@ -1,3 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 4160, "success": true}
-{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 144, "success": true, "error": null}
-{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 3797, "success": true}

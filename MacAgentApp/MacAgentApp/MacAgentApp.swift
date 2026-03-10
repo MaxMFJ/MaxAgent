@@ -20,6 +20,16 @@ struct MacAgentApp: App {
                     agentViewModel.onMonitorEventToMonitor = { [weak monitoringViewModel] session, taskId, event in
                         monitoringViewModel?.applyMonitorEvent(taskId: taskId, sourceSession: session, event: event)
                     }
+                    // 启动前检测端口冲突
+                    PortConfiguration.shared.checkConflicts()
+                    PortConfiguration.shared.writePortConfigFile()
+                    // 启动 Accessibility Bridge HTTP 服务（端口可配置）
+                    AccessibilityBridge.shared.start()
+                    // 启动 Unix Domain Socket IPC 服务
+                    IPCService.shared.start()
+                    // 启动 AX 事件监听 + 健康监控
+                    AXObserverManager.shared.observeAllApps()
+                    AXObserverManager.shared.startHealthMonitoring()
                 }
         }
         .windowStyle(.titleBar)

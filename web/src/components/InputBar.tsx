@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { useChatStore } from '../stores/chatStore';
 import { useWSStore } from '../stores/wsStore';
 import { useResponsive } from '../hooks/useResponsive';
-import { Button, IconButton } from './ui';
+import { Button, IconButton, Textarea } from './ui';
 import { Send, Square, Bot } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 
@@ -94,16 +94,16 @@ const InputBar: React.FC = () => {
       className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4"
       style={{ background: 'var(--bg-base)' }}
     >
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto min-w-0">
         <div
-          className="flex items-end gap-2 rounded-[var(--radius-xl)] px-4 sm:px-5 py-3 transition-all duration-[var(--duration-normal)]"
+          className="flex items-end gap-2 rounded-[var(--radius-xl)] px-4 sm:px-5 py-3 transition-all duration-[var(--duration-normal)] min-w-0"
           style={{
             background: 'var(--bg-elevated)',
             border: `1px solid ${isFocused ? 'var(--border-focus)' : 'var(--border)'}`,
             boxShadow: isFocused ? 'var(--shadow-glow-accent)' : 'var(--shadow-sm)',
           }}
         >
-          <textarea
+          <Textarea
             ref={textareaRef}
             value={text}
             onChange={(e) => { setText(e.target.value); autoResize(); }}
@@ -115,12 +115,13 @@ const InputBar: React.FC = () => {
               : '等待连接…'
             }
             disabled={wsStatus !== 'connected'}
-            className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
+            className="flex-1 min-w-0 bg-transparent resize-none border-0 shadow-none focus-visible:ring-0 min-h-0 py-0 text-sm leading-relaxed"
             style={{
               color: 'var(--text-primary)',
               minHeight: isMobile ? 32 : 24,
               maxHeight: 200,
               fontSize: isMobile ? 16 : undefined,
+              paddingRight: 4,
             }}
             rows={1}
             aria-label="消息输入框"
@@ -150,20 +151,16 @@ const InputBar: React.FC = () => {
                   <Bot size={16} style={{ color: canSend ? 'var(--purple)' : undefined }} />
                 </IconButton>
 
-                <button
+                <Button
+                  variant={canSend ? 'primary' : 'secondary'}
+                  size="sm"
                   disabled={!canSend}
                   onClick={() => handleSend(false)}
-                  className="inline-flex items-center justify-center gap-1.5 h-8 px-4 text-xs font-semibold rounded-[var(--radius-full)] cursor-pointer transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
-                  style={{
-                    background: canSend ? 'var(--gradient-accent)' : 'var(--bg-hover)',
-                    color: canSend ? '#fff' : 'var(--text-tertiary)',
-                    border: 'none',
-                  }}
+                  icon={<Send size={13} />}
                   aria-label="发送消息"
                 >
-                  <Send size={13} />
                   发送
-                </button>
+                </Button>
               </>
             )}
           </div>

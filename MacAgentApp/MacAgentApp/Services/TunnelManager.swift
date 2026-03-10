@@ -7,8 +7,8 @@ import CoreImage.CIFilterBuiltins
 class TunnelManager: ObservableObject {
     static let shared = TunnelManager()
 
-    /// 与 tunnel_monitor / 后端统一的端口
-    static let backendPort = 8765       // 后端服务
+    /// 与 tunnel_monitor / 后端统一的端口（动态读取）
+    static var backendPort: Int { Int(PortConfiguration.shared.backendPort) }
     static let cloudflaredMetricsPort = 4040  // cloudflared metrics API
     
     @Published var isTunnelRunning = false

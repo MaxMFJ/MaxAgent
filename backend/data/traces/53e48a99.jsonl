@@ -1,0 +1,18 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5556, "success": true, "ts": 1773132546.925009}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 1, "success": true, "error": null, "ts": 1773132546.929627}
+{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5932, "success": true, "ts": 1773132554.865514}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 1, "success": true, "error": null, "ts": 1773132554.870406}
+{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 7961, "success": true, "ts": 1773132564.8362281}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 2499, "success": true, "error": null, "ts": 1773132567.339726}
+{"iteration": 4, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 8163, "success": true, "ts": 1773132577.510402}
+{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 2280, "success": true, "error": null, "ts": 1773132579.795468}
+{"iteration": 5, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 7284, "success": true, "ts": 1773132589.085728}
+{"iteration": 5, "type": "tool", "action_type": "call_tool", "latency_ms": 2374, "success": true, "error": null, "ts": 1773132591.4659111}
+{"iteration": 6, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 9062, "success": true, "ts": 1773132603.886064}
+{"iteration": 6, "type": "tool", "action_type": "call_tool", "latency_ms": 1096, "success": true, "error": null, "ts": 1773132604.9899762}
+{"iteration": 7, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 10797, "success": true, "ts": 1773132617.808362}
+{"iteration": 7, "type": "tool", "action_type": "call_tool", "latency_ms": 2521, "success": true, "error": null, "ts": 1773132620.336106}
+{"iteration": 8, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 8648, "success": true, "ts": 1773132630.994376}
+{"iteration": 8, "type": "tool", "action_type": "call_tool", "latency_ms": 2621, "success": true, "error": null, "ts": 1773132633.62253}
+{"iteration": 9, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 8103, "success": true, "ts": 1773132643.76839}
+{"iteration": 9, "type": "tool", "action_type": "call_tool", "latency_ms": 3, "success": true, "error": null, "ts": 1773132643.787153}

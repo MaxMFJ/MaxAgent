@@ -138,7 +138,7 @@ class AgentCore:
             return self.registry.get_relevant_schemas(
                 query,
                 max_tools=10,
-                always_include=["terminal", "file_operations", "app_control", "capsule", "web_search", "input_control", "screenshot", "delegate_duck", "duck_status"],
+                always_include=["terminal", "file_operations", "app_control", "capsule", "web_search", "input_control", "screenshot", "gui_automation", "delegate_duck", "duck_status"],
             )
         return self.registry.get_schemas()
     

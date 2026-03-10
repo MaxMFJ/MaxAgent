@@ -106,7 +106,7 @@ private struct MultiTaskLiveView: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        ForEach(tasks) { task in
+                        ForEach(tasks, id: \.id) { task in
                             TaskTabButton(
                                 task: task,
                                 isExpanded: !collapsedTaskIds.contains(task.id),
@@ -132,7 +132,7 @@ private struct MultiTaskLiveView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HStack(spacing: 0) {
-                    ForEach(expandedTasks) { task in
+                    ForEach(expandedTasks, id: \.id) { task in
                         TaskLiveColumn(data: task, executionLogs: executionLogs)
                             .frame(maxWidth: .infinity)
                         if task.id != expandedTasks.last?.id {
@@ -194,11 +194,10 @@ private struct TaskTabButton: View {
         }
     }
 
-    /// Duck 任务用橙色，RPA 用紫色，主 Agent 用青色
+    /// Duck 任务用紫色，主 Agent 用青色
     private var actorAccentColor: Color {
         switch task.workerType {
         case "local_duck", "remote_duck": return CyberColor.purple
-        case "runbook": return CyberColor.orange
         default: return CyberColor.cyan
         }
     }
@@ -206,9 +205,9 @@ private struct TaskTabButton: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 4) {
-                // Duck / RPA 任务显示小图标
+                // Duck 任务显示小图标
                 if task.workerType != "main" {
-                    Image(systemName: task.workerType.contains("duck") ? "bird" : "doc.text.fill")
+                    Image(systemName: "bird")
                         .font(.system(size: 8))
                         .foregroundColor(actorAccentColor)
                 }
@@ -888,7 +887,7 @@ private struct ExecutionStreamBlock: View {
             Text("[STREAM]")
                 .font(CyberFont.mono(size: 9))
                 .foregroundColor(CyberColor.cyan.opacity(0.9))
-            ForEach(recentLogs) { log in
+            ForEach(recentLogs, id: \.id) { log in
                 VStack(alignment: .leading, spacing: 4) {
                     // 大脑→[工具] 动画：每条 STREAM 日志对应一个工具执行
                     if let toolName = toolDisplayName(log.toolName) {

@@ -49,7 +49,7 @@ class VisionTool(BaseTool):
             "action": {
                 "type": "string",
                 "enum": ["capture_and_analyze", "analyze_local_image", "find_element", "read_screen", 
-                        "describe_window", "get_qrcode"],
+                        "read_screen_structured", "describe_window", "get_qrcode"],
                 "description": "要执行的操作"
             },
             "file_path": {
@@ -94,6 +94,8 @@ class VisionTool(BaseTool):
             return await self._find_element(kwargs)
         elif action == "read_screen":
             return await self._read_screen(kwargs)
+        elif action == "read_screen_structured":
+            return await self._read_screen_structured(kwargs)
         elif action == "describe_window":
             return await self._describe_window(kwargs)
         elif action == "get_qrcode":
@@ -189,6 +191,38 @@ try? handler.perform([request])
             logger.error(f"OCR failed: {e}")
             return ""
     
+    async def _find_element_paddle(self, screenshot_path: str, target: str) -> Optional[Dict]:
+        """使用 PaddleOCR 查找 UI 元素并返回精确坐标"""
+        try:
+            from runtime.paddle_ocr import run_paddle_ocr, resolve_target, find_all_matches, is_available
+            if not is_available():
+                return None
+            layout = await run_paddle_ocr(screenshot_path, preprocess=True)
+            if layout is None or not layout.items:
+                return None
+            best = resolve_target(layout, target)
+            if best is None:
+                return None
+            all_matches = find_all_matches(layout, target, min_score=0.4)
+            return {
+                "found": True,
+                "text": best.item.text,
+                "center_x": best.item.center_x,
+                "center_y": best.item.center_y,
+                "bbox": best.item.bbox,
+                "confidence": best.item.confidence,
+                "score": best.score,
+                "match_method": best.method,
+                "all_matches": [
+                    {"text": m.item.text, "center_x": m.item.center_x,
+                     "center_y": m.item.center_y, "score": m.score}
+                    for m in all_matches[:5]
+                ],
+            }
+        except Exception as e:
+            logger.debug(f"PaddleOCR find_element failed: {e}")
+            return None
+
     async def _detect_qrcode(self, image_path: str) -> Optional[str]:
         """检测并解码二维码"""
         swift_script = '''
@@ -347,17 +381,39 @@ end tell
                         }
                     )
         
-        # 如果 Accessibility API 找不到，尝试使用 OCR + 文字定位
+        # 如果 Accessibility API 找不到，尝试使用 PaddleOCR 视觉回退（含精确坐标）
         screenshot_path = await self._capture_screenshot("window" if app_name else "full", app_name)
         if screenshot_path:
+            paddle_result = await self._find_element_paddle(screenshot_path, target)
+            if paddle_result and paddle_result.get("found"):
+                return ToolResult(
+                    success=True,
+                    data={
+                        "found": True,
+                        "method": "vision_paddleocr",
+                        "text": paddle_result.get("text", ""),
+                        "position": {
+                            "x": paddle_result["center_x"],
+                            "y": paddle_result["center_y"],
+                        },
+                        "bbox": paddle_result.get("bbox"),
+                        "confidence": paddle_result.get("confidence", 0),
+                        "score": paddle_result.get("score", 0),
+                        "match_method": paddle_result.get("match_method", ""),
+                        "suggestion": f"可以使用 input_control.mouse_click 点击坐标 ({int(paddle_result['center_x'])}, {int(paddle_result['center_y'])})",
+                        "all_matches": paddle_result.get("all_matches", []),
+                    }
+                )
+
+            # PaddleOCR 不可用或未匹配时，退回纯文本 OCR
             text = await self._ocr_image(screenshot_path)
             if target.lower() in text.lower():
                 return ToolResult(
                     success=True,
                     data={
                         "found": True,
-                        "method": "ocr",
-                        "note": f"在屏幕文字中找到了 '{target}'，但无法确定精确位置",
+                        "method": "ocr_text_only",
+                        "note": f"在屏幕文字中找到了 '{target}'，但无法确定精确位置。请截图后用坐标点击。",
                         "ocr_text": text[:500]
                     }
                 )
@@ -392,6 +448,49 @@ end tell
             }
         )
     
+    async def _read_screen_structured(self, kwargs: Dict[str, Any]) -> ToolResult:
+        """使用 PaddleOCR 读取屏幕并返回结构化 OCR 结果（含每项 bbox/置信度）"""
+        area = kwargs.get("area", "full")
+        app_name = kwargs.get("app_name", "")
+        region = kwargs.get("region")
+
+        screenshot_path = await self._capture_screenshot(area, app_name, region)
+        if not screenshot_path:
+            return ToolResult(success=False, error="截图失败")
+
+        try:
+            from runtime.paddle_ocr import run_paddle_ocr, is_available
+            if not is_available():
+                return ToolResult(success=False, error="PaddleOCR 未安装，请 pip install paddleocr paddlepaddle")
+            layout = await run_paddle_ocr(screenshot_path, preprocess=True)
+            if layout is None:
+                return ToolResult(success=False, error="PaddleOCR 识别失败")
+            return ToolResult(
+                success=True,
+                data={
+                    "full_text": layout.full_text,
+                    "item_count": len(layout.items),
+                    "items": [item.to_dict() for item in layout.items],
+                    "image_width": layout.image_width,
+                    "image_height": layout.image_height,
+                    "screenshot_path": screenshot_path,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Structured OCR failed: {e}")
+            # 退回到纯文本 OCR
+            text = await self._ocr_image(screenshot_path)
+            return ToolResult(
+                success=True,
+                data={
+                    "text": text,
+                    "char_count": len(text),
+                    "line_count": len(text.split("\n")),
+                    "screenshot_path": screenshot_path,
+                    "note": "PaddleOCR 不可用，已退回纯文本 OCR"
+                }
+            )
+
     async def _describe_window(self, kwargs: Dict[str, Any]) -> ToolResult:
         """描述指定窗口的内容"""
         app_name = kwargs.get("app_name", "")

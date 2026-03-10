@@ -423,7 +423,7 @@ async def broadcast_monitor_event(
         session_id: 会话 ID
         task_id: 任务 ID
         event: 事件数据 (包含 type 字段)
-        task_type: 任务类型 ("chat" / "autonomous" / "duck" / "runbook")
+        task_type: 任务类型 ("chat" / "autonomous" / "duck")
         worker_type: 执行者类型 ("main" / "local_duck" / "remote_duck")
         worker_id: 执行者 ID ("main" 或 duck_id)
     """

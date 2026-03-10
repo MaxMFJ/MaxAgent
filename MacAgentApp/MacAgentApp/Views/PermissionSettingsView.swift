@@ -446,6 +446,13 @@ struct PermissionSettingsContent: View {
             
             HStack(spacing: 20) {
                 ToolStatusPill(
+                    name: "AX Bridge",
+                    isAvailable: AccessibilityBridge.shared.isRunning,
+                    tip: AccessibilityBridge.shared.isRunning
+                        ? "原生 Accessibility API 服务（端口 \(AccessibilityBridge.shared.port)）"
+                        : "未运行 — App 启动时自动开启"
+                )
+                ToolStatusPill(
                     name: "CGEvent (Quartz)",
                     isAvailable: permissionManager.quartzAvailable,
                     tip: "进程内键鼠模拟 API，最快最可靠"

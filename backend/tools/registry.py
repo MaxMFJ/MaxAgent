@@ -130,6 +130,11 @@ class ToolRegistry:
                 "邮件": ["mail"], "发送邮件": ["mail"],
                 "日历": ["calendar"], "数据库": ["database"],
                 "docker": ["docker"], "网络": ["network"],
+                "点击": ["gui_automation", "input_control"], "按钮": ["gui_automation"],
+                "输入框": ["gui_automation"], "窗口": ["gui_automation"],
+                "元素": ["gui_automation"], "界面": ["gui_automation"],
+                "GUI": ["gui_automation"], "操作": ["gui_automation", "input_control"],
+                "微信": ["gui_automation", "app_control"], "发送消息": ["gui_automation", "input_control"],
             }
             for kw, tool_names in _CJK_TOOL_HINTS.items():
                 if kw in q_lower and t.name in tool_names:

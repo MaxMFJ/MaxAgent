@@ -26,6 +26,8 @@ async def permission_status():
         "cliclick": _check_cliclick(),
         "quartz": _check_quartz(),
         "osascript": _check_osascript(),
+        "ax_bridge": await _check_ax_bridge(),
+        "ipc_service": await _check_ipc_service(),
     }
     return result
 
@@ -185,3 +187,58 @@ def _check_osascript() -> dict:
         "description": "AppleScript 执行工具，用于应用控制和自动化",
         "guidance": "已可用" if path else "osascript 未找到（这不应该在 macOS 上发生）",
     }
+
+
+async def _check_ax_bridge() -> dict:
+    """检查 Swift Accessibility Bridge (端口 5650) 是否可用"""
+    try:
+        from runtime.accessibility_bridge_client import is_bridge_available, get_status
+        available = await is_bridge_available()
+        if available:
+            status = await get_status()
+            return {
+                "available": True,
+                "trusted": status.get("trusted", False),
+                "port": status.get("port", 5650),
+                "description": "Swift 原生 Accessibility API 服务（AXUIElement 树遍历 + 属性读取）",
+                "guidance": "已运行 — 后端可通过 Bridge 调用原生 AX API",
+            }
+        return {
+            "available": False,
+            "description": "Swift Accessibility Bridge",
+            "guidance": "未运行 — 请确保 MacAgentApp 已启动（Bridge 在 App 启动时自动开启）",
+        }
+    except Exception as e:
+        return {
+            "available": False,
+            "description": "Swift Accessibility Bridge",
+            "error": str(e),
+            "guidance": f"检测失败: {e}",
+        }
+
+
+async def _check_ipc_service() -> dict:
+    """检查 Swift IPC Service (端口 8767) 是否可用"""
+    try:
+        from runtime.ipc_client import get_ipc_client
+        client = get_ipc_client()
+        resp = await client.heartbeat()
+        if resp and resp.get("success"):
+            return {
+                "available": True,
+                "port": 8767,
+                "description": "Swift IPC 服务（TCP 长度前缀 JSON，支持批量/事件订阅）",
+                "guidance": "已运行 — 低延迟 IPC 通道就绪",
+            }
+        return {
+            "available": False,
+            "description": "Swift IPC Service",
+            "guidance": "未运行 — 请确保 MacAgentApp 已启动",
+        }
+    except Exception as e:
+        return {
+            "available": False,
+            "description": "Swift IPC Service",
+            "error": str(e),
+            "guidance": f"检测失败: {e}",
+        }

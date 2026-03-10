@@ -31,22 +31,21 @@ class InputControlTool(BaseTool):
     """
     
     name = "input_control"
-    description = """鼠标和键盘控制工具，用于模拟人类输入操作。
+    description = """键盘辅助工具 — 用于按键和快捷键操作。
 
-支持的操作：
-- mouse_move: 移动鼠标到指定位置
-- mouse_click: 鼠标点击（左键/右键/双击）
-- mouse_drag: 鼠标拖拽
-- mouse_scroll: 鼠标滚动
-- keyboard_type: 键盘输入文字
-- keyboard_key: 按下特定按键
-- keyboard_shortcut: 执行快捷键组合
-- get_mouse_position: 获取当前鼠标位置
-- get_screen_size: 获取屏幕尺寸
+⚠️ 重要：点击 UI 元素请用 gui_automation(click_element)，输入文字请用 gui_automation(type_text)。
+本工具仅用于以下场景：
+- keyboard_key: 按单个键（Enter/Tab/Esc）
+- keyboard_shortcut: 快捷键组合（Cmd+C/Cmd+V）
+- mouse_click: 仅当 gui_automation click_element 失败后的 fallback
+
+其他操作：
+- mouse_move / mouse_drag / mouse_scroll
+- keyboard_type: 仅当 gui_automation type_text 失败后的 fallback
+- get_mouse_position / get_screen_size
 
 使用场景：
-- 点击按钮、链接
-- 在输入框中输入文字
+- 按 Enter/Return 确认
 - 执行快捷键操作（如 Cmd+C, Cmd+V）
 - 滚动页面
 - 拖拽文件或元素"""

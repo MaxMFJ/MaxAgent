@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大语言模型完整运作原理 · 物理层标注</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent-dim: rgba(88, 166, 255, 0.15);
+      --green: #3fb950;
+      --purple: #a371f7;
+      --orange: #d29922;
+      --red: #f85149;
+      --teal: #39c5cf;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans SC', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+    .flow { display: flex; flex-direction: column; gap: 1rem; }
+    .phase { margin-top: 1.5rem; }
+    .phase-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      transition: all 0.3s ease;
+    }
+    .step.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(88, 166, 255, 0.15); }
+    .step.completed { border-color: var(--green); opacity: 0.92; }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+    .step.completed .step-num { background: rgba(63, 185, 80, 0.2); color: var(--green); }
+    .step-body { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+    .phys-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+    .phys-tag.client { background: rgba(57, 197, 207, 0.15); color: var(--teal); border: 1px solid rgba(57, 197, 207, 0.3); }
+    .phys-tag.network { background: rgba(210, 153, 34, 0.15); color: var(--orange); border: 1px solid rgba(210, 153, 34, 0.3); }
+    .phys-tag.server { background: rgba(163, 113, 247, 0.15); color: var(--purple); border: 1px solid rgba(163, 113, 247, 0.3); }
+    .phys-tag.gpu { background: rgba(88, 166, 255, 0.15); color: var(--accent); border: 1px solid rgba(88, 166, 255, 0.3); }
+    .phys-tag.storage { background: rgba(248, 81, 73, 0.1); color: var(--red); border: 1px solid rgba(248, 81, 73, 0.25); }
+    .bubble { padding: 0.5rem 0.9rem; border-radius: 10px; font-size: 0.9rem; }
+    .bubble.user { background: var(--accent-dim); border: 1px solid rgba(88, 166, 255, 0.3); }
+    .bubble.assistant { background: var(--bg-card); border: 1px solid var(--border); }
+    .vector-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 0.6rem 0; }
+    .vector-dot {
+      aspect-ratio: 1; border-radius: 4px; background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+    .vector-dot.highlight { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); transform: scale(1.05); }
+    .vector-dot.match { background: rgba(163, 113, 247, 0.2); border: 1px solid var(--purple); color: var(--purple); }
+    .weight-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 0.4rem 0; }
+    .weight-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 3px; transition: width 0.4s ease; }
+    .reasoning-tokens {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.35);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      margin-top: 0.4rem;
+      overflow-x: auto;
+    }
+    .token { display: inline; opacity: 0.4; transition: opacity 0.15s; }
+    .token.visible { opacity: 1; color: var(--purple); }
+    .token.current { opacity: 1; color: var(--accent); animation: blink 0.6s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .ctrl { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #0d1117; }
+    .btn.primary:hover { filter: brightness(1.1); }
+    .progress-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .mt-1 { margin-top: 0.5rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.8rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>大语言模型完整运作原理</h1>
+    <p class="subtitle">Chat 发送「你好」→ 全流程演示 · 物理层标注：当前处理在哪个现实物理设备中完成</p>
+
+    <div class="legend">
+      <span class="legend-item"><span class="phys-tag client">🖥️</span> 用户设备：键盘、CPU、RAM、网卡、显示器</span>
+      <span class="legend-item"><span class="phys-tag network">📡</span> 网络：路由器、光纤、基站</span>
+      <span class="legend-item"><span class="phys-tag server">🖥️</span> 服务器：CPU、RAM</span>
+      <span class="legend-item"><span class="phys-tag gpu">🧠</span> GPU：显存(VRAM)、CUDA 核心</span>
+      <span class="legend-item"><span class="phys-tag storage">💾</span> 存储：NVMe SSD、PCIe</span>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn primary" id="btnStart">▶ 开始演示</button>
+      <button class="btn" id="btnReset">重置</button>
+    </div>
+
+    <div class="flow">
+      <!-- Phase 1: 用户端 -->
+      <div class="phase">
+        <div class="phase-title">阶段一 · 用户端 (Client)</div>
+        <div class="step" id="step1">
+          <div class="step-header"><span class="step-num">1</span>用户输入</div>
+          <div class="step-body">
+            <div class="bubble user">你好</div>
+            <p class="mt-1">用户在输入框键入「你好」，触发发送。</p>
+            <div class="phys-tag client">🖥️ 物理层：键盘 → 浏览器进程内存 (RAM)</div>
+          </div>
+        </div>
+        <div class="step" id="step2">
+          <div class="step-header"><span class="step-num">2</span>前端序列化</div>
+          <div class="step-body">
+            <p>将消息封装为 JSON，准备 HTTP/WebSocket 请求。</p>
+            <div class="phys-tag client">🖥️ 物理层：用户设备 CPU · 浏览器 JavaScript 引擎 (V8/SpiderMonkey)</div>
+          </div>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-header"><span class="step-num">3</span>网络发送</div>
+          <div class="step-body">
+            <p>请求通过 TCP/HTTP 或 WebSocket 发出。</p>
+            <div class="phys-tag network">📡 物理层：用户设备网卡 → 路由器 → 光纤/铜缆/无线基站</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 2: 服务端入口 -->
+      <div class="phase">
+        <div class="phase-title">阶段二 · 服务端入口</div>
+        <div class="step" id="step4">
+          <div class="step-header"><span class="step-num">4</span>API 网关 / 负载均衡</div>
+          <div class="step-body">
+            <p>请求到达数据中心，由网关路由到推理服务实例。</p>
+            <div class="phys-tag server">🖥️ 物理层：云服务器 (如 AWS/GCP/Azure 机房) · 负载均衡器</div>
+          </div>
+        </div>
+        <div class="step" id="step5">
+          <div class="step-header"><span class="step-num">5</span>请求解析</div>
+          <div class="step-body">
+            <p>解析 HTTP 请求体，提取 prompt、参数等。</p>
+            <div class="phys-tag server">🖥️ 物理层：推理服务器 CPU · 系统 RAM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 3: 预处理 -->
+      <div class="phase">
+        <div class="phase-title">阶段三 · 预处理 (Tokenization)</div>
+        <div class="step" id="step6">
+          <div class="step-header"><span class="step-num">6</span>分词 (Tokenization)</div>
+          <div class="step-body">
+            <p>「你好」→ 查词表得到 token IDs，如 [234, 567]。</p>
+            <div class="phys-tag server">🖥️ 物理层：CPU · 词表常驻 RAM (或从 SSD 加载)</div>
+          </div>
+        </div>
+        <div class="step" id="step7">
+          <div class="step-header"><span class="step-num">7</span>上下文组装</div>
+          <div class="step-body">
+            <p>拼接 system prompt、历史对话、当前输入，形成完整序列。</p>
+            <div class="phys-tag server">🖥️ 物理层：CPU · RAM 中的 token 序列缓冲区</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 4: 模型加载 (若未加载) -->
+      <div class="phase">
+        <div class="phase-title">阶段四 · 模型与 Embedding</div>
+        <div class="step" id="step8">
+          <div class="step-header"><span class="step-num">8</span>模型权重加载</div>
+          <div class="step-body">
+            <p>若模型未在显存中，从磁盘加载权重到 GPU VRAM。</p>
+            <div class="phys-tag storage">💾 物理层：NVMe SSD → PCIe 总线</div>
+            <div class="phys-tag gpu">🧠 物理层：GPU 显存 (HBM/GDDR，如 80GB A100)</div>
+          </div>
+        </div>
+        <div class="step" id="step9">
+          <div class="step-header"><span class="step-num">9</span>Embedding 查表</div>
+          <div class="step-body">
+            <p>Token IDs → 查 Embedding 矩阵 → 得到高维向量 (如 4096 维)。</p>
+            <div class="vector-grid" id="embeddingGrid"></div>
+            <div class="phys-tag gpu">🧠 物理层：GPU VRAM 中的 Embedding 矩阵 · CUDA 核心执行查表</div>
+          </div>
+        </div>
+        <div class="step" id="step10">
+          <div class="step-header"><span class="step-num">10</span>位置编码 (Positional Encoding)</div>
+          <div class="step-body">
+            <p>为每个 token 注入位置信息，支持模型理解序列顺序。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 张量核心 · 矩阵加法</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 5: Transformer 推理 -->
+      <div class="phase">
+        <div class="phase-title">阶段五 · Transformer 推理 (核心)</div>
+        <div class="step" id="step11">
+          <div class="step-header"><span class="step-num">11</span>Q、K、V 线性投影</div>
+          <div class="step-body">
+            <p>输入向量 × Wq, Wk, Wv 得到 Query、Key、Value 矩阵。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 矩阵乘法 (GEMM) · Tensor Core</div>
+          </div>
+        </div>
+        <div class="step" id="step12">
+          <div class="step-header"><span class="step-num">12</span>注意力分数 Q·K^T</div>
+          <div class="step-body">
+            <p>计算 Query 与 Key 的点积，得到注意力分数矩阵。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 大矩阵乘法 · 高带宽显存读写</div>
+          </div>
+        </div>
+        <div class="step" id="step13">
+          <div class="step-header"><span class="step-num">13</span>Softmax 归一化</div>
+          <div class="step-body">
+            <p>对每行做 Softmax，得到注意力权重分布。</p>
+            <div class="weight-bar"><div class="weight-fill" id="weightFill" style="width: 0%"></div></div>
+            <div class="phys-tag gpu">🧠 物理层：GPU 并行 Softmax 核函数</div>
+          </div>
+        </div>
+        <div class="step" id="step14">
+          <div class="step-header"><span class="step-num">14</span>加权求和 Attention·V</div>
+          <div class="step-body">
+            <p>用注意力权重对 Value 加权求和，得到上下文表示。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 矩阵乘法 · 多注意力头并行</div>
+          </div>
+        </div>
+        <div class="step" id="step15">
+          <div class="step-header"><span class="step-num">15</span>FFN 前馈网络</div>
+          <div class="step-body">
+            <p>每个 token 经过两层 MLP：Linear → GELU → Linear。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 全连接层 · 大量浮点运算</div>
+          </div>
+        </div>
+        <div class="step" id="step16">
+          <div class="step-header"><span class="step-num">16</span>LM Head + 采样</div>
+          <div class="step-body">
+            <p>最后一层输出 → 词表维度 → Softmax → Top-p/Top-k 采样得到下一个 token。</p>
+            <div class="phys-tag gpu">🧠 物理层：GPU 输出层 · 采样在 GPU 完成</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 6: 自回归生成 -->
+      <div class="phase">
+        <div class="phase-title">阶段六 · 自回归生成</div>
+        <div class="step" id="step17">
+          <div class="step-header"><span class="step-num">17</span>循环生成 Token</div>
+          <div class="step-body">
+            <p>重复步骤 9–16，每次生成一个 token，直到遇到 EOS。</p>
+            <div class="reasoning-tokens" id="reasoningTokens"></div>
+            <div class="phys-tag gpu">🧠 物理层：GPU 循环推理 · KV Cache 存于显存</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 7: 后处理与返回 -->
+      <div class="phase">
+        <div class="phase-title">阶段七 · 后处理与返回</div>
+        <div class="step" id="step18">
+          <div class="step-header"><span class="step-num">18</span>Detokenization</div>
+          <div class="step-body">
+            <p>Token IDs → 查词表 → 还原为文本「你好！👋 我是...」。</p>
+            <div class="phys-tag server">🖥️ 物理层：服务器 CPU · RAM 中的词表</div>
+          </div>
+        </div>
+        <div class="step" id="step19">
+          <div class="step-header"><span class="step-num">19</span>流式输出</div>
+          <div class="step-body">
+            <p>通过 HTTP SSE 或 WebSocket 将文本流式推送给客户端。</p>
+            <div class="phys-tag network">📡 物理层：服务器网卡 → 互联网 → 用户设备网卡</div>
+          </div>
+        </div>
+        <div class="step" id="step20">
+          <div class="step-header"><span class="step-num">20</span>客户端渲染</div>
+          <div class="step-body">
+            <div class="bubble assistant" id="assistantBubble"></div>
+            <p class="mt-1">浏览器接收数据，更新 DOM，渲染消息气泡。</p>
+            <div class="phys-tag client">🖥️ 物理层：用户设备 CPU · 浏览器渲染引擎 · 显示器</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const response = '你好！👋 我是你的 AI 助手，有什么可以帮你的吗？';
+    const tokens = response.split('');
+    const STEP_IDS = Array.from({ length: 20 }, (_, i) => 'step' + (i + 1));
+
+    function $(id) { return document.getElementById(id); }
+    function step(id) { return $(id); }
+
+    function createVectorGrid(containerId, count = 16) {
+      const grid = $(containerId);
+      if (!grid) return [];
+      grid.innerHTML = '';
+      const labels = ['0.2','-0.1','0.8','0.3','-0.2','0.5','0.1','0.9','0.4','0.0','-0.3','0.6','0.7','0.2','-0.1','0.4'];
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'vector-dot';
+        dot.textContent = labels[i] || '.';
+        grid.appendChild(dot);
+      }
+      return grid.querySelectorAll('.vector-dot');
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function runDemo() {
+      STEP_IDS.forEach(s => { step(s)?.classList?.remove('active', 'completed'); });
+
+      for (let i = 0; i < STEP_IDS.length; i++) {
+        const s = step(STEP_IDS[i]);
+        if (!s) continue;
+        s.classList.add('active');
+
+        if (i === 8) {
+          const embDots = createVectorGrid('embeddingGrid');
+          for (let j = 0; j < embDots.length; j++) {
+            await sleep(50);
+            embDots[j].classList.add('highlight');
+          }
+        } else if (i === 12) {
+          const fill = $('weightFill');
+          for (let w = 0; w <= 100; w += 5) {
+            fill.style.width = w + '%';
+            await sleep(25);
+          }
+        } else if (i === 16) {
+          const tokEl = $('reasoningTokens');
+          tokEl.innerHTML = '';
+          tokens.forEach(t => {
+            const span = document.createElement('span');
+            span.className = 'token';
+            span.textContent = t;
+            tokEl.appendChild(span);
+          });
+          const tokenSpans = tokEl.querySelectorAll('.token');
+          for (let j = 0; j < tokenSpans.length; j++) {
+            tokenSpans[j].classList.add('current');
+            await sleep(80);
+            tokenSpans[j].classList.remove('current');
+            tokenSpans[j].classList.add('visible');
+          }
+        } else if (i === 19) {
+          $('assistantBubble').textContent = '';
+          for (let j = 0; j < tokens.length; j++) {
+            $('assistantBubble').textContent += tokens[j];
+            await sleep(50);
+          }
+        }
+
+        await sleep(i >= 8 && i <= 15 ? 400 : i === 16 ? 300 : 350);
+        s.classList.remove('active');
+        s.classList.add('completed');
+      }
+    }
+
+    function reset() {
+      STEP_IDS.forEach(s => { step(s)?.classList?.remove('active', 'completed'); });
+      const embGrid = $('embeddingGrid');
+      if (embGrid) embGrid.innerHTML = '';
+      const wf = $('weightFill');
+      if (wf) wf.style.width = '0%';
+      const rt = $('reasoningTokens');
+      if (rt) rt.innerHTML = '';
+      const ab = $('assistantBubble');
+      if (ab) ab.textContent = '';
+    }
+
+    $('btnStart').addEventListener('click', runDemo);
+    $('btnReset').addEventListener('click', reset);
+  </script>
+</body>
+</html>

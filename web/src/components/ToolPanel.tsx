@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useToolStore } from '../stores/toolStore';
 import { useMonitorStore } from '../stores/monitorStore';
 import { getTools } from '../services/api';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui';
+import { Card, Button, Badge } from './ui';
 
 type Tab = 'matrix' | 'history' | 'task' | 'logs';
 
@@ -22,48 +24,30 @@ const ToolPanel: React.FC = () => {
       .catch(() => {});
   }, [setTools]);
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'matrix', label: '矩阵', icon: '⬡' },
-    { id: 'history', label: '历史', icon: '📋' },
-    { id: 'task', label: '任务', icon: '🎯' },
-    { id: 'logs', label: '日志', icon: '📜' },
-  ];
-
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--bg-surface)' }}>
-      {/* 标题 + Tab 切换 */}
-      <div className="flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            🔧 工具面板
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-[var(--radius-full)]" style={{ color: 'var(--text-tertiary)', background: 'var(--bg-elevated)' }}>
-            {tools.length} 个工具
-          </span>
+    <div className="panel-fill" style={{ background: 'var(--bg-surface)' }}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        {/* 标题 + Tab 切换 */}
+        <div className="flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <span className="font-display text-sm font-semibold tracking-wider" style={{ color: 'var(--accent)' }}>
+              🔧 工具面板
+            </span>
+            <Badge variant="default">{tools.length} 个工具</Badge>
+          </div>
+          <TabsList variant="line" className="w-full justify-start border-0 px-3 pb-2.5 gap-1">
+            <TabsTrigger value="matrix">⬡ 矩阵</TabsTrigger>
+            <TabsTrigger value="history">📋 历史</TabsTrigger>
+            <TabsTrigger value="task">🎯 任务</TabsTrigger>
+            <TabsTrigger value="logs">📜 日志</TabsTrigger>
+          </TabsList>
         </div>
-        <div className="flex px-3 pb-2.5 gap-1">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="flex-1 text-xs py-1.5 rounded-[var(--radius-md)] cursor-pointer transition-all duration-200 font-medium"
-              style={{
-                background: tab === t.id ? 'var(--accent-dim)' : 'transparent',
-                color: tab === t.id ? 'var(--accent)' : 'var(--text-tertiary)',
-                border: `1px solid ${tab === t.id ? 'rgba(124,156,255,0.12)' : 'transparent'}`,
-              }}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* 内容区 */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {/* 矩阵 Tab: 3列网格 */}
-        {tab === 'matrix' && (
-          <div className="grid grid-cols-3 gap-1.5">
+      <div className="panel-scroll p-3">
+        {/* 矩阵 Tab */}
+        <TabsContent value="matrix" className="mt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 min-w-0">
             {tools.length === 0 ? (
               <div className="col-span-3 text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
                 加载中…
@@ -74,13 +58,10 @@ const ToolPanel: React.FC = () => {
                 const isSystem = !tool.source || tool.source === 'system';
                 return (
                   <div key={i}>
-                    <div
-                      className="px-2 py-2 rounded-[var(--radius-md)] text-xs cursor-pointer transition-all duration-200 hover:scale-[1.02]"
-                      style={{
-                        background: isExpanded ? 'var(--accent-dim)' : 'var(--bg-elevated)',
-                        border: `1px solid ${isExpanded ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--border-subtle)'}`,
-                        boxShadow: isExpanded ? 'var(--shadow-glow-accent)' : 'none',
-                      }}
+                    <Card
+                      padding="sm"
+                      hover
+                      className={`text-xs cursor-pointer transition-all duration-200 hover:scale-[1.02] ${isExpanded ? 'border-[var(--accent)] bg-[var(--accent-dim)] shadow-[var(--shadow-glow-accent)]' : ''}`}
                       onClick={() => setExpandedTool(isExpanded ? null : tool.name)}
                     >
                       <div className="font-medium truncate" style={{ color: 'var(--green)', fontSize: '0.7rem' }}>
@@ -95,85 +76,73 @@ const ToolPanel: React.FC = () => {
                         </span>
                         <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />
                       </div>
-                    </div>
-                    {/* 展开的详情 */}
+                    </Card>
                     {isExpanded && (
-                      <div
-                        className="col-span-3 mt-1 mb-1 px-3 py-2 rounded-[var(--radius-md)] text-xs animate-fade-in-up"
-                        style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)' }}
-                      >
-                        <div style={{ color: 'var(--text-primary)' }}>{tool.description}</div>
+                      <Card padding="sm" className="mt-1 mb-1 text-xs animate-fade-in-up min-w-0 break-words bg-[var(--bg-base)]">
+                        <div style={{ color: 'var(--text-primary)' }} className="break-words">{tool.description}</div>
                         <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
                           参数: {Array.isArray(tool.parameters) ? tool.parameters.length : Object.keys(tool.parameters ?? {}).length} 个
                           {tool.category && ` · ${tool.category}`}
                         </div>
-                      </div>
+                      </Card>
                     )}
                   </div>
                 );
               })
             )}
           </div>
-        )}
+        </TabsContent>
 
         {/* 历史 Tab */}
-        {tab === 'history' && (
-          <div>
-            {callHistory.length === 0 ? (
-              <div className="text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>暂无调用记录</div>
-            ) : (
-              <>
-                <div className="flex justify-end mb-2">
-                  <button onClick={clearHistory} className="text-xs cursor-pointer transition-colors hover:opacity-80" style={{ color: 'var(--text-tertiary)' }}>清除</button>
-                </div>
-                <div className="space-y-1.5">
-                  {callHistory.slice().reverse().slice(0, 20).map((call) => (
-                    <div
-                      key={call.id}
-                      className="px-3 py-2.5 rounded-[var(--radius-md)] text-xs transition-all duration-200"
-                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium" style={{ color: 'var(--green)' }}>{call.toolName}</span>
-                        <span style={{
-                          color: call.status === 'success' ? 'var(--green)' :
-                                 call.status === 'error' ? 'var(--red)' :
-                                 call.status === 'running' ? 'var(--orange)' : 'var(--text-tertiary)',
-                        }}>
-                          {call.status === 'success' ? '✓' : call.status === 'error' ? '✗' : call.status === 'running' ? '⟳' : '…'}
-                          {call.endTime && call.startTime ? ` ${((call.endTime - call.startTime) / 1000).toFixed(1)}s` : ''}
-                        </span>
-                      </div>
-                      {call.result && (
-                        <div className="mt-1 line-clamp-2" style={{ color: 'var(--text-tertiary)' }}>
-                          {call.result.slice(0, 150)}
-                        </div>
-                      )}
-                      {call.startTime && (
-                        <div className="mt-0.5" style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}>
-                          {new Date(call.startTime).toLocaleTimeString()}
-                        </div>
-                      )}
+        <TabsContent value="history" className="mt-0">
+          {callHistory.length === 0 ? (
+            <div className="text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>暂无调用记录</div>
+          ) : (
+            <>
+              <div className="flex justify-end mb-2">
+                <Button variant="ghost" size="sm" onClick={clearHistory}>清除</Button>
+              </div>
+              <div className="space-y-1.5">
+                {callHistory.slice().reverse().slice(0, 20).map((call) => (
+                  <Card key={call.id} padding="sm" className="text-xs transition-all duration-200 bg-[var(--bg-elevated)]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium" style={{ color: 'var(--green)' }}>{call.toolName}</span>
+                      <span style={{
+                        color: call.status === 'success' ? 'var(--green)' :
+                               call.status === 'error' ? 'var(--red)' :
+                               call.status === 'running' ? 'var(--orange)' : 'var(--text-tertiary)',
+                      }}>
+                        {call.status === 'success' ? '✓' : call.status === 'error' ? '✗' : call.status === 'running' ? '⟳' : '…'}
+                        {call.endTime && call.startTime ? ` ${((call.endTime - call.startTime) / 1000).toFixed(1)}s` : ''}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
+                    {call.result && (
+                      <div className="mt-1 line-clamp-2" style={{ color: 'var(--text-tertiary)' }}>
+                        {call.result.slice(0, 150)}
+                      </div>
+                    )}
+                    {call.startTime && (
+                      <div className="mt-0.5" style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}>
+                        {new Date(call.startTime).toLocaleTimeString()}
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
 
         {/* 任务 Tab */}
-        {tab === 'task' && (
-          <div>
-            {!activeTask ? (
-              <div className="text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
-                暂无活动任务
-                <div className="mt-1" style={{ opacity: 0.5 }}>使用 🤖 按钮发起自主任务</div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* 状态卡 */}
-                <div className="px-3 py-3 rounded-[var(--radius-lg)]" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+        <TabsContent value="task" className="mt-0">
+          {!activeTask ? (
+            <div className="text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
+              暂无活动任务
+              <div className="mt-1" style={{ opacity: 0.5 }}>使用 🤖 按钮发起自主任务</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Card padding="md" className="bg-[var(--bg-elevated)]">
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-medium" style={{ color: 'var(--accent)' }}>任务状态</span>
                     <span style={{
@@ -229,14 +198,13 @@ const ToolPanel: React.FC = () => {
                       {activeTask.summary}
                     </div>
                   )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              </Card>
+            </div>
+          )}
+        </TabsContent>
 
         {/* 日志 Tab */}
-        {tab === 'logs' && (
+        <TabsContent value="logs" className="mt-0">
           <div>
             {logs.length === 0 ? (
               <div className="text-xs text-center py-8" style={{ color: 'var(--text-tertiary)' }}>暂无日志</div>
@@ -264,8 +232,9 @@ const ToolPanel: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        </TabsContent>
       </div>
+      </Tabs>
     </div>
   );
 };

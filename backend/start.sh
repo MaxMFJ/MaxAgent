@@ -258,6 +258,21 @@ if [ "$ENABLE_VECTOR_SEARCH" = "true" ]; then
 elif [ "$ENABLE_VECTOR_SEARCH" != "true" ]; then
     echo "[INFO] ENABLE_VECTOR_SEARCH=false: RAG disabled. Add ENABLE_VECTOR_SEARCH=true to .env for semantic search."
 fi
+
+# RapidOCR 按需安装（GUI 视觉识别管道，~50MB，首次约 30 秒）
+# 优先使用 rapidocr-onnxruntime（兼容 Python 3.14+），回退 PaddleOCR
+ENABLE_PADDLE_OCR="${ENABLE_PADDLE_OCR:-true}"
+if [ "$ENABLE_PADDLE_OCR" = "true" ]; then
+    if ! $PY_RUN -c "import rapidocr_onnxruntime" 2>/dev/null && ! $PY_RUN -c "import paddleocr" 2>/dev/null; then
+        echo "[INFO] Installing RapidOCR (ONNX) for GUI vision pipeline (~50MB, one-time)..."
+        "$PY_RUN" -m pip install --quiet rapidocr-onnxruntime 2>/dev/null && \
+            echo "[INFO] RapidOCR installed successfully." || \
+            echo "[WARN] RapidOCR install failed, vision OCR fallback will not be available."
+    fi
+else
+    echo "[INFO] ENABLE_PADDLE_OCR=false: OCR disabled. Add ENABLE_PADDLE_OCR=true to .env for vision OCR."
+fi
+
 # 自动安装 cliclick（GUI 自动化鼠标控制依赖）
 if ! command -v cliclick >/dev/null 2>&1; then
     if command -v brew >/dev/null 2>&1; then
@@ -285,12 +300,18 @@ fi
 # 立即输出日志，便于确认启动进度（避免“卡住”的错觉）
 export PYTHONUNBUFFERED=1
 
-# Duck 模式下使用 DUCK_PORT，普通模式使用固定的 8765
+# Duck 模式下使用 DUCK_PORT，普通模式读取端口配置
 if [ "${DUCK_MODE:-0}" = "1" ]; then
     PORT="${DUCK_PORT:-8766}"
     echo "[Duck] Duck mode enabled, using port $PORT"
 else
-    PORT=8765
+    # 从 macagent_ports.json 读取端口配置（Mac App 写入）
+    PORTS_FILE="${TMPDIR:-/tmp}/macagent_ports.json"
+    if [ -f "$PORTS_FILE" ] && command -v python3 >/dev/null 2>&1; then
+        PORT=$(python3 -c "import json; print(json.load(open('$PORTS_FILE')).get('backend_port', 8765))" 2>/dev/null || echo 8765)
+    else
+        PORT=8765
+    fi
     # 启动前释放 8765 端口，避免 Address already in use
     if lsof -ti:$PORT >/dev/null 2>&1; then
         echo "Port $PORT in use, stopping existing process..."

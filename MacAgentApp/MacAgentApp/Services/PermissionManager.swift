@@ -73,7 +73,7 @@ class PermissionManager: ObservableObject {
     /// 从后端 API 获取 Python 进程的权限状态
     func fetchBackendPermissions() async {
         do {
-            let url = URL(string: "http://127.0.0.1:8765/permissions/status")!
+            let url = URL(string: "http://127.0.0.1:\(PortConfiguration.shared.backendPort)/permissions/status")!
             var request = URLRequest(url: url)
             request.timeoutInterval = 5
             

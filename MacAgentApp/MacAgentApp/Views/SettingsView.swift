@@ -25,7 +25,7 @@ struct SettingsView: View {
         NavItem(title: "审计",   icon: "doc.text.magnifyingglass",           index: 10),
         NavItem(title: "Context", icon: "chart.bar.xaxis",                  index: 11),
         NavItem(title: "Chow Duck", icon: "bird",                           index: 12),
-        NavItem(title: "RPA 流程",   icon: "list.bullet.rectangle",           index: 13),
+        NavItem(title: "端口",   icon: "cable.connector",                     index: 13),
     ]
 
     var body: some View {
@@ -130,7 +130,7 @@ struct SettingsView: View {
                         }
                     case 13:
                         ScrollView {
-                            RPASettingsContent()
+                            PortSettingsContent()
                                 .padding(20)
                         }
                     default:
@@ -407,6 +407,41 @@ struct GeneralSettingsContent: View {
                             viewModel.connect()
                         }
                         .buttonStyle(.borderedProminent)
+                    }
+                }
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            }
+
+            Divider()
+
+            // 清理缓存
+            VStack(alignment: .leading, spacing: 8) {
+                Text("清理缓存")
+                    .font(CyberFont.body(size: 14, weight: .semibold))
+                Text("清除 traces、任务检查点、chat 会话数据、系统消息等运行时缓存。保留 LLM 配置、模型、邮件、Duck 等配置文件。")
+                    .font(CyberFont.body(size: 11))
+                    .foregroundColor(.secondary)
+                HStack {
+                    Button {
+                        viewModel.clearCache()
+                    } label: {
+                        if viewModel.isClearingCache {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("清理中…")
+                        } else {
+                            Image(systemName: "trash")
+                            Text("清理缓存")
+                        }
+                    }
+                    .disabled(viewModel.isClearingCache || !viewModel.isConnected)
+                    .buttonStyle(.borderedProminent)
+                    if let msg = viewModel.clearCacheMessage {
+                        Text(msg)
+                            .font(CyberFont.body(size: 11))
+                            .foregroundColor(msg.hasPrefix("✅") ? .green : .red)
                     }
                 }
                 .padding()

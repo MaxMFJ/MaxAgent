@@ -15,7 +15,9 @@ struct FileDownloadView: View {
     @State private var downloadError: String?
     @State private var downloadSuccess = false
     
-    private let baseURL = "http://127.0.0.1:8765"
+    private var baseURL: String {
+        "http://127.0.0.1:\(PortConfiguration.shared.backendPort)"
+    }
     
     var body: some View {
         HStack(spacing: 12) {

@@ -1,2 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 8718, "success": true, "ts": 1773033588.518327}
-{"iteration": 1, "type": "tool", "action_type": "create_and_run_script", "latency_ms": 601, "success": true, "error": null, "ts": 1773033589.121323}

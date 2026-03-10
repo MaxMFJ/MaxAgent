@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const features = [
-  { icon: <FolderOpen size={20} />, title: '文件管理', desc: '查看、整理和操作文件系统', color: 'var(--accent)', gradient: 'linear-gradient(135deg, rgba(124,156,255,0.15), rgba(124,156,255,0.05))' },
+  { icon: <FolderOpen size={20} />, title: '文件管理', desc: '查看、整理和操作文件系统', color: 'var(--accent)', gradient: 'var(--gradient-warm)' },
   { icon: <Terminal size={20} />, title: '终端命令', desc: '执行 Shell 命令与管理进程', color: 'var(--green)', gradient: 'linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.05))' },
   { icon: <Rocket size={20} />, title: '应用控制', desc: '启动、关闭和操控应用程序', color: 'var(--purple)', gradient: 'linear-gradient(135deg, rgba(177,151,252,0.15), rgba(177,151,252,0.05))' },
   { icon: <Cpu size={20} />, title: '系统信息', desc: '查询 CPU、内存和磁盘状态', color: 'var(--orange)', gradient: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))' },
@@ -46,7 +46,7 @@ const WelcomeView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full select-none px-6 overflow-y-auto">
+    <div className="welcome-view-fill select-none px-6">
       {/* Ambient Background */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none"
@@ -81,12 +81,8 @@ const WelcomeView: React.FC = () => {
           </div>
         </div>
         <h1
-          className="text-3xl sm:text-4xl font-bold tracking-tight mb-3"
-          style={{
-            color: 'var(--text-primary)',
-            fontFamily: 'var(--font-display)',
-            letterSpacing: '-0.03em',
-          }}
+          className="font-display text-3xl sm:text-4xl font-bold tracking-wider mb-3"
+          style={{ color: 'var(--accent)' }}
         >
           Mac Agent
         </h1>
@@ -122,37 +118,17 @@ const WelcomeView: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {quickPrompts.map((p) => (
-            <button
+            <Card
               key={p.text}
-              className="
-                group flex items-center gap-3 text-left text-sm px-4 py-3.5
-                rounded-[var(--radius-lg)] cursor-pointer
-                transition-all duration-[var(--duration-normal)]
-                border
-              "
-              style={{
-                background: 'var(--bg-elevated)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-secondary)',
-              }}
+              hover
+              padding="md"
+              className="group flex items-center gap-3 text-left text-sm cursor-pointer"
               onClick={() => handleQuickPrompt(p.text)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-focus)';
-                e.currentTarget.style.background = 'var(--bg-hover)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.background = 'var(--bg-elevated)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
             >
               <span className="text-base flex-shrink-0">{p.emoji}</span>
               <span className="flex-1 group-hover:text-[var(--text-primary)] transition-colors">{p.text}</span>
               <ArrowRight size={14} className="flex-shrink-0 opacity-0 group-hover:opacity-60 transition-all duration-200 -translate-x-1 group-hover:translate-x-0" style={{ color: 'var(--accent)' }} />
-            </button>
+            </Card>
           ))}
         </div>
       </div>
@@ -163,15 +139,15 @@ const WelcomeView: React.FC = () => {
         style={{ color: 'var(--text-tertiary)', animationDelay: '0.4s' }}
       >
         <span className="flex items-center gap-1.5">
-          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘N</kbd>
+          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘N</kbd>
           新建会话
         </span>
         <span className="flex items-center gap-1.5">
-          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘,</kbd>
+          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘,</kbd>
           设置
         </span>
         <span className="flex items-center gap-1.5">
-          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘⇧↵</kbd>
+          <kbd className="px-2 py-1 rounded-[var(--radius-sm)] text-[10px] font-mono font-medium" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>⌘⇧↵</kbd>
           自治任务
         </span>
       </div>

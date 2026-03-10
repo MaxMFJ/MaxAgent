@@ -6,6 +6,7 @@ import AppKit
 struct ContentView: View {
     @EnvironmentObject var viewModel: AgentViewModel
     @StateObject private var processManager = ProcessManager.shared
+    @StateObject private var portConfig = PortConfiguration.shared
     @State private var showRestartAlert = false
     
     var body: some View {
@@ -75,6 +76,16 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .backendSettingDidChange)) { _ in
             showRestartAlert = true
+        }
+        // 端口冲突弹窗
+        .alert("端口冲突", isPresented: $portConfig.showConflictAlert) {
+            Button("打开端口设置") {
+                viewModel.showSettings = true
+            }
+            Button("忽略", role: .cancel) {}
+        } message: {
+            let msgs = portConfig.conflicts.map { "• 端口 \($0.port) (\($0.serviceName)) 被 \($0.conflictProcess) 占用" }
+            Text("以下端口存在冲突，部分功能可能无法正常工作：\n\(msgs.joined(separator: "\n"))\n\n请前往「设置 → 端口」修改端口号。")
         }
         .onAppear {
             viewModel.connect()

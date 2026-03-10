@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useChatStore } from '../stores/chatStore';
 import { useWSStore } from '../stores/wsStore';
-import { Button, IconButton, StatusDot } from './ui';
+import { Button, IconButton, StatusDot, Input } from './ui';
 import { Plus, X, Search, MessageSquare, Bot, Trash2, Pencil } from 'lucide-react';
 
 interface Props {
@@ -45,12 +45,12 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
     'offline';
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--bg-surface)' }}>
+    <div className="panel-fill" style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
       {/* Header */}
       <div className="p-3 flex-shrink-0">
         {onClose && (
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>会话</span>
+            <span className="font-display text-sm font-semibold tracking-wider" style={{ color: 'var(--accent)' }}>会话</span>
             <IconButton variant="ghost" size="sm" onClick={onClose} aria-label="关闭侧边栏">
               <X size={16} />
             </IconButton>
@@ -61,7 +61,7 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
           size="md"
           icon={<Plus size={15} />}
           onClick={() => { createConversation(); onClose?.(); }}
-          className="w-full"
+          className="w-full btn-neon"
         >
           新建会话
         </Button>
@@ -69,21 +69,23 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
 
       {/* Search */}
       <div className="px-3 pb-2.5 flex-shrink-0">
-        <div
-          className="flex items-center gap-2 px-3 h-9 rounded-[var(--radius-md)] transition-all duration-[var(--duration-fast)]"
-          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-        >
-          <Search size={13} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
-          <input
+        <div className="relative flex items-center">
+          <Search size={13} className="absolute left-3 pointer-events-none" style={{ color: 'var(--text-tertiary)' }} />
+          <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜索会话…"
-            className="flex-1 bg-transparent outline-none text-xs"
-            style={{ color: 'var(--text-primary)' }}
+            className="pl-8 pr-8 h-9 text-xs"
             aria-label="搜索会话"
           />
           {searchQuery && (
-            <IconButton variant="ghost" size="sm" onClick={() => setSearchQuery('')} aria-label="清除搜索">
+            <IconButton
+              variant="ghost"
+              size="sm"
+              className="absolute right-1"
+              onClick={() => setSearchQuery('')}
+              aria-label="清除搜索"
+            >
               <X size={12} />
             </IconButton>
           )}
@@ -91,7 +93,7 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
       </div>
 
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2" role="listbox" aria-label="会话列表">
+      <div className="panel-scroll px-2 pb-2" role="listbox" aria-label="会话列表">
         {sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-14 gap-3">
             <div
@@ -125,7 +127,7 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
                 `}
                 style={{
                   background: isActive ? 'var(--accent-dim)' : 'transparent',
-                  border: isActive ? '1px solid rgba(124,156,255,0.12)' : '1px solid transparent',
+                  border: isActive ? '1px solid var(--border-glow)' : '1px solid transparent',
                 }}
                 onClick={() => { setActive(conv.id); onClose?.(); }}
                 onDoubleClick={() => handleDoubleClick(conv.id, conv.title)}
@@ -163,8 +165,9 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
                     <div
                       className="flex-shrink-0 w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center transition-all duration-200"
                       style={{
-                        background: isActive ? 'var(--gradient-accent)' : 'var(--bg-elevated)',
+                        background: isActive ? 'var(--gradient-accent)' : 'var(--bg-card)',
                         color: isActive ? '#fff' : 'var(--text-tertiary)',
+                        border: isActive ? '1px solid transparent' : '1px solid var(--border)',
                       }}
                     >
                       {conv.isAutonomous ? <Bot size={14} /> : <MessageSquare size={14} />}
@@ -236,13 +239,9 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
           label={wsStatus === 'connected' ? '已连接' : wsStatus === 'connecting' ? '连接中…' : '未连接'}
         />
         {wsStatus === 'disconnected' && (
-          <button
-            onClick={reconnect}
-            className="text-xs cursor-pointer font-medium transition-colors hover:opacity-80"
-            style={{ color: 'var(--accent)' }}
-          >
+          <Button variant="ghost" size="sm" onClick={reconnect} className="text-[var(--accent)]">
             重连
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -89,7 +89,7 @@ class ProcessManager: ObservableObject {
     private func pollBackendLogs() async {
         // 从后端 API 获取日志
         do {
-            let url = URL(string: "http://127.0.0.1:8765/logs?limit=100&since_index=\(lastLogIndex)")!
+            let url = URL(string: "http://127.0.0.1:\(PortConfiguration.shared.backendPort)/logs?limit=100&since_index=\(lastLogIndex)")!
             var request = URLRequest(url: url)
             request.timeoutInterval = 3
             
@@ -138,7 +138,7 @@ class ProcessManager: ObservableObject {
     
     private func checkBackendStatus() async {
         do {
-            let url = URL(string: "http://127.0.0.1:8765/health")!
+            let url = URL(string: "http://127.0.0.1:\(PortConfiguration.shared.backendPort)/health")!
             var request = URLRequest(url: url)
             request.timeoutInterval = 2
             let (_, response) = try await URLSession.shared.data(for: request)
@@ -316,12 +316,13 @@ class ProcessManager: ObservableObject {
             NotificationCenter.default.post(name: .backendSettingDidChange, object: nil)
         }
         guard wasStartedByApp else { return }
-        // 由本 App 启动时，必须按端口杀掉实际占用 8765 的子进程（如 python main.py），
+        // 由本 App 启动时，必须按端口杀掉实际占用的子进程（如 python main.py），
         // 否则子进程会继续运行，状态轮询会再次显示「已运行」
+        let port = PortConfiguration.shared.backendPort
         Task.detached(priority: .userInitiated) {
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-            killTask.arguments = ["-c", "lsof -ti:8765 | xargs kill -9 2>/dev/null || true"]
+            killTask.arguments = ["-c", "lsof -ti:\(port) | xargs kill -9 2>/dev/null || true"]
             try? killTask.run()
             killTask.waitUntilExit()
         }

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Plus, Download, Trash2, RefreshCw, Egg, Bird, Cpu } from 'lucide-react';
-import { IconButton, Badge, StatusDot } from './ui';
+import { Plus, Download, Trash2, RefreshCw, Egg, Bird, Cpu } from 'lucide-react';
+import { IconButton, Badge, StatusDot, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Tabs, TabsList, TabsTrigger, TabsContent, Card, Button, Input, Label } from './ui';
 import ChowDuckAnimation from './ChowDuckAnimation';
 import { useDuckStore } from '../stores/duckStore';
 import type { DuckTemplate, DuckInfo, EggRecord } from '../stores/duckStore';
@@ -66,33 +66,16 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
     setIsChowing(false);
   }, [chowMode, createEgg, createLocalDuck, selectedTemplate, eggName, templates]);
 
-  const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: 'ducks', label: 'Duck 列表', icon: <Bird size={14} /> },
-    { id: 'chow', label: 'Chow Duck', icon: <span className="text-sm">🦆</span> },
-    { id: 'eggs', label: 'Eggs', icon: <Egg size={14} /> },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
-      <motion.div
-        className={`overflow-hidden flex flex-col ${isMobile ? 'w-full h-full' : 'rounded-2xl'}`}
-        style={{
-          background: 'var(--bg-surface)',
-          border: isMobile ? 'none' : '1px solid var(--border)',
-          width: isMobile ? '100%' : 720,
-          maxHeight: isMobile ? '100%' : '85vh',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
-        }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton
+        className={isMobile ? 'w-full h-full max-w-none max-h-none rounded-none' : 'w-[720px] max-h-[85vh]'}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <DialogHeader>
           <div className="flex items-center gap-3">
             <span className="text-xl">🦆</span>
-            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Chow Duck 分身管理</h2>
+            <DialogTitle className="font-display text-[var(--accent)]">Chow Duck 分身管理</DialogTitle>
             {stats && (
               <div className="flex items-center gap-2 ml-2">
                 <Badge variant="success">{stats.online} 在线</Badge>
@@ -103,43 +86,30 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
           </div>
           <div className="flex items-center gap-2">
             <IconButton variant="ghost" size="sm" onClick={() => fetchAll()} title="刷新"><RefreshCw size={14} /></IconButton>
-            <IconButton variant="ghost" size="sm" onClick={onClose} title="关闭"><X size={14} /></IconButton>
           </div>
-        </div>
+        </DialogHeader>
 
-        {/* Tabs */}
-        <div className="flex px-5 pt-3 gap-1 flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors"
-              style={{
-                color: tab === t.id ? 'var(--accent)' : 'var(--text-secondary)',
-                background: tab === t.id ? 'var(--bg-recessed)' : 'transparent',
-                borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-              }}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <Tabs value={tab} onValueChange={(v: string) => setTab(v as TabId)}>
+          <TabsList variant="line" className="w-full justify-start border-0 px-0">
+            <TabsTrigger value="ducks"><Bird size={14} className="inline mr-1" />Duck 列表</TabsTrigger>
+            <TabsTrigger value="chow"><span className="mr-1">🦆</span>Chow Duck</TabsTrigger>
+            <TabsTrigger value="eggs"><Egg size={14} className="inline mr-1" />Eggs</TabsTrigger>
+          </TabsList>
 
-        {/* Error bar */}
         {error && (
-          <div className="mx-5 mt-3 px-3 py-2 rounded-lg text-xs flex items-center justify-between" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-            {error}
-            <button onClick={clearError} className="ml-2 underline">关闭</button>
-          </div>
+          <Card padding="sm" className="mx-0 mt-3 bg-[rgba(239,68,68,0.1)] border-red-500/30">
+            <div className="flex items-center justify-between text-xs text-red-400">
+              {error}
+              <Button variant="ghost" size="sm" onClick={clearError}>关闭</Button>
+            </div>
+          </Card>
         )}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5" style={{ minHeight: 0 }}>
-          {loading && <div className="text-center py-8 text-xs" style={{ color: 'var(--text-tertiary)' }}>加载中...</div>}
+        <div className="flex-1 overflow-y-auto p-5 min-h-0">
+          {loading && <div className="text-center py-8 text-xs text-[var(--muted-foreground)]">加载中...</div>}
 
-          {/* ===== Duck 列表 Tab ===== */}
-          {tab === 'ducks' && !loading && (
+          <TabsContent value="ducks" className="mt-0">
+          {!loading && (
             <div className="space-y-3">
               {ducks.length === 0 ? (
                 <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
@@ -149,11 +119,7 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                 </div>
               ) : (
                 ducks.map((duck: DuckInfo) => (
-                  <div
-                    key={duck.duck_id}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
-                  >
+                  <Card key={duck.duck_id} padding="md" className="flex items-center gap-3">
                     <StatusDot status={duck.status === 'online' ? 'online' : duck.status === 'busy' ? 'connecting' : 'offline'} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -178,13 +144,7 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                         </IconButton>
                       )}
                       {duck.is_local && duck.status === 'offline' && (
-                        <button
-                          onClick={() => startLocalDuck(duck.duck_id)}
-                          className="px-2 py-1 rounded-lg text-xs font-medium"
-                          style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
-                        >
-                          启动
-                        </button>
+                        <Button variant="outline" size="sm" onClick={() => startLocalDuck(duck.duck_id)}>启动</Button>
                       )}
                       <IconButton
                         variant="ghost"
@@ -195,14 +155,15 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                         <Trash2 size={13} />
                       </IconButton>
                     </div>
-                  </div>
+                  </Card>
                 ))
               )}
             </div>
           )}
+          </TabsContent>
 
-          {/* ===== Chow Duck Tab ===== */}
-          {tab === 'chow' && !loading && (
+          <TabsContent value="chow" className="mt-0">
+          {!loading && (
             <div className="space-y-5">
               {/* 动画区域（强制至少 3s 吃鸭子，给后端创建配置争取时间） */}
               <ChowDuckAnimation
@@ -264,7 +225,7 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                       className="flex items-start gap-2 p-3 rounded-xl text-left transition-all"
                       style={{
                         background: selectedTemplate === t.duck_type ? 'var(--accent-dim)' : 'var(--bg-recessed)',
-                        border: `1px solid ${selectedTemplate === t.duck_type ? 'var(--accent)' : 'var(--border-subtle)'}`,
+                        border: `1px solid ${selectedTemplate === t.duck_type ? 'var(--accent)' : 'var(--border)'}`,
                       }}
                     >
                       <span className="text-lg flex-shrink-0">{t.icon}</span>
@@ -277,58 +238,25 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                 </div>
               </div>
 
-              {/* Egg 名称 */}
-              <div>
-                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Egg 名称（可选）</label>
-                <input
-                  type="text"
-                  value={eggName}
-                  onChange={(e) => setEggName(e.target.value)}
-                  placeholder="留空使用默认名称"
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{
-                    background: 'var(--bg-recessed)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
+              <div className="space-y-2">
+                <Label>Egg 名称（可选）</Label>
+                <Input value={eggName} onChange={(e) => setEggName(e.target.value)} placeholder="留空使用默认名称" />
               </div>
 
-              {/* 操作按钮 */}
               <div className="flex gap-3">
-                <button
-                  onClick={handleChowDuck}
-                  disabled={isChowing}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{
-                    background: isChowing ? 'var(--bg-recessed)' : 'var(--gradient-accent)',
-                    color: isChowing ? 'var(--text-tertiary)' : '#fff',
-                    cursor: isChowing ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  <Egg size={15} />
+                <Button variant="primary" className="flex-1" onClick={handleChowDuck} disabled={isChowing} icon={<Egg size={15} />}>
                   {(isChowing && chowMode === 'egg') ? '正在吃鸭子...' : '🦆 Chow Duck → 生成 Egg'}
-                </button>
-                <button
-                  onClick={handleChowLocalDuck}
-                  disabled={isChowing}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{
-                    background: 'var(--bg-recessed)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-primary)',
-                    cursor: isChowing ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  <Plus size={14} />
+                </Button>
+                <Button variant="outline" onClick={handleChowLocalDuck} disabled={isChowing} icon={<Plus size={14} />}>
                   {isChowing && chowMode === 'local' ? '正在吃鸭子...' : '本地 Duck'}
-                </button>
+                </Button>
               </div>
             </div>
           )}
+          </TabsContent>
 
-          {/* ===== Eggs Tab ===== */}
-          {tab === 'eggs' && !loading && (
+          <TabsContent value="eggs" className="mt-0">
+          {!loading && (
             <div className="space-y-3">
               {eggs.length === 0 ? (
                 <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
@@ -338,11 +266,7 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                 </div>
               ) : (
                 eggs.map((egg: EggRecord) => (
-                  <div
-                    key={egg.egg_id}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
-                  >
+                  <Card key={egg.egg_id} padding="md" className="flex items-center gap-3">
                     <span className="text-xl flex-shrink-0">🥚</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -368,21 +292,22 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
                         <Trash2 size={13} />
                       </IconButton>
                     </div>
-                  </div>
+                  </Card>
                 ))
               )}
             </div>
           )}
+          </TabsContent>
         </div>
+        </Tabs>
 
-        {/* Footer stats */}
         {stats && (
-          <div className="flex items-center justify-between px-5 py-3 text-[11px] flex-shrink-0" style={{ color: 'var(--text-quaternary)', borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="flex items-center justify-between px-5 py-3 text-[11px] border-t border-[var(--border)] text-[var(--muted-foreground)]">
             <span>总计 {stats.total} 个 Duck · {stats.total_completed} 任务完成</span>
             <span>{Object.entries(stats.by_type).map(([k, v]) => `${k}: ${v}`).join(' · ')}</span>
           </div>
         )}
-      </motion.div>
+      </DialogContent>
 
       {/* LLM 配置弹窗 */}
       {llmConfigDuck && (
@@ -395,7 +320,7 @@ const DuckManagement: React.FC<Props> = ({ onClose, isMobile }) => {
           onClose={() => setLlmConfigDuck(null)}
         />
       )}
-    </div>
+    </Dialog>
   );
 };
 
@@ -410,70 +335,33 @@ function DuckLLMConfigModal({ duck, onSave, onClose }: {
   const [saving, setSaving] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
-      <div
-        className="rounded-xl p-4 w-[360px]"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>分身 LLM 配置</h3>
-          <button onClick={onClose} className="text-xs" style={{ color: 'var(--text-secondary)' }}>关闭</button>
-        </div>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>
-          为 {duck.name} 配置独立 LLM，使分身更有效运用大模型完成专项任务。
-        </p>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent showCloseButton className="w-[360px]">
+        <DialogHeader>
+          <DialogTitle>分身 LLM 配置</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs mb-4 text-[var(--muted-foreground)]">为 {duck.name} 配置独立 LLM，使分身更有效运用大模型完成专项任务。</p>
         <div className="space-y-3">
-          <div>
-            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-xxx"
-              className="w-full px-3 py-2 rounded-lg text-xs"
-              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
-            />
+          <div className="space-y-2">
+            <Label>API Key</Label>
+            <Input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-xxx" />
           </div>
-          <div>
-            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Base URL</label>
-            <input
-              type="text"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="https://api.example.com/v1"
-              className="w-full px-3 py-2 rounded-lg text-xs"
-              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
-            />
+          <div className="space-y-2">
+            <Label>Base URL</Label>
+            <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://api.example.com/v1" />
           </div>
-          <div>
-            <label className="text-[11px] font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>模型名称</label>
-            <input
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="gpt-4o / deepseek-chat"
-              className="w-full px-3 py-2 rounded-lg text-xs"
-              style={{ background: 'var(--bg-recessed)', border: '1px solid var(--border-subtle)' }}
-            />
+          <div className="space-y-2">
+            <Label>模型名称</Label>
+            <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="gpt-4o / deepseek-chat" />
           </div>
         </div>
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={async () => {
-              setSaving(true);
-              await onSave(apiKey, baseUrl, model);
-              setSaving(false);
-            }}
-            disabled={saving}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: 'var(--accent)', color: '#fff' }}
-          >
+        <DialogFooter>
+          <Button variant="primary" onClick={async () => { setSaving(true); await onSave(apiKey, baseUrl, model); setSaving(false); }} disabled={saving}>
             {saving ? '保存中…' : '保存'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
