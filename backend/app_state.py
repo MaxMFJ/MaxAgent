@@ -52,7 +52,7 @@ CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
 # v3.1 Feature flags（环境变量可覆盖）
 USE_SUMMARIZED_CONTEXT: bool = os.environ.get("MACAGENT_USE_SUMMARIZED_CONTEXT", "true").lower() == "true"
 GOAL_RESTATE_EVERY_N: int = max(1, int(os.environ.get("MACAGENT_GOAL_RESTATE_EVERY_N", "6")))
-ENABLE_PLAN_AND_EXECUTE: bool = os.environ.get("MACAGENT_ENABLE_PLAN_AND_EXECUTE", "false").lower() == "true"
+ENABLE_PLAN_AND_EXECUTE: bool = os.environ.get("MACAGENT_ENABLE_PLAN_AND_EXECUTE", "true").lower() == "true"
 ENABLE_MID_LOOP_REFLECTION: bool = os.environ.get("MACAGENT_ENABLE_MID_LOOP_REFLECTION", "true").lower() == "true"
 MID_LOOP_REFLECTION_EVERY_N: int = max(1, int(os.environ.get("MACAGENT_MID_LOOP_REFLECTION_EVERY_N", "5")))
 # Escalation: 连续 N 次“相似失败”触发 FORCE_SWITCH / SKILL_FALLBACK；相似度阈值 0.0~1.0
@@ -432,3 +432,17 @@ def get_reflect_llm():
 def set_reflect_llm(client):
     global reflect_llm
     reflect_llm = client
+
+
+# ============== Unified Runtime ==============
+
+_unified_runtime = None
+
+
+def get_unified_runtime():
+    return _unified_runtime
+
+
+def set_unified_runtime(runtime):
+    global _unified_runtime
+    _unified_runtime = runtime

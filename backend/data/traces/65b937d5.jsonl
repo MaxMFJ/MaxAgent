@@ -1,0 +1,14 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 3683, "success": true, "ts": 1773221832.855627}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": false, "error": "File not found: /Users/lzz/Desktop/game_analysis.json", "ts": 1773221833.774549}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 3892, "success": true, "ts": 1773221839.6709828}
+{"iteration": 2, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773221840.267723}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 10349, "success": true, "ts": 1773221852.620959}
+{"iteration": 3, "type": "tool", "action_type": "run_shell", "latency_ms": 407, "success": true, "error": null, "ts": 1773221853.588798}
+{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 16098, "success": true, "ts": 1773221871.691872}
+{"iteration": 4, "type": "tool", "action_type": "run_shell", "latency_ms": 660, "success": true, "error": null, "ts": 1773221872.921995}
+{"iteration": 5, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 3666, "success": true, "ts": 1773221878.591999}
+{"iteration": 5, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": false, "error": "File not found: /Users/lzz/.Trash/game_analysis.json", "ts": 1773221879.177851}
+{"iteration": 6, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5062, "success": true, "ts": 1773221908.271112}
+{"iteration": 6, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773221908.819883}
+{"iteration": 7, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 2580, "success": true, "ts": 1773221913.404435}
+{"iteration": 7, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773221913.977472}

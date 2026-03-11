@@ -245,6 +245,16 @@ async def lifespan(app: FastAPI):
     )
     set_autonomous_agent(autonomous)
 
+    # Unified Agent Runtime: 统一 Chat + Autonomous 的执行入口
+    try:
+        from agent.unified_runtime import init_unified_runtime
+        from app_state import set_unified_runtime, get_chat_runner
+        chat_runner = get_chat_runner()
+        unified_rt = init_unified_runtime(chat_runner=chat_runner, auto_agent=autonomous)
+        set_unified_runtime(unified_rt)
+    except Exception as e:
+        logger.warning(f"Unified runtime init skipped: {e}")
+
     # 任务持久化管理器初始化：加载上次中断的任务
     try:
         from task_persistence import get_persistence_manager

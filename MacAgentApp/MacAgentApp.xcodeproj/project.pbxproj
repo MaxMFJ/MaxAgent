@@ -7,14 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2D5721C55EFA396606272D0F /* PortConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6116C58605B732EAC12A9C /* PortConfiguration.swift */; };
 		2FA4151906D65558C507569B /* PortSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F634291F3212FD31A180945 /* PortSettingsView.swift */; };
-		4899F0E9F0C96B7CAE6CBBCB /* PortSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */; };
+		RC00000100000000RECSRV01 /* RecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RC00000200000000RECSRV01 /* RecordingService.swift */; };
+		RC00000100000000RECMGV01 /* RecordingManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RC00000200000000RECMGV01 /* RecordingManagementView.swift */; };
+		HD00000100000000HDSRV01 /* HumanDemoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HD00000200000000HDSRV01 /* HumanDemoService.swift */; };
+		HD00000100000000HDVIEW01 /* HumanDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HD00000200000000HDVIEW01 /* HumanDemoView.swift */; };
 		4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABE82F4AA642004A5BDD /* ProcessManager.swift */; };
 		4C1EABEB2F4AA658004A5BDD /* ServiceManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1EABEA2F4AA658004A5BDD /* ServiceManagerView.swift */; };
 		4DABE95099DB64A612AA7CF9 /* HITLOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */; };
 		512B129F2AC9980B6FFC7CF4 /* Pods_MacAgentApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */; };
 		899E06CE2CC66AEFFABA4A57 /* PortConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */; };
+		/* RecordingService + RecordingManagementView added above */
 		8CDA84FC8DE48AE55C228925 /* RollbackPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3243E91C4462CBDBC2A01F50 /* RollbackPanelView.swift */; };
 		9944340EE98DAFE8EDA86B0B /* AuditLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF865104315098FC6C97C17F /* AuditLogView.swift */; };
 		A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002234567890ABCDEF1 /* MacAgentApp.swift */; };
@@ -144,13 +147,14 @@
 		B1C1BE120200000000000001 /* CyberGridBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberGridBackground.swift; sourceTree = "<group>"; };
 		B1FADE0200000000000001A1 /* CyberGrid.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CyberGrid.metal; sourceTree = "<group>"; };
 		BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortConfiguration.swift; sourceTree = "<group>"; };
-		BD6116C58605B732EAC12A9C /* PortConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortConfiguration.swift; sourceTree = "<group>"; };
+		RC00000200000000RECSRV01 /* RecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingService.swift; sourceTree = "<group>"; };
+		RC00000200000000RECMGV01 /* RecordingManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingManagementView.swift; sourceTree = "<group>"; };
 		C1000002234567890ABCDEF1 /* TunnelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelView.swift; sourceTree = "<group>"; };
 		C1000004234567890ABCDEF1 /* TunnelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelManager.swift; sourceTree = "<group>"; };
 		CE6A646519309662C764B1FE /* Pods_MacAgentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MacAgentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1000002234567890ABCDEF1 /* SystemMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageView.swift; sourceTree = "<group>"; };
 		D229029A59A6E497F6E5D829 /* MCPSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MCPSettingsView.swift; sourceTree = "<group>"; };
-		DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortSettingsView.swift; sourceTree = "<group>"; };
+
 		DDA100020000000000DUCK01 /* DuckSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuckSettingsView.swift; sourceTree = "<group>"; };
 		E1000002234567890ABCDEF1 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		E1000004234567890ABCDEF1 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
@@ -170,6 +174,8 @@
 		F100011334567890ABCDEF3 /* TracesDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracesDashboardView.swift; sourceTree = "<group>"; };
 		F1000117234567890ABCDEF4 /* AgentLiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLiveView.swift; sourceTree = "<group>"; };
 		F2000002234567890ABCDEF1 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
+		HD00000200000000HDSRV01 /* HumanDemoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDemoService.swift; sourceTree = "<group>"; };
+		HD00000200000000HDVIEW01 /* HumanDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDemoView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -268,7 +274,8 @@
 				6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */,
 				DDA100020000000000DUCK01 /* DuckSettingsView.swift */,
 				6F634291F3212FD31A180945 /* PortSettingsView.swift */,
-				DBD7A38628B7F0D6E7B3A98B /* PortSettingsView.swift */,
+				RC00000200000000RECMGV01 /* RecordingManagementView.swift */,
+				HD00000200000000HDVIEW01 /* HumanDemoView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -300,7 +307,8 @@
 				AB00000200000000IPCSR01 /* IPCService.swift */,
 				AB00000200000000VIS00001 /* VisionFallbackService.swift */,
 				BD1CE4721D2D0BF84AE2BCE2 /* PortConfiguration.swift */,
-				BD6116C58605B732EAC12A9C /* PortConfiguration.swift */,
+				RC00000200000000RECSRV01 /* RecordingService.swift */,
+				HD00000200000000HDSRV01 /* HumanDemoService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -651,8 +659,10 @@
 				AB00000100000000IPCSR01 /* IPCService.swift in Sources */,
 				899E06CE2CC66AEFFABA4A57 /* PortConfiguration.swift in Sources */,
 				2FA4151906D65558C507569B /* PortSettingsView.swift in Sources */,
-				2D5721C55EFA396606272D0F /* PortConfiguration.swift in Sources */,
-				4899F0E9F0C96B7CAE6CBBCB /* PortSettingsView.swift in Sources */,
+				RC00000100000000RECSRV01 /* RecordingService.swift in Sources */,
+				RC00000100000000RECMGV01 /* RecordingManagementView.swift in Sources */,
+				HD00000100000000HDSRV01 /* HumanDemoService.swift in Sources */,
+				HD00000100000000HDVIEW01 /* HumanDemoView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

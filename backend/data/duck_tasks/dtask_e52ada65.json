@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_e52ada65",
+  "description": "爬虫分析当前市面上流行的文字类游戏，包括文字冒险、解谜、选择题、角色扮演、剧情分支等类型。分析每种类型的机制、用户体验、互动方式。要求：1)统计至少5-10种文字游戏类型及其特点；2)提供游戏玩法分析（如何与LLM互动）；3)生成json格式的分析报告，保存到 ~/Desktop/game_analysis.json\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "general",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 1800,
+  "assigned_duck_id": "local_fb95bc89",
+  "parent_task_id": null,
+  "output": "✅ 文字类游戏市场分析任务完成\n\n【产物清单】\n📄 报告位置: /Users/lzz/Desktop/game_analysis.json\n\n【分析成果】\n✓ 游戏类型统计: 10种（超出要求的5-10种）\n  1. 文字冒险游戏 (Text Adventure)\n  2. 文字解谜游戏 (Text Puzzle/Escape)\n  3. 选择题冒险游戏 (Choice-Driven Adventure)\n  4. 角色扮演型文字游戏 (Text-based RPG)\n  5. 剧情分支视觉小说 (Visual Novel/ADV)\n  6. 交互式小说/数字故事 (Interactive Fiction)\n  7. 对话式故事游戏 (Conversational Storytelling)\n  8. 解读推理型文字游戏 (Inference/Detective Story)\n  9. 社交模拟文字游戏 (Social Simulation)\n  10. 混合型文字游戏 (Hybrid Genre)\n\n✓ 每种类型包含以下完整分析维度：\n  • 核心机制 (mechanics)\n  • 用户体验评估 (immersion、learning_curve、replayability、engagement_duration)\n  • LLM互动方式 (interactive_mode、mechanism、example_flow)\n  • 代表作品及市场状态\n\n✓ 数据来源：Steam排行榜、App Store、Bilibili、知乎、学术论文等权威平台\n\n【关键成果】\n📊 报告总数据量：~7200字+\n🎮 LLM集成方案：每种类型都明确了与ChatGPT/Claude等大模型的集成模式\n🎯 可直接用于：游戏设计、LLM应用开发、产品分析\n\n✨ 任务完全符合要求，报告已保存至指定路径。",
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773218982.5028548,
+  "assigned_at": 1773218982.503366,
+  "started_at": null,
+  "completed_at": 1773219164.901644,
+  "last_activity": 1773219164.899512
+}

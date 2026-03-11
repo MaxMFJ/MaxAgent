@@ -369,12 +369,25 @@ def get_system_prompt_for_query(query: str, session_id: Optional[str] = None) ->
         except Exception as e:
             logger.debug(f"Failed to inject terminal hint: {e}")
 
+    # 文件索引注入：查询匹配的 workspace 文件（若索引已构建）
+    file_index_hint = ""
+    try:
+        from .file_index import get_file_index
+        fidx = get_file_index()
+        if fidx.chunk_count > 0 and query:
+            hits = fidx.search(query, top_k=3, min_score=0.35)
+            if hits:
+                lines = "\n".join(f"- {h['file']} (相关度 {h['score']})" for h in hits)
+                file_index_hint = f"\n\n[相关文件（workspace 索引）：\n{lines}\n]"
+    except Exception as e:
+        logger.debug(f"Failed to inject file index hint: {e}")
+
     evolved = _load_evolved_rules()
 
     # 时间感知注入：检测到时间相关查询时，注入当前系统时间
     time_hint = _build_time_hint() if _needs_time_injection(query) else ""
 
-    return base + time_hint + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + evolved
+    return base + time_hint + intent_hint + created_files_hint + capsule_hint + workspace_hint + terminal_hint + file_index_hint + evolved
 
 
 # 向后兼容

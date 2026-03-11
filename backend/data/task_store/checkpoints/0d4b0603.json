@@ -1,0 +1,13 @@
+{
+  "task_id": "0d4b0603",
+  "session_id": "1D930BCF-BF1E-4671-8239-BA2D24B8F37F",
+  "task_description": "在企业微信 给 文件传输助手 发送 你好",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 50,
+  "action_checkpoints": [],
+  "created_at": "2026-03-11T16:22:32.158413",
+  "updated_at": "2026-03-11T16:26:32.610037",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

@@ -62,3 +62,37 @@ async def run_post_hooks(name: str, args: dict, result: ToolResult) -> ToolResul
         except Exception as e:
             logger.warning("Tool post-hook %s error: %s", getattr(h, "__name__", h), e)
     return current
+
+
+# ── 内置钩子：操作录制 ──────────────────────────────────────────────────
+# 所有工具操作自动记录到 ActionRecorder（若正在录制）
+
+
+def _recording_post_hook(name: str, args: dict, result: ToolResult):
+    """将工具的成功操作自动写入当前录制"""
+    if not result.success:
+        return None
+    try:
+        from agent.action_recorder import get_action_recorder
+
+        recorder = get_action_recorder()
+        active_sessions = list(recorder._active.keys())
+        if not active_sessions:
+            return None
+        for sid in active_sessions:
+            action = args.get("action", name)
+            params = {k: v for k, v in args.items() if k != "action"}
+            recorder.record_action(
+                session_id=sid,
+                tool=name,
+                action=action,
+                parameters=params,
+            )
+            logger.info("[Recording] Captured %s/%s for session %s", name, action, sid)
+    except Exception as e:
+        logger.warning("Recording hook error: %s", e)
+    return None
+
+
+# 注册内置录制钩子
+register_post_hook(_recording_post_hook)

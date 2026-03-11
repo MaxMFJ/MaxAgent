@@ -283,6 +283,7 @@ if ! command -v cliclick >/dev/null 2>&1; then
     fi
 fi
 
+
 # 自动安装 Node.js（MCP stdio 服务器依赖 npx/node）
 if ! command -v npx >/dev/null 2>&1; then
     if command -v brew >/dev/null 2>&1; then

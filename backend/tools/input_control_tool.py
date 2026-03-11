@@ -475,6 +475,13 @@ class InputControlTool(BaseTool):
         key = kwargs.get("key", "")
         modifiers = kwargs.get("modifiers", [])
 
+        # 兼容 keys 数组格式: ["cmd", "v"] → modifiers=["cmd"], key="v"
+        if not key:
+            keys = kwargs.get("keys", [])
+            if keys:
+                key = keys[-1]  # 最后一个是主键
+                modifiers = keys[:-1]  # 前面的是修饰键
+
         if not key:
             return ToolResult(success=False, error="需要提供按键")
 

@@ -51,12 +51,33 @@ class WorkspaceContext:
         if session_id not in self._by_session:
             self._by_session[session_id] = WorkspaceState(session_id=session_id)
         state = self._by_session[session_id]
+        old_cwd = state.cwd
         if cwd is not None:
             state.cwd = os.path.abspath(os.path.expanduser(cwd))
         if open_files is not None:
             state.open_files = [os.path.abspath(os.path.expanduser(p)) for p in open_files]
         state.last_updated = time.time()
         logger.debug(f"Workspace updated: session={session_id}, cwd={state.cwd}, files={len(state.open_files)}")
+
+        # 工作目录变更时，后台触发文件索引扫描
+        if state.cwd and state.cwd != old_cwd:
+            self._trigger_file_index(state.cwd)
+
+    @staticmethod
+    def _trigger_file_index(cwd: str) -> None:
+        """后台线程触发文件索引扫描 + 构建"""
+        import threading
+
+        def _scan():
+            try:
+                from .file_index import get_file_index
+                idx = get_file_index()
+                idx.scan_workspace(cwd)
+                idx.build_index()
+            except Exception as e:
+                logger.debug(f"File index trigger failed: {e}")
+
+        threading.Thread(target=_scan, daemon=True).start()
 
     def get(self, session_id: str) -> Optional[WorkspaceState]:
         """获取会话的 workspace 状态"""

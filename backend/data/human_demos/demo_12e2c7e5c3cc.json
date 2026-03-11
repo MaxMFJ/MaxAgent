@@ -1,0 +1,513 @@
+{
+  "id": "demo_12e2c7e5c3cc",
+  "task_description": "企业微信发送信息",
+  "events": [
+    {
+      "type": "mouse_click",
+      "timestamp": 1773218581.683975,
+      "data": {
+        "ui_role_description": "应用程序的程序坞项目",
+        "raw_x": 969,
+        "ui_description": "",
+        "raw_y": 1042,
+        "ui_label": "",
+        "app_name": "Chow Duck",
+        "button": "left",
+        "ui_title": "企业微信",
+        "element_path": "AXApplication('Dock') > AXList > AXDockItem('企业微信')",
+        "click_count": 1,
+        "ui_value": "",
+        "ui_role": "AXDockItem",
+        "ui_subrole": "AXApplicationDockItem",
+        "ui_identifier": ""
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218584.1216252,
+      "data": {
+        "modifiers": [
+          "cmd"
+        ],
+        "text": "f",
+        "key_code": 3
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218586.9323149,
+      "data": {
+        "key_code": 13,
+        "text": "w",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.0558012,
+      "data": {
+        "text": "e",
+        "key_code": 14,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.120121,
+      "data": {
+        "key_code": 45,
+        "text": "n",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.3374841,
+      "data": {
+        "text": "j",
+        "key_code": 38,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.407269,
+      "data": {
+        "key_code": 34,
+        "text": "i",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.454037,
+      "data": {
+        "text": "a",
+        "key_code": 0,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.535557,
+      "data": {
+        "key_code": 45,
+        "text": "n",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.657395,
+      "data": {
+        "text": " ",
+        "key_code": 49,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218587.960641,
+      "data": {
+        "text": "c",
+        "key_code": 8,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.09375,
+      "data": {
+        "key_code": 4,
+        "text": "h",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.1625018,
+      "data": {
+        "text": "u",
+        "key_code": 32,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.187232,
+      "data": {
+        "modifiers": [],
+        "key_code": 0,
+        "text": "a"
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.273095,
+      "data": {
+        "text": "n",
+        "key_code": 45,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.3772569,
+      "data": {
+        "modifiers": [],
+        "key_code": 1,
+        "text": "s"
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.453106,
+      "data": {
+        "text": "h",
+        "key_code": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.506724,
+      "data": {
+        "modifiers": [],
+        "key_code": 32,
+        "text": "u"
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218588.593224,
+      "data": {
+        "text": " ",
+        "key_code": 49,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.0865312,
+      "data": {
+        "text": "z",
+        "key_code": 6,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.14655,
+      "data": {
+        "modifiers": [],
+        "key_code": 4,
+        "text": "h"
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.176924,
+      "data": {
+        "text": "u",
+        "key_code": 32,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.401782,
+      "data": {
+        "modifiers": [],
+        "key_code": 1,
+        "text": "s"
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.496896,
+      "data": {
+        "text": "h",
+        "key_code": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.716084,
+      "data": {
+        "modifiers": [],
+        "text": "o",
+        "key_code": 31
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218589.7882628,
+      "data": {
+        "modifiers": [],
+        "text": "u",
+        "key_code": 32
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218590.0534542,
+      "data": {
+        "text": " ",
+        "key_code": 49,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218591.186931,
+      "data": {
+        "text": "\r",
+        "key_code": 36,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218592.483986,
+      "data": {
+        "modifiers": [],
+        "text": "n",
+        "key_code": 45
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218592.553535,
+      "data": {
+        "key_code": 34,
+        "text": "i",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218592.8284218,
+      "data": {
+        "key_code": 4,
+        "text": "h",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218592.9515069,
+      "data": {
+        "modifiers": [],
+        "text": "a",
+        "key_code": 0
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218593.032466,
+      "data": {
+        "key_code": 31,
+        "text": "o",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218593.162242,
+      "data": {
+        "modifiers": [],
+        "text": " ",
+        "key_code": 49
+      }
+    },
+    {
+      "type": "key_press",
+      "timestamp": 1773218594.871166,
+      "data": {
+        "modifiers": [],
+        "key_code": 36,
+        "text": "\r"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "step_0",
+      "action_type": "click",
+      "description": "在 Chow Duck 中 点击 AXDockItem('企业微信')",
+      "target_selector": {
+        "app": "Chow Duck",
+        "role": "AXDockItem",
+        "title": "企业微信",
+        "label": "",
+        "subrole": "AXApplicationDockItem",
+        "identifier": "",
+        "element_path": "AXApplication('Dock') > AXList > AXDockItem('企业微信')",
+        "raw_x": 969,
+        "raw_y": 1042
+      },
+      "value": null,
+      "screenshot_before": "",
+      "screenshot_after": "",
+      "timestamp": 1773218581.683975,
+      "duration_ms": 0,
+      "raw_event_indices": [
+        0
+      ]
+    },
+    {
+      "id": "step_1",
+      "action_type": "shortcut",
+      "description": "按键 cmd+3",
+      "target_selector": {},
+      "value": "cmd+3",
+      "screenshot_before": "",
+      "screenshot_after": "",
+      "timestamp": 1773218584.1216252,
+      "duration_ms": 0,
+      "raw_event_indices": [
+        1
+      ]
+    },
+    {
+      "id": "step_2",
+      "action_type": "type",
+      "description": "输入文本 \"wenjian chuanshu zhushou \rnihao \r\"",
+      "target_selector": {},
+      "value": "wenjian chuanshu zhushou \rnihao \r",
+      "screenshot_before": "",
+      "screenshot_after": "",
+      "timestamp": 1773218586.9323149,
+      "duration_ms": 0,
+      "raw_event_indices": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ]
+    }
+  ],
+  "created_at": 1773218579.960268,
+  "finished_at": 1773218597.118407,
+  "duration_seconds": 17.15813899040222,
+  "status": "approved",
+  "learning_result": {
+    "inferred_goal": "打开企业微信应用，使用快捷键进入消息编辑界面，输入并发送消息",
+    "summary": "用户通过点击 Dock 中的企业微信、按快捷键 cmd+3 唤起消息窗口，然后输入文本内容以发送消息。",
+    "capsule_json": {
+      "id": "demo_wecom_send_message",
+      "description": "打开企业微信应用，使用快捷键唤起消息界面，输入并发送消息到指定对话",
+      "inputs": {
+        "message": {
+          "type": "string",
+          "description": "要发送的消息内容，支持纯文本输入"
+        }
+      },
+      "outputs": {
+        "result": {
+          "type": "object",
+          "description": "执行结果，包含是否成功发送消息"
+        }
+      },
+      "procedure": [
+        {
+          "id": "step_1",
+          "type": "tool",
+          "tool": "gui_automation",
+          "args": {
+            "action": "click_element",
+            "app_name": "Dock",
+            "element_name": "企业微信"
+          },
+          "description": "点击 Dock 中的企业微信应用图标打开应用"
+        },
+        {
+          "id": "step_2",
+          "type": "tool",
+          "tool": "input_control",
+          "args": {
+            "action": "keyboard_shortcut",
+            "keys": [
+              "cmd",
+              "3"
+            ]
+          },
+          "description": "按快捷键 cmd+3 唤起企业微信的新消息/搜索功能"
+        },
+        {
+          "id": "step_3",
+          "type": "tool",
+          "tool": "gui_automation",
+          "args": {
+            "action": "type_text",
+            "app_name": "企业微信",
+            "text": "{{input.message}}"
+          },
+          "description": "在消息输入框中输入用户指定的消息内容"
+        },
+        {
+          "id": "step_4",
+          "type": "tool",
+          "tool": "input_control",
+          "args": {
+            "action": "keyboard_key",
+            "key": "return"
+          },
+          "description": "按 Enter 键发送消息"
+        }
+      ],
+      "task_type": "gui_task",
+      "tags": [
+        "企业微信",
+        "消息发送",
+        "快捷键",
+        "文本输入"
+      ],
+      "capability": [
+        "应用启动",
+        "快捷键触发",
+        "文本输入",
+        "消息发送"
+      ]
+    },
+    "capsule_id": "demo_wecom_send_message",
+    "confidence": 0.82,
+    "suggestions": [
+      "建议在输入后添加发送步骤（按 Enter 或点击发送按钮），以确保消息真正被发出",
+      "可以增加等待时间确保应用完全启动后再执行快捷键",
+      "如果 cmd+3 的具体用途需要明确，建议补充截图说明该快捷键的实际效果"
+    ]
+  },
+  "generated_capsule_id": "demo_wecom_send_message",
+  "tags": []
+}

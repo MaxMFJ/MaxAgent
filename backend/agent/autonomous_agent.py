@@ -32,6 +32,18 @@ from .prompt_loader import get_project_context_for_prompt
 from .exec_phases import PhaseTracker, infer_phase, auto_verify, build_verify_message, ExecutionPhase
 from tools.router import execute_tool
 
+# v3.5: 新架构模块
+from .observation_loop import ObservationLoop, get_observation_loop
+from .action_confidence import ActionConfidenceModel, get_confidence_model
+from .context_compressor import ContextCompressor, get_context_compressor
+from .environment_state import EnvironmentStateManager
+from .error_taxonomy import classify_error, ErrorTracker
+from .action_result_schema import ActionOutcome, ActionResult as StructuredActionResult
+from .execution_controller import ExecutionController
+from .verification_layer import EvidenceCollector, GoalCompletionValidator
+from .runtime_intelligence import RuntimeIntelligence
+from .goal_tracker import GoalProgressTracker
+
 # 任务持久化
 try:
     from task_persistence import get_persistence_manager, PersistentTaskStatus
@@ -244,6 +256,17 @@ class AutonomousAgent:
         
         self._action_handlers: Dict[ActionType, callable] = {}
         self._register_default_handlers()
+        
+        # v3.5: 新架构模块
+        self._observation_loop: ObservationLoop = get_observation_loop()
+        self._confidence_model: ActionConfidenceModel = get_confidence_model()
+        self._context_compressor: ContextCompressor = get_context_compressor()
+        self._error_tracker: ErrorTracker = ErrorTracker()
+        self._execution_controller: ExecutionController = ExecutionController()
+        self._evidence_collector: EvidenceCollector = EvidenceCollector()
+        self._goal_validator: GoalCompletionValidator = GoalCompletionValidator(self._evidence_collector)
+        self._runtime_intel: RuntimeIntelligence = RuntimeIntelligence()
+        self._goal_tracker: GoalProgressTracker = GoalProgressTracker()
     
     def _register_default_handlers(self):
         """Register default action handlers"""
@@ -487,6 +510,93 @@ class AutonomousAgent:
             return ESCALATION_FORCE_SWITCH
         return ESCALATION_NORMAL
 
+    # ------------------------------------------------------------------
+    # v3.6  Action dedup — 对比当前动作与最近成功步骤，防止重复执行
+    # ------------------------------------------------------------------
+    _DEDUP_SKIP_TYPES = frozenset({
+        ActionType.THINK,
+        ActionType.READ_FILE,
+        ActionType.LIST_DIRECTORY,
+        ActionType.GET_SYSTEM_INFO,
+        ActionType.CLIPBOARD_READ,
+    })
+
+    def _check_action_dedup(self, action: AgentAction, context: TaskContext) -> bool:
+        """
+        Return True if *action* duplicates a recently **succeeded** action.
+
+        Only write / execute / delegate actions are checked.
+        Read-only actions (think, read_file, screenshot …) are always allowed.
+        """
+        if action.action_type in self._DEDUP_SKIP_TYPES:
+            return False
+
+        # call_tool: screenshot is read-only
+        if action.action_type == ActionType.CALL_TOOL:
+            tool = (action.params or {}).get("tool_name", "")
+            if tool in ("screenshot",):
+                return False
+
+        # 只对比最近 12 条 **成功** 的日志
+        recent_success = [
+            log for log in context.action_logs[-20:]
+            if log.result.success
+        ][-12:]
+        if not recent_success:
+            return False
+
+        cur_sig = self._action_signature(action)
+
+        for log in recent_success:
+            if self._action_signature_from_log(log) == cur_sig:
+                return True
+        return False
+
+    @staticmethod
+    def _action_signature(action: AgentAction) -> str:
+        """Build a comparable signature string for an action."""
+        atype = action.action_type.value
+        p = action.params or {}
+
+        if action.action_type == ActionType.WRITE_FILE:
+            return f"write_file:{p.get('path', '')}"
+
+        if action.action_type == ActionType.CREATE_AND_RUN_SCRIPT:
+            return f"script:{p.get('filename', '')}:{p.get('language', '')}"
+
+        if action.action_type == ActionType.RUN_SHELL:
+            # 只取命令前 120 字符做签名（避免参数微调绕过）
+            cmd = (p.get("command") or "")[:120]
+            return f"shell:{cmd}"
+
+        if action.action_type == ActionType.DELEGATE_DUCK:
+            return f"duck:{p.get('duck_type', '')}:{(p.get('description') or '')[:80]}"
+
+        if action.action_type == ActionType.CALL_TOOL:
+            tool = p.get("tool_name", "")
+            args = p.get("args", {})
+            act = args.get("action", "")
+            # gui_automation / input_control: 用 action + element_name 做签名
+            elem = args.get("element_name", "")
+            text = (args.get("text") or args.get("content") or "")[:60]
+            return f"tool:{tool}:{act}:{elem}:{text}"
+
+        if action.action_type in (ActionType.OPEN_APP, ActionType.CLOSE_APP):
+            return f"{atype}:{p.get('app_name', '')}"
+
+        if action.action_type == ActionType.CLIPBOARD_WRITE:
+            return f"clip_w:{(p.get('content') or '')[:80]}"
+
+        if action.action_type == ActionType.FINISH:
+            return "finish"
+
+        # fallback
+        return f"{atype}:{str(p)[:120]}"
+
+    @classmethod
+    def _action_signature_from_log(cls, log) -> str:
+        return cls._action_signature(log.action)
+
     def _build_escalation_prompt(
         self, level: int, context: TaskContext, skill_guidance: str
     ) -> str:
@@ -650,9 +760,24 @@ class AutonomousAgent:
             if capsules:
                 parts.append("【匹配技能】以下技能与任务相关，可用 call_tool 执行:")
                 for cap in capsules[:3]:
+                    # 从 capsule inputs schema 提取参数信息
+                    inputs_hint = ""
+                    cap_inputs = getattr(cap, 'inputs', None) or {}
+                    if isinstance(cap_inputs, dict) and cap_inputs:
+                        param_parts = []
+                        for key, schema in cap_inputs.items():
+                            desc = schema.get("description", "") if isinstance(schema, dict) else ""
+                            default = schema.get("default") if isinstance(schema, dict) else None
+                            if default is not None:
+                                param_parts.append(f'"{key}": "（{desc}，默认:{default}）"')
+                            else:
+                                param_parts.append(f'"{key}": "（{desc}）"')
+                        inputs_hint = "{" + ", ".join(param_parts) + "}"
+                    else:
+                        inputs_hint = '{"task": "..."}'
                     parts.append(
                         f"  - {cap.id}: {cap.description[:60]}… → "
-                        f"call_tool(tool_name=\"capsule\", args={{\"action\":\"execute\", \"capsule_id\":\"{cap.id}\", \"inputs\":{{\"task\":\"...\"}}}})"
+                        f"call_tool(tool_name=\"capsule\", args={{\"action\":\"execute\", \"capsule_id\":\"{cap.id}\", \"inputs\":{inputs_hint}}})"
                     )
         except Exception as e:
             logger.debug(f"Capsule scan for task guidance: {e}")
@@ -824,6 +949,16 @@ class AutonomousAgent:
         self._mid_reflection_hint: str = ""  # v3.1 中途反思结果，注入下一轮 prompt
         self._current_plan: List[str] = []  # v3.1 Plan-and-Execute 子任务列表
         self._current_plan_index: int = 0
+
+        # v3.5: 重置新架构模块状态
+        self._observation_loop.reset()
+        self._error_tracker.reset()
+        self._confidence_model.reset()
+        self._execution_controller.reset()
+        self._evidence_collector = EvidenceCollector()
+        self._goal_validator = GoalCompletionValidator(self._evidence_collector)
+        self._runtime_intel.reset()
+        self._goal_tracker = GoalProgressTracker(task)
         
         # 任务启动时注入：匹配的 skill/capsule + 工具提示（截图用 call_tool/screencapture）
         self._task_guidance: str = ""
@@ -882,6 +1017,7 @@ class AutonomousAgent:
                 if plan:
                     self._current_plan = plan
                     self._current_plan_index = 0
+                    self._goal_tracker.set_sub_goals(plan)
                     yield {"type": "plan_created", "task_id": task_id, "sub_tasks": plan}
         except Exception as e:
             logger.debug("Plan-and-Execute init failed: %s", e)
@@ -1003,8 +1139,74 @@ class AutonomousAgent:
                 }
                 
                 if action.action_type == ActionType.FINISH:
+                    # v3.6: Plan completion enforcement — 若 plan 未完成，拒绝 FINISH
+                    plan = getattr(self, "_current_plan", []) or []
+                    plan_index = getattr(self, "_current_plan_index", 0)
+                    _finish_blocked = False
+
+                    if plan and plan_index < len(plan) - 1:
+                        remaining = plan[plan_index + 1:]
+                        logger.info(
+                            f"FINISH rejected: plan has {len(remaining)} remaining steps: {remaining}"
+                        )
+                        self._mid_reflection_hint = (
+                            f"⚠️ 任务尚未完成！计划中还有以下步骤未执行：{remaining}。"
+                            f"请继续执行下一步：{remaining[0]}。禁止跳过。"
+                        )
+                        context.add_action_log(action, ActionResult(
+                            action_id=action.action_id,
+                            success=False,
+                            output=f"计划未完成，还剩 {len(remaining)} 步：{remaining}",
+                            error="plan_incomplete",
+                        ))
+                        _finish_blocked = True
+
+                    # v3.6: 额外检查 — 若有 delegate_duck 失败（未完成），也拒绝 FINISH
+                    if not _finish_blocked:
+                        _failed_ducks = [
+                            log for log in context.action_logs
+                            if log.action.action_type == ActionType.DELEGATE_DUCK
+                            and not log.result.success
+                            and log.result.error != "duplicate_action_blocked"
+                        ]
+                        if _failed_ducks:
+                            last_duck = _failed_ducks[-1]
+                            desc = (last_duck.action.params.get("description") or "")[:80]
+                            duck_type = last_duck.action.params.get("duck_type", "")
+                            logger.info(f"FINISH rejected: has {len(_failed_ducks)} failed duck(s)")
+                            self._mid_reflection_hint = (
+                                f"⚠️ 你有未完成的子任务委派（{duck_type}: {desc}）。"
+                                f"请重新 delegate_duck 委派此子任务，不要直接结束。"
+                            )
+                            context.add_action_log(action, ActionResult(
+                                action_id=action.action_id,
+                                success=False,
+                                output=f"有 {len(_failed_ducks)} 个 duck 子任务失败，不允许 FINISH",
+                                error="duck_incomplete",
+                            ))
+                            _finish_blocked = True
+
+                    if _finish_blocked:
+                        continue
+
                     result = await self._execute_action(action)
                     context.add_action_log(action, result)
+                    
+                    # v3.5: Goal completion validation via evidence
+                    _goal_validation = {}
+                    try:
+                        _goal_validation = self._goal_validator.check_completion(
+                            task_description=context.task_description,
+                            action_logs=[
+                                {"action_type": log.action.action_type.value, "success": log.result.success}
+                                for log in context.action_logs
+                            ],
+                            claimed_success=action.params.get("success", True),
+                        )
+                        if _goal_validation.get("warnings"):
+                            logger.info(f"Goal validation warnings: {_goal_validation['warnings']}")
+                    except Exception as _gv_err:
+                        logger.debug("Goal validation error: %s", _gv_err)
                     
                     # 保存检查点 - 任务完成
                     if get_persistence_manager is not None:
@@ -1077,6 +1279,9 @@ class AutonomousAgent:
                         "success_rate": context.get_success_rate(),
                         "stop_policy_stats": stop_stats,
                         "phase_stats": self._phase_tracker.stats() if hasattr(self, "_phase_tracker") else {},
+                        "goal_validation": _goal_validation,
+                        "goal_progress": self._goal_tracker.get_status_dict(),
+                        "tool_metrics": {k: v.for_llm() for k, v in self._runtime_intel.metrics.get_all_metrics().items()},
                     }
                     
                     if self.enable_reflection and self.reflect_llm:
@@ -1095,6 +1300,92 @@ class AutonomousAgent:
                     "action_id": action.action_id,
                     "action_type": action.action_type.value
                 }
+
+                # v3.5: Pre-observation + Confidence scoring
+                _pre_snap = None
+                _confidence = 1.0
+                try:
+                    _pre_snap = await self._observation_loop.pre_observe(
+                        iteration=context.current_iteration,
+                        action_type=action.action_type.value,
+                        params=action.params or {},
+                    )
+                    _confidence = self._confidence_model.score(
+                        action.action_type.value,
+                        action.params or {},
+                    )
+                except Exception as _obs_err:
+                    logger.debug("Pre-observation/confidence error: %s", _obs_err)
+
+                # v3.6: Action dedup — 检测与最近成功步骤完全相同的动作，直接跳过
+                _dedup_skip = False
+                try:
+                    _dedup_skip = self._check_action_dedup(action, context)
+                    if _dedup_skip:
+                        logger.info(f"Action dedup: skipping duplicate {action.action_type.value}")
+                        result = ActionResult(
+                            action_id=action.action_id,
+                            success=False,
+                            output=None,
+                            error="此动作与最近成功执行的步骤完全相同，已跳过。请执行下一步而非重复已完成的操作。",
+                            execution_time_ms=0,
+                        )
+                        context.add_action_log(action, result)
+                        self._mid_reflection_hint = (
+                            "⚠️ 你刚才尝试重复一个已成功完成的动作，已被系统拦截。"
+                            "请仔细查看【关键产物】中已完成的内容，执行尚未完成的步骤。"
+                        )
+                        yield {
+                            "type": "action_result",
+                            "action_id": action.action_id,
+                            "success": False,
+                            "output": None,
+                            "error": "duplicate_action_blocked",
+                            "execution_time_ms": 0,
+                        }
+                        continue
+                except Exception as _dedup_err:
+                    logger.debug("Action dedup check error: %s", _dedup_err)
+
+                # v3.5: Execution Controller — circuit breaker + step lifecycle
+                _step_record = None
+                try:
+                    _step_record = self._execution_controller.create_step(
+                        action.action_type.value
+                    )
+                    allowed, block_reason = self._execution_controller.can_execute(
+                        action.action_type.value, action.params or {}
+                    )
+                    if not allowed:
+                        logger.warning(f"Execution blocked: {block_reason}")
+                        _observation_text = f"⚠ {block_reason}"
+                        # Synthesize a failed result
+                        result = ActionResult(
+                            action_id=action.action_id,
+                            success=False,
+                            output=None,
+                            error=block_reason,
+                            execution_time_ms=0,
+                        )
+                        context.add_action_log(action, result)
+                        yield {
+                            "type": "action_result",
+                            "action_id": action.action_id,
+                            "success": False,
+                            "output": None,
+                            "error": result.error,
+                            "execution_time_ms": 0,
+                        }
+                        context.consecutive_action_failures += 1
+                        continue
+                    self._execution_controller.on_step_start(_step_record)
+                    # Pre-action warning from runtime intelligence
+                    _pre_warning = self._runtime_intel.pre_action_check(action.action_type.value)
+                    if _pre_warning:
+                        logger.info(f"Runtime intel warning: {_pre_warning}")
+                except Exception as _ctrl_err:
+                    logger.debug("Execution controller error: %s", _ctrl_err)
+
                 if state_machine and TaskState is not None:
                     state_machine.transition(TaskState.WAITING_TOOL)
                 result = await self._execute_action(action)
@@ -1102,9 +1393,88 @@ class AutonomousAgent:
                     state_machine.transition(TaskState.RUNNING)
                 context.add_action_log(action, result)
 
+                # v3.5: Post-observation + Error tracking + Confidence update
+                _observation_text = ""
+                try:
+                    if _pre_snap is not None:
+                        _obs = await self._observation_loop.post_observe(
+                            iteration=context.current_iteration,
+                            action_type=action.action_type.value,
+                            params=action.params or {},
+                            result=result,
+                            pre_snapshot=_pre_snap,
+                        )
+                        if _obs.has_changes:
+                            _observation_text = _obs.for_llm(max_chars=600)
+                    self._confidence_model.record_outcome(action.action_type.value, result.success)
+                    if not result.success and result.error:
+                        classified = classify_error(
+                            result.error,
+                            tool_name=action.action_type.value,
+                            action_type=action.action_type.value,
+                        )
+                        self._error_tracker.record(classified)
+                        if self._error_tracker.should_escalate():
+                            _observation_text += "\n⚠ 错误持续发生，建议更换策略。"
+                except Exception as _post_err:
+                    logger.debug("Post-observation error: %s", _post_err)
+
+                # v3.5: Execution Controller step completion + Runtime Intelligence + Evidence + Goal Tracker
+                try:
+                    # Update execution controller step
+                    if _step_record is not None:
+                        if result.success:
+                            self._execution_controller.on_step_success(_step_record)
+                        else:
+                            _classified_for_ctrl = None
+                            if result.error:
+                                _classified_for_ctrl = classify_error(
+                                    result.error,
+                                    tool_name=action.action_type.value,
+                                    action_type=action.action_type.value,
+                                )
+                            if _classified_for_ctrl:
+                                self._execution_controller.on_step_failure(
+                                    _step_record, _classified_for_ctrl
+                                )
+                    # Record tool metrics for adaptive strategy
+                    _err_cat_for_metrics = ""
+                    if not result.success and result.error:
+                        try:
+                            _cl = classify_error(result.error, tool_name=action.action_type.value, action_type=action.action_type.value)
+                            _err_cat_for_metrics = _cl.category.value if _cl else ""
+                        except Exception:
+                            pass
+                    _strategy_advice = self._runtime_intel.record_tool_call(
+                        tool_name=action.action_type.value,
+                        success=result.success,
+                        latency_ms=float(result.execution_time_ms),
+                        error_category=_err_cat_for_metrics,
+                    )
+                    if _strategy_advice and _strategy_advice.advice_type == "avoid":
+                        _observation_text += f"\n{_strategy_advice.message}"
+                    # Collect evidence from action
+                    self._evidence_collector.collect_from_action(
+                        action.action_type.value, action.params or {}, result,
+                    )
+                    # Feed goal tracker
+                    self._goal_tracker.record_action(
+                        action_type=action.action_type.value,
+                        success=result.success,
+                        params=action.params,
+                        output=str(result.output or "")[:300],
+                    )
+                except Exception as _intel_err:
+                    logger.debug("Post-action intelligence error: %s", _intel_err)
+
                 # v3.4: Phase tracking + automated Verify
                 try:
                     verify_note = await auto_verify(action.action_type.value, action.params, result)
+                    # Merge observation text into verify note
+                    if _observation_text and not verify_note:
+                        verify_note = _observation_text
+                    elif _observation_text and verify_note:
+                        verify_note = f"{verify_note}\n{_observation_text}"
                     phase_rec = self._phase_tracker.record(
                         iteration=context.current_iteration,
                         action_type=action.action_type.value,
@@ -1120,6 +1490,7 @@ class AutonomousAgent:
                             "iteration": context.current_iteration,
                             "phase": phase_rec.phase.value,
                             "note": verify_note,
+                            "confidence": _confidence,
                         }
                 except Exception as _phase_err:
                     logger.debug("Phase tracking error: %s", _phase_err)
@@ -1196,6 +1567,16 @@ class AutonomousAgent:
                     # think 只是 LLM 的中间思考，不应影响连续失败计数
                     if action.action_type != ActionType.THINK:
                         context.consecutive_action_failures += 1
+
+                    # v3.6: Duck 失败时注入重试指导，防止 agent 直接 FINISH
+                    if action.action_type == ActionType.DELEGATE_DUCK:
+                        duck_desc = (action.params.get("description") or "")[:80]
+                        duck_type = action.params.get("duck_type", "")
+                        self._mid_reflection_hint = (
+                            f"⚠️ 子任务委派失败（{duck_type}: {duck_desc}）。"
+                            f"错误: {(result.error or '未知')[:100]}。"
+                            f"请稍后重新尝试 delegate_duck 委派此子任务。禁止直接结束任务。"
+                        )
                     
                     if context.consecutive_action_failures >= context.max_consecutive_action_failures:
                         logger.warning(
@@ -1282,6 +1663,7 @@ class AutonomousAgent:
                             if replan:
                                 self._current_plan = replan
                                 self._current_plan_index = 0
+                                self._goal_tracker.set_sub_goals(replan)
                                 yield {"type": "plan_replanned", "task_id": task_id, "sub_tasks": replan}
                         except Exception as e:
                             logger.debug("Replan failed: %s", e)
@@ -1491,7 +1873,63 @@ class AutonomousAgent:
         plan = getattr(self, "_current_plan", []) or []
         plan_index = getattr(self, "_current_plan_index", 0)
         if plan and plan_index < len(plan):
-            context_str += f"\n\n【当前建议子目标】{plan[plan_index]}"
+            remaining_count = len(plan) - plan_index
+            context_str += (
+                f"\n\n【执行计划】共 {len(plan)} 步，当前第 {plan_index + 1} 步: {plan[plan_index]}"
+                f"\n剩余: {plan[plan_index:]}"
+                f"\n⚠️ 必须按计划逐步完成所有步骤，禁止在计划未完成时结束任务。"
+            )
+
+        # v3.5: 注入环境状态 + 最近观察
+        try:
+            _env_ctx = self._observation_loop.env_state.get_context_for_llm()
+            if _env_ctx and _env_ctx != "环境状态未知":
+                context_str += f"\n\n【环境状态】{_env_ctx}"
+            _obs_ctx = self._observation_loop.get_recent_observations_for_llm(n=2, max_chars=600)
+            if _obs_ctx:
+                context_str += f"\n\n【最近观察】\n{_obs_ctx}"
+        except Exception:
+            pass
+
+        # v3.5: 注入任务进度 + 工具指标 + 失败记忆 + 策略建议
+        try:
+            _goal_ctx = self._goal_tracker.get_context_for_llm(max_chars=400)
+            if _goal_ctx:
+                context_str += f"\n\n{_goal_ctx}"
+            _intel_ctx = self._runtime_intel.get_context_for_llm(max_chars=500)
+            if _intel_ctx:
+                context_str += f"\n\n{_intel_ctx}"
+            _fail_mem = self._execution_controller.failure_memory.get_failure_summary(n=5)
+            if _fail_mem:
+                context_str += f"\n\n【失败记忆】\n{_fail_mem}"
+        except Exception:
+            pass
+
+        # v3.6: 动态注入在线 Duck 信息，让 LLM 知道可以/不可以 delegate
+        try:
+            from app_state import IS_DUCK_MODE
+            if not IS_DUCK_MODE:
+                from services.duck_registry import DuckRegistry
+                registry = DuckRegistry.get_instance()
+                online = await registry.list_online()
+                if online:
+                    duck_lines = []
+                    for d in online[:5]:
+                        name = getattr(d, "name", getattr(d, "duck_id", "?"))
+                        dtype = getattr(d, "duck_type", "general")
+                        if hasattr(dtype, "value"):
+                            dtype = dtype.value
+                        duck_lines.append(f"  - {name} (类型: {dtype})")
+                    context_str += (
+                        f"\n\n【在线 Duck 分身】当前有 {len(online)} 个 Duck 可用:\n"
+                        + "\n".join(duck_lines)
+                        + "\n你可以用 delegate_duck 委派子任务给它们。"
+                    )
+                else:
+                    context_str += "\n\n【Duck 状态】当前没有在线 Duck，请自行完成所有子任务。"
+        except Exception:
+            pass
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": context_str}
@@ -1634,6 +2072,16 @@ class AutonomousAgent:
                 extra_tokens = 8192  # 首步也用 8192，为可能的长 JSON 预留空间
 
             # Phase C：Extended Thinking / CoT 支持
+            # v3.5: 上下文压缩 — 在发送给 LLM 前压缩消息列表
+            try:
+                messages = self._context_compressor.compress(
+                    messages,
+                    current_query=context.task_description,
+                    keep_recent=6,
+                )
+            except Exception as _comp_err:
+                logger.debug("Context compression failed: %s", _comp_err)
+
             chat_extra_body: Optional[Dict[str, Any]] = None
             try:
                 from app_state import (  # type: ignore
@@ -2200,12 +2648,16 @@ class AutonomousAgent:
                 }
 
             # ─── 自适应超时等待 ───────────────────────────────
-            # 初始检查间隔 90s，到时检查 Duck 是否仍在活跃产出 chunk：
-            #   - 若活跃（last_activity 在最近 90s 内更新过）→ 继续等待
-            #   - 若不活跃 → 超时失败
-            # 直到 Future 被 resolve（Duck 完成/失败）才返回结果
-            CHECK_INTERVAL = 90  # 每 90 秒检查一次 Duck 活跃状态
-            INACTIVITY_THRESHOLD = 90  # Duck 超过 90s 无 chunk 产出则认为卡死
+            # 两阶段等待策略:
+            #   阶段 1 (启动等待): duck 尚未开始工作 (last_activity=None)，
+            #            最多等 STARTUP_TIMEOUT 秒让 worker 领取并启动
+            #   阶段 2 (活跃检查): duck 已开始工作，每 CHECK_INTERVAL 秒检查
+            #            是否仍有 chunk 产出。超过 INACTIVITY_THRESHOLD 无产出则超时
+            CHECK_INTERVAL = 90
+            INACTIVITY_THRESHOLD = 90
+            STARTUP_TIMEOUT = 180  # duck 从 ASSIGNED 到首次活跃的最长等待
+
+            _wait_start = time.time()
 
             while True:
                 done, _ = await asyncio.wait({future}, timeout=CHECK_INTERVAL)
@@ -2219,20 +2671,49 @@ class AutonomousAgent:
                         "duck_id": completed_task.assigned_duck_id,
                     }
 
-                # Future 未完成，检查 Duck 是否仍在活跃工作
+                # Future 未完成，检查 Duck 状态
                 current_task = await scheduler.get_task(task.task_id)
-                if current_task and current_task.last_activity:
+                if not current_task:
+                    return {
+                        "success": False,
+                        "output": None,
+                        "error": "Duck task disappeared from scheduler",
+                        "task_id": task.task_id,
+                    }
+
+                # 如果任务已被取消或失败（由其他路径设置）
+                if current_task.status in (TaskStatus.CANCELLED, TaskStatus.FAILED):
+                    return {
+                        "success": False,
+                        "output": current_task.output,
+                        "error": current_task.error or f"Duck task {current_task.status.value}",
+                        "task_id": task.task_id,
+                    }
+
+                if current_task.last_activity:
+                    # 阶段 2: duck 已开始工作，检查活跃度
                     idle_time = time.time() - current_task.last_activity
                     if idle_time < INACTIVITY_THRESHOLD:
-                        # Duck 仍在活跃产出 chunk，继续等待
-                        continue
-                # Duck 已不活跃或任务状态异常 → 超时
-                return {
-                    "success": False,
-                    "output": None,
-                    "error": f"Duck task inactive for >{INACTIVITY_THRESHOLD}s, likely stuck",
-                    "task_id": task.task_id,
-                }
+                        continue  # 仍活跃
+                    # 超过不活跃阈值 → 超时
+                    return {
+                        "success": False,
+                        "output": None,
+                        "error": f"Duck task inactive for >{INACTIVITY_THRESHOLD}s, likely stuck",
+                        "task_id": task.task_id,
+                    }
+                else:
+                    # 阶段 1: duck 尚未开始 (last_activity=None)
+                    waited = time.time() - _wait_start
+                    if waited < STARTUP_TIMEOUT:
+                        continue  # 还在启动等待窗口内
+                    # 超过启动等待 → 超时
+                    return {
+                        "success": False,
+                        "output": None,
+                        "error": f"Duck worker did not start within {STARTUP_TIMEOUT}s",
+                        "task_id": task.task_id,
+                    }
 
         except ImportError:
             return {"success": False, "error": "Duck task scheduler not available"}

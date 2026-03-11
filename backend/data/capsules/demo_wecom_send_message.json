@@ -1,0 +1,87 @@
+{
+  "id": "demo_wecom_send_message",
+  "description": "打开企业微信应用，使用快捷键唤起消息界面，输入并发送消息到指定对话",
+  "inputs": {
+    "message": {
+      "type": "string",
+      "description": "要发送的消息内容，支持纯文本输入"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "description": "执行结果，包含是否成功发送消息"
+    }
+  },
+  "procedure": [
+    {
+      "id": "step_1",
+      "type": "tool",
+      "tool": "gui_automation",
+      "args": {
+        "action": "click_element",
+        "app_name": "Dock",
+        "element_name": "企业微信"
+      },
+      "description": "点击 Dock 中的企业微信应用图标打开应用"
+    },
+    {
+      "id": "step_2",
+      "type": "tool",
+      "tool": "input_control",
+      "args": {
+        "action": "keyboard_shortcut",
+        "keys": [
+          "cmd",
+          "3"
+        ]
+      },
+      "description": "按快捷键 cmd+3 唤起企业微信的新消息/搜索功能"
+    },
+    {
+      "id": "step_3",
+      "type": "tool",
+      "tool": "gui_automation",
+      "args": {
+        "action": "type_text",
+        "app_name": "企业微信",
+        "text": "{{input.message}}"
+      },
+      "description": "在消息输入框中输入用户指定的消息内容"
+    },
+    {
+      "id": "step_4",
+      "type": "tool",
+      "tool": "input_control",
+      "args": {
+        "action": "keyboard_key",
+        "key": "return"
+      },
+      "description": "按 Enter 键发送消息"
+    }
+  ],
+  "steps": null,
+  "task_type": "gui_task",
+  "tags": [
+    "企业微信",
+    "消息发送",
+    "快捷键",
+    "文本输入"
+  ],
+  "capability": [
+    "应用启动",
+    "快捷键触发",
+    "文本输入",
+    "消息发送"
+  ],
+  "gene": "",
+  "metadata": {},
+  "signature": null,
+  "schema_version": "1.1.0",
+  "trusted": "local_source",
+  "priority": 0,
+  "version": "1.0.0",
+  "author": "demo_learner",
+  "source": "human_demo",
+  "created_at": 1773218625.692669
+}

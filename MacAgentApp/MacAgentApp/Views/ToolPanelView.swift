@@ -13,6 +13,8 @@ struct ToolPanelView: View {
                 CyberTab(title: "任务", icon: "bolt.fill", index: 2, selected: $selectedTab)
                 CyberTab(title: "日志", icon: "terminal", index: 3, selected: $selectedTab)
                 CyberTab(title: "快照", icon: "clock.arrow.circlepath", index: 4, selected: $selectedTab)
+                CyberTab(title: "录制", icon: "record.circle", index: 5, selected: $selectedTab)
+                CyberTab(title: "演示", icon: "person.badge.plus", index: 6, selected: $selectedTab)
             }
             .padding(.horizontal, 8)
             .padding(.top, 10)
@@ -34,6 +36,10 @@ struct ToolPanelView: View {
                 ExecutionLogsView()
             case 4:
                 RollbackPanelView()
+            case 5:
+                RecordingManagementView()
+            case 6:
+                HumanDemoView()
             default:
                 ToolMatrixView()
             }

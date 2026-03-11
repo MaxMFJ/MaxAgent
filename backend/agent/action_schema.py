@@ -309,7 +309,7 @@ class TaskContext:
         self._extract_artifacts(action, result)
     
     def _extract_artifacts(self, action: AgentAction, result: ActionResult):
-        """从动作和结果中提取关键产物（文件路径、URL等）"""
+        """从动作和结果中提取关键产物（文件路径、URL、完成的任务等）"""
         import re
         
         # 1. 从动作参数中提取
@@ -322,8 +322,28 @@ class TaskContext:
             filename = action.params.get("filename")
             if filename:
                 self._add_artifact("script_created", filename, "创建脚本", action.reasoning)
+
+        # 2. call_tool 成功时记录工具+动作
+        elif action.action_type == ActionType.CALL_TOOL and result.success:
+            tool = action.params.get("tool_name", "")
+            args = action.params.get("args", {})
+            act = args.get("action", "")
+            if tool and act:
+                brief = f"{tool}.{act}"
+                # 特定有意义的工具动作，记录为产物
+                if tool == "screenshot":
+                    self._add_artifact("screenshot_taken", brief, "截图完成")
+                elif tool == "app_control":
+                    app = args.get("app_name", "")
+                    self._add_artifact("app_action", f"{act}({app})", f"应用操作: {act} {app}")
+
+        # 3. delegate_duck 成功时记录
+        elif action.action_type == ActionType.DELEGATE_DUCK and result.success:
+            desc = action.params.get("description", "")[:80]
+            duck_type = action.params.get("duck_type", "")
+            self._add_artifact("duck_completed", f"{duck_type}: {desc}", f"子任务完成")
         
-        # 2. 从成功的结果输出中提取
+        # 4. 从成功的结果输出中提取
         if result.success and result.output:
             output_str = str(result.output)
             

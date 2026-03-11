@@ -97,6 +97,26 @@ async def execute_capsule(
     from tools.router import execute_tool
 
     start_time = time.time()
+
+    # 校验 inputs 是否包含 capsule 定义的必需参数
+    cap_inputs = getattr(capsule, 'inputs', None) or {}
+    if isinstance(cap_inputs, dict) and cap_inputs:
+        missing = [k for k, v in cap_inputs.items()
+                   if k not in inputs
+                   and not (isinstance(v, dict) and v.get("default") is not None)]
+        if missing:
+            return {
+                "success": False,
+                "outputs": {},
+                "steps": [],
+                "error": f"缺少必需的输入参数: {', '.join(missing)}。capsule 需要: {list(cap_inputs.keys())}，实际传入: {list(inputs.keys())}",
+                "duration_ms": 0,
+            }
+        # 为有默认值但未传入的参数填充默认值
+        for k, v in cap_inputs.items():
+            if k not in inputs and isinstance(v, dict) and v.get("default") is not None:
+                inputs[k] = v["default"]
+
     step_defs = capsule.get_step_defs()
     if not step_defs:
         return {"success": True, "outputs": {}, "steps": [], "error": None, "duration_ms": 0}
@@ -125,6 +145,9 @@ async def execute_capsule(
             res = await _execute_parallel_step(step_def, step_id, inputs, step_outputs, tool_registry, bind_target_fn)
         elif step_type == "condition":
             res = _execute_condition_step(step_def, step_id, inputs, step_outputs)
+        elif step_def.tool or step_def.name:
+            # 非标准 type 但指定了 tool/name → 当作 tool 步骤执行
+            res = await _execute_tool_step(step_def, step_id, inputs, step_outputs, tool_registry, bind_target_fn)
         else:
             res = {"success": False, "step_id": step_id, "error": f"Unknown step type: {step_type}"}
 

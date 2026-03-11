@@ -381,11 +381,14 @@ def load_all_local(
     cache_dir: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     """
-    从默认 ./capsules/ 与 ./capsules_cache/ 加载所有本地/缓存 Capsule。
+    从默认 ./capsules/ 与 ./capsules_cache/ 以及 data/capsules/ 加载所有本地/缓存 Capsule。
     去重按 id（后加载覆盖先加载）。
     """
     by_id: Dict[str, Dict[str, Any]] = {}
-    for d in (capsules_dir or DEFAULT_CAPSULES_DIR, cache_dir or DEFAULT_CAPSULES_CACHE):
+    # 人工演示生成的 capsule 保存在 data/capsules/
+    from paths import DATA_DIR
+    data_capsules = Path(DATA_DIR) / "capsules"
+    for d in (capsules_dir or DEFAULT_CAPSULES_DIR, cache_dir or DEFAULT_CAPSULES_CACHE, data_capsules):
         if d and d.exists():
             for cap in load_from_directory(d, recursive=True):
                 cid = cap.get("id") or cap.get("gene") or ""

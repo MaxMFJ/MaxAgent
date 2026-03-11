@@ -621,7 +621,10 @@ async def _handle_chat(
         """
         Chat 流任务：所有 chunk 同时写入 TaskTracker 缓冲。
         客户端断线后任务继续执行，重连后可通过 resume_chat 恢复。
+        使用 StreamChunkDispatcher 统一分发逻辑。
         """
+        from agent.stream_dispatcher import StreamChunkDispatcher
+
         tracker = get_task_tracker()
         chat_task_id = f"chat_{_sid}_{uuid.uuid4().hex[:6]}"
 
@@ -639,24 +642,35 @@ async def _handle_chat(
             task_type="chat"
         )
 
-        chunk_count = 0
-        has_error = False
-        client_gone = False
-        total_usage = None
+        dispatcher = StreamChunkDispatcher(
+            task_id=chat_task_id,
+            session_id=_sid,
+            task_type="chat",
+            tracker=tracker,
+            connection_manager=connection_manager,
+            websocket=websocket,
+            client_id=_cid,
+            safe_send_fn=safe_send_json,
+            broadcast_monitor_fn=broadcast_monitor_event,
+            system_message_service=get_system_message_service(),
+        )
+
         extra_system_prompt = ""
         final_status = AutoTaskStatus.COMPLETED
 
-        def _mark_client_gone():
-            """标记客户端已断开，记录已发送的 chunk 数用于断线重连去重"""
-            nonlocal client_gone
-            if not client_gone:
-                client_gone = True
-                _tt = tracker.get(chat_task_id)
-                if _tt:
-                    # 当前 chunk 发送失败，所以已发送数 = 缓冲区长度 - 1
-                    _tt.client_sent_count = max(0, len(_tt.chunks) - 1)
+        async def _on_chat_chunk(chunk: dict):
+            """Chat 特有的 chunk 后处理：tool_result 的 image 提取"""
+            chunk_type = chunk.get("type", "")
+            if chunk_type == "tool_result":
+                data = chunk.pop("data", None)
+                if data and not dispatcher.client_gone:
+                    from agent.image_extractor import extract_image_from_result
+                    img = extract_image_from_result(data)
+                    if img:
+                        await dispatcher.dispatch_chunk(img)
 
         try:
+            # Web 增强预取（Chat 特有）
             try:
                 from agent.web_augmented_thinking import ThinkingAugmenter, AugmentationType
                 aug = ThinkingAugmenter()
@@ -665,14 +679,8 @@ async def _handle_chat(
                     extra_system_prompt = aug.format_augmentation_for_llm(a)
                     if extra_system_prompt:
                         web_chunk = {"type": "web_augmentation", "augmentation_type": a.get("type"), "query": a.get("query"), "success": True}
-                        tracker.record_chunk(chat_task_id, web_chunk)
-                        if not client_gone:
-                            if not await safe_send_json(websocket, web_chunk):
-                                _mark_client_gone()
-                        if not client_gone:
-                            await connection_manager.broadcast_to_session(_sid, web_chunk, exclude_client=_cid)
+                        await dispatcher.dispatch_chunk(web_chunk)
                 elif a and not a.get("success"):
-                    # Web 增强预取失败时，注入 fallback 提示让 LLM 知道可以用 web_search 工具自行获取
                     aug_type = a.get("type", "")
                     aug_query = a.get("query", "")
                     if aug_type == AugmentationType.REALTIME_INFO.value or aug_type == "realtime_info":
@@ -686,115 +694,29 @@ async def _handle_chat(
             except Exception as e:
                 logger.warning(f"Web augmentation failed: {e}")
 
-            async for chunk in chat_runner.run_stream(_content, session_id=_sid, extra_system_prompt=extra_system_prompt):
-                chunk_count += 1
-                chunk_type = chunk.get("type", "unknown")
-                if chunk_type == "stream_end":
-                    total_usage = chunk.get("usage")
-                    continue
-                
-                # 广播监控事件（重要事件类型）
-                if chunk_type in ("llm_request_start", "llm_request_end", "tool_call", "tool_result", "thinking", "content", "error"):
-                    await broadcast_monitor_event(_sid, chat_task_id, chunk, task_type="chat")
-                
-                if chunk_type == "tool_result":
-                    data = chunk.pop("data", None)
-                    to_send = {k: v for k, v in chunk.items()}
-                    tracker.record_chunk(chat_task_id, to_send)
-                    if not client_gone:
-                        if not await safe_send_json(websocket, to_send):
-                            _mark_client_gone()
-                            logger.info(f"Chat stream: client gone during tool_result, task continues in background (task_id={chat_task_id})")
-                    if not client_gone:
-                        await connection_manager.broadcast_to_session(_sid, to_send, exclude_client=_cid)
-                    if data and not client_gone:
-                        from agent.image_extractor import extract_image_from_result
-                        img = extract_image_from_result(data)
-                        if img:
-                            tracker.record_chunk(chat_task_id, img)
-                            if not await safe_send_json(websocket, img):
-                                _mark_client_gone()
-                            if not client_gone:
-                                await connection_manager.broadcast_to_session(_sid, img, exclude_client=_cid)
-                else:
-                    # 保证 error 类 chunk 同时带 message 与 error，方便 Mac App 等客户端解析
-                    if chunk_type == "error":
-                        err_text = chunk.get("error") or chunk.get("message") or "未知错误"
-                        chunk = {"type": "error", "error": err_text, "message": err_text}
-                    tracker.record_chunk(chat_task_id, chunk)
-                    if not client_gone:
-                        if not await safe_send_json(websocket, chunk):
-                            _mark_client_gone()
-                            logger.info(f"Chat stream: client gone, task continues in background (task_id={chat_task_id})")
-                    if not client_gone:
-                        await connection_manager.broadcast_to_session(_sid, chunk, exclude_client=_cid)
-                if chunk_type == "error":
-                    has_error = True
-                    err_msg = chunk.get("error") or chunk.get("message") or "未知错误"
-                    try:
-                        get_system_message_service().add_error(
-                            "对话执行错误", err_msg,
-                            source="chat_stream", category=MessageCategory.SYSTEM_ERROR.value,
-                        )
-                    except Exception as _e:
-                        logger.warning(f"Failed to push error notification: {_e}")
+            # 统一分发流
+            await dispatcher.dispatch_stream(
+                chat_runner.run_stream(_content, session_id=_sid, extra_system_prompt=extra_system_prompt),
+                on_chunk=_on_chat_chunk,
+            )
 
-            if not has_error:
+            if not dispatcher.has_error:
                 _ac = get_agent_core()
                 model_name = _ac.llm.config.model if _ac and _ac.llm else None
-                done_msg = {"type": "done", "model": model_name}
-                if total_usage:
-                    done_msg["usage"] = total_usage
-                tracker.record_chunk(chat_task_id, done_msg)
-                if not client_gone:
-                    await safe_send_json(websocket, done_msg)
-                    await connection_manager.broadcast_to_session(_sid, done_msg, exclude_client=_cid)
-                else:
-                    await connection_manager.broadcast_to_session(_sid, done_msg)
-                # 广播任务完成事件
-                await broadcast_monitor_event(
-                    _sid, chat_task_id,
-                    {"type": "task_complete", "status": "completed", "timestamp": datetime.now().isoformat()},
-                    task_type="chat"
-                )
+                await dispatcher.send_done(model_name=model_name)
 
         except asyncio.CancelledError:
             final_status = AutoTaskStatus.STOPPED
-            stopped_msg = {"type": "stopped", "session_id": _sid}
-            tracker.record_chunk(chat_task_id, stopped_msg)
-            await safe_send_json(websocket, stopped_msg)
-            await connection_manager.broadcast_to_session(_sid, stopped_msg, exclude_client=_cid)
-            # 广播任务停止事件
-            await broadcast_monitor_event(
-                _sid, chat_task_id,
-                {"type": "task_stopped", "reason": "cancelled", "timestamp": datetime.now().isoformat()},
-                task_type="chat"
-            )
+            await dispatcher.send_stopped()
             raise
         except WebSocketDisconnect:
             logger.info(f"Chat stream: WebSocket disconnected, task continues in background (task_id={chat_task_id})")
         except Exception as e:
             final_status = AutoTaskStatus.ERROR
             logger.error(f"Error in stream: {e}", exc_info=True)
-            err_msg = str(e)
-            err_chunk = {"type": "error", "message": err_msg, "error": err_msg}
-            tracker.record_chunk(chat_task_id, err_chunk)
-            # 广播错误事件
-            await broadcast_monitor_event(_sid, chat_task_id, err_chunk, task_type="chat")
-            if not client_gone:
-                await safe_send_json(websocket, err_chunk)
-            try:
-                get_system_message_service().add_error(
-                    "对话执行错误", str(e),
-                    source="chat_stream", category=MessageCategory.SYSTEM_ERROR.value,
-                )
-            except Exception as _e:
-                logger.warning(f"Failed to push error notification: {_e}")
+            await dispatcher.send_error(str(e))
         finally:
-            # 客户端一直在线且流式输出完成，清空缓冲防止重连重复发送
-            if not client_gone:
-                tracker.clear_chunks(chat_task_id)
-            await tracker.finish(chat_task_id, final_status)
+            await dispatcher.cleanup(final_status)
             session_stream_tasks.pop(_sid, None)
 
     session_stream_tasks[_sid] = asyncio.create_task(_run_stream_and_send())
@@ -847,78 +769,81 @@ async def _autonomous_task_worker(
     同时广播给 session 内所有在线客户端。
     即使所有客户端断线，任务仍继续执行。
     同时广播监控事件给所有连接的客户端（用于全局监控）。
+    使用 StreamChunkDispatcher 统一分发逻辑。
     """
+    from agent.stream_dispatcher import StreamChunkDispatcher
+
     tracker = get_task_tracker()
     autonomous_agent = get_autonomous_agent()
     final_status = AutoTaskStatus.COMPLETED
 
+    dispatcher = StreamChunkDispatcher(
+        task_id=task_id,
+        session_id=session_id,
+        task_type="autonomous",
+        tracker=tracker,
+        connection_manager=connection_manager,
+        # Autonomous 模式: 无 websocket 直连，全靠 broadcast
+        websocket=None,
+        client_id=None,
+        safe_send_fn=safe_send_json,
+        broadcast_monitor_fn=broadcast_monitor_event,
+        system_message_service=get_system_message_service(),
+    )
+
+    async def _on_autonomous_chunk(chunk: dict):
+        """自主任务特有的 chunk 后处理逻辑"""
+        chunk_type = chunk.get("type", "")
+
+        if chunk_type == "task_stopped":
+            nonlocal final_status
+            final_status = AutoTaskStatus.STOPPED
+            try:
+                reason = chunk.get("message") or chunk.get("reason") or "未知原因"
+                get_system_message_service().add_error(
+                    "自主任务被停止",
+                    f"任务: {task[:100]}\n原因: {reason}\n建议: {chunk.get('recommendation', '')}",
+                    source="autonomous_task",
+                    category=MessageCategory.SYSTEM_ERROR.value,
+                )
+            except Exception as _e:
+                logger.warning(f"Failed to push stop notification: {_e}")
+
+        elif chunk_type == "task_complete":
+            try:
+                memory = get_episodic_memory()
+                episode = Episode(
+                    episode_id=chunk.get("task_id", ""),
+                    task_description=task,
+                    result=chunk.get("summary", ""),
+                    success=chunk.get("success", False),
+                    total_actions=chunk.get("total_actions", 0),
+                    total_iterations=chunk.get("iterations", 0),
+                    execution_time_ms=chunk.get("execution_time_ms", 0),
+                    action_log=chunk.get("action_log", []),
+                    token_usage=chunk.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
+                )
+                memory.add_episode(episode)
+            except Exception as e:
+                logger.error(f"Failed to save episode: {e}")
+            try:
+                success = chunk.get("success", False)
+                summary = chunk.get("summary", "") or task[:200]
+                total_actions = chunk.get("total_actions", 0)
+                title = "任务完成" if success else "任务未完成"
+                content = f"任务: {task[:100]}{'...' if len(task) > 100 else ''}\n总结: {summary}\n动作数: {total_actions}"
+                get_system_message_service().add_info(
+                    title, content,
+                    source="autonomous_task", category=MessageCategory.TASK.value,
+                )
+            except Exception as e:
+                logger.warning(f"System notification for task_complete failed: {e}")
+
     async def _run_with_limit():
-        async for chunk in autonomous_agent.run_autonomous(task, session_id=session_id):
-            tracker.record_chunk(task_id, chunk)
-            await connection_manager.broadcast_to_session(session_id, chunk)
-            
-            # 广播监控事件给所有客户端（用于全局监控面板）
-            # 跳过已经通过 session 广播的 llm_request_end 事件，避免客户端重复显示
-            chunk_type = chunk.get("type", "")
-            if chunk_type not in ("llm_request_start", "llm_request_end"):
-                await broadcast_monitor_event(session_id, task_id, chunk, task_type="autonomous")
-
-            chunk_type = chunk.get("type")
-            if chunk_type == "error":
-                err_msg = chunk.get("error") or chunk.get("message") or "未知错误"
-                try:
-                    get_system_message_service().add_error(
-                        "自主任务执行错误",
-                        f"任务: {task[:100]}\n错误: {err_msg}",
-                        source="autonomous_task",
-                        category=MessageCategory.SYSTEM_ERROR.value,
-                    )
-                except Exception as _e:
-                    logger.warning(f"Failed to push error notification: {_e}")
-
-            elif chunk_type == "task_stopped":
-                nonlocal final_status
-                final_status = AutoTaskStatus.STOPPED
-                try:
-                    reason = chunk.get("message") or chunk.get("reason") or "未知原因"
-                    get_system_message_service().add_error(
-                        "自主任务被停止",
-                        f"任务: {task[:100]}\n原因: {reason}\n建议: {chunk.get('recommendation', '')}",
-                        source="autonomous_task",
-                        category=MessageCategory.SYSTEM_ERROR.value,
-                    )
-                except Exception as _e:
-                    logger.warning(f"Failed to push stop notification: {_e}")
-
-            elif chunk_type == "task_complete":
-                try:
-                    memory = get_episodic_memory()
-                    episode = Episode(
-                        episode_id=chunk.get("task_id", ""),
-                        task_description=task,
-                        result=chunk.get("summary", ""),
-                        success=chunk.get("success", False),
-                        total_actions=chunk.get("total_actions", 0),
-                        total_iterations=chunk.get("iterations", 0),
-                        execution_time_ms=chunk.get("execution_time_ms", 0),
-                        action_log=chunk.get("action_log", []),
-                        token_usage=chunk.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
-                    )
-                    memory.add_episode(episode)
-                except Exception as e:
-                    logger.error(f"Failed to save episode: {e}")
-                try:
-                    success = chunk.get("success", False)
-                    summary = chunk.get("summary", "") or task[:200]
-                    total_actions = chunk.get("total_actions", 0)
-                    title = "任务完成" if success else "任务未完成"
-                    content = f"任务: {task[:100]}{'...' if len(task) > 100 else ''}\n总结: {summary}\n动作数: {total_actions}"
-                    get_system_message_service().add_info(
-                        title, content,
-                        source="autonomous_task", category=MessageCategory.TASK.value,
-                    )
-                except Exception as e:
-                    logger.warning(f"System notification for task_complete failed: {e}")
+        await dispatcher.dispatch_stream(
+            autonomous_agent.run_autonomous(task, session_id=session_id),
+            on_chunk=_on_autonomous_chunk,
+        )
 
     try:
         async def _run_with_timeout():
@@ -934,15 +859,11 @@ async def _autonomous_task_worker(
         else:
             await _run_with_timeout()
 
-        done_chunk = {"type": "done"}
-        tracker.record_chunk(task_id, done_chunk)
-        await connection_manager.broadcast_to_session(session_id, done_chunk)
+        await dispatcher.send_done()
 
     except asyncio.TimeoutError:
         final_status = AutoTaskStatus.ERROR
-        timeout_chunk = {"type": "error", "message": "自主任务执行超时（TimeoutPolicy.autonomous_timeout）"}
-        tracker.record_chunk(task_id, timeout_chunk)
-        await connection_manager.broadcast_to_session(session_id, timeout_chunk)
+        await dispatcher.send_error("自主任务执行超时（TimeoutPolicy.autonomous_timeout）")
         try:
             get_system_message_service().add_error(
                 "自主任务超时", "任务执行时间超过限制，已自动停止",
@@ -952,16 +873,12 @@ async def _autonomous_task_worker(
             logger.warning(f"Failed to push timeout notification: {_e}")
     except asyncio.CancelledError:
         final_status = AutoTaskStatus.STOPPED
-        stopped_chunk = {"type": "stopped", "session_id": session_id}
-        tracker.record_chunk(task_id, stopped_chunk)
-        await connection_manager.broadcast_to_session(session_id, stopped_chunk)
+        await dispatcher.send_stopped()
         raise
     except Exception as e:
         final_status = AutoTaskStatus.ERROR
         logger.error(f"Error in autonomous execution: {e}", exc_info=True)
-        err_chunk = {"type": "error", "message": str(e)}
-        tracker.record_chunk(task_id, err_chunk)
-        await connection_manager.broadcast_to_session(session_id, err_chunk)
+        await dispatcher.send_error(str(e))
         try:
             get_system_message_service().add_error(
                 "自主任务执行错误", str(e),
@@ -970,8 +887,8 @@ async def _autonomous_task_worker(
         except Exception as _e:
             logger.warning(f"Failed to push error notification: {_e}")
     finally:
-        await tracker.finish(task_id, final_status)
-        # 确保客户端一定能收到结束信号，避免手机端一直转圈（异常/取消时上面只发了 error/stopped，补发 done）
+        await dispatcher.cleanup(final_status)
+        # 确保客户端一定能收到结束信号
         try:
             await connection_manager.broadcast_to_session(session_id, {"type": "done"})
         except Exception as _e:

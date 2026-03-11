@@ -41,10 +41,10 @@ class PortConfiguration: ObservableObject {
 
     // MARK: - Defaults
 
-    static let defaultBackendPort: UInt16 = 8765
-    static let defaultAXBridgePort: UInt16 = 5650
-    static let defaultIPCPort: UInt16 = 8767
-    static let defaultDuckStartPort: UInt16 = 8866
+    nonisolated static let defaultBackendPort: UInt16 = 8765
+    nonisolated static let defaultAXBridgePort: UInt16 = 5650
+    nonisolated static let defaultIPCPort: UInt16 = 8767
+    nonisolated static let defaultDuckStartPort: UInt16 = 8866
 
     // MARK: - UserDefaults Keys
 
@@ -102,7 +102,6 @@ class PortConfiguration: ObservableObject {
             }
         }
         // 内部互冲突检测：同一端口分配给多个服务
-        let ports = allPorts.map(\.port)
         var seen = Set<UInt16>()
         for (port, name) in allPorts {
             if seen.contains(port) {
@@ -114,7 +113,7 @@ class PortConfiguration: ObservableObject {
         showConflictAlert = !detected.isEmpty
     }
 
-    /// 用 lsof 检测端口是否被占用，返回占用进程名（nil = 未占用）
+    /// 用 lsof 检测端口是否被占用，返回占用进程名（nil = 未占用或属于本 App 自身进程）
     private func processOccupyingPort(_ port: UInt16) -> String? {
         let pipe = Pipe()
         let process = Process()
@@ -128,16 +127,57 @@ class PortConfiguration: ObservableObject {
         } catch {
             return nil
         }
-        guard let data = try? pipe.fileHandleForReading.readDataToEndOfFile(),
-              let output = String(data: data, encoding: .utf8), !output.isEmpty else {
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8), !output.isEmpty else {
             return nil
         }
         // 解析 lsof 输出, 第二行开始是结果
         let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty }
         guard lines.count > 1 else { return nil }
-        // COMMAND 列
-        let parts = lines[1].split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
-        return parts.isEmpty ? "未知进程" : String(parts[0])
+        // lsof 列: COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
+        let parts = lines[1].split(separator: " ", omittingEmptySubsequences: true)
+        guard parts.count >= 2 else { return "未知进程" }
+        let command = String(parts[0])
+        let pidStr = String(parts[1])
+        guard let pid = Int32(pidStr) else { return command }
+
+        // 1. 如果是当前 App 自身进程（AX Bridge / IPC 等），跳过
+        if pid == ProcessInfo.processInfo.processIdentifier {
+            return nil
+        }
+
+        // 2. 如果是 Python 进程，检查是否为本 App 启动的后端
+        let lowerCmd = command.lowercased()
+        if lowerCmd.contains("python") {
+            if isMacAgentBackendProcess(pid: pid) {
+                return nil
+            }
+        }
+
+        return command
+    }
+
+    /// 检查指定 PID 的 Python 进程是否属于 MacAgent 后端
+    private func isMacAgentBackendProcess(pid: Int32) -> Bool {
+        let pipe = Pipe()
+        let ps = Process()
+        ps.executableURL = URL(fileURLWithPath: "/bin/ps")
+        ps.arguments = ["-p", "\(pid)", "-o", "command="]
+        ps.standardOutput = pipe
+        ps.standardError = FileHandle.nullDevice
+        do {
+            try ps.run()
+            ps.waitUntilExit()
+        } catch {
+            return false
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let cmdLine = String(data: data, encoding: .utf8) else {
+            return false
+        }
+        let lower = cmdLine.lowercased()
+        // 后端特征：命令行包含 macagent 路径或 start.sh 或 main.py（在 backend 目录内）
+        return lower.contains("macagent") && (lower.contains("main.py") || lower.contains("start.sh") || lower.contains("uvicorn"))
     }
 
     /// 写入端口配置文件，供 Python 后端读取

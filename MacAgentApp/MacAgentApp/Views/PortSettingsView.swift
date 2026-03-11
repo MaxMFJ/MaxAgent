@@ -29,6 +29,7 @@ struct PortSettingsContent: View {
             HStack(spacing: 12) {
                 Button {
                     portConfig.checkConflicts()
+                    portConfig.writePortConfigFile()
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "antenna.radiowaves.left.and.right")

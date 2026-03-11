@@ -27,6 +27,16 @@
     "source": "log_analyzer",
     "category": "system_error",
     "timestamp": "2026-03-10T17:54:13.168473",
-    "read": false
+    "read": true
+  },
+  {
+    "id": "d85f2284-c62c-4f21-9b5d-63b2a7a4807a",
+    "level": "error",
+    "title": "自主任务执行错误",
+    "content": "'ErrorTracker' object has no attribute 'reset'",
+    "source": "autonomous_task",
+    "category": "system_error",
+    "timestamp": "2026-03-11T16:22:32.516015",
+    "read": true
   }
 ]

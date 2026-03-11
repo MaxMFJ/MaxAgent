@@ -1363,15 +1363,39 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)webSocketService:(WebSocketService *)service didReceiveDuckTaskComplete:(NSString *)content success:(BOOL)success sessionId:(NSString *)sessionId {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!content.length) return;
+        
+        // 消息去重：生成基于 session 和 content 的唯一标识
+        NSString *contentHash = [NSString stringWithFormat:@"%lu", (unsigned long)[content hash]];
+        NSString *dedupeId = [NSString stringWithFormat:@"duck_complete_%@_%@", sessionId, contentHash];
+        if ([self.displayedMessageIds containsObject:dedupeId]) {
+            NSLog(@"[Chat] Duplicate duck_task_complete, skipping: %@", dedupeId);
+            return;
+        }
+        [self.displayedMessageIds addObject:dedupeId];
+        
         ConversationManager *manager = [ConversationManager sharedManager];
         Conversation *conv = nil;
+        
+        // 首先尝试根据 sessionId 查找会话
         for (Conversation *c in manager.conversations) {
             if ([c.conversationId isEqualToString:sessionId]) {
                 conv = c;
                 break;
             }
         }
-        if (!conv) return;
+        
+        // 如果找不到,尝试使用当前会话(可能正在同步 session)
+        if (!conv && manager.currentConversation) {
+            NSLog(@"[Chat] Cannot find conversation for session %@, using current conversation %@", 
+                  sessionId, manager.currentConversation.conversationId);
+            conv = manager.currentConversation;
+        }
+        
+        if (!conv) {
+            NSLog(@"[Chat] No suitable conversation found for duck_task_complete, skipping");
+            return;
+        }
+        
         Message *msg = [Message assistantMessage];
         msg.content = content;
         msg.status = success ? MessageStatusComplete : MessageStatusError;
@@ -1385,7 +1409,8 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             [self.tableView reloadData];
             [self scrollToBottom];
         }
-        NSLog(@"[Chat] duck_task_complete: session=%@ success=%d", sessionId, success);
+        NSLog(@"[Chat] duck_task_complete: session=%@ success=%d added to conv=%@", 
+              sessionId, success, conv.conversationId);
     });
 }
 
@@ -1397,7 +1422,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
         if (self.currentAssistantMessage) {
             if (success && output.length > 0) {
                 self.currentAssistantMessage.content = output;
-                self.currentAssistantMessage.status = MessageStatusError;
+                self.currentAssistantMessage.status = MessageStatusComplete;
             } else {
                 NSString *msg = errorMessage.length > 0 ? errorMessage : @"Duck 未返回结果";
                 self.currentAssistantMessage.content = [NSString stringWithFormat:@"❌ %@", msg];
