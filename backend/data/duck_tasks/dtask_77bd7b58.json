@@ -1,0 +1,26 @@
+{
+  "task_id": "dtask_77bd7b58",
+  "description": "修改 /Users/lzz/Desktop/崂山道士.html 页面，按照 Glassmorphism 设计文档进行全面改造：\n\n## 设计文档核心要求\n\n### 1. 背景\n- 使用深山云雾渐变背景：linear-gradient(135deg, #1a3a2a 0%, #2d4a3d 25%, #3d5a4d 50%, #2a4a3a 75%, #1a3a2a 100%)\n- 背景大小 400% 400%，添加 cloudMove 动画（30s ease infinite）\n\n### 2. 玻璃卡片样式\n```css\n.glass-card {\n    background: rgba(255, 255, 255, 0.08);\n    backdrop-filter: blur(20px);\n    -webkit-backdrop-filter: blur(20px);\n    border: 1px solid rgba(255, 255, 255, 0.18);\n    border-radius: 16px;\n    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);\n}\n.glass-card:hover {\n    background: rgba(255, 255, 255, 0.12);\n    border-color: rgba(255, 255, 255, 0.25);\n    transform: translateY(-2px);\n    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n}\n```\n\n### 3. 玻璃按钮\n- 背景: rgba(255, 255, 255, 0.1)\n- backdrop-filter: blur(10px)\n- 边框: 1px solid rgba(255, 255, 255, 0.2)\n- border-radius: 12px\n- hover 时添加金色光晕 box-shadow: 0 4px 20px rgba(201, 162, 39, 0.3)\n- primary 按钮使用金色渐变\n\n### 4. 玻璃输入框\n- 背景: rgba(255, 255, 255, 0.05)\n- focus 时边框变为金色 rgba(201, 162, 39, 0.5)\n\n### 5. 配色变量\n```css\n--accent-gold: #c9a227;\n--accent-jade: #5d9a7a;\n--accent-red: #8b2323;\n--accent-blue: #4a7a9a;\n--text-primary: rgba(255, 255, 255, 0.95);\n--text-secondary: rgba(255, 255, 255, 0.7);\n```\n\n### 6. 字体\n- 标题: 'Ma Shan Zheng', 'ZCOOL XiaoWei', cursive 或 'Noto Serif SC'\n- 正文: 'Noto Sans SC', sans-serif\n- 字号: 标题 2.5rem, 正文 1.1rem, 行高 1.8\n\n### 7. 动效\n- 入场动画 glassFadeIn (0.6s ease-out)\n- 悬浮效果 translateY(-4px) scale(1.01)\n- 点击反馈 scale(0.96)\n- 金色光晕效果 glow-gold\n\n### 8. 特殊效果\n- 符文边框 rune-border（渐变边框动画）\n- 道法光晕效果\n\n请直接修改现有 HTML 文件，保持游戏逻辑不变，仅改造视觉样式为 Glassmorphism 风格。文件路径：/Users/lzz/Desktop/崂山道士.html\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。\n如果任务要求修改已有文件，请直接读取和修改原始文件，不要创建新文件。",
+  "task_type": "general",
+  "params": {
+    "file_paths": [
+      "/Users/lzz/Desktop/崂山道士.html"
+    ]
+  },
+  "status": "pending",
+  "priority": 0,
+  "timeout": 1800,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773308570.810661,
+  "assigned_at": 1773308570.811379,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773308570.811402
+}

@@ -631,7 +631,7 @@ class BackendService: ObservableObject {
         return response.response
     }
     
-    func sendMessageStream(_ content: String, sessionId: String? = nil) -> AsyncThrowingStream<StreamChunk, Error> {
+    func sendMessageStream(_ content: String, sessionId: String? = nil, filePaths: [String] = []) -> AsyncThrowingStream<StreamChunk, Error> {
         return AsyncThrowingStream { [weak self] continuation in
             Task { [weak self] in
                 guard let self = self else {
@@ -648,13 +648,16 @@ class BackendService: ObservableObject {
                         return
                     }
                     
-                    // 发送消息，包含 session_id
+                    // 发送消息，包含 session_id 和可选的 file_paths
                     var message: [String: Any] = [
                         "type": "chat",
                         "content": content
                     ]
                     if let sessionId = sessionId {
                         message["session_id"] = sessionId
+                    }
+                    if !filePaths.isEmpty {
+                        message["file_paths"] = filePaths
                     }
                     
                     let jsonData = try JSONSerialization.data(withJSONObject: message)
@@ -1298,7 +1301,7 @@ class BackendService: ObservableObject {
     
     // MARK: - Autonomous Execution
     
-    func sendAutonomousTask(_ task: String, sessionId: String? = nil, enableModelSelection: Bool = true, preferLocal: Bool = false, preferredTier: String? = nil) -> AsyncThrowingStream<StreamChunk, Error> {
+    func sendAutonomousTask(_ task: String, sessionId: String? = nil, enableModelSelection: Bool = true, preferLocal: Bool = false, preferredTier: String? = nil, filePaths: [String] = []) -> AsyncThrowingStream<StreamChunk, Error> {
         return AsyncThrowingStream { [weak self] continuation in
             Task { [weak self] in
                 guard let self = self else {
@@ -1327,6 +1330,10 @@ class BackendService: ObservableObject {
                     
                     if let sessionId = sessionId {
                         message["session_id"] = sessionId
+                    }
+                    
+                    if !filePaths.isEmpty {
+                        message["file_paths"] = filePaths
                     }
                     
                     let jsonData = try JSONSerialization.data(withJSONObject: message)

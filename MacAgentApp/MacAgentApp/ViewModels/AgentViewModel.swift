@@ -26,6 +26,8 @@ class AgentViewModel: ObservableObject {
     @Published var conversations: [Conversation] = []
     @Published var currentConversation: Conversation?
     @Published var inputText: String = ""
+    /// 用户拖拽到输入框的附件文件路径（发送后清空）
+    @Published var attachedFilePaths: [String] = []
     @Published var isConnected: Bool = false
     @Published var isLoading: Bool = false
     @Published var showSettings: Bool = false
@@ -753,7 +755,9 @@ class AgentViewModel: ObservableObject {
         let assistantMessage = Message(role: .assistant, content: "", isStreaming: true)
         conversation.messages.append(assistantMessage)
         
+        let filePaths = attachedFilePaths
         inputText = ""
+        attachedFilePaths = []
         updateCurrentConversation(conversation)
         isLoading = true
         executionLogs = []
@@ -768,7 +772,7 @@ class AgentViewModel: ObservableObject {
                     currentSendTask = nil
                 }
             }
-            await sendMessageWithRetry(content, sessionId: conversationId, retryCount: 0)
+            await sendMessageWithRetry(content, sessionId: conversationId, retryCount: 0, filePaths: filePaths)
         }
     }
     
@@ -821,7 +825,7 @@ class AgentViewModel: ObservableObject {
         }
     }
     
-    private func sendMessageWithRetry(_ messageText: String, sessionId: String, retryCount: Int) async {
+    private func sendMessageWithRetry(_ messageText: String, sessionId: String, retryCount: Int, filePaths: [String] = []) async {
         if ttsEnabled {
             TTSService.shared.resetStreamState()
         }
@@ -832,7 +836,7 @@ class AgentViewModel: ObservableObject {
             executionLogs = []
             defer { isStreamingLLM = false }
 
-            for try await chunk in backendService.sendMessageStream(messageText, sessionId: sessionId) {
+            for try await chunk in backendService.sendMessageStream(messageText, sessionId: sessionId, filePaths: filePaths) {
                 switch chunk {
                 case .content(let text):
                     fullContent += text
@@ -1094,7 +1098,9 @@ class AgentViewModel: ObservableObject {
         conversation.messages.append(assistantMessage)
         
         let task = inputText
+        let filePaths = attachedFilePaths
         inputText = ""
+        attachedFilePaths = []
         
         updateCurrentConversation(conversation)
         isLoading = true
@@ -1112,11 +1118,11 @@ class AgentViewModel: ObservableObject {
                     currentSendTask = nil
                 }
             }
-            await executeAutonomousTask(task, sessionId: sessionId)
+            await executeAutonomousTask(task, sessionId: sessionId, filePaths: filePaths)
         }
     }
     
-    private func executeAutonomousTask(_ task: String, sessionId: String) async {
+    private func executeAutonomousTask(_ task: String, sessionId: String, filePaths: [String] = []) async {
         var statusContent = ""
         var completedActions = 0
         var failedActions = 0
@@ -1134,7 +1140,8 @@ class AgentViewModel: ObservableObject {
                 for try await chunk in backendService.sendAutonomousTask(
                     task,
                     sessionId: sessionId,
-                    preferredTier: preferredModelTier == "auto" ? nil : preferredModelTier
+                    preferredTier: preferredModelTier == "auto" ? nil : preferredModelTier,
+                    filePaths: filePaths
                 ) {
                     switch chunk {
                 case .modelSelected(let modelType, let reason, let taskType, let complexity):

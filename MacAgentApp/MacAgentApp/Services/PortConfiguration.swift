@@ -41,7 +41,7 @@ class PortConfiguration: ObservableObject {
 
     // MARK: - Defaults
 
-    nonisolated static let defaultBackendPort: UInt16 = 8765
+    nonisolated static let defaultBackendPort: UInt16 = 8769
     nonisolated static let defaultAXBridgePort: UInt16 = 5650
     nonisolated static let defaultIPCPort: UInt16 = 8767
     nonisolated static let defaultDuckStartPort: UInt16 = 8866

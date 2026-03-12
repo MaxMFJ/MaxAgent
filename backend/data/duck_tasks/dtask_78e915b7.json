@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_78e915b7",
+  "description": "## 任务：修改 /Users/lzz/Desktop/崂山道士.html 页面为 Glassmorphism（玻璃态）风格\n\n### 背景\n现有 `/Users/lzz/Desktop/崂山道士.html` 是一个文字冒险游戏，需要按照设计文档 `/Users/lzz/Desktop/崂山道士_Glassmorphism设计文档.md` 进行视觉改造。\n\n### 设计规格（必须全部实现）\n\n**1. 背景**\n- 渐变色背景：linear-gradient(135deg, #1a3a2a 0%, #2d4a3d 25%, #3d5a4d 50%, #2a4a3a 75%, #1a3a2a 100%)\n- 背景动画：cloudMove 30s ease infinite，背景尺寸 400% 400%\n\n**2. 配色方案（CSS 变量）**\n```css\n--bg-gradient: linear-gradient(135deg, #1a3a2a, #2d4a3d, #3d5a4d, #2a4a3a, #1a3a2a);\n--glass-bg: rgba(255, 255, 255, 0.08);\n--glass-bg-hover: rgba(255, 255, 255, 0.12);\n--glass-border: rgba(255, 255, 255, 0.18);\n--accent-gold: #c9a227;\n--accent-jade: #5d9a7a;\n--accent-red: #8b2323;\n--accent-blue: #4a7a9a;\n--text-primary: rgba(255, 255, 255, 0.95);\n--text-secondary: rgba(255, 255, 255, 0.7);\n--text-muted: rgba(255, 255, 255, 0.5);\n```\n\n**3. 玻璃卡片样式**\n```css\n.glass-card {\n    background: rgba(255, 255, 255, 0.08);\n    backdrop-filter: blur(20px);\n    -webkit-backdrop-filter: blur(20px);\n    border: 1px solid rgba(255, 255, 255, 0.18);\n    border-radius: 16px;\n    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);\n    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n}\n.glass-card:hover {\n    background: rgba(255, 255, 255, 0.12);\n    border-color: rgba(255, 255, 255, 0.25);\n    transform: translateY(-4px) scale(1.01);\n    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 0 30px rgba(201, 162, 39, 0.1);\n}\n```\n\n**4. 玻璃按钮样式**\n```css\n.glass-button {\n    background: rgba(255, 255, 255, 0.1);\n    backdrop-filter: blur(10px);\n    -webkit-backdrop-filter: blur(10px);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    border-radius: 12px;\n    color: rgba(255, 255, 255, 0.9);\n    padding: 12px 24px;\n    transition: all 0.3s ease;\n    cursor: pointer;\n}\n.glass-button:hover {\n    background: rgba(255, 255, 255, 0.18);\n    border-color: rgba(255, 255, 255, 0.3);\n    box-shadow: 0 4px 20px rgba(201, 162, 39, 0.3);\n}\n.glass-button:active {\n    transform: scale(0.96);\n}\n.glass-button.primary {\n    background: linear-gradient(135deg, rgba(201, 162, 39, 0.3), rgba(201, 162, 39, 0.15));\n    border-color: rgba(201, 162, 39, 0.5);\n}\n.glass-button.primary:hover {\n    background: linear-gradient(135deg, rgba(201, 162, 39, 0.4), rgba(201, 162, 39, 0.25));\n    box-shadow: 0 4px 24px rgba(201, 162, 39, 0.4);\n}\n```\n\n**5. 玻璃输入框样式**\n```css\n.glass-input {\n    background: rgba(255, 255, 255, 0.05);\n    backdrop-filter: blur(10px);\n    -webkit-backdrop-filter: blur(10px);\n    border: 1px solid rgba(255, 255, 255, 0.15);\n    border-radius: 10px;\n    color: rgba(255, 255, 255, 0.9);\n    padding: 12px 16px;\n    transition: all 0.3s ease;\n}\n.glass-input:focus {\n    outline: none;\n    border-color: rgba(201, 162, 39, 0.5);\n    background: rgba(255, 255, 255, 0.08);\n    box-shadow: 0 0 20px rgba(201, 162, 39, 0.2);\n}\n.glass-input::placeholder {\n    color: rgba(255, 255, 255, 0.4);\n}\n```\n\n**6. 字体规范**\n- 标题字体：'Ma Shan Zheng', 'ZCOOL XiaoWei', cursive（书法风格）\n- 正文字体：'Noto Serif SC', 'Source Han Serif CN', 'SimSun', serif\n- 辅助字体：'Noto Sans SC', 'Microsoft YaHei', sans-serif\n- 标题阴影：0 2px 4px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 162, 39, 0.3)\n\n**7. 动效**\n- 入场动画：glassFadeIn 0.6s ease-out\n- 悬浮效果：transform + box-shadow 过渡\n- 点击反馈：scale(0.96)\n\n**8. 响应式断点**\n- 移动端 (max-width: 768px)：border-radius 12px, margin 8px\n- 平板 (769px-1024px)：border-radius 14px, margin 12px\n- 桌面 (min-width: 1025px)：border-radius 16px, margin 16px\n\n### 改造优先级\n1. 第一阶段：背景 + 主要卡片玻璃化\n2. 第二阶段：交互组件玻璃化\n3. 第三阶段：特殊效果增强\n\n请修改完成后保存到 /Users/lzz/Desktop/崂山道士.html\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。\n如果任务要求修改已有文件，请直接读取和修改原始文件，不要创建新文件。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 1800,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773306399.240441,
+  "assigned_at": 1773306399.241407,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773306399.241432
+}

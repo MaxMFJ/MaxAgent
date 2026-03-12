@@ -250,6 +250,44 @@ async def _on_duck_task_complete(session_id: str, task) -> None:
                 except Exception:
                     pass
 
+        # 额外检查：Designer Duck 可能直接输出了 .md 设计文档（非 _design_spec.md 命名）
+        md_files = [fp for fp in file_paths if fp.lower().endswith(".md")]
+        if md_files and not design_spec_content:
+            for md_fp in md_files:
+                try:
+                    with open(md_fp, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    # 检查是否包含设计规格关键词
+                    if any(kw in content for kw in ("色彩", "配色", "Color", "布局", "Layout", "组件", "Component", "Glassmorphism", "设计")):
+                        design_spec_content = content[:2000]
+                        paths_hint += f"\n设计文档：`{md_fp}`"
+                        break
+                except Exception:
+                    pass
+
+        # 从 Duck 输出文本中提取设计规格路径（Duck 可能写到任务指定的路径，不在 file_paths 中）
+        if not design_spec_content:
+            import re
+            output_text = str(task.output or "")
+            desc_text = original_desc
+            # 从输出和描述中查找 .md 路径
+            for search_text in [output_text, desc_text]:
+                md_path_matches = re.findall(
+                    r'(/(?:Users|tmp|home)/[^\s"\'\\,，]+\.md)',
+                    search_text, re.IGNORECASE,
+                )
+                for md_path in md_path_matches:
+                    expanded = os.path.expanduser(md_path.replace("~", os.path.expanduser("~")))
+                    if os.path.exists(expanded) and not design_spec_content:
+                        try:
+                            with open(expanded, "r", encoding="utf-8") as f:
+                                content = f.read()
+                            if any(kw in content for kw in ("色彩", "配色", "Color", "布局", "Layout", "设计")):
+                                design_spec_content = content[:2000]
+                                paths_hint += f"\n设计文档：`{expanded}`"
+                        except Exception:
+                            pass
+
         output_str = str(task.output or "")
 
         continuation_msg = (
@@ -369,6 +407,7 @@ async def _try_auto_delegate(
     session_id: str,
     websocket: WebSocket,
     notify_type: str,
+    file_paths: list | None = None,
 ) -> bool:
     """
     若 AUTO_DELEGATE_WHEN_MAIN_BUSY 已开启且有空闲 Duck，
@@ -392,9 +431,11 @@ async def _try_auto_delegate(
             )
             return False
         scheduler = get_task_scheduler()
+        params = {"file_paths": file_paths} if file_paths else {}
         duck_task = await scheduler.submit(
             description=description,
             task_type="general",
+            params=params,
             strategy=ScheduleStrategy.SINGLE,
             source_session_id=session_id,
         )
@@ -569,9 +610,14 @@ async def _handle_chat(
     """处理 chat 消息：流式对话"""
     agent_core = get_agent_core()
     content = message.get("content", "")
+    file_paths = message.get("file_paths") or []
     session_id = message.get("session_id") or message.get("conversation_id") or current_session_id
 
-    logger.info(f"Received chat message (session: {session_id}): {content[:100]}...")
+    if file_paths:
+        content = f"{content}\n\n【用户附带文件】\n" + "\n".join(f"- {p}" for p in file_paths)
+        logger.info(f"Received chat message (session: {session_id}) with {len(file_paths)} file refs: {content[:100]}...")
+    else:
+        logger.info(f"Received chat message (session: {session_id}): {content[:100]}...")
 
     await connection_manager.broadcast_to_session(
         session_id,
@@ -600,7 +646,7 @@ async def _handle_chat(
 
     # ── 主 Agent 忙时自动委派给 Duck（缺陷修复：5.1）────────────────────────
     if is_main_agent_busy(session_id, "chat"):
-        delegated = await _try_auto_delegate(content, session_id, websocket, "chat")
+        delegated = await _try_auto_delegate(content, session_id, websocket, "chat", file_paths=file_paths)
         if delegated:
             return session_id
         # 无可用 Duck：回退到旧行为（cancel 旧 chat 任务，由主 Agent 执行新任务）
@@ -926,7 +972,11 @@ async def _handle_autonomous_task(
     """非阻塞启动自主任务，立即返回 task_id 给客户端"""
     autonomous_agent = get_autonomous_agent()
     task = message.get("task", "")
+    file_paths = message.get("file_paths") or []
     session_id = message.get("session_id") or current_session_id
+
+    if file_paths:
+        task = f"{task}\n\n【用户附带文件】\n" + "\n".join(f"- {p}" for p in file_paths)
 
     # 将当前连接加入任务使用的 session，否则 broadcast_to_session(session_id, chunk) 发不到本客户端
     if session_id != current_session_id:
@@ -975,7 +1025,7 @@ async def _handle_autonomous_task(
 
     # ── 主 Agent 忙时自动委派给 Duck（缺陷修复：5.1）────────────────────────
     if is_main_agent_busy(session_id, "autonomous"):
-        delegated = await _try_auto_delegate(task, session_id, websocket, "autonomous")
+        delegated = await _try_auto_delegate(task, session_id, websocket, "autonomous", file_paths=file_paths)
         if delegated:
             return
         # 无可用 Duck：回退到旧行为（TaskTracker.register 会自动 cancel 旧任务）

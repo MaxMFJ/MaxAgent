@@ -8,6 +8,7 @@ Local Duck Worker — 本地 Duck 运行时
 from __future__ import annotations
 import asyncio
 import logging
+import os
 import platform
 import socket
 import time
@@ -288,21 +289,50 @@ class LocalDuckWorker:
                      self.duck_id, llm_client.config.model if hasattr(llm_client, 'config') else 'main')
         return agent
 
+    @staticmethod
+    def _desc_has_explicit_output_path(description: str) -> bool:
+        """检测任务描述中是否包含明确的输出路径（如 ~/Desktop/xxx.md, /Users/xxx/xxx.html）。"""
+        import re
+        # 匹配 "输出到/保存到/写入到 + 路径" 或描述中直接包含绝对路径的输出指示
+        explicit_patterns = [
+            r'(?:输出|保存|写入|生成|创建)\s*(?:到|至|为)\s*[`"\']*(/[^\s`"\'，,]+|~/[^\s`"\'，,]+)',
+            r'(?:output|save|write)\s+(?:to|at|as)\s+[`"\']*(/[^\s`"\'，,]+|~/[^\s`"\'，,]+)',
+        ]
+        for pat in explicit_patterns:
+            if re.search(pat, description, re.IGNORECASE):
+                return True
+        return False
+
+    @staticmethod
+    def _desc_has_modify_existing_intent(description: str) -> bool:
+        """检测任务是否意在修改现有文件（而非创建新文件）。"""
+        import re
+        modify_patterns = [
+            r'(?:修改|改造|重新设计|重构|优化|更新|替换)\s*(?:现有|已有|桌面上的|原始)',
+            r'(?:modify|update|refactor|redesign)\s+(?:existing|the|current)',
+            r'(?:修改|改造)\s+[^\s]+\.(?:html|css|js|py)',
+        ]
+        for pat in modify_patterns:
+            if re.search(pat, description, re.IGNORECASE):
+                return True
+        return False
+
     def _build_isolated_description(self, payload: DuckTaskPayload, sandbox=None) -> str:
         """
-        v3.8.1: 构建隔离的任务描述 — 只包含任务本身 + 必要文件引用 + 沙箱路径。
-        不含主 Agent 会话历史、action_logs 或其他 session 状态。
+        v3.8.2: 构建隔离的任务描述 — 只包含任务本身 + 必要文件引用 + 工作目录提示。
 
-        隔离原则:
-        1. 仅传入 payload.description（来自主 Agent 的委派描述）
-        2. 附加 payload.params 中的文件引用（如存在）
-        3. 附加沙箱工作目录（如存在）
+        智能路径策略:
+        1. 若任务描述包含明确输出路径（如 "输出到 ~/Desktop/xxx.md"），优先使用该路径
+        2. 若任务是修改现有文件，允许读取和写回原始路径
+        3. 仅当任务没有明确输出路径时，才建议使用沙箱工作目录
         """
+        import re
+
         parts = [payload.description]
 
-        # 附加任务参数中的文件引用
+        # 附加任务参数中的文件引用（方案 A+D：大文件用智能摘要+缓存，小文件直接给路径）
+        file_refs = []
         if payload.params:
-            file_refs = []
             for key in ("file_path", "file_paths", "input_file", "output_file", "source_file", "target_path"):
                 val = payload.params.get(key)
                 if val:
@@ -310,19 +340,59 @@ class LocalDuckWorker:
                         file_refs.extend(str(v) for v in val)
                     else:
                         file_refs.append(str(val))
-            if file_refs:
-                parts.append(f"\n【相关文件】{', '.join(file_refs)}")
+        # 从描述中解析文件路径（多种格式）
+        if not file_refs and payload.description:
+            # 格式1: 【用户附带文件】列表格式 "- /path" 或 "• ~/path"
+            for m in re.finditer(r"[-•]\s*(/[^\s\n]+|~/[^\s\n]+)", payload.description):
+                p = os.path.expanduser(m.group(1).strip())
+                if os.path.exists(p) and p not in file_refs:
+                    file_refs.append(p)
+            # 格式2: 描述中内嵌的绝对路径（如 "修改 /Users/xxx/file.html"）
+            if not file_refs:
+                for m in re.finditer(r'(/(?:Users|home|tmp|var|opt)/[^\s"\'\\,，；；、\]\)>\n]+)', payload.description):
+                    p = m.group(1).rstrip("。.）)")
+                    if os.path.exists(p) and p not in file_refs:
+                        file_refs.append(p)
+        if file_refs:
+            parts.append(f"\n【相关文件路径】{', '.join(file_refs)}")
+            try:
+                from services.file_structure_service import build_file_refs_with_summary
+                summary_block = build_file_refs_with_summary(file_refs)
+                if summary_block:
+                    parts.append(f"\n【文件结构摘要】（大文件已压缩，可分段 read_file 按需读取详情）\n{summary_block}")
+            except Exception as _e:
+                logger.warning(f"File structure summary failed: {_e}")
 
-        # 附加沙箱工作目录
+        desc = payload.description or ""
+        has_explicit_path = self._desc_has_explicit_output_path(desc)
+        has_modify_intent = self._desc_has_modify_existing_intent(desc)
+
         if sandbox:
-            parts.append(f"\n【工作目录】请将产出文件保存到: {sandbox.workspace_dir}")
+            if has_explicit_path:
+                # 任务描述中有明确输出路径，尊重用户意图
+                parts.append(
+                    f"\n【工作目录】沙箱工作区: {sandbox.workspace_dir}"
+                    f"\n⚠️ 注意：任务描述中已指定了输出路径，请将文件保存到任务描述中指定的路径，而非沙箱。"
+                    f"\n如需创建临时文件或中间产物，可使用沙箱目录。"
+                )
+            elif has_modify_intent:
+                # 任务是修改现有文件，允许读写原始路径
+                parts.append(
+                    f"\n【工作目录】沙箱工作区: {sandbox.workspace_dir}"
+                    f"\n⚠️ 注意：此任务需要修改现有文件。你可以直接读取和修改原始文件路径。"
+                    f"\n完成后将修改后的文件保存回原始路径。沙箱仅用于临时文件。"
+                )
+            else:
+                # 默认行为：保存到沙箱
+                parts.append(f"\n【工作目录】请将产出文件保存到: {sandbox.workspace_dir}")
 
         return "\n".join(parts)
 
     def _build_retry_description(self, payload: DuckTaskPayload, sandbox, failure_summary: str, attempt: int) -> str:
         """
-        v3.8.1: 重试上下文重建 — 创建全新上下文，注入前次失败摘要。
+        v3.8.2: 重试上下文重建 — 创建全新上下文，注入前次失败摘要。
         不追加到旧 context，而是从零开始，附带失败经验。
+        保留与 _build_isolated_description 一致的智能路径策略。
         """
         parts = [
             f"【第 {attempt} 次尝试 · 强制执行模式】",
@@ -336,8 +406,19 @@ class LocalDuckWorker:
             f"原始任务：{payload.description}",
         ]
 
+        desc = payload.description or ""
+        has_explicit_path = self._desc_has_explicit_output_path(desc)
+        has_modify_intent = self._desc_has_modify_existing_intent(desc)
+
         if sandbox:
-            parts.append(f"\n【工作目录】{sandbox.workspace_dir}")
+            if has_explicit_path:
+                parts.append(f"\n【工作目录】沙箱: {sandbox.workspace_dir}")
+                parts.append("⚠️ 任务描述中已指定输出路径，请保存到任务指定的路径而非沙箱。")
+            elif has_modify_intent:
+                parts.append(f"\n【工作目录】沙箱: {sandbox.workspace_dir}")
+                parts.append("⚠️ 此任务需修改现有文件，可直接读写原始路径。")
+            else:
+                parts.append(f"\n【工作目录】{sandbox.workspace_dir}")
 
         return "\n".join(parts)
 
@@ -443,7 +524,12 @@ class LocalDuckWorker:
 
         # 活跃时间追踪（每个 chunk 到来时更新），用于惰性超时检测
         last_active: list = [time.time()]
-        INACTIVITY_TIMEOUT = 90  # 90 秒无任何 chunk → 认为任务卡死
+        # v3.8.2: 相位感知超时 — 监听 Duck 是否因工作导致超时
+        # 若 Duck 正在工作（LLM 处理/工具执行），给予更长时间；仅当空闲且无下一步才判断失败
+        duck_phase: list = ["idle"]  # "idle" | "llm_waiting" | "tool_executing"
+        IDLE_INACTIVITY_TIMEOUT = 90     # 空闲：90s 无任何 chunk → 真正卡死
+        LLM_INACTIVITY_TIMEOUT = 300     # LLM 处理中：5 分钟（大上下文/大文件可能很慢）
+        TOOL_INACTIVITY_TIMEOUT = 180    # 工具执行中：3 分钟（如 create_and_run_script 生成大文件）
 
         # 获取 scheduler 引用，用于更新任务活跃时间
         from services.duck_task_scheduler import get_task_scheduler
@@ -455,6 +541,24 @@ class LocalDuckWorker:
             async for chunk in agent.run_autonomous(description, session_id=duck_session):
                 last_active[0] = time.time()  # 有进展，更新活跃时间
                 _scheduler.update_task_activity(payload.task_id)  # 同步更新调度器层面的活跃时间
+
+                # v3.8.2: 相位感知 — 根据 chunk 类型更新 duck_phase（工作导致超时则延长时间）
+                chunk_type = chunk.get("type", "")
+                if chunk_type == "llm_request_start":
+                    duck_phase[0] = "llm_waiting"
+                elif chunk_type == "llm_request_end":
+                    duck_phase[0] = "idle"
+                elif chunk_type in ("tool_call",):
+                    duck_phase[0] = "tool_executing"
+                elif chunk_type == "tool_result":
+                    duck_phase[0] = "idle"  # 工具返回后可能马上发起下一轮 LLM
+                elif chunk_type == "chunk":
+                    # 流式内容：若在 LLM 输出中则视为 llm_waiting，避免长生成被误判卡死
+                    if duck_phase[0] == "llm_waiting":
+                        pass  # 保持
+                    else:
+                        duck_phase[0] = "llm_waiting"  # 收到内容即视为 LLM 在工作
+
                 # 实时广播执行步骤到全局监控面板
                 await broadcast_monitor_event(
                     session_id=source_session,
@@ -464,7 +568,6 @@ class LocalDuckWorker:
                     worker_type="local_duck",
                     worker_id=self.duck_id,
                 )
-                chunk_type = chunk.get("type", "")
                 if chunk_type == "task_complete":
                     summary = chunk.get("summary", "") or ""
                     break
@@ -476,11 +579,14 @@ class LocalDuckWorker:
 
         async def _run_smart(description: str, hard_timeout: float) -> str:
             """
-            智能超时执行：
+            v3.8.2 智能相位感知超时执行：
             - 每 20s 检查 Duck 是否仍活跃（有 chunk 产出）
-            - 若 {INACTIVITY_TIMEOUT}s 内无任何 chunk → 判定 Duck 卡死，取消任务
+            - 根据 Duck 当前相位使用不同超时阈值：
+              * idle: 90s （真正无事可做）
+              * llm_waiting: 300s （LLM 处理大上下文可能很慢）
+              * tool_executing: 180s （工具执行如生成大文件）
             - 若超过 hard_timeout 硬上限 → 取消任务
-            只要 Duck 持续工作（截图、调用工具等产出 chunk），就不会超时。
+            只要 Duck 持续工作，就不会被误杀。
             """
             last_active[0] = time.time()
             hard_deadline = time.time() + hard_timeout
@@ -501,11 +607,21 @@ class LocalDuckWorker:
                         raise asyncio.TimeoutError(
                             f"任务超时：总执行时间超过 {int(hard_timeout)}s 上限"
                         )
-                    if inactivity > INACTIVITY_TIMEOUT:
+                    # v3.8.2: 根据当前相位选择超时阈值
+                    current_phase = duck_phase[0]
+                    if current_phase == "llm_waiting":
+                        timeout_threshold = LLM_INACTIVITY_TIMEOUT
+                    elif current_phase == "tool_executing":
+                        timeout_threshold = TOOL_INACTIVITY_TIMEOUT
+                    else:
+                        timeout_threshold = IDLE_INACTIVITY_TIMEOUT
+
+                    if inactivity > timeout_threshold:
                         stream_task.cancel()
                         await asyncio.gather(stream_task, return_exceptions=True)
                         raise asyncio.TimeoutError(
-                            f"任务卡死：{int(inactivity)}s 内无任何进展，Duck 可能已挂起"
+                            f"任务卡死：{int(inactivity)}s 内无任何进展"
+                            f"（相位={current_phase}，阈值={timeout_threshold}s），Duck 可能已挂起"
                         )
             finally:
                 if not stream_task.done():

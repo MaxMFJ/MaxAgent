@@ -1,0 +1,2 @@
+{"iteration": 1, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 5705, "success": true, "ts": 1773302847.732343}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773302848.640578}

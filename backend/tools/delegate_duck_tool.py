@@ -90,9 +90,29 @@ class DelegateDuckTool(BaseTool):
 
             # 注入实际路径，避免 Duck 用 xxx/$(whoami) 等占位符
             desktop_path = os.path.realpath(os.path.expanduser("~/Desktop"))
+
+            # 检测任务中引用的现有文件路径，展开 ~ 为实际路径
+            import re
+            expanded_description = description
+            # 展开 ~/Desktop 等波浪号路径为绝对路径
+            tilde_paths = re.findall(r'(~/[^\s"\'\\,，；；、\]\)>]+)', description)
+            extracted_file_paths = []
+            for tp in tilde_paths:
+                real_p = os.path.realpath(os.path.expanduser(tp))
+                expanded_description = expanded_description.replace(tp, real_p)
+                if os.path.exists(real_p):
+                    extracted_file_paths.append(real_p)
+
+            # 同时提取已有的绝对路径
+            abs_paths = re.findall(r'(/(?:Users|home|tmp|var|opt)/[^\s"\'\\,，；；、\]\)>]+)', expanded_description)
+            for ap in abs_paths:
+                if os.path.exists(ap) and ap not in extracted_file_paths:
+                    extracted_file_paths.append(ap)
+
             enhanced_description = (
-                f"{description}\n\n"
-                f"【重要】保存文件时必须使用实际路径：{desktop_path}，禁止用 /Users/xxx/ 或 $(whoami)。"
+                f"{expanded_description}\n\n"
+                f"【重要】保存文件时必须使用实际路径：{desktop_path}，禁止用 /Users/xxx/ 或 $(whoami)。\n"
+                f"如果任务要求修改已有文件，请直接读取和修改原始文件，不要创建新文件。"
             )
 
             from agent.terminal_session import get_current_session_id
@@ -105,7 +125,7 @@ class DelegateDuckTool(BaseTool):
             task = await scheduler.submit(
                 description=enhanced_description,
                 task_type="general",
-                params={},
+                params={"file_paths": extracted_file_paths} if extracted_file_paths else {},
                 priority=0,
                 timeout=1800,
                 strategy="single",

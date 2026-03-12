@@ -1,0 +1,14 @@
+{"iteration": 1, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 8078, "success": true, "ts": 1773305876.44382}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773305877.361475}
+{"iteration": 2, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 8398, "success": true, "ts": 1773305887.770466}
+{"iteration": 2, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773305888.3187652}
+{"iteration": 3, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 5596, "success": true, "ts": 1773305895.921477}
+{"iteration": 3, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773305896.484294}
+{"iteration": 4, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 11010, "success": true, "ts": 1773305909.50298}
+{"iteration": 4, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773305910.069257}
+{"iteration": 5, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 11121, "success": true, "ts": 1773305923.193106}
+{"iteration": 5, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773305923.789195}
+{"iteration": 6, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 6777, "success": true, "ts": 1773305939.3847418}
+{"iteration": 6, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773305939.959747}
+{"iteration": 7, "type": "llm", "model": "custom.d8b27d47/glm-5", "latency_ms": 8575, "success": true, "ts": 1773305950.542044}
+{"iteration": 7, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773305951.0826392}

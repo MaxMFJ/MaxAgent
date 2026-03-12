@@ -965,6 +965,18 @@ class AutonomousAgent:
                         )
                 
                 llm_events: List[Dict[str, Any]] = []
+
+                # v3.8.2: 先 yield llm_request_start，让 Duck worker 知道我们正在等 LLM
+                # （此前 llm_request_start 和 llm_request_end 一起在 _generate_action 完成后才 yield，
+                #   导致 LLM 思考期间 Duck worker 无 chunk 收到而误判超时）
+                yield {
+                    "type": "llm_request_start",
+                    "iteration": context.current_iteration,
+                    "provider": self.llm.config.provider if hasattr(self.llm, 'config') else "",
+                    "model": (self.llm.config.model or "") if hasattr(self.llm, 'config') else "",
+                    "_pre_call": True,  # 标记：这是预发射信号，真正的将在 llm_events 中
+                }
+
                 action = await self._generate_action(context, llm_events=llm_events)
                 for evt in llm_events:
                     yield evt
@@ -992,6 +1004,17 @@ class AutonomousAgent:
                                 reasoning="Output files already exist, treating as completed.",
                             )
                     if action is None:
+                        # 检测 LLM 超时（区别于解析失败），注入上下文缩减提示
+                        was_llm_timeout = getattr(context, "_last_llm_timeout", False)
+                        if was_llm_timeout:
+                            context._last_llm_timeout = False
+                            context._truncation_hint = (
+                                "【LLM 超时警告】上次 LLM 调用超时，可能因为上下文过大或预期输出过长。\n"
+                                "请采取以下策略之一：\n"
+                                "1. 使用 create_and_run_script 编写 Python 脚本来生成/修改文件，避免在 JSON 中输出大量内容\n"
+                                "2. 分步操作：先修改 CSS 部分，再修改 HTML 结构，每步只处理文件的一部分\n"
+                                "3. 如果需要大量修改，用 run_shell 执行 sed/awk 等命令或 Python 脚本"
+                            )
                         # 若为 write_file 截断场景触发的「再试一次」，不增加 retry_count
                         allow_one_more = getattr(context, "_allow_one_more_retry", False)
                         if allow_one_more:
@@ -1003,9 +1026,10 @@ class AutonomousAgent:
                         
                         backoff_seconds = min(2 ** context.retry_count, 30)
                         # 解析重试：用 retry 类型，前端显示「正在重试…」而非「错误」
+                        retry_reason = "LLM timeout, switching strategy" if was_llm_timeout else "Retrying parse"
                         yield {
                             "type": "retry",
-                            "message": f"Retrying parse… ({context.retry_count}/{context.max_retries}, {backoff_seconds}s later)",
+                            "message": f"{retry_reason}… ({context.retry_count}/{context.max_retries}, {backoff_seconds}s later)",
                             "retry_count": context.retry_count,
                             "max_retries": context.max_retries,
                             "backoff_seconds": backoff_seconds,
@@ -2176,6 +2200,8 @@ class AutonomousAgent:
             
         except asyncio.TimeoutError:
             logger.error("LLM request timed out (TimeoutPolicy.llm_timeout or 120s fallback)")
+            # 标记超时，让调用方区分超时 vs 解析失败，采取不同重试策略
+            context._last_llm_timeout = True
             if llm_events is not None:
                 llm_events.append({
                     "type": "llm_request_end",
@@ -2731,6 +2757,58 @@ class AutonomousAgent:
             }
 
         try:
+            file_size = os.path.getsize(path)
+            # Duck 模式下大文件主动拦截：返回摘要+首尾片段，避免全量内容涌入 LLM 上下文
+            BIG_FILE_THRESHOLD = 20 * 1024  # 20KB
+            # 判断是否为 Duck：优先用 isolated_context（Local Duck），再检查环境变量（Remote Duck）
+            is_duck = getattr(self, 'isolated_context', False)
+            if not is_duck:
+                try:
+                    from app_state import IS_DUCK_MODE
+                    is_duck = IS_DUCK_MODE
+                except ImportError:
+                    pass
+            # Duck + 大文件 + 从头读取（offset==0）：无论 limit 多少都返回摘要
+            if is_duck and file_size > BIG_FILE_THRESHOLD and offset == 0:
+                with open(path, "r", encoding=encoding, errors="replace") as f:
+                    lines = f.readlines()
+                total_lines = len(lines)
+                # 首 80 行 + 尾 30 行
+                head_lines = 80
+                tail_lines = 30
+                head = "".join(lines[:head_lines])
+                tail = "".join(lines[-tail_lines:]) if total_lines > head_lines + tail_lines else ""
+                # 智能摘要
+                summary_block = ""
+                try:
+                    from services.file_structure_service import get_file_structure_summary
+                    summary = get_file_structure_summary(path)
+                    if summary:
+                        summary_block = f"\n\n【结构摘要】\n{summary}"
+                except Exception:
+                    pass
+                omitted = total_lines - head_lines - (tail_lines if tail else 0)
+                mid_hint = f"\n\n... [省略中间 {omitted} 行] ...\n\n" if tail and omitted > 0 else ""
+                output = (
+                    f"【大文件智能读取】文件共 {total_lines} 行（{file_size} 字节），已启用摘要模式。"
+                    f"{summary_block}"
+                    f"\n\n【前 {head_lines} 行】\n{head}"
+                    f"{mid_hint}"
+                    f"{'【后 ' + str(tail_lines) + ' 行】' + chr(10) + tail if tail else ''}"
+                    f"\n\n⚠️ 【禁止全量读取】你已获得文件结构摘要和首尾内容，禁止再次从 offset=0 读取全文。"
+                    f"\n✅ 【正确做法】使用 create_and_run_script 编写 Python 脚本来修改此文件。"
+                    f"脚本中 open('{path}') 读全文，用字符串替换/正则修改后写回。"
+                    f"\n如只需读取某段代码，用 read_file offset=N limit=M 精确读取。"
+                )
+                return {
+                    "success": True,
+                    "output": output,
+                    "content": output,
+                    "total_size": sum(len(l) for l in lines),
+                    "truncated": True,
+                    "smart_summary": True,
+                }
+
             with open(path, "r", encoding=encoding, errors="replace") as f:
                 full_content = f.read()
             total = len(full_content)

@@ -144,6 +144,49 @@ class FileTool(BaseTool):
         if os.path.isdir(path):
             return ToolResult(success=False, error=f"路径是目录，不是文件: {path}")
 
+        # Duck 模式下大文件主动拦截：返回摘要+首尾片段
+        BIG_FILE_THRESHOLD = 20 * 1024
+        file_size = os.path.getsize(path)
+        is_duck = False
+        try:
+            from app_state import get_duck_context
+            is_duck = get_duck_context() is not None
+        except ImportError:
+            pass
+        if is_duck and file_size > BIG_FILE_THRESHOLD and offset == 0:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            total_lines = len(lines)
+            head_lines = 80
+            tail_lines = 30
+            head = "".join(lines[:head_lines])
+            tail = "".join(lines[-tail_lines:]) if total_lines > head_lines + tail_lines else ""
+            summary_block = ""
+            try:
+                from services.file_structure_service import get_file_structure_summary
+                summary = get_file_structure_summary(path)
+                if summary:
+                    summary_block = f"\n\n【结构摘要】\n{summary}"
+            except Exception:
+                pass
+            omitted = total_lines - head_lines - (tail_lines if tail else 0)
+            mid_hint = f"\n\n... [省略中间 {omitted} 行] ...\n\n" if tail and omitted > 0 else ""
+            output = (
+                f"【大文件智能读取】文件共 {total_lines} 行（{file_size} 字节），已启用摘要模式。"
+                f"{summary_block}"
+                f"\n\n【前 {head_lines} 行】\n{head}"
+                f"{mid_hint}"
+                f"{'【后 ' + str(tail_lines) + ' 行】' + chr(10) + tail if tail else ''}"
+                f"\n\n⚠️ 【禁止全量读取】你已获得文件结构摘要和首尾内容，禁止再次从 offset=0 读取全文。"
+                f"\n✅ 【正确做法】使用 create_and_run_script 编写 Python 脚本来修改此文件。"
+                f"脚本中 open('{path}') 读全文，用字符串替换/正则修改后写回。"
+                f"\n如只需读取某段代码，用 read offset=N limit=M 精确读取。"
+            )
+            return ToolResult(
+                success=True,
+                data={"path": path, "content": output, "size": len(output), "total_size": sum(len(l) for l in lines), "truncated": True, "smart_summary": True},
+            )
+
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             full_content = f.read()
         total_size = len(full_content)
