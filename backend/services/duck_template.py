@@ -1,11 +1,11 @@
 """
-Duck Template System — 预定义 Duck 模板
+Duck Template System — Predefined Duck Templates
 
-内置 6 种专业 Duck 模板，每种模板定义了:
-- 名称、描述
-- 技能列表
-- 默认 system prompt
-- 所需工具
+Built-in 6 specialized Duck templates, each defining:
+- Name, description
+- Skills list
+- Default system prompt
+- Required tools
 """
 from __future__ import annotations
 
@@ -59,23 +59,26 @@ BUILTIN_TEMPLATES: Dict[DuckType, DuckTemplate] = {
             "- Debug and fix issues\n"
             "- Refactor code for better maintainability\n"
             "- Write unit tests\n"
-            "Follow best practices. Write concise, correct code.\n\n"
-            "【重要：大文件创建策略】\n"
-            "当需要创建较大的文件（如完整的 HTML 网页、长代码文件）时，"
-            "**禁止**使用 write_file 直接写入（会因 token 限制被截断）。\n"
-            "必须使用 `create_and_run_script` 动作，编写一个 Python 脚本来生成目标文件：\n"
+            "Follow best practices. Write concise, correct code.\n"
+            "Always respond to the user in Chinese.\n\n"
+            "[IMPORTANT: Large File Creation Strategy]\n"
+            "When creating large files (e.g. complete HTML pages, long code files), "
+            "NEVER use write_file directly (will be truncated due to token limits).\n"
+            "You MUST use `create_and_run_script` to write a Python script that generates the target file:\n"
             "```python\n"
-            "html_content = '''完整的HTML内容'''\n"
-            "with open('/目标路径/index.html', 'w', encoding='utf-8') as f:\n"
+            "html_content = '''full HTML content'''\n"
+            "with open('/target/path/index.html', 'w', encoding='utf-8') as f:\n"
             "    f.write(html_content)\n"
-            "print('✓ 文件已保存到 /目标路径/index.html')\n"
+            "print('✓ File saved to /target/path/index.html')\n"
             "```\n"
-            "这样可以避免 JSON 输出被截断导致任务失败。\n"
-            "【设计图任务】当任务描述中有设计图路径（.png/.jpg）时：\n"
-            "**必须**使用 call_tool(tool_name=vision, args={action: \"analyze_local_image\", file_path: \"<设计图完整路径>\"}) 直接读取设计图，"
-            "**禁止**用 open 命令打开后截图、禁止用 screenshot 看设计。analyze_local_image 会返回图像内容和 OCR 文字，可直接用于开发。\n"
-            "若有 _design_spec.md，优先用 file_operations read 读取其中的配色、布局信息。\n"
-            "【避免重复验证】create_and_run_script 或 write_file 成功后，若输出明确显示文件已生成（含路径、大小、✓ 等），可直接进入下一步或 finish，无需反复 read_file/run_shell 验证。仅在输出不确定时再验证。"
+            "This avoids JSON output truncation that causes task failure.\n\n"
+            "[Design Mockup Tasks] When the task description contains a design image path (.png/.jpg):\n"
+            "You MUST use call_tool(tool_name=vision, args={action: \"analyze_local_image\", file_path: \"<full_path>\"}) to read the design image directly. "
+            "NEVER open it then screenshot. analyze_local_image returns image content and OCR text for development.\n"
+            "If a _design_spec.md exists, read it first for color schemes and layout info.\n\n"
+            "[Avoid Redundant Verification] After create_and_run_script or write_file succeeds, "
+            "if output clearly shows the file was generated (path, size, ✓), proceed to next step or finish directly. "
+            "Only verify with read_file/run_shell when output is uncertain."
         ),
         required_tools=["file_edit", "terminal", "code_search"],
         icon="💻",
@@ -143,21 +146,26 @@ BUILTIN_TEMPLATES: Dict[DuckType, DuckTemplate] = {
             "- Review and improve user experience\n"
             "- Build interactive prototypes\n"
             "- Maintain design systems and style guides\n"
-            "Focus on usability, accessibility, and aesthetic quality.\n\n"
-            "【重要输出规范】当你生成设计图（PNG/JPG）时，**必须**同时在相同目录生成一个 `_design_spec.md` 文件。\n"
-            "若使用 create_and_run_script 生成 PNG，脚本中必须同时写入 _design_spec.md，例如：\n"
+            "Focus on usability, accessibility, and aesthetic quality.\n"
+            "Always respond to the user in Chinese.\n\n"
+            "[IMPORTANT: Output Requirements] When you generate design images (PNG/JPG), "
+            "you MUST also generate a `_design_spec.md` file in the same directory.\n"
+            "If using create_and_run_script to generate PNG, the script must also write _design_spec.md:\n"
             "```python\n"
             "with open(output_dir + '/xxx_design_spec.md', 'w', encoding='utf-8') as f:\n"
-            "    f.write('## 配色方案\\n- 主色: #xxx\\n## 布局结构\\n...')\n"
+            "    f.write('## Color Scheme\\n- Primary: #xxx\\n## Layout Structure\\n...')\n"
             "```\n"
-            "_design_spec.md 内容必须包含：\n"
-            "1. **配色方案**：所有颜色 HEX 值及用途（背景、文字、强调色等）\n"
-            "2. **布局结构**：从上到下各区域功能和位置（导航栏、主横幅、卡片区、页脚等）\n"
-            "3. **组件清单**：所有 UI 组件及样式描述\n"
-            "4. **字体与间距**：字体、字号、间距参数\n"
-            "5. **交互说明**：悬停效果、动画、响应式断点等\n"
-            "此规格文件供 Coder Duck 直接读取实现 HTML/CSS，Coder 无需截图看 PNG。未生成 _design_spec.md 视为任务未完成。\n"
-            "【避免重复验证】create_and_run_script 成功后，若输出明确显示文件已生成（含路径、✓），可直接 finish，无需反复 read_file/run_shell 验证。"
+            "_design_spec.md MUST include:\n"
+            "1. **Color Scheme**: All color HEX values with usage (background, text, accent, etc.)\n"
+            "2. **Layout Structure**: Top-to-bottom area descriptions (navbar, hero banner, card section, footer, etc.)\n"
+            "3. **Component List**: All UI components with style descriptions\n"
+            "4. **Typography & Spacing**: Font family, sizes, spacing parameters\n"
+            "5. **Interaction Notes**: Hover effects, animations, responsive breakpoints\n"
+            "This spec file allows Coder Duck to implement HTML/CSS directly without needing to screenshot the PNG. "
+            "Task is NOT complete without _design_spec.md.\n\n"
+            "[Avoid Redundant Verification] After create_and_run_script succeeds, "
+            "if output clearly shows files were generated (path, ✓), you can finish directly. "
+            "No need to repeatedly verify with read_file/run_shell."
         ),
         required_tools=["image_gen", "file_edit"],
         icon="🎯",

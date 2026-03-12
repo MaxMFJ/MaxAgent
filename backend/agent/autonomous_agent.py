@@ -7,7 +7,6 @@ import asyncio
 import json
 import os
 import uuid
-import hashlib
 import logging
 import time
 from typing import List, Dict, Any, Optional, AsyncGenerator, Tuple
@@ -44,6 +43,22 @@ from .verification_layer import EvidenceCollector, GoalCompletionValidator
 from .runtime_intelligence import RuntimeIntelligence
 from .goal_tracker import GoalProgressTracker
 
+# v3.7: 统一引擎模块
+from .llm_call_builder import LLMCallBuilder
+from .context_builder import ContextBuilder
+from .error_recovery import ErrorRecovery
+from .execution_engine import ExecutionEngine
+from .thinking_manager import ThinkingManager as UnifiedThinkingManager
+
+# v3.8: 中间件框架
+from .middleware import MiddlewareChain
+from .middlewares import (
+    ContextSummarizationMiddleware,
+    ActionDeduplicationMiddleware,
+    PlanTrackingMiddleware,
+    DuckDelegationMiddleware,
+)
+
 # 任务持久化
 try:
     from task_persistence import get_persistence_manager, PersistentTaskStatus
@@ -69,148 +84,139 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Strategy escalation levels for the three-layer defense
+# Strategy escalation levels — 使用统一模块的常量
 # ---------------------------------------------------------------------------
-ESCALATION_NORMAL = 0          # No intervention
-ESCALATION_FORCE_SWITCH = 1    # Force a different approach (layer 2)
-ESCALATION_SKILL_FALLBACK = 2  # Inject skill guidance (layer 3)
+from .thinking_manager import ESCALATION_NORMAL, ESCALATION_FORCE_SWITCH, ESCALATION_SKILL_FALLBACK
 
-# 首步解析加固：第一步且模型返回长纯文本时，不当作 finish，重试并注入强约束 prompt
-FIRST_STEP_PLAIN_TEXT_MIN_LEN = 200
+# 首步解析加固阈值 — 使用统一模块
+from .error_recovery import FIRST_STEP_PLAIN_TEXT_MIN_LEN
 
 
-AUTONOMOUS_SYSTEM_PROMPT = """你是一个完全自主执行的 macOS Agent，会代表用户自动完成各种任务，无需用户干预。你拥有终端、文件、截图、联网搜索等工具，可执行用户请求的操作。请按以下格式输出动作。
+AUTONOMOUS_SYSTEM_PROMPT = """You are a fully autonomous macOS Agent that completes tasks on behalf of the user without intervention. You have access to terminal, file system, screenshot, web search, and other tools. Always respond to the user in Chinese (中文). Output your next action in the format below.
 
-## 输出格式
-你必须始终以 JSON 格式输出下一步动作：
+## Output Format
+You must always output the next action as JSON:
 ```json
 {
-  "reasoning": "解释为什么执行这个动作",
-  "action_type": "动作类型",
+  "reasoning": "Why this action is needed",
+  "action_type": "action_type_here",
   "params": { ... }
 }
 ```
 
-## 可用的动作类型
+## Available Action Types
 
-1. **run_shell** - 执行终端命令
+1. **run_shell** - Execute a terminal command
    ```json
    {"action_type": "run_shell", "params": {"command": "ls -la", "working_directory": "/path"}, "reasoning": "..."}
    ```
 
-2. **create_and_run_script** - 创建并执行脚本
+2. **create_and_run_script** - Create and execute a script
    ```json
    {"action_type": "create_and_run_script", "params": {"language": "python|bash|javascript", "code": "...", "run": true}, "reasoning": "..."}
    ```
 
-3. **read_file** - 读取文件内容
+3. **read_file** - Read file contents
    ```json
    {"action_type": "read_file", "params": {"path": "/path/to/file"}, "reasoning": "..."}
    ```
 
-4. **write_file** - 写入文件
+4. **write_file** - Write to a file
    ```json
    {"action_type": "write_file", "params": {"path": "/path/to/file", "content": "..."}, "reasoning": "..."}
    ```
 
-5. **move_file** - 移动/重命名文件
+5. **move_file** - Move/rename a file
    ```json
    {"action_type": "move_file", "params": {"source": "/path/from", "destination": "/path/to"}, "reasoning": "..."}
    ```
 
-6. **copy_file** - 复制文件
+6. **copy_file** - Copy a file
    ```json
    {"action_type": "copy_file", "params": {"source": "/path/from", "destination": "/path/to"}, "reasoning": "..."}
    ```
 
-7. **delete_file** - 删除文件
+7. **delete_file** - Delete a file
    ```json
    {"action_type": "delete_file", "params": {"path": "/path/to/file"}, "reasoning": "..."}
    ```
 
-8. **list_directory** - 列出目录内容
+8. **list_directory** - List directory contents
    ```json
    {"action_type": "list_directory", "params": {"path": "/path/to/dir"}, "reasoning": "..."}
    ```
 
-9. **open_app** - 打开应用程序（不可用于发邮件；发邮件必须用 call_tool(mail)）
+9. **open_app** - Open an application (NOT for sending email; use call_tool(mail) for email)
    ```json
    {"action_type": "open_app", "params": {"app_name": "Safari"}, "reasoning": "..."}
    ```
 
-10. **get_system_info** - 获取系统信息
+10. **get_system_info** - Get system information
     ```json
     {"action_type": "get_system_info", "params": {"info_type": "cpu|memory|disk|all"}, "reasoning": "..."}
     ```
 
-11. **call_tool** - 调用已注册的内置工具（推荐用于截图、联网搜索、技能库、邮件等）
-   - **联网搜索**（查财报、新闻、实时数据、天气）：{"action_type": "call_tool", "params": {"tool_name": "web_search", "args": {"action": "search|news|get_stock|get_weather", "query": "搜索词", "language": "zh-CN"}}, "reasoning": "..."}。你有 web_search 工具可获取实时信息，研究、调研、查最新数据、天气预报时请先调用它，不要以「无法获取实时数据」为由拒绝。查天气时使用 action="get_weather"，query 传城市名。
-   - **发送邮件**（必须用此方式，禁止用 open_app 打开 Mail 应用）：{"action_type": "call_tool", "params": {"tool_name": "mail", "args": {"action": "send", "to": "收件人@example.com", "subject": "主题", "body": "正文"}}, "reasoning": "..."}。系统已配置 SMTP 时直接调用即可。
-   - 全屏截图：{"action_type": "call_tool", "params": {"tool_name": "screenshot", "args": {"action": "capture", "area": "full"}}, "reasoning": "..."}
-   - **指定应用窗口截图**（如「截图微信窗口」「截 Safari 窗口」）：必须传 app_name，只截该应用窗口：{"action_type": "call_tool", "params": {"tool_name": "screenshot", "args": {"action": "capture", "app_name": "WeChat"}}, "reasoning": "..."}。常见：微信→WeChat，Safari→Safari，Chrome→Google Chrome。
-   - 技能库：{"action_type": "call_tool", "params": {"tool_name": "capsule", "args": {"action": "find", "task": "关键词"}}, "reasoning": "..."}
-   - **Duck 分身状态**（用户问「Duck 在线吗」「有哪些分身」时）：{"action_type": "call_tool", "params": {"tool_name": "duck_status", "args": {}}, "reasoning": "..."}
-   - macOS 无 screenshot 命令，截图请用 call_tool(tool_name=screenshot) 或 run_shell 时用 **screencapture** 命令。
+11. **call_tool** - Invoke a registered built-in tool (recommended for screenshots, web search, capsules, email, etc.)
+   - **Web search** (financials, news, real-time data, weather): {"action_type": "call_tool", "params": {"tool_name": "web_search", "args": {"action": "search|news|get_stock|get_weather", "query": "search terms", "language": "zh-CN"}}, "reasoning": "..."}. You have the web_search tool for real-time info. Use it for research, latest data, weather forecasts — never refuse by saying "I cannot get real-time data". For weather, use action="get_weather" with city name as query.
+   - **Send email** (MUST use this; NEVER use open_app to open Mail app): {"action_type": "call_tool", "params": {"tool_name": "mail", "args": {"action": "send", "to": "recipient@example.com", "subject": "Subject", "body": "Body"}}, "reasoning": "..."}. System SMTP is already configured.
+   - Full screen screenshot: {"action_type": "call_tool", "params": {"tool_name": "screenshot", "args": {"action": "capture", "area": "full"}}, "reasoning": "..."}
+   - **App window screenshot** (e.g. "capture WeChat window"): must pass app_name to capture only that app's window: {"action_type": "call_tool", "params": {"tool_name": "screenshot", "args": {"action": "capture", "app_name": "WeChat"}}, "reasoning": "..."}. Common mappings: WeChat→WeChat, Safari→Safari, Chrome→Google Chrome.
+   - Capsule skills: {"action_type": "call_tool", "params": {"tool_name": "capsule", "args": {"action": "find", "task": "keywords"}}, "reasoning": "..."}
+   - **Duck status** (when user asks about online Ducks): {"action_type": "call_tool", "params": {"tool_name": "duck_status", "args": {}}, "reasoning": "..."}
+   - macOS has no `screenshot` command; use call_tool(tool_name=screenshot) or run_shell with the **screencapture** command.
 
-12. **delegate_duck** - 委派子任务给 Duck 分身 Agent（当有在线 Duck 时可用）
-   - 适合：代码编写、网页制作、爬虫、设计等可独立完成的子任务；或需并行执行时
-   - 委派前可先 call_tool(duck_status) 确认有可用 Duck；若委派失败（无可用 Duck），请自行用 write_file / create_and_run_script 等完成
+12. **delegate_duck** - Delegate a sub-task to a Duck agent (when online Ducks are available)
+   - Best for: coding, web page creation, crawling, design, and other independently completable sub-tasks; or when parallel execution is needed
+   - Check availability first with call_tool(duck_status); if delegation fails (no Duck available), complete the task yourself using write_file / create_and_run_script etc.
    ```json
-   {"action_type": "delegate_duck", "params": {"description": "子任务描述", "duck_type": "coder|designer|crawler|general（可选）", "strategy": "single|multi（可选）"}, "reasoning": "..."}
+   {"action_type": "delegate_duck", "params": {"description": "Sub-task description", "duck_type": "coder|designer|crawler|general (optional)", "strategy": "single|multi (optional)"}, "reasoning": "..."}
    ```
 
-13. **think** - 思考/分析（不执行任何操作）
+13. **think** - Think/analyze (no action taken)
     ```json
-    {"action_type": "think", "params": {"thought": "分析当前情况..."}, "reasoning": "需要思考下一步"}
+    {"action_type": "think", "params": {"thought": "Analyzing the situation..."}, "reasoning": "Need to think about next step"}
     ```
 
-14. **finish** - 完成任务
+14. **finish** - Complete the task
     ```json
-    {"action_type": "finish", "params": {"summary": "任务完成总结", "success": true}, "reasoning": "任务已完成"}
+    {"action_type": "finish", "params": {"summary": "Task completion summary", "success": true}, "reasoning": "Task is done"}
     ```
 
-## 执行步骤（按阶段思考）
-- **Gather**：根据需要读取文件、搜索、查看错误信息以理解当前状态。
-- **Act**：执行一个具体动作（run_shell / call_tool / write_file 等）。
-- **Verify**：根据工具返回判断是否达成子目标、是否需重试或调整策略。
+## Execution Phases (think in stages)
+- **Gather**: Read files, search, check error messages to understand current state as needed.
+- **Act**: Execute one concrete action (run_shell / call_tool / write_file etc.).
+- **Verify**: Check tool output to determine if the sub-goal was met, if a retry or strategy change is needed.
 
-## 执行规则
+## Execution Rules
 
-1. **每次只输出一个动作**；**禁止只输出纯自然语言**，必须输出上述 JSON 格式（可先简短 reasoning，再跟 ```json ... ``` 块）。
-2. **若用户只是打招呼或简单对话**（如「你好」「下午好」「在吗」），也必须用 JSON 回复：输出 `finish`，在 `params.summary` 里写你的回复内容（例如问候+简短说明你能做什么）。不要只回复一段自然文字。
-3. **禁止在未执行具体操作前就输出 finish**：若任务需要**打开应用、执行命令、截图、读/写文件**等实际操作，你必须先输出并执行对应动作（如 open_app、run_shell、call_tool 等），等该步骤执行并看到结果后，再根据结果输出 finish。例如「打开微信」必须先输出 `open_app`（params.app_name 为 "WeChat"），等执行成功后再输出 finish；不能直接输出 finish 并写「微信已打开」。
-4. **仔细分析上一步的执行结果后再决定下一步**
-5. **遇到错误时，分析原因并尝试修复，最多重试 3 次**
-6. **任务完成后必须输出 finish 动作**
-7. **截图类任务（截屏、截图桌面等）：一旦有一次成功的截图结果，立即输出 finish，不要重复截图**
-8. **优先使用批量命令（如 mv *.txt dest/）而不是逐个操作**
-9. **保持简洁高效，避免不必要的步骤**
-10. **发送邮件：必须使用 call_tool(tool_name=mail)。禁止使用 open_app 打开 Mail 应用来发邮件（Mail 应用限制多、无法可靠自动化）。**
+1. **Output exactly one action per turn**; **never output plain natural language only** — always output JSON format as above (you may add brief reasoning text before the ```json ... ``` block).
+2. **If the user is just greeting or making small talk** (e.g. "hello", "good afternoon"), still reply in JSON: output `finish` with `params.summary` containing your greeting and brief description of your capabilities. Never reply with just plain text.
+3. **Never output finish before performing the required operations**: if the task requires opening apps, executing commands, screenshots, reading/writing files, etc., you must first output and execute the corresponding action (e.g. open_app, run_shell, call_tool), wait for the result, then output finish based on the outcome. For example, "open WeChat" requires first outputting `open_app` (params.app_name = "WeChat"), then finish after success — never output finish directly claiming "WeChat is open".
+4. **Carefully analyze the previous step's result before deciding the next step.**
+5. **On error, analyze the cause and attempt to fix it, retrying up to 3 times.**
+6. **Output finish when the task is complete.**
+7. **Screenshot tasks: once you get a successful screenshot result, output finish immediately — do not take repeated screenshots.**
+8. **Prefer batch commands (e.g. mv *.txt dest/) over individual operations.**
+9. **Be concise and efficient; avoid unnecessary steps.**
+10. **Sending email: MUST use call_tool(tool_name=mail). NEVER use open_app to open the Mail app for sending email (Mail app has many limitations and cannot be reliably automated).**
 
-## GUI 交互规范（⚠️ 最高优先级规则 — 必须严格遵守）
+## GUI Interaction Rules (⚠️ HIGHEST PRIORITY — must strictly follow)
 
 {gui_rules}
 
-## 安全限制
-- 禁止执行 `rm -rf /` 等危险命令
-- 禁止修改系统关键文件
-- 所有操作都会被记录
+## Security Restrictions
+- Never execute `rm -rf /` or similar destructive commands
+- Never modify critical system files
+- All operations are logged
 
 {user_context}
 
-现在，根据用户的任务和当前上下文，输出下一步动作的 JSON。"""
+Now, based on the user's task and current context, output the JSON for your next action."""
 
 
 def _looks_like_json_or_code(text: str) -> bool:
-    """判断内容是否像 JSON 或代码块（避免把未解析成功的 JSON 误当纯文本 finish）。"""
-    if not text or len(text) < 10:
-        return False
-    t = text.strip()
-    return (
-        t.startswith("{") or t.startswith("[") or
-        "```json" in t or "```" in t or
-        '"action_type"' in t or '"action_type":' in t
-    )
+    """委托给 ErrorRecovery 统一判断。"""
+    return ErrorRecovery.looks_like_json_or_code(text or "")
 
 
 class AutonomousAgent:
@@ -230,7 +236,8 @@ class AutonomousAgent:
         enable_model_selection: bool = True,
         enable_adaptive_stop: bool = True,
         max_tokens: int = 100000,
-        max_time_seconds: int = 600
+        max_time_seconds: int = 600,
+        isolated_context: bool = False,
     ):
         self.remote_llm = llm_client  # Remote model (DeepSeek/OpenAI)
         self.runtime_adapter = runtime_adapter  # DI: 平台操作通过 adapter
@@ -243,7 +250,9 @@ class AutonomousAgent:
         self.enable_adaptive_stop = enable_adaptive_stop
         self.max_tokens = max_tokens
         self.max_time_seconds = max_time_seconds
-        self.context_manager = context_manager
+        # v3.8: 上下文隔离模式 — Duck 子代理不共享主 Agent 的会话上下文
+        self.isolated_context = isolated_context
+        self.context_manager = None if isolated_context else context_manager
         self.model_selector = get_model_selector()
         
         # Track current model selection for recording results
@@ -267,6 +276,16 @@ class AutonomousAgent:
         self._goal_validator: GoalCompletionValidator = GoalCompletionValidator(self._evidence_collector)
         self._runtime_intel: RuntimeIntelligence = RuntimeIntelligence()
         self._goal_tracker: GoalProgressTracker = GoalProgressTracker()
+
+        # v3.7: 统一引擎模块
+        _is_duck = False
+        try:
+            from app_state import IS_DUCK_MODE
+            _is_duck = IS_DUCK_MODE
+        except ImportError:
+            pass
+        self._thinking_manager = UnifiedThinkingManager(llm_client, is_duck_mode=_is_duck)
+        self._call_builder = LLMCallBuilder(llm_client, is_local_model=False)
     
     def _register_default_handlers(self):
         """Register default action handlers"""
@@ -356,7 +375,10 @@ class AutonomousAgent:
     # ------------------------------------------------------------------
 
     async def _collect_user_context(self) -> str:
-        """Collect user environment context (locale, timezone, path, approximate location)."""
+        """Collect user environment context (locale, timezone, path, approximate location).
+        LEGACY PATH (DO NOT EXTEND) — 基础部分与 ContextBuilder.collect_user_context 重叠，
+        但此版本含 _get_approximate_location 等增强。待后续统一。
+        """
         import asyncio
         import os
         import getpass
@@ -364,14 +386,14 @@ class AutonomousAgent:
         parts: List[str] = []
 
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        parts.append(f"- 当前时间: {now_str}")
+        parts.append(f"- Current Time: {now_str}")
 
         # 实际路径（保存文件、向用户报告时必须用此，禁止用 xxx 或 $(whoami)）
         try:
             username = getpass.getuser()
             desktop = os.path.realpath(os.path.expanduser("~/Desktop"))
-            parts.append(f"- 当前用户: {username}")
-            parts.append(f"- 桌面路径: {desktop}（保存文件到桌面时用此路径，向用户报告时也用此，禁止用 /Users/xxx/ 或 $(whoami)）")
+            parts.append(f"- Current User: {username}")
+            parts.append(f"- Desktop Path: {desktop} (Use this exact path when saving files to Desktop or reporting to the user. NEVER use /Users/xxx/ or $(whoami).)")
         except Exception:
             pass
 
@@ -384,7 +406,7 @@ class AutonomousAgent:
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
             locale_str = stdout.decode().strip()
             if locale_str and locale_str != "unknown":
-                parts.append(f"- 系统语言/区域: {locale_str}")
+                parts.append(f"- System Locale: {locale_str}")
         except Exception:
             pass
 
@@ -394,21 +416,21 @@ class AutonomousAgent:
             import locale as _locale
             try:
                 tz_full = datetime.now().astimezone().tzinfo
-                parts.append(f"- 时区: {tz_full}")
+                parts.append(f"- Timezone: {tz_full}")
             except Exception:
-                parts.append(f"- 时区: {tz}")
+                parts.append(f"- Timezone: {tz}")
         except Exception:
             pass
 
         # Approximate location via macOS system or IP geolocation
         city = await self._get_approximate_location()
         if city:
-            parts.append(f"- 大致位置: {city}")
+            parts.append(f"- Approximate Location: {city}")
 
         if not parts:
             return ""
 
-        return "## 用户环境\n" + "\n".join(parts)
+        return "## User Environment\n" + "\n".join(parts)
 
     async def _get_approximate_location(self) -> str:
         """Best-effort approximate city via system timezone or IP geolocation."""
@@ -455,147 +477,33 @@ class AutonomousAgent:
         """
         v3.1: 基于 embedding 相似度或 fallback 到 md5，判断重复失败并返回 escalation 等级。
         阈值从 app_state (ESCALATION_* ) 读取。
+        现委托给统一的 ThinkingManager。
         """
-        logs = context.action_logs
-        if len(logs) < 2:
-            return ESCALATION_NORMAL
+        # 同步 app_state 阈值到 ThinkingManager
         try:
             from app_state import (
                 ESCALATION_FORCE_AFTER_N,
                 ESCALATION_SKILL_AFTER_N,
                 ESCALATION_SIMILARITY_THRESHOLD,
             )
+            self._thinking_manager._escalation_force_after_n = ESCALATION_FORCE_AFTER_N
+            self._thinking_manager._escalation_skill_after_n = ESCALATION_SKILL_AFTER_N
+            self._thinking_manager._escalation_similarity_threshold = ESCALATION_SIMILARITY_THRESHOLD
         except ImportError:
-            ESCALATION_FORCE_AFTER_N, ESCALATION_SKILL_AFTER_N = 2, 3
-            ESCALATION_SIMILARITY_THRESHOLD = 0.85
-
-        recent = logs[-5:]
-        failed_logs = [log for log in recent if not log.result.success]
-        if len(failed_logs) < 2:
-            return ESCALATION_NORMAL
-        signatures = []
-        for log in failed_logs:
-            sig_text = f"{log.action.action_type.value}:{log.result.error or str(log.result.output) or ''}"[:300]
-            signatures.append(sig_text)
-
-        consecutive_same = 0
-        last_sig = signatures[-1]
-        try:
-            from .vector_store import encode_text_for_similarity
-            import numpy as np
-            last_emb = encode_text_for_similarity(last_sig)
-            if last_emb is not None:
-                for i in range(len(signatures) - 1, -1, -1):
-                    emb = encode_text_for_similarity(signatures[i])
-                    if emb is not None and np.dot(last_emb, emb) >= ESCALATION_SIMILARITY_THRESHOLD:
-                        consecutive_same += 1
-                    else:
-                        break
-        except Exception as e:
-            logger.debug("Escalation embedding fallback to hash: %s", e)
-            last_emb = None
-
-        if last_emb is None:
-            hashes = [hashlib.md5(s.encode()).hexdigest()[:10] for s in signatures]
-            last_hash = hashes[-1]
-            for h in reversed(hashes):
-                if h == last_hash:
-                    consecutive_same += 1
-                else:
-                    break
-
-        if consecutive_same >= ESCALATION_SKILL_AFTER_N:
-            return ESCALATION_SKILL_FALLBACK
-        if consecutive_same >= ESCALATION_FORCE_AFTER_N:
-            return ESCALATION_FORCE_SWITCH
-        return ESCALATION_NORMAL
+            pass
+        return self._thinking_manager.detect_repeated_failure(context.action_logs)
 
     # ------------------------------------------------------------------
-    # v3.6  Action dedup — 对比当前动作与最近成功步骤，防止重复执行
+    # v3.6  Action dedup — 委托给统一的 ThinkingManager
     # ------------------------------------------------------------------
-    _DEDUP_SKIP_TYPES = frozenset({
-        ActionType.THINK,
-        ActionType.READ_FILE,
-        ActionType.LIST_DIRECTORY,
-        ActionType.GET_SYSTEM_INFO,
-        ActionType.CLIPBOARD_READ,
-    })
 
     def _check_action_dedup(self, action: AgentAction, context: TaskContext) -> bool:
-        """
-        Return True if *action* duplicates a recently **succeeded** action.
-
-        Only write / execute / delegate actions are checked.
-        Read-only actions (think, read_file, screenshot …) are always allowed.
-        """
-        if action.action_type in self._DEDUP_SKIP_TYPES:
-            return False
-
-        # call_tool: screenshot is read-only
-        if action.action_type == ActionType.CALL_TOOL:
-            tool = (action.params or {}).get("tool_name", "")
-            if tool in ("screenshot",):
-                return False
-
-        # 只对比最近 12 条 **成功** 的日志
-        recent_success = [
-            log for log in context.action_logs[-20:]
-            if log.result.success
-        ][-12:]
-        if not recent_success:
-            return False
-
-        cur_sig = self._action_signature(action)
-
-        for log in recent_success:
-            if self._action_signature_from_log(log) == cur_sig:
-                return True
-        return False
-
-    @staticmethod
-    def _action_signature(action: AgentAction) -> str:
-        """Build a comparable signature string for an action."""
-        atype = action.action_type.value
-        p = action.params or {}
-
-        if action.action_type == ActionType.WRITE_FILE:
-            return f"write_file:{p.get('path', '')}"
-
-        if action.action_type == ActionType.CREATE_AND_RUN_SCRIPT:
-            return f"script:{p.get('filename', '')}:{p.get('language', '')}"
-
-        if action.action_type == ActionType.RUN_SHELL:
-            # 只取命令前 120 字符做签名（避免参数微调绕过）
-            cmd = (p.get("command") or "")[:120]
-            return f"shell:{cmd}"
-
-        if action.action_type == ActionType.DELEGATE_DUCK:
-            return f"duck:{p.get('duck_type', '')}:{(p.get('description') or '')[:80]}"
-
-        if action.action_type == ActionType.CALL_TOOL:
-            tool = p.get("tool_name", "")
-            args = p.get("args", {})
-            act = args.get("action", "")
-            # gui_automation / input_control: 用 action + element_name 做签名
-            elem = args.get("element_name", "")
-            text = (args.get("text") or args.get("content") or "")[:60]
-            return f"tool:{tool}:{act}:{elem}:{text}"
-
-        if action.action_type in (ActionType.OPEN_APP, ActionType.CLOSE_APP):
-            return f"{atype}:{p.get('app_name', '')}"
-
-        if action.action_type == ActionType.CLIPBOARD_WRITE:
-            return f"clip_w:{(p.get('content') or '')[:80]}"
-
-        if action.action_type == ActionType.FINISH:
-            return "finish"
-
-        # fallback
-        return f"{atype}:{str(p)[:120]}"
-
-    @classmethod
-    def _action_signature_from_log(cls, log) -> str:
-        return cls._action_signature(log.action)
+        """委托给统一的 ThinkingManager。"""
+        return self._thinking_manager.check_action_dedup(
+            action.action_type.value if hasattr(action.action_type, 'value') else str(action.action_type),
+            action.params,
+            context.action_logs,
+        )
 
     def _build_escalation_prompt(
         self, level: int, context: TaskContext, skill_guidance: str
@@ -613,10 +521,10 @@ class AutonomousAgent:
 
         if level >= ESCALATION_FORCE_SWITCH:
             parts.append(
-                f"⚠️ 你已经连续多次尝试了相似的方法但都未能成功完成任务。\n"
-                f"你之前使用的方法: {used_methods}\n"
-                f"你必须使用完全不同的方法。禁止再次使用与之前相同的命令或工具。\n"
-                f"考虑: 1) 使用不同的工具或 API  2) 换一种思路  3) 先获取更多信息再行动"
+                f"⚠️ You have repeatedly tried similar methods but failed to complete the task.\n"
+                f"Methods you've used: {used_methods}\n"
+                f"You MUST use a completely different approach. Do NOT reuse any of the same commands or tools.\n"
+                f"Consider: 1) Use a different tool or API  2) Try a different approach  3) Gather more information first"
             )
 
         if level >= ESCALATION_SKILL_FALLBACK and skill_guidance:
@@ -625,75 +533,31 @@ class AutonomousAgent:
         return "\n\n".join(parts)
 
     async def _run_mid_loop_reflection(self, context: TaskContext) -> Optional[str]:
-        """
-        v3.1: 中途轻量反思，返回一句改进建议供下一轮 prompt 注入。
-        使用 reflect_llm 或 llm，超时 30s。
-        """
+        """委托给统一的 ThinkingManager。"""
         try:
             from app_state import ENABLE_MID_LOOP_REFLECTION
             if not ENABLE_MID_LOOP_REFLECTION:
                 return None
         except ImportError:
             pass
-        client = self.reflect_llm or self.llm
-        if not client:
-            return None
         recent = context.action_logs[-5:]
         if len(recent) < 2:
             return None
-        steps_text = "\n".join(
-            f"  {i+1}. {log.action.action_type.value}: {'成功' if log.result.success else '失败'}"
-            + (f" - {log.result.error[:80]}" if log.result.error else "")
-            for i, log in enumerate(recent)
+        recent_steps = [
+            {
+                "action_type": log.action.action_type.value,
+                "success": log.result.success,
+                "output_snippet": log.result.error or str(log.result.output or ""),
+            }
+            for log in recent
+        ]
+        return await self._thinking_manager.run_reflection(
+            context.task_description, recent_steps
         )
-        prompt = f"""任务: {context.task_description}
-
-最近步骤:
-{steps_text}
-
-请用一两句话给出下一步改进建议（不要重复已失败的做法）。直接输出建议，不要 JSON。"""
-        try:
-            if get_timeout_policy is not None:
-                resp = await get_timeout_policy().with_llm_timeout(
-                    client.chat(messages=[{"role": "user", "content": prompt}]),
-                    timeout=30.0,
-                )
-            else:
-                resp = await asyncio.wait_for(client.chat(messages=[{"role": "user", "content": prompt}]), timeout=30.0)
-            content = (resp.get("content") or "").strip()
-            return content[:500] if content else None
-        except Exception as e:
-            logger.debug("Mid-loop reflection failed: %s", e)
-            return None
 
     async def _generate_plan(self, task: str) -> List[str]:
-        """
-        v3.1 Plan-and-Execute: 生成高层子任务列表，供执行循环参考。
-        返回 sub_tasks: List[str]，失败或未启用时返回空列表。
-        """
-        try:
-            from app_state import ENABLE_PLAN_AND_EXECUTE
-            if not ENABLE_PLAN_AND_EXECUTE:
-                return []
-        except ImportError:
-            return []
-        prompt = f"""请将以下任务拆解为 3-7 个可执行的子步骤，每行一个简短子目标，不要编号不要 JSON。
-任务: {task}
-
-子步骤（每行一条）:"""
-        try:
-            if get_timeout_policy is not None:
-                resp = await get_timeout_policy().with_llm_timeout(self.llm.chat(messages=[{"role": "user", "content": prompt}]))
-            else:
-                resp = await self.llm.chat(messages=[{"role": "user", "content": prompt}])
-            content = (resp.get("content") or "").strip()
-            lines = [ln.strip() for ln in content.split("\n") if ln.strip() and not ln.strip().startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "-", "*"))]
-            if not lines:
-                lines = [ln.strip().lstrip("0123456789.-) ") for ln in content.split("\n") if ln.strip()][:7]
-            return lines[:7] if lines else []
-        except Exception as e:
-            logger.debug("Plan generation failed: %s", e)
-            return []
+        """委托给统一的 ThinkingManager。"""
+        return await self._thinking_manager.generate_plan(task)
 
     # ------------------------------------------------------------------
     # Task-start: skill/capsule 扫描与工具提示（避免盲目 run_shell）
@@ -720,26 +584,26 @@ class AutonomousAgent:
             for keyword, app_name in app_name_map:
                 if keyword in task and ("窗口" in task or "应用" in task or "程序" in task):
                     app_window_hint = (
-                        f"【指定窗口截图】用户要截的是「{keyword}」窗口，必须用 app_name 参数只截该应用窗口，不要用 area:\"full\"。"
-                        f"示例: call_tool params={{\"tool_name\":\"screenshot\",\"args\":{{\"action\":\"capture\",\"app_name\":\"{app_name}\"}}}}"
+                        f"[App Window Screenshot] The user wants to capture the '{keyword}' window. Use app_name parameter to capture only that app's window; do NOT use area:\"full\"."
+                        f" Example: call_tool params={{\"tool_name\":\"screenshot\",\"args\":{{\"action\":\"capture\",\"app_name\":\"{app_name}\"}}}}"
                     )
                     break
             if not app_window_hint and ("窗口" in task or "某应用" in task or "指定" in task and "截图" in task):
                 app_window_hint = (
-                    "【指定窗口截图】用户要截的是某个应用的窗口，请在 args 中使用 app_name 参数（如 app_name:\"WeChat\" 表示微信窗口），不要用 area:\"full\" 全屏截图。"
+                    "[App Window Screenshot] The user wants to capture a specific app's window. Use app_name in args (e.g. app_name:\"WeChat\" for WeChat window); do NOT use area:\"full\" for full screen."
                 )
             if app_window_hint:
                 parts.append(app_window_hint)
             else:
                 parts.append(
-                    "【截图】macOS 没有 screenshot 命令。全屏截图请用 call_tool params={\"tool_name\":\"screenshot\",\"args\":{\"action\":\"capture\",\"area\":\"full\"}}；"
-                    "或 run_shell: screencapture -x -t png /tmp/screenshot.png"
+                    "[Screenshot] macOS has no 'screenshot' command. For full screen: call_tool params={\"tool_name\":\"screenshot\",\"args\":{\"action\":\"capture\",\"area\":\"full\"}}; "
+                    "or run_shell: screencapture -x -t png /tmp/screenshot.png"
                 )
 
         # 1b) 研究/投资/财报类任务：明确可用 web_search 获取实时数据
         if any(k in task for k in ("研究", "财报", "投资", "科技股", "股票", "新闻", "最新", "实时", "调研")):
             parts.append(
-                "【联网研究】你有 web_search 工具可搜索网页、新闻、财报等实时信息。请用 call_tool(tool_name=\"web_search\", args={\"action\":\"search\"或\"news\", \"query\":\"关键词\", \"language\":\"zh-CN\"}) 获取数据，不要以「无法获取实时数据」为由拒绝任务。"
+                "[Web Research] You have the web_search tool to search web pages, news, financial data, etc. Use call_tool(tool_name=\"web_search\", args={\"action\":\"search\" or \"news\", \"query\":\"keywords\", \"language\":\"zh-CN\"}) to get data. Never refuse by saying you cannot fetch real-time data."
             )
 
         # 2) 扫描并注入匹配的 skill/capsule（本地注册表优先；N/A 时按需拉取）
@@ -758,7 +622,7 @@ class AutonomousAgent:
                     logger.debug(f"On-demand skill fetch skipped: {ode}")
 
             if capsules:
-                parts.append("【匹配技能】以下技能与任务相关，可用 call_tool 执行:")
+                parts.append("[Matched Skills] The following skills are relevant to the task; use call_tool to execute:")
                 for cap in capsules[:3]:
                     # 从 capsule inputs schema 提取参数信息
                     inputs_hint = ""
@@ -769,9 +633,9 @@ class AutonomousAgent:
                             desc = schema.get("description", "") if isinstance(schema, dict) else ""
                             default = schema.get("default") if isinstance(schema, dict) else None
                             if default is not None:
-                                param_parts.append(f'"{key}": "（{desc}，默认:{default}）"')
+                                param_parts.append(f'"{ key}": "({desc}, default:{default})"')
                             else:
-                                param_parts.append(f'"{key}": "（{desc}）"')
+                                param_parts.append(f'"{key}": "({desc})"')
                         inputs_hint = "{" + ", ".join(param_parts) + "}"
                     else:
                         inputs_hint = '{"task": "..."}'
@@ -781,6 +645,17 @@ class AutonomousAgent:
                     )
         except Exception as e:
             logger.debug(f"Capsule scan for task guidance: {e}")
+
+        # v3.8: 注入匹配的技能包知识
+        try:
+            from .skill_pack import get_skill_pack_manager
+            skill_injection = get_skill_pack_manager().get_prompt_injection(
+                task, max_knowledge_chars=1500
+            )
+            if skill_injection:
+                parts.append(skill_injection)
+        except Exception as e:
+            logger.debug(f"Skill pack injection failed: {e}")
 
         if not parts:
             return ""
@@ -811,13 +686,13 @@ class AutonomousAgent:
             steps = best.get_steps()
 
             lines = [
-                f"💡 系统找到了一个相关技能可以帮助你完成任务:",
-                f"技能: {best.description}",
-                f"来源: {best.source or 'local'}",
+                f"💡 System found a relevant skill to help complete the task:",
+                f"Skill: {best.description}",
+                f"Source: {best.source or 'local'}",
             ]
 
             if steps:
-                lines.append("建议步骤:")
+                lines.append("Suggested steps:")
                 for i, step in enumerate(steps[:8], 1):
                     desc = step.get("description", "")
                     tool = step.get("tool", step.get("name", ""))
@@ -825,9 +700,9 @@ class AutonomousAgent:
                         lines.append(f"  {i}. {desc}")
                     elif tool:
                         args_str = json.dumps(step.get("args", step.get("parameters", {})), ensure_ascii=False)
-                        lines.append(f"  {i}. 使用工具 {tool}: {args_str[:120]}")
+                        lines.append(f"  {i}. Use tool {tool}: {args_str[:120]}")
 
-            lines.append("请参考以上建议调整你的执行策略。")
+            lines.append("Please refer to the above suggestions and adjust your execution strategy.")
             return "\n".join(lines)
 
         except Exception as e:
@@ -864,7 +739,7 @@ class AutonomousAgent:
                     break
                 if chunk.get("type") == "error":
                     raise RuntimeError(chunk.get("error", "Unknown error"))
-            return summary or "任务已结束"
+            return summary or "Task ended"
         finally:
             if old_llm is not None:
                 self.llm = old_llm
@@ -959,6 +834,21 @@ class AutonomousAgent:
         self._goal_validator = GoalCompletionValidator(self._evidence_collector)
         self._runtime_intel.reset()
         self._goal_tracker = GoalProgressTracker(task)
+        # 异步并行 Duck 委派：跟踪已提交但未完成的 Duck 任务
+        self._pending_duck_futures: Dict[str, asyncio.Future] = {}  # task_id -> future
+        self._pending_duck_descriptions: Dict[str, str] = {}  # task_id -> description
+        
+        # v3.8: 初始化中间件链
+        self._middleware_chain = MiddlewareChain()
+        self._middleware_chain.add(ContextSummarizationMiddleware(
+            token_budget=getattr(self, 'max_tokens', 80000) or 80000,
+        ))
+        self._mw_dedup = ActionDeduplicationMiddleware()
+        self._middleware_chain.add(self._mw_dedup)
+        self._mw_plan = PlanTrackingMiddleware()
+        self._middleware_chain.add(self._mw_plan)
+        self._mw_duck = DuckDelegationMiddleware()
+        self._middleware_chain.add(self._mw_duck)
         
         # 任务启动时注入：匹配的 skill/capsule + 工具提示（截图用 call_tool/screencapture）
         self._task_guidance: str = ""
@@ -1018,6 +908,7 @@ class AutonomousAgent:
                     self._current_plan = plan
                     self._current_plan_index = 0
                     self._goal_tracker.set_sub_goals(plan)
+                    self._mw_plan.set_plan(plan)  # v3.8: 同步到中间件
                     yield {"type": "plan_created", "task_id": task_id, "sub_tasks": plan}
         except Exception as e:
             logger.debug("Plan-and-Execute init failed: %s", e)
@@ -1029,12 +920,21 @@ class AutonomousAgent:
             while True:
                 context.current_iteration += 1
                 
+                # ─── v3.8: 中间件链 before_iteration ───
+                async for mw_event in self._middleware_chain.before_iteration(context, context.current_iteration):
+                    yield mw_event
+
+                # ─── 收集已完成的并行 Duck 任务结果（兼容旧路径）───
+                if self._pending_duck_futures:
+                    async for duck_event in self._collect_duck_results(context):
+                        yield duck_event
+
                 # 硬性上限检查 - 即使所有其他停止条件失效也必须停止
                 if context.current_iteration > HARD_ITERATION_LIMIT:
                     logger.error(f"Hard iteration limit reached: {context.current_iteration} > {HARD_ITERATION_LIMIT}")
                     context.status = "force_stopped"
                     context.stop_reason = "hard_limit"
-                    context.stop_message = f"任务执行超过硬性上限（{HARD_ITERATION_LIMIT} 次迭代），强制终止"
+                    context.stop_message = f"Task exceeded hard limit ({HARD_ITERATION_LIMIT} iterations), forcefully terminated"
                     yield {
                         "type": "task_stopped",
                         "task_id": context.task_id,
@@ -1052,9 +952,17 @@ class AutonomousAgent:
                 
                 # 在线模型网关常对同一 token 限制并发，必须等上一轮返回后再发下一请求。非首轮前等待。
                 if context.current_iteration > 1 and self.llm is self.remote_llm:
-                    _delay = float(os.environ.get("LLM_REQUEST_DELAY_SECONDS", "2.0"))
-                    if _delay > 0:
-                        await asyncio.sleep(_delay)
+                    await self._call_builder.pre_request_delay(context.current_iteration)
+
+                # v3.6: 检测连续相同 action 循环 — 委托给 ThinkingManager
+                if not self._mid_reflection_hint and len(context.action_logs) >= 3:
+                    last_log = context.action_logs[-1]
+                    _at_val = last_log.action.action_type.value if hasattr(last_log.action.action_type, 'value') else str(last_log.action.action_type)
+                    if self._thinking_manager.detect_loop(_at_val, last_log.action.params or {}, context.action_logs):
+                        self._mid_reflection_hint = (
+                            f"⚠️ You have executed the same action ({_at_val}) 3 times consecutively. "
+                            f"This is an ineffective loop. Immediately switch to a different strategy or proceed to the next step."
+                        )
                 
                 llm_events: List[Dict[str, Any]] = []
                 action = await self._generate_action(context, llm_events=llm_events)
@@ -1078,10 +986,10 @@ class AutonomousAgent:
                             action = AgentAction(
                                 action_type=ActionType.FINISH,
                                 params={
-                                    "summary": f"任务已完成，产出文件：{', '.join(existing_files[:3])}",
+                                    "summary": f"Task completed. Output files: {', '.join(existing_files[:3])}",
                                     "success": True,
                                 },
-                                reasoning="已产出目标文件，视为完成。",
+                                reasoning="Output files already exist, treating as completed.",
                             )
                     if action is None:
                         # 若为 write_file 截断场景触发的「再试一次」，不增加 retry_count
@@ -1097,7 +1005,7 @@ class AutonomousAgent:
                         # 解析重试：用 retry 类型，前端显示「正在重试…」而非「错误」
                         yield {
                             "type": "retry",
-                            "message": f"正在重试解析… ({context.retry_count}/{context.max_retries}，{backoff_seconds}s 后)",
+                            "message": f"Retrying parse… ({context.retry_count}/{context.max_retries}, {backoff_seconds}s later)",
                             "retry_count": context.retry_count,
                             "max_retries": context.max_retries,
                             "backoff_seconds": backoff_seconds,
@@ -1116,13 +1024,13 @@ class AutonomousAgent:
                         if context.retry_count >= context.max_retries:
                             context.status = "parse_error"
                             context.stop_reason = "consecutive_parse_failures"
-                            context.stop_message = f"LLM 连续 {context.retry_count} 次返回无法解析的内容，请检查模型配置或简化任务描述"
+                            context.stop_message = f"LLM returned unparseable content {context.retry_count} times consecutively. Please check model configuration or simplify the task description."
                             yield {
                                 "type": "task_stopped",
                                 "task_id": context.task_id,
                                 "reason": "parse_error",
                                 "message": context.stop_message,
-                                "recommendation": "请尝试：1) 简化任务描述 2) 检查 API 配额 3) 切换模型",
+                                "recommendation": "Try: 1) Simplify the task description 2) Check API quota 3) Switch model",
                             }
                             break
                         
@@ -1139,54 +1047,67 @@ class AutonomousAgent:
                 }
                 
                 if action.action_type == ActionType.FINISH:
-                    # v3.6: Plan completion enforcement — 若 plan 未完成，拒绝 FINISH
+                    # v3.6: 统一 FINISH Guard — 委托给 ThinkingManager
                     plan = getattr(self, "_current_plan", []) or []
                     plan_index = getattr(self, "_current_plan_index", 0)
                     _finish_blocked = False
 
-                    if plan and plan_index < len(plan) - 1:
-                        remaining = plan[plan_index + 1:]
-                        logger.info(
-                            f"FINISH rejected: plan has {len(remaining)} remaining steps: {remaining}"
-                        )
-                        self._mid_reflection_hint = (
-                            f"⚠️ 任务尚未完成！计划中还有以下步骤未执行：{remaining}。"
-                            f"请继续执行下一步：{remaining[0]}。禁止跳过。"
-                        )
-                        context.add_action_log(action, ActionResult(
-                            action_id=action.action_id,
-                            success=False,
-                            output=f"计划未完成，还剩 {len(remaining)} 步：{remaining}",
-                            error="plan_incomplete",
-                        ))
-                        _finish_blocked = True
+                    # v3.8: 中间件链 check_finish（优先级最高）
+                    block_reason = self._middleware_chain.check_finish(action, context) if hasattr(self, '_middleware_chain') else None
 
-                    # v3.6: 额外检查 — 若有 delegate_duck 失败（未完成），也拒绝 FINISH
-                    if not _finish_blocked:
-                        _failed_ducks = [
-                            log for log in context.action_logs
-                            if log.action.action_type == ActionType.DELEGATE_DUCK
-                            and not log.result.success
-                            and log.result.error != "duplicate_action_blocked"
-                        ]
-                        if _failed_ducks:
-                            last_duck = _failed_ducks[-1]
-                            desc = (last_duck.action.params.get("description") or "")[:80]
-                            duck_type = last_duck.action.params.get("duck_type", "")
-                            logger.info(f"FINISH rejected: has {len(_failed_ducks)} failed duck(s)")
-                            self._mid_reflection_hint = (
-                                f"⚠️ 你有未完成的子任务委派（{duck_type}: {desc}）。"
-                                f"请重新 delegate_duck 委派此子任务，不要直接结束。"
+                    # 向后兼容：若中间件未阻止，再检查原有逻辑
+                    if not block_reason:
+                        # 额外检查：是否有未完成的异步 Duck 任务
+                        pending_ducks = getattr(self, '_pending_duck_futures', {})
+                        if pending_ducks:
+                            pending_descs = [self._pending_duck_descriptions.get(tid, tid[:8]) for tid in pending_ducks]
+                            block_reason = f"There are {len(pending_ducks)} Duck sub-tasks still executing: {', '.join(pending_descs)}. Please wait for them to complete before finishing the task."
+                        else:
+                            block_reason = self._thinking_manager.should_block_finish(
+                                plan, plan_index, context.action_logs
                             )
+                    if block_reason:
+                        # 连续 FINISH 被阻止次数累计，超过 3 次则强制放行
+                        _consecutive_finish_blocks = getattr(context, '_consecutive_finish_blocks', 0) + 1
+                        context._consecutive_finish_blocks = _consecutive_finish_blocks
+                        if _consecutive_finish_blocks >= 3:
+                            logger.warning("FINISH blocked %d times consecutively, force-allowing: %s",
+                                           _consecutive_finish_blocks, block_reason)
+                            context._consecutive_finish_blocks = 0
+                        else:
+                            logger.info(f"FINISH rejected ({_consecutive_finish_blocks}/3): {block_reason}")
+                            # 构建具体的下一步指导，而不只是告诉 LLM "被阻止了"
+                            remaining_steps = []
+                            if plan and plan_index < len(plan) - 1:
+                                remaining_steps = plan[plan_index + 1:]
+                            if remaining_steps:
+                                next_step_hint = f"Please continue with the next planned step: '{remaining_steps[0]}' ({len(remaining_steps)} steps remaining)"
+                            else:
+                                next_step_hint = "Please check failed sub-tasks and re-execute, or use another approach to complete the task"
+                            feedback_msg = (
+                                f"⚠️ FINISH rejected: {block_reason}\n"
+                                f"Your task is NOT complete. You cannot output finish. {next_step_hint}.\n"
+                                f"Do NOT output finish again. Execute a concrete tool action immediately."
+                            )
+                            self._mid_reflection_hint = feedback_msg
                             context.add_action_log(action, ActionResult(
                                 action_id=action.action_id,
                                 success=False,
-                                output=f"有 {len(_failed_ducks)} 个 duck 子任务失败，不允许 FINISH",
-                                error="duck_incomplete",
+                                output=feedback_msg,
+                                error="finish_blocked",
                             ))
                             _finish_blocked = True
+                    else:
+                        context._consecutive_finish_blocks = 0
 
                     if _finish_blocked:
+                        # 向监控面板广播 FINISH 被阻止事件
+                        yield {
+                            "type": "finish_blocked",
+                            "reason": block_reason,
+                            "consecutive_blocks": _consecutive_finish_blocks,
+                            "iteration": context.current_iteration,
+                        }
                         continue
 
                     result = await self._execute_action(action)
@@ -1225,7 +1146,7 @@ class AutonomousAgent:
                             await persistence.update_task_status(
                                 task_id=task_id,
                                 status=PersistentTaskStatus.COMPLETED,
-                                final_result=action.params.get("summary", "任务完成"),
+                                final_result=action.params.get("summary", "Task completed"),
                             )
                         except Exception as e:
                             logger.warning(f"Failed to save checkpoint on finish: {e}")
@@ -1233,7 +1154,7 @@ class AutonomousAgent:
                     context.status = "completed"
                     context.stop_reason = "task_complete"
                     context.completed_at = datetime.now()
-                    context.final_result = action.params.get("summary", "任务完成")
+                    context.final_result = action.params.get("summary", "Task completed")
                     
                     task_success = action.params.get("success", True)
                     execution_time_ms = int((time.time() - self._task_start_time) * 1000) if self._task_start_time else 0
@@ -1291,7 +1212,7 @@ class AutonomousAgent:
                                 yield reflect_chunk
                         except Exception as e:
                             logger.warning(f"Reflection skipped (Ollama may not be running): {e}")
-                            yield {"type": "reflect_result", "error": f"反思跳过: Ollama 未运行"}
+                            yield {"type": "reflect_result", "error": f"Reflection skipped: Ollama not running"}
                     
                     return
                 
@@ -1327,13 +1248,13 @@ class AutonomousAgent:
                             action_id=action.action_id,
                             success=False,
                             output=None,
-                            error="此动作与最近成功执行的步骤完全相同，已跳过。请执行下一步而非重复已完成的操作。",
+                            error="This action is identical to a recently successful step and has been skipped. Please proceed to the next step instead of repeating completed actions.",
                             execution_time_ms=0,
                         )
                         context.add_action_log(action, result)
                         self._mid_reflection_hint = (
-                            "⚠️ 你刚才尝试重复一个已成功完成的动作，已被系统拦截。"
-                            "请仔细查看【关键产物】中已完成的内容，执行尚未完成的步骤。"
+                            "⚠️ You just attempted to repeat an already-completed action, which was blocked by the system. "
+                            "Please review what has been completed in [Key Artifacts] and execute the remaining steps."
                         )
                         yield {
                             "type": "action_result",
@@ -1415,7 +1336,7 @@ class AutonomousAgent:
                         )
                         self._error_tracker.record(classified)
                         if self._error_tracker.should_escalate():
-                            _observation_text += "\n⚠ 错误持续发生，建议更换策略。"
+                            _observation_text += "\n⚠ Errors keep occurring, consider switching strategy."
                 except Exception as _post_err:
                     logger.debug("Post-observation error: %s", _post_err)
 
@@ -1573,9 +1494,9 @@ class AutonomousAgent:
                         duck_desc = (action.params.get("description") or "")[:80]
                         duck_type = action.params.get("duck_type", "")
                         self._mid_reflection_hint = (
-                            f"⚠️ 子任务委派失败（{duck_type}: {duck_desc}）。"
-                            f"错误: {(result.error or '未知')[:100]}。"
-                            f"请稍后重新尝试 delegate_duck 委派此子任务。禁止直接结束任务。"
+                            f"⚠️ Sub-task delegation failed ({duck_type}: {duck_desc}). "
+                            f"Error: {(result.error or 'unknown')[:100]}. "
+                            f"Please retry delegate_duck for this sub-task later. Do NOT finish the task directly."
                         )
                     
                     if context.consecutive_action_failures >= context.max_consecutive_action_failures:
@@ -1585,8 +1506,8 @@ class AutonomousAgent:
                         context.status = "consecutive_failures"
                         context.stop_reason = "consecutive_failures"
                         context.stop_message = (
-                            f"连续 {context.consecutive_action_failures} 次动作执行失败，未完成任务。"
-                            f"最后错误: {result.error or '未知'}"
+                            f"{context.consecutive_action_failures} consecutive action failures, task incomplete. "
+                            f"Last error: {result.error or 'unknown'}"
                         )
                         context.completed_at = datetime.now()
                         
@@ -1617,7 +1538,7 @@ class AutonomousAgent:
                             "task_id": task_id,
                             "reason": context.stop_reason,
                             "message": context.stop_message,
-                            "recommendation": "请检查任务描述或环境（权限、依赖等）后重试。",
+                            "recommendation": "Please check the task description or environment (permissions, dependencies, etc.) and retry.",
                             "iterations": context.current_iteration,
                             "execution_time_ms": execution_time_ms,
                             "success_rate": context.get_success_rate(),
@@ -1640,6 +1561,7 @@ class AutonomousAgent:
                         idx = getattr(self, "_current_plan_index", 0)
                         if plan and idx < len(plan) - 1:
                             self._current_plan_index = idx + 1
+                            self._mw_plan.advance()  # v3.8: 同步中间件
                 
                 # v3.1 中途反思：每 N 步或连续失败时触发，结果写入 _mid_reflection_hint 供下一轮注入
                 try:
@@ -1664,6 +1586,7 @@ class AutonomousAgent:
                                 self._current_plan = replan
                                 self._current_plan_index = 0
                                 self._goal_tracker.set_sub_goals(replan)
+                                self._mw_plan.set_plan(replan)  # v3.8: 同步中间件
                                 yield {"type": "plan_replanned", "task_id": task_id, "sub_tasks": replan}
                         except Exception as e:
                             logger.debug("Replan failed: %s", e)
@@ -1806,6 +1729,8 @@ class AutonomousAgent:
         If llm_events is provided, append llm_request_start/llm_request_end for monitoring.
         """
         # Build system prompt with user context (layer 1)
+        # LEGACY PATH (DO NOT EXTEND) — Autonomous 模式的 system prompt 拼装仍为内联；
+        # 新提示注入请通过 ContextBuilder 添加。
         user_ctx = getattr(self, "_user_context", "")
         
         # 注入共享 GUI 规则（single source of truth）
@@ -1831,19 +1756,19 @@ class AutonomousAgent:
                 except (ValueError, ImportError):
                     template_prompt = ""
                 parts = [
-                    f"【分身身份】你是 {duck_ctx.get('name', 'Duck')}，专项类型：{duck_type_str}。"
+                    f"[Duck Identity] You are {duck_ctx.get('name', 'Duck')}, specialized type: {duck_type_str}."
                 ]
                 if template_prompt:
-                    parts.append(f"\n【专项规范】\n{template_prompt}")
+                    parts.append(f"\n[Specialization Rules]\n{template_prompt}")
                 if duck_ctx.get("skills"):
-                    parts.append(f"\n你的专项技能：{', '.join(duck_ctx['skills'])}。请优先运用这些技能完成任务。")
+                    parts.append(f"\nYour specialized skills: {', '.join(duck_ctx['skills'])}. Prioritize using these skills to complete the task.")
                 parts.append(
-                    "\n【重要执行规则】你是执行者，不是规划者。你必须：\n"
-                    "1. 直接使用工具（run_shell、write_file、call_tool 等）执行任务，而非描述或规划任务。\n"
-                    "2. 如果任务要求创建文件，必须输出 write_file 或 create_and_run_script 动作来实际创建文件。\n"
-                    "3. 绝对不要只输出任务分析或执行策略的文字说明。每一步都必须是可执行的 JSON 动作。\n"
-                    "4. 不要在第一步就 finish，除非任务已经被真正完成（文件已创建、命令已执行等）。\n"
-                    "5. 如果任务需要编写代码/HTML/文件，直接用 create_and_run_script 生成（禁止在 write_file 的 content 中放超长内容）。"
+                    "\n[CRITICAL: Execution Rules] You are an executor, NOT a planner. You MUST:\n"
+                    "1. Use tools directly (run_shell, write_file, call_tool, etc.) to execute the task — never just describe or plan.\n"
+                    "2. If the task requires creating files, output write_file or create_and_run_script actions to actually create them.\n"
+                    "3. NEVER output just text analysis or strategy descriptions. Every step must be an executable JSON action.\n"
+                    "4. Do NOT finish on the first step unless the task is truly complete (files created, commands executed, etc.).\n"
+                    "5. For code/HTML/file creation, use create_and_run_script (NEVER put very long content in write_file's content field)."
                 )
                 duck_block = "\n".join(parts)
                 system_prompt = duck_block + "\n\n---\n\n" + system_prompt
@@ -1869,25 +1794,25 @@ class AutonomousAgent:
         else:
             context_str = context.get_context_for_llm()
         if GOAL_RESTATE_EVERY_N and context.current_iteration > 0 and context.current_iteration % GOAL_RESTATE_EVERY_N == 0:
-            context_str = f"【当前目标】原始任务: {context.task_description}\n\n" + context_str
+            context_str = f"[Current Goal] Original task: {context.task_description}\n\n" + context_str
         plan = getattr(self, "_current_plan", []) or []
         plan_index = getattr(self, "_current_plan_index", 0)
         if plan and plan_index < len(plan):
             remaining_count = len(plan) - plan_index
             context_str += (
-                f"\n\n【执行计划】共 {len(plan)} 步，当前第 {plan_index + 1} 步: {plan[plan_index]}"
-                f"\n剩余: {plan[plan_index:]}"
-                f"\n⚠️ 必须按计划逐步完成所有步骤，禁止在计划未完成时结束任务。"
+                f"\n\n[Execution Plan] {len(plan)} total steps, currently on step {plan_index + 1}: {plan[plan_index]}"
+                f"\nRemaining: {plan[plan_index:]}"
+                f"\n⚠️ You MUST complete all steps in order. Do NOT finish the task before the plan is fully completed."
             )
 
         # v3.5: 注入环境状态 + 最近观察
         try:
             _env_ctx = self._observation_loop.env_state.get_context_for_llm()
             if _env_ctx and _env_ctx != "环境状态未知":
-                context_str += f"\n\n【环境状态】{_env_ctx}"
+                context_str += f"\n\n[Environment State] {_env_ctx}"
             _obs_ctx = self._observation_loop.get_recent_observations_for_llm(n=2, max_chars=600)
             if _obs_ctx:
-                context_str += f"\n\n【最近观察】\n{_obs_ctx}"
+                context_str += f"\n\n[Recent Observations]\n{_obs_ctx}"
         except Exception:
             pass
 
@@ -1901,35 +1826,25 @@ class AutonomousAgent:
                 context_str += f"\n\n{_intel_ctx}"
             _fail_mem = self._execution_controller.failure_memory.get_failure_summary(n=5)
             if _fail_mem:
-                context_str += f"\n\n【失败记忆】\n{_fail_mem}"
+                context_str += f"\n\n[Failure Memory]\n{_fail_mem}"
         except Exception:
             pass
 
-        # v3.6: 动态注入在线 Duck 信息，让 LLM 知道可以/不可以 delegate
+        # v3.6: 动态注入在线 Duck 信息 — 委托给 ContextBuilder
+        duck_status = await ContextBuilder.get_duck_status_context()
+        if duck_status:
+            context_str += f"\n\n{duck_status}"
+
+        # v3.8: 注入持久化经验事实
         try:
-            from app_state import IS_DUCK_MODE
-            if not IS_DUCK_MODE:
-                from services.duck_registry import DuckRegistry
-                registry = DuckRegistry.get_instance()
-                online = await registry.list_online()
-                if online:
-                    duck_lines = []
-                    for d in online[:5]:
-                        name = getattr(d, "name", getattr(d, "duck_id", "?"))
-                        dtype = getattr(d, "duck_type", "general")
-                        if hasattr(dtype, "value"):
-                            dtype = dtype.value
-                        duck_lines.append(f"  - {name} (类型: {dtype})")
-                    context_str += (
-                        f"\n\n【在线 Duck 分身】当前有 {len(online)} 个 Duck 可用:\n"
-                        + "\n".join(duck_lines)
-                        + "\n你可以用 delegate_duck 委派子任务给它们。"
-                    )
-                else:
-                    context_str += "\n\n【Duck 状态】当前没有在线 Duck，请自行完成所有子任务。"
+            from .persistent_memory import get_factbase
+            fact_hint = get_factbase().recall_for_prompt(context.task_description, max_chars=800)
+            if fact_hint:
+                context_str += f"\n\n{fact_hint}"
         except Exception:
             pass
 
+        # LEGACY PATH (DO NOT EXTEND) — 消息构建内联；新增消息逻辑请通过 ContextBuilder。
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": context_str}
@@ -1987,25 +1902,18 @@ class AutonomousAgent:
                 result_summary += f"\n\n{escalation}"
             # v3.1 中途反思建议回写
             mid_hint = getattr(self, "_mid_reflection_hint", "") or ""
+            # v3.8: 合并中间件链提示
+            mw_hints = self._middleware_chain.collect_hints(context) if hasattr(self, '_middleware_chain') else ""
+            if mw_hints:
+                mid_hint = f"{mid_hint}\n{mw_hints}".strip() if mid_hint else mw_hints
             if mid_hint:
                 result_summary += f"\n\n【中途反思建议】{mid_hint}"
                 self._mid_reflection_hint = ""
 
-            # 重复验证检测：create_and_run_script 成功后已多次 read_file/run_shell 验证 → 提示可直接 finish
-            logs = context.action_logs
-            if len(logs) >= 4:
-                script_success_idx = None
-                for i, log in enumerate(logs):
-                    if log.action.action_type == ActionType.CREATE_AND_RUN_SCRIPT and log.result.success:
-                        script_success_idx = i
-                verify_actions = (ActionType.READ_FILE, ActionType.RUN_SHELL)
-                if script_success_idx is not None:
-                    verify_count = sum(
-                        1 for log in logs[script_success_idx + 1:]
-                        if log.action.action_type in verify_actions
-                    )
-                    if verify_count >= 2:
-                        result_summary += "\n\n【避免重复验证】你已多次 read_file/run_shell 验证，若文件已确认存在且内容正确，请直接 finish 完成任务。"
+            # 重复验证检测 — 委托给 ContextBuilder
+            _verify_hint = ContextBuilder.build_verification_hint(context.action_logs)
+            if _verify_hint:
+                result_summary += f"\n\n{_verify_hint}"
 
             next_prompt = f"{result_summary}\n\n请分析结果并输出下一步动作的 JSON。"
             # 注入截断提示（若上轮 JSON 因 token 限制被截断）
@@ -2060,16 +1968,9 @@ class AutonomousAgent:
                     "iteration": context.current_iteration,
                 })
             # 多步任务后易输出长 JSON（如报告），提高 max_tokens 避免截断
-            # 从第 1 步起即用 8192，避免 write_file 内容（如 HTML）因默认 4096 被截断
-            steps = len(context.action_logs)
-            if steps >= 8:
-                extra_tokens = 16384
-            elif steps >= 5:
-                extra_tokens = 12288
-            elif steps >= 1:
-                extra_tokens = 8192
-            else:
-                extra_tokens = 8192  # 首步也用 8192，为可能的长 JSON 预留空间
+            extra_tokens = self._call_builder.compute_max_tokens(
+                step_count=len(context.action_logs)
+            )
 
             # Phase C：Extended Thinking / CoT 支持
             # v3.5: 上下文压缩 — 在发送给 LLM 前压缩消息列表
@@ -2082,6 +1983,11 @@ class AutonomousAgent:
             except Exception as _comp_err:
                 logger.debug("Context compression failed: %s", _comp_err)
 
+            # 安全网：确保 messages 含至少一条 user 消息（防压缩器误删）
+            messages = ContextBuilder.ensure_user_message_present(
+                messages, context.task_description
+            )
+
             chat_extra_body: Optional[Dict[str, Any]] = None
             try:
                 from app_state import (  # type: ignore
@@ -2092,33 +1998,11 @@ class AutonomousAgent:
                 ENABLE_EXTENDED_THINKING = False
                 EXTENDED_THINKING_BUDGET_TOKENS = 8000
             if ENABLE_EXTENDED_THINKING:
-                provider = (self.llm.config.provider or "").lower()
-                if provider == "anthropic":
-                    # Anthropic Extended Thinking（via extra_body）
-                    budget = max(1024, int(EXTENDED_THINKING_BUDGET_TOKENS))
-                    chat_extra_body = {
-                        "thinking": {"type": "enabled", "budget_tokens": budget}
-                    }
-                    # Extended Thinking 要求 temperature=1（否则 API 报错）
-                    messages_for_thinking = messages
-                    logger.info(
-                        f"Extended Thinking enabled: provider={provider} budget={budget}"
-                    )
-                else:
-                    # 其他模型：注入 CoT 系统指令（通用 Chain-of-Thought 前缀）
-                    cot_prefix = (
-                        "[Chain-of-Thought Reasoning] 在输出最终 JSON 动作之前，"
-                        "请先在 <thinking>...</thinking> 标签内逐步推理分析当前状态、"
-                        "潜在风险和最优下一步，然后再输出 JSON。"
-                    )
-                    if messages and messages[0].get("role") == "system":
-                        import copy
-                        messages = copy.copy(messages)
-                        messages[0] = dict(messages[0])
-                        messages[0]["content"] = cot_prefix + "\n\n" + messages[0]["content"]
-                    logger.info(
-                        f"CoT prompt injection enabled: provider={provider}"
-                    )
+                messages, chat_extra_body = self._call_builder.inject_cot(
+                    messages,
+                    enable_extended_thinking=True,
+                    thinking_budget_tokens=EXTENDED_THINKING_BUDGET_TOKENS,
+                )
 
             chat_coro = self.llm.chat(
                 messages=messages,
@@ -2177,8 +2061,8 @@ class AutonomousAgent:
                 # 补充检测：completion_tokens 达到本次 max_tokens 上限也视为截断
                 completion_tokens = usage.get("completion_tokens", 0)
                 _effective_max_tokens = extra_tokens or self.llm.config.max_tokens or 4096
-                is_truncated = (finish_reason == "length") or (
-                    completion_tokens > 0 and completion_tokens >= _effective_max_tokens - 10
+                is_truncated = LLMCallBuilder.is_truncated(
+                    finish_reason, completion_tokens, _effective_max_tokens
                 )
                 if is_truncated and finish_reason != "length":
                     logger.info(
@@ -2574,6 +2458,11 @@ class AutonomousAgent:
             args = {}
         if not tool_name:
             return {"success": False, "error": "call_tool 缺少 tool_name"}
+
+        # 拦截 delegate_duck：强制走阻塞 handler，防止 tool registry 的异步路径导致并发
+        if tool_name == "delegate_duck":
+            return await self._handle_delegate_duck(args)
+
         try:
             result = await execute_tool(tool_name, args)
             out = result.data
@@ -2590,7 +2479,11 @@ class AutonomousAgent:
             return {"success": False, "output": None, "error": str(e)}
 
     async def _handle_delegate_duck(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """委派子任务给 Duck 分身 Agent"""
+        """
+        异步委派子任务给 Duck 分身 Agent。
+        采用 fire-and-forget 模式：提交任务后立即返回，不阻塞主 Agent。
+        Duck 结果通过 _collect_duck_results() 在后续迭代中收集。
+        """
         from app_state import IS_DUCK_MODE
         if IS_DUCK_MODE:
             return {"success": False, "error": "Duck 模式下不允许再次委派子任务给其他 Duck"}
@@ -2618,7 +2511,7 @@ class AutonomousAgent:
                 except ValueError:
                     pass
 
-            # 使用 asyncio.Future 等待结果
+            # 使用 asyncio.Future 接收结果（异步，不阻塞）
             loop = asyncio.get_event_loop()
             future: asyncio.Future = loop.create_future()
 
@@ -2647,78 +2540,88 @@ class AutonomousAgent:
                     "task_id": task.task_id,
                 }
 
-            # ─── 自适应超时等待 ───────────────────────────────
-            # 两阶段等待策略:
-            #   阶段 1 (启动等待): duck 尚未开始工作 (last_activity=None)，
-            #            最多等 STARTUP_TIMEOUT 秒让 worker 领取并启动
-            #   阶段 2 (活跃检查): duck 已开始工作，每 CHECK_INTERVAL 秒检查
-            #            是否仍有 chunk 产出。超过 INACTIVITY_THRESHOLD 无产出则超时
-            CHECK_INTERVAL = 90
-            INACTIVITY_THRESHOLD = 90
-            STARTUP_TIMEOUT = 180  # duck 从 ASSIGNED 到首次活跃的最长等待
+            # 异步并行模式：注册 future 后立即返回，主 Agent 可继续执行其他动作
+            self._pending_duck_futures[task.task_id] = future
+            self._pending_duck_descriptions[task.task_id] = description[:100]
+            logger.info(f"Duck task {task.task_id} dispatched asynchronously (pending: {len(self._pending_duck_futures)})")
 
-            _wait_start = time.time()
-
-            while True:
-                done, _ = await asyncio.wait({future}, timeout=CHECK_INTERVAL)
-                if future in done:
-                    completed_task = future.result()
-                    return {
-                        "success": completed_task.status == TaskStatus.COMPLETED,
-                        "output": completed_task.output,
-                        "error": completed_task.error,
-                        "task_id": completed_task.task_id,
-                        "duck_id": completed_task.assigned_duck_id,
-                    }
-
-                # Future 未完成，检查 Duck 状态
-                current_task = await scheduler.get_task(task.task_id)
-                if not current_task:
-                    return {
-                        "success": False,
-                        "output": None,
-                        "error": "Duck task disappeared from scheduler",
-                        "task_id": task.task_id,
-                    }
-
-                # 如果任务已被取消或失败（由其他路径设置）
-                if current_task.status in (TaskStatus.CANCELLED, TaskStatus.FAILED):
-                    return {
-                        "success": False,
-                        "output": current_task.output,
-                        "error": current_task.error or f"Duck task {current_task.status.value}",
-                        "task_id": task.task_id,
-                    }
-
-                if current_task.last_activity:
-                    # 阶段 2: duck 已开始工作，检查活跃度
-                    idle_time = time.time() - current_task.last_activity
-                    if idle_time < INACTIVITY_THRESHOLD:
-                        continue  # 仍活跃
-                    # 超过不活跃阈值 → 超时
-                    return {
-                        "success": False,
-                        "output": None,
-                        "error": f"Duck task inactive for >{INACTIVITY_THRESHOLD}s, likely stuck",
-                        "task_id": task.task_id,
-                    }
-                else:
-                    # 阶段 1: duck 尚未开始 (last_activity=None)
-                    waited = time.time() - _wait_start
-                    if waited < STARTUP_TIMEOUT:
-                        continue  # 还在启动等待窗口内
-                    # 超过启动等待 → 超时
-                    return {
-                        "success": False,
-                        "output": None,
-                        "error": f"Duck worker did not start within {STARTUP_TIMEOUT}s",
-                        "task_id": task.task_id,
-                    }
+            return {
+                "success": True,
+                "output": f"子任务已异步委派给 Duck（task_id: {task.task_id}）。Duck 正在后台执行，你可以继续执行其他操作。完成后系统会自动通知结果。",
+                "task_id": task.task_id,
+                "duck_id": task.assigned_duck_id,
+                "async_dispatched": True,
+            }
 
         except ImportError:
             return {"success": False, "error": "Duck task scheduler not available"}
         except Exception as e:
             return {"success": False, "error": f"delegate_duck error: {e}"}
+
+    async def _collect_duck_results(self, context: TaskContext) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        非阻塞地收集已完成的并行 Duck 任务结果。
+        在每次迭代开始时调用，将已完成的 Duck 结果注入主 Agent 上下文。
+        """
+        if not self._pending_duck_futures:
+            return
+
+        from services.duck_protocol import TaskStatus
+
+        completed_ids = []
+        for task_id, future in self._pending_duck_futures.items():
+            if future.done():
+                completed_ids.append(task_id)
+
+        for task_id in completed_ids:
+            future = self._pending_duck_futures.pop(task_id)
+            desc = self._pending_duck_descriptions.pop(task_id, "")
+            try:
+                completed_task = future.result()
+                success = completed_task.status == TaskStatus.COMPLETED
+                output = completed_task.output
+                error = completed_task.error
+                duck_id = completed_task.assigned_duck_id
+
+                # 将 Duck 结果作为虚拟 action log 注入上下文，让 LLM 知道结果
+                from .action_schema import ActionType
+                duck_action = AgentAction(
+                    action_type=ActionType.DELEGATE_DUCK,
+                    params={"description": desc, "task_id": task_id},
+                    reasoning=f"异步 Duck 任务完成（{'成功' if success else '失败'}）",
+                )
+                duck_result = ActionResult(
+                    action_id=duck_action.action_id,
+                    success=success,
+                    output=output,
+                    error=error,
+                )
+                context.add_action_log(duck_action, duck_result)
+
+                status_text = "✅ 成功" if success else "❌ 失败"
+                hint = f"【Duck 异步任务完成】{status_text}：{desc}"
+                if output:
+                    hint += f"\n结果：{str(output)[:300]}"
+                if error:
+                    hint += f"\n错误：{error[:200]}"
+                # 追加到反思提示
+                existing_hint = self._mid_reflection_hint or ""
+                self._mid_reflection_hint = f"{existing_hint}\n{hint}".strip()
+
+                yield {
+                    "type": "duck_result_collected",
+                    "task_id": task_id,
+                    "duck_id": duck_id,
+                    "success": success,
+                    "description": desc,
+                    "output": str(output)[:500] if output else None,
+                    "error": error,
+                    "pending_count": len(self._pending_duck_futures),
+                }
+                logger.info(f"Duck async result collected: task={task_id} success={success} pending={len(self._pending_duck_futures)}")
+            except Exception as e:
+                logger.warning(f"Failed to collect duck result for {task_id}: {e}")
+                self._pending_duck_descriptions.pop(task_id, None)
     
     async def _handle_create_script(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle create_and_run_script action"""

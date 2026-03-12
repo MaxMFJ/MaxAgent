@@ -294,6 +294,7 @@ async def get_llm_providers_for_import():
         if main_base and main_model:
             providers.append({
                 "provider": main_provider,
+                "provider_ref": "main",
                 "name": f"主模型 ({main_provider})",
                 "api_key": main_key,
                 "base_url": main_base,
@@ -312,6 +313,7 @@ async def get_llm_providers_for_import():
         if base_url and model:
             providers.append({
                 "provider": p,
+                "provider_ref": p,
                 "name": p,
                 "api_key": api_key,
                 "base_url": base_url,
@@ -324,10 +326,12 @@ async def get_llm_providers_for_import():
             continue
         base_url = (p.get("base_url") or "").strip()
         model = (p.get("model") or "").strip()
+        custom_id = (p.get("id") or "").strip()
         if base_url and model:
             providers.append({
                 "provider": "custom",
-                "name": (p.get("name") or p.get("id") or "自定义").strip(),
+                "provider_ref": f"custom:{custom_id}" if custom_id else "custom",
+                "name": (p.get("name") or custom_id or "自定义").strip(),
                 "api_key": (p.get("api_key") or "").strip(),
                 "base_url": base_url,
                 "model": model,

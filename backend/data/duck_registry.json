@@ -14,14 +14,15 @@
     "platform": "darwin",
     "is_local": true,
     "registered_at": 1773017955.531414,
-    "last_heartbeat": 1773223246.526001,
+    "last_heartbeat": 1773301044.17083,
     "current_task_id": null,
     "busy_reason": null,
     "completed_tasks": 3,
-    "failed_tasks": 9,
+    "failed_tasks": 10,
     "llm_api_key": null,
     "llm_base_url": null,
-    "llm_model": null
+    "llm_model": null,
+    "llm_provider_ref": null
   },
   {
     "duck_id": "local_69779502",
@@ -39,14 +40,15 @@
     "platform": "darwin",
     "is_local": true,
     "registered_at": 1773017961.826617,
-    "last_heartbeat": 1773223246.526174,
+    "last_heartbeat": 1773300983.9939132,
     "current_task_id": null,
     "busy_reason": null,
-    "completed_tasks": 5,
-    "failed_tasks": 22,
+    "completed_tasks": 6,
+    "failed_tasks": 31,
     "llm_api_key": "sk-RnBiJJcR1dzwwEphyFKm9ZYu90mWas6n0PmkYqyiOHYsFMnj",
     "llm_base_url": "https://cc.580ai.net/v1",
-    "llm_model": "claude-haiku-4-5-20251001-thinking"
+    "llm_model": "claude-haiku-4-5-20251001-thinking",
+    "llm_provider_ref": "newapi"
   },
   {
     "duck_id": "local_71b8dd5c",
@@ -63,14 +65,15 @@
     "platform": "darwin",
     "is_local": true,
     "registered_at": 1773017976.228244,
-    "last_heartbeat": 1773223246.526284,
+    "last_heartbeat": 1773301043.384,
     "current_task_id": null,
     "busy_reason": null,
-    "completed_tasks": 9,
-    "failed_tasks": 5,
+    "completed_tasks": 11,
+    "failed_tasks": 6,
     "llm_api_key": null,
     "llm_base_url": null,
-    "llm_model": null
+    "llm_model": null,
+    "llm_provider_ref": null
   },
   {
     "duck_id": "local_51b6c4cf",
@@ -87,14 +90,15 @@
     "platform": "darwin",
     "is_local": true,
     "registered_at": 1773017982.9235609,
-    "last_heartbeat": 1773223246.526379,
+    "last_heartbeat": 1773301044.170975,
     "current_task_id": null,
     "busy_reason": null,
     "completed_tasks": 0,
     "failed_tasks": 0,
     "llm_api_key": null,
     "llm_base_url": null,
-    "llm_model": null
+    "llm_model": null,
+    "llm_provider_ref": null
   },
   {
     "duck_id": "local_4ec8d52d",
@@ -111,13 +115,14 @@
     "platform": "darwin",
     "is_local": true,
     "registered_at": 1773017989.7248409,
-    "last_heartbeat": 1773223246.526471,
+    "last_heartbeat": 1773301044.171015,
     "current_task_id": null,
     "busy_reason": null,
     "completed_tasks": 0,
     "failed_tasks": 0,
     "llm_api_key": null,
     "llm_base_url": null,
-    "llm_model": null
+    "llm_model": null,
+    "llm_provider_ref": null
   }
 ]

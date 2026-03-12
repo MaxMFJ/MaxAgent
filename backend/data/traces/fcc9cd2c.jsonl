@@ -1,0 +1,4 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5743, "success": true, "ts": 1773298978.113375}
+{"iteration": 1, "type": "tool", "action_type": "read_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773298979.058283}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 12133, "success": true, "ts": 1773298993.197333}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 162, "success": true, "error": null, "ts": 1773298993.91711}

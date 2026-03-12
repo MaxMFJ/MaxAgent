@@ -241,3 +241,55 @@ def get_custom_provider_by_id(provider_id: str) -> Optional[dict]:
         if p.get("id") == provider_id:
             return p
     return None
+
+
+def resolve_provider_config(provider_ref: str) -> Optional[dict]:
+    """
+    根据 provider_ref 解析出完整的 LLM 配置 (api_key, base_url, model)。
+    provider_ref 格式:
+      - "main"           → 当前主模型
+      - "deepseek"       → 云端提供商
+      - "openai"         → 云端提供商
+      - "custom:{id}"    → 自定义提供商 (按 id 查找)
+    返回 {"api_key": ..., "base_url": ..., "model": ...} 或 None。
+    """
+    if not provider_ref:
+        return None
+    cfg = load_llm_config()
+    persisted_key = get_persisted_api_key() or ""
+
+    # 自定义提供商: "custom:{id}"
+    if provider_ref.startswith("custom:"):
+        custom_id = provider_ref[7:]
+        p = get_custom_provider_by_id(custom_id)
+        if p and (p.get("base_url") or "").strip() and (p.get("model") or "").strip():
+            return {
+                "api_key": (p.get("api_key") or "").strip(),
+                "base_url": (p.get("base_url") or "").strip(),
+                "model": (p.get("model") or "").strip(),
+            }
+        return None
+
+    # 主模型
+    if provider_ref == "main":
+        main_provider = (cfg.get("provider") or "").strip().lower()
+        if main_provider in ("ollama", "lmstudio"):
+            return None  # 本地模型不支持分身
+        base_url = (cfg.get("base_url") or "").strip()
+        model = (cfg.get("model") or "").strip()
+        api_key = (cfg.get("api_key") or "").strip() or persisted_key
+        if base_url and model:
+            return {"api_key": api_key, "base_url": base_url, "model": model}
+        return None
+
+    # 云端提供商 (deepseek, openai, newapi, gemini, anthropic)
+    providers = cfg.get("providers") or {}
+    slot = providers.get(provider_ref) if isinstance(providers, dict) else None
+    if slot and isinstance(slot, dict):
+        base_url = (slot.get("base_url") or "").strip()
+        model = (slot.get("model") or "").strip()
+        api_key = (slot.get("api_key") or "").strip() or persisted_key
+        if base_url and model:
+            return {"api_key": api_key, "base_url": base_url, "model": model}
+
+    return None

@@ -39,6 +39,11 @@ from .event_schema import (
     PRIORITY_TRIGGER_UPGRADE,
 )
 from .evomap_bridge import evomap_enhance_context, evomap_record_success
+from .llm_call_builder import LLMCallBuilder
+from .context_builder import ContextBuilder
+from .error_recovery import ErrorRecovery
+from .execution_engine import ExecutionEngine
+from .thinking_manager import ThinkingManager
 from tools import get_all_tools, ToolRegistry
 from tools.base import BaseTool, ToolResult
 from tools.schema_registry import build_from_base_tools
@@ -66,23 +71,10 @@ def _is_json_probe_task(query: str) -> bool:
 
 def _record_created_files(context, tool_call: Dict[str, Any], result: ToolResult) -> None:
     """将工具执行产生的文件路径记录到 context，供后续追问时 LLM 能告知用户位置"""
-    if not result.success or not isinstance(result.data, dict):
-        return
     name = tool_call.get("name", "")
-    if name == "file_operations":
-        action = (tool_call.get("arguments") or {}).get("action")
-        if action in ("write", "create"):
-            path = result.data.get("path")
-            if path:
-                context.add_created_file(path)
-        elif action in ("move", "copy"):
-            dest = result.data.get("to")
-            if dest:
-                context.add_created_file(dest)
-    elif name == "developer_tool":
-        project_path = result.data.get("project_path")
-        if project_path:
-            context.add_created_file(project_path)
+    args = tool_call.get("arguments") or {}
+    for path in ExecutionEngine.extract_created_files(name, args, result):
+        context.add_created_file(path)
 
 
 def _should_have_tool_call(user_message: str, model_output: str) -> bool:
@@ -169,15 +161,8 @@ class AgentCore:
             *context_messages
         ]
         
-        # 防污染安全网：确保当前 user message 一定在 messages 列表中
-        if messages and messages[-1].get("role") != "user":
-            has_current_query = any(
-                m.get("role") == "user" and m.get("content", "").strip() == user_message.strip()
-                for m in messages[-3:]
-            )
-            if not has_current_query:
-                logger.warning(f"Safety net: current user message missing from context, appending")
-                messages.append({"role": "user", "content": user_message})
+        # 防污染安全网（统一模块）
+        messages = ContextBuilder.ensure_user_message_present(messages, user_message)
         
         logger.info(f"Context: {len(context_messages)} messages for query")
         
@@ -301,45 +286,36 @@ class AgentCore:
         context.set_task_tier(tier_name)
         
         base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message, session_id)
-        combined_extra = "\n\n".join(p for p in [extra_system_prompt, evomap_context] if p)
-        system_prompt = f"{base_prompt}\n\n{combined_extra}" if combined_extra else base_prompt
+        system_prompt = ContextBuilder.build_system_prompt(
+            base_prompt,
+            extra_system_prompt=extra_system_prompt,
+            evomap_context=evomap_context,
+        )
         
         messages = [
             {"role": "system", "content": system_prompt},
             *context_messages
         ]
         
-        # 防污染安全网：确保当前 user message 一定在 messages 列表中
-        # （context_messages 可能因 token 截断丢失最新消息）
-        if messages and messages[-1].get("role") != "user":
-            has_current_query = any(
-                m.get("role") == "user" and m.get("content", "").strip() == user_message.strip()
-                for m in messages[-3:]  # 最多检查最后 3 条
-            )
-            if not has_current_query:
-                logger.warning(f"Safety net: current user message missing from context, appending")
-                messages.append({"role": "user", "content": user_message})
+        # 防污染安全网（统一模块）
+        messages = ContextBuilder.ensure_user_message_present(messages, user_message)
         
         logger.info(f"Context: {len(context_messages)} messages for query, local_mode={use_local_mode}, provider={provider}, model={model_name}")
         
-        # 按任务类型动态 max_tokens：简单对话 4096，复杂生成 32768，长指南/报告类避免截断
-        # 若用户在配置中设置了更高的 max_tokens，则取较大值
-        base_max = 4096 if intent_result.tier == QueryTier.SIMPLE else 32768
+        # 使用统一 LLMCallBuilder 计算 max_tokens
+        _call_builder = LLMCallBuilder(self.llm, is_local_model=use_local_mode)
         cfg_max = getattr(self.llm.config, "max_tokens", None) or 0
-        stream_max_tokens = max(base_max, cfg_max) if cfg_max > 0 else base_max
-        # 按模型实际上限收窄（避免超出模型限制导致 400 错误）
-        _MODEL_MAX_TOKENS: dict = {
-            "deepseek-chat": 8192,
-            "deepseek-reasoner": 8000,
-            "deepseek-coder": 8192,
-        }
-        _current_model = (self.llm.config.model or "").lower()
-        for _model_key, _model_limit in _MODEL_MAX_TOKENS.items():
-            if _model_key in _current_model:
-                if stream_max_tokens > _model_limit:
-                    logger.info(f"Capping max_tokens from {stream_max_tokens} to {_model_limit} for model {_current_model}")
-                    stream_max_tokens = _model_limit
-                break
+        tier_str = "simple" if intent_result.tier == QueryTier.SIMPLE else "complex"
+        stream_max_tokens = _call_builder.compute_max_tokens(
+            tier=tier_str, step_count=0, config_max=cfg_max,
+        )
+        # Chat 模式对 complex 任务用 32768（保持原有行为）
+        if tier_str == "complex":
+            stream_max_tokens = max(stream_max_tokens, 32768)
+            # 模型级上限裁剪
+            stream_max_tokens = _call_builder.compute_max_tokens(
+                tier="complex", config_max=stream_max_tokens,
+            )
         logger.info(f"Query tier={intent_result.tier.value} -> max_tokens={stream_max_tokens}")
         
         # 本地模型不传递 tools（通过 prompt 描述工具）
@@ -349,18 +325,13 @@ class AgentCore:
         truncation_retries = 0
         MAX_TRUNCATION_RETRIES = 2
 
-        # 在线模型连续请求间隔（秒），避免网关「没有可用token」/ upstream error。可通过环境变量覆盖。
-        _delay = float(os.environ.get("LLM_REQUEST_DELAY_SECONDS", "2.0"))
-        if _delay < 0:
-            _delay = 0
-
         for iteration in range(self.max_iterations):
             logger.info(f"Agent stream iteration {iteration + 1}, session: {session_id}, messages: {len(messages)}, local_mode={use_local_mode}")
             
             # 在线模型/网关常对同一 token 限制并发，必须等上一轮流式完全结束后再发下一轮，否则易 500。
             # 非首轮请求前等待，确保网关释放 token 后再发下一请求。
-            if iteration > 0 and not use_local_mode and _delay > 0:
-                await asyncio.sleep(_delay)
+            # 统一请求延迟
+            await _call_builder.pre_request_delay(iteration)
             
             tool_calls = []
             current_content = ""
@@ -463,24 +434,13 @@ class AgentCore:
                             f"Tool call truncated (retry {truncation_retries}/{MAX_TRUNCATION_RETRIES}), "
                             f"tools: [{tool_names}]. Asking LLM to regenerate with shorter output."
                         )
-                        yield {
-                            "type": "content",
-                            "content": f"\n\n⚠️ 生成内容过长被截断，正在重新生成（第 {truncation_retries} 次）...\n\n",
-                        }
-                        messages.append({
-                            "role": "assistant",
-                            "content": current_content or f"我需要调用 {tool_names} 工具，但输出被截断了。",
-                        })
-                        messages.append({
-                            "role": "user",
-                            "content": (
-                                "你的上一次回复因为太长被截断了，工具调用参数不完整。"
-                                "请用更简洁的方式重新生成。具体建议：\n"
-                                "1. 如果是生成代码/脚本，请将内容拆分为多个步骤，先完成核心部分\n"
-                                "2. 减少注释和装饰性内容\n"
-                                "3. 如果是生成报告，先生成简要版本"
-                            ),
-                        })
+                        # 统一截断续传消息构建
+                        _a_msg, _u_msg, _warn = ErrorRecovery.build_truncation_retry_messages(
+                            tool_names, current_content, truncation_retries, MAX_TRUNCATION_RETRIES,
+                        )
+                        yield {"type": "content", "content": _warn}
+                        messages.append(_a_msg)
+                        messages.append(_u_msg)
                         tool_calls = []
                         continue
                 

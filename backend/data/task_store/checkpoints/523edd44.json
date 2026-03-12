@@ -1,0 +1,13 @@
+{
+  "task_id": "523edd44",
+  "session_id": "duck_local_fb95bc89_dtask_",
+  "task_description": "帮我爬取一个适合做文字游戏的经典故事，要求：1）情节丰富 有戏剧冲突 2）适合改编为文字冒险游戏 3）至少3000字 4）从网页抓取真实故事内容（如民间故事、神话传说、经典小说片段等）。请直接输出抓取到的完整故事文本内容。\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 50,
+  "action_checkpoints": [],
+  "created_at": "2026-03-12T08:56:01.846513",
+  "updated_at": "2026-03-12T09:00:23.104348",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

@@ -1,0 +1,13 @@
+{
+  "task_id": "092b72d0",
+  "session_id": "duck_local_69779502_dtask_",
+  "task_description": "开发一个文字冒险游戏《猎人海力布》HTML文件保存到桌面\n\n## 故事背景\n改编自经典民间故事：猎人海力布救下小白蛇，获得能听懂动物语言的宝石，但不能把秘密告诉别人否则会变成石头，最终为救乡亲牺牲自己。\n\n## 功能需求\n1. **剧情系统**：5个章节，每章2-3个分支选择，影响剧情发展\n2. **AI NPC对话**：玩家可与故事角色对话，对话内容通过大模型生成\n3. **模型配置**：游戏内设置面板可配置：\n   - Base URL（默认 https://api.openai.com/v1）\n   - API Key\n   - 模型名称（默认 gpt-3.5-turbo）\n4. **存档系统**：自动保存进度到localStorage\n\n## 技术要求\n- 纯HTML+CSS+JS单文件\n- 兼容OpenAI API格式\n- 支持自定义Base URL适配各类大模型\n- 草原/古风深绿色主题\n- 界面包含：章节标题、剧情文本、选择按钮、对话输入框、设置按钮\n\n## 输出路径\n~/Desktop/猎人海力布-文字游戏.html\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 50,
+  "action_checkpoints": [],
+  "created_at": "2026-03-12T10:30:37.355016",
+  "updated_at": "2026-03-12T10:57:22.229934",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

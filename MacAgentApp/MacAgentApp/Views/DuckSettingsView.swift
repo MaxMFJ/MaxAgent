@@ -155,10 +155,11 @@ struct DuckSettingsContent: View {
                 apiKey: item.apiKey,
                 baseUrl: item.baseUrl,
                 model: item.model,
+                providerRef: item.providerRef,
                 onFetchMainAgentProviders: { await viewModel.fetchMainAgentLLMProviders() },
-                onSave: { apiKey, baseUrl, model in
+                onSave: { apiKey, baseUrl, model, providerRef in
                     Task {
-                        await viewModel.updateDuckLLMConfig(duckId: item.duckId, apiKey: apiKey, baseUrl: baseUrl, model: model)
+                        await viewModel.updateDuckLLMConfig(duckId: item.duckId, apiKey: apiKey, baseUrl: baseUrl, model: model, providerRef: providerRef)
                         llmConfigDuck = nil
                     }
                 },
@@ -323,7 +324,8 @@ struct DuckSettingsContent: View {
                                 duckName: duck["name"] as? String ?? duckId,
                                 apiKey: duck["llm_api_key"] as? String ?? "",
                                 baseUrl: duck["llm_base_url"] as? String ?? "",
-                                model: duck["llm_model"] as? String ?? ""
+                                model: duck["llm_model"] as? String ?? "",
+                                providerRef: duck["llm_provider_ref"] as? String ?? ""
                             )
                         }
                     })
@@ -637,14 +639,16 @@ private struct LLMConfigDuckItem: Identifiable {
     let apiKey: String
     let baseUrl: String
     let model: String
+    let providerRef: String
 
-    init(duckId: String, duckName: String, apiKey: String, baseUrl: String, model: String) {
+    init(duckId: String, duckName: String, apiKey: String, baseUrl: String, model: String, providerRef: String = "") {
         self.id = duckId
         self.duckId = duckId
         self.duckName = duckName
         self.apiKey = apiKey
         self.baseUrl = baseUrl
         self.model = model
+        self.providerRef = providerRef
     }
 }
 
@@ -732,26 +736,26 @@ private struct DuckRowView: View {
     }
 }
 
-/// 分身 LLM 配置弹窗（用户手动填写 api_key、base_url、model，支持从主 Agent 配置一键导入）
+/// 分身 LLM 配置弹窗（从主 Agent 已配置的模型中选择，无需手动输入 key/url/model）
 private struct DuckLLMConfigSheet: View {
     let duckId: String
     let duckName: String
     let apiKey: String
     let baseUrl: String
     let model: String
+    let providerRef: String
     let onFetchMainAgentProviders: () async -> [[String: Any]]
-    let onSave: (String, String, String) -> Void
+    let onSave: (String, String, String, String) -> Void  // (apiKey, baseUrl, model, providerRef)
     let onDismiss: () -> Void
 
-    @State private var editApiKey: String = ""
-    @State private var editBaseUrl: String = ""
-    @State private var editModel: String = ""
     @State private var mainAgentProviders: [[String: Any]] = []
-    @State private var isLoadingProviders: Bool = false
+    @State private var isLoadingProviders: Bool = true
     @State private var providersError: String?
+    @State private var selectedIndex: Int? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Header
             HStack {
                 Text("分身 LLM 配置")
                     .font(CyberFont.body(size: 16, weight: .semibold))
@@ -759,104 +763,159 @@ private struct DuckLLMConfigSheet: View {
                 Button("关闭") { onDismiss() }
                     .buttonStyle(.plain)
             }
-            Text("为 \(duckName) 配置独立 LLM，使分身更有效运用大模型完成专项任务。")
+            Text("为 \(duckName) 选择 LLM 模型")
                 .font(CyberFont.body(size: 12))
                 .foregroundColor(.secondary)
 
-            // 从主 Agent 已配置的在线 LLM 一键导入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("主 Agent 配置")
-                    .font(CyberFont.body(size: 11, weight: .medium))
-                HStack(spacing: 8) {
-                    Button {
-                        Task {
-                            isLoadingProviders = true
-                            providersError = nil
-                            mainAgentProviders = await onFetchMainAgentProviders()
-                            providersError = mainAgentProviders.isEmpty ? "主 Agent 暂无已配置的在线 LLM" : nil
-                            isLoadingProviders = false
-                        }
-                    } label: {
-                        if isLoadingProviders {
-                            ProgressView().scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "arrow.down.circle")
-                            Text("获取主 Agent 配置")
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isLoadingProviders)
-                    if let err = providersError {
-                        Text(err)
-                            .font(CyberFont.body(size: 10))
-                            .foregroundColor(.orange)
-                    }
+            // Provider list
+            if isLoadingProviders {
+                HStack {
+                    Spacer()
+                    ProgressView("加载已配置的模型…")
+                        .font(CyberFont.body(size: 12))
+                    Spacer()
                 }
-                if !mainAgentProviders.isEmpty {
-                    List {
-                        ForEach(mainAgentProviders.indices, id: \.self) { i in
-                            let m = mainAgentProviders[i]
-                            let name = m["name"] as? String ?? m["provider"] as? String ?? ""
-                            let mod = m["model"] as? String ?? ""
-                            Button {
-                                applyProvider(m)
-                            } label: {
-                                HStack {
-                                    Text("\(name): \(mod)")
-                                        .font(CyberFont.body(size: 12))
-                                    Spacer()
-                                    Image(systemName: "arrow.right.circle")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.secondary)
+                .padding(.vertical, 20)
+            } else if let err = providersError {
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 24))
+                        .foregroundColor(.orange)
+                    Text(err)
+                        .font(CyberFont.body(size: 12))
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("选择模型")
+                        .font(CyberFont.body(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                    ScrollView {
+                        VStack(spacing: 6) {
+                            ForEach(mainAgentProviders.indices, id: \.self) { i in
+                                let m = mainAgentProviders[i]
+                                let name = m["name"] as? String ?? m["provider"] as? String ?? ""
+                                let mod = m["model"] as? String ?? ""
+                                let isSelected = selectedIndex == i
+                                Button {
+                                    selectedIndex = i
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(isSelected ? .accentColor : .secondary)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(name)
+                                                .font(CyberFont.body(size: 12, weight: .medium))
+                                                .foregroundColor(CyberColor.textPrimary)
+                                            Text(mod)
+                                                .font(CyberFont.body(size: 11))
+                                                .foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(10)
+                                    .background(isSelected ? Color.accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor).opacity(0.6))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
+                                    )
+                                    .cornerRadius(6)
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
-                    .frame(maxHeight: 140)
+                    .frame(maxHeight: 220)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("API Key")
-                    .font(CyberFont.body(size: 11, weight: .medium))
-                TextField("sk-xxx", text: $editApiKey)
-                    .textFieldStyle(.roundedBorder)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Base URL")
-                    .font(CyberFont.body(size: 11, weight: .medium))
-                TextField("https://api.example.com/v1", text: $editBaseUrl)
-                    .textFieldStyle(.roundedBorder)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("模型名称")
-                    .font(CyberFont.body(size: 11, weight: .medium))
-                TextField("gpt-4o / deepseek-chat", text: $editModel)
-                    .textFieldStyle(.roundedBorder)
+            // Current config display
+            if !model.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("当前配置")
+                        .font(CyberFont.body(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Text(model)
+                            .font(CyberFont.body(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
+                    .cornerRadius(6)
+                }
             }
 
+            // Tip
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundColor(.blue)
+                Text("如需使用新模型，请先在「设置 → 模型」中配置，然后回此处选择。")
+                    .font(CyberFont.body(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            .padding(10)
+            .background(Color.blue.opacity(0.06))
+            .cornerRadius(6)
+
+            // Save button
             HStack {
                 Spacer()
                 Button("保存") {
-                    onSave(editApiKey, editBaseUrl, editModel)
+                    guard let idx = selectedIndex, idx < mainAgentProviders.count else { return }
+                    let m = mainAgentProviders[idx]
+                    let selApiKey = m["api_key"] as? String ?? ""
+                    let selBaseUrl = m["base_url"] as? String ?? ""
+                    let selModel = m["model"] as? String ?? ""
+                    let selProviderRef = m["provider_ref"] as? String ?? m["provider"] as? String ?? ""
+                    onSave(selApiKey, selBaseUrl, selModel, selProviderRef)
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(selectedIndex == nil)
             }
         }
         .padding(24)
-        .frame(minWidth: 360)
+        .frame(minWidth: 380)
         .onAppear {
-            editApiKey = apiKey
-            editBaseUrl = baseUrl
-            editModel = model
+            Task {
+                isLoadingProviders = true
+                providersError = nil
+                mainAgentProviders = await onFetchMainAgentProviders()
+                if mainAgentProviders.isEmpty {
+                    providersError = "暂无已配置的模型，请先在「设置 → 模型」中配置。"
+                } else {
+                    // Auto-select current model if it matches (prefer provider_ref match)
+                    if !providerRef.isEmpty {
+                        for (i, m) in mainAgentProviders.enumerated() {
+                            let ref = m["provider_ref"] as? String ?? ""
+                            if ref == providerRef {
+                                selectedIndex = i
+                                break
+                            }
+                        }
+                    }
+                    if selectedIndex == nil {
+                        for (i, m) in mainAgentProviders.enumerated() {
+                            if (m["model"] as? String ?? "") == model &&
+                               (m["base_url"] as? String ?? "") == baseUrl {
+                                selectedIndex = i
+                                break
+                            }
+                        }
+                    }
+                }
+                isLoadingProviders = false
+            }
         }
-    }
-
-    private func applyProvider(_ m: [String: Any]) {
-        editApiKey = m["api_key"] as? String ?? ""
-        editBaseUrl = m["base_url"] as? String ?? ""
-        editModel = m["model"] as? String ?? ""
     }
 }
 

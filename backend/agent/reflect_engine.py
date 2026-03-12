@@ -54,122 +54,122 @@ _FAILURE_KEYWORDS: Dict[FailureType, List[str]] = {
 # 失败类型 → 专属反思 prompt 模板
 FAILURE_REFLECTION_TEMPLATES: Dict[FailureType, str] = {
     FailureType.COMMAND_ERROR: """\
-## 失败分析（命令执行错误）
+## Failure Analysis (Command Execution Error)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 哪条命令出错？错误信息是什么？
-2. 是命令格式、参数还是路径问题？
-3. 正确的命令应该怎么写？
-4. 类似任务今后应注意哪些命令规范？
+Focus your analysis on:
+1. Which command failed? What was the error message?
+2. Was it a format, argument, or path issue?
+3. What would the correct command be?
+4. What command conventions should be followed for similar tasks?
 
-以 JSON 输出：
+Output as JSON:
 ```json
 {{
   "efficiency_score": 5,
-  "root_cause": "根本原因",
-  "correct_approach": "正确做法",
+  "root_cause": "root cause",
+  "correct_approach": "correct approach",
   "successes": [],
-  "failures": ["失败原因"],
-  "strategies": ["今后策略"],
-  "improvements": ["改进建议"]
+  "failures": ["failure reason"],
+  "strategies": ["future strategy"],
+  "improvements": ["improvement suggestion"]
 }}
 ```""",
 
     FailureType.PERMISSION: """\
-## 失败分析（权限问题）
+## Failure Analysis (Permission Issue)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 哪个操作触发权限拒绝？
-2. 是否需要 sudo？是否存在安全限制？
-3. 有无替代方案（不需要特权的路径）？
-4. 今后如何提前判断权限需求？
+Focus your analysis on:
+1. Which operation triggered the permission denial?
+2. Is sudo required? Are there security restrictions?
+3. Are there alternative approaches (paths not requiring elevated privileges)?
+4. How to proactively identify permission requirements in the future?
 
-以 JSON 输出，字段同上。""",
+Output as JSON with same fields as above.""",
 
     FailureType.FILE_NOT_FOUND: """\
-## 失败分析（文件/路径不存在）
+## Failure Analysis (File/Path Not Found)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 访问的路径是什么？为何不存在？
-2. 是否应先 list_directory 确认路径？
-3. 路径是相对还是绝对？有无拼写错误？
-4. 今后操作文件前应如何验证？
+Focus your analysis on:
+1. What path was accessed? Why does it not exist?
+2. Should list_directory be used first to verify the path?
+3. Is the path relative or absolute? Any typos?
+4. How to validate file existence before operations in the future?
 
-以 JSON 输出，字段同上。""",
+Output as JSON with same fields as above.""",
 
     FailureType.NETWORK_ERROR: """\
-## 失败分析（网络错误）
+## Failure Analysis (Network Error)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 网络请求失败的具体原因（超时/DNS/连接拒绝）？
-2. 是否可以重试？是否需要代理或其他配置？
-3. 有无离线替代方案？
-4. 今后联网任务应如何做容错设计？
+Focus your analysis on:
+1. Specific cause of network failure (timeout/DNS/connection refused)?
+2. Can the request be retried? Is a proxy or other config needed?
+3. Are there offline alternatives?
+4. How to design fault tolerance for network tasks in the future?
 
-以 JSON 输出，字段同上。""",
+Output as JSON with same fields as above.""",
 
     FailureType.TIMEOUT: """\
-## 失败分析（超时）
+## Failure Analysis (Timeout)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 哪个步骤超时？预期执行时间是多少？
-2. 是否应该使用 background=true 或异步方式？
-3. 如何拆分为更小的子任务？
-4. 今后对耗时操作应如何规划？
+Focus your analysis on:
+1. Which step timed out? What was the expected execution time?
+2. Should background=true or async execution be used?
+3. How to split into smaller sub-tasks?
+4. How to plan for time-consuming operations in the future?
 
-以 JSON 输出，字段同上。""",
+Output as JSON with same fields as above.""",
 
     FailureType.LOGIC_ERROR: """\
-## 失败分析（逻辑/语义错误）
+## Failure Analysis (Logic/Semantic Error)
 
-任务：{task}
-失败步骤摘要：
+Task: {task}
+Failed step summary:
 {action_summary}
 
-请重点分析：
-1. 对任务的理解是否有偏差？
-2. 执行策略是否符合用户真实意图？
-3. 哪个步骤的逻辑判断出现错误？
-4. 今后如何在 Gather 阶段更准确理解任务？
+Focus your analysis on:
+1. Was the task understanding inaccurate?
+2. Did the execution strategy match the user's actual intent?
+3. Which step had a logical judgment error?
+4. How to better understand the task during the Gather phase in the future?
 
-以 JSON 输出，字段同上。""",
+Output as JSON with same fields as above.""",
 
     FailureType.UNKNOWN: """\
-## 失败分析
+## Failure Analysis
 
-任务：{task}
-执行统计：{status}，共 {total_actions} 步，{iterations} 次迭代
-失败步骤摘要：
+Task: {task}
+Execution stats: {status}, {total_actions} steps, {iterations} iterations
+Failed step summary:
 {action_summary}
 
-请分析：
-1. 整体执行效率（1-10 分）
-2. 成功的步骤
-3. 失败的步骤及原因
-4. 可提取的可复用策略
-5. 改进建议
+Analyze:
+1. Overall execution efficiency (1-10 score)
+2. Successful steps
+3. Failed steps and their causes
+4. Reusable strategies to extract
+5. Improvement suggestions
 
-以 JSON 输出：
+Output as JSON:
 ```json
 {{
   "efficiency_score": 7,

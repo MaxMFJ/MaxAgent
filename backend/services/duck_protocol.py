@@ -131,10 +131,11 @@ class DuckInfo(BaseModel):
     completed_tasks: int = 0
     failed_tasks: int = 0
 
-    # 分身独立 LLM 配置（用户手动填写，用于专项任务更有效运用大模型）
+    # 分身独立 LLM 配置（用于专项任务更有效运用大模型）
     llm_api_key: Optional[str] = None
     llm_base_url: Optional[str] = None
     llm_model: Optional[str] = None
+    llm_provider_ref: Optional[str] = None  # 引用主配置中的 provider，运行时动态解析
 
 
 # ─── Duck 任务 ────────────────────────────────────────

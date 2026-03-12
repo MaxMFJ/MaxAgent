@@ -1774,13 +1774,13 @@ class BackendService: ObservableObject {
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
 
-    /// 更新分身 LLM 配置（api_key、base_url、model 用户手动填写，用于专项任务更有效运用大模型。空字符串会清空该字段）
-    nonisolated func updateDuckLLMConfig(duckId: String, apiKey: String, baseUrl: String, model: String) async throws -> [String: Any] {
+    /// 更新分身 LLM 配置（引用主配置中的 provider，运行时动态解析）
+    nonisolated func updateDuckLLMConfig(duckId: String, apiKey: String, baseUrl: String, model: String, providerRef: String = "") async throws -> [String: Any] {
         guard let url = URL(string: "\(baseURL)/duck/local/\(duckId)/llm-config") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = ["api_key": apiKey, "base_url": baseUrl, "model": model]
+        let body: [String: Any] = ["api_key": apiKey, "base_url": baseUrl, "model": model, "provider_ref": providerRef]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await urlSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {

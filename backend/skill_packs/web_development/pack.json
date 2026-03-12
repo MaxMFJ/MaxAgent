@@ -1,0 +1,16 @@
+{
+    "id": "web_development",
+    "name": "Web 开发技能包",
+    "description": "HTML CSS JavaScript 前端开发 网页制作 响应式布局",
+    "keywords": ["html", "css", "javascript", "web", "前端", "网页", "网站", "页面", "react", "vue"],
+    "knowledge_file": "knowledge.md",
+    "prompt_hints": [
+        "创建较大网页文件（>1500字符）时，优先用 create_and_run_script 生成，避免 write_file 被截断",
+        "HTML 文件应包含完整的 DOCTYPE 声明和 meta charset=utf-8",
+        "CSS 样式建议内联到 HTML 的 style 标签中，减少文件数量",
+        "使用语义化 HTML5 标签（header, nav, main, footer, section, article）",
+        "确保响应式：使用 viewport meta + media queries 或 flexbox/grid"
+    ],
+    "capsule_ids": ["web_scaffold"],
+    "agent_types": ["coder", "designer", "general"]
+}

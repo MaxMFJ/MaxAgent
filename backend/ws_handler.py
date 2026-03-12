@@ -129,6 +129,16 @@ async def _run_agent_and_broadcast_result(
             "session_id": session_id,
             "duck_id": label,
         })
+
+        # 写入对话上下文（确保即使客户端未即时收到广播，刷新后仍可看到结果）
+        try:
+            from agent.context_manager import context_manager as ctx_mgr_mod
+            ctx = ctx_mgr_mod.get_or_create(session_id)
+            ctx.add_message("assistant", summary_content)
+            ctx_mgr_mod.save_session(session_id)
+        except Exception as _ctx_err:
+            logger.debug(f"[duck_hook] Failed to save to context: {_ctx_err}")
+
         logger.info(
             f"[duck_hook] Broadcast final response for session {session_id} "
             f"task {task_id} ({len(full_text)} chars, tools={tool_calls_used})"
@@ -824,6 +834,20 @@ async def _autonomous_task_worker(
                     token_usage=chunk.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
                 )
                 memory.add_episode(episode)
+                # v3.8: 提取事实到持久化事实库
+                try:
+                    from agent.persistent_memory import FactExtractor, get_factbase
+                    facts = FactExtractor.extract(
+                        episode_id=episode.episode_id,
+                        task_description=task,
+                        action_log=chunk.get("action_log", []),
+                        success=chunk.get("success", False),
+                        result=chunk.get("summary", ""),
+                    )
+                    if facts:
+                        get_factbase().add_facts(facts)
+                except Exception as fact_err:
+                    logger.debug(f"Fact extraction failed: {fact_err}")
             except Exception as e:
                 logger.error(f"Failed to save episode: {e}")
             try:

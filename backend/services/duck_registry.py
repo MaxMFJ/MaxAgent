@@ -93,6 +93,8 @@ class DuckRegistry:
                     info.llm_base_url = existing.llm_base_url
                 if info.llm_model is None and existing.llm_model:
                     info.llm_model = existing.llm_model
+                if info.llm_provider_ref is None and existing.llm_provider_ref:
+                    info.llm_provider_ref = existing.llm_provider_ref
             self._ducks[info.duck_id] = info
             self._save_to_disk()
             logger.info(f"Duck registered: {info.duck_id} ({info.name})")
@@ -151,7 +153,7 @@ class DuckRegistry:
             duck.status = DuckStatus.BUSY if task_id else DuckStatus.ONLINE
 
     async def update_llm_config(self, duck_id: str, **kwargs: Any) -> bool:
-        """更新分身 LLM 配置（用户手动填写），仅更新传入的字段。空字符串会清空该字段。"""
+        """更新分身 LLM 配置，仅更新传入的字段。空字符串会清空该字段。"""
         async with self._lock:
             duck = self._ducks.get(duck_id)
             if not duck:
@@ -162,8 +164,10 @@ class DuckRegistry:
                 duck.llm_base_url = kwargs["base_url"] or None
             if "model" in kwargs:
                 duck.llm_model = kwargs["model"] or None
+            if "provider_ref" in kwargs:
+                duck.llm_provider_ref = kwargs["provider_ref"] or None
             self._save_to_disk()
-            logger.info(f"Duck {duck_id} LLM config updated")
+            logger.info(f"Duck {duck_id} LLM config updated (provider_ref={duck.llm_provider_ref})")
             return True
 
     async def increment_completed(self, duck_id: str):

@@ -1,0 +1,13 @@
+{
+  "task_id": "955a5b90",
+  "session_id": "duck_local_69779502_dtask_",
+  "task_description": "爬虫任务：抓取一个适合改编为文字冒险游戏的经典中国故事素材。需要：1) 从公开故事网站（如中国神话故事网、知乎专栏等）抓取一个完整的故事；2) 故事要有情节、角色，适合做成文字冒险游戏；3) 返回故事标题、主要角色、情节概述、完整故事内容。保存文件时必须使用实际路径：/Users/lzz/Desktop。",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 50,
+  "action_checkpoints": [],
+  "created_at": "2026-03-12T09:12:36.909119",
+  "updated_at": "2026-03-12T09:28:38.339468",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

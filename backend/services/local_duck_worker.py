@@ -40,6 +40,7 @@ class LocalDuckWorker:
         llm_api_key: Optional[str] = None,
         llm_base_url: Optional[str] = None,
         llm_model: Optional[str] = None,
+        llm_provider_ref: Optional[str] = None,
     ):
         self.duck_id = duck_id
         self.name = name
@@ -48,10 +49,12 @@ class LocalDuckWorker:
         self.llm_api_key = llm_api_key
         self.llm_base_url = llm_base_url
         self.llm_model = llm_model
+        self.llm_provider_ref = llm_provider_ref
 
         self._task_queue: asyncio.Queue[DuckTaskPayload] = asyncio.Queue()
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
+        self._agent = None  # 独立的 AutonomousAgent 实例（不再共享全局）
 
     # ─── 生命周期 ────────────────────────────────────
 
@@ -75,6 +78,7 @@ class LocalDuckWorker:
             llm_api_key=self.llm_api_key,
             llm_base_url=self.llm_base_url,
             llm_model=self.llm_model,
+            llm_provider_ref=self.llm_provider_ref,
         )
         await registry.register(info)
 
@@ -196,21 +200,146 @@ class LocalDuckWorker:
         await scheduler.handle_result(self.duck_id, result)
 
     def _create_duck_llm_client(self) -> Optional[Any]:
-        """若分身配置了独立 LLM，创建 LLMClient"""
-        if not all([self.llm_api_key, self.llm_base_url, self.llm_model]):
+        """若分身配置了独立 LLM，创建 LLMClient。优先使用 provider_ref 动态解析，否则回退到静态字段。"""
+        api_key = self.llm_api_key
+        base_url = self.llm_base_url
+        model = self.llm_model
+
+        # 方案B: 优先通过 provider_ref 动态解析（跟随主配置变更）
+        if getattr(self, 'llm_provider_ref', None):
+            try:
+                from config.llm_config import resolve_provider_config
+                resolved = resolve_provider_config(self.llm_provider_ref)
+                if resolved:
+                    api_key = resolved["api_key"]
+                    base_url = resolved["base_url"]
+                    model = resolved["model"]
+                    logger.info("Duck %s LLM resolved via provider_ref=%s -> model=%s",
+                                self.duck_id, self.llm_provider_ref, model)
+                else:
+                    logger.warning("Duck %s provider_ref=%s 解析失败，回退到静态字段",
+                                   self.duck_id, self.llm_provider_ref)
+            except Exception as e:
+                logger.warning("Duck %s provider_ref resolve error: %s", self.duck_id, e)
+
+        if not all([api_key, base_url, model]):
             return None
         try:
             from agent.llm_client import LLMClient, LLMConfig
             config = LLMConfig(
                 provider="openai",
-                api_key=self.llm_api_key,
-                base_url=self.llm_base_url,
-                model=self.llm_model,
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
             )
             return LLMClient(config)
         except Exception as e:
             logger.warning("Duck LLM client creation failed: %s", e)
             return None
+
+    def _create_independent_agent(self, duck_llm=None):
+        """为 Duck 创建独立的 AutonomousAgent 实例，不共享全局 agent 状态。
+        v3.8: 优先通过 AgentRegistry + AgentFactory 创建，保留后向兼容。
+        v3.8.1: isolated_context=True — 隔离主 Agent 会话上下文，Duck 只看到任务描述。
+        """
+        from app_state import get_autonomous_agent
+
+        main_agent = get_autonomous_agent()
+        if main_agent is None:
+            raise RuntimeError("Main AutonomousAgent not initialized")
+
+        llm_client = duck_llm if duck_llm is not None else main_agent.remote_llm
+
+        # v3.8: 尝试通过 AgentRegistry 获取该 Duck 类型的 AgentSpec
+        try:
+            from agent.agent_registry import AgentFactory, get_agent_registry
+            registry = get_agent_registry()
+            spec = registry.get(self.duck_type.value if hasattr(self.duck_type, 'value') else str(self.duck_type))
+            if spec:
+                agent = AgentFactory.create(
+                    spec=spec,
+                    llm_client=llm_client,
+                    reflect_llm=main_agent.reflect_llm,
+                    local_llm=main_agent.local_llm,
+                    runtime_adapter=main_agent.runtime_adapter,
+                    isolated_context=True,
+                )
+                logger.info("Duck %s: created via AgentFactory (type=%s, isolated=True, llm=%s)",
+                            self.duck_id, spec.agent_type,
+                            llm_client.config.model if hasattr(llm_client, 'config') else 'main')
+                return agent
+        except Exception as e:
+            logger.debug("AgentFactory fallback: %s", e)
+
+        # 后向兼容：直接创建
+        from agent.autonomous_agent import AutonomousAgent
+        agent = AutonomousAgent(
+            llm_client=llm_client,
+            local_llm_client=main_agent.local_llm,
+            reflect_llm=main_agent.reflect_llm,
+            runtime_adapter=main_agent.runtime_adapter,
+            max_iterations=main_agent.max_iterations,
+            enable_reflection=main_agent.enable_reflection,
+            enable_model_selection=main_agent.enable_model_selection,
+            enable_adaptive_stop=main_agent.enable_adaptive_stop,
+            isolated_context=True,
+        )
+        logger.info("Duck %s: created independent AutonomousAgent (isolated=True, llm=%s)",
+                     self.duck_id, llm_client.config.model if hasattr(llm_client, 'config') else 'main')
+        return agent
+
+    def _build_isolated_description(self, payload: DuckTaskPayload, sandbox=None) -> str:
+        """
+        v3.8.1: 构建隔离的任务描述 — 只包含任务本身 + 必要文件引用 + 沙箱路径。
+        不含主 Agent 会话历史、action_logs 或其他 session 状态。
+
+        隔离原则:
+        1. 仅传入 payload.description（来自主 Agent 的委派描述）
+        2. 附加 payload.params 中的文件引用（如存在）
+        3. 附加沙箱工作目录（如存在）
+        """
+        parts = [payload.description]
+
+        # 附加任务参数中的文件引用
+        if payload.params:
+            file_refs = []
+            for key in ("file_path", "file_paths", "input_file", "output_file", "source_file", "target_path"):
+                val = payload.params.get(key)
+                if val:
+                    if isinstance(val, list):
+                        file_refs.extend(str(v) for v in val)
+                    else:
+                        file_refs.append(str(val))
+            if file_refs:
+                parts.append(f"\n【相关文件】{', '.join(file_refs)}")
+
+        # 附加沙箱工作目录
+        if sandbox:
+            parts.append(f"\n【工作目录】请将产出文件保存到: {sandbox.workspace_dir}")
+
+        return "\n".join(parts)
+
+    def _build_retry_description(self, payload: DuckTaskPayload, sandbox, failure_summary: str, attempt: int) -> str:
+        """
+        v3.8.1: 重试上下文重建 — 创建全新上下文，注入前次失败摘要。
+        不追加到旧 context，而是从零开始，附带失败经验。
+        """
+        parts = [
+            f"【第 {attempt} 次尝试 · 强制执行模式】",
+            f"上一次执行未成功完成。失败摘要：{failure_summary[:200]}",
+            "",
+            "请注意以下要求：",
+            "1. 必须实际执行任务，不要只描述或规划。",
+            "2. 使用 write_file、run_shell、create_and_run_script 等工具动作。",
+            "3. 禁止只输出文字分析。每一步都必须是可执行的 JSON 动作。",
+            "",
+            f"原始任务：{payload.description}",
+        ]
+
+        if sandbox:
+            parts.append(f"\n【工作目录】{sandbox.workspace_dir}")
+
+        return "\n".join(parts)
 
     @staticmethod
     def _check_output_is_plan_not_result(output: Any) -> bool:
@@ -269,7 +398,7 @@ class LocalDuckWorker:
         替代原 _do_work，使 Duck 执行过程在"AI 监控中心"实时可见，包含完整 action 链路。
         """
         from ws_handler import broadcast_monitor_event
-        from app_state import get_autonomous_agent, set_duck_context
+        from app_state import set_duck_context
 
         # 获取最新 Duck 配置（用户可能已更新 llm_config）
         registry = DuckRegistry.get_instance()
@@ -278,18 +407,36 @@ class LocalDuckWorker:
             self.llm_api_key = duck.llm_api_key
             self.llm_base_url = duck.llm_base_url
             self.llm_model = duck.llm_model
+            self.llm_provider_ref = duck.llm_provider_ref
+
+        duck_llm = self._create_duck_llm_client()
+        if duck_llm is None:
+            logger.warning("Duck %s: duck_llm is None, will use main agent's LLM (provider_ref=%s)",
+                           self.duck_id, getattr(self, 'llm_provider_ref', None))
+
+        # 为每个任务创建独立的 AutonomousAgent 实例（不共享全局 agent，避免并发竞争）
+        agent = self._create_independent_agent(duck_llm)
+
+        # v3.8: 为 Duck 任务创建隔离沙箱
+        _sandbox = None
+        try:
+            from services.duck_sandbox import get_duck_sandbox
+            _sandbox_mgr = get_duck_sandbox()
+            _sandbox = _sandbox_mgr.create_sandbox(self.duck_id, payload.task_id[:8])
+        except Exception as _sb_err:
+            logger.debug(f"Sandbox creation skipped: {_sb_err}")
 
         duck_ctx = {
             "name": self.name,
             "duck_type": self.duck_type.value,
             "skills": self.skills,
         }
+        if _sandbox:
+            duck_ctx["sandbox_dir"] = _sandbox.workspace_dir
         set_duck_context(duck_ctx)
-        override_llm = self._create_duck_llm_client()
 
-        agent = get_autonomous_agent()
-        if agent is None:
-            raise RuntimeError("AutonomousAgent not initialized")
+        # v3.8.1: 构建隔离上下文 —— Duck 只收到任务描述 + 必要文件引用，不含主 Agent 会话历史
+        isolated_desc = self._build_isolated_description(payload, _sandbox)
 
         # 使用 task_id 构建隔离的 duck session，避免与主 Agent session 状态混用
         duck_session = f"duck_{self.duck_id}_{payload.task_id[:6]}"
@@ -304,36 +451,28 @@ class LocalDuckWorker:
 
         async def _stream_run(description: str) -> str:
             """流式迭代 run_autonomous，广播每个 chunk，返回最终 summary"""
-            old_llm = None
-            if override_llm is not None:
-                old_llm = agent.llm
-                agent.llm = override_llm
-            try:
-                summary = ""
-                async for chunk in agent.run_autonomous(description, session_id=duck_session):
-                    last_active[0] = time.time()  # 有进展，更新活跃时间
-                    _scheduler.update_task_activity(payload.task_id)  # 同步更新调度器层面的活跃时间
-                    # 实时广播执行步骤到全局监控面板
-                    await broadcast_monitor_event(
-                        session_id=source_session,
-                        task_id=payload.task_id,
-                        event=chunk,
-                        task_type="duck",
-                        worker_type="local_duck",
-                        worker_id=self.duck_id,
-                    )
-                    chunk_type = chunk.get("type", "")
-                    if chunk_type == "task_complete":
-                        summary = chunk.get("summary", "") or ""
-                        break
-                    if chunk_type == "task_stopped":
-                        raise RuntimeError(chunk.get("message", "任务被停止"))
-                    if chunk_type == "error":
-                        raise RuntimeError(chunk.get("error", "任务执行错误"))
-                return summary or "任务已结束"
-            finally:
-                if old_llm is not None:
-                    agent.llm = old_llm
+            summary = ""
+            async for chunk in agent.run_autonomous(description, session_id=duck_session):
+                last_active[0] = time.time()  # 有进展，更新活跃时间
+                _scheduler.update_task_activity(payload.task_id)  # 同步更新调度器层面的活跃时间
+                # 实时广播执行步骤到全局监控面板
+                await broadcast_monitor_event(
+                    session_id=source_session,
+                    task_id=payload.task_id,
+                    event=chunk,
+                    task_type="duck",
+                    worker_type="local_duck",
+                    worker_id=self.duck_id,
+                )
+                chunk_type = chunk.get("type", "")
+                if chunk_type == "task_complete":
+                    summary = chunk.get("summary", "") or ""
+                    break
+                if chunk_type == "task_stopped":
+                    raise RuntimeError(chunk.get("message", "任务被停止"))
+                if chunk_type == "error":
+                    raise RuntimeError(chunk.get("error", "任务执行错误"))
+            return summary or "任务已结束"
 
         async def _run_smart(description: str, hard_timeout: float) -> str:
             """
@@ -374,17 +513,17 @@ class LocalDuckWorker:
                     await asyncio.gather(stream_task, return_exceptions=True)
 
         try:
-            result = await _run_smart(payload.description, float(payload.timeout))
+            result = await _run_smart(isolated_desc, float(payload.timeout))
             # 检测结果是否只是计划描述，而非真正执行结果
             if self._check_output_is_plan_not_result(result):
                 logger.warning(
-                    f"Duck {self.duck_id} returned plan instead of result, retrying with stronger prompt"
+                    f"Duck {self.duck_id} returned plan instead of result, retrying with context rebuild"
                 )
-                reinforced_desc = (
-                    f"【强制执行模式】以下任务必须实际执行，不要只描述或规划。"
-                    f"你必须使用 write_file、run_shell 等工具动作来完成任务。"
-                    f"禁止只输出文字分析。\n\n"
-                    f"原始任务：{payload.description}"
+                # v3.8.1: 重试上下文重建 — 创建全新 agent 实例 + 注入失败摘要
+                agent = self._create_independent_agent(duck_llm)
+                failure_summary = (result or "")[:300]
+                reinforced_desc = self._build_retry_description(
+                    payload, _sandbox, failure_summary, attempt=2
                 )
                 remaining_timeout = max(float(payload.timeout) * 0.7, 60.0)
                 result = await _run_smart(reinforced_desc, remaining_timeout)
@@ -421,8 +560,18 @@ class LocalDuckWorker:
             except Exception as llm_err:
                 raise RuntimeError(f"Local Duck fallback LLM failed: {llm_err}")
         finally:
-            set_duck_context(None)
-
+            set_duck_context(None)            # v3.8: 归档沙箱产出
+            if _sandbox:
+                try:
+                    from services.duck_sandbox import get_duck_sandbox as _get_sb
+                    _sb = _get_sb()
+                    outputs = _sb.collect_outputs(_sandbox)
+                    if outputs:
+                        _sb.archive_sandbox(_sandbox)
+                    else:
+                        _sb.cleanup_sandbox(_sandbox, force=True)
+                except Exception as _sb_err:
+                    logger.debug(f"Sandbox archive/cleanup failed: {_sb_err}")
     async def _do_work(self, payload: DuckTaskPayload) -> Any:
         """
         实际执行任务逻辑。
@@ -430,7 +579,7 @@ class LocalDuckWorker:
         注入 Duck 身份（name/duck_type/skills）到 prompt，使 Agent 知晓专项技能。
         若分身配置了独立 LLM（api_key/base_url/model），优先使用以更有效运用大模型。
         """
-        from app_state import get_autonomous_agent, set_duck_context
+        from app_state import set_duck_context
 
         # 从 registry 获取最新配置（用户可能已更新 llm_config）
         registry = DuckRegistry.get_instance()
@@ -446,34 +595,35 @@ class LocalDuckWorker:
             "skills": self.skills,
         }
         set_duck_context(duck_ctx)
-        override_llm = self._create_duck_llm_client()
+        duck_llm = self._create_duck_llm_client()
         try:
-            agent = get_autonomous_agent()
-            if agent is None:
-                raise RuntimeError("AutonomousAgent not initialized")
+            # 为每个任务创建独立 agent 实例
+            agent = self._create_independent_agent(duck_llm)
+
+            # v3.8.1: 使用隔离上下文描述
+            isolated_desc = self._build_isolated_description(payload, None)
 
             # 首次执行
             result = await asyncio.wait_for(
-                agent.run(payload.description, override_llm=override_llm),
+                agent.run(isolated_desc),
                 timeout=float(payload.timeout),
             )
             # 检测是否真正完成：若 summary 是 action plan JSON 而非结果，说明任务未完成
             if self._check_output_is_plan_not_result(result):
-                # 重试一次：用更强的执行指令重新运行
+                # v3.8.1: 重试上下文重建 — 创建全新 agent + 注入失败摘要
                 logger.warning(
-                    f"Duck {self.duck_id} returned plan instead of result, retrying with stronger prompt"
+                    f"Duck {self.duck_id} returned plan instead of result, retrying with context rebuild"
                 )
-                reinforced_desc = (
-                    f"【强制执行模式】以下任务必须实际执行，不要只描述或规划。"
-                    f"你必须使用 write_file、run_shell 等工具动作来完成任务。"
-                    f"禁止只输出文字分析。\n\n"
-                    f"原始任务：{payload.description}"
+                agent = self._create_independent_agent(duck_llm)
+                failure_summary = (result or "")[:300]
+                reinforced_desc = self._build_retry_description(
+                    payload, None, failure_summary, attempt=2
                 )
                 remaining_timeout = max(
                     float(payload.timeout) * 0.7, 60.0
                 )
                 result = await asyncio.wait_for(
-                    agent.run(reinforced_desc, override_llm=override_llm),
+                    agent.run(reinforced_desc),
                     timeout=remaining_timeout,
                 )
                 if self._check_output_is_plan_not_result(result):
@@ -608,6 +758,7 @@ class LocalDuckManager:
             llm_api_key=duck.llm_api_key,
             llm_base_url=duck.llm_base_url,
             llm_model=duck.llm_model,
+            llm_provider_ref=duck.llm_provider_ref,
         )
         await worker.start()
         self._workers[duck_id] = worker

@@ -121,10 +121,11 @@ class CreateLocalDuckRequest(BaseModel):
 
 
 class UpdateDuckLLMConfigRequest(BaseModel):
-    """分身 LLM 配置（用户手动填写）"""
+    """分身 LLM 配置（引用主配置中的 provider）"""
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     model: Optional[str] = None
+    provider_ref: Optional[str] = None  # 引用主配置中的 provider，运行时动态解析
 
 
 @router.post("/create-local")

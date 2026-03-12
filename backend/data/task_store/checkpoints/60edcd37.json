@@ -1,0 +1,97 @@
+{
+  "task_id": "60edcd37",
+  "session_id": "duck_local_fb95bc89_dtask_",
+  "task_description": "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，不要先描述计划。必须使用 write_file 或 run_shell 完成任务。\n历史失败原因：任务卡死：99s 内无任何进展，Duck 可能已挂起\n\n原始任务：帮我爬取一个适合做文字游戏的经典故事，要求：1）情节丰富 有戏剧冲突 2）适合改编为文字冒险游戏 3）至少3000字 4）从网页抓取真实故事内容（如民间故事、神话传说、经典小说片段等）。请直接输出抓取到的完整故事文本内容。\n\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "status": "stopped",
+  "current_iteration": 2,
+  "max_iterations": 50,
+  "action_checkpoints": [
+    {
+      "iteration": 1,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "capsule",
+        "args": {
+          "action": "execute",
+          "capsule_id": "openclaw_skill_duckduckgo-search",
+          "inputs": {
+            "task": "经典民间故事 神话传说 适合改编文字冒险游戏 戏剧冲突 情节丰富"
+          }
+        },
+        "reasoning": "使用 DuckDuckGo 搜索适合改编为文字游戏的经典故事，找到有戏剧冲突、情节丰富的故事内容"
+      },
+      "reasoning": "",
+      "success": true,
+      "output": {
+        "instruction_mode": true,
+        "capsule_id": "openclaw_skill_duckduckgo-search",
+        "instructions": "## 技能指令: Performs web searches using DuckDuckGo to retrieve real-time information from the internet. Use when the user needs to search for current events, documentation, tutorials, or any information that requires web search capabilities.\n来源: github:openclaw/skills | ID: openclaw_skill_duckduckgo-search\n\n### 步骤 1\n[overview] # DuckDuckGo Web Search Skill\n\n这个技能通过 DuckDuckGo 搜索引擎实现网络搜索功能，帮助获取实时信息。\n\n### 步骤 2\n[功能特性] - 🔍 基于 DuckDuckGo 的隐私友好型搜索\n- 📰 支持新闻搜索\n- 🖼️ 支持图片搜索\n- 📹 支持视频搜索\n- 🌐 无需 API Key，免费使用\n- 🔒 保护隐私，不追踪用户\n\n### 步骤 3\n[安装] ```bash\n# 使用 uv 安装（推荐）\nuv pip install duckduckgo-search\n\n# 或使用 pip 安装\npip install duckduckgo-search\n```\n\n### 步骤 4\n[快速开始] ### 命令行方式\n\n```bash\n# 基础文本搜索\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text('Python tutorial', max_results=5))\n    for r in results:\n        print(f\\\"标题: {r['title']}\\\")\n        print(f\\\"链接: {r['href']}\\\")\n        print(f\\\"摘要: {r['body']}\\\")\n        print('---')\n\"\n```\n\n### 步骤 5\n[搜索类型] ### 1. 文本搜索 (Text Search)\n\n最常用的搜索方式，返回网页结果：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nquery = 'your search query'\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text(\n        query,\n        region='cn-zh',      # 地区设置：cn-zh(中国), us-en(美国), wt-wt(全球)\n        safesearch='moderate', # 安全搜索：on, moderate, off\n        timelimit='m',       # 时间范围：d(天), w(周), m(月), y(年), None(不限)\n        max_results=10       # 最大结果数\n    ))\n    \n    for i, r in enumerate(results, 1):\n        print(f\\\"{i}. {r['title']}\\\")\n        print(f\\\"   URL: {r['href']}\\\")\n        print(f\\\"   摘要: {r['body'][:100]}...\\\")\n        print()\n\"\n```\n\n### 2. 新闻搜索 (News Search)\n\n搜索最新新闻：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.news(\n        'AI technology',\n        region='wt-wt',\n        safesearch='moderate',\n        timelimit='d',       # d=过去24小时, w=过去一周, m=过去一月\n        max_results=10\n    ))\n    \n    for r in results:\n        print(f\\\"📰 {r['title']}\\\")\n        print(f\\\"   来源: {r['source']}\\\")\n        print(f\\\"   时间: {r['date']}\\\")\n        print(f\\\"   链接: {r['url']}\\\")\n        print()\n\"\n```\n\n### 3. 图片搜索 (Image Search)\n\n搜索图片资源：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.images(\n        'cute cats',\n        region='wt-wt',\n        safesearch='moderate',\n        size='Medium',       # Small, Medium, Large, Wallpaper\n        type_image='photo',  # photo, clipart, gif, transparent, line\n        layout='Square',     # Square, Tall, Wide\n        max_results=10\n    ))\n    \n    for r in results:\n        print(f\\\"🖼️ {r['title']}\\\")\n        print(f\\\"   图片: {r['image']}\\\")\n        print(f\\\"   缩略图: {r['thumbnail']}\\\")\n        print(f\\\"   来源: {r['source']}\\\")\n        print()\n\"\n```\n\n### 4. 视频搜索 (Video Search)\n\n搜索视频内容：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.videos(\n        'Python programming',\n        region='wt-wt',\n        safesea\n\n### 步骤 6\n[实用脚本] ### 通用搜索函数\n\n创建一个可复用的搜索脚本：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nimport json\n\ndef web_search(query, search_type='text', max_results=5, region='wt-wt', timelimit=None):\n    '''\n    执行 DuckDuckGo 搜索\n    \n    参数:\n        query: 搜索关键词\n        search_type: 搜索类型 (text, news, images, videos)\n        max_results: 最大结果数\n        region: 地区 (cn-zh, us-en, wt-wt)\n        timelimit: 时间限制 (d, w, m, y)\n    '''\n    with DDGS() as ddgs:\n        if search_type == 'text':\n            results = list(ddgs.text(query, region=region, timelimit=timelimit, max_results=max_results))\n        elif search_type == 'news':\n            results = list(ddgs.news(query, region=region, timelimit=timelimit, max_results=max_results))\n        elif search_type == 'images':\n            results = list(ddgs.images(query, region=region, max_results=max_results))\n        elif search_type == 'videos':\n            results = list(ddgs.videos(query, region=region, timelimit=timelimit, max_results=max_results))\n        else:\n            results = []\n    \n    return results\n\n# 使用示例\nquery = 'Python 3.12 new features'\nresults = web_search(query, search_type='text', max_results=5)\n\nprint(f'🔍 搜索: {query}')\nprint(f'📊 找到 {len(results)} 个结果')\nprint()\n\nfor i, r in enumerate(results, 1):\n    print(f\\\"{i}. {r['title']}\\\")\n    print(f\\\"   {r['href']}\\\")\n    print(f\\\"   {r['body'][:150]}...\\\")\n    print()\n\"\n```\n\n### 搜索并保存结果\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nimport json\nfrom datetime import datetime\n\nquery = 'latest tech news'\noutput_file = f'search_results_{datetime.now().strftime(\\\"%Y%m%d_%H%M%S\\\")}.json'\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text(query, max_results=10))\n\n# 保存到 JSON 文件\nwith open(output_file, 'w', encoding='utf-8') as f:\n    json.dump({\n        'query': query,\n        'timestamp': datetime.now().isoformat(),\n        'results': results\n    }, f, ensure_ascii=False, indent=2)\n\nprint(f'✅ 搜索结果已保存到: {output_file}')\nprint(f'📊 共 {len(results)} 条结果')\n\"\n```\n\n### 多关键词批量搜索\n\n`\n\n### 步骤 7\n[参数说明] ### 地区代码 (region)\n\n| 代码 | 地区 |\n|------|------|\n| `cn-zh` | 中国 |\n| `us-en` | 美国 |\n| `uk-en` | 英国 |\n| `jp-jp` | 日本 |\n| `kr-kr` | 韩国 |\n| `wt-wt` | 全球 (无地区限制) |\n\n### 时间限制 (timelimit)\n\n| 值 | 含义 |\n|----|------|\n| `d` | 过去 24 小时 |\n| `w` | 过去一周 |\n| `m` | 过去一月 |\n| `y` | 过去一年 |\n| `None` | 不限制 |\n\n### 安全搜索 (safesearch)\n\n| 值 | 含义 |\n|----|------|\n| `on` | 严格过滤 |\n| `moderate` | 适度过滤 (默认) |\n| `off` | 关闭过滤 |\n\n### 步骤 8\n[错误处理] ```bash\npython -c \"\nfrom duckduckgo_search import DDGS\nfrom duckduckgo_search.exceptions import DuckDuckGoSearchException\n\ntry:\n    with DDGS() as ddgs:\n        results = list(ddgs.text('test query', max_results=5))\n        print(f'✅ 搜索成功，找到 {len(results)} 个结果')\nexcept DuckDuckGoSearchException as e:\n    print(f'❌ 搜索出错: {e}')\nexcept Exception as e:\n    print(f'❌ 未知错误: {e}')\n\"\n```\n\n### 步骤 9\n[使用代理] 如果需要使用代理：\n\n```bash\npython -c \"\nfrom duckduckgo_search import DDGS\n\n# 设置代理\nproxy = 'http://127.0.0.1:7890'  # 替换为你的代理地址\n\nwith DDGS(proxy=proxy) as ddgs:\n    results = list(ddgs.text('test query', max_results=5))\n    print(f'通过代理搜索成功，找到 {len(results)} 个结果')\n\"\n```\n\n### 步骤 10\n[常见问题] **安装失败？**\n```bash\n# 确保 pip 是最新版本\npip install --upgrade pip\npip install duckduckgo-search\n\n# 或使用 uv\nuv pip install duckduckgo-search\n```\n\n**搜索无结果？**\n```bash\n# 检查网络连接\n# 尝试使用代理\n# 减少搜索关键词复杂度\n# 检查地区设置是否正确\n```\n\n**请求被限制？**\n```bash\n# 在多次搜索之间添加延迟\nimport time\ntime.sleep(1)  # 等待 1 秒\n\n# 减少单次请求的结果数量\nmax_results=5  # 而不是 50\n```\n\n### 步骤 11\n[与其他工具集成] ### 结合 browser-use 获取详细内容\n\n```bash\n# 1. 先用 DuckDuckGo 搜索\npython -c \"\nfrom duckduckgo_search import DDGS\n\nwith DDGS() as ddgs:\n    results = list(ddgs.text('Python async tutorial', max_results=1))\n    if results:\n        url = results[0]['href']\n        print(f'URL: {url}')\n\"\n\n# 2. 用 browser-use 打开并获取详细内容\nbrowser-use open <url_from_search>\nbrowser-use state\n```\n\n### 步骤 12\n[注意事项] ⚠️ **使用建议**：\n\n1. **遵守使用频率限制**：避免短时间内大量请求\n2. **合理设置结果数量**：不要一次请求过多结果\n3. **添加适当延迟**：批量搜索时在请求之间添加 `time.sleep()`\n4. **处理异常情况**：始终添加错误处理代码\n5. **尊重版权**：搜索结果仅供参考，注意内容版权\n\n相关标签: Bash(duckduckgo-search:*),, Bash(python:*),, Bash(pip:*),, Bash(uv:*), agent-skill\n\n请根据以上指令，使用你已有的工具（如 terminal、file、browser 等）逐步完成任务。",
+        "message": "技能 'Performs web searches using DuckDuckGo to retrieve real-time information from the internet. Use when the user needs to search for current events, documentation, tutorials, or any information that requires web search capabilities.' 已激活。这是一个指令型技能，请按照 instructions 中的步骤，使用你已有的工具逐步执行。"
+      },
+      "error": null,
+      "timestamp": "2026-03-12T08:57:59.377429"
+    },
+    {
+      "iteration": 2,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "适合文字冒险游戏 经典故事 民间传说 神话 3000字以上",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "任务要求爬取一个适合做文字游戏的经典故事。我需要先搜索找到合适的故事源，然后抓取内容。使用 web_search 工具搜索适合改编为文字游戏的经典故事。",
+      "success": true,
+      "output": {
+        "query": "适合文字冒险游戏 经典故事 民间传说 神话 3000字以上",
+        "results": [
+          {
+            "title": "剧情丰富的文字游戏推荐 好玩的剧情文字游戏有哪些-游民星空 GamerSky.com",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.gamersky.com%2Fhandbook%2F202510%2F2037560.shtml&amp;rut=cd40389ab77de647308d50dd4c8b5997d3d314de0ad2bd1f0b7b82fc52559839",
+            "snippet": "在这片由3000+像素块精心构筑的异世界，你将化身冒险家，在12大职业的技能树间自由穿梭～从挥舞法杖的星象师到舞动双刃的暗影刺客，每个职业都有15种专属技能等你解锁! 副本里藏着200+种奇珍装备，每件都带着独特的属性加成，让你的角色成长之路充满惊喜。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "有什么比较好玩的文字游戏推荐？ - 知乎",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.zhihu.com%2Fquestion%2F386296787&amp;rut=c6a51cd07d740dddb485fdebb4bb5dfb85131e76294d731d949e8d704d237aef",
+            "snippet": "7、赛博朋克：酒保行动：不同于传统的AVG游戏，玩家将在反乌托邦的世界里扮演一个调酒师，倾听客人们喝醉后吐露的故事。决定游戏剧情走向的不再是传统的选项，而是取决于玩家调制的不同酒类。城市雇佣兵对暴乱的恐惧，虚拟偶像对职业的偏执，机器人对存在价值的烦恼，酒客们光怪陆离的 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "热门文字冒险类手游大全 - 热门文字冒险类手游推荐 - TapTap",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.taptap.cn%2Ftag%2F%25E6%2596%2587%25E5%25AD%2597%25E5%2586%2592%25E9%2599%25A9&amp;rut=a44fec40ca882a035a78b4c6b4948dff9b48ab2ab6dfbd3ce4130a4208079e49",
+            "snippet": "TapTap 为您推荐热门文字冒险类手游，其中的每一款文字冒险类游戏，都是由专业人员从全球海量的手机游戏中精选而出，为您推荐高品质的文字冒险类手机游戏下载",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "文字冒险-剧情丰富的文字冒险类游戏 - 超好玩游戏网",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.18touch.com%2Fzhuanti%2Fwzmx%2F&amp;rut=e8a617135d8ce4427cf981b2ed520e33edf88b3d0002da16e56a98e36a1bbaba",
+            "snippet": "文字冒险是指以文字形式为主的游戏类型，一直以来，文字冒险凭借剧情丰富、文字简洁的优点被广大玩家所热爱，同样也是市面上最受欢迎的游戏类型之一。在这里，小编我也为您盘点许多剧情丰富的文字冒险类游戏。在游戏中，您可以体验到交互式的剧情推进，喜欢文字冒险的小伙伴，不妨收藏 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "基于文字的游戏哪个好 十大经典基于文字的游戏排行榜_游戏单机游戏-中关村在线",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fgame.zol.com.cn%2F1025%2F10253737.html&amp;rut=56760c858b6515f51b70cf847f6101e72d1e5cd6fcb8514556312f908e011ad3",
+            "snippet": "探寻文字游戏的魅力，这篇文章带你领略十大经典基于文字的冒险之作。无论是深度剧情还是独特的交互体验，从经典的Zork系列到《神秘海域：德雷克遗产》，每一款都将带给你不一样的阅读与思考乐趣。快来一探究竟，哪一。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-12T08:58:42.496936"
+    }
+  ],
+  "created_at": "2026-03-12T08:57:41.862020",
+  "updated_at": "2026-03-12T09:00:23.103950",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}
