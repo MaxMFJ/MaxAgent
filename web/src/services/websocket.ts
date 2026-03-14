@@ -115,19 +115,6 @@ class WebSocketService {
     this.send({ type: 'stop', session_id: this.sessionId });
   }
 
-  sendAutonomousTask(task: string, options?: {
-    enableModelSelection?: boolean;
-    preferLocal?: boolean;
-  }) {
-    this.send({
-      type: 'autonomous_task',
-      task,
-      session_id: this.sessionId,
-      enable_model_selection: options?.enableModelSelection,
-      prefer_local: options?.preferLocal,
-    });
-  }
-
   sendResumeTask(sessionId: string) {
     this.send({ type: 'resume_task', session_id: sessionId });
   }

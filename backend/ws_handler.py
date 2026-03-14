@@ -50,6 +50,45 @@ HEARTBEAT_INTERVAL = 30  # 服务端心跳间隔（秒）
 # task_id → WebSocket  （主 Backend 将 Duck 结果路由给请求发起方）
 _duck_direct_chat_callbacks: dict[str, WebSocket] = {}
 
+# ─── Duck 续步排队（主 Agent 忙时暂存，空闲后自动执行） ──────────────────────
+# session_id → list[(task, timestamp)]
+_deferred_continuations: dict[str, list] = {}
+_deferred_lock = asyncio.Lock()
+
+
+async def _enqueue_continuation(session_id: str, task) -> None:
+    """主 Agent 忙时将 Duck 续步排队"""
+    import time
+    async with _deferred_lock:
+        if session_id not in _deferred_continuations:
+            _deferred_continuations[session_id] = []
+        _deferred_continuations[session_id].append((task, time.time()))
+        logger.info(f"[duck_hook] Continuation queued for session {session_id} "
+                    f"(queue size: {len(_deferred_continuations[session_id])})")
+
+
+async def drain_deferred_continuations(session_id: str) -> None:
+    """主 Agent 空闲时调用，处理排队的 Duck 续步"""
+    async with _deferred_lock:
+        items = _deferred_continuations.pop(session_id, [])
+    if not items:
+        return
+    import time
+    for task, queued_at in items:
+        # 过期的续步丢弃（超过10分钟）
+        if time.time() - queued_at > 600:
+            logger.info(f"[duck_hook] Expired continuation discarded for session {session_id}")
+            continue
+        # 再次检查主 Agent 是否空闲
+        if is_main_agent_busy(session_id, "chat"):
+            # 放回队列
+            async with _deferred_lock:
+                if session_id not in _deferred_continuations:
+                    _deferred_continuations[session_id] = []
+                _deferred_continuations[session_id].append((task, queued_at))
+            return  # 仍然忙，稍后再试
+        await _on_duck_task_complete(session_id, task)
+
 
 # ─── Duck 完成自动续步钩子 ───────────────────────────────────────────────────
 
@@ -168,8 +207,9 @@ async def _on_duck_task_complete(session_id: str, task) -> None:
     if not chat_runner:
         return  # Agent 未初始化
 
-    # 若主 Agent 正在忙于该 session 的其他任务，不插队
+    # 若主 Agent 正在忙于该 session 的其他任务，排队等待
     if is_main_agent_busy(session_id, "chat"):
+        await _enqueue_continuation(session_id, task)
         return
 
     duck_name = getattr(task, "assigned_duck_id", "Duck") or "Duck"
@@ -371,6 +411,87 @@ def _register_duck_hooks():
         logger.warning(f"Failed to register duck_complete hook: {e}")
 
 _register_duck_hooks()
+
+
+# ─── DAG 完成自动续步钩子 ──────────────────────────────────────────────────────
+
+async def _on_dag_complete(execution) -> None:
+    """
+    DAG 多Agent协作完成后的自动续步钩子（Chat 模式）。
+    当 DAG 所有节点执行完毕后，通知主 Agent 汇总结果给用户。
+    """
+    session_id = execution.session_id
+    if not session_id:
+        return
+
+    chat_runner = get_chat_runner()
+    if not chat_runner:
+        return
+
+    # 若主 Agent 正忙，广播结果但不触发续步
+    dag_id = execution.dag_id
+    status = execution.status
+    success = status == "completed"
+
+    # 构建节点摘要
+    node_lines = []
+    for n in execution.nodes.values():
+        st = "✅" if n.status.value == "completed" else "❌"
+        output_preview = str(n.output)[:200] if n.output else ""
+        error_preview = str(n.error)[:100] if n.error else ""
+        line = f"  {st} {n.node_id}: {n.description[:60]}"
+        if output_preview:
+            line += f"\n     结果: {output_preview}"
+        if error_preview:
+            line += f"\n     错误: {error_preview}"
+        node_lines.append(line)
+
+    continuation_msg = (
+        f"[系统自动续步] DAG 多Agent协作{'完成' if success else '失败'}（dag_id: {dag_id}）\n"
+        f"任务描述：{execution.description}\n"
+        f"节点执行情况：\n" + "\n".join(node_lines) + "\n"
+    )
+
+    if execution.output:
+        continuation_msg += f"\n汇总结果：{str(execution.output)[:500]}\n"
+    if execution.error:
+        continuation_msg += f"\n错误信息：{execution.error[:300]}\n"
+
+    continuation_msg += (
+        "\n请根据上述DAG执行结果向用户汇报：\n"
+        "1. 列出所有已完成的子任务及其产出\n"
+        "2. 如果有失败的子任务，说明原因\n"
+        "3. 汇总最终成果\n"
+    )
+
+    if is_main_agent_busy(session_id, "chat"):
+        # 主 Agent 忙，直接广播 DAG 完成通知
+        await connection_manager.broadcast_to_session(session_id, {
+            "type": "dag_completed",
+            "dag_id": dag_id,
+            "status": status,
+            "description": execution.description,
+            "output": execution.output,
+            "error": execution.error,
+            "group_id": execution.group_id,
+        })
+        return
+
+    # 主 Agent 空闲，触发续步让主 Agent 汇总
+    await _run_agent_and_broadcast_result(
+        session_id, continuation_msg, chat_runner, f"dag_{dag_id}", label="DAG协作"
+    )
+
+
+def _register_dag_hooks():
+    try:
+        from services.duck_task_dag import DAGTaskOrchestrator
+        DAGTaskOrchestrator.register_complete_hook(_on_dag_complete)
+        logger.info("Registered dag_complete auto-resume hook")
+    except Exception as e:
+        logger.warning(f"Failed to register dag_complete hook: {e}")
+
+_register_dag_hooks()
 
 
 # ============== Busy Check Helper ==============
@@ -607,7 +728,7 @@ async def _handle_chat(
     message: dict, websocket: WebSocket,
     current_session_id: str, actual_client_id: str, actual_client_type: ClientType,
 ):
-    """处理 chat 消息：流式对话"""
+    """处理 chat 消息：统一执行引擎（quick Q&A → core.run_stream / 复杂任务 → autonomous loop）"""
     agent_core = get_agent_core()
     content = message.get("content", "")
     file_paths = message.get("file_paths") or []
@@ -631,8 +752,10 @@ async def _handle_chat(
         exclude_client=actual_client_id,
     )
 
-    chat_runner = get_chat_runner()
-    if not chat_runner:
+    # 检查执行引擎是否就绪（优先 autonomous agent，回退 chat_runner）
+    autonomous_agent = get_autonomous_agent()
+    chat_runner = get_chat_runner() if not autonomous_agent else None
+    if not autonomous_agent and not chat_runner:
         logger.error("Agent not initialized!")
         await safe_send_json(websocket, {"type": "error", "message": "Agent not initialized"})
         try:
@@ -650,6 +773,14 @@ async def _handle_chat(
         if delegated:
             return session_id
         # 无可用 Duck：回退到旧行为（cancel 旧 chat 任务，由主 Agent 执行新任务）
+
+    # 同步 model_selection / prefer_local 设置（原 autonomous_task 入口的功能）
+    _auto_ag = get_autonomous_agent()
+    if _auto_ag:
+        if "enable_model_selection" in message:
+            _auto_ag.enable_model_selection = message.get("enable_model_selection", True)
+        if "prefer_local" in message:
+            _auto_ag._prefer_local = message.get("prefer_local", False)
 
     if session_id in session_stream_tasks:
         old_task = session_stream_tasks[session_id]
@@ -715,7 +846,7 @@ async def _handle_chat(
         final_status = AutoTaskStatus.COMPLETED
 
         async def _on_chat_chunk(chunk: dict):
-            """Chat 特有的 chunk 后处理：tool_result 的 image 提取"""
+            """统一 chunk 后处理：image 提取 + autonomous 事件（episode memory、通知）"""
             chunk_type = chunk.get("type", "")
             if chunk_type == "tool_result":
                 data = chunk.pop("data", None)
@@ -724,9 +855,64 @@ async def _handle_chat(
                     img = extract_image_from_result(data)
                     if img:
                         await dispatcher.dispatch_chunk(img)
+            elif chunk_type == "task_stopped":
+                nonlocal final_status
+                final_status = AutoTaskStatus.STOPPED
+                try:
+                    reason = chunk.get("message") or chunk.get("reason") or "未知原因"
+                    get_system_message_service().add_error(
+                        "任务被停止",
+                        f"任务: {_content[:100]}\n原因: {reason}\n建议: {chunk.get('recommendation', '')}",
+                        source="chat_task",
+                        category=MessageCategory.SYSTEM_ERROR.value,
+                    )
+                except Exception as _e:
+                    logger.warning(f"Failed to push stop notification: {_e}")
+            elif chunk_type == "task_complete":
+                try:
+                    memory = get_episodic_memory()
+                    episode = Episode(
+                        episode_id=chunk.get("task_id", ""),
+                        task_description=_content,
+                        result=chunk.get("summary", ""),
+                        success=chunk.get("success", False),
+                        total_actions=chunk.get("total_actions", 0),
+                        total_iterations=chunk.get("iterations", 0),
+                        execution_time_ms=chunk.get("execution_time_ms", 0),
+                        action_log=chunk.get("action_log", []),
+                        token_usage=chunk.get("token_usage", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}),
+                    )
+                    memory.add_episode(episode)
+                    try:
+                        from agent.persistent_memory import FactExtractor, get_factbase
+                        facts = FactExtractor.extract(
+                            episode_id=episode.episode_id,
+                            task_description=_content,
+                            action_log=chunk.get("action_log", []),
+                            success=chunk.get("success", False),
+                            result=chunk.get("summary", ""),
+                        )
+                        if facts:
+                            get_factbase().add_facts(facts)
+                    except Exception:
+                        pass
+                except Exception as e:
+                    logger.error(f"Failed to save episode: {e}")
+                try:
+                    success = chunk.get("success", False)
+                    summary = chunk.get("summary", "") or _content[:200]
+                    total_actions = chunk.get("total_actions", 0)
+                    title = "任务完成" if success else "任务未完成"
+                    content_str = f"任务: {_content[:100]}{'...' if len(_content) > 100 else ''}\n总结: {summary}\n动作数: {total_actions}"
+                    get_system_message_service().add_info(
+                        title, content_str,
+                        source="chat_task", category=MessageCategory.TASK.value,
+                    )
+                except Exception as e:
+                    logger.warning(f"System notification for task_complete failed: {e}")
 
         try:
-            # Web 增强预取（Chat 特有）
+            # Web 增强预取
             try:
                 from agent.web_augmented_thinking import ThinkingAugmenter, AugmentationType
                 aug = ThinkingAugmenter()
@@ -750,11 +936,30 @@ async def _handle_chat(
             except Exception as e:
                 logger.warning(f"Web augmentation failed: {e}")
 
-            # 统一分发流
-            await dispatcher.dispatch_stream(
-                chat_runner.run_stream(_content, session_id=_sid, extra_system_prompt=extra_system_prompt),
-                on_chunk=_on_chat_chunk,
-            )
+            # ── 统一执行引擎：所有 chat 消息通过 autonomous agent 处理 ──
+            # Quick Q&A 由 run_autonomous 内部判断，自动走快速路径 (core.run_stream)
+            # 复杂任务走完整 Plan-Execute-Reflect 循环
+            autonomous_agent = get_autonomous_agent()
+            if autonomous_agent:
+                await dispatcher.dispatch_stream(
+                    autonomous_agent.run_autonomous(
+                        _content, session_id=_sid, extra_system_prompt=extra_system_prompt
+                    ),
+                    on_chunk=_on_chat_chunk,
+                )
+            else:
+                # Fallback: 如果 autonomous agent 未初始化，回退到 chat_runner
+                chat_runner = get_chat_runner()
+                if chat_runner:
+                    await dispatcher.dispatch_stream(
+                        chat_runner.run_stream(
+                            _content, session_id=_sid, extra_system_prompt=extra_system_prompt
+                        ),
+                        on_chunk=_on_chat_chunk,
+                    )
+                else:
+                    await dispatcher.send_error("Agent not initialized")
+                    return
 
             if not dispatcher.has_error:
                 _ac = get_agent_core()
@@ -774,6 +979,8 @@ async def _handle_chat(
         finally:
             await dispatcher.cleanup(final_status)
             session_stream_tasks.pop(_sid, None)
+            # Chat 完成后，检查是否有排队的 Duck 续步
+            asyncio.create_task(drain_deferred_continuations(_sid))
 
     session_stream_tasks[_sid] = asyncio.create_task(_run_stream_and_send())
     return session_id
@@ -963,6 +1170,8 @@ async def _autonomous_task_worker(
             await connection_manager.broadcast_to_session(session_id, {"type": "done"})
         except Exception as _e:
             logger.warning(f"Failed to broadcast done in autonomous worker finally: {_e}")
+        # 自主任务完成后，检查是否有排队的 Duck 续步
+        asyncio.create_task(drain_deferred_continuations(session_id))
 
 
 async def _handle_autonomous_task(
@@ -1491,6 +1700,116 @@ async def _handle_chat_to_duck(message: dict, websocket: WebSocket, current_sess
         })
 
 
+# ============== WebSocket → DAG 群聊触发 ==============
+
+async def _handle_create_dag(message: dict, websocket: WebSocket, current_session_id: str):
+    """
+    通过 WebSocket 创建并执行 DAG，自动触发群聊。
+    消息格式:
+    {
+      "type": "create_dag",
+      "description": "帮我完成一个网页设计项目",
+      "nodes": [
+        {"node_id": "research", "description": "调研竞品", "task_type": "crawler", "depends_on": []},
+        {"node_id": "design", "description": "设计页面", "task_type": "designer", "depends_on": ["research"]},
+        {"node_id": "code", "description": "编写代码", "task_type": "coder", "depends_on": ["design"]}
+      ]
+    }
+    """
+    description = message.get("description", "").strip()
+    nodes_raw = message.get("nodes", [])
+    session_id = message.get("session_id") or current_session_id
+
+    if not description or not nodes_raw:
+        await safe_send_json(websocket, {
+            "type": "create_dag_error",
+            "error": "description 和 nodes 均不能为空",
+        })
+        return
+
+    try:
+        from services.duck_task_dag import DAGTaskOrchestrator, DAGNode
+        from services.duck_protocol import DuckType
+
+        # 解析节点
+        dag_nodes = []
+        for raw in nodes_raw:
+            node_id = raw.get("node_id", "").strip()
+            node_desc = raw.get("description", "").strip()
+            if not node_id or not node_desc:
+                await safe_send_json(websocket, {
+                    "type": "create_dag_error",
+                    "error": f"每个 node 必须包含 node_id 和 description",
+                })
+                return
+
+            duck_type = None
+            if raw.get("task_type"):
+                try:
+                    duck_type = DuckType(raw["task_type"])
+                except ValueError:
+                    pass
+
+            dag_nodes.append(DAGNode(
+                node_id=node_id,
+                description=node_desc,
+                task_type=raw.get("task_type", "general"),
+                params=raw.get("params", {}),
+                duck_type=duck_type,
+                duck_id=raw.get("duck_id"),
+                timeout=raw.get("timeout", 600),
+                depends_on=raw.get("depends_on", []),
+                input_mapping=raw.get("input_mapping", {}),
+            ))
+
+        orchestrator = DAGTaskOrchestrator.get_instance()
+
+        # DAG 完成回调：将最终结果推送给用户
+        async def _dag_callback(execution):
+            try:
+                await safe_send_json(websocket, {
+                    "type": "dag_completed",
+                    "dag_id": execution.dag_id,
+                    "status": execution.status,
+                    "output": execution.output,
+                    "error": execution.error,
+                    "group_id": execution.group_id,
+                })
+            except Exception:
+                logger.warning(f"Failed to send dag_completed for {execution.dag_id}")
+
+        execution = orchestrator.create_dag(
+            description=description,
+            nodes=dag_nodes,
+            callback=_dag_callback,
+            session_id=session_id,
+        )
+
+        # 通知客户端：DAG 已创建
+        await safe_send_json(websocket, {
+            "type": "dag_created",
+            "dag_id": execution.dag_id,
+            "description": description,
+            "node_count": len(dag_nodes),
+            "session_id": session_id,
+        })
+
+        # 异步执行（不阻塞 WS 线程）
+        asyncio.create_task(orchestrator.execute(execution.dag_id))
+
+    except ValueError as e:
+        await safe_send_json(websocket, {
+            "type": "create_dag_error",
+            "error": str(e),
+        })
+    except Exception as e:
+        logger.exception("create_dag handler error")
+        await safe_send_json(websocket, {
+            "type": "create_dag_error",
+            "error": f"创建 DAG 失败: {str(e)}",
+        })
+
+
 # ============== Server-side Heartbeat ==============
 
 async def _heartbeat_loop(websocket: WebSocket, client_id: str):
@@ -1600,6 +1919,9 @@ async def websocket_endpoint(
         "buffered_chat_count": buffered_chat_count,
     })
 
+    # 补发断线期间缓冲的重要消息（duck_task_complete / retry / progress 等）
+    await connection_manager.flush_pending(current_session_id, websocket)
+
     if unread_count > 0:
         try:
             svc = get_system_message_service()
@@ -1633,6 +1955,8 @@ async def websocket_endpoint(
                     # 确保 broadcast_to_session 能正确路由 duck_task_complete 等异步通知
                     await connection_manager.update_session(actual_client_id, new_sid)
                     current_session_id = new_sid
+                    # 补发新 session 下缓冲的消息
+                    await connection_manager.flush_pending(new_sid, websocket)
                 elif new_sid:
                     current_session_id = new_sid
 
@@ -1649,7 +1973,24 @@ async def websocket_endpoint(
                 await _handle_clear_session(message, websocket, current_session_id, actual_client_id)
 
             elif msg_type == "autonomous_task":
-                await _handle_autonomous_task(message, websocket, current_session_id, actual_client_id, actual_client_type)
+                # ── 已废弃：autonomous_task 现在统一路由到 _handle_chat ──
+                # 将 autonomous_task 消息格式转换为 chat 消息格式，统一走 chat 入口
+                chat_message = {
+                    "type": "chat",
+                    "content": message.get("task", ""),
+                    "file_paths": message.get("file_paths"),
+                    "session_id": message.get("session_id"),
+                    "enable_model_selection": message.get("enable_model_selection", True),
+                    "prefer_local": message.get("prefer_local", False),
+                }
+                # 同步 model_selection / prefer_local 到 autonomous agent
+                _auto_ag = get_autonomous_agent()
+                if _auto_ag:
+                    _auto_ag.enable_model_selection = message.get("enable_model_selection", True)
+                    _auto_ag._prefer_local = message.get("prefer_local", False)
+                current_session_id = await _handle_chat(
+                    chat_message, websocket, current_session_id, actual_client_id, actual_client_type
+                )
 
             elif msg_type == "resume_task":
                 await _handle_resume_task(message, websocket, current_session_id)
@@ -1681,6 +2022,9 @@ async def websocket_endpoint(
             elif msg_type == "chat_to_duck":
                 await _handle_chat_to_duck(message, websocket, current_session_id)
 
+            elif msg_type == "create_dag":
+                await _handle_create_dag(message, websocket, current_session_id)
+
             else:
                 # 未知消息类型，通知客户端
                 logger.warning(f"Unknown message type received: {msg_type}")
@@ -1693,7 +2037,7 @@ async def websocket_endpoint(
                         "autonomous_task", "resume_task", "resume_chat", "get_episodes",
                         "get_statistics", "get_system_messages", "mark_system_message_read",
                         "mark_all_system_messages_read", "get_model_stats", "analyze_task",
-                        "chat_to_duck"
+                        "chat_to_duck", "create_dag"
                     ]
                 })
 

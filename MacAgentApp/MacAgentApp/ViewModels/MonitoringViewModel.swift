@@ -431,7 +431,7 @@ class MonitoringViewModel: ObservableObject {
     // MARK: - 多任务 monitor_event 处理
 
     func applyMonitorEvent(taskId: String, sourceSession: String, event: [String: Any]) {
-        let taskType = event["task_type"] as? String ?? "autonomous"
+        let taskType = event["task_type"] as? String ?? "chat"
 
         // 提取执行者（actor）信息（由后端注入到 inner event）
         let workerType = event["_worker_type"] as? String ?? "main"
@@ -1176,7 +1176,7 @@ class MonitoringViewModel: ObservableObject {
                         id: taskId,
                         taskId: taskId,
                         sessionId: d["session_id"] as? String ?? "",
-                        taskType: d["task_type"] as? String ?? "autonomous",
+                        taskType: d["task_type"] as? String ?? "chat",
                         description: d["description"] as? String ?? "",
                         status: d["status"] as? String ?? "unknown",
                         createdAt: d["created_at"] as? Double ?? 0,

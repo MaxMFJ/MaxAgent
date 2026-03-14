@@ -40,6 +40,7 @@ class ActionType(Enum):
     CHANGE_CONFIG = "change_config"          # 修改配置
     RESTART_PROCESS = "restart_process"      # 重启进程
     SEND_NOTIFICATION = "send_notification"  # 发送通知
+    LLM_FIX = "llm_fix"                     # 调用 LLM 分析并修复
 
 
 @dataclass
@@ -303,38 +304,45 @@ class RepairPlanner:
             ))
         
         elif strategy == RepairStrategy.MODIFY_PROMPT:
-            # 生成优化的 prompt
             actions.append(RepairAction(
-                action_type=ActionType.EXECUTE_SCRIPT,
-                description="优化系统提示词",
+                action_type=ActionType.LLM_FIX,
+                description="调用 LLM 优化系统提示词",
                 parameters={
-                    "script_type": "python",
-                    "script_content": self._generate_prompt_optimization_script(diagnostic)
-                }
+                    "fix_type": "prompt_optimization",
+                    "error_message": diagnostic.description,
+                    "problem_type": diagnostic.problem_type.value,
+                    "suggestions": diagnostic.suggestions,
+                },
+                timeout_seconds=60,
             ))
         
         elif strategy == RepairStrategy.MODIFY_CODE:
-            # 生成代码修复脚本
             actions.append(RepairAction(
-                action_type=ActionType.EXECUTE_SCRIPT,
-                description="生成代码修复",
+                action_type=ActionType.LLM_FIX,
+                description="调用 LLM 分析错误并生成代码修复",
                 parameters={
-                    "script_type": "python",
-                    "target_file": diagnostic.source_file,
-                    "target_line": diagnostic.source_line,
-                    "script_content": self._generate_code_fix_script(diagnostic)
+                    "fix_type": "code_fix",
+                    "error_message": diagnostic.description,
+                    "problem_type": diagnostic.problem_type.value,
+                    "source_file": diagnostic.source_file,
+                    "source_line": diagnostic.source_line,
+                    "suggestions": diagnostic.suggestions,
                 },
-                requires_confirmation=True
+                timeout_seconds=120,
+                requires_confirmation=True,
             ))
         
         elif strategy == RepairStrategy.ADD_FALLBACK:
             actions.append(RepairAction(
-                action_type=ActionType.EXECUTE_SCRIPT,
-                description="添加回退机制",
+                action_type=ActionType.LLM_FIX,
+                description="调用 LLM 生成回退机制",
                 parameters={
-                    "script_type": "python",
-                    "script_content": self._generate_fallback_script(diagnostic)
-                }
+                    "fix_type": "add_fallback",
+                    "error_message": diagnostic.description,
+                    "problem_type": diagnostic.problem_type.value,
+                    "suggestions": diagnostic.suggestions,
+                },
+                timeout_seconds=60,
             ))
         
         elif strategy == RepairStrategy.RESTART_SERVICE:
@@ -370,106 +378,6 @@ class RepairPlanner:
             ))
         
         return actions
-    
-    def _generate_prompt_optimization_script(self, diagnostic: DiagnosticResult) -> str:
-        """生成提示词优化脚本"""
-        problem_type = diagnostic.problem_type.value
-        script = '''
-# 提示词优化脚本
-# 问题类型: ''' + problem_type + '''
-
-import json
-
-def optimize_prompt(original_prompt, error_context):
-    """优化提示词"""
-    
-    optimizations = {
-        "tool_parse_failure": "请严格按照 JSON 格式输出工具调用",
-        "llm_empty_response": "请确保生成有意义的响应。如果需要使用工具，请输出 JSON 格式的工具调用。",
-        "function_calling_failed": "本次请求不使用 function calling，请在回复中直接包含 JSON 格式的工具调用。"
-    }
-    
-    problem_type = "''' + problem_type + '''"
-    if problem_type in optimizations:
-        return original_prompt + "\\n\\n" + optimizations[problem_type]
-    
-    return original_prompt
-
-# 返回优化建议
-result = {
-    "optimization_type": "prompt_enhancement",
-    "problem_type": "''' + problem_type + '''",
-    "suggestion": "添加明确的输出格式指导"
-}
-print(json.dumps(result))
-'''
-        return script
-    
-    def _generate_code_fix_script(self, diagnostic: DiagnosticResult) -> str:
-        """生成代码修复脚本"""
-        problem_type = diagnostic.problem_type.value
-        source_file = diagnostic.source_file or "unknown"
-        source_line = diagnostic.source_line or 0
-        
-        script = f'''
-# 代码修复脚本
-# 目标文件: {source_file}
-# 目标行: {source_line}
-# 问题: {problem_type}
-
-import json
-
-def generate_fix():
-    """生成修复建议"""
-    
-    fixes = dict()
-    fixes["tool_parse_failure"] = dict(
-        suggestion="添加更多 JSON 解析容错",
-        code_snippet="try: tool_call = json.loads(text)\\nexcept: pass"
-    )
-    fixes["function_calling_failed"] = dict(
-        suggestion="添加本地模式回退",
-        code_snippet="# Use LocalToolParser for fallback"
-    )
-    
-    problem_type = "{problem_type}"
-    if problem_type in fixes:
-        return fixes[problem_type]
-    
-    return dict(suggestion="需要人工分析", code_snippet="")
-
-result = generate_fix()
-print(json.dumps(result))
-'''
-        return script
-    
-    def _generate_fallback_script(self, diagnostic: DiagnosticResult) -> str:
-        """生成回退机制脚本"""
-        problem_type = diagnostic.problem_type.value
-        
-        script = f'''
-# 回退机制脚本
-# 问题: {problem_type}
-
-import json
-
-def create_fallback_handler():
-    """创建回退处理器"""
-    
-    return dict(
-        fallback_type="graceful_degradation",
-        problem_type="{problem_type}",
-        actions=[
-            "尝试使用简化的工具调用格式",
-            "切换到备用 LLM 提供商",
-            "降级到纯文本对话模式"
-        ]
-    )
-
-result = create_fallback_handler()
-print(json.dumps(result))
-'''
-        return script
     
     def _estimate_success_rate(
         self,

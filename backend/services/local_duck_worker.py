@@ -167,6 +167,13 @@ class LocalDuckWorker:
             worker_id=self.duck_id,
         )
 
+        # 在 DAG 群聊中发送「Duck 已接受并开始执行」通知
+        try:
+            from services.duck_task_dag import notify_duck_task_started
+            await notify_duck_task_started(payload.task_id, self.duck_id, self.name)
+        except Exception:
+            pass  # 非 DAG 任务或群聊不存在时静默跳过
+
         try:
             output = await self._do_work_with_monitoring(payload, source_session)
             success = True
@@ -328,11 +335,20 @@ class LocalDuckWorker:
         """
         import re
 
-        parts = [payload.description]
+        # 过滤主 Agent 系统提示中注入的桌面路径提示，不应传递给 Duck Agent
+        raw_desc = payload.description or ""
+        clean_desc = re.sub(
+            r'[\n\s]*【重要】保存文件时必须使用实际路径[：:][^\n。]*[。\n]?',
+            '',
+            raw_desc,
+        ).strip()
+
+        parts = [clean_desc]
 
         # 附加任务参数中的文件引用（方案 A+D：大文件用智能摘要+缓存，小文件直接给路径）
         file_refs = []
         if payload.params:
+            # 先扫描特定键
             for key in ("file_path", "file_paths", "input_file", "output_file", "source_file", "target_path"):
                 val = payload.params.get(key)
                 if val:
@@ -340,6 +356,23 @@ class LocalDuckWorker:
                         file_refs.extend(str(v) for v in val)
                     else:
                         file_refs.append(str(val))
+            # 再扫描所有字符串/列表参数值，提取其中的绝对路径（用于 input_mapping 传递的上游输出）
+            if not file_refs:
+                for key, val in payload.params.items():
+                    if key in ("description", "task_type"):
+                        continue
+                    text = val if isinstance(val, str) else (
+                        "\n".join(str(v) for v in val) if isinstance(val, list) else ""
+                    )
+                    if not text:
+                        continue
+                    for m in re.finditer(
+                        r'(/(?:Users|home|tmp|var|opt)/[^\s"\'\\,，；；、\]\)>\n]+\.(?:md|html?|txt|json|pdf|py|js|ts|css|yaml|yml|csv))',
+                        text, re.IGNORECASE,
+                    ):
+                        p = m.group(1).rstrip("。.）)")
+                        if os.path.exists(p) and p not in file_refs:
+                            file_refs.append(p)
         # 从描述中解析文件路径（多种格式）
         if not file_refs and payload.description:
             # 格式1: 【用户附带文件】列表格式 "- /path" 或 "• ~/path"
@@ -363,7 +396,7 @@ class LocalDuckWorker:
             except Exception as _e:
                 logger.warning(f"File structure summary failed: {_e}")
 
-        desc = payload.description or ""
+        desc = clean_desc
         has_explicit_path = self._desc_has_explicit_output_path(desc)
         has_modify_intent = self._desc_has_modify_existing_intent(desc)
 
@@ -406,7 +439,10 @@ class LocalDuckWorker:
             f"原始任务：{payload.description}",
         ]
 
-        desc = payload.description or ""
+        import re as _re2
+        desc = _re2.sub(
+            r'[\n\s]*【重要】保存文件时必须使用实际路径[：:][^\n。]*[。\n]?', '', payload.description or ''
+        ).strip()
         has_explicit_path = self._desc_has_explicit_output_path(desc)
         has_modify_intent = self._desc_has_modify_existing_intent(desc)
 
@@ -443,11 +479,15 @@ class LocalDuckWorker:
 
         # ── 正向完成信号检测：如果包含明确的完成/成功标志，直接视为已完成 ──
         completion_signals = [
-            r'(?:✓|✅|√)',                                      # 完成标记符号
-            r'(?:已保存|已创建|已生成|已写入|已完成)',            # 明确的完成动词
+            r'(?:✓|✅|√)',                                       # 完成标记符号
+            r'(?:已保存|已创建|已生成|已写入|已完成)',             # 明确的完成动词（连续）
+            r'(?:已经|成功)(?:保存|创建|生成|写入|完成)',          # "已经/成功" + 动词（分离形式）
+            r'(?:已将|已把).{0,15}(?:保存|写入|创建)',            # "已将/已把...保存/写入"
             r'(?:saved|written|created|generated)\s+(?:to|at)',  # 英文完成标记
-            r'(?:文件|file)\s*(?:大小|size)',                    # 文件大小信息=实际产出
-            r'(?:分辨率|resolution)',                            # 图片产出信息
+            r'(?:文件|file)\s*(?:大小|size)',                     # 文件大小信息=实际产出
+            r'(?:分辨率|resolution)',                             # 图片产出信息
+            r'macagent_workspace/ducks/[^\s]+/workspace/',       # 包含沙箱路径 = 已写入工作区
+            r'Written to:',                                       # write_file 成功标志
         ]
         completion_score = sum(1 for p in completion_signals if re.search(p, stripped, re.IGNORECASE))
         if completion_score >= 1:
@@ -499,11 +539,17 @@ class LocalDuckWorker:
         agent = self._create_independent_agent(duck_llm)
 
         # v3.8: 为 Duck 任务创建隔离沙箱
+        # 使用任务描述的前 15 个非空字符作为可读标签（中英文均可）
         _sandbox = None
         try:
             from services.duck_sandbox import get_duck_sandbox
+            import re as _re
+            _raw_desc = (payload.original_description or payload.description or "").strip()
+            _label_text = _re.sub(r'\s+', '', _raw_desc)[:15]  # 去空白后取前15字符
             _sandbox_mgr = get_duck_sandbox()
-            _sandbox = _sandbox_mgr.create_sandbox(self.duck_id, payload.task_id[:8])
+            _sandbox = _sandbox_mgr.create_sandbox(
+                self.duck_id, payload.task_id[:8], label=_label_text
+            )
         except Exception as _sb_err:
             logger.debug(f"Sandbox creation skipped: {_sb_err}")
 
@@ -528,12 +574,15 @@ class LocalDuckWorker:
         # 若 Duck 正在工作（LLM 处理/工具执行），给予更长时间；仅当空闲且无下一步才判断失败
         duck_phase: list = ["idle"]  # "idle" | "llm_waiting" | "tool_executing"
         IDLE_INACTIVITY_TIMEOUT = 90     # 空闲：90s 无任何 chunk → 真正卡死
-        LLM_INACTIVITY_TIMEOUT = 300     # LLM 处理中：5 分钟（大上下文/大文件可能很慢）
+        LLM_INACTIVITY_TIMEOUT = 120     # LLM 处理中：2 分钟（减少卡死等待时间）
         TOOL_INACTIVITY_TIMEOUT = 180    # 工具执行中：3 分钟（如 create_and_run_script 生成大文件）
 
         # 获取 scheduler 引用，用于更新任务活跃时间
         from services.duck_task_scheduler import get_task_scheduler
         _scheduler = get_task_scheduler()
+
+        # 工具调用计数器，用于向 Chat 发送关键里程碑通知
+        _tool_call_count: list = [0]
 
         async def _stream_run(description: str) -> str:
             """流式迭代 run_autonomous，广播每个 chunk，返回最终 summary"""
@@ -550,6 +599,14 @@ class LocalDuckWorker:
                     duck_phase[0] = "idle"
                 elif chunk_type in ("tool_call",):
                     duck_phase[0] = "tool_executing"
+                    # 向 Chat 发送关键工具调用进度
+                    _tool_call_count[0] += 1
+                    tool_name = chunk.get("tool_name", chunk.get("action_type", ""))
+                    if tool_name and _tool_call_count[0] <= 10:  # 最多推送10条进度
+                        await _scheduler._notify_session_duck_progress(
+                            source_session, payload.task_id,
+                            f"⚙️ Duck 正在执行：{tool_name}（第 {_tool_call_count[0]} 步）"
+                        )
                 elif chunk_type == "tool_result":
                     duck_phase[0] = "idle"  # 工具返回后可能马上发起下一轮 LLM
                 elif chunk_type == "chunk":
@@ -629,30 +686,138 @@ class LocalDuckWorker:
                     await asyncio.gather(stream_task, return_exceptions=True)
 
         try:
-            result = await _run_smart(isolated_desc, float(payload.timeout))
+            # v3.9: 使用确定性计划执行引擎（有 sandbox 时启用）
+            if _sandbox:
+                from services.duck_plan_executor import run_duck_task_with_plan
+
+                async def _broadcast_chunk(chunk: dict) -> None:
+                    """计划执行器的广播回调"""
+                    last_active[0] = time.time()
+                    _scheduler.update_task_activity(payload.task_id)
+                    chunk_type = chunk.get("type", "")
+                    if chunk_type == "llm_request_start":
+                        duck_phase[0] = "llm_waiting"
+                    elif chunk_type in ("llm_request_end", "tool_result"):
+                        duck_phase[0] = "idle"
+                    elif chunk_type == "tool_call":
+                        duck_phase[0] = "tool_executing"
+                    await broadcast_monitor_event(
+                        session_id=source_session,
+                        task_id=payload.task_id,
+                        event=chunk,
+                        task_type="duck",
+                        worker_type="local_duck",
+                        worker_id=self.duck_id,
+                    )
+
+                # 获取用于规划的 LLM（duck_llm 优先，否则使用主 LLM）
+                _plan_llm = duck_llm
+                if _plan_llm is None:
+                    try:
+                        from app_state import get_llm_client
+                        _plan_llm = get_llm_client()
+                    except Exception:
+                        pass
+
+                result = await asyncio.wait_for(
+                    run_duck_task_with_plan(
+                        agent=agent,
+                        llm_client=_plan_llm,
+                        task_description=isolated_desc,
+                        workspace_dir=_sandbox.workspace_dir,
+                        task_id=payload.task_id,
+                        session_id=duck_session,
+                        duck_type=self.duck_type.value if hasattr(self.duck_type, 'value') else str(self.duck_type),
+                        hard_timeout=min(float(payload.timeout), 540.0),
+                        broadcast_fn=_broadcast_chunk,
+                    ),
+                    timeout=float(payload.timeout),
+                )
+            else:
+                result = await _run_smart(isolated_desc, float(payload.timeout))
             # 检测结果是否只是计划描述，而非真正执行结果
             if self._check_output_is_plan_not_result(result):
-                logger.warning(
-                    f"Duck {self.duck_id} returned plan instead of result, retrying with context rebuild"
-                )
-                # v3.8.1: 重试上下文重建 — 创建全新 agent 实例 + 注入失败摘要
-                agent = self._create_independent_agent(duck_llm)
-                failure_summary = (result or "")[:300]
-                reinforced_desc = self._build_retry_description(
-                    payload, _sandbox, failure_summary, attempt=2
-                )
-                remaining_timeout = max(float(payload.timeout) * 0.7, 60.0)
-                result = await _run_smart(reinforced_desc, remaining_timeout)
-                if self._check_output_is_plan_not_result(result):
-                    raise RuntimeError(
-                        "任务未真正完成：Duck 返回了执行计划而非结果，可能是依赖缺失或脚本执行失败。"
-                        f"请重新指派任务或让主 Agent 直接处理。"
-                        f"（输出摘要：{str(result)[:150]}）"
+                # 先检查 workspace 是否有实际产出文件 — 有则直接视为成功，跳过重试
+                _ws_files_early = []
+                if _sandbox:
+                    try:
+                        _ws = _sandbox.workspace_dir
+                        for _dp, _dd, _ff in os.walk(_ws):
+                            for _fn in _ff:
+                                if not _fn.startswith("."):
+                                    _ws_files_early.append(os.path.join(_dp, _fn))
+                    except Exception:
+                        pass
+                if _ws_files_early:
+                    logger.info(
+                        f"Duck {self.duck_id} output may be plan-text but workspace has {len(_ws_files_early)} file(s), treating as success"
                     )
+                    # 将 workspace 产出追加到结果
+                    result = (result or "") + (
+                        f"\n\n【工作区产出】目录: {_sandbox.workspace_dir}\n"
+                        + "\n".join(f"  - {f}" for f in _ws_files_early[:30])
+                    )
+                else:
+                    logger.warning(
+                        f"Duck {self.duck_id} returned plan instead of result, retrying with context rebuild"
+                    )
+                    # v3.8.1: 重试上下文重建 — 创建全新 agent 实例 + 注入失败摘要
+                    agent = self._create_independent_agent(duck_llm)
+                    failure_summary = (result or "")[:300]
+                    reinforced_desc = self._build_retry_description(
+                        payload, _sandbox, failure_summary, attempt=2
+                    )
+                    remaining_timeout = max(float(payload.timeout) * 0.7, 60.0)
+                    result = await _run_smart(reinforced_desc, remaining_timeout)
+                    if self._check_output_is_plan_not_result(result):
+                        raise RuntimeError(
+                            "任务未真正完成：Duck 返回了执行计划而非结果，可能是依赖缺失或脚本执行失败。"
+                            f"请重新指派任务或让主 Agent 直接处理。"
+                            f"（输出摘要：{str(result)[:150]}）"
+                        )
+            # 将沙箱工作区产出文件清单追加到结果，供下游节点（input_mapping）引用
+            if _sandbox:
+                try:
+                    ws = _sandbox.workspace_dir
+                    if os.path.isdir(ws):
+                        ws_files = []
+                        for _dp, _dd, _ff in os.walk(ws):
+                            for _fn in _ff:
+                                if not _fn.startswith("."):
+                                    ws_files.append(os.path.join(_dp, _fn))
+                        if ws_files:
+                            result = (result or "") + (
+                                f"\n\n【工作区产出】目录: {ws}\n"
+                                + "\n".join(f"  - {f}" for f in ws_files[:30])
+                            )
+                except Exception:
+                    pass
             return result
         except asyncio.TimeoutError as e:
             raise RuntimeError(str(e))
         except Exception as e:
+            # 任务异常前先检查 workspace 是否已有产出文件（如 LLM 超时但文件已写完）
+            if _sandbox:
+                try:
+                    _ws = _sandbox.workspace_dir
+                    _rescue_files = []
+                    if os.path.isdir(_ws):
+                        for _dp, _dd, _ff in os.walk(_ws):
+                            for _fn in _ff:
+                                if not _fn.startswith("."):
+                                    _rescue_files.append(os.path.join(_dp, _fn))
+                    if _rescue_files:
+                        logger.info(
+                            f"Duck {self.duck_id} failed ({e}) but workspace has {len(_rescue_files)} file(s), treating as success"
+                        )
+                        _rescue_result = (
+                            f"任务在执行中因异常中断（{str(e)[:100]}），但工作区已有产出文件：\n\n"
+                            f"【工作区产出】目录: {_ws}\n"
+                            + "\n".join(f"  - {f}" for f in _rescue_files[:30])
+                        )
+                        return _rescue_result
+                except Exception:
+                    pass
             logger.warning(f"Local Duck agent run failed, attempting LLM fallback: {e}")
             # 若任务涉及文件创建，LLM 无法真正写文件，不降级
             desc = (payload.description or "").lower()
@@ -677,13 +842,19 @@ class LocalDuckWorker:
                 raise RuntimeError(f"Local Duck fallback LLM failed: {llm_err}")
         finally:
             set_duck_context(None)            # v3.8: 归档沙箱产出
+            # 归档目标：macagent_workspace/outputs/ 而非桌面，避免污染用户桌面。
+            # 文件仍保留在 workspace_dir 中，同时备份到 outputs/ 供查阅。
             if _sandbox:
                 try:
                     from services.duck_sandbox import get_duck_sandbox as _get_sb
+                    import os as _os
                     _sb = _get_sb()
                     outputs = _sb.collect_outputs(_sandbox)
                     if outputs:
-                        _sb.archive_sandbox(_sandbox)
+                        _outputs_dir = _os.path.expanduser(
+                            "~/Desktop/macagent_workspace/outputs"
+                        )
+                        _sb.archive_sandbox(_sandbox, archive_dir=_outputs_dir)
                     else:
                         _sb.cleanup_sandbox(_sandbox, force=True)
                 except Exception as _sb_err:

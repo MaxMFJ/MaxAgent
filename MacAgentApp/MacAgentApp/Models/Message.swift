@@ -352,7 +352,7 @@ struct PendingToolsResponse: Codable {
     let pending: [PendingTool]
 }
 
-// MARK: - Autonomous Mode Models
+// MARK: - Execution Models
 
 struct ExecutionLogEntry: Identifiable {
     let id = UUID()

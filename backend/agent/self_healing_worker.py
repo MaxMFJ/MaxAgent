@@ -76,7 +76,17 @@ class SelfHealingWorker:
                 self._broadcast(session_id, {"type": "self_healing_status", "status": "unavailable", "message": "自愈模块不可用"})
                 return
 
-            healer = get_self_healing_agent()
+            # 获取用户 LLM 用于智能修复
+            llm_chat = None
+            try:
+                from app_state import get_llm_client
+                client = get_llm_client()
+                if client and hasattr(client, 'chat'):
+                    llm_chat = client.chat
+            except Exception:
+                logger.debug("Could not get LLM client for self-healing")
+
+            healer = get_self_healing_agent(llm_chat=llm_chat)
             error_message = payload.get("error", "") or payload.get("message", "解析失败")
             context = payload.get("context", {})
             context["session_id"] = session_id

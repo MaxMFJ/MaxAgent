@@ -102,9 +102,19 @@ class ContextBuilder:
         except Exception:
             pass
 
-        # 桌面路径
+        # 桌面路径（Duck 沙箱模式下替换为沙箱工作区路径）
         desktop = os.path.realpath(os.path.expanduser("~/Desktop"))
-        parts.append(f"桌面路径: {desktop}")
+        try:
+            from app_state import get_duck_context as _get_dc
+            _dc = _get_dc()
+            _sandbox_dir = (_dc or {}).get("sandbox_dir")
+        except Exception:
+            _sandbox_dir = None
+        if _sandbox_dir:
+            # Duck 沙箱模式：完全隐藏桌面路径，只暴露工作区路径
+            parts.append(f"工作区路径: {_sandbox_dir}（所有输出必须保存到此路径）")
+        else:
+            parts.append(f"桌面路径: {desktop}")
 
         # 用户名
         user = os.environ.get("USER", "")
@@ -144,7 +154,8 @@ class ContextBuilder:
                 return (
                     f"【在线 Duck 分身】当前有 {len(online)} 个 Duck 可用:\n"
                     + "\n".join(duck_lines)
-                    + "\n你可以用 delegate_duck 委派子任务给它们。"
+                    + "\n你可以用 delegate_duck 委派单个子任务，或用 delegate_dag 创建多Agent协作DAG（自动群聊）。"
+                    + "\n当任务可分解为2+个有依赖关系的阶段时，优先使用 delegate_dag。"
                 )
             else:
                 return "【Duck 状态】当前没有在线 Duck，请自行完成所有子任务。"

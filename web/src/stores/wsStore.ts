@@ -14,7 +14,6 @@ interface WSState {
   reconnect: () => void;
   sendChat: (content: string, sessionId?: string) => void;
   stopGeneration: () => void;
-  sendAutonomousTask: (task: string) => void;
   sendResumeTask: (sessionId: string) => void;
   sendResumeChat: (sessionId: string) => void;
   onMessage: (type: string, fn: (msg: WSMessage) => void) => () => void;
@@ -61,10 +60,6 @@ export const useWSStore = create<WSState>((set) => ({
 
   stopGeneration() {
     wsService.sendStopGeneration();
-  },
-
-  sendAutonomousTask(task) {
-    wsService.sendAutonomousTask(task);
   },
 
   sendResumeTask(sessionId) {

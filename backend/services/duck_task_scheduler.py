@@ -163,6 +163,14 @@ class DuckTaskScheduler:
 
         if not candidates:
             logger.warning(f"No available duck for task {task.task_id}, staying PENDING")
+            # 通知用户任务正在排队等待
+            session_id = self._task_sessions.get(task.task_id)
+            if session_id:
+                type_hint = f"（类型: {duck_type.value}）" if duck_type else ""
+                await self._notify_session_duck_progress(
+                    session_id, task.task_id,
+                    f"⏳ 当前没有可用的 Duck{type_hint}，任务已排队等待。Duck 上线后会自动分配执行。"
+                )
             return  # 保持 PENDING, 等 Duck 上线后重新分配
 
         # 简单选择: 完成任务数最少的 (负载均衡)
@@ -206,6 +214,18 @@ class DuckTaskScheduler:
 
         registry = DuckRegistry.get_instance()
         await registry.set_current_task(duck_id, task.task_id, busy_reason="assigned_task")
+
+        # 向委派来源会话发送进度通知：Duck 已接手
+        session_id = self._task_sessions.get(task.task_id)
+        if session_id:
+            duck_info = await registry.get(duck_id)
+            duck_label = f"{duck_info.duck_type.value} Duck" if duck_info else duck_id
+            original_desc = task.original_description or task.description or ""
+            desc_preview = original_desc[:60]
+            await self._notify_session_duck_progress(
+                session_id, task.task_id,
+                f"🦆 {duck_label} 已接手任务：{desc_preview}...\n正在执行中，请等待结果。"
+            )
 
         payload = DuckTaskPayload(
             task_id=task.task_id,
@@ -439,8 +459,24 @@ class DuckTaskScheduler:
                 self._notify_main_agent_retry(session_id, task, failed_duck_id, error_summary)
             )
 
-        # 直接重新分配给同一 Duck（duck 保持 BUSY，不再搜索空闲 duck）
-        await self._assign_to_duck(task, failed_duck_id)
+        # 尝试选择其他可用 Duck 重试；无其他可用时回退到原 Duck
+        registry = DuckRegistry.get_instance()
+        # 获取失败 duck 的类型，用于找同类型的替代
+        failed_duck_info = await registry.get(failed_duck_id)
+        duck_type = failed_duck_info.duck_type if failed_duck_info else None
+        candidates = await registry.list_available(duck_type)
+        # 排除失败的 duck（如果有其他选择）
+        alt_candidates = [d for d in candidates if d.duck_id != failed_duck_id]
+        if alt_candidates:
+            # 选负载最轻的替代 duck
+            best = min(alt_candidates, key=lambda d: d.completed_tasks + d.failed_tasks)
+            # 释放原 duck
+            await registry.set_current_task(failed_duck_id, None)
+            logger.info(f"Auto-retry: switching from duck {failed_duck_id} to {best.duck_id}")
+            await self._assign_to_duck(task, best.duck_id)
+        else:
+            # 无替代 duck，继续使用原 duck（保持 BUSY）
+            await self._assign_to_duck(task, failed_duck_id)
 
     async def _notify_main_agent_retry(
         self,
@@ -479,19 +515,73 @@ class DuckTaskScheduler:
     @staticmethod
     def _find_likely_output_files(task: "DuckTask") -> list:
         """
-        当 output 为空（超时/异常）时，根据任务描述推断可能产出的文件并检查是否存在。
+        当 output 为空（超时/异常）时，检查 Duck 的沙箱工作区及桌面是否已有产出文件。
         避免「任务已完成但超时导致重试」时重复创建已存在的文件。
+        策略优先级：
+          1. Duck 沙箱工作区（任意文件类型，15分钟内修改）
+          2. 描述中引用路径的同目录 HTML
+          3. 桌面直接子目录 HTML（向后兼容旧行为）
         """
         import os
-        import re
         import time
         import glob as glob_module
-        desc = (task.original_description or task.description or "").lower()
+
+        candidates: list = []
+        cutoff = time.time() - 900  # 15 分钟内产出的文件
+
+        # ── 优先：扫描 Duck 沙箱工作区 ─────────────────────────────
+        # 沙箱目录命名可能含可读 label（如 "AI数据搜集_dtask_9a"），
+        # 因此通过 _metadata.json 匹配 duck_id + task_id 进行定位。
+        duck_id = task.assigned_duck_id or ""
+        task_prefix = (task.task_id or "")[:8]
+        if duck_id and task_prefix:
+            sandbox_root = os.path.expanduser("~/Desktop/macagent_workspace/ducks")
+            if os.path.isdir(sandbox_root):
+                # 遍历子目录找到匹配任务的 workspace
+                for entry in os.scandir(sandbox_root):
+                    if not entry.is_dir():
+                        continue
+                    meta_file = os.path.join(entry.path, "_metadata.json")
+                    if not os.path.exists(meta_file):
+                        # 降级：尝试旧格式目录名 {duck_id}_{task_prefix}
+                        if entry.name == f"{duck_id}_{task_prefix}":
+                            workspace = os.path.join(entry.path, "workspace")
+                        else:
+                            continue
+                    else:
+                        try:
+                            import json as _json
+                            meta = _json.loads(open(meta_file, encoding="utf-8").read())
+                            if meta.get("duck_id") != duck_id or not meta.get("task_id", "").startswith(task_prefix):
+                                continue
+                        except Exception:
+                            continue
+                        workspace = os.path.join(entry.path, "workspace")
+                    if not os.path.isdir(workspace):
+                        continue
+                    # 递归扫描所有文件，不限扩展名
+                    for dirpath, _dirs, files in os.walk(workspace):
+                        for fname in files:
+                            if fname.startswith("."):
+                                continue
+                            fpath = os.path.join(dirpath, fname)
+                            try:
+                                if os.path.isfile(fpath) and os.path.getmtime(fpath) >= cutoff:
+                                    candidates.append(fpath)
+                            except OSError:
+                                pass
+                    if candidates:
+                        seen: set = set()
+                        return [p for p in candidates if p not in seen and not seen.add(p)]
+
+        # ── 回退：从描述中提取参考路径，检查同目录下是否有 .html 产出 ─────
+        import re
+        raw_desc = task.original_description or task.description or ""
+        desc = raw_desc.lower()
+        # 仅在有文件输出类关键词时才做桌面/路径扫描
         if not desc or not any(k in desc for k in ("网页", "html", "设计", "design", "创建", "create", "保存", "save")):
             return []
-        candidates = []
-        # 从描述中提取参考路径（如设计图），检查同目录下是否有 .html 产出
-        raw_desc = task.original_description or task.description or ""
+
         ref_paths = re.findall(
             r'(/(?:Users|tmp|var|home)/[^\s"\'\\,，；；、\]\)>]+\.(?:html?|png|jpg|jpeg|md|txt))',
             raw_desc,
@@ -503,18 +593,19 @@ class DuckTaskScheduler:
                 for f in glob_module.glob(os.path.join(base_dir, "*.html")) + glob_module.glob(os.path.join(base_dir, "*.htm")):
                     if os.path.isfile(f):
                         candidates.append(f)
+
         # 检查 Desktop 下最近 15 分钟内修改的 .html
         desktop = os.path.expanduser("~/Desktop")
         if os.path.isdir(desktop):
-            cutoff = time.time() - 900
             for p in glob_module.glob(os.path.join(desktop, "*.html")) + glob_module.glob(os.path.join(desktop, "*.htm")):
                 try:
                     if os.path.isfile(p) and os.path.getmtime(p) >= cutoff:
                         candidates.append(p)
                 except OSError:
                     pass
-        seen = set()
-        return [p for p in candidates if p not in seen and not seen.add(p)]
+
+        seen2: set = set()
+        return [p for p in candidates if p not in seen2 and not seen2.add(p)]
 
     @staticmethod
     def _extract_file_paths_from_output(output: any) -> list:
@@ -547,6 +638,22 @@ class DuckTaskScheduler:
                 seen.add(p)
                 result.append(p)
         return result
+
+    async def _notify_session_duck_progress(
+        self, session_id: str, task_id: str, content: str
+    ):
+        """向委派来源会话发送 Duck 执行进度消息（展示在 Chat 中）"""
+        try:
+            from connection_manager import connection_manager
+            msg = {
+                "type": "duck_task_progress",
+                "task_id": task_id,
+                "content": content,
+                "session_id": session_id,
+            }
+            await connection_manager.broadcast_to_session(session_id, msg)
+        except Exception as e:
+            logger.debug(f"Failed to send duck progress: {e}")
 
     async def _notify_session_duck_complete(
         self, session_id: str, task: DuckTask, result: DuckResultPayload

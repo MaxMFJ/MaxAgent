@@ -1,0 +1,18 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 6099, "success": true, "ts": 1773461587.390246}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 4673, "success": true, "error": null, "ts": 1773461592.6955929}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 12213, "success": true, "ts": 1773461606.9127629}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 4279, "success": true, "error": null, "ts": 1773461611.794055}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 10903, "success": true, "ts": 1773461624.7021508}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 996, "success": true, "error": null, "ts": 1773461626.311371}
+{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 22667, "success": true, "ts": 1773461650.984183}
+{"iteration": 4, "type": "tool", "action_type": "write_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773461651.527455}
+{"iteration": 5, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 13089, "success": true, "ts": 1773461666.622261}
+{"iteration": 5, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773461667.176051}
+{"iteration": 6, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 6327, "success": false, "error": "parse_failed", "ts": 1773461679.251543}
+{"iteration": 7, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 13144, "success": true, "ts": 1773461694.402205}
+{"iteration": 7, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773461694.980182}
+{"iteration": 8, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 61458, "success": true, "ts": 1773461758.444672}
+{"iteration": 8, "type": "tool", "action_type": "write_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773461759.024817}
+{"iteration": 9, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 6903, "success": true, "ts": 1773461767.934381}
+{"iteration": 9, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773461768.5045938}
+{"iteration": 10, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 9903, "success": true, "ts": 1773461780.413716}

@@ -5,6 +5,7 @@ import { useChatStore } from '../stores/chatStore';
 import { useMonitorStore } from '../stores/monitorStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import { useToolStore } from '../stores/toolStore';
+import { useGroupChatStore } from '../stores/groupChatStore';
 import { getTools } from '../services/api';
 import type { WSMessage } from '../types';
 
@@ -432,6 +433,62 @@ export function useWSDispatcher() {
       }
     }));
 
+    /* Duck 任务自动重试通知 */
+    unsubs.push(onMessage('duck_task_retry', (msg: WSMessage) => {
+      const content = (msg.content as string) ?? '';
+      const sessionId = (msg.session_id as string) ?? '';
+      if (!content) return;
+      const store = useChatStore.getState();
+      const conv = store.conversations.find((c) => c.id === sessionId || (c as any).sessionId === sessionId)
+        ?? store.getActiveConversation();
+      if (conv) {
+        store.addMessage(conv.id, {
+          id: uuid(),
+          role: 'assistant',
+          content,
+          timestamp: Date.now(),
+          modelName: 'Duck',
+        });
+      }
+    }));
+
+    /* Duck 任务执行进度通知 */
+    unsubs.push(onMessage('duck_task_progress', (msg: WSMessage) => {
+      const content = (msg.content as string) ?? '';
+      const sessionId = (msg.session_id as string) ?? '';
+      if (!content) return;
+      const store = useChatStore.getState();
+      const conv = store.conversations.find((c) => c.id === sessionId || (c as any).sessionId === sessionId)
+        ?? store.getActiveConversation();
+      if (conv) {
+        store.addMessage(conv.id, {
+          id: uuid(),
+          role: 'assistant',
+          content,
+          timestamp: Date.now(),
+          modelName: 'Duck',
+        });
+      }
+    }));
+
+    /* 主 Agent 忙时任务自动转交 Duck */
+    unsubs.push(onMessage('auto_delegated_to_duck', (msg: WSMessage) => {
+      const message = (msg.message as string) ?? '任务已自动转交给 Duck 执行';
+      const sessionId = (msg.session_id as string) ?? '';
+      const store = useChatStore.getState();
+      const conv = store.conversations.find((c) => c.id === sessionId || (c as any).sessionId === sessionId)
+        ?? store.getActiveConversation();
+      if (conv) {
+        store.addMessage(conv.id, {
+          id: uuid(),
+          role: 'assistant',
+          content: `🦆 ${message}`,
+          timestamp: Date.now(),
+          modelName: 'System',
+        });
+      }
+    }));
+
     /* 系统通知 */
     unsubs.push(onMessage('system_notification', (msg: WSMessage) => {
       const notification = msg.notification as any;
@@ -440,6 +497,88 @@ export function useWSDispatcher() {
           notification.level ?? 'info',
           notification.content ?? notification.title ?? ''
         );
+      }
+    }));
+
+    /* 监控事件（Duck / 主 Agent 的实时执行步骤） */
+    unsubs.push(onMessage('monitor_event', (msg: WSMessage) => {
+      const event = (msg as any).event as Record<string, any> | undefined;
+      if (!event) return;
+      const eventType = event.type as string;
+      const workerLabel = (event._worker_label as string) ?? '';
+      const monitorStore = useMonitorStore.getState();
+
+      if (eventType === 'task_start') {
+        monitorStore.addStep({
+          id: `me_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          action: `[${workerLabel}] 任务开始`,
+          target: (event.task as string)?.slice(0, 80),
+          status: 'executing',
+          startTime: Date.now(),
+        });
+      } else if (eventType === 'tool_call') {
+        const stepId = (event.call_id as string) ?? `me_tc_${Date.now()}`;
+        monitorStore.addStep({
+          id: stepId,
+          action: `[${workerLabel}] ${event.tool_name ?? event.action_type ?? 'tool'}`,
+          target: (event.description as string)?.slice(0, 80),
+          status: 'executing',
+          startTime: Date.now(),
+        });
+      } else if (eventType === 'tool_result') {
+        const stepId = (event.call_id as string) ?? '';
+        if (stepId) {
+          monitorStore.updateStep(stepId, {
+            status: event.success === false ? 'failed' : 'success',
+            endTime: Date.now(),
+            result: (event.output as string)?.slice(0, 200),
+          });
+        }
+      } else if (eventType === 'task_complete') {
+        monitorStore.addStep({
+          id: `me_done_${Date.now()}`,
+          action: `[${workerLabel}] 任务完成`,
+          status: (event.success === false) ? 'failed' : 'success',
+          startTime: Date.now(),
+          endTime: Date.now(),
+          result: (event.summary as string)?.slice(0, 200),
+        });
+      } else if (eventType === 'chunk') {
+        const content = (event.content as string) ?? '';
+        if (content) {
+          monitorStore.appendNeuralStream(content);
+        }
+      }
+    }));
+
+    /* ============= 群聊（多 Agent 协作） ============= */
+
+    unsubs.push(onMessage('group_chat_created', (msg: WSMessage) => {
+      const group = (msg as any).group;
+      if (group) {
+        useGroupChatStore.getState().onGroupCreated(group);
+        useNotificationStore.getState().addNotification({
+          type: 'info',
+          message: `🦆 群聊已创建: ${group.title}`,
+          category: 'task',
+        });
+      }
+    }));
+
+    unsubs.push(onMessage('group_message', (msg: WSMessage) => {
+      const groupId = (msg as any).group_id as string;
+      const message = (msg as any).message;
+      if (groupId && message) {
+        useGroupChatStore.getState().onGroupMessage(groupId, message);
+      }
+    }));
+
+    unsubs.push(onMessage('group_status_update', (msg: WSMessage) => {
+      const groupId = (msg as any).group_id as string;
+      const status = (msg as any).status;
+      const taskSummary = (msg as any).task_summary ?? {};
+      if (groupId && status) {
+        useGroupChatStore.getState().onGroupStatusUpdate(groupId, status, taskSummary);
       }
     }));
 

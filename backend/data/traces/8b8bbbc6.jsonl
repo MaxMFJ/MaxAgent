@@ -1,0 +1,9 @@
+{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 4149, "success": true, "ts": 1773470168.265331}
+{"iteration": 1, "type": "tool", "action_type": "run_shell", "latency_ms": 4, "success": false, "error": "/bin/sh: pip: command not found", "ts": 1773470168.619085}
+{"iteration": 2, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 4543, "success": true, "ts": 1773470175.167351}
+{"iteration": 2, "type": "tool", "action_type": "run_shell", "latency_ms": 159, "success": true, "error": null, "ts": 1773470175.627929}
+{"iteration": 3, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 4903, "success": true, "ts": 1773470182.534577}
+{"iteration": 3, "type": "tool", "action_type": "run_shell", "latency_ms": 347, "success": false, "error": "error: externally-managed-environment\n\n× This environment is externally managed\n╰─> To install Python packages system-wide, try brew install\n    xyz, where xyz is the package you are trying to\n    ins", "ts": 1773470183.180126}
+{"iteration": 4, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 5597, "success": true, "ts": 1773470190.805634}
+{"iteration": 4, "type": "tool", "action_type": "run_shell", "latency_ms": 15418, "success": true, "error": null, "ts": 1773470206.5530062}
+{"iteration": 5, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 7460, "success": true, "ts": 1773470216.0362}

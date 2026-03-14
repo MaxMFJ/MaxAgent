@@ -256,7 +256,11 @@ class ReflectResult:
                 text = text[:-3]
             text = text.strip()
 
-            data = json.loads(text)
+            # Handle case where text might already be a dict
+            if isinstance(text, dict):
+                data = text
+            else:
+                data = json.loads(text)
 
             return cls(
                 efficiency_score=data.get("efficiency_score", 5),
@@ -440,7 +444,11 @@ class ReflectEngine:
             if text.endswith("```"):
                 text = text[:-3]
             
-            data = json.loads(text.strip())
+            # Handle case where text might already be a dict
+            if isinstance(text, dict):
+                data = text
+            else:
+                data = json.loads(text.strip())
             strategies = []
             
             for i, s in enumerate(data.get("strategies", [])):
@@ -515,7 +523,12 @@ class ReflectEngine:
             if text.endswith("```"):
                 text = text[:-3]
             
-            return json.loads(text.strip())
+            # Handle case where text might already be a dict
+            text_to_parse = text.strip()
+            if isinstance(text_to_parse, dict):
+                return text_to_parse
+            else:
+                return json.loads(text_to_parse)
             
         except Exception as e:
             logger.error(f"Pattern analysis error: {e}")

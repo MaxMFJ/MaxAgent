@@ -67,6 +67,11 @@ class AgentViewModel: ObservableObject {
     /// Chat 模式下 LLM 请求计数，用于生成唯一 actionId（避免第二次消息覆盖第一次）
     private var chatLlmRequestCounter: Int = 0
 
+    // MARK: - Group Chat (多 Agent 协作群聊)
+    
+    @Published var groupChats: [GroupChat] = []
+    @Published var activeGroupChat: GroupChat?
+
     /// 转发 monitor_event 到 MonitoringViewModel（多任务分桶）
     var onMonitorEventToMonitor: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
 
@@ -330,7 +335,7 @@ class AgentViewModel: ObservableObject {
                 let localSessionId = conversation.id.uuidString
                 await self.backendService.syncSessionId(localSessionId)
                 try? await Task.sleep(nanoseconds: 300_000_000)
-                await self.resumeAutonomousTask(sessionId: localSessionId, taskId: taskId)
+                await self.resumeChatStream(sessionId: localSessionId)
             }
         }
         
@@ -363,6 +368,34 @@ class AgentViewModel: ObservableObject {
             guard let self = self else { return }
             Task { @MainActor in
                 self.handleDuckTaskComplete(content: content, success: success, taskId: taskId, sessionId: sessionId)
+            }
+        }
+
+        // MARK: Group Chat callbacks
+        backendService.onGroupChatCreated = { [weak self] group in
+            guard let self = self else { return }
+            self.groupChats.insert(group, at: 0)
+            self.activeGroupChat = group
+        }
+        backendService.onGroupMessage = { [weak self] groupId, message in
+            guard let self = self else { return }
+            if var g = self.groupChats.first(where: { $0.groupId == groupId }) {
+                g.addMessage(message)
+                if let idx = self.groupChats.firstIndex(where: { $0.groupId == groupId }) {
+                    self.groupChats[idx] = g
+                }
+                if self.activeGroupChat?.groupId == groupId {
+                    self.activeGroupChat = g
+                }
+            }
+        }
+        backendService.onGroupStatusUpdate = { [weak self] groupId, status, taskSummary in
+            guard let self = self else { return }
+            if let idx = self.groupChats.firstIndex(where: { $0.groupId == groupId }) {
+                self.groupChats[idx].updateStatus(status, summary: taskSummary)
+                if self.activeGroupChat?.groupId == groupId {
+                    self.activeGroupChat = self.groupChats[idx]
+                }
             }
         }
     }
@@ -711,6 +744,7 @@ class AgentViewModel: ObservableObject {
     
     func selectConversation(_ conversation: Conversation) {
         Task { @MainActor in
+            activeGroupChat = nil
             currentConversation = conversation
         }
     }
@@ -891,8 +925,104 @@ class AgentViewModel: ObservableObject {
                     fullContent += "\n📷 图片: \(path)\n"
                     updateAssistantMessage(content: fullContent, isStreaming: true, attachments: [attachment])
                     
-                case .taskStart, .modelSelected, .actionPlan, .actionExecuting, .actionResult, .reflectStart, .reflectResult, .taskComplete:
-                    break
+                case .taskStart(let taskId, let taskDesc):
+                    currentTaskId = taskId
+                    taskProgress = TaskProgress(
+                        id: taskId,
+                        taskDescription: taskDesc,
+                        status: .running,
+                        currentIteration: 0,
+                        totalActions: 0,
+                        successfulActions: 0,
+                        failedActions: 0,
+                        startTime: Date()
+                    )
+                    fullContent += "🚀 任务开始执行...\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .modelSelected(let modelType, let reason, let taskType, let complexity):
+                    selectedModelType = modelType
+                    selectedModelReason = reason
+                    taskAnalysisType = taskType
+                    taskComplexity = complexity
+                    let modelIcon = modelType == "local" ? "🏠" : "☁️"
+                    let modelName = modelType == "local" ? "本地模型" : "远程模型"
+                    fullContent += "\(modelIcon) 选择模型: \(modelName)\n📊 任务类型: \(taskType) (复杂度: \(complexity)/10)\n💡 原因: \(reason)\n\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .actionPlan(let action, let iteration):
+                    currentIteration = iteration
+                    let actionType = action["action_type"] as? String ?? "unknown"
+                    let reasoning = action["reasoning"] as? String ?? ""
+                    let actionId = action["action_id"] as? String ?? UUID().uuidString
+                    let params = action["params"] as? [String: Any] ?? [:]
+                    let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
+                    let logEntry = ActionLogEntry(actionId: actionId, actionType: actionType, reasoning: reasoning, status: .pending, output: nil, error: nil, timestamp: Date(), iteration: iteration, paramsSummary: paramsSummary)
+                    actionLogs.append(logEntry)
+                    if actionType == "call_tool" {
+                        let toolName = (action["params"] as? [String: Any])?["tool_name"] as? String ?? "unknown"
+                        let args = (action["params"] as? [String: Any])?["args"] as? [String: Any] ?? [:]
+                        let toolCall = ToolCall(id: actionId, name: toolName, arguments: args.mapValues { AnyCodable($0) }, result: nil)
+                        recentToolCalls.insert(toolCall, at: 0)
+                        if recentToolCalls.count > 10 { recentToolCalls.removeLast() }
+                    }
+                    fullContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .actionExecuting(let actionId, let actionType):
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        let e = actionLogs[index]
+                        actionLogs[index] = ActionLogEntry(actionId: actionId, actionType: e.actionType, reasoning: e.reasoning, status: .executing, output: nil, error: nil, timestamp: e.timestamp, iteration: e.iteration, paramsSummary: e.paramsSummary)
+                    }
+                    fullContent += "   ⏳ 执行中: \(actionType)...\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .actionResult(let actionId, let success, let output, let error):
+                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
+                        let e = actionLogs[index]
+                        actionLogs[index] = ActionLogEntry(actionId: actionId, actionType: e.actionType, reasoning: e.reasoning, status: success ? .success : .failed, output: output, error: error, timestamp: e.timestamp, iteration: e.iteration, paramsSummary: e.paramsSummary)
+                    }
+                    if success {
+                        let outputPreview = formatActionOutput(output)
+                        fullContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ":\n   \(outputPreview)")\n"
+                        var screenshotAttachment: MessageAttachment?
+                        if let out = output?.data(using: .utf8),
+                           let obj = try? JSONSerialization.jsonObject(with: out) as? [String: Any],
+                           let path = obj["screenshot_path"] as? String ?? obj["path"] as? String,
+                           !path.isEmpty {
+                            screenshotAttachment = MessageAttachment.fromLocalPath(path)
+                        }
+                        if let att = screenshotAttachment {
+                            fullContent += "\n📷 截图已生成\n"
+                            updateAssistantMessage(content: fullContent, isStreaming: true, attachments: [att])
+                        } else {
+                            updateAssistantMessage(content: fullContent, isStreaming: true)
+                        }
+                    } else {
+                        fullContent += "   ❌ 失败: \(error ?? "未知错误")\n"
+                        updateAssistantMessage(content: fullContent, isStreaming: true)
+                    }
+                    taskProgress?.totalActions = (taskProgress?.totalActions ?? 0) + 1
+                    if success { taskProgress?.successfulActions = (taskProgress?.successfulActions ?? 0) + 1 }
+                    else { taskProgress?.failedActions = (taskProgress?.failedActions ?? 0) + 1 }
+                    
+                case .reflectStart:
+                    fullContent += "\n🔍 正在分析执行结果...\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .reflectResult(let reflection):
+                    fullContent += "💡 反思结果:\n\(reflection)\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .taskComplete(_, let success, let summary, let totalActions):
+                    taskProgress?.status = success ? .completed : .failed
+                    taskProgress?.endTime = Date()
+                    taskProgress?.summary = summary
+                    let statusIcon = success ? "✅" : "⚠️"
+                    fullContent += "\n\(statusIcon) \(success ? "任务完成" : "任务未完成")\n"
+                    fullContent += "📊 统计: \(totalActions) 个动作\n"
+                    if !summary.isEmpty { fullContent += "📝 总结: \(summary)\n" }
+                    updateAssistantMessage(content: fullContent, isStreaming: false)
 
                 case .llmRequestStart(let provider, let model, let iteration):
                     let llmId = "llm_chat_\(chatLlmRequestCounter)"
@@ -942,9 +1072,22 @@ class AgentViewModel: ObservableObject {
                     // 仅用于 resumeChatStream，此处忽略
                     break
                     
-                case .phaseVerify, .hitlRequest:
-                    // chat 模式不处理 v3.4 自主任务事件
-                    break
+                case .phaseVerify(let iteration, let phase, let note):
+                    let phaseIcon: String
+                    switch phase {
+                    case "gather": phaseIcon = "🔍"
+                    case "act": phaseIcon = "⚡"
+                    case "verify": phaseIcon = "✔️"
+                    default: phaseIcon = "🔄"
+                    }
+                    fullContent += "\(phaseIcon) [Verify #\(iteration)] \(note)\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
+                    
+                case .hitlRequest(let actionId, let actionType, let description, let riskLevel):
+                    let request = HitlRequest(actionId: actionId, actionType: actionType, description: description, riskLevel: riskLevel)
+                    pendingHitlRequests.append(request)
+                    fullContent += "\n⚠️ [等待审批] \(actionType): \(description)\n"
+                    updateAssistantMessage(content: fullContent, isStreaming: true)
                 }
             }
             
@@ -1085,384 +1228,6 @@ class AgentViewModel: ObservableObject {
         updateCurrentConversation(conversation, shouldSave: shouldSave)
     }
     
-    // MARK: - Autonomous Execution
-    
-    func sendAutonomousTask() {
-        guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        guard var conversation = currentConversation else { return }
-        
-        let userMessage = Message(role: .user, content: "🤖 [自主任务] \(inputText)")
-        conversation.messages.append(userMessage)
-        
-        let assistantMessage = Message(role: .assistant, content: "正在启动自主执行...", isStreaming: true)
-        conversation.messages.append(assistantMessage)
-        
-        let task = inputText
-        let filePaths = attachedFilePaths
-        inputText = ""
-        attachedFilePaths = []
-        
-        updateCurrentConversation(conversation)
-        isLoading = true
-        shouldScrollToBottom = true
-        
-        actionLogs = []
-        currentIteration = 0
-        
-        let sessionId = conversation.id.uuidString
-        
-        currentSendTask = Task {
-            defer {
-                Task { @MainActor in
-                    isLoading = false
-                    currentSendTask = nil
-                }
-            }
-            await executeAutonomousTask(task, sessionId: sessionId, filePaths: filePaths)
-        }
-    }
-    
-    private func executeAutonomousTask(_ task: String, sessionId: String, filePaths: [String] = []) async {
-        var statusContent = ""
-        var completedActions = 0
-        var failedActions = 0
-        
-        // Reset model selection state
-        selectedModelType = nil
-        selectedModelReason = nil
-        taskAnalysisType = nil
-        taskComplexity = 0
-        executionLogs = []
-        
-        var retryCount = 0
-        retryLoop: while true {
-            do {
-                for try await chunk in backendService.sendAutonomousTask(
-                    task,
-                    sessionId: sessionId,
-                    preferredTier: preferredModelTier == "auto" ? nil : preferredModelTier,
-                    filePaths: filePaths
-                ) {
-                    switch chunk {
-                case .modelSelected(let modelType, let reason, let taskType, let complexity):
-                    selectedModelType = modelType
-                    selectedModelReason = reason
-                    taskAnalysisType = taskType
-                    taskComplexity = complexity
-                    
-                    let modelIcon = modelType == "local" ? "🏠" : "☁️"
-                    let modelName = modelType == "local" ? "本地模型" : "远程模型"
-                    statusContent = "\(modelIcon) 选择模型: \(modelName)\n"
-                    statusContent += "📊 任务类型: \(taskType) (复杂度: \(complexity)/10)\n"
-                    statusContent += "💡 原因: \(reason)\n\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .taskStart(let taskId, _):
-                    currentTaskId = taskId
-                    taskProgress = TaskProgress(
-                        id: taskId,
-                        taskDescription: task,
-                        status: .running,
-                        currentIteration: 0,
-                        totalActions: 0,
-                        successfulActions: 0,
-                        failedActions: 0,
-                        startTime: Date()
-                    )
-                    statusContent += "🚀 任务开始执行...\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-
-                case .llmRequestStart(let provider, let model, let iteration):
-                    isStreamingLLM = true
-                    let llmId = "llm_\(iteration)"
-                    let logEntry = ActionLogEntry(
-                        actionId: llmId,
-                        actionType: "llm_request",
-                        reasoning: "请求 \(provider)/\(model)",
-                        status: .executing,
-                        output: nil,
-                        error: nil,
-                        timestamp: Date(),
-                        iteration: iteration
-                    )
-                    actionLogs = actionLogs + [logEntry]
-                    statusContent += "\n☁️ LLM 请求中: \(provider)/\(model)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-
-                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
-                    isStreamingLLM = false
-                    let llmId = "llm_\(iteration)"
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
-                        let pt = usage["prompt_tokens"] as? Int ?? 0
-                        let ct = usage["completion_tokens"] as? Int ?? 0
-                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
-                        if let err = error, !err.isEmpty {
-                            out += " | 错误: \(err)"
-                        } else if let preview = responsePreview, !preview.isEmpty {
-                            out += "\n预览: \(preview)"
-                        }
-                        let updated = ActionLogEntry(
-                            actionId: llmId,
-                            actionType: "llm_request",
-                            reasoning: actionLogs[index].reasoning,
-                            status: error != nil ? .failed : .success,
-                            output: out,
-                            error: error,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: iteration
-                        )
-                        var newLogs = actionLogs
-                        newLogs[index] = updated
-                        actionLogs = newLogs
-                    }
-                    let icon = error != nil ? "❌" : "✅"
-                    statusContent += "   \(icon) LLM 返回: \(latencyMs)ms, \(usage["total_tokens"] as? Int ?? 0) tokens\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .actionPlan(let action, let iteration):
-                    currentIteration = iteration
-                    let actionType = action["action_type"] as? String ?? "unknown"
-                    let reasoning = action["reasoning"] as? String ?? ""
-                    let actionId = action["action_id"] as? String ?? UUID().uuidString
-                    let params = action["params"] as? [String: Any] ?? [:]
-                    let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
-
-                    let logEntry = ActionLogEntry(
-                        actionId: actionId,
-                        actionType: actionType,
-                        reasoning: reasoning,
-                        status: .pending,
-                        output: nil,
-                        error: nil,
-                        timestamp: Date(),
-                        iteration: iteration,
-                        paramsSummary: paramsSummary
-                    )
-                    actionLogs.append(logEntry)
-
-                    // 工具历史：call_tool 映射到 recentToolCalls
-                    if actionType == "call_tool" {
-                        let params = action["params"] as? [String: Any] ?? [:]
-                        let toolName = params["tool_name"] as? String ?? "unknown"
-                        let args = params["args"] as? [String: Any] ?? [:]
-                        let argsCodable = args.mapValues { AnyCodable($0) }
-                        let toolCall = ToolCall(id: actionId, name: toolName, arguments: argsCodable, result: nil)
-                        recentToolCalls.insert(toolCall, at: 0)
-                        if recentToolCalls.count > 10 { recentToolCalls.removeLast() }
-                    }
-                    
-                    statusContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .actionExecuting(let actionId, let actionType):
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        let e = actionLogs[index]
-                        actionLogs[index] = ActionLogEntry(
-                            actionId: actionId,
-                            actionType: e.actionType,
-                            reasoning: e.reasoning,
-                            status: .executing,
-                            output: nil,
-                            error: nil,
-                            timestamp: e.timestamp,
-                            iteration: e.iteration,
-                            paramsSummary: e.paramsSummary
-                        )
-                    }
-                    statusContent += "   ⏳ 执行中: \(actionType)...\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .actionResult(let actionId, let success, let output, let error):
-                    var actionType = "unknown"
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        let e = actionLogs[index]
-                        actionType = e.actionType
-                        actionLogs[index] = ActionLogEntry(
-                            actionId: actionId,
-                            actionType: actionType,
-                            reasoning: e.reasoning,
-                            status: success ? .success : .failed,
-                            output: output,
-                            error: error,
-                            timestamp: e.timestamp,
-                            iteration: e.iteration,
-                            paramsSummary: e.paramsSummary
-                        )
-                    }
-                    // 工具历史：更新 recentToolCalls 的 result
-                    if let tcIndex = recentToolCalls.firstIndex(where: { $0.id == actionId }) {
-                        let outStr = output ?? error ?? ""
-                        recentToolCalls[tcIndex] = ToolCall(
-                            id: recentToolCalls[tcIndex].id,
-                            name: recentToolCalls[tcIndex].name,
-                            arguments: recentToolCalls[tcIndex].arguments,
-                            result: ToolResult(success: success, output: outStr)
-                        )
-                        // 工具日志：call_tool 结果写入 executionLogs
-                        let toolName = recentToolCalls[tcIndex].name
-                        let level = success ? "info" : "error"
-                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
-                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
-                    } else if actionType != "llm_request" {
-                        // 非 call_tool 类型动作（run_shell、read_file、write_file 等）也写入 executionLogs
-                        let outStr = output ?? error ?? ""
-                        let level = success ? "info" : "error"
-                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
-                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: actionType))
-                    }
-                    
-                    if success {
-                        completedActions += 1
-                        let outputPreview = formatActionOutput(output)
-                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ":\n   \(outputPreview)")\n"
-                        // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
-                        var screenshotAttachment: MessageAttachment?
-                        if let out = output?.data(using: .utf8),
-                           let obj = try? JSONSerialization.jsonObject(with: out) as? [String: Any],
-                           let path = obj["screenshot_path"] as? String ?? obj["path"] as? String,
-                           !path.isEmpty {
-                            screenshotAttachment = MessageAttachment.fromLocalPath(path)
-                        }
-                        if let att = screenshotAttachment {
-                            statusContent += "\n📷 截图已生成\n"
-                            updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [att])
-                        } else {
-                            updateAssistantMessage(content: statusContent, isStreaming: true)
-                        }
-                    } else {
-                        failedActions += 1
-                        statusContent += "   ❌ 失败: \(error ?? "未知错误")\n"
-                        updateAssistantMessage(content: statusContent, isStreaming: true)
-                    }
-                    
-                    taskProgress?.totalActions = completedActions + failedActions
-                    taskProgress?.successfulActions = completedActions
-                    taskProgress?.failedActions = failedActions
-                    
-                case .reflectStart:
-                    statusContent += "\n🔍 正在分析执行结果...\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .reflectResult(let reflection):
-                    statusContent += "💡 反思结果:\n\(reflection)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .taskComplete(_, let success, let summary, let totalActions):
-                    taskProgress?.status = success ? .completed : .failed
-                    taskProgress?.endTime = Date()
-                    taskProgress?.summary = summary
-                    
-                    let statusIcon = success ? "✅" : "⚠️"
-                    statusContent += "\n\(statusIcon) \(success ? "任务完成" : "任务未完成")\n"
-                    statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
-                    let displaySummary = summary.isEmpty ? (success ? "已完成" : "请查看上方失败步骤的错误信息") : summary
-                    statusContent += "📝 总结: \(displaySummary)\n"
-                    // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    
-                case .retry(let message):
-                    statusContent += "\n⏳ \(message)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .content(let text):
-                    statusContent += text
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .done(let model, let tokenUsage):
-                    updateAssistantMessage(content: statusContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
-                    
-                case .error(let message):
-                    statusContent += "\n❌ 错误: \(message)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    errorMessage = message
-                    
-                case .imageData(let base64, let mimeType, let path):
-                    // 合并附件和内容更新为一次调用，避免竞态条件
-                    let attachment = MessageAttachment.fromBase64(base64, mimeType: mimeType)
-                    if let imagePath = path {
-                        statusContent += "\n📷 截图已生成: \(imagePath)\n"
-                    }
-                    updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [attachment])
-                    
-                case .localImage(let path):
-                    let localAttachment = MessageAttachment.fromLocalPath(path)
-                    statusContent += "\n📷 图片: \(path)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [localAttachment])
-                    
-                case .toolCall(let name, _):
-                    statusContent += "🔧 调用工具: \(name)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .toolResult(let name, let success, let result):
-                    let icon = success ? "✅" : "❌"
-                    statusContent += "\(icon) \(name): \(result)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .executionLog(let toolName, _, let level, let message):
-                    executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: message, toolName: toolName))
-                    
-                case .stopped:
-                    statusContent += "\n\n[已终止]"
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    
-                case .phaseVerify(let iteration, let phase, let note):
-                    // v3.4: 三阶段验证结果气泡
-                    let phaseIcon: String
-                    switch phase {
-                    case "gather": phaseIcon = "🔍"
-                    case "act": phaseIcon = "⚡"
-                    case "verify": phaseIcon = "✔️"
-                    default: phaseIcon = "🔄"
-                    }
-                    statusContent += "\(phaseIcon) [Verify #\(iteration)] \(note)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .hitlRequest(let actionId, let actionType, let description, let riskLevel):
-                    // v3.4: HITL 人工审批请求 - 将请求存入 ViewModel，触发弹窗
-                    let request = HitlRequest(
-                        actionId: actionId,
-                        actionType: actionType,
-                        description: description,
-                        riskLevel: riskLevel
-                    )
-                    pendingHitlRequests.append(request)
-                    statusContent += "\n⚠️ [等待审批] \(actionType): \(description)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-
-                case .chatResumeResult:
-                    // 仅用于 resumeChatStream，此处忽略
-                    break
-                }
-        
-                }
-                break retryLoop
-            } catch is CancellationError {
-                statusContent += "\n\n[已终止]"
-                updateAssistantMessage(content: statusContent, isStreaming: false)
-                return
-            } catch {
-                if retryCount < 1 && isConnectionError(error) {
-                    retryCount += 1
-                    updateAssistantMessage(content: statusContent + "\n\n连接断开，正在重连...", isStreaming: true)
-                    await backendService.reconnect()
-                    if isConnected {
-                        // 重连后同步本地 session_id 到后端
-                        await backendService.syncSessionId(sessionId)
-                        try? await Task.sleep(nanoseconds: 300_000_000)
-                        updateAssistantMessage(content: statusContent + "\n已重连，正在重新执行...", isStreaming: true)
-                        continue retryLoop
-                    }
-                }
-                errorMessage = "自主执行失败: \(error.localizedDescription)"
-                updateAssistantMessage(
-                    content: statusContent + "\n❌ 执行失败: \(error.localizedDescription)",
-                    isStreaming: false
-                )
-                return
-            }
-        }
-    }
-    
     func clearActionLogs() {
         actionLogs = []
         executionLogs = []
@@ -1591,282 +1356,6 @@ class AgentViewModel: ObservableObject {
         }
     }
 
-    
-    // MARK: - Task Resume (断线重连恢复)
-    
-    private func resumeAutonomousTask(sessionId: String, taskId: String?) async {
-        guard var conversation = currentConversation else { return }
-        
-        // 添加一条恢复消息
-        let resumeMessage = Message(role: .assistant, content: "🔄 检测到任务正在运行，正在恢复...\n任务ID: \(taskId ?? "unknown")", isStreaming: true)
-        conversation.messages.append(resumeMessage)
-        updateCurrentConversation(conversation)
-        
-        isLoading = true
-        
-        var statusContent = "🔄 正在恢复任务...\n"
-        var completedActions = 0
-        var failedActions = 0
-        var retryCount = 0
-        retryLoop: while true {
-            do {
-                for try await chunk in backendService.resumeTask(sessionId: sessionId) {
-                switch chunk {
-                case .modelSelected(let modelType, let reason, let taskType, let complexity):
-                    selectedModelType = modelType
-                    selectedModelReason = reason
-                    taskAnalysisType = taskType
-                    taskComplexity = complexity
-                    
-                    let modelIcon = modelType == "local" ? "🏠" : "☁️"
-                    let modelName = modelType == "local" ? "本地模型" : "远程模型"
-                    statusContent += "\(modelIcon) 模型: \(modelName) | 任务类型: \(taskType) (复杂度: \(complexity)/10)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .taskStart(let recoveredTaskId, let taskDesc):
-                    currentTaskId = recoveredTaskId
-                    taskProgress = TaskProgress(
-                        id: recoveredTaskId,
-                        taskDescription: taskDesc,
-                        status: .running,
-                        currentIteration: 0,
-                        totalActions: 0,
-                        successfulActions: 0,
-                        failedActions: 0,
-                        startTime: Date()
-                    )
-                    statusContent += "✅ 任务已恢复: \(taskDesc)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-
-                case .llmRequestStart(let provider, let model, let iteration):
-                    isStreamingLLM = true
-                    let llmId = "llm_\(iteration)"
-                    let logEntry = ActionLogEntry(
-                        actionId: llmId,
-                        actionType: "llm_request",
-                        reasoning: "请求 \(provider)/\(model)",
-                        status: .executing,
-                        output: nil,
-                        error: nil,
-                        timestamp: Date(),
-                        iteration: iteration
-                    )
-                    actionLogs = actionLogs + [logEntry]
-
-                case .llmRequestEnd(_, _, let iteration, let latencyMs, let usage, let responsePreview, let error):
-                    isStreamingLLM = false
-                    let llmId = "llm_\(iteration)"
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == llmId }) {
-                        let pt = usage["prompt_tokens"] as? Int ?? 0
-                        let ct = usage["completion_tokens"] as? Int ?? 0
-                        var out = "延迟: \(latencyMs)ms | 输入: \(pt) tokens | 输出: \(ct) tokens"
-                        if let err = error, !err.isEmpty {
-                            out += " | 错误: \(err)"
-                        } else if let preview = responsePreview, !preview.isEmpty {
-                            out += "\n预览: \(preview)"
-                        }
-                        let updated = ActionLogEntry(
-                            actionId: llmId,
-                            actionType: "llm_request",
-                            reasoning: actionLogs[index].reasoning,
-                            status: error != nil ? .failed : .success,
-                            output: out,
-                            error: error,
-                            timestamp: actionLogs[index].timestamp,
-                            iteration: iteration
-                        )
-                        var newLogs = actionLogs
-                        newLogs[index] = updated
-                        actionLogs = newLogs
-                    }
-                    
-                case .actionPlan(let action, let iteration):
-                    currentIteration = iteration
-                    let actionType = action["action_type"] as? String ?? "unknown"
-                    let reasoning = action["reasoning"] as? String ?? ""
-                    let actionId = action["action_id"] as? String ?? UUID().uuidString
-                    let params = action["params"] as? [String: Any] ?? [:]
-                    let paramsSummary = Self.buildParamsSummary(actionType: actionType, params: params)
-                    
-                    let logEntry = ActionLogEntry(
-                        actionId: actionId,
-                        actionType: actionType,
-                        reasoning: reasoning,
-                        status: .pending,
-                        output: nil,
-                        error: nil,
-                        timestamp: Date(),
-                        iteration: iteration,
-                        paramsSummary: paramsSummary
-                    )
-                    actionLogs = actionLogs + [logEntry]
-                    
-                    // 工具历史：call_tool 映射到 recentToolCalls
-                    if actionType == "call_tool" {
-                        let params = action["params"] as? [String: Any] ?? [:]
-                        let toolName = params["tool_name"] as? String ?? "unknown"
-                        let args = params["args"] as? [String: Any] ?? [:]
-                        let argsCodable = args.mapValues { AnyCodable($0) }
-                        let toolCall = ToolCall(id: actionId, name: toolName, arguments: argsCodable, result: nil)
-                        recentToolCalls.insert(toolCall, at: 0)
-                        if recentToolCalls.count > 10 { recentToolCalls.removeLast() }
-                    }
-                    
-                    statusContent += "\n📋 步骤 \(iteration): \(actionType)\n   → \(reasoning)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .actionExecuting(let actionId, let actionType):
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        let e = actionLogs[index]
-                        actionLogs[index] = ActionLogEntry(
-                            actionId: actionId,
-                            actionType: e.actionType,
-                            reasoning: e.reasoning,
-                            status: .executing,
-                            output: nil,
-                            error: nil,
-                            timestamp: e.timestamp,
-                            iteration: e.iteration,
-                            paramsSummary: e.paramsSummary
-                        )
-                    }
-                    statusContent += "   ⏳ 执行中: \(actionType)...\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .actionResult(let actionId, let success, let output, let error):
-                    var actionType = "unknown"
-                    if let index = actionLogs.firstIndex(where: { $0.actionId == actionId }) {
-                        let e = actionLogs[index]
-                        actionType = e.actionType
-                        actionLogs[index] = ActionLogEntry(
-                            actionId: actionId,
-                            actionType: actionType,
-                            reasoning: e.reasoning,
-                            status: success ? .success : .failed,
-                            output: output,
-                            error: error,
-                            timestamp: e.timestamp,
-                            iteration: e.iteration,
-                            paramsSummary: e.paramsSummary
-                        )
-                    }
-                    // 工具历史：更新 recentToolCalls 的 result
-                    if let tcIndex = recentToolCalls.firstIndex(where: { $0.id == actionId }) {
-                        let outStr = output ?? error ?? ""
-                        recentToolCalls[tcIndex] = ToolCall(
-                            id: recentToolCalls[tcIndex].id,
-                            name: recentToolCalls[tcIndex].name,
-                            arguments: recentToolCalls[tcIndex].arguments,
-                            result: ToolResult(success: success, output: outStr)
-                        )
-                        // 工具日志：call_tool 结果写入 executionLogs
-                        let toolName = recentToolCalls[tcIndex].name
-                        let level = success ? "info" : "error"
-                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
-                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: toolName))
-                    } else if actionType != "llm_request" {
-                        // 非 call_tool 类型动作（run_shell、read_file、write_file 等）也写入 executionLogs
-                        let outStr = output ?? error ?? ""
-                        let level = success ? "info" : "error"
-                        let msg = success ? (outStr.isEmpty ? "成功" : String(outStr.prefix(500))) : (error ?? "失败")
-                        executionLogs.append(ExecutionLogEntry(timestamp: Date(), level: level, message: msg, toolName: actionType))
-                    }
-                    
-                    if success {
-                        completedActions += 1
-                        let outputPreview = formatActionOutput(output)
-                        statusContent += "   ✅ 成功\(outputPreview.isEmpty ? "" : ":\n   \(outputPreview)")\n"
-                        // 若 output 为截图结果 JSON，解析 screenshot_path 并在聊天中展示图片
-                        var screenshotAttachment: MessageAttachment?
-                        if let out = output?.data(using: .utf8),
-                           let obj = try? JSONSerialization.jsonObject(with: out) as? [String: Any],
-                           let path = obj["screenshot_path"] as? String ?? obj["path"] as? String,
-                           !path.isEmpty {
-                            screenshotAttachment = MessageAttachment.fromLocalPath(path)
-                        }
-                        if let att = screenshotAttachment {
-                            statusContent += "\n📷 截图已生成\n"
-                            updateAssistantMessage(content: statusContent, isStreaming: true, attachments: [att])
-                        } else {
-                            updateAssistantMessage(content: statusContent, isStreaming: true)
-                        }
-                    } else {
-                        failedActions += 1
-                        statusContent += "   ❌ 失败: \(error ?? "未知错误")\n"
-                        updateAssistantMessage(content: statusContent, isStreaming: true)
-                    }
-                    
-                    taskProgress?.totalActions = completedActions + failedActions
-                    taskProgress?.successfulActions = completedActions
-                    taskProgress?.failedActions = failedActions
-                    
-                case .reflectStart:
-                    statusContent += "\n🔍 正在分析执行结果...\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .reflectResult(let reflection):
-                    statusContent += "💡 反思结果:\n\(reflection)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .taskComplete(_, let success, let summary, let totalActions):
-                    taskProgress?.status = success ? .completed : .failed
-                    taskProgress?.endTime = Date()
-                    taskProgress?.summary = summary
-                    
-                    let statusIcon = success ? "✅" : "⚠️"
-                    statusContent += "\n\(statusIcon) \(success ? "任务完成" : "任务未完成")\n"
-                    statusContent += "📊 统计: \(totalActions) 个动作, \(completedActions) 成功, \(failedActions) 失败\n"
-                    let displaySummary = summary.isEmpty ? (success ? "已完成" : "请查看上方失败步骤的错误信息") : summary
-                    statusContent += "📝 总结: \(displaySummary)\n"
-                    // 任务已完成，先停止菊花；若后续还有反思结果会继续追加内容，但不再转圈
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    
-                case .retry(let message):
-                    statusContent += "\n⏳ \(message)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .content(let text):
-                    statusContent += text
-                    updateAssistantMessage(content: statusContent, isStreaming: true)
-                    
-                case .done(let model, let tokenUsage):
-                    updateAssistantMessage(content: statusContent, isStreaming: false, modelName: model, tokenUsage: tokenUsage)
-                    
-                case .error(let message):
-                    statusContent += "\n❌ 错误: \(message)\n"
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    errorMessage = message
-                    
-                case .stopped:
-                    statusContent += "\n\n[已终止]"
-                    updateAssistantMessage(content: statusContent, isStreaming: false)
-                    
-                default:
-                    break
-                }
-                }
-                break retryLoop
-            } catch {
-                if retryCount < 1 && isConnectionError(error) {
-                    retryCount += 1
-                    updateAssistantMessage(content: statusContent + "\n连接断开，正在重连...", isStreaming: true)
-                    await backendService.reconnect()
-                    if isConnected {
-                        updateAssistantMessage(content: statusContent + "\n已重连，正在恢复任务...", isStreaming: true)
-                        continue retryLoop
-                    }
-                }
-                errorMessage = "任务恢复失败: \(error.localizedDescription)"
-                updateAssistantMessage(
-                    content: statusContent + "\n❌ 恢复失败: \(error.localizedDescription)",
-                    isStreaming: false
-                )
-                break
-            }
-        }
-        
-        isLoading = false
-    }
     
     // MARK: - Chat Resume (断线重连恢复 chat 流)
     

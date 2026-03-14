@@ -93,7 +93,8 @@ class RepairExecutor:
         self,
         config_manager: Optional[Any] = None,
         api_client: Optional[Any] = None,
-        dry_run: bool = False
+        dry_run: bool = False,
+        llm_chat: Optional[Any] = None
     ):
         """
         初始化执行器
@@ -102,10 +103,12 @@ class RepairExecutor:
             config_manager: 配置管理器
             api_client: API 客户端
             dry_run: 是否只模拟执行（不实际修改）
+            llm_chat: 用户 LLM 聊天函数 async (messages, tools=None) -> {content: str}
         """
         self.config_manager = config_manager
         self.api_client = api_client
         self.dry_run = dry_run
+        self.llm_chat = llm_chat
         self.execution_history: List[ExecutionResult] = []
         
         # 动作执行器映射
@@ -116,7 +119,12 @@ class RepairExecutor:
             ActionType.CHANGE_CONFIG: self._change_config,
             ActionType.RESTART_PROCESS: self._restart_process,
             ActionType.SEND_NOTIFICATION: self._send_notification,
+            ActionType.LLM_FIX: self._execute_llm_fix,
         }
+    
+    def set_llm_chat(self, llm_chat) -> None:
+        """设置/更新 LLM 聊天函数"""
+        self.llm_chat = llm_chat
     
     async def execute(self, plan: RepairPlan) -> ExecutionResult:
         """
@@ -430,6 +438,153 @@ class RepairExecutor:
         logger.info(f"Notification: [{severity}] {message}")
         return f"Notification sent: {message}"
     
+    async def _execute_llm_fix(self, action: RepairAction) -> str:
+        """调用用户 LLM 分析错误并生成修复方案"""
+        if not self.llm_chat:
+            raise RuntimeError("LLM 未配置，无法执行 LLM 修复")
+        
+        params = action.parameters
+        fix_type = params.get("fix_type", "code_fix")
+        error_message = params.get("error_message", "")
+        problem_type = params.get("problem_type", "unknown")
+        suggestions = params.get("suggestions", [])
+        
+        if fix_type == "prompt_optimization":
+            prompt = f"""你是 Chow Duck Agent 的自愈模块。当前检测到以下问题需要优化提示词：
+
+问题类型: {problem_type}
+错误描述: {error_message}
+已知建议: {', '.join(suggestions) if suggestions else '无'}
+
+请分析问题并给出提示词优化方案。输出 JSON 格式：
+{{
+  "optimization": "具体的提示词优化建议",
+  "append_instruction": "需要追加到 system prompt 的指令文本",
+  "reason": "为什么这个优化能解决问题"
+}}
+
+只输出 JSON，不要其他内容。"""
+        
+        elif fix_type == "code_fix":
+            source_file = params.get("source_file", "")
+            source_line = params.get("source_line", 0)
+            
+            # 尝试读取源文件上下文
+            file_context = ""
+            if source_file and os.path.exists(source_file):
+                try:
+                    with open(source_file, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+                    start = max(0, (source_line or 1) - 10)
+                    end = min(len(lines), (source_line or 1) + 10)
+                    file_context = f"\n源文件 ({source_file}) 相关代码:\n```python\n{''.join(lines[start:end])}```\n"
+                except Exception:
+                    pass
+            
+            prompt = f"""你是 Chow Duck Agent 的自愈模块。当前检测到以下代码问题需要修复：
+
+问题类型: {problem_type}
+错误描述: {error_message}
+源文件: {source_file or '未知'}
+错误行号: {source_line or '未知'}
+已知建议: {', '.join(suggestions) if suggestions else '无'}
+{file_context}
+请分析问题根因并给出修复方案。输出 JSON 格式：
+{{
+  "root_cause": "问题根因分析",
+  "fix_description": "修复方案描述",
+  "file_path": "需要修改的文件路径（如果需要）",
+  "modifications": [
+    {{"old": "需要替换的原始代码", "new": "替换后的新代码"}}
+  ],
+  "requires_restart": false
+}}
+
+只输出 JSON，不要其他内容。"""
+        
+        elif fix_type == "add_fallback":
+            prompt = f"""你是 Chow Duck Agent 的自愈模块。当前需要为以下问题添加回退机制：
+
+问题类型: {problem_type}
+错误描述: {error_message}
+已知建议: {', '.join(suggestions) if suggestions else '无'}
+
+请分析并给出回退方案。输出 JSON 格式：
+{{
+  "fallback_strategy": "回退策略描述",
+  "actions": ["具体动作1", "具体动作2"],
+  "config_changes": {{"key": "value"}},
+  "reason": "为什么采用这个回退方案"
+}}
+
+只输出 JSON，不要其他内容。"""
+        else:
+            raise ValueError(f"未知的 fix_type: {fix_type}")
+        
+        try:
+            response = await self.llm_chat(
+                [
+                    {"role": "system", "content": "你是一个专业的代码自愈分析助手，只输出 JSON 格式的修复方案。"},
+                    {"role": "user", "content": prompt},
+                ],
+                tools=None,
+            )
+            
+            # 提取 LLM 响应内容
+            content = response
+            if isinstance(response, dict):
+                content = response.get("content", "")
+                if isinstance(content, list):
+                    # 处理 [{"type": "text", "text": "..."}] 格式
+                    texts = [c.get("text", "") for c in content if isinstance(c, dict) and c.get("type") == "text"]
+                    content = "\n".join(texts)
+            
+            content = str(content).strip()
+            
+            # 提取 JSON
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            
+            import json
+            fix_result = json.loads(content)
+            
+            # 对于 code_fix，尝试自动应用修改
+            if fix_type == "code_fix" and fix_result.get("modifications"):
+                file_path = fix_result.get("file_path", params.get("source_file", ""))
+                if file_path and os.path.exists(file_path):
+                    # 备份
+                    backup_path = f"{file_path}.self_heal_backup"
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        original = f.read()
+                    with open(backup_path, "w", encoding="utf-8") as f:
+                        f.write(original)
+                    
+                    # 应用修改
+                    modified = original
+                    applied = 0
+                    for mod in fix_result["modifications"]:
+                        old_text = mod.get("old", "")
+                        new_text = mod.get("new", "")
+                        if old_text and old_text in modified:
+                            modified = modified.replace(old_text, new_text, 1)
+                            applied += 1
+                    
+                    if applied > 0:
+                        with open(file_path, "w", encoding="utf-8") as f:
+                            f.write(modified)
+                        logger.info(f"[SelfHealing] LLM fix applied {applied} modifications to {file_path}")
+                    
+                    fix_result["applied"] = applied
+                    fix_result["backup"] = backup_path
+            
+            return json.dumps(fix_result, ensure_ascii=False)
+        
+        except Exception as e:
+            logger.error(f"[SelfHealing] LLM fix failed: {e}")
+            raise
+
     def _is_critical_action(self, action: RepairAction) -> bool:
         """判断是否是关键动作"""
         critical_types = {

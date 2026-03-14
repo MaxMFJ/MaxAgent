@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_5698fc9c",
+  "description": "搜索并搜集2024-2025年AI行业最新动态，包括AI投资趋势、主要公司发展、大模型进展、AI应用场景、行业报告等，整理成结构化的数据摘要\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": "已成功完成AI行业动态研究任务。\n\n【完成内容】\n1. 搜索并收集了6个维度的AI行业最新动态：\n   - AI投资趋势（中国市场脱虚向实、投早投小；全球生成式AI投资热点）\n   - 大模型进展（GPT-5、Claude 4、Gemini、文心一言、通义千问等）\n   - 主要公司发展（谷歌、微软、Meta、字节、阿里、腾讯）\n   - AI应用场景（医疗、金融、制造、自动驾驶、气候能源）\n   - 行业报告（麦肯锡2025 AI报告、IDC、Gartner预测）\n\n2. 整理成结构化数据摘要文件：\n   📁 /Users/lzz/Desktop/AI行业2024-2025动态摘要.md\n\n【文件内容】\n- 包含6大章节：AI投资趋势、大模型进展、主要公司发展、AI应用场景、行业报告与技术趋势总结\n- 采用表格、列表等结构化形式呈现\n- 数据来源标注清晰（新华社、麦肯锡、WEF等）",
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773473140.945857,
+  "assigned_at": 1773473140.94636,
+  "started_at": null,
+  "completed_at": 1773473293.403232,
+  "last_activity": 1773473293.401879
+}

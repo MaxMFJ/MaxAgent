@@ -1,0 +1,24 @@
+{
+  "task_id": "dtask_37eaf7f9",
+  "description": "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，不要先描述计划。必须使用 write_file 或 run_shell 完成任务。\n历史失败原因：任务涉及文件创建，但 Agent 执行失败（LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.）。请重试或由主 Agent 直接处理。\n\n原始任务：搜集2025-2026年AI行业最新数据、主要趋势、重大新闻、市场规模、投融资情况、关键技术发展等，整理成结构化数据供后续使用\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": "已成功完成AI行业2025-2026年数据报告任务。报告文件：/Users/lzz/Desktop/AI行业2025-2026数据报告.json\n\n报告包含以下结构化数据：\n1. 市场规模 - 中国市场2025年预测、全球市场趋势\n2. 主要趋势 - 大模型技术突破、AI Agent智能体、端侧AI、AI+行业应用、AI安全治理\n3. 投融资情况 - 融资活跃度、投资热点\n4. 关键技术发展 - 多模态大模型、AI Agent、RAG检索增强、AI编程、端侧AI\n5. 重大新闻 - 生成式AI应用爆发、AI芯片国产化、AI监管政策等\n6. 未来展望 - 2026年预测",
+  "error": null,
+  "retry_count": 1,
+  "max_retries": 2,
+  "original_description": "搜集2025-2026年AI行业最新数据、主要趋势、重大新闻、市场规模、投融资情况、关键技术发展等，整理成结构化数据供后续使用\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "retry_errors": [
+    "任务涉及文件创建，但 Agent 执行失败（LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.）。请重试或由主 Agent 直接处理。"
+  ],
+  "created_at": 1773474892.0680268,
+  "assigned_at": 1773475091.7274802,
+  "started_at": null,
+  "completed_at": 1773475224.5798872,
+  "last_activity": 1773475224.577992
+}

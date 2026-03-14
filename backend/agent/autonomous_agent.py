@@ -172,12 +172,22 @@ You must always output the next action as JSON:
    {"action_type": "delegate_duck", "params": {"description": "Sub-task description", "duck_type": "coder|designer|crawler|general (optional)", "strategy": "single|multi (optional)"}, "reasoning": "..."}
    ```
 
-13. **think** - Think/analyze (no action taken)
+13. **delegate_dag** - Create a multi-agent collaborative DAG task (automatically creates a group chat for real-time visibility)
+   - Best for: complex tasks requiring MULTIPLE sub-agents working in sequence or parallel with dependencies
+   - Use this when the task naturally decomposes into 2+ stages with clear input/output relationships
+   - A group chat will be auto-created for all participating agents to report progress
+   - Each node is a sub-task assigned to a Duck; `depends_on` defines execution order
+   ```json
+   {"action_type": "delegate_dag", "params": {"description": "Overall task description", "nodes": [{"node_id": "step1", "description": "Research competitors", "task_type": "crawler", "depends_on": []}, {"node_id": "step2", "description": "Design UI based on research", "task_type": "designer", "depends_on": ["step1"]}, {"node_id": "step3", "description": "Implement the design", "task_type": "coder", "depends_on": ["step2"]}]}, "reasoning": "This task needs multiple agents working in sequence"}
+   ```
+   - **When to use delegate_dag vs delegate_duck**: Use `delegate_duck` for single independent sub-tasks; use `delegate_dag` when there are 2+ interdependent sub-tasks that form a pipeline or parallel workflow.
+
+14. **think** - Think/analyze (no action taken)
     ```json
     {"action_type": "think", "params": {"thought": "Analyzing the situation..."}, "reasoning": "Need to think about next step"}
     ```
 
-14. **finish** - Complete the task
+15. **finish** - Complete the task
     ```json
     {"action_type": "finish", "params": {"summary": "Task completion summary", "success": true}, "reasoning": "Task is done"}
     ```
@@ -199,6 +209,7 @@ You must always output the next action as JSON:
 8. **Prefer batch commands (e.g. mv *.txt dest/) over individual operations.**
 9. **Be concise and efficient; avoid unnecessary steps.**
 10. **Sending email: MUST use call_tool(tool_name=mail). NEVER use open_app to open the Mail app for sending email (Mail app has many limitations and cannot be reliably automated).**
+11. **Multi-step task delegation**: When the task involves 2+ distinct stages (e.g. research→analysis→generation, or design→code→test), and online Ducks are available in the context, you MUST use `delegate_dag` to create a multi-agent DAG instead of doing everything yourself step by step. The DAG will automatically create a group chat, assign sub-agents, and track progress. Only do the task yourself if NO Ducks are online.
 
 ## GUI Interaction Rules (⚠️ HIGHEST PRIORITY — must strictly follow)
 
@@ -304,10 +315,18 @@ class AutonomousAgent:
             ActionType.CLIPBOARD_READ: self._handle_clipboard_read,
             ActionType.CLIPBOARD_WRITE: self._handle_clipboard_write,
             ActionType.CALL_TOOL: self._handle_call_tool,
-            ActionType.DELEGATE_DUCK: self._handle_delegate_duck,
             ActionType.THINK: self._handle_think,
             ActionType.FINISH: self._handle_finish,
         }
+        # Duck 模式下不注册委派 handler，彻底阻止递归创建 DAG/委派
+        try:
+            from app_state import IS_DUCK_MODE
+            if not IS_DUCK_MODE:
+                self._action_handlers[ActionType.DELEGATE_DUCK] = self._handle_delegate_duck
+                self._action_handlers[ActionType.DELEGATE_DAG] = self._handle_delegate_dag
+        except ImportError:
+            self._action_handlers[ActionType.DELEGATE_DUCK] = self._handle_delegate_duck
+            self._action_handlers[ActionType.DELEGATE_DAG] = self._handle_delegate_dag
     
     def update_llm(self, llm_client: LLMClient, is_local: bool = False):
         """Update LLM client"""
@@ -393,7 +412,18 @@ class AutonomousAgent:
             username = getpass.getuser()
             desktop = os.path.realpath(os.path.expanduser("~/Desktop"))
             parts.append(f"- Current User: {username}")
-            parts.append(f"- Desktop Path: {desktop} (Use this exact path when saving files to Desktop or reporting to the user. NEVER use /Users/xxx/ or $(whoami).)")
+            # Duck 沙箱模式：将桌面路径提示替换为沙箱工作区，防止文件写入桌面
+            try:
+                from app_state import get_duck_context as _get_dc
+                _dc = _get_dc()
+                _sandbox_dir = (_dc or {}).get("sandbox_dir")
+            except Exception:
+                _sandbox_dir = None
+            if _sandbox_dir:
+                # Duck 沙箱模式：完全隐藏桌面路径，只暴露沙箱工作区，防止 LLM 误用
+                parts.append(f"- Workspace: {_sandbox_dir} (Save ALL output files here. Do NOT use Desktop.)")
+            else:
+                parts.append(f"- Desktop Path: {desktop} (Use this exact path when saving files to Desktop or reporting to the user. NEVER use /Users/xxx/ or $(whoami).)")
         except Exception:
             pass
 
@@ -744,15 +774,72 @@ class AutonomousAgent:
             if old_llm is not None:
                 self.llm = old_llm
 
+    # ------------------------------------------------------------------
+    # Quick Q&A detection — 轻量级判断是否绕过 Planner-Reflect 循环
+    # ------------------------------------------------------------------
+    def _is_quick_qa(self, task: str) -> bool:
+        """Detect simple conversational messages that don't need full autonomous loop.
+        Uses keyword-based heuristics (no LLM call) to keep it fast.
+        """
+        # Duck workers always use full autonomous
+        if self.isolated_context:
+            return False
+        try:
+            from .model_selector import TaskType
+            analysis = self.model_selector.analyzer.analyze(task)
+            # Knowledge queries with low complexity → Q&A
+            if analysis.task_type == TaskType.KNOWLEDGE_QUERY and analysis.complexity_score <= 4:
+                return True
+            # Simple operations with very low complexity → Q&A
+            if analysis.task_type == TaskType.SIMPLE_OPERATION and analysis.complexity_score <= 3 and analysis.estimated_steps <= 2:
+                return True
+        except Exception:
+            pass
+        # Very short messages that look conversational
+        if len(task.strip()) < 80 and not any(kw in task.lower() for kw in [
+            "创建", "写入", "生成", "下载", "运行", "打开", "设计", "部署", "搜索",
+            "create", "write", "generate", "download", "run", "open", "deploy", "search",
+            "delegate", "dag", "build", "install",
+        ]):
+            return True
+        return False
+
+    async def _run_quick_qa(
+        self, task: str, session_id: str, extra_system_prompt: str,
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Fast path for simple Q&A — delegates to AgentCore.run_stream() (function calling).
+        Skips planning, reflection, middleware, adaptive stop. ~1 round-trip.
+        """
+        from app_state import get_agent_core, get_chat_runner
+        runner = get_chat_runner() or get_agent_core()
+        if not runner:
+            yield {"type": "error", "message": "Agent core not available for quick Q&A"}
+            return
+        logger.info(f"Quick Q&A mode for: {task[:60]}...")
+        async for chunk in runner.run_stream(task, session_id=session_id, extra_system_prompt=extra_system_prompt):
+            yield chunk
+
     async def run_autonomous(
         self,
         task: str,
-        session_id: str = "default"
+        session_id: str = "default",
+        extra_system_prompt: str = "",
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
-        Run autonomous task execution with adaptive stopping
-        Yields progress updates as the task executes
+        Unified execution entry point — handles both quick Q&A and complex tasks.
+        Quick Q&A: delegates to AgentCore function-calling loop (fast, yields content chunks).
+        Complex tasks: full Plan-Execute-Reflect autonomous loop.
+        Yields progress updates as the task executes.
         """
+        # Quick Q&A fast path — bypass Planner-Reflect for simple questions
+        if self._is_quick_qa(task):
+            async for chunk in self._run_quick_qa(task, session_id, extra_system_prompt):
+                yield chunk
+            return
+
+        # Store extra_system_prompt for injection into _generate_action
+        self._extra_system_prompt = extra_system_prompt
+
         task_id = str(uuid.uuid4())[:8]
         # v3.4: store for file handlers (snapshot_manager, etc.)
         self._current_task_id = task_id
@@ -837,6 +924,9 @@ class AutonomousAgent:
         # 异步并行 Duck 委派：跟踪已提交但未完成的 Duck 任务
         self._pending_duck_futures: Dict[str, asyncio.Future] = {}  # task_id -> future
         self._pending_duck_descriptions: Dict[str, str] = {}  # task_id -> description
+        # 异步 DAG 编排：跟踪已提交但未完成的 DAG 执行
+        self._pending_dag_futures: Dict[str, asyncio.Future] = {}  # dag_id -> future
+        self._pending_dag_descriptions: Dict[str, str] = {}  # dag_id -> description
         
         # v3.8: 初始化中间件链
         self._middleware_chain = MiddlewareChain()
@@ -928,6 +1018,11 @@ class AutonomousAgent:
                 if self._pending_duck_futures:
                     async for duck_event in self._collect_duck_results(context):
                         yield duck_event
+
+                # ─── 收集已完成的 DAG 多Agent协作结果 ───
+                if self._pending_dag_futures:
+                    async for dag_event in self._collect_dag_results(context):
+                        yield dag_event
 
                 # 硬性上限检查 - 即使所有其他停止条件失效也必须停止
                 if context.current_iteration > HARD_ITERATION_LIMIT:
@@ -1086,10 +1181,16 @@ class AutonomousAgent:
                         if pending_ducks:
                             pending_descs = [self._pending_duck_descriptions.get(tid, tid[:8]) for tid in pending_ducks]
                             block_reason = f"There are {len(pending_ducks)} Duck sub-tasks still executing: {', '.join(pending_descs)}. Please wait for them to complete before finishing the task."
-                        else:
-                            block_reason = self._thinking_manager.should_block_finish(
-                                plan, plan_index, context.action_logs
-                            )
+                    if not block_reason:
+                        # 额外检查：是否有未完成的 DAG 协作任务
+                        pending_dags = getattr(self, '_pending_dag_futures', {})
+                        if pending_dags:
+                            pending_descs = [self._pending_dag_descriptions.get(did, did[:8]) for did in pending_dags]
+                            block_reason = f"There are {len(pending_dags)} DAG multi-agent tasks still executing: {', '.join(pending_descs)}. Please wait for them to complete before finishing."
+                    if not block_reason:
+                        block_reason = self._thinking_manager.should_block_finish(
+                            plan, plan_index, context.action_logs
+                        )
                     if block_reason:
                         # 连续 FINISH 被阻止次数累计，超过 3 次则强制放行
                         _consecutive_finish_blocks = getattr(context, '_consecutive_finish_blocks', 0) + 1
@@ -1764,6 +1865,29 @@ class AutonomousAgent:
         ).replace(
             "{user_context}", user_ctx if user_ctx else ""
         )
+
+        # Duck 模式下剥离委派相关段落，防止 Duck 递归创建 DAG/委派子任务
+        try:
+            from app_state import IS_DUCK_MODE as _is_duck_prompt
+        except ImportError:
+            _is_duck_prompt = False
+        if _is_duck_prompt:
+            import re
+            # 移除 action type 12 (delegate_duck) 和 13 (delegate_dag)
+            system_prompt = re.sub(
+                r'12\.\s*\*\*delegate_duck\*\*.*?(?=\n\d+\.\s*\*\*)',
+                '', system_prompt, flags=re.DOTALL,
+            )
+            system_prompt = re.sub(
+                r'13\.\s*\*\*delegate_dag\*\*.*?(?=\n\d+\.\s*\*\*)',
+                '', system_prompt, flags=re.DOTALL,
+            )
+            # 移除规则 11（Multi-step task delegation）
+            system_prompt = re.sub(
+                r'11\.\s*\*\*Multi-step task delegation\*\*.*?(?=\n\d+\.\s*\*\*|\n\n##)',
+                '', system_prompt, flags=re.DOTALL,
+            )
+
         # 注入 Duck 分身身份与专项规范（Local Duck 执行时）
         try:
             from app_state import get_duck_context
@@ -1794,6 +1918,16 @@ class AutonomousAgent:
                     "4. Do NOT finish on the first step unless the task is truly complete (files created, commands executed, etc.).\n"
                     "5. For code/HTML/file creation, use create_and_run_script (NEVER put very long content in write_file's content field)."
                 )
+                # 沙箱工作目录强制约束 — 确保产出文件写入分配的工作区而非桌面
+                sandbox_dir = duck_ctx.get("sandbox_dir")
+                if sandbox_dir:
+                    parts.append(
+                        f"\n[WORKSPACE — MANDATORY] Your ONLY output directory is: {sandbox_dir}\n"
+                        "ALL files you create or write MUST be saved inside this directory.\n"
+                        "⛔ NEVER save files to ~/Desktop, /tmp, or any other location.\n"
+                        "⛔ IGNORE any '桌面路径' (Desktop path) hint shown below — it does NOT apply to your tasks.\n"
+                        f"Example: to create output.html → write_file path: \"{sandbox_dir}/output.html\""
+                    )
                 duck_block = "\n".join(parts)
                 system_prompt = duck_block + "\n\n---\n\n" + system_prompt
         except Exception:
@@ -1802,6 +1936,11 @@ class AutonomousAgent:
         project_ctx = get_project_context_for_prompt()
         if project_ctx:
             system_prompt = project_ctx + "\n\n---\n\n" + system_prompt
+
+        # 注入 extra_system_prompt（来自 web augmentation 等外部上下文）
+        _extra_sp = getattr(self, "_extra_system_prompt", "")
+        if _extra_sp:
+            system_prompt = system_prompt + "\n\n" + _extra_sp
 
         # v3.1: 结构化上下文（可选）+ Goal 重述
         try:
@@ -1908,7 +2047,20 @@ class AutonomousAgent:
                         and (last_log.action.params.get("args") or {}).get("action") == "read"
                     )
                 )
-                out_limit = 10000 if is_read else 300
+                # 限制 read_file 结果注入 LLM 上下文的大小，防止超时
+                _is_duck_mode = getattr(self, 'isolated_context', False)
+                if not _is_duck_mode:
+                    try:
+                        from app_state import get_duck_context as _gdc_rd
+                        _is_duck_mode = bool(_gdc_rd())
+                    except Exception:
+                        pass
+                if is_read and _is_duck_mode:
+                    out_limit = 3000  # Duck 模式
+                elif is_read:
+                    out_limit = 5000  # 普通模式（从 10000 降至 5000）
+                else:
+                    out_limit = 300
                 result_summary = f"上一步执行成功。输出: {out_str[:out_limit]}{'...[已截断]' if len(out_str) > out_limit else ''}"
                 # 截图类任务：一旦截图成功，强制要求立即 finish，避免重复截图
                 task_desc = getattr(context, "task_description", "") or ""
@@ -1952,6 +2104,15 @@ class AutonomousAgent:
             # 解析失败重试时，若已有较多步骤，提示简化输出
             if getattr(context, "retry_count", 0) > 0:
                 next_prompt += "\n\n【重试提示】上轮输出可能被截断。请只输出一个简洁的 JSON 动作，报告内容不要全部内嵌在 content 中；可先 finish 简要总结，或分步 write_file。"
+            # Duck 任务步数过多时主动催收尾（防止上下文爆炸导致卡死）
+            _is_duck = bool(get_duck_context())
+            _steps_done = len(context.action_logs)
+            if _is_duck and _steps_done >= 8 and not getattr(context, "_wrap_up_injected", False):
+                context._wrap_up_injected = True
+                next_prompt += (
+                    "\n\n【⚠️ 收尾提示】你已执行了较多步骤，请立即将所有收集到的内容写入工作区，"
+                    "然后用 finish 动作输出总结并结束任务。不要再进行新的搜索，专注于写文件和收尾。"
+                )
 
             # ── 多模态注入：若上一步结果含图像（如 analyze_local_image / capture_and_analyze），
             #    将图像 base64 注入到消息中供视觉模型分析，避免 Agent 反复截图
@@ -1999,10 +2160,12 @@ class AutonomousAgent:
             # Phase C：Extended Thinking / CoT 支持
             # v3.5: 上下文压缩 — 在发送给 LLM 前压缩消息列表
             try:
+                # Duck 任务用更激进的压缩策略，防止多步执行后上下文爆炸
+                _keep = 4 if get_duck_context() else 6
                 messages = self._context_compressor.compress(
                     messages,
                     current_query=context.task_description,
-                    keep_recent=6,
+                    keep_recent=_keep,
                 )
             except Exception as _comp_err:
                 logger.debug("Context compression failed: %s", _comp_err)
@@ -2301,6 +2464,55 @@ class AutonomousAgent:
             pass
 
         handler = self._action_handlers.get(action.action_type)
+
+        # ── Worker Duck 工作区路径强制 ───────────────────────────────────────
+        # Worker Duck 的 write_file 必须写入 workspace，自动重定向非法路径
+        try:
+            from app_state import get_duck_context as _gdc_ws
+            _duck_ctx = _gdc_ws()
+            if _duck_ctx and _at_str in ("write_file", "create_and_run_script"):
+                _ws_dir = _duck_ctx.get("workspace_dir", "") or _duck_ctx.get("sandbox_dir", "") if isinstance(_duck_ctx, dict) else ""
+                if _ws_dir and action.params:
+                    _fp = action.params.get("file_path") or action.params.get("path") or ""
+                    if _fp and not _fp.startswith(_ws_dir):
+                        import os as _os
+                        _corrected = _os.path.join(_ws_dir, _os.path.basename(_fp))
+                        logger.warning(
+                            f"[WorkerDuck] Redirecting write: '{_fp}' → '{_corrected}'"
+                        )
+                        if "file_path" in action.params:
+                            action.params["file_path"] = _corrected
+                        elif "path" in action.params:
+                            action.params["path"] = _corrected
+        except Exception:
+            pass
+
+        # ── Worker Duck 角色隔离守卫 ─────────────────────────────────────────
+        # Worker Duck 不允许调用委派/编排类动作，这些是 Supervisor 专属权限
+        _WORKER_FORBIDDEN = {
+            "delegate_duck", "delegate_dag", "spawn_duck",
+            "create_agent", "create_duck", "plan_new_agents",
+        }
+        _at_str = action.action_type.value.lower() if hasattr(action.action_type, "value") else str(action.action_type).lower()
+        if _at_str in _WORKER_FORBIDDEN:
+            try:
+                from app_state import get_duck_context as _gdc
+                _is_worker = bool(_gdc())
+            except Exception:
+                _is_worker = False
+            if _is_worker:
+                return ActionResult(
+                    action_id=action.action_id,
+                    success=False,
+                    error=(
+                        f"⛔ WORKER_DUCK ROLE VIOLATION: Action '{_at_str}' is forbidden. "
+                        f"Worker Ducks are EXECUTOR_ONLY. "
+                        f"You are the assigned specialist — complete the task using available tools."
+                    ),
+                    execution_time_ms=int((time.time() - start_time) * 1000),
+                )
+        # ─────────────────────────────────────────────────────────────────────
+
         if not handler:
             return ActionResult(
                 action_id=action.action_id,
@@ -2485,9 +2697,18 @@ class AutonomousAgent:
         if not tool_name:
             return {"success": False, "error": "call_tool 缺少 tool_name"}
 
-        # 拦截 delegate_duck：强制走阻塞 handler，防止 tool registry 的异步路径导致并发
-        if tool_name == "delegate_duck":
-            return await self._handle_delegate_duck(args)
+        # 拦截 delegate_duck / delegate_dag
+        # Duck 模式下直接拒绝，防止递归委派
+        if tool_name in ("delegate_duck", "delegate_dag"):
+            try:
+                from app_state import IS_DUCK_MODE
+                if IS_DUCK_MODE:
+                    return {"success": False, "error": "Duck 模式下不允许委派任务给其他 Duck"}
+            except ImportError:
+                pass
+            if tool_name == "delegate_duck":
+                return await self._handle_delegate_duck(args)
+            return await self._handle_delegate_dag(args)
 
         try:
             result = await execute_tool(tool_name, args)
@@ -2584,6 +2805,95 @@ class AutonomousAgent:
         except Exception as e:
             return {"success": False, "error": f"delegate_duck error: {e}"}
 
+    async def _handle_delegate_dag(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        创建多Agent协作DAG：自动分解为多个子任务节点，按依赖顺序执行，
+        自动创建群聊供所有Agent实时汇报进度。
+        """
+        from app_state import IS_DUCK_MODE
+        if IS_DUCK_MODE:
+            return {"success": False, "error": "Duck 模式下不允许创建 DAG 协作任务"}
+
+        description = params.get("description", "").strip()
+        nodes_raw = params.get("nodes", [])
+        if not description or not nodes_raw:
+            return {"success": False, "error": "delegate_dag 需要 description 和 nodes 参数"}
+
+        try:
+            from services.duck_task_dag import DAGTaskOrchestrator, DAGNode
+            from services.duck_protocol import DuckType
+
+            # 解析节点
+            dag_nodes = []
+            for raw in nodes_raw:
+                node_id = raw.get("node_id", "").strip()
+                node_desc = raw.get("description", "").strip()
+                if not node_id or not node_desc:
+                    return {"success": False, "error": "每个 node 必须包含 node_id 和 description"}
+
+                duck_type = None
+                if raw.get("task_type"):
+                    try:
+                        duck_type = DuckType(raw["task_type"])
+                    except ValueError:
+                        pass
+
+                dag_nodes.append(DAGNode(
+                    node_id=node_id,
+                    description=node_desc,
+                    task_type=raw.get("task_type", "general"),
+                    params=raw.get("params", {}),
+                    duck_type=duck_type,
+                    duck_id=raw.get("duck_id"),
+                    timeout=raw.get("timeout", 600),
+                    depends_on=raw.get("depends_on", []),
+                    input_mapping=raw.get("input_mapping", {}),
+                ))
+
+            orchestrator = DAGTaskOrchestrator.get_instance()
+
+            # 使用 asyncio.Future 接收 DAG 最终结果
+            loop = asyncio.get_event_loop()
+            future: asyncio.Future = loop.create_future()
+
+            async def _dag_callback(execution):
+                if not future.done():
+                    future.set_result(execution)
+
+            session_id = getattr(self, '_current_session_id', '') or ''
+            execution = orchestrator.create_dag(
+                description=description,
+                nodes=dag_nodes,
+                callback=_dag_callback,
+                session_id=session_id,
+            )
+
+            # 注册 future 用于后续结果收集
+            self._pending_dag_futures[execution.dag_id] = future
+            self._pending_dag_descriptions[execution.dag_id] = description[:100]
+
+            # 异步执行 DAG（fire-and-forget）
+            asyncio.create_task(orchestrator.execute(execution.dag_id))
+
+            logger.info(f"DAG {execution.dag_id} created with {len(dag_nodes)} nodes, executing asynchronously")
+
+            return {
+                "success": True,
+                "output": f"多Agent协作 DAG 已创建并开始执行（dag_id: {execution.dag_id}，共 {len(dag_nodes)} 个子任务）。"
+                          f"群聊已自动创建，各Agent将在群聊中实时汇报进度。DAG 完成后系统会自动通知结果。",
+                "dag_id": execution.dag_id,
+                "node_count": len(dag_nodes),
+                "group_id": execution.group_id,
+                "async_dispatched": True,
+            }
+
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+        except ImportError:
+            return {"success": False, "error": "DAG task orchestrator not available"}
+        except Exception as e:
+            return {"success": False, "error": f"delegate_dag error: {e}"}
+
     async def _collect_duck_results(self, context: TaskContext) -> AsyncGenerator[Dict[str, Any], None]:
         """
         非阻塞地收集已完成的并行 Duck 任务结果。
@@ -2648,6 +2958,70 @@ class AutonomousAgent:
             except Exception as e:
                 logger.warning(f"Failed to collect duck result for {task_id}: {e}")
                 self._pending_duck_descriptions.pop(task_id, None)
+
+    async def _collect_dag_results(self, context: TaskContext) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        非阻塞地收集已完成的 DAG 执行结果。
+        在每次迭代开始时调用，将已完成的 DAG 结果注入主 Agent 上下文。
+        """
+        if not self._pending_dag_futures:
+            return
+
+        completed_ids = []
+        for dag_id, future in self._pending_dag_futures.items():
+            if future.done():
+                completed_ids.append(dag_id)
+
+        for dag_id in completed_ids:
+            future = self._pending_dag_futures.pop(dag_id)
+            desc = self._pending_dag_descriptions.pop(dag_id, "")
+            try:
+                execution = future.result()
+                success = execution.status == "completed"
+
+                # 注入虚拟 action log 让 LLM 知道 DAG 完成
+                from .action_schema import ActionType
+                dag_action = AgentAction(
+                    action_type=ActionType.DELEGATE_DAG,
+                    params={"description": desc, "dag_id": dag_id},
+                    reasoning=f"DAG 多Agent协作完成（{'成功' if success else '失败'}）",
+                )
+                dag_result = ActionResult(
+                    action_id=dag_action.action_id,
+                    success=success,
+                    output=execution.output,
+                    error=execution.error,
+                )
+                context.add_action_log(dag_action, dag_result)
+
+                status_text = "✅ 成功" if success else "❌ 失败"
+                node_summary = ", ".join(
+                    f"{n.node_id}({'✅' if n.status.value == 'completed' else '❌'})"
+                    for n in execution.nodes.values()
+                )
+                hint = f"【DAG 多Agent协作完成】{status_text}：{desc}\n节点状态：{node_summary}"
+                if execution.output:
+                    hint += f"\n最终结果：{str(execution.output)[:500]}"
+                if execution.error:
+                    hint += f"\n错误：{execution.error[:200]}"
+                existing_hint = self._mid_reflection_hint or ""
+                self._mid_reflection_hint = f"{existing_hint}\n{hint}".strip()
+
+                yield {
+                    "type": "dag_result_collected",
+                    "dag_id": dag_id,
+                    "success": success,
+                    "description": desc,
+                    "status": execution.status,
+                    "output": str(execution.output)[:500] if execution.output else None,
+                    "error": execution.error,
+                    "group_id": execution.group_id,
+                    "pending_count": len(self._pending_dag_futures),
+                }
+                logger.info(f"DAG result collected: dag={dag_id} status={execution.status} pending={len(self._pending_dag_futures)}")
+            except Exception as e:
+                logger.warning(f"Failed to collect DAG result for {dag_id}: {e}")
+                self._pending_dag_descriptions.pop(dag_id, None)
     
     async def _handle_create_script(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle create_and_run_script action"""
@@ -2732,10 +3106,35 @@ class AutonomousAgent:
 
         path = os.path.expanduser(params.get("path", ""))
         encoding = params.get("encoding", "utf-8")
+
+        # 文件读取缓存：防止反复读取同一文件导致上下文膨胀（全局生效）
+        if not hasattr(self, '_read_file_cache'):
+            self._read_file_cache = {}
+        _cache_key = f"{path}:{params.get('offset', 0)}:{params.get('limit', 0)}"
+        if path and _cache_key in self._read_file_cache:
+            logger.info(f"[ReadCache] read_file cache hit: {path}")
+            return self._read_file_cache[_cache_key]
+
+        # 判断 Duck 模式（用于后续限制）
+        _is_duck_cache = getattr(self, 'isolated_context', False)
+        if not _is_duck_cache:
+            try:
+                from app_state import get_duck_context as _gdc_cache
+                _is_duck_cache = bool(_gdc_cache())
+            except Exception:
+                pass
+        encoding = params.get("encoding", "utf-8")
         offset = int(params.get("offset", 0) or 0)
         limit = int(params.get("limit", 0) or 15000)
         if limit <= 0:
             limit = 15000
+
+        # 全局读取限制：防止大内容导致 LLM 上下文膨胀超时
+        # Duck 模式更激进（5000），普通模式也有上限（8000）
+        if _is_duck_cache and limit > 5000:
+            limit = 5000
+        elif limit > 8000:
+            limit = 8000
 
         if not path:
             return {"success": False, "error": "Path is empty"}
@@ -2800,7 +3199,7 @@ class AutonomousAgent:
                     f"脚本中 open('{path}') 读全文，用字符串替换/正则修改后写回。"
                     f"\n如只需读取某段代码，用 read_file offset=N limit=M 精确读取。"
                 )
-                return {
+                _big_result = {
                     "success": True,
                     "output": output,
                     "content": output,
@@ -2808,6 +3207,9 @@ class AutonomousAgent:
                     "truncated": True,
                     "smart_summary": True,
                 }
+                if path and hasattr(self, '_read_file_cache'):
+                    self._read_file_cache[_cache_key] = _big_result
+                return _big_result
 
             with open(path, "r", encoding=encoding, errors="replace") as f:
                 full_content = f.read()
@@ -2817,14 +3219,20 @@ class AutonomousAgent:
                 content = full_content[offset : offset + limit]
                 truncated = offset + limit < total
                 hint = f"共 {total} 字符，已读 {offset}–{offset + len(content)}。若需后续内容可 read_file offset={offset + len(content)} limit={limit}" if truncated else None
-                return {
+                _chunk_result = {
                     "success": True,
                     "output": content + (f"\n\n[分段提示] {hint}" if hint else ""),
                     "content": content,
                     "total_size": total,
                     "truncated": truncated,
                 }
-            return {"success": True, "output": full_content, "content": full_content}
+                if path and hasattr(self, '_read_file_cache'):
+                    self._read_file_cache[_cache_key] = _chunk_result
+                return _chunk_result
+            _full_result = {"success": True, "output": full_content, "content": full_content}
+            if path and hasattr(self, '_read_file_cache'):
+                self._read_file_cache[_cache_key] = _full_result
+            return _full_result
         except Exception as e:
             return {"success": False, "error": str(e)}
     

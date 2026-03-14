@@ -67,6 +67,12 @@ class BackendService: ObservableObject {
     var onMonitorEvent: ((_ sourceSession: String, _ taskId: String, _ event: [String: Any]) -> Void)?
     /// 子 Duck 任务完成时回调（主 Agent 主动联系用户，将结果作为 assistant 消息展示）
     var onDuckTaskComplete: ((_ content: String, _ success: Bool, _ taskId: String, _ sessionId: String) -> Void)?
+    /// 群聊创建时回调
+    var onGroupChatCreated: ((_ group: GroupChat) -> Void)?
+    /// 群聊消息回调
+    var onGroupMessage: ((_ groupId: String, _ message: GroupMessage) -> Void)?
+    /// 群聊状态更新回调
+    var onGroupStatusUpdate: ((_ groupId: String, _ status: GroupChatStatus, _ taskSummary: GroupTaskSummary) -> Void)?
 
     init(port: Int = Int(PortConfiguration.defaultBackendPort)) {
         self.port = port
@@ -249,6 +255,25 @@ class BackendService: ObservableObject {
                                 let retrySessionId = json["session_id"] as? String ?? ""
                                 await MainActor.run {
                                     self.onDuckTaskComplete?(retryContent, false, retryTaskId, retrySessionId)
+                                }
+                            case "group_chat_created":
+                                if let groupData = try? JSONSerialization.data(withJSONObject: json["group"] ?? [:]),
+                                   let group = try? JSONDecoder().decode(GroupChat.self, from: groupData) {
+                                    await MainActor.run { self.onGroupChatCreated?(group) }
+                                }
+                            case "group_message":
+                                let gid = json["group_id"] as? String ?? ""
+                                if let msgData = try? JSONSerialization.data(withJSONObject: json["message"] ?? [:]),
+                                   let msg = try? JSONDecoder().decode(GroupMessage.self, from: msgData) {
+                                    await MainActor.run { self.onGroupMessage?(gid, msg) }
+                                }
+                            case "group_status_update":
+                                let gid = json["group_id"] as? String ?? ""
+                                let statusStr = json["status"] as? String ?? "active"
+                                let gStatus = GroupChatStatus(rawValue: statusStr) ?? .active
+                                if let summaryData = try? JSONSerialization.data(withJSONObject: json["task_summary"] ?? [:]),
+                                   let summary = try? JSONDecoder().decode(GroupTaskSummary.self, from: summaryData) {
+                                    await MainActor.run { self.onGroupStatusUpdate?(gid, gStatus, summary) }
                                 }
                             case "client_disconnected":
                                 break
@@ -804,6 +829,29 @@ class BackendService: ObservableObject {
                                     let retrySessionIdDtc = json["session_id"] as? String ?? ""
                                     await MainActor.run { self.onDuckTaskComplete?(retryContentDtc, false, retryTaskIdDtc, retrySessionIdDtc) }
                                     continue
+
+                                case "group_chat_created":
+                                    if let groupData = try? JSONSerialization.data(withJSONObject: json["group"] ?? [:]),
+                                       let group = try? JSONDecoder().decode(GroupChat.self, from: groupData) {
+                                        await MainActor.run { self.onGroupChatCreated?(group) }
+                                    }
+                                    continue
+                                case "group_message":
+                                    let gidDtc = json["group_id"] as? String ?? ""
+                                    if let msgData = try? JSONSerialization.data(withJSONObject: json["message"] ?? [:]),
+                                       let msg = try? JSONDecoder().decode(GroupMessage.self, from: msgData) {
+                                        await MainActor.run { self.onGroupMessage?(gidDtc, msg) }
+                                    }
+                                    continue
+                                case "group_status_update":
+                                    let gidDtc = json["group_id"] as? String ?? ""
+                                    let statusStrDtc = json["status"] as? String ?? "active"
+                                    let gStatusDtc = GroupChatStatus(rawValue: statusStrDtc) ?? .active
+                                    if let summaryData = try? JSONSerialization.data(withJSONObject: json["task_summary"] ?? [:]),
+                                       let summary = try? JSONDecoder().decode(GroupTaskSummary.self, from: summaryData) {
+                                        await MainActor.run { self.onGroupStatusUpdate?(gidDtc, gStatusDtc, summary) }
+                                    }
+                                    continue
                                 
                                 case "system_notification":
                                     await MainActor.run { [weak self] in
@@ -1268,6 +1316,29 @@ class BackendService: ObservableObject {
                                     await MainActor.run { self.onDuckTaskComplete?(retryContentDtc2, false, retryTaskIdDtc2, retrySessionIdDtc2) }
                                     continue
 
+                                case "group_chat_created":
+                                    if let groupData = try? JSONSerialization.data(withJSONObject: json["group"] ?? [:]),
+                                       let group = try? JSONDecoder().decode(GroupChat.self, from: groupData) {
+                                        await MainActor.run { self.onGroupChatCreated?(group) }
+                                    }
+                                    continue
+                                case "group_message":
+                                    let gidDtc2 = json["group_id"] as? String ?? ""
+                                    if let msgData = try? JSONSerialization.data(withJSONObject: json["message"] ?? [:]),
+                                       let msg = try? JSONDecoder().decode(GroupMessage.self, from: msgData) {
+                                        await MainActor.run { self.onGroupMessage?(gidDtc2, msg) }
+                                    }
+                                    continue
+                                case "group_status_update":
+                                    let gidDtc2 = json["group_id"] as? String ?? ""
+                                    let statusStrDtc2 = json["status"] as? String ?? "active"
+                                    let gStatusDtc2 = GroupChatStatus(rawValue: statusStrDtc2) ?? .active
+                                    if let summaryData = try? JSONSerialization.data(withJSONObject: json["task_summary"] ?? [:]),
+                                       let summary = try? JSONDecoder().decode(GroupTaskSummary.self, from: summaryData) {
+                                        await MainActor.run { self.onGroupStatusUpdate?(gidDtc2, gStatusDtc2, summary) }
+                                    }
+                                    continue
+
                                 case "monitor_event":
                                     let sourceSessionChat = json["source_session"] as? String ?? ""
                                     let taskIdChat = json["task_id"] as? String ?? ""
@@ -1299,279 +1370,11 @@ class BackendService: ObservableObject {
         }
     }
     
-    // MARK: - Autonomous Execution
+    // MARK: - Autonomous Execution (DEPRECATED — now routes through chat)
     
+    @available(*, deprecated, message: "Use sendMessageStream instead. Autonomous mode merged into chat.")
     func sendAutonomousTask(_ task: String, sessionId: String? = nil, enableModelSelection: Bool = true, preferLocal: Bool = false, preferredTier: String? = nil, filePaths: [String] = []) -> AsyncThrowingStream<StreamChunk, Error> {
-        return AsyncThrowingStream { [weak self] continuation in
-            Task { [weak self] in
-                guard let self = self else {
-                    continuation.finish(throwing: URLError(.cancelled))
-                    return
-                }
-                cancelIdleReceiveLoop()
-                do {
-                    await self.ensureConnected()
-                    
-                    guard let webSocket = self.webSocketTask else {
-                        continuation.finish(throwing: URLError(.cannotConnectToHost))
-                        return
-                    }
-                    
-                    var message: [String: Any] = [
-                        "type": "autonomous_task",
-                        "task": task,
-                        "enable_model_selection": enableModelSelection,
-                        "prefer_local": preferLocal
-                    ]
-                    
-                    if let tier = preferredTier, !tier.isEmpty, tier != "auto" {
-                        message["preferred_tier"] = tier
-                    }
-                    
-                    if let sessionId = sessionId {
-                        message["session_id"] = sessionId
-                    }
-                    
-                    if !filePaths.isEmpty {
-                        message["file_paths"] = filePaths
-                    }
-                    
-                    let jsonData = try JSONSerialization.data(withJSONObject: message)
-                    let jsonString = String(data: jsonData, encoding: .utf8)!
-                    try await webSocket.send(.string(jsonString))
-                    
-                    while true {
-                        let response = try await webSocket.receive()
-                        
-                        switch response {
-                        case .string(let text):
-                            if let data = text.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let type = json["type"] as? String {
-                                
-                                switch type {
-                                case "task_start":
-                                    let taskId = json["task_id"] as? String ?? ""
-                                    let taskDesc = json["task"] as? String ?? ""
-                                    continuation.yield(.taskStart(taskId: taskId, task: taskDesc))
-                                    
-                                case "model_selected":
-                                    let modelType = json["model_type"] as? String ?? "unknown"
-                                    let reason = json["reason"] as? String ?? ""
-                                    let taskType = json["task_type"] as? String ?? ""
-                                    let complexity = json["complexity"] as? Int ?? 0
-                                    continuation.yield(.modelSelected(modelType: modelType, reason: reason, taskType: taskType, complexity: complexity))
-                                    
-                                case "action_plan":
-                                    let action = json["action"] as? [String: Any] ?? [:]
-                                    let iteration = json["iteration"] as? Int ?? 0
-                                    continuation.yield(.actionPlan(action: action, iteration: iteration))
-                                    
-                                case "action_executing":
-                                    let actionId = json["action_id"] as? String ?? ""
-                                    let actionType = json["action_type"] as? String ?? ""
-                                    continuation.yield(.actionExecuting(actionId: actionId, actionType: actionType))
-                                    
-                                case "action_result":
-                                    let actionId = json["action_id"] as? String ?? ""
-                                    let success = json["success"] as? Bool ?? false
-                                    let output = json["output"] as? String
-                                    let error = json["error"] as? String
-                                    continuation.yield(.actionResult(actionId: actionId, success: success, output: output, error: error))
-                                    // 兼容旧协议：action_result 内嵌 image_base64 时直接展示；新协议由 screenshot chunk 单独推送
-                                    if success, let path = json["screenshot_path"] as? String, !path.isEmpty,
-                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
-                                        let mime = json["mime_type"] as? String ?? "image/png"
-                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
-                                    }
-                                
-                                case "screenshot":
-                                    // 后端单独推送的截图 chunk，避免大 payload 导致 WebSocket 失败
-                                    if let path = json["screenshot_path"] as? String, !path.isEmpty,
-                                       let base64 = json["image_base64"] as? String, !base64.isEmpty {
-                                        let mime = json["mime_type"] as? String ?? "image/png"
-                                        continuation.yield(.imageData(base64: base64, mimeType: mime, path: path))
-                                    }
-                                    
-                                case "reflect_start":
-                                    continuation.yield(.reflectStart)
-                                    
-                                case "reflect_result":
-                                    let reflection = json["reflection"] as? String ?? ""
-                                    continuation.yield(.reflectResult(reflection: reflection))
-                                    
-                                case "llm_request_start":
-                                    let provider = json["provider"] as? String ?? "unknown"
-                                    let model = json["model"] as? String ?? ""
-                                    let iteration = json["iteration"] as? Int ?? 0
-                                    continuation.yield(.llmRequestStart(provider: provider, model: model, iteration: iteration))
-
-                                case "llm_request_end":
-                                    let provider = json["provider"] as? String ?? "unknown"
-                                    let model = json["model"] as? String ?? ""
-                                    let iteration = json["iteration"] as? Int ?? 0
-                                    let latencyMs = json["latency_ms"] as? Int ?? 0
-                                    let usage = json["usage"] as? [String: Any] ?? [:]
-                                    let responsePreview = json["response_preview"] as? String
-                                    let error = json["error"] as? String
-                                    continuation.yield(.llmRequestEnd(provider: provider, model: model, iteration: iteration, latencyMs: latencyMs, usage: usage, responsePreview: responsePreview, error: error))
-
-                                case "task_complete":
-                                    let taskId = json["task_id"] as? String ?? ""
-                                    let success = json["success"] as? Bool ?? false
-                                    let summary = json["summary"] as? String ?? ""
-                                    let totalActions = json["total_actions"] as? Int ?? 0
-                                    continuation.yield(.taskComplete(taskId: taskId, success: success, summary: summary, totalActions: totalActions))
-
-                                case "task_stopped":
-                                    let taskIdStopped = json["task_id"] as? String ?? ""
-                                    let msg = json["message"] as? String ?? json["reason"] as? String ?? "任务已停止"
-                                    let rec = json["recommendation"] as? String ?? ""
-                                    let summaryStopped = rec.isEmpty ? msg : "\(msg)\n\n建议: \(rec)"
-                                    let totalStopped = json["iterations"] as? Int ?? 0
-                                    continuation.yield(.taskComplete(taskId: taskIdStopped, success: false, summary: summaryStopped, totalActions: totalStopped))
-                                    
-                                case "execution_log":
-                                    if let toolName = json["tool_name"] as? String,
-                                       let level = json["level"] as? String,
-                                       let message = json["message"] as? String {
-                                        let actionId = json["action_id"] as? String ?? ""
-                                        continuation.yield(.executionLog(toolName: toolName, actionId: actionId, level: level, message: message))
-                                    }
-                                    
-                                case "content":
-                                    if let content = json["content"] as? String {
-                                        continuation.yield(.content(content))
-                                    }
-                                    
-                                case "upgrade_complete":
-                                    let plan = json["plan"] as? String ?? ""
-                                    let loaded = json["loaded_tools"] as? [String] ?? []
-                                    let summary = loaded.isEmpty
-                                        ? "✅ 升级已完成。\(plan.isEmpty ? "" : plan)"
-                                        : "✅ 升级已完成，已加载工具: \(loaded.joined(separator: ", "))"
-                                    continuation.yield(.content(summary))
-                                    
-                                case "upgrade_error":
-                                    let err = json["error"] as? String ?? "未知错误"
-                                    continuation.yield(.content("❌ 升级失败: \(err)"))
-                                    
-                                case "done":
-                                    let modelName = json["model"] as? String
-                                    var tokenUsageAuto: TokenUsage? = nil
-                                    if let usage = json["usage"] as? [String: Any] {
-                                        tokenUsageAuto = TokenUsage(
-                                            promptTokens: usage["prompt_tokens"] as? Int ?? 0,
-                                            completionTokens: usage["completion_tokens"] as? Int ?? 0,
-                                            totalTokens: usage["total_tokens"] as? Int ?? 0
-                                        )
-                                    }
-                                    continuation.yield(.done(model: modelName, tokenUsage: tokenUsageAuto))
-                                    startIdleReceiveLoop()
-                                    continuation.finish()
-                                    return
-                                    
-                                case "retry":
-                                    let retryMsg = json["message"] as? String ?? "正在重试解析…"
-                                    continuation.yield(.retry(message: retryMsg))
-                                    continue
-                                
-                                case "error":
-                                    let errorMsg = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
-                                    continuation.yield(.error(errorMsg))
-                                    startIdleReceiveLoop()
-                                    continuation.finish()
-                                    return
-                                
-                                case "server_ping":
-                                    // 服务端心跳，回复 pong
-                                    if let ws = self.webSocketTask {
-                                        Task {
-                                            do {
-                                                let pongMsg: [String: Any] = ["type": "pong"]
-                                                let pongData = try JSONSerialization.data(withJSONObject: pongMsg)
-                                                if let pongStr = String(data: pongData, encoding: .utf8) {
-                                                    try await ws.send(.string(pongStr))
-                                                }
-                                            } catch {}
-                                        }
-                                    }
-                                    continue
-
-                                case "duck_task_complete":
-                                    let contentDtc3 = json["content"] as? String ?? ""
-                                    let successDtc3 = json["success"] as? Bool ?? false
-                                    let taskIdDtc3 = json["task_id"] as? String ?? ""
-                                    let sessionIdDtc3 = json["session_id"] as? String ?? ""
-                                    await MainActor.run { self.onDuckTaskComplete?(contentDtc3, successDtc3, taskIdDtc3, sessionIdDtc3) }
-                                    continue
-                                case "duck_task_retry":
-                                    let retryContentDtc3 = json["content"] as? String ?? ""
-                                    let retryTaskIdDtc3 = json["task_id"] as? String ?? ""
-                                    let retrySessionIdDtc3 = json["session_id"] as? String ?? ""
-                                    await MainActor.run { self.onDuckTaskComplete?(retryContentDtc3, false, retryTaskIdDtc3, retrySessionIdDtc3) }
-                                    continue
-                                
-                                case "autonomous_task_accepted":
-                                    // 服务端确认接受任务，返回 task_id
-                                    continue
-                                
-                                case "phase_verify":
-                                    let iteration = json["iteration"] as? Int ?? 0
-                                    let phase = json["phase"] as? String ?? ""
-                                    let note = json["note"] as? String ?? ""
-                                    continuation.yield(.phaseVerify(iteration: iteration, phase: phase, note: note))
-                                    continue
-                                
-                                case "hitl_request":
-                                    let actionId = json["action_id"] as? String ?? ""
-                                    let actionType = json["action_type"] as? String ?? ""
-                                    let description = json["description"] as? String ?? ""
-                                    let riskLevel = json["risk_level"] as? String ?? "medium"
-                                    continuation.yield(.hitlRequest(actionId: actionId, actionType: actionType, description: description, riskLevel: riskLevel))
-                                    continue
-                                
-                                case "system_notification":
-                                    await MainActor.run { [weak self] in
-                                        self?.handleSystemNotification(json)
-                                    }
-                                    continue
-                                
-                                case "tools_updated":
-                                    if let cb = self.onToolsUpdated {
-                                        await cb()
-                                    }
-                                    continue
-
-                                case "monitor_event":
-                                    let sourceSessionAuto = json["source_session"] as? String ?? ""
-                                    let taskIdAuto = json["task_id"] as? String ?? ""
-                                    let eventAuto = json["event"] as? [String: Any] ?? [:]
-                                    await MainActor.run {
-                                        self.onMonitorEvent?(sourceSessionAuto, taskIdAuto, eventAuto)
-                                    }
-                                    continue
-                                    
-                                default:
-                                    continue
-                                }
-                            }
-                            
-                        case .data:
-                            continue
-                            
-                        @unknown default:
-                            continue
-                        }
-                    }
-                    
-                } catch {
-                    disconnect()
-                    startIdleReceiveLoop()
-                    continuation.finish(throwing: error)
-                }
-            }
-        }
+        return sendMessageStream(task, sessionId: sessionId, filePaths: filePaths)
     }
 
     // MARK: - MCP (Model Context Protocol)

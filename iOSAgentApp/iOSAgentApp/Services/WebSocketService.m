@@ -129,21 +129,6 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
     NSLog(@"[WebSocket] Sent chat_to_duck to duck_id=%@", duckId);
 }
 
-- (void)sendAutonomousTask:(NSString *)task sessionId:(NSString *)sessionId {
-    if (self.connectionState != WebSocketConnectionStateConnected) {
-        NSLog(@"[WebSocket] Not connected, cannot send task");
-        return;
-    }
-    
-    NSDictionary *message = @{
-        @"type": @"autonomous_task",
-        @"task": task,
-        @"session_id": sessionId
-    };
-    
-    [self sendJSONMessage:message];
-}
-
 - (void)createNewSession:(NSString *)sessionId {
     if (!sessionId) {
         NSLog(@"[WebSocket] createNewSession called with nil sessionId");
@@ -455,6 +440,30 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
         }
         NSLog(@"[WebSocket] duck_task_complete: session_id=%@ success=%d", sessionId, success);
     }
+    // MARK: - Group Chat
+    else if ([type isEqualToString:@"group_chat_created"]) {
+        NSDictionary *groupData = [json[@"group"] isKindOfClass:[NSDictionary class]] ? json[@"group"] : @{};
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveGroupChatCreated:)]) {
+            [self.delegate webSocketService:self didReceiveGroupChatCreated:groupData];
+        }
+        NSLog(@"[WebSocket] group_chat_created: group_id=%@", groupData[@"group_id"]);
+    }
+    else if ([type isEqualToString:@"group_message"]) {
+        NSString *groupId = _StringFromJSON(json[@"group_id"]) ?: @"";
+        NSDictionary *msgData = [json[@"message"] isKindOfClass:[NSDictionary class]] ? json[@"message"] : @{};
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveGroupMessage:message:)]) {
+            [self.delegate webSocketService:self didReceiveGroupMessage:groupId message:msgData];
+        }
+    }
+    else if ([type isEqualToString:@"group_status_update"]) {
+        NSString *groupId = _StringFromJSON(json[@"group_id"]) ?: @"";
+        NSString *status = _StringFromJSON(json[@"status"]) ?: @"";
+        NSDictionary *taskSummary = [json[@"task_summary"] isKindOfClass:[NSDictionary class]] ? json[@"task_summary"] : @{};
+        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveGroupStatusUpdate:status:taskSummary:)]) {
+            [self.delegate webSocketService:self didReceiveGroupStatusUpdate:groupId status:status taskSummary:taskSummary];
+        }
+        NSLog(@"[WebSocket] group_status_update: group_id=%@ status=%@", groupId, status);
+    }
     else if ([type isEqualToString:@"pong"]) {
         // Heartbeat response
     }
@@ -462,10 +471,6 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
         // 服务端心跳，回复 pong
         NSDictionary *pongMessage = @{@"type": @"pong"};
         [self sendJSONMessage:pongMessage];
-    }
-    else if ([type isEqualToString:@"autonomous_task_accepted"]) {
-        // 服务端确认接受任务
-        NSLog(@"[WebSocket] Autonomous task accepted");
     }
     else if ([type isEqualToString:@"resume_result"]) {
         BOOL found = _BoolFromJSON(json[@"found"]);
@@ -560,13 +565,9 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
         }
     }
     else if ([type isEqualToString:@"llm_request_start"] || [type isEqualToString:@"llm_request_end"]) {
-        // LLM 操作状态 - 同时用于普通 chat 和自主任务
+        // LLM 操作状态
         if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveLLMStatus:)]) {
             [self.delegate webSocketService:self didReceiveLLMStatus:json];
-        }
-        // 也转发给自主任务处理（保持兼容）
-        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveAutonomousChunk:)]) {
-            [self.delegate webSocketService:self didReceiveAutonomousChunk:json];
         }
     }
     else if ([type isEqualToString:@"model_selected"] || [type isEqualToString:@"task_start"] ||
@@ -575,9 +576,8 @@ static inline NSString * _Nullable _StringFromJSON(id obj) {
              [type isEqualToString:@"reflect_start"] || [type isEqualToString:@"reflect_result"] ||
              [type isEqualToString:@"task_complete"] || [type isEqualToString:@"task_stopped"] ||
              [type isEqualToString:@"progress_update"]) {
-        if ([self.delegate respondsToSelector:@selector(webSocketService:didReceiveAutonomousChunk:)]) {
-            [self.delegate webSocketService:self didReceiveAutonomousChunk:json];
-        }
+        // These chunks now arrive through chat flow — handled by content/done delegates
+        NSLog(@"[WebSocket] Execution chunk: %@", type);
     }
     else if ([type isEqualToString:@"monitor_event"]) {
         NSDictionary *event = json[@"event"];

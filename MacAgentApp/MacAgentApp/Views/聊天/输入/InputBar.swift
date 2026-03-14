@@ -86,33 +86,6 @@ struct InputBar: View {
                 .disabled(viewModel.isLoading)
                 .help(viewModel.isVoiceInputActive ? "停止语音输入" : "语音输入（静音自动发送）")
                 
-                Button(action: sendAutonomousTask) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "robot")
-                            .font(CyberFont.body(size: 20, weight: .medium))
-                        if viewModel.preferredModelTier != "auto" {
-                            Text(tierShortName(viewModel.preferredModelTier))
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundColor(CyberColor.green)
-                        }
-                    }
-                    .foregroundColor(canSend ? CyberColor.green : CyberColor.textSecond.opacity(0.5))
-                    .frame(width: 36, height: 36)
-                    .background(canSend ? CyberColor.green.opacity(0.15) : Color.clear)
-                    .clipShape(Circle())
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!canSend && !viewModel.isLoading)
-                .help("自主执行：按住可选择模型层级 (⌘⇧↵)")
-                .keyboardShortcut(.return, modifiers: [.command, .shift])
-                .contextMenu {
-                    Button("⚡ 自动选择（推荐）") { viewModel.preferredModelTier = "auto" }
-                    Button("🔍 快速 Fast（本地/轻量）") { viewModel.preferredModelTier = "fast" }
-                    Button("💪 强力 Strong（旗舰模型）") { viewModel.preferredModelTier = "strong" }
-                    Button("💰 经济 Cheap（高性价比）") { viewModel.preferredModelTier = "cheap" }
-                }
-                
                 Button(action: viewModel.isLoading ? { viewModel.stopTask() } : onSubmit) {
                     Image(systemName: viewModel.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
                         .font(CyberFont.body(size: 22))
@@ -165,11 +138,6 @@ struct InputBar: View {
     private func sendMessage() {
         guard canSend else { return }
         viewModel.sendMessage()
-    }
-    
-    private func sendAutonomousTask() {
-        guard canSend else { return }
-        viewModel.sendAutonomousTask()
     }
 
     private func tierShortName(_ tier: String) -> String {

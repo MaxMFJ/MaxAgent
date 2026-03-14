@@ -70,23 +70,27 @@ class DAGExecution:
     """一次 DAG 执行实例"""
     dag_id: str
     description: str
+    session_id: str = ""              # 关联的用户 session
     nodes: Dict[str, DAGNode] = field(default_factory=dict)
     status: str = "pending"   # pending / running / completed / failed / cancelled
     created_at: float = field(default_factory=time.time)
     completed_at: Optional[float] = None
     output: Any = None        # 聚合后的最终结果
     error: Optional[str] = None
+    group_id: Optional[str] = None    # 关联的 GroupChat ID
 
     def to_dict(self) -> dict:
         return {
             "dag_id": self.dag_id,
             "description": self.description,
+            "session_id": self.session_id,
             "nodes": {nid: n.to_dict() for nid, n in self.nodes.items()},
             "status": self.status,
             "created_at": self.created_at,
             "completed_at": self.completed_at,
             "output": self.output,
             "error": self.error,
+            "group_id": self.group_id,
         }
 
 
@@ -94,6 +98,7 @@ class DAGTaskOrchestrator:
     """DAG 任务编排器（单例）"""
 
     _instance: Optional["DAGTaskOrchestrator"] = None
+    _complete_hooks: List[Callable] = []  # 全局完成钩子
 
     def __init__(self):
         self._executions: Dict[str, DAGExecution] = {}
@@ -106,6 +111,11 @@ class DAGTaskOrchestrator:
             cls._instance = cls()
         return cls._instance
 
+    @classmethod
+    def register_complete_hook(cls, hook: Callable):
+        """注册全局 DAG 完成钩子（类似 duck_complete_hook）"""
+        cls._complete_hooks.append(hook)
+
     # ─── 创建 DAG ────────────────────────────────────
 
     def create_dag(
@@ -113,6 +123,7 @@ class DAGTaskOrchestrator:
         description: str,
         nodes: List[DAGNode],
         callback: Optional[DAGCallback] = None,
+        session_id: str = "",
     ) -> DAGExecution:
         """
         创建一个 DAG 执行实例。
@@ -134,6 +145,7 @@ class DAGTaskOrchestrator:
         execution = DAGExecution(
             dag_id=dag_id,
             description=description,
+            session_id=session_id,
             nodes={n.node_id: n for n in nodes},
         )
 
@@ -154,6 +166,10 @@ class DAGTaskOrchestrator:
 
         execution.status = "running"
         logger.info(f"DAG executing: {dag_id}")
+
+        # 自动创建群聊
+        if execution.session_id:
+            await self._create_group_chat(execution)
 
         # 启动所有无依赖的节点
         await self._schedule_ready_nodes(execution)
@@ -211,6 +227,9 @@ class DAGTaskOrchestrator:
 
             logger.info(f"DAG {execution.dag_id}: node {node.node_id} → task {task.task_id}")
 
+            # 群聊: 主 Agent 发布任务分配消息
+            await self._group_post_task_assign(execution, node)
+
     async def _on_node_complete(self, dag_id: str, node_id: str, task: DuckTask):
         """节点任务完成回调"""
         execution = self._executions.get(dag_id)
@@ -226,6 +245,9 @@ class DAGTaskOrchestrator:
         node.error = task.error
 
         logger.info(f"DAG {dag_id}: node {node_id} → {task.status.value}")
+
+        # 群聊: Duck 汇报完成/失败
+        await self._group_post_node_result(execution, node, task)
 
         if task.status == TaskStatus.FAILED:
             # 检查是否还有其他节点可以执行
@@ -286,6 +308,9 @@ class DAGTaskOrchestrator:
 
         logger.info(f"DAG {execution.dag_id} finished: {execution.status}")
 
+        # 群聊: 更新状态并发布总结
+        await self._group_finalize(execution)
+
         # 触发回调
         cb = self._callbacks.pop(execution.dag_id, None)
         if cb:
@@ -293,6 +318,13 @@ class DAGTaskOrchestrator:
                 await cb(execution)
             except Exception as e:
                 logger.error(f"DAG callback error: {e}")
+
+        # 触发全局完成钩子（供 ws_handler chat 续步使用）
+        for hook in self._complete_hooks:
+            try:
+                await hook(execution)
+            except Exception as e:
+                logger.error(f"DAG complete hook error: {e}")
 
     def _find_terminal_nodes(self, execution: DAGExecution) -> List[DAGNode]:
         """找到终端节点（没有其他节点依赖它的节点）"""
@@ -320,6 +352,15 @@ class DAGTaskOrchestrator:
 
         execution.status = "cancelled"
         execution.completed_at = time.time()
+
+        # 群聊: 取消
+        if execution.group_id:
+            try:
+                from services.group_chat_service import get_group_chat_service
+                await get_group_chat_service().cancel_group(execution.group_id)
+            except Exception:
+                pass
+
         logger.info(f"DAG cancelled: {dag_id}")
         return True
 
@@ -334,6 +375,145 @@ class DAGTaskOrchestrator:
             execs = [e for e in execs if e.status == status]
         execs.sort(key=lambda e: e.created_at, reverse=True)
         return execs
+
+    # ─── Group Chat 集成 ─────────────────────────────
+
+    async def _create_group_chat(self, execution: DAGExecution) -> None:
+        """DAG 开始时自动创建群聊"""
+        try:
+            from services.group_chat_service import get_group_chat_service
+            svc = get_group_chat_service()
+            gc = await svc.create_group(
+                session_id=execution.session_id,
+                title=execution.description,
+                dag_id=execution.dag_id,
+            )
+            execution.group_id = gc.group_id
+
+            # 主 Agent 在群聊中发布执行计划
+            node_list = "\n".join(
+                f"  {i+1}. {n.description}"
+                + (f" (依赖: {', '.join(n.depends_on)})" if n.depends_on else "")
+                for i, n in enumerate(execution.nodes.values())
+            )
+            from models.group_chat import GroupMessageType
+            await svc.post_message(
+                gc.group_id, "main",
+                f"📋 执行计划已生成，共 {len(execution.nodes)} 个子任务:\n{node_list}",
+                msg_type=GroupMessageType.PLAN,
+                metadata={"total_nodes": len(execution.nodes)},
+            )
+            await svc.update_task_panel(
+                gc.group_id,
+                total=len(execution.nodes), completed=0, failed=0,
+                running=0, pending=len(execution.nodes),
+            )
+        except Exception as e:
+            logger.warning("创建群聊失败: %s", e)
+
+    async def _group_post_task_assign(self, execution: DAGExecution, node: DAGNode) -> None:
+        """主 Agent 在群聊中通知任务分配"""
+        if not execution.group_id:
+            return
+        try:
+            from services.group_chat_service import get_group_chat_service
+            from models.group_chat import GroupMessageType
+            svc = get_group_chat_service()
+            duck_hint = f" → Duck({node.duck_id})" if node.duck_id else ""
+            deps = f"（上游: {', '.join(node.depends_on)}）" if node.depends_on else ""
+            await svc.post_message(
+                execution.group_id, "main",
+                f"📌 分配任务: {node.description}{duck_hint}{deps}",
+                msg_type=GroupMessageType.TASK_ASSIGN,
+                metadata={"node_id": node.node_id, "task_id": node.task_id},
+            )
+            # 更新面板
+            all_n = list(execution.nodes.values())
+            running = sum(1 for n in all_n if n.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING))
+            pending = sum(1 for n in all_n if n.status == TaskStatus.PENDING)
+            completed = sum(1 for n in all_n if n.status == TaskStatus.COMPLETED)
+            failed = sum(1 for n in all_n if n.status == TaskStatus.FAILED)
+            await svc.update_task_panel(
+                execution.group_id,
+                total=len(all_n), completed=completed, failed=failed,
+                running=running, pending=pending,
+            )
+        except Exception as e:
+            logger.debug("群聊任务分配消息失败: %s", e)
+
+    async def _group_post_node_result(self, execution: DAGExecution, node: DAGNode, task: DuckTask) -> None:
+        """Duck 在群聊中汇报任务结果，@主Agent"""
+        if not execution.group_id:
+            return
+        try:
+            from services.group_chat_service import get_group_chat_service
+            from models.group_chat import GroupMessageType
+            svc = get_group_chat_service()
+
+            sender_id = task.assigned_duck_id or "system"
+            # 确保 Duck 在参与者列表中
+            gc = await svc.get_group(execution.group_id)
+            if gc and sender_id != "system" and not gc.get_participant(sender_id):
+                duck_name = f"Duck-{sender_id[:6]}"
+                dtype = node.duck_type.value if node.duck_type else "general"
+                await svc.add_duck_participant(execution.group_id, sender_id, duck_name, dtype)
+
+            if task.status == TaskStatus.COMPLETED:
+                output_preview = str(task.output)[:200] if task.output else "无输出"
+                await svc.post_message(
+                    execution.group_id, sender_id,
+                    f"✅ @主Agent 任务完成: {node.description}\n结果: {output_preview}",
+                    msg_type=GroupMessageType.TASK_COMPLETE,
+                    mentions=["main"],
+                    metadata={"node_id": node.node_id, "task_id": task.task_id},
+                )
+            else:
+                await svc.post_message(
+                    execution.group_id, sender_id,
+                    f"❌ @主Agent 任务失败: {node.description}\n错误: {task.error or '未知错误'}",
+                    msg_type=GroupMessageType.TASK_FAILED,
+                    mentions=["main"],
+                    metadata={"node_id": node.node_id, "task_id": task.task_id},
+                )
+
+            # 更新面板
+            all_n = list(execution.nodes.values())
+            running = sum(1 for n in all_n if n.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING))
+            pending = sum(1 for n in all_n if n.status == TaskStatus.PENDING)
+            completed = sum(1 for n in all_n if n.status == TaskStatus.COMPLETED)
+            failed = sum(1 for n in all_n if n.status == TaskStatus.FAILED)
+            await svc.update_task_panel(
+                execution.group_id,
+                total=len(all_n), completed=completed, failed=failed,
+                running=running, pending=pending,
+            )
+        except Exception as e:
+            logger.debug("群聊节点结果消息失败: %s", e)
+
+    async def _group_finalize(self, execution: DAGExecution) -> None:
+        """DAG 完成/失败时更新群聊"""
+        if not execution.group_id:
+            return
+        try:
+            from services.group_chat_service import get_group_chat_service
+            svc = get_group_chat_service()
+            all_n = list(execution.nodes.values())
+            completed_count = sum(1 for n in all_n if n.status == TaskStatus.COMPLETED)
+            failed_count = sum(1 for n in all_n if n.status == TaskStatus.FAILED)
+
+            if execution.status == "completed":
+                conclusion = (
+                    f"🎉 全部 {len(all_n)} 个子任务已完成"
+                    f"（成功 {completed_count}，失败 {failed_count}）"
+                )
+                await svc.complete_group(execution.group_id, conclusion)
+            else:
+                await svc.fail_group(
+                    execution.group_id,
+                    f"共 {len(all_n)} 个子任务，成功 {completed_count}，失败 {failed_count}",
+                )
+        except Exception as e:
+            logger.debug("群聊完结消息失败: %s", e)
 
     # ─── DAG 验证 ────────────────────────────────────
 
@@ -367,3 +547,57 @@ class DAGTaskOrchestrator:
 
 def get_dag_orchestrator() -> DAGTaskOrchestrator:
     return DAGTaskOrchestrator.get_instance()
+
+
+async def notify_duck_task_started(task_id: str, duck_id: str, duck_name: str) -> None:
+    """Duck 开始执行任务时，在对应的 DAG 群聊中发送接受任务通知。
+
+    由 local_duck_worker 在任务开始时调用，让群聊成员知道哪个 Duck 已接手并开始工作。
+    """
+    orchestrator = get_dag_orchestrator()
+    entry = orchestrator._task_to_dag.get(task_id)
+    if not entry:
+        return                       # 该任务不属于任何 DAG（standalone duck task），静默跳过
+
+    dag_id, node_id = entry
+    execution = orchestrator._executions.get(dag_id)
+    if not execution or not execution.group_id:
+        return
+
+    node = execution.nodes.get(node_id)
+    if not node:
+        return
+
+    # 更新节点状态为 RUNNING
+    node.status = TaskStatus.RUNNING
+
+    try:
+        from services.group_chat_service import get_group_chat_service
+        from models.group_chat import GroupMessageType
+        svc = get_group_chat_service()
+
+        # 若 Duck 还不在群聊成员列表中，先加入
+        gc = await svc.get_group(execution.group_id)
+        if gc and not gc.get_participant(duck_id):
+            dtype = node.duck_type.value if node.duck_type else "general"
+            await svc.add_duck_participant(execution.group_id, duck_id, duck_name, dtype)
+
+        await svc.post_message(
+            execution.group_id, duck_id,
+            f"⚙️ 已接收任务，开始执行：{node.description}",
+            msg_type=GroupMessageType.TASK_PROGRESS,
+            metadata={"node_id": node_id, "task_id": task_id},
+        )
+        # 更新任务面板
+        all_n = list(execution.nodes.values())
+        running = sum(1 for n in all_n if n.status in (TaskStatus.RUNNING, TaskStatus.ASSIGNED))
+        pending = sum(1 for n in all_n if n.status == TaskStatus.PENDING)
+        completed = sum(1 for n in all_n if n.status == TaskStatus.COMPLETED)
+        failed = sum(1 for n in all_n if n.status == TaskStatus.FAILED)
+        await svc.update_task_panel(
+            execution.group_id,
+            total=len(all_n), completed=completed, failed=failed,
+            running=running, pending=pending,
+        )
+    except Exception as e:
+        logger.debug("群聊 Duck 开始通知失败: %s", e)

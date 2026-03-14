@@ -27,6 +27,8 @@
 		FRM002 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_AUDIO /* AudioToolbox.framework */; };
 		FRM003 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM_SPEECH /* Speech.framework */; };
 		MDL001 /* Message.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* Message.m */; };
+		GC_MDL01 /* GroupChat.m in Sources */ = {isa = PBXBuildFile; fileRef = GC_SRC01 /* GroupChat.m */; };
+		GC_VCT01 /* GroupChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = GC_SRC03 /* GroupChatViewController.m */; };
 		MDL002 /* ServerConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC006 /* ServerConfig.m */; };
 		MDL003 /* Conversation.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC012 /* Conversation.m */; };
 		MDL004 /* ConversationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = SRC013 /* ConversationManager.m */; };
@@ -84,6 +86,10 @@
 		SRC004H /* WebSocketService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WebSocketService.h; sourceTree = "<group>"; };
 		SRC005 /* Message.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Message.m; sourceTree = "<group>"; };
 		SRC005H /* Message.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Message.h; sourceTree = "<group>"; };
+		GC_SRC01 /* GroupChat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GroupChat.m; sourceTree = "<group>"; };
+		GC_SRC02 /* GroupChat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GroupChat.h; sourceTree = "<group>"; };
+		GC_SRC03 /* GroupChatViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GroupChatViewController.m; sourceTree = "<group>"; };
+		GC_SRC04 /* GroupChatViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GroupChatViewController.h; sourceTree = "<group>"; };
 		SRC006 /* ServerConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ServerConfig.m; sourceTree = "<group>"; };
 		SRC006H /* ServerConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ServerConfig.h; sourceTree = "<group>"; };
 		SRC007 /* ChatViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ChatViewController.m; sourceTree = "<group>"; };
@@ -208,6 +214,8 @@
 				DUCK002 /* Duck.m */,
 				4C4742202F5406CD00B528B2 /* ActionLogEntry.h */,
 				4C4742212F5406CD00B528B2 /* ActionLogEntry.m */,
+				GC_SRC02 /* GroupChat.h */,
+				GC_SRC01 /* GroupChat.m */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -282,6 +290,8 @@
 				SRC011 /* ImageZoomViewController.m */,
 				SRC014H /* ConversationListViewController.h */,
 				SRC014 /* ConversationListViewController.m */,
+				GC_SRC04 /* GroupChatViewController.h */,
+				GC_SRC03 /* GroupChatViewController.m */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -456,6 +466,8 @@
 				DUCK_BF1 /* Duck.m in Sources */,
 				DUCK_BF2 /* DuckApiService.m in Sources */,
 				DUCK_BF3 /* DuckTargetSelectorViewController.m in Sources */,
+				GC_MDL01 /* GroupChat.m in Sources */,
+				GC_VCT01 /* GroupChatViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

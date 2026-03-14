@@ -16,8 +16,10 @@
 #import "VoiceRainbowView.h"
 #import "AgentLiveView.h"
 #import "ActionLogEntry.h"
+#import "GroupChat.h"
+#import "GroupChatViewController.h"
 
-@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate, AgentLiveViewDelegate, DuckTargetSelectorDelegate>
+@interface ChatViewController () <UITableViewDataSource, UITableViewDelegate, WebSocketServiceDelegate, InputViewDelegate, MessageCellDelegate, ConversationListDelegate, AgentLiveViewDelegate, DuckTargetSelectorDelegate, GroupChatViewControllerDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) InputView *inputView;
@@ -27,7 +29,6 @@
 
 @property (nonatomic, strong, nullable) Message *currentAssistantMessage;
 @property (nonatomic, strong) NSLayoutConstraint *inputViewBottomConstraint;
-@property (nonatomic, strong, nullable) NSTimer *autonomousTimeoutTimer;
 @property (nonatomic, strong) VoiceRainbowView *voiceRainbow;
 
 // 用于消息去重（避免重连时重复显示已有消息）
@@ -49,6 +50,10 @@
 @property (nonatomic, assign) BOOL hasPendingStreamingUpdate;
 @property (nonatomic, assign) NSInteger streamingHeightUpdateCounter;
 
+// Group Chat（多 Agent 协作群聊）
+@property (nonatomic, strong) NSMutableArray<GroupChat *> *groupChats;
+@property (nonatomic, strong, nullable) GroupChatViewController *activeGroupChatVC;
+
 @end
 
 @implementation ChatViewController
@@ -62,6 +67,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
     // 初始化消息去重 set
     self.displayedMessageIds = [NSMutableSet set];
+    self.groupChats = [NSMutableArray array];
 
     // 深空黑主背景
     self.view.backgroundColor = TechTheme.backgroundPrimary;
@@ -886,66 +892,8 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     }
 }
 
-- (void)inputView:(InputView *)inputView didRequestSendAsAutonomousTask:(NSString *)text {
-    (void)inputView;
-    ConversationManager *manager = [ConversationManager sharedManager];
-    Conversation *currentConv = manager.currentConversation;
-    if (!currentConv) {
-        currentConv = [manager createNewConversation];
-    }
-    NSString *userContent = [NSString stringWithFormat:@"🤖 [自主任务] %@", text];
-    Message *userMessage = [Message userMessageWithContent:userContent];
-    [currentConv.messages addObject:userMessage];
-    self.currentAssistantMessage = [Message assistantMessage];
-    self.currentAssistantMessage.content = NSLocalizedString(@"autonomous_starting", nil);
-    [currentConv.messages addObject:self.currentAssistantMessage];
-    currentConv.updatedAt = [NSDate date];
-    if (currentConv.messages.count == 2) {
-        NSUInteger maxLength = MIN(30, userContent.length);
-        currentConv.title = [userContent substringToIndex:maxLength];
-        [self updateTitle];
-    }
-    [manager saveConversations];
-    [self.tableView reloadData];
-    [self scrollToBottom];
-    [self.inputView clearText];
-    self.inputView.loading = YES;
-    [self cancelAutonomousTimeout];
-    __weak typeof(self) wself = self;
-    self.autonomousTimeoutTimer = [NSTimer scheduledTimerWithTimeInterval:600 repeats:NO block:^(NSTimer * _Nonnull t) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            __strong typeof(wself) self = wself;
-            if (!self) return;
-            if (self.inputView.loading && self.currentAssistantMessage) {
-                self.inputView.loading = NO;
-                [self.currentAssistantMessage appendContent:@"\n\n[超时未收到完成信号，已停止等待]"];
-                NSMutableArray<Message *> *messages = [self currentMessages];
-                NSInteger idx = [messages indexOfObject:self.currentAssistantMessage];
-                if (idx != NSNotFound) {
-                    [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:idx inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
-                }
-                ConversationManager *m = [ConversationManager sharedManager];
-                if (m.currentConversation) {
-                    m.currentConversation.updatedAt = [NSDate date];
-                    [m saveConversations];
-                }
-                self.currentAssistantMessage = nil;
-            }
-            [self cancelAutonomousTimeout];
-        });
-    }];
-    [[NSRunLoop mainRunLoop] addTimer:self.autonomousTimeoutTimer forMode:NSRunLoopCommonModes];
-    [[WebSocketService sharedService] sendAutonomousTask:text sessionId:currentConv.conversationId];
-}
-
-- (void)cancelAutonomousTimeout {
-    [self.autonomousTimeoutTimer invalidate];
-    self.autonomousTimeoutTimer = nil;
-}
-
 - (void)inputViewDidRequestStop:(InputView *)inputView {
     (void)inputView;
-    [self cancelAutonomousTimeout];
     [[TTSService sharedService] stop];
     self.inputView.loading = NO;
     
@@ -1159,7 +1107,6 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)webSocketServiceDidCompleteSend:(WebSocketService *)service modelName:(NSString *)modelName tokenUsage:(NSDictionary<NSString *,NSNumber *> *)tokenUsage {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self cancelAutonomousTimeout];
         // 重置流式节流状态
         self.lastStreamingUIUpdateTime = nil;
         self.hasPendingStreamingUpdate = NO;
@@ -1201,7 +1148,6 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)webSocketServiceDidStop:(WebSocketService *)service {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
         [self scheduleHideAgentLiveIfNotRunning];
         if (self.currentAssistantMessage) {
@@ -1293,7 +1239,6 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 
 - (void)webSocketService:(WebSocketService *)service didReceiveError:(NSString *)errorMessage {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self cancelAutonomousTimeout];
         self.inputView.loading = NO;
         [self scheduleHideAgentLiveIfNotRunning];
         if (self.currentAssistantMessage) {
@@ -1565,102 +1510,6 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     });
 }
 
-- (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (!self.currentAssistantMessage) return;
-        NSString *type = chunk[@"type"];
-        NSMutableString *append = [NSMutableString string];
-        
-        // 同时更新 AgentLiveView
-        if ([type isEqualToString:@"task_start"]) {
-            [self showAgentLiveView];
-            NSString *taskId = chunk[@"task_id"] ?: @"";
-            NSString *taskDesc = chunk[@"task"] ?: @"";
-            self.agentLiveView.taskProgress = [TaskProgress progressWithTaskId:taskId description:taskDesc];
-            [self.agentLiveView.taskProgress handleTaskStart:chunk];
-            [self updateAgentLiveViewHeight];
-            [append appendString:@"🚀 任务开始执行...\n"];
-        } else if ([type isEqualToString:@"model_selected"]) {
-            NSString *modelType = chunk[@"model_type"] ?: @"";
-            NSString *reason = chunk[@"reason"] ?: @"";
-            NSString *icon = [modelType isEqualToString:@"local"] ? @"🏠" : @"☁️";
-            NSString *name = [modelType isEqualToString:@"local"] ? NSLocalizedString(@"model_local", nil) : NSLocalizedString(@"model_remote", nil);
-            [self.agentLiveView.taskProgress handleModelSelected:chunk];
-            [append appendFormat:@"%@ 选择模型: %@\n", icon, name];
-            if (reason.length) [append appendFormat:@"💡 %@\n\n", reason];
-        } else if ([type isEqualToString:@"action_plan"]) {
-            [self.agentLiveView handleActionPlan:chunk];
-            [self updateAgentLiveViewHeight];
-            NSDictionary *action = chunk[@"action"];
-            NSString *actionType = ([action isKindOfClass:[NSDictionary class]] ? action[@"action_type"] : nil) ?: @"unknown";
-            NSString *reasoning = ([action isKindOfClass:[NSDictionary class]] ? action[@"reasoning"] : nil) ?: @"";
-            NSNumber *iter = chunk[@"iteration"];
-            [append appendFormat:@"\n📋 步骤 %@: %@\n   → %@\n", iter ? iter.stringValue : @"?", actionType, reasoning];
-        } else if ([type isEqualToString:@"action_executing"]) {
-            [self.agentLiveView handleActionExecuting:chunk];
-            NSString *actionType = chunk[@"action_type"] ?: @"";
-            [append appendFormat:@"⏳ 执行中: %@\n", actionType];
-        } else if ([type isEqualToString:@"action_result"]) {
-            [self.agentLiveView handleActionResult:chunk];
-            id succ = chunk[@"success"];
-            BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
-            NSString *output = chunk[@"output"] ?: @"";
-            NSString *err = chunk[@"error"] ?: @"";
-            if (success && output.length) [append appendFormat:@"   ✓ %@\n", output];
-            else if (err.length) [append appendFormat:@"   ✗ %@\n", err];
-        } else if ([type isEqualToString:@"llm_request_start"]) {
-            [self.agentLiveView handleLLMRequestStart:chunk];
-        } else if ([type isEqualToString:@"llm_request_end"]) {
-            [self.agentLiveView handleLLMRequestEnd:chunk];
-        } else if ([type isEqualToString:@"reflect_start"]) {
-            [append appendString:@"\n🔄 反思中...\n"];
-        } else if ([type isEqualToString:@"reflect_result"]) {
-            NSString *ref = chunk[@"reflection"] ?: chunk[@"error"] ?: @"";
-            if (ref.length) [append appendFormat:@"   %@\n", ref];
-        } else if ([type isEqualToString:@"task_complete"]) {
-            [self.agentLiveView handleTaskComplete:chunk];
-            id succ = chunk[@"success"];
-            BOOL success = ([succ isKindOfClass:[NSNumber class]] ? [succ boolValue] : NO);
-            NSString *summary = chunk[@"summary"] ?: @"";
-            [append appendFormat:@"\n%@ 任务完成\n%@\n", success ? @"✅" : @"⚠️", summary];
-        } else if ([type isEqualToString:@"task_stopped"]) {
-            [self.agentLiveView handleTaskStopped:chunk];
-            [append appendFormat:@"\n⏹ %@\n", chunk[@"message"] ?: chunk[@"reason"] ?: NSLocalizedString(@"autonomous_stopped", nil)];
-        } else if ([type isEqualToString:@"progress_update"]) {
-            [self.agentLiveView.taskProgress handleProgressUpdate:chunk];
-            NSString *msg = chunk[@"message"] ?: @"";
-            if (msg.length) [append appendFormat:@"%@\n", msg];
-        }
-        
-        if (append.length > 0) {
-            self.currentAssistantMessage.content = [self.currentAssistantMessage.content stringByAppendingString:append];
-            NSMutableArray<Message *> *messages = [self currentMessages];
-            NSInteger index = [messages indexOfObject:self.currentAssistantMessage];
-            if (index != NSNotFound) {
-                [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]] withRowAnimation:UITableViewRowAnimationNone];
-                [self scrollToBottom];
-            }
-        }
-        if ([type isEqualToString:@"task_complete"] || [type isEqualToString:@"task_stopped"] || [type isEqualToString:@"error"]) {
-            [self cancelAutonomousTimeout];
-            self.inputView.loading = NO;
-            self.currentAssistantMessage.status = MessageStatusComplete;
-            ConversationManager *manager = [ConversationManager sharedManager];
-            if (manager.currentConversation) {
-                manager.currentConversation.updatedAt = [NSDate date];
-                [manager saveConversations];
-            }
-            self.currentAssistantMessage = nil;
-            // 延迟隐藏 Agent Live 面板
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (!self.agentLiveView.isRunning) {
-                    [self hideAgentLiveView];
-                }
-            });
-        }
-    });
-}
-
 #pragma mark - Agent Live View
 
 - (void)showAgentLiveView {
@@ -1823,6 +1672,61 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
             }
         }
     });
+}
+
+// MARK: - Group Chat Delegate
+
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupChatCreated:(NSDictionary *)groupData {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        GroupChat *group = [GroupChat groupChatWithDictionary:groupData];
+        [self.groupChats insertObject:group atIndex:0];
+
+        // 自动打开群聊视图
+        GroupChatViewController *vc = [[GroupChatViewController alloc] init];
+        vc.groupChat = group;
+        vc.delegate = self;
+        self.activeGroupChatVC = vc;
+        [self.navigationController pushViewController:vc animated:YES];
+        NSLog(@"[GroupChat] Created group: %@", group.groupId);
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupMessage:(NSString *)groupId message:(NSDictionary *)messageData {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        GroupMessage *msg = [GroupMessage messageWithDictionary:messageData];
+        for (GroupChat *g in self.groupChats) {
+            if ([g.groupId isEqualToString:groupId]) {
+                if (self.activeGroupChatVC && [self.activeGroupChatVC.groupChat.groupId isEqualToString:groupId]) {
+                    [self.activeGroupChatVC appendMessage:msg];
+                } else {
+                    [g addMessage:msg];
+                }
+                break;
+            }
+        }
+    });
+}
+
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupStatusUpdate:(NSString *)groupId status:(NSString *)status taskSummary:(NSDictionary *)taskSummary {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        GroupChatStatusType st = [GroupChat statusFromString:status];
+        GroupTaskSummary *ts = [GroupTaskSummary summaryWithDictionary:taskSummary];
+        for (GroupChat *g in self.groupChats) {
+            if ([g.groupId isEqualToString:groupId]) {
+                [g updateStatus:st summary:ts];
+                if (self.activeGroupChatVC && [self.activeGroupChatVC.groupChat.groupId isEqualToString:groupId]) {
+                    [self.activeGroupChatVC updateStatus:st summary:ts];
+                }
+                break;
+            }
+        }
+        NSLog(@"[GroupChat] Status update: %@ -> %@", groupId, status);
+    });
+}
+
+- (void)groupChatViewControllerDidRequestBack:(GroupChatViewController *)vc {
+    self.activeGroupChatVC = nil;
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 - (void)dealloc {

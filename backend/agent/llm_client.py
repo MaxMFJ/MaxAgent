@@ -219,14 +219,27 @@ class LLMClient:
                 logger.info(f"Using local token count for chat: {result['usage']}")
             
             if message.tool_calls:
-                result["tool_calls"] = [
-                    {
+                result["tool_calls"] = []
+                for tc in message.tool_calls:
+                    # Handle arguments that might already be a dict or might be a JSON string
+                    args = tc.function.arguments
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args)
+                        except json.JSONDecodeError:
+                            # If parsing fails, keep as string or handle appropriately
+                            pass
+                    elif not isinstance(args, dict):
+                        # If it's neither a string nor a dict, convert to dict if possible
+                        try:
+                            args = dict(args)
+                        except:
+                            pass  # Keep original if conversion fails
+                    result["tool_calls"].append({
                         "id": tc.id,
                         "name": tc.function.name,
-                        "arguments": json.loads(tc.function.arguments)
-                    }
-                    for tc in message.tool_calls
-                ]
+                        "arguments": args
+                    })
             
             # ── Track usage ──
             usage = result.get("usage", {})
@@ -412,9 +425,19 @@ class LLMClient:
                             for idx in sorted(tool_calls_buffer.keys()):
                                 tc = tool_calls_buffer[idx]
                                 try:
-                                    tc["arguments"] = json.loads(tc["arguments"])
+                                    # Handle arguments that might already be a dict or might be a JSON string
+                                    args = tc["arguments"]
+                                    if isinstance(args, str):
+                                        args = json.loads(args)
+                                    elif not isinstance(args, dict):
+                                        # If it's neither a string nor a dict, convert to dict if possible
+                                        try:
+                                            args = dict(args)
+                                        except:
+                                            pass  # Keep original if conversion fails
+                                    tc["arguments"] = args
                                     tc["_truncated"] = False
-                                except json.JSONDecodeError:
+                                except (json.JSONDecodeError, TypeError):
                                     logger.warning(f"Tool call '{tc['name']}' has invalid JSON arguments (truncated={truncated})")
                                     tc["arguments"] = {}
                                     tc["_truncated"] = True

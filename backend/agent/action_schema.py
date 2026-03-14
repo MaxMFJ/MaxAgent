@@ -34,6 +34,7 @@ class ActionType(Enum):
     CLIPBOARD_WRITE = "clipboard_write"
     CALL_TOOL = "call_tool"  # 调用已注册工具（screenshot、capsule、terminal 等）
     DELEGATE_DUCK = "delegate_duck"  # 委派任务给 Duck 分身 Agent
+    DELEGATE_DAG = "delegate_dag"    # 创建多Agent协作DAG（自动群聊）
     THINK = "think"
     FINISH = "finish"
 

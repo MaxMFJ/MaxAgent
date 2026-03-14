@@ -47,12 +47,17 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 
 /// 服务端下发朗读指令（如 notification(speak)）
 - (void)webSocketService:(WebSocketService *)service didReceiveSpeak:(NSString *)text;
-/// 自主任务流式 chunk（model_selected, task_start, action_plan, action_result, task_complete 等）
-- (void)webSocketService:(WebSocketService *)service didReceiveAutonomousChunk:(NSDictionary *)chunk;
 /// LLM 操作状态（llm_request_start, llm_request_end）- 用于显示 chat 进度
 - (void)webSocketService:(WebSocketService *)service didReceiveLLMStatus:(NSDictionary *)status;
 /// 监控事件（chat/自主任务均会广播，含 task_start、llm_request_start、tool_call 等）
 - (void)webSocketService:(WebSocketService *)service didReceiveMonitorEvent:(NSDictionary *)event sessionId:(NSString *)sessionId taskId:(NSString *)taskId taskType:(NSString *)taskType;
+
+/// 群聊：创建新的多 Agent 协作群聊
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupChatCreated:(NSDictionary *)groupData;
+/// 群聊：收到群消息
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupMessage:(NSString *)groupId message:(NSDictionary *)messageData;
+/// 群聊：群聊状态/任务面板更新
+- (void)webSocketService:(WebSocketService *)service didReceiveGroupStatusUpdate:(NSString *)groupId status:(NSString *)status taskSummary:(NSDictionary *)taskSummary;
 
 @end
 
@@ -71,7 +76,6 @@ typedef NS_ENUM(NSInteger, WebSocketConnectionState) {
 - (void)sendChatMessage:(NSString *)content sessionId:(NSString *)sessionId;
 /// 发送给子 Duck 的直聊消息（主 Backend 转发）
 - (void)sendChatToDuck:(NSString *)content duckId:(NSString *)duckId sessionId:(NSString *)sessionId;
-- (void)sendAutonomousTask:(NSString *)task sessionId:(NSString *)sessionId;
 - (void)createNewSession:(NSString *)sessionId;
 - (void)clearSession:(NSString *)sessionId;
 - (void)sendStopStream:(NSString *)sessionId;

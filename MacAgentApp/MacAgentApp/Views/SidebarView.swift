@@ -76,7 +76,35 @@ struct SidebarView: View {
             Rectangle()
                 .fill(CyberColor.border)
                 .frame(height: 1)
-            
+
+            // Group Chats Section
+            if !viewModel.groupChats.isEmpty {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("协作群聊")
+                            .font(CyberFont.display(size: 11, weight: .semibold))
+                            .foregroundColor(CyberColor.purple)
+                            .tracking(1)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+
+                    ForEach(viewModel.groupChats) { group in
+                        GroupChatRow(group: group, isActive: viewModel.activeGroupChat?.groupId == group.groupId)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewModel.activeGroupChat = group
+                                viewModel.currentConversation = nil
+                            }
+                    }
+                }
+
+                Rectangle()
+                    .fill(CyberColor.border)
+                    .frame(height: 1)
+            }
+
             // Connection Status
             HStack {
                 Circle()
@@ -129,6 +157,50 @@ struct ConversationRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct GroupChatRow: View {
+    let group: GroupChat
+    let isActive: Bool
+
+    private var statusEmoji: String {
+        switch group.status {
+        case .active: return "🟢"
+        case .completed: return "✅"
+        case .failed: return "❌"
+        case .cancelled: return "⏹️"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(statusEmoji)
+                .font(.system(size: 10))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(group.title)
+                    .font(CyberFont.body(size: 12))
+                    .foregroundColor(CyberColor.textPrimary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Text("\(group.participants.count) 成员")
+                        .font(CyberFont.mono(size: 9))
+                        .foregroundColor(CyberColor.textSecond)
+                    Text("·")
+                        .foregroundColor(CyberColor.textSecond)
+                    Text("\(group.messages.count) 消息")
+                        .font(CyberFont.mono(size: 9))
+                        .foregroundColor(CyberColor.textSecond)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(isActive ? CyberColor.bgHighlight : Color.clear)
     }
 }
 

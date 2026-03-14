@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useChatStore } from '../stores/chatStore';
 import { useWSStore } from '../stores/wsStore';
+import { useGroupChatStore } from '../stores/groupChatStore';
 import { Button, IconButton, StatusDot, Input } from './ui';
-import { Plus, X, Search, MessageSquare, Bot, Trash2, Pencil } from 'lucide-react';
+import { Plus, X, Search, MessageSquare, Trash2, Pencil, Users } from 'lucide-react';
 
 interface Props {
   onClose?: () => void;
@@ -17,6 +18,9 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
   const rename = useChatStore((s) => s.renameConversation);
   const wsStatus = useWSStore((s) => s.status);
   const reconnect = useWSStore((s) => s.reconnect);
+  const groupBriefs = useGroupChatStore((s) => s.briefs);
+  const activeGroupId = useGroupChatStore((s) => s.activeGroupId);
+  const setActiveGroup = useGroupChatStore((s) => s.setActiveGroup);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -170,7 +174,7 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
                         border: isActive ? '1px solid transparent' : '1px solid var(--border)',
                       }}
                     >
-                      {conv.isAutonomous ? <Bot size={14} /> : <MessageSquare size={14} />}
+                      {<MessageSquare size={14} />}
                     </div>
 
                     {/* Content */}
@@ -228,6 +232,53 @@ const Sidebar: React.FC<Props> = ({ onClose }) => {
           })}
         </div>
       </div>
+
+      {/* Group Chats */}
+      {groupBriefs.length > 0 && (
+        <div className="px-2 pb-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="px-1 py-2 flex items-center gap-1.5">
+            <Users size={12} style={{ color: 'var(--text-tertiary)' }} />
+            <span className="text-[11px] font-semibold tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+              协作群聊
+            </span>
+          </div>
+          <div className="space-y-1">
+            {groupBriefs.map((g) => {
+              const isActive = g.group_id === activeGroupId;
+              const statusEmoji = g.status === 'active' ? '🟢' : g.status === 'completed' ? '✅' : g.status === 'failed' ? '🔴' : '⚪';
+              return (
+                <div
+                  key={g.group_id}
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-[var(--radius-md)] cursor-pointer transition-all"
+                  style={{
+                    background: isActive ? 'var(--accent-dim)' : 'transparent',
+                    border: isActive ? '1px solid var(--border-glow)' : '1px solid transparent',
+                  }}
+                  onClick={() => {
+                    setActiveGroup(g.group_id);
+                    setActive(null as any);
+                    onClose?.();
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-hover)'; }}
+                  onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                >
+                  <span style={{ fontSize: 14 }}>🦆</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-[12px] truncate font-medium" style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                      {g.title}
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                        {statusEmoji} {g.participant_count} 人 · {g.message_count} 条
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Footer: Connection Status */}
       <div

@@ -11,7 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 - (void)inputViewDidRequestVoiceInput:(InputView *)inputView;
-- (void)inputView:(InputView *)inputView didRequestSendAsAutonomousTask:(NSString *)text;
 
 @end
 

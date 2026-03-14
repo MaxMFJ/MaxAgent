@@ -73,15 +73,29 @@ class DuckSandbox:
         self._root.mkdir(parents=True, exist_ok=True)
         self._active: Dict[str, SandboxInfo] = {}
 
-    def create_sandbox(self, duck_id: str, task_id: str) -> SandboxInfo:
+    def create_sandbox(self, duck_id: str, task_id: str, label: str = "") -> SandboxInfo:
         """
-        为 Duck 任务创建独立沙箱目录
+        为 Duck 任务创建独立沙箱目录。
+
+        Args:
+            duck_id: Duck 标识符
+            task_id: 任务 ID（取前 8 位）
+            label: 可读任务标签（由主 Agent 设置，用于目录命名，如 "AI行业数据搜集"）
 
         Returns:
             SandboxInfo with workspace_dir set
         """
-        sandbox_id = f"{duck_id}_{task_id}"
-        workspace_dir = self._root / sandbox_id / "workspace"
+        sandbox_id = f"{duck_id}_{task_id}"  # 内部查找键不变
+
+        # 用可读 label 作为目录前缀（限 20 字符，去除特殊字符）
+        if label:
+            import re as _re
+            safe_label = _re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", label).strip()[:20]
+            dir_name = f"{safe_label}_{task_id}" if safe_label else sandbox_id
+        else:
+            dir_name = sandbox_id
+
+        workspace_dir = self._root / dir_name / "workspace"
         workspace_dir.mkdir(parents=True, exist_ok=True)
 
         info = SandboxInfo(
@@ -93,7 +107,7 @@ class DuckSandbox:
         )
 
         # 写入元数据
-        meta_path = self._root / sandbox_id / "_metadata.json"
+        meta_path = self._root / dir_name / "_metadata.json"
         meta_path.write_text(
             json.dumps(info.to_dict(), ensure_ascii=False, indent=2),
             encoding="utf-8",

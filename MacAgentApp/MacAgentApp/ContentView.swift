@@ -20,9 +20,14 @@ struct ContentView: View {
                 SidebarView()
                     .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
                 
-                // 中间聊天区域
-                ChatView()
-                    .frame(minWidth: 400)
+                // 中间区域：群聊或普通对话
+                if viewModel.activeGroupChat != nil {
+                    GroupChatView()
+                        .frame(minWidth: 400)
+                } else {
+                    ChatView()
+                        .frame(minWidth: 400)
+                }
                 
                 // 右侧工具面板（可隐藏）
                 if viewModel.showToolPanel {

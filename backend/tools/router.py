@@ -127,6 +127,11 @@ async def execute_tool(
                 except Exception as mcp_err:
                     logger.warning("MCP fallback for '%s' also failed: %s", name, mcp_err)
 
+        # ── MCP Catalog Auto-Suggest ────────────────────────────────
+        # 工具完全不存在且无 MCP fallback 时，自动搜索 MCP Catalog 推荐安装
+        if not result.success and isinstance(result.data, dict) and result.data.get("tool_not_found"):
+            result = _enrich_with_catalog_suggestions(result, name)
+
         return result
     except asyncio.TimeoutError as e:
         logger.warning(f"Tool {name} timed out: {e}")
@@ -143,3 +148,29 @@ def _try_mcp_fallback(reg: ToolRegistry, tool_name: str):
         return find_mcp_fallback(reg, tool_name)
     except ImportError:
         return None
+
+
+def _enrich_with_catalog_suggestions(result: ToolResult, tool_name: str) -> ToolResult:
+    """当工具不存在时，搜索 MCP Catalog 并在错误信息中推荐可安装的 MCP 服务。"""
+    try:
+        from services.mcp_catalog_service import get_mcp_catalog
+        catalog = get_mcp_catalog()
+        matches = catalog.search(tool_name, limit=3)
+        if not matches:
+            return result
+        suggestions = []
+        for entry in matches:
+            suggestions.append(f"- {entry.name} (id={entry.id}): {entry.description}")
+        hint = (
+            f"\n\n💡 在 MCP Catalog 中发现以下可能匹配的服务，"
+            f"你可以调用 request_mcp_install 工具来安装：\n"
+            + "\n".join(suggestions)
+        )
+        return ToolResult(
+            success=False,
+            error=(result.error or "") + hint,
+            data=result.data,
+        )
+    except Exception as e:
+        logger.debug("MCP catalog suggestion failed: %s", e)
+        return result

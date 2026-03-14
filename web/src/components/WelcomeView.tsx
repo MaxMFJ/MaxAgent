@@ -7,7 +7,6 @@ import {
   Rocket,
   Cpu,
   Clipboard,
-  Bot,
   ArrowRight,
   Zap,
   Sparkles,
@@ -19,7 +18,7 @@ const features = [
   { icon: <Rocket size={20} />, title: '应用控制', desc: '启动、关闭和操控应用程序', color: 'var(--purple)', gradient: 'linear-gradient(135deg, rgba(177,151,252,0.15), rgba(177,151,252,0.05))' },
   { icon: <Cpu size={20} />, title: '系统信息', desc: '查询 CPU、内存和磁盘状态', color: 'var(--orange)', gradient: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))' },
   { icon: <Clipboard size={20} />, title: '剪贴板', desc: '读写剪贴板，跨应用传递', color: 'var(--teal)', gradient: 'linear-gradient(135deg, rgba(94,234,212,0.15), rgba(94,234,212,0.05))' },
-  { icon: <Bot size={20} />, title: '自治模式', desc: '下达目标，Agent 自主执行', color: 'var(--green)', gradient: 'linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.05))' },
+  { icon: <Sparkles size={20} />, title: '智能执行', desc: '下达目标，Agent 自动完成', color: 'var(--green)', gradient: 'linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.05))' },
 ];
 
 const quickPrompts = [

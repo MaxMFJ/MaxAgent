@@ -2,7 +2,6 @@
 SelfUpgradeOrchestrator
 Planner → Strategy Router → Executor → Validation → Activation
 Deterministic stages, block until result known.
-Fallback: CURSOR_CLI → CURSOR_GUI → LLM_SCRIPT
 """
 
 import asyncio
@@ -17,17 +16,11 @@ from .models import (
 )
 from .planner import plan_upgrade
 from .strategy_router import route_strategy
-from .executors import execute_llm_script, execute_cursor_cli, execute_cursor_gui
+from .executors import execute_llm_script
 from .validator import validate
 from .activation import activate, set_load_generated_tools
 
 logger = logging.getLogger(__name__)
-
-FALLBACK_ORDER = [
-    ImplementationStrategy.CURSOR_CLI,
-    ImplementationStrategy.CURSOR_GUI,
-    ImplementationStrategy.LLM_SCRIPT,
-]
 
 
 class SelfUpgradeOrchestrator:
@@ -106,23 +99,8 @@ class SelfUpgradeOrchestrator:
                 }
                 return
             else:
-                strategies_to_try = [strategy] + [s for s in FALLBACK_ORDER if s != strategy]
-                for s in strategies_to_try:
-                    if s == ImplementationStrategy.LLM_SCRIPT:
-                        success, err_msg = await execute_llm_script(plan, self.llm_chat, _stage_cb)
-                    elif s == ImplementationStrategy.CURSOR_CLI:
-                        success, err_msg = await execute_cursor_cli(plan, _stage_cb)
-                    elif s == ImplementationStrategy.CURSOR_GUI:
-                        success, err_msg = await execute_cursor_gui(plan, _stage_cb)
-                    else:
-                        continue
-
-                    if success:
-                        if s != strategy:
-                            logger.info(f"[Upgrade] Fallback to {s.value}")
-                        break
-                    else:
-                        logger.warning(f"[Upgrade] {s.value} failed: {err_msg}")
+                # LLM_SCRIPT: generate code via user's LLM
+                success, err_msg = await execute_llm_script(plan, self.llm_chat, _stage_cb)
 
             if not success:
                 self._update_task_stage(task, UpgradeStage.FAILED)

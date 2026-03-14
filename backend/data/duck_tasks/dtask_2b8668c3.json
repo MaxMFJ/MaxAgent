@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_2b8668c3",
+  "description": "搜索并整理最新的AI行业数据、新闻、趋势报告，包括AI融资事件、技术突破、市场分析等\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773470650.6045928,
+  "assigned_at": 1773470650.604882,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773470650.604887
+}

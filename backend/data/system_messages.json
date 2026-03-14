@@ -38,5 +38,35 @@
     "category": "system_error",
     "timestamp": "2026-03-11T16:22:32.516015",
     "read": true
+  },
+  {
+    "id": "efa6b081-7896-46a6-b089-158979b942d5",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "the JSON object must be str, bytes or bytearray, not dict",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-14T09:58:31.476162",
+    "read": true
+  },
+  {
+    "id": "3ab99b9b-10fe-4ac9-90ef-0d3fa8544432",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "Error code: 429 - {'error': {'message': 'Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day', 'code': 429, 'metadata': {'headers': {'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': '1773532800000'}, 'provider_name': None}}, 'user_id': 'user_3AuprgATwxedIo0e2iB1W0x03wU'}",
+    "source": "chat_stream",
+    "category": "system_error",
+    "timestamp": "2026-03-14T11:10:48.775571",
+    "read": true
+  },
+  {
+    "id": "d2e39348-8faf-425a-8539-92139dc460a8",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-14T14:49:11.552223",
+    "read": true
   }
 ]

@@ -28,6 +28,7 @@ from .evomap_tool import EvoMapTool
 from .capsule_tool import CapsuleTool
 from .mcp_catalog_tool import MCPCatalogTool, RequestMCPInstallTool
 from .delegate_duck_tool import DelegateDuckTool
+from .delegate_dag_tool import DelegateDagTool
 from .duck_status_tool import DuckStatusTool
 
 __all__ = [
@@ -61,6 +62,7 @@ __all__ = [
     "MCPCatalogTool",
     "RequestMCPInstallTool",
     "DelegateDuckTool",
+    "DelegateDagTool",
     "DuckStatusTool",
 ]
 
@@ -69,7 +71,7 @@ def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
     Get instances of all available tools
     runtime_adapter: 由 Agent 注入，Tool 禁止自行获取
     """
-    return [
+    tools = [
         FileTool(runtime_adapter),
         TerminalTool(runtime_adapter),
         AppTool(runtime_adapter),
@@ -97,6 +99,15 @@ def get_all_tools(runtime_adapter: Optional["RuntimeAdapter"] = None):
         CapsuleTool(runtime_adapter),
         MCPCatalogTool(runtime_adapter),
         RequestMCPInstallTool(runtime_adapter),
-        DelegateDuckTool(runtime_adapter),
         DuckStatusTool(runtime_adapter),
     ]
+    # Duck 模式下不提供委派工具，防止递归创建 DAG/委派
+    try:
+        from app_state import IS_DUCK_MODE
+        if not IS_DUCK_MODE:
+            tools.append(DelegateDuckTool(runtime_adapter))
+            tools.append(DelegateDagTool(runtime_adapter))
+    except ImportError:
+        tools.append(DelegateDuckTool(runtime_adapter))
+        tools.append(DelegateDagTool(runtime_adapter))
+    return tools

@@ -48,8 +48,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     baseUrl: '',
     temperature: 0.7,
     maxTokens: 4096,
-    autonomousMode: false,
-    maxAutonomousSteps: 25,
     ...(saved as any)?.config,
   },
   sidebarWidth: (saved as any)?.sidebarWidth ?? 260,

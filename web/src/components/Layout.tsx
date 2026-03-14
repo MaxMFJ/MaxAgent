@@ -6,6 +6,7 @@ import ErrorBanner from './ErrorBanner';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useWSStore } from '../stores/wsStore';
 import { useChatStore } from '../stores/chatStore';
+import { useGroupChatStore } from '../stores/groupChatStore';
 import { useResponsive } from '../hooks/useResponsive';
 
 const ToolPanel = lazy(() => import('./ToolPanel'));
@@ -13,6 +14,7 @@ const NotificationPanel = lazy(() => import('./NotificationPanel'));
 const SettingsModal = lazy(() => import('./SettingsModal'));
 const MonitorDashboard = lazy(() => import('./MonitorDashboard'));
 const DuckManagement = lazy(() => import('./DuckManagement'));
+const GroupChatView = lazy(() => import('./GroupChatView'));
 
 const Layout: React.FC = () => {
   const sidebarWidth = useSettingsStore((s) => s.sidebarWidth);
@@ -29,6 +31,8 @@ const Layout: React.FC = () => {
   const setMobilePanelOpen = useSettingsStore((s) => s.setMobilePanelOpen);
 
   const { isMobile, isTablet } = useResponsive();
+
+  const activeGroupId = useGroupChatStore((s) => s.activeGroupId);
 
   const [rightTab, setRightTab] = useState<'tools' | 'notifications'>('tools');
   const [showSettings, setShowSettings] = useState(false);
@@ -120,7 +124,13 @@ const Layout: React.FC = () => {
 
         {/* 聊天区域：可收缩 + 内部滚动 */}
         <div className="app-main app-main-mobile">
-          <ChatView />
+          {activeGroupId ? (
+            <Suspense fallback={<div className="p-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>加载中…</div>}>
+              <GroupChatView />
+            </Suspense>
+          ) : (
+            <ChatView />
+          )}
         </div>
 
         {/* 移动端侧边栏抽屉（从左滑入） */}
@@ -192,7 +202,13 @@ const Layout: React.FC = () => {
         </div>
         <div className="resizer" onMouseDown={onSidebarDragStart} />
         <div className="app-content">
-          <ChatView />
+          {activeGroupId ? (
+            <Suspense fallback={<div className="p-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>加载中…</div>}>
+              <GroupChatView />
+            </Suspense>
+          ) : (
+            <ChatView />
+          )}
         </div>
         {showRightPanel && (
           <>

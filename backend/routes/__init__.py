@@ -34,6 +34,7 @@ from .cache import router as cache_router
 from .recordings import router as recordings_router
 from .file_index import router as file_index_router
 from .demos import router as demos_router
+from .group_chat import router as group_chat_router
 
 all_routers = [
     health_router,
@@ -68,4 +69,5 @@ all_routers = [
     recordings_router,
     file_index_router,
     demos_router,
+    group_chat_router,
 ]

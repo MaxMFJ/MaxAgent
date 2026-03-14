@@ -98,7 +98,8 @@ class SelfHealingAgent:
         repair_validator: Optional[RepairValidator] = None,
         max_iterations: int = 3,
         auto_heal: bool = True,
-        strategy_db_path: Optional[str] = None
+        strategy_db_path: Optional[str] = None,
+        llm_chat: Optional[Any] = None
     ):
         """
         初始化自愈 Agent
@@ -111,11 +112,17 @@ class SelfHealingAgent:
             max_iterations: 最大修复迭代次数
             auto_heal: 是否自动修复
             strategy_db_path: 策略数据库路径
+            llm_chat: 用户 LLM 聊天函数 async (messages, tools=None) -> {content: str}
         """
         self.diagnostic = diagnostic_engine or get_diagnostic_engine()
         self.planner = repair_planner or get_repair_planner()
         self.executor = repair_executor or get_repair_executor()
         self.validator = repair_validator or get_repair_validator()
+        self.llm_chat = llm_chat
+        
+        # 将 llm_chat 传递给 executor
+        if llm_chat and hasattr(self.executor, 'set_llm_chat'):
+            self.executor.set_llm_chat(llm_chat)
         
         self.max_iterations = max_iterations
         self.auto_heal = auto_heal
@@ -461,9 +468,13 @@ class SelfHealingAgent:
 _self_healing_agent: Optional[SelfHealingAgent] = None
 
 
-def get_self_healing_agent() -> SelfHealingAgent:
+def get_self_healing_agent(llm_chat=None) -> SelfHealingAgent:
     """获取自愈 Agent 单例"""
     global _self_healing_agent
     if _self_healing_agent is None:
-        _self_healing_agent = SelfHealingAgent()
+        _self_healing_agent = SelfHealingAgent(llm_chat=llm_chat)
+    elif llm_chat is not None and _self_healing_agent.llm_chat is None:
+        _self_healing_agent.llm_chat = llm_chat
+        if hasattr(_self_healing_agent.executor, 'set_llm_chat'):
+            _self_healing_agent.executor.set_llm_chat(llm_chat)
     return _self_healing_agent

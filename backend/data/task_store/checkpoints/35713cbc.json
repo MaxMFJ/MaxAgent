@@ -1,0 +1,374 @@
+{
+  "task_id": "35713cbc",
+  "session_id": "duck_local_d936e706_dtask_",
+  "task_description": "搜集2025-2026年AI行业最新数据、主要趋势、重大新闻、市场规模、投融资情况、关键技术发展等，整理成结构化数据供后续使用\n\n【相关文件路径】/Users/lzz/Desktop\n\n【文件结构摘要】（大文件已压缩，可分段 read_file 按需读取详情）\n【/Users/lzz/Desktop】可直接读取",
+  "status": "stopped",
+  "current_iteration": 7,
+  "max_iterations": 30,
+  "action_checkpoints": [
+    {
+      "iteration": 1,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI人工智能 2025 2026年 发展趋势 最新数据 行业报告",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "首先搜索AI行业2025-2026年的最新数据和发展趋势，了解行业整体概况",
+      "success": true,
+      "output": {
+        "query": "AI人工智能 2025 2026年 发展趋势 最新数据 行业报告",
+        "results": [
+          {
+            "title": "斯坦福《2025年ai指数报告》发布：揭示ai技术如何以前所未有的速度改变世界 - 知乎",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fzhuanlan.zhihu.com%2Fp%2F1914000463344403814&amp;rut=a9a3c3df09e1240e57bc0468083013473543214a2fc20b6bc95c97609f560b48",
+            "snippet": "2025《&quot;人工智能+&quot;行业发展蓝皮书》 点击下载： 2025《&quot;人工智能+&quot;行业发展蓝皮书》.pdf *注：《&quot;人工智能+&quot;行业发展 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "《斯坦福2025年人工智能指数报告》：全球AI发展趋势与挑战全景解析 这是Stanford HAI 发布的第 8 份 AI Index 研究 ...",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fxueqiu.com%2F9427078671%2F330786359&amp;rut=a7a9a732577ce06e7637b4ab4d5a417031ccfcefb64f7849d8b1be4bf97fa0d2",
+            "snippet": "2025《&quot;人工智能+&quot;行业发展蓝皮书》 点击下载： 2025《&quot;人工智能+&quot;行业发展蓝皮书》.pdf *注：《&quot;人工智能+&quot;行业发展 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "行业报告 - 研究成果 - 2025《&quot;人工智能+&quot;行业发展蓝皮书》 - 上海交通大学行业研究院",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.iir.sjtu.edu.cn%2Fiir%2Freport%2F88253.html&amp;rut=9b9c13252ed636d11a0853d82b0ffdca9bd719a6b73756006569806dc9c0ef1f",
+            "snippet": "2025《&quot;人工智能+&quot;行业发展蓝皮书》 点击下载： 2025《&quot;人工智能+&quot;行业发展蓝皮书》.pdf *注：《&quot;人工智能+&quot;行业发展 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2026年人工智能趋势报告｜Ai已入黄金时代：全球人工智能九大趋势与创新蓝图 - 智源社区",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fhub.baai.ac.cn%2Fview%2F51452&amp;rut=042fb0b8160c51e8d42bd8af7a1a37a29e5ce5565eb3d248a651464c4e9ea471",
+            "snippet": "《2026年人工智能趋势报告》显示，全球AI市场年增长13.11%，超17.1万家公司和4.62万家初创企业推动技术创新，创造就业岗位逾1160万，新增120万。报告基于对900多万初创企业的追踪，分析15416家AI企业，揭示全球AI创新格局与发展态势。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "全球人工智能社会发展研究报告（2025） - 东方财富网",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fdata.eastmoney.com%2Freport%2Fzw_industry.jshtml%3Finfocode%3DAP202508031720751707&amp;rut=2cd61352a2887909b56d0107e524d8b0bb3cfb774446c9234768591f3f0ec97b",
+            "snippet": "新华深读｜2026年中国AI发展趋势前瞻-&quot;中国AI技术的发展与应用令人期待，需要全社会的深度参与。&quot;",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:55:10.385977"
+    },
+    {
+      "iteration": 2,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI行业 2025年 市场规模 预测 全球 中国",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "已获取初步搜索结果，需要继续搜索市场规模、投融资、关键技术发展等多个维度的信息，以获得全面的AI行业数据",
+      "success": true,
+      "output": {
+        "query": "AI行业 2025年 市场规模 预测 全球 中国",
+        "results": [
+          {
+            "title": "2025年中国AI市场深度分析报告：7470亿规模增长趋势与企业应用指南",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.betteryeah.com%2Fblog%2Fchina%2Dai%2Dmarket%2Danalysis%2D2025%2Dgrowth%2Dtrends%2Denterprise%2Dapplications&amp;rut=96a1ff747fe98ed07ed67558f2482c092c832cb9f219aa6eb663d34915f57955",
+            "snippet": "2. 中国人工智能发展现状：中国算力发展迅速，2022年在全球算力规模占比达33%，为人工智能发展提供有力支撑。 行业市场规模持续扩大，2024年达7470亿元，预测2025年将升至10457亿元，在互联网、电信、政务等多行业渗透度不断提高。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2025年中国人工智能产业规模及行业发展前景预测分析（图）",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.askci.com%2Fnews%2Fchanye%2F20250730%2F091404275383804487100401.shtml&amp;rut=a29d86bd51a2361a5b00b6bdcf5997e6a13dcd53d5178a5aea32e75a1965fe31",
+            "snippet": "2. 中国人工智能发展现状：中国算力发展迅速，2022年在全球算力规模占比达33%，为人工智能发展提供有力支撑。 行业市场规模持续扩大，2024年达7470亿元，预测2025年将升至10457亿元，在互联网、电信、政务等多行业渗透度不断提高。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2024-2025年中国人工智能行业发展趋势研究报告 - 搜狐",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.sohu.com%2Fa%2F855160176_121655386&amp;rut=2c0b41e982a8b7d3e7f0d77eb6feff66fd8683589977810887658ddeab9a9cca",
+            "snippet": "2. 中国人工智能发展现状：中国算力发展迅速，2022年在全球算力规模占比达33%，为人工智能发展提供有力支撑。 行业市场规模持续扩大，2024年达7470亿元，预测2025年将升至10457亿元，在互联网、电信、政务等多行业渗透度不断提高。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2024-2025年中国人工智能行业发展趋势：技术突破推动人工智能广泛应用至各行业生态 (附报告下载)-艾媒网-全球领先的新经济行业数据分析 ...",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.iimedia.cn%2Fc1020%2F104745.html&amp;rut=1a2088b6fa3f16efe91e50365aa85ba087dff5a1195a6751505ba49c09171041",
+            "snippet": "本文核心数据：2018-2025年中国人工智能市场规模及预测、2021-2023年中国人工智能行业渗透度、机器学习与深度学习市场主要参与者、2021-2026年全球AI ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "预见2025：《2025年中国人工智能行业全景图谱》（附市场规模、竞争格局和发展趋势等）_前瞻趋势 - 前瞻产业研究院",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fbg.qianzhan.com%2Ftrends%2Fdetail%2F506%2F250218%2Da70ead78.html&amp;rut=317ffca377d81a11ffbc086367f2e206d1d924385df9ec82e62144d42b2c5322",
+            "snippet": "在数字化浪潮席卷全球的今天，人工智能技术正以前所未有的速度重塑着我们的世界。从OpenAI发布的全新ChatGPT Agent到DeepSeek引领的模型推理成本革命，AI技术正在经历从实验室走向产业化的关键转折点。本文将深入剖析2025年全球AI产业的最新发展态势，揭示推动行业增长的底层逻辑，并展望未来技术 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:55:25.148025"
+    },
+    {
+      "iteration": 3,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI行业 2025年 投融资 融资事件 并购 关键技术发展",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "继续搜索AI行业2025-2026年投融资情况和关键技术发展信息，以获得更全面的数据",
+      "success": true,
+      "output": {
+        "query": "AI行业 2025年 投融资 融资事件 并购 关键技术发展",
+        "results": [
+          {
+            "title": "2024-2025年ai应用并购与趋势研究_腾讯新闻",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fnews.qq.com%2Frain%2Fa%2F20251111A02LPK00&amp;rut=a2bf7f7e0c9b299660bd34f8d39f445dd50cad0078e633b46e9adf11cd0929ae",
+            "snippet": "01A股市场AI应用并购事件梳理与分析2024年至2025年，A股AI应用并购市场持续活跃，呈现出鲜明的战略驱动特征。传统制造业巨头与科技公司成为并购 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "报告：2025年中国ai投资呈脱虚向实、投早投小趋势-经济参考网 _ 新华社《经济参考报》官方网站",
+            "url": "//duckduckgo.com/l/?uddg=http%3A%2F%2Fjjckb.xinhuanet.com%2F20251228%2F28b9a08eda8f49538b014686f105f369%2Fc.html&amp;rut=db24fca7293271fa1d94dc8388f413ac224184d5b71de7df4558980d21071df4",
+            "snippet": "近日，在2025极新AIGC峰会上，烯牛数据发布2025年AI投融资专题报告。报告显示，AI领域融资额在2025年同比迅猛增长，AI领域脱虚向实趋势显著，投早、投小趋势明显。其中，AIGC赛道呈现小额高频、百花齐放特征，具身智能因融资规模暴增2倍成为最热赛道。 从行业侧看，报告显示，从融资金额来看 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2025年AI融资与并购趋势深度解析：投资者如何布局未来？",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.sohu.com%2Fa%2F876558139_121924584&amp;rut=d87fbfa495f64bcab8d503c2fd3a40430e7e3e292ff5098ff09d1437badf2ed9",
+            "snippet": "在过去的一年，人工智能行业迎来了前所未有的发展机遇，全球范围内的投资与并购活动显著增加，标志着该领域已步入了一个新的高峰期。根据CBInsights发布的《2025年人工智能发展态势报告》，在2024年，全球人工智能融资额度 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2025年12月AI投融资全景：322起融资背后的技术趋势与产业升级",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fdeveloper.baidu.com%2Farticle%2Fdetail.html%3Fid%3D5666181&amp;rut=921ee3c91b01def3d5a4661c269f0ad391ec7add0fe09846dc3d1cfa64e4249d",
+            "snippet": "本文深度解析2025年12月AI领域322起投融资事件，揭示资本流向与技术演进方向。通过对比2024年同期数据，分析IPO规模、行业分布与资本偏好变化，为开发者与投资者提供战略参考，同时探讨AI芯片、大模型、企业服务等核心赛道的创新突破。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "2025 年 Ai 行业发展趋势：资本重构、技术突破与生态博弈",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fzhuanlan.zhihu.com%2Fp%2F1890692536093373008&amp;rut=49090ac2feaf90ecf1195efed07574c7cfd4ab6d56b5408988651e1f9d8bdda5",
+            "snippet": "2024年是人工智能（AI）载入史册的一年，而2025年的序幕刚刚拉开，资本市场对AI的热情却丝毫未减，甚至愈演愈烈。当算力成本飙升、行业竞争加剧，巨额融资成为AI公司生存和发展的生命线。本文将基于今年上半年已公布的融资信息，深入解读那些成功吸金过亿美元的AI新贵，剖析其背后的产业 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:55:59.809836"
+    },
+    {
+      "iteration": 4,
+      "action_type": "list_directory",
+      "params": {
+        "path": "/Users/lzz/Desktop"
+      },
+      "reasoning": "检查Desktop目录下的文件，看看是否已有相关的AI行业数据文件，或者是否有其他相关资料",
+      "success": true,
+      "output": "Untitled.trace\n.DS_Store\nmacagent\n.localized\nGameLinker\ntunnel\nnga_delta_action",
+      "error": null,
+      "timestamp": "2026-03-14T15:56:09.031339"
+    },
+    {
+      "iteration": 5,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI 2025年 生成式AI 大模型 ChatGPT OpenAI 技术突破",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "需要继续搜索AI行业的技术发展、重大新闻等维度信息，以获得更全面的数据支撑",
+      "success": true,
+      "output": {
+        "query": "AI 2025年 生成式AI 大模型 ChatGPT OpenAI 技术突破",
+        "results": [
+          {
+            "title": "隆重推出 GPT‑5.2 - OpenAI",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fopenai.com%2Fzh%2DHans%2DCN%2Findex%2Fintroducing%2Dgpt%2D5%2D2%2F&amp;rut=1733c8965af2f6b9acf178a2adb235a6a12b880e27facbbaab2ff449a7b8ce9b",
+            "snippet": "GPT-5概述 北京时间 2025年8月8日 凌晨1点 OPENAI举行了1个小时的线上发布会，正式推出了其史上最聪明、最强大的大模型GPT-5。 GPT-5是OpenAI发布的最新一代大型语言模型，它基于Transformer架构，经过大规模的文本数据训练，能够生成流畅、自然的语言输出。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "OpenAI 2025 上半年稱王，ChatGPT 佔全球生成式 AI 營收 63% | 鏈新聞 ABMedia",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fabmedia.io%2Fopenai%2Dchatgpt%2Ddominates%2D2025%2Dh1%2Dgenerative%2Dai%2Drevenue&amp;rut=fc7db38e24a217226fa8c2353bcc8690cce8f3faa9f03227f10a5908c358cce8",
+            "snippet": "GPT-5概述 北京时间 2025年8月8日 凌晨1点 OPENAI举行了1个小时的线上发布会，正式推出了其史上最聪明、最强大的大模型GPT-5。 GPT-5是OpenAI发布的最新一代大型语言模型，它基于Transformer架构，经过大规模的文本数据训练，能够生成流畅、自然的语言输出。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "OpenAI 将 GPT-5 设为 ChatGPT 新默认 | Multi AI",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fmulti%2Dai.ai%2Fzh%2Fblog%2Fopenai%2Dlaunches%2Dgpt%2D5%2Das%2Dnew%2Ddefault%2Din%2Dchatgpt%2Dzh&amp;rut=43d2ae3439b47d174dc5b6734045e48d29cd04fb6cf098ef3394f5ba070054e9",
+            "snippet": "GPT-5概述 北京时间 2025年8月8日 凌晨1点 OPENAI举行了1个小时的线上发布会，正式推出了其史上最聪明、最强大的大模型GPT-5。 GPT-5是OpenAI发布的最新一代大型语言模型，它基于Transformer架构，经过大规模的文本数据训练，能够生成流畅、自然的语言输出。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "ChatGPT 深度研究：2025 年 AI 大模型产业链全景与未来机遇",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.axtonliu.ai%2Fnewsletters%2Fai%2D2%2Fposts%2Fchatgpt%2Ddeep%2Ddive%2Dai%2Dmodel%2Dindustry%2Dchain&amp;rut=8385f55f29fe71e78d79e84c74491c2b6db594525d8b29d1bad6a71fbf1a6735",
+            "snippet": "GPT-5概述 北京时间 2025年8月8日 凌晨1点 OPENAI举行了1个小时的线上发布会，正式推出了其史上最聪明、最强大的大模型GPT-5。 GPT-5是OpenAI发布的最新一代大型语言模型，它基于Transformer架构，经过大规模的文本数据训练，能够生成流畅、自然的语言输出。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "OpenAI发布最新大模型GPT5、本地部署GPT开源模型 - 腾讯云",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fcloud.tencent.com%2Fdeveloper%2Farticle%2F2560453&amp;rut=fdf5db7ef89efdae23c4be90c3431407796b8f4f33685640809807d8654decc7",
+            "snippet": "GPT-5概述 北京时间 2025年8月8日 凌晨1点 OPENAI举行了1个小时的线上发布会，正式推出了其史上最聪明、最强大的大模型GPT-5。 GPT-5是OpenAI发布的最新一代大型语言模型，它基于Transformer架构，经过大规模的文本数据训练，能够生成流畅、自然的语言输出。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:56:23.443441"
+    },
+    {
+      "iteration": 6,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI人工智能 2025年 中国政策 监管 发展规划",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "需要搜索AI行业政策与监管方面的发展情况，这是行业数据的重要维度",
+      "success": true,
+      "output": {
+        "query": "AI人工智能 2025年 中国政策 监管 发展规划",
+        "results": [
+          {
+            "title": "国务院关于深入实施&quot;人工智能+&quot;行动的意见__2025年第25号国务院公报_中国政府网",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.gov.cn%2Fgongbao%2F2025%2Fissue_12266%2F202509%2Fcontent_7039598.html&amp;rut=2de8f89b635c81528ac12010cec36de778529b0fefda25c6e43933f567a9e715",
+            "snippet": "到2027年，率先实现人工智能与6大重点领域广泛深度融合，新一代智能终端、智能体等应用普及率超70%，智能经济核心产业规模快速增长，人工智能在公共治理中的作用明显增强，人工智能开放合作体系不断完善。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "最全最新!国家有关人工智能的政策汇总（第5版，2025.8更新共41条）",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fzhuanlan.zhihu.com%2Fp%2F1943998620224452018&amp;rut=718662e15f82acc790e5f86dc10242dc5a3761b44fed4ab3e9c5c714843edfb2",
+            "snippet": "发布时间：2025年7月26日 原文链接： gov.cn/yaowen/liebiao/2 《人工智能全球治理行动计划》在2025年7月26日的2025世界人工智能大会暨人工智能全球治理高级别会议上发表。 该计划旨在推动人工智能技术的全球发展与治理，确保其安全性、可靠性、可控性和公平性。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "国务院关于深入实施&quot;人工智能+&quot;行动的意见",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.mee.gov.cn%2Fzcwj%2Fgwywj%2F202508%2Ft20250827_1126207.shtml&amp;rut=2ac1573980893e57a3564685c6f690ed1e7389b02a5e081a1faf13c8facb86b8",
+            "snippet": "到2027年，率先实现人工智能与6大重点领域广泛深度融合，新一代智能终端、智能体等应用普及率超70%，智能经济核心产业规模快速增长，人工智能在公共治理中的作用明显增强，人工智能开放合作体系不断完善。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "【筑牢深入推进&quot;人工智能+&quot;行动的政策制度之基】-国家发展和改革委员会",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.ndrc.gov.cn%2Fxxgk%2Fjd%2Fjd%2F202508%2Ft20250828_1400103.html&amp;rut=410e8625912b7d71d8b5a3c33b53f08b92db0dde9c99ae617a4f49bb0e1c1453",
+            "snippet": "从国际比较看，欧盟《人工智能法案》于2024年正式公布，确立了&quot;基于用途驱动的风险分级&quot;与&quot;通用人工智能（GPAI）&quot;额外义务的统一框架，力图引导全球监管的趋同与互认。 经合组织于2024年更新《人工智能原则》，聚焦生成式与通用人工智能的治理协同。",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "国家队下场，万字长文读懂国务院&quot;人工智能+&quot;行动计划",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fnews.qq.com%2Frain%2Fa%2F20250830A06PV100&amp;rut=a6ed4e5ff298de57c40b863ce267ee9be357e7a3846ec7f1313ba2fcd9000705",
+            "snippet": "2025年8月26日，国务院发布了一份名为《国务院关于深入实施&quot;人工智能+&quot;行动的意见》的文件，标志着一份关乎未来十年中国产业变革的战略蓝图 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:57:00.195538"
+    },
+    {
+      "iteration": 7,
+      "action_type": "call_tool",
+      "params": {
+        "tool_name": "web_search",
+        "args": {
+          "action": "search",
+          "query": "AI芯片 英伟达 2025年 技术发展 市场格局",
+          "language": "zh-CN"
+        }
+      },
+      "reasoning": "我需要继续搜索更多AI行业数据，包括AI芯片/半导体发展、主要AI企业竞争格局等，然后整合所有搜索结果整理成结构化数据文件。让我先继续搜索更多维度的数据。",
+      "success": true,
+      "output": {
+        "query": "AI芯片 英伟达 2025年 技术发展 市场格局",
+        "results": [
+          {
+            "title": "2025英伟达人工智能发展战略研究报告_腾讯新闻",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fnews.qq.com%2Frain%2Fa%2F20251111A0103T00&amp;rut=e8ee0d98c8830cd910e9aa2707732d64598fd6ca1e6a24a7702894667e494af9",
+            "snippet": "英伟达计划在未来几年内持续推出新一代GPU架构，包括Blackwell Ultra和Rubin系列，并积极布局软件和服务领域。 AMD计划推出MI500系列等新一代AI加速器，并持续构建其ROCm软件生态系统。 英特尔计划推出新一代AI加速器，并新建工厂以提升其在AI芯片领域的自主可控 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "92%垄断 vs 国产逆袭：2025全球AI芯片战争全景图",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.zhihu.com%2Ftardis%2Fbd%2Fart%2F1936384698470363308&amp;rut=d03026d7488ca0523326f95c5663bb0d19ddf91e1c56b463022dc4c51ca887ea",
+            "snippet": "英伟达计划在未来几年内持续推出新一代GPU架构，包括Blackwell Ultra和Rubin系列，并积极布局软件和服务领域。 AMD计划推出MI500系列等新一代AI加速器，并持续构建其ROCm软件生态系统。 英特尔计划推出新一代AI加速器，并新建工厂以提升其在AI芯片领域的自主可控 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "英伟达AI芯片需求可持续性分析：市场、竞争与技术展望 金灵Gilin | 专业金融AI分析报告",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.gilin.com.cn%2Fessence0904488.html&amp;rut=52339c34b47806f133797e3b007791d6ed440c97cca548dbeaf05f6dca62ef06",
+            "snippet": "AI芯片作为人工智能时代的&quot;算力引擎&quot;，正引领全球科技产业进入新一轮创新周期。本文将从产业发展历程、市场格局演变、技术架构升级、应用场景拓展及未来挑战等维度，全面剖析2025年AI芯片产业的全景图景。文章将深入解读国内外龙头企业竞争策略，分析异构计算、存算一体等前沿技术趋势 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "英伟达 GTC 2025：从 Agentic AI 到 Physical AI，AI 物理化革命的五大关键-36氪",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fm.36kr.com%2Fp%2F3212943024563458&amp;rut=f941e9e1f493c6c9d68928905d2bcf380bd56dd29ced8c51b1a4276139270d13",
+            "snippet": "AI芯片作为人工智能时代的&quot;算力引擎&quot;，正引领全球科技产业进入新一轮创新周期。本文将从产业发展历程、市场格局演变、技术架构升级、应用场景拓展及未来挑战等维度，全面剖析2025年AI芯片产业的全景图景。文章将深入解读国内外龙头企业竞争策略，分析异构计算、存算一体等前沿技术趋势 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          },
+          {
+            "title": "Ai芯动力：重塑计算未来？——英伟达 (Nvidia) 2025财年年度财务与战略分析 【重点关注指标概览】$英伟达 (Nvda)$ 英伟达 ...",
+            "url": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fxueqiu.com%2F3684328133%2F340746692&amp;rut=458e92fd8dcef294e35ec299f9e77525a68106976cf7654078b4008f3fd2f6fc",
+            "snippet": "AI芯片作为人工智能时代的&quot;算力引擎&quot;，正引领全球科技产业进入新一轮创新周期。本文将从产业发展历程、市场格局演变、技术架构升级、应用场景拓展及未来挑战等维度，全面剖析2025年AI芯片产业的全景图景。文章将深入解读国内外龙头企业竞争策略，分析异构计算、存算一体等前沿技术趋势 ...",
+            "source": "DuckDuckGo",
+            "published_date": null
+          }
+        ],
+        "count": 5,
+        "source": "DuckDuckGo (HTML)"
+      },
+      "error": null,
+      "timestamp": "2026-03-14T15:57:16.495415"
+    }
+  ],
+  "created_at": "2026-03-14T15:54:52.080599",
+  "updated_at": "2026-03-14T16:24:29.670452",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

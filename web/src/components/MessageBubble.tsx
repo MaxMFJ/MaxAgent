@@ -43,7 +43,7 @@ const MessageBubble: React.FC<Props> = ({ message, onDelete }) => {
         <Avatar
           icon={isSystem ? <AlertTriangle size={14} /> : <Bot size={14} />}
           size="sm"
-          variant={isSystem ? 'warning' : message.isAutonomous ? 'purple' : 'default'}
+          variant={isSystem ? 'warning' : 'default'}
           className="mt-1.5 mr-2.5 flex-shrink-0"
         />
       )}
@@ -60,10 +60,9 @@ const MessageBubble: React.FC<Props> = ({ message, onDelete }) => {
           {/* Role Label */}
           {!isUser ? (
             <div className="flex items-center gap-2 mb-3">
-              <Badge variant={isSystem ? 'danger' : message.isAutonomous ? 'purple' : 'accent'}>
-                {isSystem ? '系统' : message.isAutonomous ? 'AI 自主执行' : '助手'}
+              <Badge variant={isSystem ? 'danger' : 'accent'}>
+                {isSystem ? '系统' : '助手'}
               </Badge>
-              {message.isAutonomous && <Badge variant="purple">自治</Badge>}
             </div>
           ) : null}
 

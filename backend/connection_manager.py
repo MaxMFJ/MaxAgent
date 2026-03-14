@@ -1,9 +1,12 @@
 """
 WebSocket 连接管理器
 管理多客户端连接、会话广播、安全发送。
+支持断线期间重要消息缓冲（duck_task_complete / duck_task_retry / done 等）。
 """
 import asyncio
 import logging
+import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -14,6 +17,16 @@ from fastapi import WebSocket, WebSocketDisconnect
 from app_state import get_server_status, set_server_status, ServerStatus
 
 logger = logging.getLogger(__name__)
+
+# 需要缓冲的重要消息类型（断线期间不能丢失）
+_BUFFERED_MSG_TYPES = frozenset({
+    "duck_task_complete", "duck_task_retry", "duck_task_progress",
+    "done", "task_complete", "auto_delegated_to_duck",
+})
+# 每个 session 最多缓冲多少条
+_MAX_BUFFER_PER_SESSION = 50
+# 缓冲消息过期时间（秒）
+_BUFFER_EXPIRE_SECS = 600
 
 
 class ClientType(str, Enum):
@@ -39,6 +52,8 @@ class ConnectionManager:
         self._connections: Dict[str, ClientConnection] = {}
         self._session_connections: Dict[str, Set[str]] = {}
         self._lock = asyncio.Lock()
+        # 断线消息缓冲：session_id → deque[(timestamp, message)]
+        self._pending_buffers: Dict[str, deque] = {}
 
     def get_server_status(self) -> ServerStatus:
         return get_server_status()
@@ -99,10 +114,16 @@ class ConnectionManager:
             return True
 
     async def broadcast_to_session(self, session_id: str, message: dict, exclude_client: str = None):
-        if session_id not in self._session_connections:
+        # 检查 session 是否有在线客户端
+        if session_id not in self._session_connections or not self._session_connections[session_id]:
+            # 无在线客户端 — 缓冲重要消息
+            msg_type = message.get("type", "")
+            if msg_type in _BUFFERED_MSG_TYPES:
+                self._buffer_message(session_id, message)
             return
         client_ids = list(self._session_connections[session_id])
         disconnected = []
+        sent_count = 0
         for client_id in client_ids:
             if client_id == exclude_client:
                 continue
@@ -110,8 +131,16 @@ class ConnectionManager:
                 conn = self._connections[client_id]
                 if not await safe_send_json(conn.websocket, message):
                     disconnected.append(client_id)
+                else:
+                    sent_count += 1
         for client_id in disconnected:
             await self.disconnect(client_id)
+
+        # 如果所有发送都失败了，缓冲重要消息
+        if sent_count == 0:
+            msg_type = message.get("type", "")
+            if msg_type in _BUFFERED_MSG_TYPES:
+                self._buffer_message(session_id, message)
         
         # 检查 session 是否还有客户端，如果没有则触发孤儿任务处理
         if disconnected and self.get_session_client_count(session_id) == 0:
@@ -122,6 +151,29 @@ class ConnectionManager:
                 logger.info(f"Orphan task handling triggered for session {session_id} after broadcast failures")
             except Exception as e:
                 logger.debug(f"Failed to trigger orphan handling: {e}")
+
+    def _buffer_message(self, session_id: str, message: dict):
+        """缓冲重要消息，供客户端重连后补发"""
+        if session_id not in self._pending_buffers:
+            self._pending_buffers[session_id] = deque(maxlen=_MAX_BUFFER_PER_SESSION)
+        self._pending_buffers[session_id].append((time.time(), message))
+        logger.debug(f"Buffered {message.get('type')} for session {session_id} "
+                     f"(buffer size: {len(self._pending_buffers[session_id])})")
+
+    async def flush_pending(self, session_id: str, websocket: WebSocket):
+        """客户端重连后，补发缓冲的重要消息"""
+        buf = self._pending_buffers.pop(session_id, None)
+        if not buf:
+            return
+        now = time.time()
+        flushed = 0
+        for ts, msg in buf:
+            if now - ts > _BUFFER_EXPIRE_SECS:
+                continue  # 过期消息丢弃
+            if await safe_send_json(websocket, msg):
+                flushed += 1
+        if flushed:
+            logger.info(f"Flushed {flushed} pending messages to session {session_id}")
 
     async def broadcast_all(self, message: dict, exclude_client: str = None):
         client_ids = list(self._connections.keys())

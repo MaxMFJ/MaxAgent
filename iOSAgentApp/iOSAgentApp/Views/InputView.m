@@ -6,7 +6,6 @@
 @property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) UIButton *sendButton;
 @property (nonatomic, strong) UIButton *voiceButton;
-@property (nonatomic, strong) UIButton *autonomousButton;
 @property (nonatomic, strong) UILabel *placeholderLabel;
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) NSLayoutConstraint *textViewHeightConstraint;
@@ -75,18 +74,6 @@
     _voicePulseRing.alpha = 0;
     _voicePulseRing.userInteractionEnabled = NO;
     [self addSubview:_voicePulseRing];
-
-    // 自主模式按钮
-    _autonomousButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _autonomousButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [_autonomousButton setImage:[UIImage systemImageNamed:@"cpu.fill"
-                                        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:19 weight:UIFontWeightMedium]]
-                       forState:UIControlStateNormal];
-    _autonomousButton.tintColor = TechTheme.textDim;
-    _autonomousButton.backgroundColor = [TechTheme.neonPurple colorWithAlphaComponent:0.08];
-    _autonomousButton.layer.cornerRadius = 20;
-    [_autonomousButton addTarget:self action:@selector(autonomousButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self addSubview:_autonomousButton];
 
     // 输入框容器（圆角，玻璃带霓虹边框）
     _containerView = [[UIView alloc] init];
@@ -174,14 +161,8 @@
         // 输入框容器
         [_containerView.topAnchor constraintEqualToAnchor:self.topAnchor constant:10],
         [_containerView.leadingAnchor constraintEqualToAnchor:_voiceButton.trailingAnchor constant:6],
-        [_containerView.trailingAnchor constraintEqualToAnchor:_autonomousButton.leadingAnchor constant:-6],
+        [_containerView.trailingAnchor constraintEqualToAnchor:_sendButton.leadingAnchor constant:-6],
         [_containerView.bottomAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-10],
-
-        // 自主模式按钮
-        [_autonomousButton.trailingAnchor constraintEqualToAnchor:_sendButton.leadingAnchor constant:-6],
-        [_autonomousButton.centerYAnchor constraintEqualToAnchor:_containerView.centerYAnchor],
-        [_autonomousButton.widthAnchor constraintEqualToConstant:40],
-        [_autonomousButton.heightAnchor constraintEqualToConstant:40],
 
         // 发送按钮
         [_sendButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-10],
@@ -216,13 +197,6 @@
 - (void)voiceButtonTapped {
     if ([self.delegate respondsToSelector:@selector(inputViewDidRequestVoiceInput:)]) {
         [self.delegate inputViewDidRequestVoiceInput:self];
-    }
-}
-
-- (void)autonomousButtonTapped {
-    NSString *text = [self.textView.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (text.length > 0 && [self.delegate respondsToSelector:@selector(inputView:didRequestSendAsAutonomousTask:)]) {
-        [self.delegate inputView:self didRequestSendAsAutonomousTask:text];
     }
 }
 
@@ -301,15 +275,6 @@
             (id)[TechTheme.neonBlue colorWithAlphaComponent:0.2].CGColor
         ];
         self.sendButton.layer.shadowOpacity = 0;
-    }
-
-    BOOL autonomousEnabled = self.enabled && hasText && !self.loading;
-    self.autonomousButton.enabled = autonomousEnabled;
-    self.autonomousButton.tintColor = autonomousEnabled ? TechTheme.neonPurple : TechTheme.textDim;
-    if (autonomousEnabled) {
-        [TechTheme applyNeonGlow:self.autonomousButton color:TechTheme.neonPurple radius:5];
-    } else {
-        self.autonomousButton.layer.shadowOpacity = 0;
     }
 }
 

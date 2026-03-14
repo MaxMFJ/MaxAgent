@@ -24,6 +24,8 @@
 		A1000003234567890ABCDEF1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004234567890ABCDEF1 /* ContentView.swift */; };
 		A1000005234567890ABCDEF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006234567890ABCDEF1 /* Assets.xcassets */; };
 		A1000007234567890ABCDEF1 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008234567890ABCDEF1 /* Message.swift */; };
+		GC00000100000000GRPCHAT1 /* GroupChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC00000200000000GRPCHAT1 /* GroupChat.swift */; };
+		GC00000100000000GRPVIEW1 /* GroupChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC00000200000000GRPVIEW1 /* GroupChatView.swift */; };
 		A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A234567890ABCDEF1 /* AgentViewModel.swift */; };
 		A100000B234567890ABCDEF1 /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C234567890ABCDEF1 /* BackendService.swift */; };
 		A100000F234567890ABCDEF1 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010234567890ABCDEF1 /* SidebarView.swift */; };
@@ -104,6 +106,8 @@
 		A1000004234567890ABCDEF1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006234567890ABCDEF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000008234567890ABCDEF1 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		GC00000200000000GRPCHAT1 /* GroupChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupChat.swift; sourceTree = "<group>"; };
+		GC00000200000000GRPVIEW1 /* GroupChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupChatView.swift; sourceTree = "<group>"; };
 		A100000A234567890ABCDEF1 /* AgentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViewModel.swift; sourceTree = "<group>"; };
 		A100000C234567890ABCDEF1 /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };
 		A1000010234567890ABCDEF1 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
@@ -317,6 +321,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000008234567890ABCDEF1 /* Message.swift */,
+				GC00000200000000GRPCHAT1 /* GroupChat.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -325,6 +330,7 @@
 			isa = PBXGroup;
 			children = (
 				B1000002234567890ABCDEF1 /* ChatView.swift */,
+				GC00000200000000GRPVIEW1 /* GroupChatView.swift */,
 				B1C1BE120200000000000001 /* CyberGridBackground.swift */,
 				B1000031234567890ABCDEF1 /* 消息 */,
 				B1000032234567890ABCDEF1 /* 输入 */,
@@ -591,6 +597,8 @@
 				A1000003234567890ABCDEF1 /* ContentView.swift in Sources */,
 				A1000001234567890ABCDEF1 /* MacAgentApp.swift in Sources */,
 				A1000007234567890ABCDEF1 /* Message.swift in Sources */,
+				GC00000100000000GRPCHAT1 /* GroupChat.swift in Sources */,
+				GC00000100000000GRPVIEW1 /* GroupChatView.swift in Sources */,
 				4C1EABE92F4AA642004A5BDD /* ProcessManager.swift in Sources */,
 				A1000009234567890ABCDEF1 /* AgentViewModel.swift in Sources */,
 				A100000B234567890ABCDEF1 /* BackendService.swift in Sources */,

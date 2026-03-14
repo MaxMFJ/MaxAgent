@@ -130,7 +130,7 @@ class AgentCore:
             return self.registry.get_relevant_schemas(
                 query,
                 max_tools=10,
-                always_include=["terminal", "file_operations", "app_control", "capsule", "web_search", "input_control", "screenshot", "gui_automation", "delegate_duck", "duck_status"],
+                always_include=["terminal", "file_operations", "app_control", "capsule", "web_search", "input_control", "screenshot", "gui_automation", "delegate_duck", "delegate_dag", "duck_status"],
             )
         return self.registry.get_schemas()
     
@@ -286,9 +286,20 @@ class AgentCore:
         context.set_task_tier(tier_name)
         
         base_prompt = LOCAL_MODEL_SYSTEM_PROMPT if use_local_mode else get_system_prompt_for_query(enhanced_message, session_id)
+        
+        # 注入在线 Duck 状态（供 LLM 决定是否使用 delegate_duck/delegate_dag）
+        duck_status_extra = ""
+        try:
+            duck_status_ctx = await ContextBuilder.get_duck_status_context()
+            if duck_status_ctx:
+                duck_status_extra = duck_status_ctx
+        except Exception:
+            pass
+        
+        combined_extra = "\n\n".join(p for p in [extra_system_prompt, duck_status_extra] if p)
         system_prompt = ContextBuilder.build_system_prompt(
             base_prompt,
-            extra_system_prompt=extra_system_prompt,
+            extra_system_prompt=combined_extra,
             evomap_context=evomap_context,
         )
         

@@ -10,11 +10,10 @@ struct ToolPanelView: View {
             HStack(spacing: 0) {
                 CyberTab(title: "矩阵", icon: "cpu", index: 0, selected: $selectedTab)
                 CyberTab(title: "历史", icon: "clock", index: 1, selected: $selectedTab)
-                CyberTab(title: "任务", icon: "bolt.fill", index: 2, selected: $selectedTab)
-                CyberTab(title: "日志", icon: "terminal", index: 3, selected: $selectedTab)
-                CyberTab(title: "快照", icon: "clock.arrow.circlepath", index: 4, selected: $selectedTab)
-                CyberTab(title: "录制", icon: "record.circle", index: 5, selected: $selectedTab)
-                CyberTab(title: "演示", icon: "person.badge.plus", index: 6, selected: $selectedTab)
+                CyberTab(title: "日志", icon: "terminal", index: 2, selected: $selectedTab)
+                CyberTab(title: "快照", icon: "clock.arrow.circlepath", index: 3, selected: $selectedTab)
+                CyberTab(title: "录制", icon: "record.circle", index: 4, selected: $selectedTab)
+                CyberTab(title: "演示", icon: "person.badge.plus", index: 5, selected: $selectedTab)
             }
             .padding(.horizontal, 8)
             .padding(.top, 10)
@@ -31,14 +30,12 @@ struct ToolPanelView: View {
             case 1:
                 ToolHistoryView()
             case 2:
-                AutonomousTaskView()
-            case 3:
                 ExecutionLogsView()
-            case 4:
+            case 3:
                 RollbackPanelView()
-            case 5:
+            case 4:
                 RecordingManagementView()
-            case 6:
+            case 5:
                 HumanDemoView()
             default:
                 ToolMatrixView()
@@ -544,46 +541,7 @@ struct ToolCallRow: View {
     }
 }
 
-// MARK: - Autonomous Task View
-
-struct AutonomousTaskView: View {
-    @EnvironmentObject var viewModel: AgentViewModel
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Task Progress Header
-            if let progress = viewModel.taskProgress {
-                TaskProgressHeader(progress: progress)
-                    .environmentObject(viewModel)
-                Rectangle()
-                    .fill(CyberColor.border)
-                    .frame(height: 1)
-            }
-            
-            // Action Logs
-            if viewModel.actionLogs.isEmpty {
-                EmptyTaskView()
-            } else {
-                ActionLogsList(logs: viewModel.actionLogs)
-            }
-            
-            // Clear Button
-            if !viewModel.actionLogs.isEmpty {
-                Rectangle()
-                    .fill(CyberColor.border)
-                    .frame(height: 1)
-                Button(action: { viewModel.clearActionLogs() }) {
-                    Label("清除日志", systemImage: "trash")
-                        .font(CyberFont.mono(size: 11))
-                        .foregroundColor(CyberColor.red)
-                }
-                .buttonStyle(.plain)
-                .padding()
-            }
-        }
-        .background(CyberColor.bg1)
-    }
-}
+// MARK: - Task Views (used by monitoring dashboard)
 
 struct TaskProgressHeader: View {
     @EnvironmentObject var viewModel: AgentViewModel
@@ -685,32 +643,6 @@ private struct CyberStatMini: View {
                 .font(CyberFont.mono(size: 10, weight: .semibold))
                 .foregroundColor(color)
         }
-    }
-}
-
-struct EmptyTaskView: View {
-    @EnvironmentObject var viewModel: AgentViewModel
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bolt.circle")
-                .font(CyberFont.display(size: 40))
-                .foregroundColor(CyberColor.cyanDim)
-            
-            Text("AUTONOMOUS MODE")
-                .font(CyberFont.mono(size: 11, weight: .bold))
-                .foregroundColor(CyberColor.textPrimary)
-                .tracking(2)
-            
-            Text("在聊天框输入任务后点击 🤖 按钮\n自动选择本地/远程模型执行")
-                .font(CyberFont.mono(size: 10))
-                .foregroundColor(CyberColor.textSecond)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-        .background(CyberColor.bg1)
     }
 }
 

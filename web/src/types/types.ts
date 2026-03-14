@@ -21,8 +21,6 @@ export interface Message {
   modelName?: string;
   /** Token 用量 */
   tokenUsage?: TokenUsage;
-  /** 是否为自主任务消息 */
-  isAutonomous?: boolean;
 }
 
 export interface MessageImage {
@@ -43,8 +41,6 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   messages: Message[];
-  /** 是否有自主任务在运行 */
-  isAutonomous?: boolean;
   /** 当前 session_id */
   sessionId?: string;
 }
@@ -136,8 +132,6 @@ export interface BackendConfig {
   baseUrl?: string;
   temperature: number;
   maxTokens: number;
-  autonomousMode: boolean;
-  maxAutonomousSteps: number;
   langchainCompat?: boolean;
   langchainInstalled?: boolean;
   remoteFallbackProvider?: string;
@@ -207,8 +201,11 @@ export type WSMessageType =
   | 'screenshot'
   /* 系统通知 */
   | 'system_notification'
-  /* Duck 任务完成 */
+  /* Duck 任务 */
   | 'duck_task_complete'
+  | 'duck_task_retry'
+  | 'duck_task_progress'
+  | 'auto_delegated_to_duck'
   /* 心跳 */
   | 'server_ping'
   /* 监控 */
@@ -218,6 +215,10 @@ export type WSMessageType =
   /* 升级 */
   | 'upgrade_complete'
   | 'upgrade_error'
+  /* 群聊 */
+  | 'group_chat_created'
+  | 'group_message'
+  | 'group_status_update'
   /* 兼容旧类型 */
   | 'chat_response'
   | 'chat_chunk'
@@ -232,4 +233,74 @@ export type WSMessageType =
 export interface WSMessage {
   type: WSMessageType;
   [key: string]: unknown;
+}
+
+/* ============ 群聊（多 Agent 协作） ============ */
+
+export type GroupChatStatus = 'active' | 'completed' | 'failed' | 'cancelled';
+export type ParticipantRole = 'main' | 'duck' | 'system';
+export type GroupMessageType =
+  | 'text'
+  | 'task_assign'
+  | 'task_progress'
+  | 'task_complete'
+  | 'task_failed'
+  | 'status_update'
+  | 'plan'
+  | 'conclusion';
+
+export interface GroupParticipant {
+  participant_id: string;
+  name: string;
+  role: ParticipantRole;
+  duck_type?: string;
+  emoji: string;
+  joined_at: number;
+}
+
+export interface GroupMessage {
+  msg_id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_role: ParticipantRole;
+  msg_type: GroupMessageType;
+  content: string;
+  mentions: string[];
+  metadata: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface GroupTaskSummary {
+  total?: number;
+  completed?: number;
+  failed?: number;
+  running?: number;
+  pending?: number;
+}
+
+export interface GroupChat {
+  group_id: string;
+  title: string;
+  session_id: string;
+  dag_id?: string;
+  status: GroupChatStatus;
+  participants: GroupParticipant[];
+  messages: GroupMessage[];
+  task_summary: GroupTaskSummary;
+  created_at: number;
+  completed_at?: number;
+}
+
+export interface GroupChatBrief {
+  group_id: string;
+  title: string;
+  session_id: string;
+  dag_id?: string;
+  status: GroupChatStatus;
+  participant_count: number;
+  message_count: number;
+  task_summary: GroupTaskSummary;
+  created_at: number;
+  completed_at?: number;
+  last_message?: GroupMessage;
 }
