@@ -127,7 +127,13 @@ class LocalDuckWorker:
             except asyncio.CancelledError:
                 break
 
-            await self._execute_task(payload)
+            try:
+                await self._execute_task(payload)
+            except asyncio.CancelledError:
+                logger.warning(f"[Local Duck] {self.duck_id} task cancelled during execution: {payload.task_id}")
+                break
+            except Exception as e:
+                logger.error(f"[Local Duck] {self.duck_id} unhandled error in _execute_task: {e}", exc_info=True)
 
     async def _execute_task(self, payload: DuckTaskPayload):
         """执行单个任务，向监控面板广播实时步骤，并回传结果"""
@@ -151,21 +157,24 @@ class LocalDuckWorker:
         output: Any = None
         error: Optional[str] = None
 
-        # 广播任务开始事件（带 Duck 身份）
-        await broadcast_monitor_event(
-            session_id=source_session,
-            task_id=payload.task_id,
-            event={
-                "type": "task_start",
-                "task": payload.description,
-                "task_id": payload.task_id,
-                "duck_name": self.name,
-                "duck_type": self.duck_type.value,
-            },
-            task_type="duck",
-            worker_type="local_duck",
-            worker_id=self.duck_id,
-        )
+        # 广播任务开始事件（带 Duck 身份，包裹 try/except 防止广播异常影响任务执行）
+        try:
+            await broadcast_monitor_event(
+                session_id=source_session,
+                task_id=payload.task_id,
+                event={
+                    "type": "task_start",
+                    "task": payload.description,
+                    "task_id": payload.task_id,
+                    "duck_name": self.name,
+                    "duck_type": self.duck_type.value,
+                },
+                task_type="duck",
+                worker_type="local_duck",
+                worker_id=self.duck_id,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to broadcast task start event: {e}")
 
         # 在 DAG 群聊中发送「Duck 已接受并开始执行」通知
         try:
@@ -177,35 +186,43 @@ class LocalDuckWorker:
         try:
             output = await self._do_work_with_monitoring(payload, source_session)
             success = True
+        except asyncio.CancelledError:
+            error = "任务被外部取消"
+            logger.warning(f"Local Duck {self.duck_id} task cancelled: {payload.task_id}")
         except Exception as e:
             error = str(e)
             logger.error(f"Local Duck {self.duck_id} task failed: {e}")
-            # 广播任务失败事件
-            await broadcast_monitor_event(
-                session_id=source_session,
+            # 广播任务失败事件（包裹 try/except 防止广播失败导致 handle_result 跳过）
+            try:
+                await broadcast_monitor_event(
+                    session_id=source_session,
+                    task_id=payload.task_id,
+                    event={
+                        "type": "task_complete",
+                        "task_id": payload.task_id,
+                        "success": False,
+                        "summary": f"执行失败: {error[:200]}",
+                    },
+                    task_type="duck",
+                    worker_type="local_duck",
+                    worker_id=self.duck_id,
+                )
+            except Exception as broadcast_err:
+                logger.warning(f"Failed to broadcast task failure event: {broadcast_err}")
+        finally:
+            # 保证无论成功/失败/取消，handle_result 一定被调用，DAG 回调一定触发
+            duration = time.time() - start_time
+            result = DuckResultPayload(
                 task_id=payload.task_id,
-                event={
-                    "type": "task_complete",
-                    "task_id": payload.task_id,
-                    "success": False,
-                    "summary": f"执行失败: {error[:200]}",
-                },
-                task_type="duck",
-                worker_type="local_duck",
-                worker_id=self.duck_id,
+                success=success,
+                output=output,
+                error=error,
+                duration=duration,
             )
-
-        duration = time.time() - start_time
-
-        result = DuckResultPayload(
-            task_id=payload.task_id,
-            success=success,
-            output=output,
-            error=error,
-            duration=duration,
-        )
-
-        await scheduler.handle_result(self.duck_id, result)
+            try:
+                await scheduler.handle_result(self.duck_id, result)
+            except Exception as hr_err:
+                logger.error(f"Local Duck {self.duck_id} handle_result failed: {hr_err}", exc_info=True)
 
     def _create_duck_llm_client(self) -> Optional[Any]:
         """若分身配置了独立 LLM，创建 LLMClient。优先使用 provider_ref 动态解析，否则回退到静态字段。"""
@@ -286,7 +303,7 @@ class LocalDuckWorker:
             local_llm_client=main_agent.local_llm,
             reflect_llm=main_agent.reflect_llm,
             runtime_adapter=main_agent.runtime_adapter,
-            max_iterations=main_agent.max_iterations,
+            max_iterations=min(main_agent.max_iterations, 12),
             enable_reflection=main_agent.enable_reflection,
             enable_model_selection=main_agent.enable_model_selection,
             enable_adaptive_stop=main_agent.enable_adaptive_stop,
@@ -691,7 +708,7 @@ class LocalDuckWorker:
                 from services.duck_plan_executor import run_duck_task_with_plan
 
                 async def _broadcast_chunk(chunk: dict) -> None:
-                    """计划执行器的广播回调"""
+                    """计划执行器的广播回调（包含群聊进度通知 + 监控面板广播）"""
                     last_active[0] = time.time()
                     _scheduler.update_task_activity(payload.task_id)
                     chunk_type = chunk.get("type", "")
@@ -701,14 +718,28 @@ class LocalDuckWorker:
                         duck_phase[0] = "idle"
                     elif chunk_type == "tool_call":
                         duck_phase[0] = "tool_executing"
-                    await broadcast_monitor_event(
-                        session_id=source_session,
-                        task_id=payload.task_id,
-                        event=chunk,
-                        task_type="duck",
-                        worker_type="local_duck",
-                        worker_id=self.duck_id,
-                    )
+                        # 向 Chat 发送关键工具调用进度（与 _stream_run 路径保持一致）
+                        _tool_call_count[0] += 1
+                        tool_name = chunk.get("tool_name", chunk.get("action_type", ""))
+                        if tool_name and _tool_call_count[0] <= 10:
+                            try:
+                                await _scheduler._notify_session_duck_progress(
+                                    source_session, payload.task_id,
+                                    f"⚙️ Duck 正在执行：{tool_name}（第 {_tool_call_count[0]} 步）"
+                                )
+                            except Exception:
+                                pass
+                    try:
+                        await broadcast_monitor_event(
+                            session_id=source_session,
+                            task_id=payload.task_id,
+                            event=chunk,
+                            task_type="duck",
+                            worker_type="local_duck",
+                            worker_id=self.duck_id,
+                        )
+                    except Exception as _bcast_err:
+                        logger.debug(f"broadcast_monitor_event failed in plan executor: {_bcast_err}")
 
                 # 获取用于规划的 LLM（duck_llm 优先，否则使用主 LLM）
                 _plan_llm = duck_llm

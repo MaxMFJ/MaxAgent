@@ -238,7 +238,7 @@ export interface WSMessage {
 /* ============ 群聊（多 Agent 协作） ============ */
 
 export type GroupChatStatus = 'active' | 'completed' | 'failed' | 'cancelled';
-export type ParticipantRole = 'main' | 'duck' | 'system';
+export type ParticipantRole = 'main' | 'duck' | 'system' | 'monitor';
 export type GroupMessageType =
   | 'text'
   | 'task_assign'
@@ -247,7 +247,8 @@ export type GroupMessageType =
   | 'task_failed'
   | 'status_update'
   | 'plan'
-  | 'conclusion';
+  | 'conclusion'
+  | 'monitor_report';
 
 export interface GroupParticipant {
   participant_id: string;

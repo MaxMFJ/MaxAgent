@@ -1,0 +1,16 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 7909, "success": true, "ts": 1773725618.889122}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 2368, "success": true, "error": null, "ts": 1773725621.86881}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 35105, "success": true, "ts": 1773725658.9780312}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 1212, "success": true, "error": null, "ts": 1773725660.756014}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 7510, "success": true, "ts": 1773725670.2707388}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 1427, "success": true, "error": null, "ts": 1773725672.301898}
+{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 11900, "success": true, "ts": 1773725686.207674}
+{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 644, "success": true, "error": null, "ts": 1773725687.391593}
+{"iteration": 5, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 19442, "success": true, "ts": 1773725708.839809}
+{"iteration": 5, "type": "tool", "action_type": "call_tool", "latency_ms": 662, "success": true, "error": null, "ts": 1773725710.124931}
+{"iteration": 6, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 14159, "success": true, "ts": 1773725748.7426612}
+{"iteration": 6, "type": "tool", "action_type": "call_tool", "latency_ms": 2033, "success": true, "error": null, "ts": 1773725751.37235}
+{"iteration": 7, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 70291, "success": true, "ts": 1773725823.669597}
+{"iteration": 7, "type": "tool", "action_type": "write_file", "latency_ms": 1, "success": true, "error": null, "ts": 1773725824.2296479}
+{"iteration": 8, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 14481, "success": true, "ts": 1773725840.7167392}
+{"iteration": 8, "type": "tool", "action_type": "read_file", "latency_ms": 0, "success": true, "error": null, "ts": 1773725841.279852}

@@ -73,6 +73,8 @@ class BackendService: ObservableObject {
     var onGroupMessage: ((_ groupId: String, _ message: GroupMessage) -> Void)?
     /// 群聊状态更新回调
     var onGroupStatusUpdate: ((_ groupId: String, _ status: GroupChatStatus, _ taskSummary: GroupTaskSummary) -> Void)?
+    /// 群聊被删除回调（用户或后端触发）
+    var onGroupChatDeleted: ((_ groupId: String) -> Void)?
 
     init(port: Int = Int(PortConfiguration.defaultBackendPort)) {
         self.port = port
@@ -275,6 +277,9 @@ class BackendService: ObservableObject {
                                    let summary = try? JSONDecoder().decode(GroupTaskSummary.self, from: summaryData) {
                                     await MainActor.run { self.onGroupStatusUpdate?(gid, gStatus, summary) }
                                 }
+                            case "group_chat_deleted":
+                                let deletedGid = json["group_id"] as? String ?? ""
+                                await MainActor.run { self.onGroupChatDeleted?(deletedGid) }
                             case "client_disconnected":
                                 break
                             default:
@@ -656,7 +661,7 @@ class BackendService: ObservableObject {
         return response.response
     }
     
-    func sendMessageStream(_ content: String, sessionId: String? = nil, filePaths: [String] = []) -> AsyncThrowingStream<StreamChunk, Error> {
+    func sendMessageStream(_ content: String, sessionId: String? = nil, filePaths: [String] = [], activeGroupId: String? = nil) -> AsyncThrowingStream<StreamChunk, Error> {
         return AsyncThrowingStream { [weak self] continuation in
             Task { [weak self] in
                 guard let self = self else {
@@ -683,6 +688,9 @@ class BackendService: ObservableObject {
                     }
                     if !filePaths.isEmpty {
                         message["file_paths"] = filePaths
+                    }
+                    if let gid = activeGroupId {
+                        message["active_group_id"] = gid
                     }
                     
                     let jsonData = try JSONSerialization.data(withJSONObject: message)
@@ -852,7 +860,11 @@ class BackendService: ObservableObject {
                                         await MainActor.run { self.onGroupStatusUpdate?(gidDtc, gStatusDtc, summary) }
                                     }
                                     continue
-                                
+                                case "group_chat_deleted":
+                                    let deletedGidDtc = json["group_id"] as? String ?? ""
+                                    await MainActor.run { self.onGroupChatDeleted?(deletedGidDtc) }
+                                    continue
+
                                 case "system_notification":
                                     await MainActor.run { [weak self] in
                                         self?.handleSystemNotification(json)
@@ -873,7 +885,87 @@ class BackendService: ObservableObject {
                                         self.onMonitorEvent?(sourceSession, taskId, event)
                                     }
                                     continue
-                                    
+
+                                // ── 自主任务事件（chat + autonomous 合并后需要处理）──
+                                case "task_start":
+                                    continuation.yield(.content("🚀 **任务已启动**\n\n"))
+
+                                case "model_selected":
+                                    let modelType = json["model_type"] as? String ?? ""
+                                    let reason = json["reason"] as? String ?? ""
+                                    continuation.yield(.content("📡 模型选择: **\(modelType)** (\(reason))\n\n"))
+
+                                case "task_analysis":
+                                    let complexity = json["complexity"] as? String ?? ""
+                                    if !complexity.isEmpty {
+                                        continuation.yield(.content("📊 任务复杂度: \(complexity)\n\n"))
+                                    }
+
+                                case "action_plan":
+                                    let action = json["action"] as? [String: Any] ?? [:]
+                                    let iteration = json["iteration"] as? Int ?? 0
+                                    let actionType = action["action_type"] as? String ?? "执行"
+                                    let reasoning = action["reasoning"] as? String ?? ""
+                                    continuation.yield(.content("\n**步骤 \(iteration)**: \(actionType)\n> \(reasoning)\n\n"))
+
+                                case "action_result":
+                                    let success = json["success"] as? Bool ?? false
+                                    let output = json["output"] as? String ?? ""
+                                    let error = json["error"] as? String
+                                    let icon = success ? "✅" : "❌"
+                                    let text = success ? String(output.prefix(200)) : (error ?? "")
+                                    continuation.yield(.content("\(icon) \(text.isEmpty ? "" : "`\(text)`")\n\n"))
+
+                                case "action_executing":
+                                    continue
+
+                                case "finish_blocked":
+                                    let reason = json["reason"] as? String ?? ""
+                                    continuation.yield(.content("⏳ 完成被阻止: \(reason)\n\n"))
+
+                                case "reflect_start":
+                                    continuation.yield(.content("\n🔍 **反思分析中…**\n\n"))
+
+                                case "reflect_result":
+                                    let reflection = json["reflection"] as? String ?? ""
+                                    let reflectError = json["error"] as? String
+                                    if !reflection.isEmpty {
+                                        continuation.yield(.content("> \(reflection)\n\n"))
+                                    } else if let err = reflectError {
+                                        continuation.yield(.content("> ⚠️ \(err)\n\n"))
+                                    }
+
+                                case "task_complete":
+                                    let success = json["success"] as? Bool ?? false
+                                    let summary = json["summary"] as? String ?? ""
+                                    let totalActions = json["total_actions"] as? Int ?? 0
+                                    let icon = success ? "🎉" : "😞"
+                                    continuation.yield(.content("\n---\n\(icon) **任务\(success ? "完成" : "失败")** (共 \(totalActions) 步)\n\n\(summary)\n"))
+
+                                case "task_stopped":
+                                    let reason = json["reason"] as? String ?? ""
+                                    let message = json["message"] as? String ?? ""
+                                    let recommendation = json["recommendation"] as? String ?? ""
+                                    continuation.yield(.content("\n---\n⚠️ **任务停止**: \(message.isEmpty ? reason : message)\n\(recommendation)\n"))
+
+                                case "plan_created", "plan_replanned":
+                                    let subTasks = json["sub_tasks"] as? [String] ?? []
+                                    if !subTasks.isEmpty {
+                                        var planText = "📋 **执行计划**:\n"
+                                        for (i, task) in subTasks.enumerated() {
+                                            planText += "\(i + 1). \(task)\n"
+                                        }
+                                        planText += "\n"
+                                        continuation.yield(.content(planText))
+                                    }
+
+                                case "retry":
+                                    let retryMsg = json["message"] as? String ?? "正在重试…"
+                                    continuation.yield(.content("🔄 \(retryMsg)\n\n"))
+
+                                case "task_state", "task_progress", "web_augmentation":
+                                    continue
+
                                 default:
                                     continue
                                 }
@@ -1338,6 +1430,10 @@ class BackendService: ObservableObject {
                                         await MainActor.run { self.onGroupStatusUpdate?(gidDtc2, gStatusDtc2, summary) }
                                     }
                                     continue
+                                case "group_chat_deleted":
+                                    let deletedGidDtc2 = json["group_id"] as? String ?? ""
+                                    await MainActor.run { self.onGroupChatDeleted?(deletedGidDtc2) }
+                                    continue
 
                                 case "monitor_event":
                                     let sourceSessionChat = json["source_session"] as? String ?? ""
@@ -1658,5 +1754,40 @@ class BackendService: ObservableObject {
         URL(string: "\(baseURL)/duck/egg/\(eggId)/download")
     }
 
-}
+    // MARK: - Group Chat REST API
 
+    /// 拉取指定 session 下的全部群聊简要信息
+    nonisolated func fetchGroupChatBriefs(sessionId: String) async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/group-chat/list?session_id=\(sessionId)") else {
+            throw URLError(.badURL)
+        }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let groups = json["groups"] as? [[String: Any]] else { return [] }
+        return groups
+    }
+
+    /// 拉取单个群聊完整信息（含所有消息）
+    nonisolated func fetchGroupChatDetail(groupId: String) async throws -> GroupChat {
+        guard let url = URL(string: "\(baseURL)/group-chat/\(groupId)") else {
+            throw URLError(.badURL)
+        }
+        let (data, _) = try await urlSession.data(from: url)
+        let decoder = JSONDecoder()
+        return try decoder.decode(GroupChat.self, from: data)
+    }
+
+    /// 永久删除群聊
+    nonisolated func deleteGroupChat(groupId: String) async throws {
+        guard let url = URL(string: "\(baseURL)/group-chat/\(groupId)") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode == 404 {
+            throw URLError(.fileDoesNotExist)
+        }
+    }
+
+}

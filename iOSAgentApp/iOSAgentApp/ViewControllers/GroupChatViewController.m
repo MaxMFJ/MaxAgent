@@ -190,7 +190,14 @@ static NSString *const kAgentCellId  = @"AgentCell";
     // Remove old subviews to reconfigure  
     for (UIView *sv in cell.contentView.subviews) { [sv removeFromSuperview]; }
 
-    UIColor *accentColor = (msg.senderRole == ParticipantRoleMain) ? TechTheme.neonCyan : TechTheme.neonOrange;
+    UIColor *accentColor;
+    if (msg.senderRole == ParticipantRoleMain) {
+        accentColor = TechTheme.neonCyan;
+    } else if (msg.senderRole == ParticipantRoleMonitor) {
+        accentColor = TechTheme.neonPurple;
+    } else {
+        accentColor = TechTheme.neonOrange;
+    }
 
     // Emoji avatar
     UILabel *emojiLabel = [[UILabel alloc] init];
@@ -320,6 +327,7 @@ static NSString *const kAgentCellId  = @"AgentCell";
         case GroupMessageTypeTaskProgress: return @" 进度 ";
         case GroupMessageTypePlan: return @" 计划 ";
         case GroupMessageTypeConclusion: return @" 总结 ";
+        case GroupMessageTypeMonitorReport: return @" 报告 ";
         case GroupMessageTypeStatusUpdate: return @" 状态 ";
         case GroupMessageTypeText: return nil;
     }

@@ -230,10 +230,20 @@ class ActionGeneratorMixin:
                         _is_duck_mode = bool(_gdc_rd())
                     except Exception:
                         pass
+                # 判断是否为 call_tool（搜索/爬虫类工具，结果可能较长）
+                _is_call_tool = last_log.action.action_type == ActionType.CALL_TOOL
+                _tool_name = (last_log.action.params.get("tool_name") or "").lower()
+                _is_search_tool = _is_call_tool and any(
+                    k in _tool_name for k in ("search", "web", "browser", "crawl", "fetch")
+                )
                 if is_read and _is_duck_mode:
-                    out_limit = 3000  # Duck 模式
+                    out_limit = 2500  # Duck 模式读文件（从 3000 降低，防止后续 LLM 超时）
                 elif is_read:
-                    out_limit = 5000  # 普通模式（从 10000 降至 5000）
+                    out_limit = 4000  # 普通模式（从 5000 降至 4000）
+                elif _is_search_tool and _is_duck_mode:
+                    out_limit = 1500  # Duck 模式搜索结果
+                elif _is_call_tool and _is_duck_mode:
+                    out_limit = 600   # Duck 模式其他工具调用
                 else:
                     out_limit = 300
                 result_summary = f"上一步执行成功。输出: {out_str[:out_limit]}{'...[已截断]' if len(out_str) > out_limit else ''}"
@@ -291,7 +301,7 @@ class ActionGeneratorMixin:
             except Exception:
                 _is_duck = False
             _steps_done = len(context.action_logs)
-            if _is_duck and _steps_done >= 8 and not getattr(context, "_wrap_up_injected", False):
+            if _is_duck and _steps_done >= 6 and not getattr(context, "_wrap_up_injected", False):
                 context._wrap_up_injected = True
                 next_prompt += (
                     "\n\n【⚠️ 收尾提示】你已执行了较多步骤，请立即将所有收集到的内容写入工作区，"
@@ -569,7 +579,22 @@ class ActionGeneratorMixin:
                 })
             return None
         except Exception as e:
-            logger.error(f"Error generating action: {e}")
+            logger.error(f"Error generating action: {e}", exc_info=True)
+            # 上下文超限检测：标记 timeout 并注入压缩提示，让调用方缩减上下文后重试
+            err_str = str(e).lower()
+            if any(k in err_str for k in ("context_length", "context length", "token limit",
+                                           "max_tokens", "maximum context", "too many tokens",
+                                           "reduce the length", "context window",
+                                           "context_too_large")):
+                logger.warning("Context too large in _generate_action, marking for context reduction")
+                context._last_llm_timeout = True
+                context._truncation_hint = (
+                    "【上下文超限】LLM 请求因上下文过大而失败。\n"
+                    "请采取以下策略：\n"
+                    "1. 使用 create_and_run_script 编写 Python 脚本来读取和处理文件，而不是通过 read_file 把全文放入上下文\n"
+                    "2. 如果已有足够信息，直接用 finish 完成任务\n"
+                    "3. 操作文件时使用 sed/awk 等命令操作，避免大段内容传递"
+                )
             if llm_events is not None:
                 llm_events.append({
                     "type": "llm_request_end",

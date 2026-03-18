@@ -70,8 +70,8 @@ async def execute_llm_script(
         try:
             from agent.upgrade_security import check_code_safety, is_path_allowed
         except ImportError:
-            check_code_safety = lambda c: (True, "")
-            is_path_allowed = lambda p: True
+            logger.error("[Upgrade] Security module unavailable, aborting upgrade")
+            return False, "安全模块不可用，无法执行升级"
 
         safe, err = check_code_safety(content)
         if not safe:

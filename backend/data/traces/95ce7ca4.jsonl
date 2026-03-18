@@ -1,0 +1,6 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 8580, "success": true, "ts": 1773718214.935037}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 1326, "success": true, "error": null, "ts": 1773718217.275415}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 23875, "success": true, "ts": 1773718243.1567261}
+{"iteration": 2, "type": "tool", "action_type": "think", "latency_ms": 0, "success": true, "error": null, "ts": 1773718243.794247}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 10387, "success": true, "ts": 1773718256.187099}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 3701, "success": true, "error": null, "ts": 1773718260.516321}

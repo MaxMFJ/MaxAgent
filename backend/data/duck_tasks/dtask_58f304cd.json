@@ -1,0 +1,24 @@
+{
+  "task_id": "dtask_58f304cd",
+  "description": "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，不要先描述计划。必须使用 write_file 或 run_shell 完成任务。\n历史失败原因：任务超时：总执行时间超过 300s 上限\n\n原始任务：根据AI行业研究报告设计文档，生成一个漂亮的HTML展示页面。需要包含：1) 市场趋势和大数据图表展示 2) 大模型技术进展板块 3) 投资动态和企业产品展示 4) 现代化UI设计，使用渐变背景、卡片式布局、动画效果",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 1,
+  "max_retries": 2,
+  "original_description": "根据AI行业研究报告设计文档，生成一个漂亮的HTML展示页面。需要包含：1) 市场趋势和大数据图表展示 2) 大模型技术进展板块 3) 投资动态和企业产品展示 4) 现代化UI设计，使用渐变背景、卡片式布局、动画效果",
+  "retry_errors": [
+    "任务超时：总执行时间超过 300s 上限"
+  ],
+  "created_at": 1773716530.939265,
+  "assigned_at": 1773716831.944682,
+  "started_at": null,
+  "completed_at": 1773716831.9425652,
+  "last_activity": 1773716831.944683
+}

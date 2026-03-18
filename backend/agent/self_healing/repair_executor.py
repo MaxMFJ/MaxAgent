@@ -235,11 +235,13 @@ class RepairExecutor:
                 
                 except asyncio.TimeoutError:
                     last_error = f"Action timed out after {action.timeout_seconds}s"
+                    break  # 超时不重试，问题通常不是瞬时的
                 except Exception as e:
                     last_error = str(e)
                 
                 if attempt < action.retry_count - 1:
-                    await asyncio.sleep(1)  # 重试前等待
+                    delay = min(2 ** attempt, 16)  # 指数退避，最大16秒
+                    await asyncio.sleep(delay)
             
             # 所有重试都失败
             duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
@@ -316,8 +318,9 @@ class RepairExecutor:
         if not file_path or not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
         
-        # 备份原文件
-        backup_path = f"{file_path}.backup"
+        # 备份原文件（带时间戳避免覆盖）
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = f"{file_path}.backup.{timestamp}"
         with open(file_path, 'r') as f:
             original_content = f.read()
         
@@ -354,7 +357,7 @@ class RepairExecutor:
         # 使用 httpx 或 requests 调用 API
         import httpx
         
-        base_url = "http://127.0.0.1:8765"
+        base_url = os.environ.get("MACAGENT_BACKEND_URL", "http://127.0.0.1:8765")
         url = f"{base_url}{endpoint}" if endpoint.startswith("/") else endpoint
         
         async with httpx.AsyncClient() as client:
@@ -396,9 +399,11 @@ class RepairExecutor:
         wait_seconds = params.get("wait_seconds", 5)
         
         if service == "backend":
-            # 重启后端服务
+            # 动态获取后端目录路径
+            from paths import BACKEND_ROOT
+            backend_dir = BACKEND_ROOT
             process = await asyncio.create_subprocess_shell(
-                'pkill -f "python.*main.py" 2>/dev/null; sleep 2; cd /Users/lzz/Desktop/未命名文件夹/MacAgent/backend && python main.py &',
+                f'pkill -f "python.*main.py" 2>/dev/null; sleep 2; cd {backend_dir} && python main.py &',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )

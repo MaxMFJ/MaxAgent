@@ -39,9 +39,9 @@ class ContextSummarizationMiddleware(AgentMiddleware):
     def __init__(
         self,
         token_budget: int = 80000,
-        trigger_ratio: float = 0.7,
-        trigger_threshold: int = 20,
-        keep_recent: int = 8,
+        trigger_ratio: float = 0.6,
+        trigger_threshold: int = 12,
+        keep_recent: int = 6,
     ):
         self.token_budget = token_budget
         self.trigger_ratio = trigger_ratio

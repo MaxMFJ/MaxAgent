@@ -13,6 +13,7 @@ enum ParticipantRole: String, Codable {
     case main
     case duck
     case system
+    case monitor
 }
 
 enum GroupMessageType: String, Codable {
@@ -24,6 +25,7 @@ enum GroupMessageType: String, Codable {
     case statusUpdate = "status_update"
     case plan
     case conclusion
+    case monitorReport = "monitor_report"
 }
 
 struct GroupParticipant: Codable, Identifiable {

@@ -1,72 +1,32 @@
 [
   {
-    "id": "331b3e8e-b708-48df-8fa6-3f9582f8d869",
+    "id": "796cc5d1-ca88-4629-afec-9ca66afba242",
+    "level": "error",
+    "title": "任务被停止",
+    "content": "任务: 帮我做一个关于AI行业的研究报告2025-2026年的，先craw 搜集最新的行业数据和新闻，然后designer 设计页面md说明页面如何设计，最后coder 生成一个漂亮的HTML展示页面\n原因: LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.\n建议: Try: 1) Simplify the task description 2) Check API quota 3) Switch model",
+    "source": "chat_task",
+    "category": "system_error",
+    "timestamp": "2026-03-17T10:53:29.964666",
+    "read": true
+  },
+  {
+    "id": "7735943c-5688-44f3-afd3-71775bfa15af",
+    "level": "error",
+    "title": "任务被停止",
+    "content": "任务: 帮我做一个关于AI行业的研究报告2025-2026年的，先craw 搜集最新的行业数据和新闻，然后designer 设计页面md说明页面如何设计，最后coder 生成一个漂亮的HTML展示页面\n原因: LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.\n建议: Try: 1) Simplify the task description 2) Check API quota 3) Switch model",
+    "source": "chat_task",
+    "category": "system_error",
+    "timestamp": "2026-03-17T13:18:12.739129",
+    "read": true
+  },
+  {
+    "id": "f26f3078-9685-4cef-bd96-f70b0baa8d43",
     "level": "warning",
     "title": "启动检查: 2 条未分类错误",
     "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
     "source": "log_analyzer",
     "category": "system_error",
-    "timestamp": "2026-03-10T16:43:27.580755",
-    "read": true
-  },
-  {
-    "id": "3378961c-9b33-40a7-8f8e-ebb7cf2d5cd4",
-    "level": "info",
-    "title": "任务完成",
-    "content": "任务: 在 企业微信 发送 吃啦吗 给 文件传输助手\n总结: <think>\n用户要求在企业微信发送\"吃啦吗\"给\"文件传输助手\"。\n\n根据上下文，上一步已经获取了企业微信的界面状态。现在需要：\n1. 先找到\"文件传输助手\"这个联系人\n2. 点击进入聊天窗口\n3. 输入消息\"吃啦吗\"\n4. 发送消息\n\n根据 GUI 交互规范，我需要：\n1. 先用 gui_automation(get_gui_state, app_name=\"企业微信\") 获取界面状态\n2. 用 gui_automation(find_elements, app_name=\"企业微信\", element_name=\"文件传输助手\") 查找元素\n3. 用 gui_automation(click_element, app_name=\"企业微信\", element_name=\"文件传输助手\") 点击元素\n4. 用 gui_automation(type_text, app_name=\"企业微信\", text=\"吃啦吗\") 输入文字\n5. 用 input_control(keyboard_key, key=\"return\") 发送消息\n6. 最后截图验证\n\n让我先获取企业微信的界面状态。\n</think>\n\n```json\n{\"action_type\": \"gui_automation\", \"params\": {\"action\": \"get_gui_state\", \"app_name\": \"企业微信\"}, \"reasoning\": \"获取企业微信当前界面状态，了解窗口布局和元素\"}\n```\n动作数: 2",
-    "source": "autonomous_task",
-    "category": "task",
-    "timestamp": "2026-03-10T16:47:23.090946",
-    "read": true
-  },
-  {
-    "id": "fe2bdb8d-9176-48d1-b306-d5e7c7a9a835",
-    "level": "warning",
-    "title": "启动检查: 2 条未分类错误",
-    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-10T17:54:13.168473",
-    "read": true
-  },
-  {
-    "id": "d85f2284-c62c-4f21-9b5d-63b2a7a4807a",
-    "level": "error",
-    "title": "自主任务执行错误",
-    "content": "'ErrorTracker' object has no attribute 'reset'",
-    "source": "autonomous_task",
-    "category": "system_error",
-    "timestamp": "2026-03-11T16:22:32.516015",
-    "read": true
-  },
-  {
-    "id": "efa6b081-7896-46a6-b089-158979b942d5",
-    "level": "error",
-    "title": "对话执行错误",
-    "content": "the JSON object must be str, bytes or bytearray, not dict",
-    "source": "chat_stream",
-    "category": "system_error",
-    "timestamp": "2026-03-14T09:58:31.476162",
-    "read": true
-  },
-  {
-    "id": "3ab99b9b-10fe-4ac9-90ef-0d3fa8544432",
-    "level": "error",
-    "title": "对话执行错误",
-    "content": "Error code: 429 - {'error': {'message': 'Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day', 'code': 429, 'metadata': {'headers': {'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': '1773532800000'}, 'provider_name': None}}, 'user_id': 'user_3AuprgATwxedIo0e2iB1W0x03wU'}",
-    "source": "chat_stream",
-    "category": "system_error",
-    "timestamp": "2026-03-14T11:10:48.775571",
-    "read": true
-  },
-  {
-    "id": "d2e39348-8faf-425a-8539-92139dc460a8",
-    "level": "warning",
-    "title": "启动检查: 2 条未分类错误",
-    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-14T14:49:11.552223",
+    "timestamp": "2026-03-17T17:06:40.235943",
     "read": true
   }
 ]

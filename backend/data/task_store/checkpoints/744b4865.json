@@ -1,0 +1,13 @@
+{
+  "task_id": "744b4865",
+  "session_id": "duck_local_d936e706_dtask_",
+  "task_description": "搜集2025-2026年AI行业最新数据、新闻、趋势报告，包含市场规模、融资动态、主要玩家、技术突破等\n\n【相关文件路径】/Users/lzz/Desktop\n\n【文件结构摘要】（大文件已压缩，可分段 read_file 按需读取详情）\n【/Users/lzz/Desktop】可直接读取",
+  "status": "stopped",
+  "current_iteration": 0,
+  "max_iterations": 30,
+  "action_checkpoints": [],
+  "created_at": "2026-03-17T17:14:07.555244",
+  "updated_at": "2026-03-17T17:15:12.218869",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

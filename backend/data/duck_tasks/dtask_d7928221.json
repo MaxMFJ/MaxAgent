@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_d7928221",
+  "description": "搜集AI行业2025-2026年最新行业数据和新闻，包括：1) AI市场趋势和规模数据 2) 大模型技术进展 3) AI投资融资动态 4) 主要AI企业和产品动态 5) AI应用落地案例 6) AI政策和监管动态。请搜索并整理成结构化的数据摘要。",
+  "task_type": "general",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": "<think>\n用户要求我作为\"Crawler Duck\"这个专业爬虫代理，搜集2025-2026年AI行业的最新数据和新闻。需要涵盖6个方面：\n1. AI市场趋势和规模数据\n2. 大模型技术进展\n3. AI投资融资动态\n4. 主要AI企业和产品动态\n5. AI应用落地案例\n6. AI政策和监管动态\n\n用户要求结构化的数据摘要。\n\n作为AI助手，我需要通过网络搜索来获取这些信息。让我开始搜索各个方面的话题。\n\n首先我需要搜索：\n- AI market trends 2025 2026\n- LLM technology progress 2025\n- AI investment funding 2025\n- AI companies products 2025\n- AI applications cases 2025\n- AI policy regulation 2025\n\n我会进行多次搜索来获取这些信息。\n</think>\n\n我将开始为您搜集2025-2026年AI行业的最新数据和新闻。让我分多个维度进行搜索。\n<tool_call>\n[\n  {\n    tool => 'web_crawl',\n    args => {\n      query=\"AI market trends size 2025 2026 forecast billion dollars\"\n    }\n  },\n  {\n    tool => 'web_crawl',\n    args => {\n      query=\"large language model LLM technology progress 2025 GPT-5 Claude\"\n    }\n  },\n  {\n    tool => 'web_crawl',\n    args => {\n      query=\"AI investment funding rounds 2025 startups unicorn\"\n    }\n  }\n]\n</tool_call>",
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773716477.882723,
+  "assigned_at": 1773716477.88312,
+  "started_at": null,
+  "completed_at": 1773716698.420959,
+  "last_activity": 1773716477.883126
+}

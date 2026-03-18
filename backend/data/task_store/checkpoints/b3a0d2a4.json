@@ -1,0 +1,26 @@
+{
+  "task_id": "b3a0d2a4",
+  "session_id": "duck_local_d936e706_dtask_",
+  "task_description": "搜集AI行业2025-2026年最新数据、政策、投融资、热门公司、技术趋势等新闻和数据\n\n【相关文件路径】/Users/lzz/Desktop\n\n【文件结构摘要】（大文件已压缩，可分段 read_file 按需读取详情）\n【/Users/lzz/Desktop】可直接读取",
+  "status": "stopped",
+  "current_iteration": 1,
+  "max_iterations": 30,
+  "action_checkpoints": [
+    {
+      "iteration": 1,
+      "action_type": "list_directory",
+      "params": {
+        "path": "/Users/lzz/Desktop"
+      },
+      "reasoning": "查看桌面文件结构，了解用户已有哪些参考资料",
+      "success": true,
+      "output": "Untitled.trace\n.DS_Store\nmacagent\n.localized\nGameLinker\ntunnel\nnga_delta_action",
+      "error": null,
+      "timestamp": "2026-03-17T14:03:13.983936"
+    }
+  ],
+  "created_at": "2026-03-17T14:02:54.785274",
+  "updated_at": "2026-03-17T14:06:25.009584",
+  "last_client_disconnect_at": null,
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
+}

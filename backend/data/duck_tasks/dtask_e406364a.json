@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_e406364a",
+  "description": "搜集2025-2026年AI行业最新数据、新闻、趋势报告，包含市场规模、融资动态、主要玩家、技术突破等\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "assigned",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773738847.550501,
+  "assigned_at": 1773738847.5510101,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773738847.551011
+}

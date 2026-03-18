@@ -61,3 +61,13 @@ async def cancel_group(group_id: str):
         raise HTTPException(status_code=404, detail="群聊不存在")
     await svc.cancel_group(group_id)
     return {"status": "cancelled"}
+
+
+@router.delete("/{group_id}")
+async def delete_group(group_id: str):
+    """永久删除群聊（用户主动操作，不可恢复）"""
+    svc = get_group_chat_service()
+    deleted = await svc.delete_group(group_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="群聊不存在")
+    return {"status": "deleted"}

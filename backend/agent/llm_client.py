@@ -500,6 +500,21 @@ class LLMClient:
             )
             # 对连接类 / Channel 错误返回友好提示，便于用户在设置中检查 API 与 LM Studio
             err_msg = str(e)
+            # 上下文长度超限（context_length_exceeded / token limit / max context）
+            # 标记为特殊错误类型，便于上层做上下文剪裁而非盲目重试
+            _err_lower = err_msg.lower()
+            if any(k in _err_lower for k in ("context_length", "context length", "token limit",
+                                               "max_tokens", "maximum context", "too many tokens",
+                                               "reduce the length", "context window")):
+                err_msg = f"[CONTEXT_TOO_LARGE] 上下文超出模型窗口限制: {err_msg[:200]}"
+                yield {"type": "error", "error": err_msg}
+                UsageTracker.shared().record_call(
+                    model=self.config.model,
+                    provider=self.config.provider,
+                    success=False,
+                    error=err_msg[:200],
+                )
+                return
             if "Connection" in type(e).__name__ or "Connection" in err_msg or "ConnectError" in err_msg:
                 err_msg = (
                     f"无法连接到 API 服务（{base}）。请检查：\n"

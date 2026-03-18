@@ -2,12 +2,12 @@
   "task_id": "755d9370",
   "session_id": "BFFA399C-776B-4EBD-83D3-11335C37BFA0",
   "task_description": "帮我做一个关于AI行业的研究报告2025-2026年的，先craw 搜集最新的行业数据和新闻，然后designer 设计页面md说明页面如何设计，最后coder 生成一个漂亮的HTML展示页面",
-  "status": "running",
+  "status": "stopped",
   "current_iteration": 0,
   "max_iterations": 50,
   "action_checkpoints": [],
   "created_at": "2026-03-14T17:16:27.986562",
-  "updated_at": "2026-03-14T17:16:27.986586",
+  "updated_at": "2026-03-17T09:57:14.163616",
   "last_client_disconnect_at": null,
-  "final_result": null
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
 }

@@ -334,6 +334,40 @@ class GroupChatService:
             "status": gc.status.value,
         })
 
+    async def delete_group(self, group_id: str) -> bool:
+        """永久删除群聊（用户主动操作）"""
+        gc = self._groups.get(group_id)
+        if not gc:
+            return False
+
+        session_id = gc.session_id
+        dag_id = gc.dag_id
+
+        # 从内存中移除
+        self._groups.pop(group_id, None)
+        if session_id in self._session_groups:
+            try:
+                self._session_groups[session_id].remove(group_id)
+            except ValueError:
+                pass
+        if dag_id:
+            self._dag_groups.pop(dag_id, None)
+
+        # 从磁盘删除
+        file_path = _DATA_DIR / f"{group_id}.json"
+        try:
+            file_path.unlink(missing_ok=True)
+        except Exception as e:
+            logger.warning("删除群聊文件失败: %s", e)
+
+        # 广播删除事件通知前端
+        await self._broadcast(session_id, {
+            "type": "group_chat_deleted",
+            "group_id": group_id,
+        })
+        logger.info("群聊已删除: %s", group_id)
+        return True
+
     # ── 广播 ──────────────────────────────────────────────────────
 
     @staticmethod

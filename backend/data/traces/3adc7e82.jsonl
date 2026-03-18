@@ -1,0 +1,26 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 16943, "success": true, "ts": 1773716454.080309}
+{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 2486, "success": true, "error": null, "ts": 1773716457.593477}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 17888, "success": true, "ts": 1773716477.5808089}
+{"iteration": 2, "type": "tool", "action_type": "delegate_duck", "latency_ms": 4, "success": true, "error": null, "ts": 1773716478.143788}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 13453, "success": true, "ts": 1773716493.601312}
+{"iteration": 3, "type": "tool", "action_type": "delegate_duck", "latency_ms": 1, "success": true, "error": null, "ts": 1773716494.1778948}
+{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 22000, "success": true, "ts": 1773716518.183161}
+{"iteration": 4, "type": "tool", "action_type": "think", "latency_ms": 0, "success": true, "error": null, "ts": 1773716518.773121}
+{"iteration": 5, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 9865, "success": true, "ts": 1773716530.643352}
+{"iteration": 5, "type": "tool", "action_type": "delegate_duck", "latency_ms": 1, "success": true, "error": null, "ts": 1773716531.206408}
+{"iteration": 6, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 13595, "success": true, "ts": 1773716552.791958}
+{"iteration": 6, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716553.372503}
+{"iteration": 7, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 18276, "success": true, "ts": 1773716573.6529338}
+{"iteration": 7, "type": "tool", "action_type": "call_tool", "latency_ms": 873, "success": true, "error": null, "ts": 1773716575.116628}
+{"iteration": 8, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 14229, "success": true, "ts": 1773716591.3513181}
+{"iteration": 8, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716591.92447}
+{"iteration": 9, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 11803, "success": true, "ts": 1773716605.732961}
+{"iteration": 9, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716606.325639}
+{"iteration": 10, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 16320, "success": true, "ts": 1773716624.651314}
+{"iteration": 10, "type": "tool", "action_type": "call_tool", "latency_ms": 2324, "success": true, "error": null, "ts": 1773716627.589649}
+{"iteration": 11, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 9917, "success": true, "ts": 1773716646.2550669}
+{"iteration": 11, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716646.836877}
+{"iteration": 12, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 23112, "success": true, "ts": 1773716671.95491}
+{"iteration": 12, "type": "tool", "action_type": "call_tool", "latency_ms": 6123, "success": true, "error": null, "ts": 1773716678.7043478}
+{"iteration": 13, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 9955, "success": true, "ts": 1773716690.66462}
+{"iteration": 13, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716691.233645}

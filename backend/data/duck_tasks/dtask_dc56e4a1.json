@@ -1,0 +1,24 @@
+{
+  "task_id": "dtask_dc56e4a1",
+  "description": "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，不要先描述计划。必须使用 write_file 或 run_shell 完成任务。\n历史失败原因：任务涉及文件创建，但 Agent 执行失败（Token limit exceeded: 86009/80000）。请重试或由主 Agent 直接处理。\n\n原始任务：爬虫搜集AI行业2025-2026最新数据、新闻、趋势报告，整理成结构化的调研素材\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": "任务已完成！已成功创建结构化调研素材文件：/Users/lzz/Desktop/AI行业2025-2026调研素材.md\n\n文件包含以下内容：\n1. 市场规模与投资趋势 - 中国AI市场数据（6000+企业、1.2万亿产业规模）、全球投资趋势\n2. 技术发展趋势 - 大模型发展（多模态、端侧AI）、应用场景（制造、医疗、金融、教育）\n3. 行业重点事件 - 企业动态、政策动向\n4. 2026年发展趋势前瞻 - Agent智能体应用爆发、AI原生应用、垂直领域解决方案\n5. 数据来源 - 清华大学、知乎、行业研究报告\n\n文件已整理成Markdown格式，包含层次分明的章节结构，便于阅读和使用。",
+  "error": null,
+  "retry_count": 1,
+  "max_retries": 2,
+  "original_description": "爬虫搜集AI行业2025-2026最新数据、新闻、趋势报告，整理成结构化的调研素材\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "retry_errors": [
+    "任务涉及文件创建，但 Agent 执行失败（Token limit exceeded: 86009/80000）。请重试或由主 Agent 直接处理。"
+  ],
+  "created_at": 1773797220.240407,
+  "assigned_at": 1773797584.003955,
+  "started_at": null,
+  "completed_at": 1773797728.052526,
+  "last_activity": 1773797728.049402
+}

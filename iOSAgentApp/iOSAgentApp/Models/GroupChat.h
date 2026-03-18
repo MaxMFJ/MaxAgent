@@ -14,7 +14,8 @@ typedef NS_ENUM(NSInteger, GroupChatStatusType) {
 typedef NS_ENUM(NSInteger, ParticipantRoleType) {
     ParticipantRoleMain,
     ParticipantRoleDuck,
-    ParticipantRoleSystem
+    ParticipantRoleSystem,
+    ParticipantRoleMonitor
 };
 
 typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
@@ -25,7 +26,8 @@ typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
     GroupMessageTypeTaskFailed,
     GroupMessageTypeStatusUpdate,
     GroupMessageTypePlan,
-    GroupMessageTypeConclusion
+    GroupMessageTypeConclusion,
+    GroupMessageTypeMonitorReport
 };
 
 // MARK: - GroupParticipant

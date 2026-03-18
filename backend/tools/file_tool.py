@@ -145,7 +145,7 @@ class FileTool(BaseTool):
             return ToolResult(success=False, error=f"路径是目录，不是文件: {path}")
 
         # Duck 模式下大文件主动拦截：返回摘要+首尾片段
-        BIG_FILE_THRESHOLD = 20 * 1024
+        BIG_FILE_THRESHOLD = 10 * 1024  # 10KB（从 20KB 降低，更积极防止上下文爆炸）
         file_size = os.path.getsize(path)
         is_duck = False
         try:

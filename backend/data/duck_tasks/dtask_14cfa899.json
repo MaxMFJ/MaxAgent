@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_14cfa899",
+  "description": "根据研究报告数据，设计页面的布局、配色、模块结构，输出MD设计说明文档\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "designer",
+  "params": {},
+  "status": "assigned",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_ca78da97",
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773738681.9963589,
+  "assigned_at": 1773738681.996947,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773738681.996948
+}

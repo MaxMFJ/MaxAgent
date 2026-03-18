@@ -59,6 +59,7 @@ class ActionExecutor:
         iteration: int = 0,
         action_id: str = "",
         capture_ui: bool = False,
+        observe: bool = True,
     ) -> StructuredActionResult:
         """
         执行单个 action 并返回结构化结果。
@@ -74,12 +75,14 @@ class ActionExecutor:
         start_time = time.time()
         self._execution_count += 1
 
-        # 1. Pre-observe: 环境快照
-        pre_snap = await self._obs_loop.pre_observe(
-            iteration=iteration,
-            action_type=action_type,
-            params=params,
-        )
+        # 1. Pre-observe: 环境快照（可选）
+        pre_snap = None
+        if observe:
+            pre_snap = await self._obs_loop.pre_observe(
+                iteration=iteration,
+                action_type=action_type,
+                params=params,
+            )
 
         # 2. 前置条件检查
         precondition_error = self._check_preconditions(action_type, params)
@@ -116,19 +119,20 @@ class ActionExecutor:
             iteration=iteration,
         )
 
-        # 5. Post-observe: 对比环境变化
-        try:
-            obs = await self._obs_loop.post_observe(
-                iteration=iteration,
-                action_type=action_type,
-                params=params,
-                result=raw_result or {"success": False, "error": exec_error},
-                pre_snapshot=pre_snap,
-                capture_ui=capture_ui,
-            )
-            self._obs_loop.enrich_action_result(obs, structured)
-        except Exception as e:
-            logger.debug("Post-observation failed: %s", e)
+        # 5. Post-observe: 对比环境变化（可选）
+        if observe and pre_snap is not None:
+            try:
+                obs = await self._obs_loop.post_observe(
+                    iteration=iteration,
+                    action_type=action_type,
+                    params=params,
+                    result=raw_result or {"success": False, "error": exec_error},
+                    pre_snapshot=pre_snap,
+                    capture_ui=capture_ui,
+                )
+                self._obs_loop.enrich_action_result(obs, structured)
+            except Exception as e:
+                logger.debug("Post-observation failed: %s", e)
 
         return structured
 

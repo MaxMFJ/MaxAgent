@@ -12,7 +12,7 @@ from pathlib import Path
 
 class MacAgentUpdater:
     def __init__(self):
-        self.project_path = Path("/Users/lzz/Desktop/未命名文件夹/MacAgent")
+        self.project_path = Path(__file__).resolve().parent
         self.backend_path = self.project_path / "backend"
         
     def check_current_version(self):

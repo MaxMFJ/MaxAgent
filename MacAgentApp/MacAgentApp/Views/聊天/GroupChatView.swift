@@ -310,6 +310,7 @@ private struct GroupMessageRow: View {
         switch message.senderRole {
         case .main: return CyberColor.cyan
         case .duck: return CyberColor.orange
+        case .monitor: return CyberColor.purple
         case .system: return CyberColor.textSecond
         }
     }
@@ -322,6 +323,7 @@ private struct GroupMessageRow: View {
         case .taskProgress: return "进度"
         case .plan: return "计划"
         case .conclusion: return "总结"
+        case .monitorReport: return "报告"
         case .statusUpdate: return "状态"
         case .text: return nil
         }

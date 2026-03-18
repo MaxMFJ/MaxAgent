@@ -207,20 +207,27 @@ class SelfHealingAgent:
                     "requires_confirmation": plan.requires_confirmation
                 }
                 
-                # 如果需要确认，等待用户确认
+                # 如果需要确认，等待用户确认（超时后自动跳过该计划）
                 if plan.requires_confirmation and not context.get("auto_confirm"):
                     yield {
                         "type": "confirmation_required",
                         "message": f"修复计划风险等级为 {plan.risk_level}，需要确认是否执行"
                     }
-                    # 等待确认（实际实现中需要等待用户输入）
                     if not context.get("confirmed"):
-                        yield {
-                            "type": "status",
-                            "status": "waiting_confirmation",
-                            "message": "等待用户确认..."
-                        }
-                        # 这里可以添加超时逻辑
+                        # 等待确认，最多60秒超时
+                        confirmation_timeout = 60
+                        elapsed = 0
+                        while elapsed < confirmation_timeout and not context.get("confirmed"):
+                            await asyncio.sleep(1)
+                            elapsed += 1
+                        
+                        if not context.get("confirmed"):
+                            yield {
+                                "type": "status",
+                                "status": "confirmation_timeout",
+                                "message": f"确认超时({confirmation_timeout}s)，跳过该修复计划"
+                            }
+                            continue  # 跳转到下次迭代尝试其他策略
                 
                 # 阶段 3: 执行
                 self.current_status = HealingStatus.EXECUTING
@@ -415,13 +422,16 @@ class SelfHealingAgent:
             logger.warning(f"Failed to load strategy DB: {e}")
     
     def _save_strategy_db(self):
-        """保存策略数据库"""
+        """保存策略数据库（原子写入避免并发损坏）"""
         try:
             db_path = Path(self.strategy_db_path)
             db_path.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(db_path, 'w') as f:
+            # 先写临时文件再原子重命名，避免并发写入损坏
+            tmp_path = db_path.with_suffix('.json.tmp')
+            with open(tmp_path, 'w') as f:
                 json.dump(self.planner.strategy_db, f, indent=2)
+            tmp_path.replace(db_path)
             
             logger.info(f"Saved strategy DB to {db_path}")
         except Exception as e:

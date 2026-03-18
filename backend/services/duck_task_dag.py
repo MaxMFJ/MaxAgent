@@ -124,10 +124,12 @@ class DAGTaskOrchestrator:
         nodes: List[DAGNode],
         callback: Optional[DAGCallback] = None,
         session_id: str = "",
+        existing_group_id: Optional[str] = None,
     ) -> DAGExecution:
         """
         创建一个 DAG 执行实例。
         nodes 列表中的 depends_on 字段定义依赖关系。
+        existing_group_id: 若指定，则使用已有群聊而不新建。
         """
         dag_id = f"dag_{uuid.uuid4().hex[:8]}"
 
@@ -147,6 +149,7 @@ class DAGTaskOrchestrator:
             description=description,
             session_id=session_id,
             nodes={n.node_id: n for n in nodes},
+            group_id=existing_group_id or None,
         )
 
         self._executions[dag_id] = execution
@@ -167,9 +170,12 @@ class DAGTaskOrchestrator:
         execution.status = "running"
         logger.info(f"DAG executing: {dag_id}")
 
-        # 自动创建群聊
+        # 群聊：复用已有群聊或新建
         if execution.session_id:
-            await self._create_group_chat(execution)
+            if execution.group_id:
+                await self._reuse_group_chat(execution)
+            else:
+                await self._create_group_chat(execution)
 
         # 启动所有无依赖的节点
         await self._schedule_ready_nodes(execution)
@@ -353,6 +359,13 @@ class DAGTaskOrchestrator:
         execution.status = "cancelled"
         execution.completed_at = time.time()
 
+        # 项目经理: 清理监控数据
+        try:
+            from services.task_monitor_bot import TaskMonitorBot
+            TaskMonitorBot.cleanup(dag_id)
+        except Exception:
+            pass
+
         # 群聊: 取消
         if execution.group_id:
             try:
@@ -390,6 +403,27 @@ class DAGTaskOrchestrator:
             )
             execution.group_id = gc.group_id
 
+            # ── 项目经理机器人自动加入 ──
+            from services.task_monitor_bot import (
+                TaskMonitorBot, MONITOR_BOT_ID, MONITOR_BOT_NAME, MONITOR_BOT_EMOJI,
+            )
+            from models.group_chat import GroupParticipant, ParticipantRole
+            gc.add_participant(GroupParticipant(
+                participant_id=MONITOR_BOT_ID,
+                name=MONITOR_BOT_NAME,
+                role=ParticipantRole.MONITOR,
+                emoji=MONITOR_BOT_EMOJI,
+            ))
+            svc._save_group(gc)
+            TaskMonitorBot.register(
+                execution.dag_id, gc.group_id,
+                execution.description, len(execution.nodes),
+            )
+            await svc.post_system_message(
+                gc.group_id,
+                f"{MONITOR_BOT_EMOJI} {MONITOR_BOT_NAME} 已加入，将在任务结束后发布执行分析报告",
+            )
+
             # 主 Agent 在群聊中发布执行计划
             node_list = "\n".join(
                 f"  {i+1}. {n.description}"
@@ -411,6 +445,66 @@ class DAGTaskOrchestrator:
         except Exception as e:
             logger.warning("创建群聊失败: %s", e)
 
+    async def _reuse_group_chat(self, execution: DAGExecution) -> None:
+        """复用已有群聊，在其中追加新执行计划"""
+        try:
+            from services.group_chat_service import get_group_chat_service
+            from models.group_chat import GroupChatStatus, GroupMessageType
+            svc = get_group_chat_service()
+            gc = await svc.get_group(execution.group_id)
+            if not gc:
+                logger.warning("续接群聊不存在: %s，改为新建", execution.group_id)
+                execution.group_id = None
+                await self._create_group_chat(execution)
+                return
+
+            # 若群聊已关闭状态，重新激活
+            if gc.status != GroupChatStatus.ACTIVE:
+                gc.status = GroupChatStatus.ACTIVE
+                gc.completed_at = None
+                svc._save_group(gc)
+
+            # 注册 dag_id → group_id 映射
+            svc._dag_groups[execution.dag_id] = execution.group_id
+
+            # 注册项目经理
+            from services.task_monitor_bot import (
+                TaskMonitorBot, MONITOR_BOT_ID, MONITOR_BOT_NAME, MONITOR_BOT_EMOJI,
+            )
+            from models.group_chat import GroupParticipant, ParticipantRole
+            if not gc.get_participant(MONITOR_BOT_ID):
+                gc.add_participant(GroupParticipant(
+                    participant_id=MONITOR_BOT_ID,
+                    name=MONITOR_BOT_NAME,
+                    role=ParticipantRole.MONITOR,
+                    emoji=MONITOR_BOT_EMOJI,
+                ))
+                svc._save_group(gc)
+            TaskMonitorBot.register(
+                execution.dag_id, gc.group_id,
+                execution.description, len(execution.nodes),
+            )
+
+            node_list = "\n".join(
+                f"  {i+1}. {n.description}"
+                + (f" (依赖: {', '.join(n.depends_on)})" if n.depends_on else "")
+                for i, n in enumerate(execution.nodes.values())
+            )
+            await svc.post_message(
+                gc.group_id, "main",
+                f"🔄 续接任务，新增 {len(execution.nodes)} 个子任务:\n{node_list}",
+                msg_type=GroupMessageType.PLAN,
+                metadata={"total_nodes": len(execution.nodes), "resumed": True},
+            )
+            await svc.update_task_panel(
+                gc.group_id,
+                total=len(execution.nodes), completed=0, failed=0,
+                running=0, pending=len(execution.nodes),
+            )
+            logger.info("群聊续接成功: %s → dag %s", execution.group_id, execution.dag_id)
+        except Exception as e:
+            logger.warning("续接群聊失败: %s", e)
+
     async def _group_post_task_assign(self, execution: DAGExecution, node: DAGNode) -> None:
         """主 Agent 在群聊中通知任务分配"""
         if not execution.group_id:
@@ -426,6 +520,12 @@ class DAGTaskOrchestrator:
                 f"📌 分配任务: {node.description}{duck_hint}{deps}",
                 msg_type=GroupMessageType.TASK_ASSIGN,
                 metadata={"node_id": node.node_id, "task_id": node.task_id},
+            )
+            # 项目经理: 记录任务分配
+            from services.task_monitor_bot import TaskMonitorBot
+            TaskMonitorBot.record_task_assign(
+                execution.dag_id, node.node_id, node.description,
+                duck_type=node.duck_type.value if node.duck_type else None,
             )
             # 更新面板
             all_n = list(execution.nodes.values())
@@ -476,6 +576,14 @@ class DAGTaskOrchestrator:
                     metadata={"node_id": node.node_id, "task_id": task.task_id},
                 )
 
+            # 项目经理: 记录任务完成/失败
+            from services.task_monitor_bot import TaskMonitorBot
+            TaskMonitorBot.record_task_complete(
+                execution.dag_id, node.node_id,
+                output=task.output, error=task.error,
+                success=(task.status == TaskStatus.COMPLETED),
+            )
+
             # 更新面板
             all_n = list(execution.nodes.values())
             running = sum(1 for n in all_n if n.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING))
@@ -494,6 +602,13 @@ class DAGTaskOrchestrator:
         """DAG 完成/失败时更新群聊"""
         if not execution.group_id:
             return
+        try:
+            # ── 项目经理: 先发布分析报告 ──
+            from services.task_monitor_bot import TaskMonitorBot
+            await TaskMonitorBot.generate_and_post_report(execution.dag_id)
+        except Exception as e:
+            logger.debug("项目经理报告生成失败: %s", e)
+
         try:
             from services.group_chat_service import get_group_chat_service
             svc = get_group_chat_service()
@@ -570,6 +685,13 @@ async def notify_duck_task_started(task_id: str, duck_id: str, duck_name: str) -
 
     # 更新节点状态为 RUNNING
     node.status = TaskStatus.RUNNING
+
+    # 项目经理: 记录 Duck 开始执行
+    try:
+        from services.task_monitor_bot import TaskMonitorBot
+        TaskMonitorBot.record_task_started(dag_id, node_id, duck_id)
+    except Exception:
+        pass
 
     try:
         from services.group_chat_service import get_group_chat_service

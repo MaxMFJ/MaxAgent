@@ -10,6 +10,7 @@ static NSString *_SafeString(id value) {
 static ParticipantRoleType _RoleFromString(NSString *str) {
     if ([str isEqualToString:@"duck"]) return ParticipantRoleDuck;
     if ([str isEqualToString:@"system"]) return ParticipantRoleSystem;
+    if ([str isEqualToString:@"monitor"]) return ParticipantRoleMonitor;
     return ParticipantRoleMain;
 }
 
@@ -21,6 +22,7 @@ static GroupMessageTypeValue _MsgTypeFromString(NSString *str) {
     if ([str isEqualToString:@"status_update"]) return GroupMessageTypeStatusUpdate;
     if ([str isEqualToString:@"plan"]) return GroupMessageTypePlan;
     if ([str isEqualToString:@"conclusion"]) return GroupMessageTypeConclusion;
+    if ([str isEqualToString:@"monitor_report"]) return GroupMessageTypeMonitorReport;
     return GroupMessageTypeText;
 }
 

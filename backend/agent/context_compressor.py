@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 # 默认 token 预算（近似，1 token ≈ 2 中文字符 / 4 英文字符）
-DEFAULT_MAX_TOKENS = 12000
+DEFAULT_MAX_TOKENS = 10000
 CHARS_PER_TOKEN = 3  # 中英混合近似
 
 
@@ -49,7 +49,10 @@ class ContextCompressor:
         if not messages:
             return messages
 
-        total_chars = sum(len(m.get("content", "")) for m in messages)
+        total_chars = sum(
+            len(m.get("content", "")) if isinstance(m.get("content", ""), str) else 500
+            for m in messages
+        )
         budget_chars = self.max_tokens * CHARS_PER_TOKEN
 
         # 未超预算，不压缩
@@ -241,12 +244,15 @@ class ContextCompressor:
     def _ensure_query(
         self, messages: List[Dict[str, Any]], current_query: str,
     ) -> List[Dict[str, Any]]:
-        """确保当前 user 查询在末尾"""
+        """确保消息列表末尾有 user 角色消息（不覆盖已有的 action prompt）"""
         if not messages:
             return [{"role": "user", "content": current_query}]
         last = messages[-1]
-        if last.get("role") == "user" and current_query[:50] in last.get("content", "")[:60]:
+        # 如果最后一条已经是 user 消息，不要再追加 task_description，
+        # 否则会覆盖 "请分析结果并输出下一步动作的 JSON" 指令
+        if last.get("role") == "user":
             return messages
+        # 最后一条不是 user 消息（极端情况），才追加
         messages.append({"role": "user", "content": current_query})
         return messages
 

@@ -12,6 +12,7 @@ from typing import Any, Dict, List, AsyncGenerator
 
 from .action_schema import AgentAction, ActionType, ActionResult, TaskContext
 from .exec_phases import PhaseTracker, auto_verify, build_verify_message
+from .goal_tracker import GoalProgressTracker
 from .stop_policy import AdaptiveStopPolicy, StopReason, create_stop_policy
 from .thinking_manager import ESCALATION_FORCE_SWITCH, ESCALATION_SKILL_FALLBACK
 from .verification_layer import EvidenceCollector, GoalCompletionValidator

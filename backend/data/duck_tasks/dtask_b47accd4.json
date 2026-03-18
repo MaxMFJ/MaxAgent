@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_b47accd4",
+  "description": "搜集2025-2026年AI行业的最新数据、新闻、趋势分析报告，整理成结构化的数据摘要\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "params": {},
+  "status": "completed",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": "✅ 任务完成！\n\n已成功搜集2025-2026年AI行业最新数据、新闻、趋势分析报告，并整理成结构化数据摘要。\n\n**生成的文件**: /Users/lzz/Desktop/AI行业2025-2026趋势分析报告.md\n\n**报告内容概要**:\n1. **全球AI市场规模与投资趋势** - 市场规模持续扩大，生成式AI成为投资热点，企业级AI应用快速增长\n2. **2025年AI技术发展趋势** - 大模型技术演进（多模态融合、长上下文窗口、推理能力提升、端侧AI普及）、AI应用场景拓展（AI办公类：Prezo、天工AI搜索、酷表ChatExcel等）\n3. **中国AI行业动态** - 政策环境、产业生态、挑战与机遇\n4. **2025-2026年重点趋势预测** - AI Agent爆发、端侧AI普及、AI原生应用涌现、人机协作深化等\n\n**数据来源**: 月狐数据《AI产业全景洞察报告2025》、知乎行业分析讨论、各AI企业公开信息\n\n报告已成功保存至桌面，供后续查阅使用。",
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773738438.482941,
+  "assigned_at": 1773738438.483525,
+  "started_at": null,
+  "completed_at": 1773738681.9927502,
+  "last_activity": 1773738681.989175
+}

@@ -48,6 +48,8 @@ from .llm_call_builder import LLMCallBuilder
 from .context_builder import ContextBuilder
 from .error_recovery import ErrorRecovery
 from .execution_engine import ExecutionEngine
+from .action_executor import get_action_executor
+from .action_execution_policies import ActionExecutionPolicies
 from .thinking_manager import ThinkingManager as UnifiedThinkingManager
 
 # v3.8: 中间件框架
@@ -92,6 +94,7 @@ from .duck_handlers_mixin import DuckHandlersMixin
 from .action_generator_mixin import ActionGeneratorMixin
 from .execution_loop_mixin import ExecutionLoopMixin
 from .reflection_mixin import ReflectionMixin
+from .action_execution_mixin import ActionExecutionMixin
 
 
 class AutonomousAgent(
@@ -103,6 +106,7 @@ class AutonomousAgent(
     ActionGeneratorMixin,
     ExecutionLoopMixin,
     ReflectionMixin,
+    ActionExecutionMixin,
 ):
     """
     Fully autonomous agent that executes tasks without user intervention
@@ -170,6 +174,8 @@ class AutonomousAgent(
             pass
         self._thinking_manager = UnifiedThinkingManager(llm_client, is_duck_mode=_is_duck)
         self._call_builder = LLMCallBuilder(llm_client, is_local_model=False)
+        self._action_executor = get_action_executor()
+        self._action_policies = ActionExecutionPolicies(self)
     
     def _register_default_handlers(self):
         """Register default action handlers"""
@@ -299,180 +305,5 @@ class AutonomousAgent(
 
     # 注：_is_quick_qa, _run_quick_qa, run_autonomous → ExecutionLoopMixin
     # 注：_generate_action → ActionGeneratorMixin
-
-    async def _execute_action(self, action: AgentAction) -> ActionResult:
-        """Execute a single action. v3.1: 统一安全校验在入口执行。v3.3: +幂等+HITL+审计"""
-        start_time = time.time()
-        ok, err = validate_action_safe(action)
-        if not ok:
-            # v3.3: 审计 — 安全拦截
-            try:
-                from services.audit_service import append_audit_event
-                append_audit_event(
-                    "action_blocked",
-                    task_id=getattr(self, "_current_task_id", ""),
-                    session_id=getattr(self, "_current_session_id", ""),
-                    action_type=action.action_type,
-                    params_summary=str(action.params)[:200],
-                    result="blocked",
-                    risk_level="high",
-                    details={"reason": err},
-                )
-            except Exception:
-                pass
-            return ActionResult(
-                action_id=action.action_id,
-                success=False,
-                error=err or "安全校验未通过",
-                execution_time_ms=int((time.time() - start_time) * 1000),
-            )
-
-        # v3.3: 幂等缓存检查
-        try:
-            from services.idempotent_service import get_cached_result
-            cached = get_cached_result(action.action_type, action.params or {})
-            if cached is not None:
-                return ActionResult(
-                    action_id=action.action_id,
-                    success=cached.get("success", True),
-                    output=cached.get("output"),
-                    error=cached.get("error"),
-                    execution_time_ms=0,
-                )
-        except Exception:
-            pass
-
-        # v3.3: HITL 人工审批检查
-        try:
-            from services.hitl_service import should_require_confirmation, get_hitl_manager, HitlDecision
-            if should_require_confirmation(action.action_type, action.params or {}):
-                mgr = get_hitl_manager()
-                req = mgr.create_request(
-                    action_id=action.action_id,
-                    task_id=getattr(self, "_current_task_id", ""),
-                    session_id=getattr(self, "_current_session_id", ""),
-                    action_type=action.action_type,
-                    params=action.params or {},
-                )
-                # 广播确认请求到 WebSocket
-                try:
-                    from connection_manager import ConnectionManager
-                    # 此处不阻塞发送，仅尝试通知客户端
-                except Exception:
-                    pass
-                decision = await mgr.wait_for_decision(action.action_id)
-                if decision != HitlDecision.APPROVED:
-                    return ActionResult(
-                        action_id=action.action_id,
-                        success=False,
-                        error=f"HITL: 动作被{decision.value}",
-                        execution_time_ms=int((time.time() - start_time) * 1000),
-                    )
-        except ImportError:
-            pass
-
-        handler = self._action_handlers.get(action.action_type)
-        _at_str = action.action_type.value.lower() if hasattr(action.action_type, "value") else str(action.action_type).lower()
-
-        # ── Worker Duck 工作区路径强制 ───────────────────────────────────────
-        # Worker Duck 的 write_file 必须写入 workspace，自动重定向非法路径
-        try:
-            from app_state import get_duck_context as _gdc_ws
-            _duck_ctx = _gdc_ws()
-            if _duck_ctx and _at_str in ("write_file", "create_and_run_script"):
-                _ws_dir = _duck_ctx.get("workspace_dir", "") or _duck_ctx.get("sandbox_dir", "") if isinstance(_duck_ctx, dict) else ""
-                if _ws_dir and action.params:
-                    _fp = action.params.get("file_path") or action.params.get("path") or ""
-                    if _fp and not _fp.startswith(_ws_dir):
-                        import os as _os
-                        _corrected = _os.path.join(_ws_dir, _os.path.basename(_fp))
-                        logger.warning(
-                            f"[WorkerDuck] Redirecting write: '{_fp}' → '{_corrected}'"
-                        )
-                        if "file_path" in action.params:
-                            action.params["file_path"] = _corrected
-                        elif "path" in action.params:
-                            action.params["path"] = _corrected
-        except Exception:
-            pass
-
-        # ── Worker Duck 角色隔离守卫 ─────────────────────────────────────────
-        # Worker Duck 不允许调用委派/编排类动作，这些是 Supervisor 专属权限
-        _WORKER_FORBIDDEN = {
-            "delegate_duck", "delegate_dag", "spawn_duck",
-            "create_agent", "create_duck", "plan_new_agents",
-        }
-        if _at_str in _WORKER_FORBIDDEN:
-            try:
-                from app_state import get_duck_context as _gdc
-                _is_worker = bool(_gdc())
-            except Exception:
-                _is_worker = False
-            if _is_worker:
-                return ActionResult(
-                    action_id=action.action_id,
-                    success=False,
-                    error=(
-                        f"⛔ WORKER_DUCK ROLE VIOLATION: Action '{_at_str}' is forbidden. "
-                        f"Worker Ducks are EXECUTOR_ONLY. "
-                        f"You are the assigned specialist — complete the task using available tools."
-                    ),
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
-        # ─────────────────────────────────────────────────────────────────────
-
-        if not handler:
-            return ActionResult(
-                action_id=action.action_id,
-                success=False,
-                error=f"No handler for action type: {action.action_type}"
-            )
-        
-        try:
-            result = await handler(action.params)
-            execution_time = int((time.time() - start_time) * 1000)
-            
-            action_result = ActionResult(
-                action_id=action.action_id,
-                success=result.get("success", True),
-                output=result.get("output"),
-                error=result.get("error"),
-                execution_time_ms=execution_time
-            )
-
-            # v3.3: 审计 — 动作执行
-            try:
-                from services.audit_service import append_audit_event
-                append_audit_event(
-                    "action_execute",
-                    task_id=getattr(self, "_current_task_id", ""),
-                    session_id=getattr(self, "_current_session_id", ""),
-                    action_type=action.action_type,
-                    params_summary=str(action.params)[:200],
-                    result="success" if action_result.success else "failure",
-                    risk_level="low",
-                )
-            except Exception:
-                pass
-
-            # v3.3: 幂等缓存存储
-            try:
-                from services.idempotent_service import store_cached_result
-                store_cached_result(
-                    action.action_type,
-                    action.params or {},
-                    {"success": action_result.success, "output": action_result.output, "error": action_result.error},
-                )
-            except Exception:
-                pass
-
-            return action_result
-        except Exception as e:
-            execution_time = int((time.time() - start_time) * 1000)
-            return ActionResult(
-                action_id=action.action_id,
-                success=False,
-                error=str(e),
-                execution_time_ms=execution_time
-            )
+    # 注：_execute_action → ActionExecutionMixin
     

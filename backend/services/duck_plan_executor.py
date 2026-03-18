@@ -534,6 +534,7 @@ async def execute_step(
     _permission_rejection_count = 0
     _action_history: List[str] = []  # 动作签名历史，用于循环检测
     _MAX_SAME_ACTION = 2  # 同一动作最多重复次数
+    _tool_call_count = 0  # 实际工具执行次数（action_result chunk）
     try:
         async for chunk in agent.run_autonomous(full_prompt, session_id=f"{session_id}_step{step.index}"):
             step.action_count += 1
@@ -648,6 +649,57 @@ async def execute_step(
                 except Exception:
                     pass
 
+            # ── MAX_STEP_ACTIONS 工具调用次数限制 ─────
+            if chunk_type == "action_result":
+                _tool_call_count += 1
+                # 若 web_search/搜索类工具连续返回空结果，注入强制收尾提示
+                if _tool_call_count >= 2:
+                    _last_output = chunk.get("output") or ""
+                    _last_success = chunk.get("success", True)
+                    if _last_success and isinstance(_last_output, str) and (
+                        "'count': 0" in _last_output or '"count": 0' in _last_output
+                        or "count': 0" in _last_output or "results': []" in _last_output
+                        or "'results': []" in _last_output
+                    ):
+                        logger.info(
+                            "[Executor] Step %d: search returned empty results x%d, "
+                            "injecting fallback hint",
+                            step.index + 1, _tool_call_count,
+                        )
+                        if broadcast_fn:
+                            try:
+                                await broadcast_fn({
+                                    "type": "tool_result",
+                                    "result": (
+                                        "⚠️ 搜索接口返回空结果，网络搜索受限。"
+                                        "请改用你的内置知识完成任务：直接用 write_file 或 create_and_run_script "
+                                        "根据已知信息生成内容，然后用 finish 结束当前步骤。"
+                                        "不要再尝试网络搜索。"
+                                    ),
+                                    "success": False,
+                                })
+                            except Exception:
+                                pass
+                if _tool_call_count >= MAX_STEP_ACTIONS:
+                    logger.warning(
+                        "[Executor] Step %d reached MAX_STEP_ACTIONS=%d, forcing step completion",
+                        step.index + 1, MAX_STEP_ACTIONS,
+                    )
+                    result_summary = f"步骤 {step.index+1} 已执行 {_tool_call_count} 次工具调用，强制结束步骤"
+                    if broadcast_fn:
+                        try:
+                            await broadcast_fn({
+                                "type": "tool_result",
+                                "result": (
+                                    f"⚠️ 当前步骤已调用工具 {_tool_call_count} 次（上限 {MAX_STEP_ACTIONS}），"
+                                    "系统强制结束本步骤。请继续下一步。"
+                                ),
+                                "success": False,
+                            })
+                        except Exception:
+                            pass
+                    break
+
             # ── escalation 检测 ──────────────────────
             escalation = _extract_escalation(chunk)
             if escalation:
@@ -676,6 +728,13 @@ async def execute_step(
         raise
 
     state.execution_locked = False
+    # 若 generator 静默退出（无 task_complete / task_stopped），给出默认摘要避免空字符串误判为失败
+    if not result_summary:
+        result_summary = f"步骤 {step.index + 1} 执行结束（执行了 {_tool_call_count} 次工具调用）"
+        logger.info(
+            "[Executor] Step %d: generator exited silently (tool_calls=%d), using default summary",
+            step.index + 1, _tool_call_count,
+        )
     return result_summary
 
 
@@ -735,6 +794,11 @@ async def run_duck_task_with_plan(
     while not state.is_finished():
         if time.time() > deadline:
             logger.warning(f"[Executor] Hard deadline reached, stopping early")
+            if broadcast_fn:
+                try:
+                    await broadcast_fn({"type": "error", "error": "⏰ 总时间已到达上限，提前结束"})
+                except Exception:
+                    pass
             break
 
         step = state.current_step
@@ -745,10 +809,32 @@ async def run_duck_task_with_plan(
         if step.failure_count >= MAX_STEP_FAILURES:
             logger.warning(f"[Executor] Step {step.index+1} failed {step.failure_count} times, skipping")
             state.skip_step(f"失败次数超过上限（{step.failure_count}）")
+            if broadcast_fn:
+                try:
+                    await broadcast_fn({
+                        "type": "tool_result",
+                        "result": f"⚠️ 步骤 {step.index+1} 失败 {step.failure_count} 次，已跳过",
+                        "success": False,
+                    })
+                except Exception:
+                    pass
             continue
 
         logger.info(f"[Executor] Step {step.index+1}/{len(steps)}: {step.description[:60]}")
-        step_timeout = min(120.0, deadline - time.time())
+
+        # 广播步骤开始
+        if broadcast_fn:
+            try:
+                await broadcast_fn({
+                    "type": "tool_call",
+                    "tool_name": f"plan_step_{step.index+1}",
+                    "action_type": "plan_step",
+                    "description": f"📌 执行步骤 {step.index+1}/{len(steps)}: {step.description[:60]}",
+                })
+            except Exception:
+                pass
+
+        step_timeout = min(240.0, deadline - time.time())
         if step_timeout < 10:
             break
 
@@ -758,14 +844,32 @@ async def run_duck_task_with_plan(
                 timeout=step_timeout,
             )
         except asyncio.TimeoutError:
-            logger.warning(f"[Executor] Step {step.index+1} timed out")
-            step_result = f"步骤 {step.index+1} 超时"
+            logger.warning(f"[Executor] Step {step.index+1} timed out ({step_timeout:.0f}s)")
+            step_result = f"步骤 {step.index+1} 超时（{step_timeout:.0f}s）"
             step.failure_count += 1
             state.execution_locked = False
+            if broadcast_fn:
+                try:
+                    await broadcast_fn({
+                        "type": "tool_result",
+                        "result": f"⏰ 步骤 {step.index+1} 超时（{step_timeout:.0f}s），将重试或跳过",
+                        "success": False,
+                    })
+                except Exception:
+                    pass
         except Exception as e:
             logger.warning(f"[Executor] Step {step.index+1} error: {e}")
             step.failure_count += 1
             state.execution_locked = False
+            if broadcast_fn:
+                try:
+                    await broadcast_fn({
+                        "type": "tool_result",
+                        "result": f"❌ 步骤 {step.index+1} 异常: {str(e)[:100]}",
+                        "success": False,
+                    })
+                except Exception:
+                    pass
             if step.failure_count < MAX_STEP_FAILURES:
                 continue  # 重试当前步骤
             else:

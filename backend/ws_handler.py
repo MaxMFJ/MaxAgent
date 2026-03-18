@@ -733,12 +733,35 @@ async def _handle_chat(
     content = message.get("content", "")
     file_paths = message.get("file_paths") or []
     session_id = message.get("session_id") or message.get("conversation_id") or current_session_id
+    active_group_id = message.get("active_group_id") or ""
 
     if file_paths:
         content = f"{content}\n\n【用户附带文件】\n" + "\n".join(f"- {p}" for p in file_paths)
         logger.info(f"Received chat message (session: {session_id}) with {len(file_paths)} file refs: {content[:100]}...")
     else:
         logger.info(f"Received chat message (session: {session_id}): {content[:100]}...")
+
+    # 若前端传来活跃群聊 ID，构建群聊上下文系统提示，使主 Agent 知道已有协作群聊可供续接
+    _group_context_prompt = ""
+    if active_group_id:
+        try:
+            from services.group_chat_service import get_group_chat_service
+            _svc = get_group_chat_service()
+            _gc = await _svc.get_group(active_group_id)
+            if _gc:
+                _group_context_prompt = (
+                    f"\n\n【当前活跃协作群聊】\n"
+                    f"group_id: {_gc.group_id}\n"
+                    f"标题: {_gc.title}\n"
+                    f"状态: {_gc.status.value}\n"
+                    f"dag_id: {_gc.dag_id or '无'}\n"
+                    f"参与者: {', '.join(p.name for p in _gc.participants)}\n"
+                    f"如果用户希望继续此群聊中的任务，请使用上述 group_id 和 dag_id，"
+                    f"而不要新建群聊。如需追加子任务，可对现有群聊发送消息或补充执行计划。"
+                )
+                logger.info(f"Injected active group context: {active_group_id}")
+        except Exception as _ge:
+            logger.debug("获取活跃群聊上下文失败: %s", _ge)
 
     await connection_manager.broadcast_to_session(
         session_id,
@@ -752,10 +775,9 @@ async def _handle_chat(
         exclude_client=actual_client_id,
     )
 
-    # 检查执行引擎是否就绪（优先 autonomous agent，回退 chat_runner）
-    autonomous_agent = get_autonomous_agent()
-    chat_runner = get_chat_runner() if not autonomous_agent else None
-    if not autonomous_agent and not chat_runner:
+    # 检查执行引擎是否就绪（chat_runner 优先，回退 agent_core）
+    chat_runner = get_chat_runner() or get_agent_core()
+    if not chat_runner:
         logger.error("Agent not initialized!")
         await safe_send_json(websocket, {"type": "error", "message": "Agent not initialized"})
         try:
@@ -842,7 +864,7 @@ async def _handle_chat(
             system_message_service=get_system_message_service(),
         )
 
-        extra_system_prompt = ""
+        extra_system_prompt = _group_context_prompt
         final_status = AutoTaskStatus.COMPLETED
 
         async def _on_chat_chunk(chunk: dict):
@@ -918,15 +940,16 @@ async def _handle_chat(
                 aug = ThinkingAugmenter()
                 a = await aug.augment(_content)
                 if a and a.get("success"):
-                    extra_system_prompt = aug.format_augmentation_for_llm(a)
-                    if extra_system_prompt:
+                    web_aug = aug.format_augmentation_for_llm(a)
+                    if web_aug:
+                        extra_system_prompt = extra_system_prompt + web_aug
                         web_chunk = {"type": "web_augmentation", "augmentation_type": a.get("type"), "query": a.get("query"), "success": True}
                         await dispatcher.dispatch_chunk(web_chunk)
                 elif a and not a.get("success"):
                     aug_type = a.get("type", "")
                     aug_query = a.get("query", "")
                     if aug_type == AugmentationType.REALTIME_INFO.value or aug_type == "realtime_info":
-                        extra_system_prompt = (
+                        extra_system_prompt += (
                             f"\n\n[系统提示：自动联网预取 '{aug_query}' 的实时信息失败。"
                             f"但你仍然可以使用 web_search 工具获取实时数据（天气用 action=get_weather，"
                             f"新闻用 action=news，通用搜索用 action=search）。请主动调用 web_search 工具来获取用户需要的信息，"
@@ -936,30 +959,19 @@ async def _handle_chat(
             except Exception as e:
                 logger.warning(f"Web augmentation failed: {e}")
 
-            # ── 统一执行引擎：所有 chat 消息通过 autonomous agent 处理 ──
-            # Quick Q&A 由 run_autonomous 内部判断，自动走快速路径 (core.run_stream)
-            # 复杂任务走完整 Plan-Execute-Reflect 循环
-            autonomous_agent = get_autonomous_agent()
-            if autonomous_agent:
+            # ── 统一执行引擎：所有 chat 消息通过 chat_runner (AgentCore) 处理 ──
+            # 使用 function calling ReAct 循环，支持 delegate_duck/dag 等工具
+            chat_runner = get_chat_runner() or get_agent_core()
+            if chat_runner:
                 await dispatcher.dispatch_stream(
-                    autonomous_agent.run_autonomous(
+                    chat_runner.run_stream(
                         _content, session_id=_sid, extra_system_prompt=extra_system_prompt
                     ),
                     on_chunk=_on_chat_chunk,
                 )
             else:
-                # Fallback: 如果 autonomous agent 未初始化，回退到 chat_runner
-                chat_runner = get_chat_runner()
-                if chat_runner:
-                    await dispatcher.dispatch_stream(
-                        chat_runner.run_stream(
-                            _content, session_id=_sid, extra_system_prompt=extra_system_prompt
-                        ),
-                        on_chunk=_on_chat_chunk,
-                    )
-                else:
-                    await dispatcher.send_error("Agent not initialized")
-                    return
+                await dispatcher.send_error("Agent not initialized")
+                return
 
             if not dispatcher.has_error:
                 _ac = get_agent_core()

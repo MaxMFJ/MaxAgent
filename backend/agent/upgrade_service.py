@@ -54,7 +54,12 @@ class UpgradeService:
 
             async def _run_then_release():
                 try:
-                    await self._on_trigger(reason, user_message, session_id)
+                    async with asyncio.timeout(1800):  # 30分钟超时
+                        await self._on_trigger(reason, user_message, session_id)
+                except asyncio.TimeoutError:
+                    logger.error("UpgradeService: upgrade timed out after 30 minutes")
+                except Exception as e:
+                    logger.error(f"UpgradeService: upgrade failed: {e}")
                 finally:
                     with self._lock:
                         self._upgrading = False

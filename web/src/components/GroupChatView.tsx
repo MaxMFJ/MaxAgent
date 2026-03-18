@@ -35,6 +35,7 @@ const msgTypeIcon: Record<string, string> = {
   status_update: 'ℹ️',
   plan: '📋',
   conclusion: '🎉',
+  monitor_report: '📊',
   text: '💬',
 };
 
@@ -112,6 +113,7 @@ const TaskPanel: React.FC<{ summary: GroupTaskSummary; status: string }> = ({
 const GroupMessageBubble: React.FC<{ message: GroupMessage }> = ({ message }) => {
   const isSystem = message.sender_role === 'system';
   const isMain = message.sender_role === 'main';
+  const isMonitor = message.sender_role === 'monitor';
 
   if (isSystem) {
     return (
@@ -129,6 +131,11 @@ const GroupMessageBubble: React.FC<{ message: GroupMessage }> = ({ message }) =>
     );
   }
 
+  const senderEmoji = isMain ? '🧠' : isMonitor ? '📊' : '🦆';
+  const senderColor = isMain ? '#3b82f6' : isMonitor ? '#8b5cf6' : '#f59e0b';
+  const bubbleBg = isMain ? '#eff6ff' : isMonitor ? '#f5f3ff' : '#fef9ee';
+  const bubbleBorder = isMain ? '#bfdbfe' : isMonitor ? '#c4b5fd' : '#fed7aa';
+
   return (
     <div
       style={{
@@ -140,13 +147,13 @@ const GroupMessageBubble: React.FC<{ message: GroupMessage }> = ({ message }) =>
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
         <span style={{ fontSize: 16 }}>
-          {isMain ? '🧠' : '🦆'}
+          {senderEmoji}
         </span>
         <span
           style={{
             fontSize: 12,
             fontWeight: 600,
-            color: isMain ? '#3b82f6' : '#f59e0b',
+            color: senderColor,
           }}
         >
           {message.sender_name}
@@ -168,7 +175,7 @@ const GroupMessageBubble: React.FC<{ message: GroupMessage }> = ({ message }) =>
       </div>
       <div
         style={{
-          background: isMain ? '#eff6ff' : '#fef9ee',
+          background: bubbleBg,
           borderRadius: 8,
           padding: '8px 12px',
           maxWidth: '85%',
@@ -176,7 +183,7 @@ const GroupMessageBubble: React.FC<{ message: GroupMessage }> = ({ message }) =>
           lineHeight: 1.6,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
-          border: `1px solid ${isMain ? '#bfdbfe' : '#fed7aa'}`,
+          border: `1px solid ${bubbleBorder}`,
         }}
       >
         {message.content}

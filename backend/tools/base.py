@@ -46,8 +46,8 @@ class ToolResult:
     
     # 发送给 LLM 的工具结果最大字符数
     MAX_RESULT_CHARS = 3000
-    # 含 content 的 read 类结果：设计规格等需完整传递，提高上限
-    MAX_RESULT_CHARS_READ = 15000
+    # 含 content 的 read 类结果：降低上限防止上下文爆炸（从 15000 降至 8000）
+    MAX_RESULT_CHARS_READ = 8000
 
     def to_string(self) -> str:
         """Convert result to string for LLM consumption (excludes large/binary data)"""
@@ -96,8 +96,8 @@ class ToolResult:
                 # 已知二进制字段或任何超长字符串
                 is_known_binary = key in self._BINARY_FIELD_NAMES
                 is_text_content = key in self._TEXT_CONTENT_KEYS
-                # content 字段（如 read_file 结果）保留 12000 字符，便于设计规格等完整传递
-                max_str = 12000 if is_text_content else 1500
+                # content 字段（如 read_file 结果）保留 6000 字符（从 12000 降低，避免上下文爆炸）
+                max_str = 6000 if is_text_content else 1500
                 is_oversized = len(value) > max_str
                 if is_known_binary and len(value) > 200:
                     filtered[key] = f"[二进制数据，{len(value)} 字符，已省略]"

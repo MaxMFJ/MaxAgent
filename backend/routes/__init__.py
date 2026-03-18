@@ -31,7 +31,6 @@ from .context import router as context_router
 from .duck_api import router as duck_api_router
 from .duck_ws import router as duck_ws_router
 from .cache import router as cache_router
-from .recordings import router as recordings_router
 from .file_index import router as file_index_router
 from .demos import router as demos_router
 from .group_chat import router as group_chat_router
@@ -66,7 +65,6 @@ all_routers = [
     duck_api_router,
     duck_ws_router,
     cache_router,
-    recordings_router,
     file_index_router,
     demos_router,
     group_chat_router,

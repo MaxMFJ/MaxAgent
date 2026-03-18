@@ -29,8 +29,8 @@ class DelegateDagTool(BaseTool):
         "创建多Agent协作DAG任务（自动群聊）。"
         "当任务可分解为2+个有依赖关系的阶段时使用（如 调研→分析→代码生成）。"
         "每个节点是一个子任务，depends_on定义执行顺序。无依赖的节点并行执行。"
-        "参数：description(必填，总体描述)、nodes(必填，子任务节点数组)。"
-        "DAG会自动创建群聊，各Agent在群聊中汇报进度。"
+        "参数：description(必填，总体描述)、nodes(必填，子任务节点数组)、existing_group_id(可选，续接已有群聊)。"
+        "DAG会自动创建群聊，各Agent在群聊中汇报进度。如果用户要求续接已有群聊任务，传入existing_group_id。"
     )
     category = ToolCategory.CUSTOM
     parameters = {
@@ -68,6 +68,10 @@ class DelegateDagTool(BaseTool):
                     "required": ["node_id", "description"],
                 },
             },
+            "existing_group_id": {
+                "type": "string",
+                "description": "（可选）续接已有协作群聊的 group_id。提供此参数时新DAG在该群聊中执行，不新建群聊。",
+            },
         },
         "required": ["description", "nodes"],
     }
@@ -78,6 +82,7 @@ class DelegateDagTool(BaseTool):
     async def execute(self, **kwargs) -> ToolResult:
         description = (kwargs.get("description") or "").strip()
         nodes_raw = kwargs.get("nodes") or []
+        existing_group_id = (kwargs.get("existing_group_id") or "").strip()
 
         if not description:
             return ToolResult(success=False, error="description 必填")
@@ -135,6 +140,7 @@ class DelegateDagTool(BaseTool):
                 description=description,
                 nodes=dag_nodes,
                 session_id=session_id,
+                existing_group_id=existing_group_id or None,
             )
 
             # 异步执行（不阻塞）
@@ -145,6 +151,8 @@ class DelegateDagTool(BaseTool):
                 for n in dag_nodes
             )
 
+            group_msg = f"群聊 {existing_group_id} 中续接执行" if existing_group_id else "群聊已自动创建，各Agent将在群聊中实时汇报进度"
+
             return ToolResult(
                 success=True,
                 data={
@@ -154,7 +162,7 @@ class DelegateDagTool(BaseTool):
                     "message": (
                         f"多Agent协作DAG已创建并开始执行（共{len(dag_nodes)}个子任务）。\n"
                         f"节点：{node_summary}\n"
-                        f"群聊已自动创建，各Agent将在群聊中实时汇报进度。"
+                        f"{group_msg}。"
                     ),
                 },
             )

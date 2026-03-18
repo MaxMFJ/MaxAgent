@@ -398,6 +398,26 @@ class AgentViewModel: ObservableObject {
                 }
             }
         }
+        backendService.onGroupChatDeleted = { [weak self] groupId in
+            guard let self = self else { return }
+            self.groupChats.removeAll { $0.groupId == groupId }
+            if self.activeGroupChat?.groupId == groupId {
+                self.activeGroupChat = nil
+            }
+        }
+    }
+
+    /// 用户主动删除群聊
+    func deleteGroupChat(_ groupChat: GroupChat) {
+        Task {
+            try? await backendService.deleteGroupChat(groupId: groupChat.groupId)
+            await MainActor.run {
+                self.groupChats.removeAll { $0.groupId == groupChat.groupId }
+                if self.activeGroupChat?.groupId == groupChat.groupId {
+                    self.activeGroupChat = nil
+                }
+            }
+        }
     }
 
     private func handleDuckTaskComplete(content: String, success: Bool, taskId: String, sessionId: String) {
@@ -428,13 +448,66 @@ class AgentViewModel: ObservableObject {
             await syncConfig()
             await loadGitHubConfig()
             loadSystemMessages()
+            // 恢复持久化的群聊（用户重启 App 后看到进行中的多 Agent 任务）
+            await restoreGroupChats()
         }
     }
     
     func disconnect() {
         backendService.disconnect()
     }
-    
+
+    // MARK: - Group Chat Restore
+
+    /// App 启动/重连时从后端拉取历史群聊，恢复进行中的多 Agent 任务显示
+    private func restoreGroupChats() async {
+        guard let conversation = currentConversation else { return }
+        let sessionId = conversation.id.uuidString
+
+        do {
+            let briefs = try await backendService.fetchGroupChatBriefs(sessionId: sessionId)
+            guard !briefs.isEmpty else { return }
+
+            var restored: [GroupChat] = []
+            for brief in briefs {
+                guard let groupId = brief["group_id"] as? String,
+                      let statusStr = brief["status"] as? String else { continue }
+
+                // 仅恢复进行中的群聊；已完成/取消的24小时内也保留，让用户能看到结果
+                let isActive = statusStr == "active"
+                let isRecentlyDone: Bool = {
+                    guard statusStr == "completed" || statusStr == "failed",
+                          let completedAt = brief["completed_at"] as? Double else { return false }
+                    return (Date().timeIntervalSince1970 - completedAt) < 86400 // 24h
+                }()
+                guard isActive || isRecentlyDone else { continue }
+
+                // 拉取完整群聊（含消息）
+                if let gc = try? await backendService.fetchGroupChatDetail(groupId: groupId) {
+                    restored.append(gc)
+                }
+            }
+
+            guard !restored.isEmpty else { return }
+
+            await MainActor.run {
+                for gc in restored {
+                    // 避免重复添加
+                    if !self.groupChats.contains(where: { $0.groupId == gc.groupId }) {
+                        self.groupChats.append(gc)
+                    }
+                }
+                // 若有进行中的群聊，自动设置为活跃
+                if self.activeGroupChat == nil,
+                   let activeGc = restored.first(where: { $0.status.rawValue == "active" }) {
+                    self.activeGroupChat = activeGc
+                }
+            }
+        } catch {
+            // 群聊恢复失败不影响正常使用
+        }
+    }
+
     // MARK: - Configuration
     
     func syncConfig() async {
@@ -870,7 +943,9 @@ class AgentViewModel: ObservableObject {
             executionLogs = []
             defer { isStreamingLLM = false }
 
-            for try await chunk in backendService.sendMessageStream(messageText, sessionId: sessionId, filePaths: filePaths) {
+            // 若当前有活跃群聊，将 group_id 传给后端，使主 Agent 知道已有群聊可续接
+            let activeGid = activeGroupChat?.groupId
+            for try await chunk in backendService.sendMessageStream(messageText, sessionId: sessionId, filePaths: filePaths, activeGroupId: activeGid) {
                 switch chunk {
                 case .content(let text):
                     fullContent += text

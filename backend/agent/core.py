@@ -90,6 +90,75 @@ def _should_have_tool_call(user_message: str, model_output: str) -> bool:
     return user_wants_tool and model_failed
 
 
+# ── Chat 模式上下文剪裁（防止 read_file 等大结果导致上下文爆炸）──
+# 估算 1 token ≈ 3 chars（中英混合）
+_CHARS_PER_TOKEN_APPROX = 3
+# Chat 模式消息列表最大 token 预算（保守值，适配大部分模型窗口）
+_CHAT_CONTEXT_MAX_TOKENS = 60000
+
+
+def _estimate_messages_tokens(messages: list) -> int:
+    """粗略估算 messages 列表的 token 数"""
+    total_chars = 0
+    for m in messages:
+        content = m.get("content")
+        if isinstance(content, str):
+            total_chars += len(content)
+        elif isinstance(content, list):  # 多模态
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    total_chars += len(item.get("text", ""))
+        # tool_calls / function arguments
+        for tc in m.get("tool_calls", []):
+            args = tc.get("function", {}).get("arguments", "")
+            total_chars += len(args) if isinstance(args, str) else len(str(args))
+    return total_chars // _CHARS_PER_TOKEN_APPROX
+
+
+def _prune_chat_messages(messages: list, max_tokens: int = _CHAT_CONTEXT_MAX_TOKENS) -> list:
+    """
+    当 chat 消息列表的估算 token 超过预算时，压缩旧的 tool 结果。
+    策略：保留 system + 最后 4 轮对话完整，旧 tool 消息内容截断到 300 chars。
+    如果仍然超标，逐步删除最早的 assistant+tool 对话轮次。
+    """
+    est = _estimate_messages_tokens(messages)
+    if est <= max_tokens:
+        return messages
+
+    logger.info(f"Chat context pruning: ~{est} tokens > {max_tokens} budget, {len(messages)} msgs")
+
+    # Phase 1: 压缩旧 tool 消息的 content（保留最近 8 条消息不动）
+    keep_tail = 8
+    for i, m in enumerate(messages):
+        if i >= len(messages) - keep_tail:
+            break
+        if m.get("role") == "tool":
+            content = m.get("content", "")
+            if isinstance(content, str) and len(content) > 500:
+                m["content"] = content[:300] + f"\n...[上下文压缩: 原 {len(content)} 字符]"
+
+    est = _estimate_messages_tokens(messages)
+    if est <= max_tokens:
+        logger.info(f"Pruning phase 1 sufficient: ~{est} tokens")
+        return messages
+
+    # Phase 2: 删除最早的非 system 消息轮次（保持配对完整性）
+    system_msgs = [m for m in messages if m.get("role") == "system"]
+    non_system = [m for m in messages if m.get("role") != "system"]
+
+    while _estimate_messages_tokens(system_msgs + non_system) > max_tokens and len(non_system) > keep_tail:
+        removed = non_system.pop(0)
+        # 如果删了 assistant with tool_calls，也要删对应的 tool 结果
+        if removed.get("tool_calls"):
+            while non_system and non_system[0].get("role") == "tool":
+                non_system.pop(0)
+
+    result = system_msgs + non_system
+    final_est = _estimate_messages_tokens(result)
+    logger.info(f"Pruning phase 2 done: ~{final_est} tokens, {len(result)} msgs")
+    return result
+
+
 class AgentCore:
     """
     Core agent engine - 最小调度核心
@@ -337,6 +406,10 @@ class AgentCore:
         MAX_TRUNCATION_RETRIES = 2
 
         for iteration in range(self.max_iterations):
+            # ── 上下文剪裁：防止 read_file 等大结果导致消息列表无限增长 ──
+            if iteration > 0 and not use_local_mode:
+                messages = _prune_chat_messages(messages)
+
             logger.info(f"Agent stream iteration {iteration + 1}, session: {session_id}, messages: {len(messages)}, local_mode={use_local_mode}")
             
             # 在线模型/网关常对同一 token 限制并发，必须等上一轮流式完全结束后再发下一轮，否则易 500。
@@ -421,6 +494,14 @@ class AgentCore:
                             "response_preview": None,
                             "error": str(err_msg)[:200],
                         }
+                        # 上下文超限：剪裁后重试，不直接 return
+                        if isinstance(err_msg, str) and "[CONTEXT_TOO_LARGE]" in err_msg:
+                            logger.warning("Context too large detected, pruning and retrying")
+                            # 激进剪裁：将预算降至当前的一半
+                            _half_budget = _estimate_messages_tokens(messages) // 2
+                            messages = _prune_chat_messages(messages, max_tokens=max(_half_budget, 4000))
+                            yield {"type": "content", "content": "\n⚠️ 上下文过大，自动压缩后重试...\n"}
+                            continue
                         yield {"type": "error", "error": err_msg}
                         return
                 
@@ -598,10 +679,16 @@ class AgentCore:
                         
                         for tc, result in zip(tool_calls, tool_results):
                             _record_created_files(context, tc, result)
+                            # 控制注入 LLM 上下文的 tool 结果大小，防止上下文爆炸
+                            result_str = result.to_string()
+                            # 对 read_file 类大结果在 chat 模式额外限制
+                            _CHAT_TOOL_RESULT_LIMIT = 8000
+                            if len(result_str) > _CHAT_TOOL_RESULT_LIMIT:
+                                result_str = result_str[:_CHAT_TOOL_RESULT_LIMIT] + f"\n...[chat上下文截断，原 {len(result_str)} 字符]"
                             messages.append({
                                 "role": "tool",
                                 "tool_call_id": tc["id"],
-                                "content": result.to_string()
+                                "content": result_str
                             })
                             yield {
                                 "type": "tool_result",

@@ -97,6 +97,13 @@ struct SidebarView: View {
                                 viewModel.activeGroupChat = group
                                 viewModel.currentConversation = nil
                             }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    viewModel.deleteGroupChat(group)
+                                } label: {
+                                    Label("删除群聊", systemImage: "trash")
+                                }
+                            }
                     }
                 }
 

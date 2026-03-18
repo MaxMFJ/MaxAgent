@@ -1,0 +1,22 @@
+{
+  "task_id": "dtask_ae5ce1aa",
+  "description": "搜集AI行业2025-2026年的最新行业数据、新闻、趋势分析报告等。需要涵盖：1) AI技术发展趋势 2) 主要AI公司和产品动态 3) 行业投资和融资情况 4) AI应用落地案例 5) 政策监管动态。确保数据是最新的（2025-2026年）。请提供详细的中文资料整理。",
+  "task_type": "general",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 300,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773725587.199735,
+  "assigned_at": 1773725587.2000818,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773725587.2000902
+}
