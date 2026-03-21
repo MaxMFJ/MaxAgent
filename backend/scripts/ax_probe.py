@@ -60,7 +60,7 @@ def dump_tree(elem, depth=0, max_depth=3, prefix=""):
             if size:
                 Quartz.AXValueGetValue(size, Quartz.kAXValueCGSizeType, s)
             pos_str = f" @({int(p.x)},{int(p.y)} {int(s.width)}x{int(s.height)})"
-        except:
+        except Exception:
             pass
     
     # Get actions

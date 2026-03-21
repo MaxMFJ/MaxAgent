@@ -16,6 +16,7 @@ import asyncio
 import json
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -45,6 +46,7 @@ class RuntimeJournal:
     """Append-only journal for task state transitions"""
 
     _instance: Optional["RuntimeJournal"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._file_path = _JOURNAL_FILE
@@ -54,7 +56,9 @@ class RuntimeJournal:
     @classmethod
     def get_instance(cls) -> "RuntimeJournal":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     def set_loop(self, loop: asyncio.AbstractEventLoop):

@@ -51,6 +51,9 @@ from .runtime_health import router as runtime_health_router
 # Remote Workers (v3.0)
 from .remote_workers import router as remote_workers_router
 
+# Scheduled Tasks (v3.x)
+from .scheduled_tasks import router as scheduled_tasks_router
+
 all_routers = [
     health_router,
     auth_router,
@@ -97,4 +100,6 @@ all_routers = [
     runtime_health_router,
     # Remote Workers (v3.0)
     remote_workers_router,
+    # Scheduled Tasks
+    scheduled_tasks_router,
 ]

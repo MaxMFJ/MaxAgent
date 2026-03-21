@@ -187,7 +187,7 @@ class InputControlTool(BaseTool):
             )
             _, stderr = await process.communicate()
             return process.returncode == 0
-        except:
+        except Exception:
             return False
     
     async def _mouse_click(self, kwargs: dict) -> ToolResult:

@@ -26,6 +26,7 @@ Agent Registry + Factory Pattern — 子代理注册表与工厂模式
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
@@ -167,6 +168,7 @@ class AgentRegistry:
     """
 
     _instance: Optional["AgentRegistry"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._specs: Dict[str, AgentSpec] = {}
@@ -175,7 +177,9 @@ class AgentRegistry:
     @classmethod
     def get_instance(cls) -> "AgentRegistry":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     def initialize(self):

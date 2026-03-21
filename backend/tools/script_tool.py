@@ -214,7 +214,7 @@ class ScriptTool(BaseTool):
                 if not save_path:
                     try:
                         os.unlink(script_path)
-                    except:
+                    except Exception:
                         pass
                 
                 return ToolResult(
@@ -229,7 +229,7 @@ class ScriptTool(BaseTool):
             if not save_path:
                 try:
                     os.unlink(script_path)
-                except:
+                except Exception:
                     pass
             
             return ToolResult(

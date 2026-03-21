@@ -296,6 +296,7 @@ class MonitoringViewModel: ObservableObject {
     @Published var healthInfo: SystemHealthInfo = SystemHealthInfo()
     @Published var localLLMInfo: LocalLLMInfo = LocalLLMInfo()
     @Published var memoryStatus: MemoryStatusInfo = MemoryStatusInfo()
+    @Published var circuitBreakers: [[String: Any]] = []
     @Published var modelSelectorInfo: ModelSelectorInfo = ModelSelectorInfo()
     @Published var lastPolledAt: Date?
     @Published var isPolling: Bool = false
@@ -834,6 +835,7 @@ class MonitoringViewModel: ObservableObject {
                     await fetchDeepHealth()
                     await fetchTraces()
                     await fetchActiveTasks()
+                    await fetchCircuitBreakers()
                 }
                 isPolling = false
                 lastPolledAt = Date()
@@ -918,6 +920,16 @@ class MonitoringViewModel: ObservableObject {
                 if let sessions = json["sessions"] as? [String: [String: Any]] {
                     memoryStatus.sessionSummary = sessions.mapValues { $0["items"] as? Int ?? 0 }
                 }
+            }
+        } catch {}
+    }
+
+    private func fetchCircuitBreakers() async {
+        guard let url = URL(string: "\(baseURL)/runtime/circuit-breakers") else { return }
+        do {
+            let (data, _) = try await httpSession.data(from: url)
+            if let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+                circuitBreakers = arr
             }
         } catch {}
     }

@@ -10,6 +10,7 @@ Duck Task Scheduler — 任务调度引擎
 import asyncio
 import json
 import logging
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -57,6 +58,7 @@ class DuckTaskScheduler:
     """Duck 任务调度引擎 (单例)"""
 
     _instance: Optional["DuckTaskScheduler"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._tasks: Dict[str, DuckTask] = {}
@@ -66,14 +68,19 @@ class DuckTaskScheduler:
         self._lock = asyncio.Lock()
         self._watchdog_task: Optional[asyncio.Task] = None
         self._watchdog_interval: int = 20  # 秒
-        self._lease_timeout: int = 120     # Worker lease 超时（秒）
+        self._lease_timeout: int = 60      # Worker lease 超时（秒），60s 足以检测崩溃
         self._lease_scan_interval: int = 10  # lease 扫描间隔（秒）
         self._lease_scanner_task: Optional[asyncio.Task] = None
+        # TTL cleanup for completed tasks
+        self._task_ttl_seconds: int = 3600  # 已完成任务保留 1 小时
+        self._last_cleanup_time: float = 0.0
 
     @classmethod
     def get_instance(cls) -> "DuckTaskScheduler":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ─── 初始化 / 持久化 ─────────────────────────────
@@ -100,6 +107,11 @@ class DuckTaskScheduler:
                         await self.reschedule_pending()
                 except Exception as e:
                     logger.warning(f"[watchdog] reschedule error: {e}")
+                # 定期清理已完成的任务记录
+                try:
+                    self._cleanup_expired_tasks()
+                except Exception as e:
+                    logger.warning(f"[watchdog] cleanup error: {e}")
 
         self._watchdog_task = asyncio.create_task(_watchdog_loop())
         logger.info(f"[scheduler] Pending watchdog started (interval={self._watchdog_interval}s)")
@@ -199,6 +211,42 @@ class DuckTaskScheduler:
                     f"retries={task.retry_count}/{task.max_retries} (lease_expired) → FAILED_FINAL"
                 )
                 await self._fail_task(task, f"Lease expired after {task.retry_count} retries")
+
+    def _cleanup_expired_tasks(self):
+        """清理已终结且超过 TTL 的任务，释放内存并删除持久化文件"""
+        now = time.time()
+        # 每 5 分钟执行一次清理
+        if now - self._last_cleanup_time < 300:
+            return
+        self._last_cleanup_time = now
+
+        terminal_states = (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
+        to_remove: list[str] = []
+        for tid, task in self._tasks.items():
+            if task.status not in terminal_states:
+                continue
+            finished_at = task.completed_at or task.created_at
+            if now - finished_at > self._task_ttl_seconds:
+                to_remove.append(tid)
+
+        if not to_remove:
+            return
+
+        for tid in to_remove:
+            self._tasks.pop(tid, None)
+            self._callbacks.pop(tid, None)
+            self._task_sessions.pop(tid, None)
+            handle = self._timeout_handles.pop(tid, None)
+            if handle:
+                handle.cancel()
+            # 删除持久化文件
+            fpath = TASK_STORE_DIR / f"{tid}.json"
+            try:
+                fpath.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+        logger.info(f"[cleanup] Removed {len(to_remove)} expired tasks from memory")
 
     def _load_from_disk(self):
         """加载未完成的任务，重启后 ASSIGNED/RUNNING 重置为 PENDING"""
@@ -551,19 +599,16 @@ class DuckTaskScheduler:
                 await cb(task)
             except Exception as e:
                 logger.error(f"Task callback error: {e}", exc_info=True)
-                # 回调失败恢复：尝试重新触发 DAG 调度，防止 DAG 死锁
-                dag_info = None
+                # 回调失败恢复：通过 _on_node_complete（幂等）安全推进 DAG，
+                # 避免直接调用 _schedule_ready_nodes 在不一致状态下触发新任务
                 try:
                     from services.duck_task_dag import DAGTaskOrchestrator
                     orch = DAGTaskOrchestrator.get_instance()
                     dag_info = orch._task_to_dag.get(result.task_id)
                     if dag_info:
                         dag_id, node_id = dag_info
-                        execution = orch._executions.get(dag_id)
-                        if execution:
-                            logger.info(f"[recovery] Re-scheduling DAG {dag_id} after callback failure")
-                            await orch._schedule_ready_nodes(execution)
-                            await orch._check_dag_completion(execution)
+                        logger.info(f"[recovery] Re-running _on_node_complete for DAG {dag_id} node {node_id}")
+                        await orch._on_node_complete(dag_id, node_id, task)
                 except Exception as recovery_err:
                     logger.error(f"[recovery] DAG recovery also failed: {recovery_err}")
 

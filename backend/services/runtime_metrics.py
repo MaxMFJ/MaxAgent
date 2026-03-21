@@ -34,6 +34,7 @@ class RuntimeMetrics:
     """In-memory metrics collector (singleton, thread-safe)"""
 
     _instance = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -88,7 +89,9 @@ class RuntimeMetrics:
     @classmethod
     def get_instance(cls) -> "RuntimeMetrics":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ─── Record Methods ──────────────────────────────

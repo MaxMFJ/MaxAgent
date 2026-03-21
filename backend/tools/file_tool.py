@@ -23,6 +23,22 @@ def _normalize_path(path: str) -> str:
     return path
 
 
+# 允许访问的路径根列表
+_ALLOWED_ROOTS = [
+    os.path.expanduser("~"),
+    "/tmp",
+    "/var/folders",  # macOS 临时目录
+]
+
+
+def _check_path_allowed(path: str) -> None:
+    """检查路径是否在允许范围内，防止访问系统敏感文件"""
+    normalized = os.path.normpath(os.path.realpath(path))
+    if any(normalized.startswith(root) for root in _ALLOWED_ROOTS):
+        return
+    raise PermissionError(f"路径不在允许范围内: {path}")
+
+
 class FileTool(BaseTool):
     """Tool for file system operations"""
     
@@ -95,6 +111,7 @@ class FileTool(BaseTool):
             return ToolResult(success=False, error="缺少路径参数")
 
         path = _normalize_path(path)
+        _check_path_allowed(path)
         
         try:
             if action == "read":
@@ -124,12 +141,16 @@ class FileTool(BaseTool):
                 dest = kwargs.get("destination")
                 if not dest:
                     return ToolResult(success=False, error="移动操作需要 destination 参数")
-                return await self._move(path, _normalize_path(dest))
+                dest = _normalize_path(dest)
+                _check_path_allowed(dest)
+                return await self._move(path, dest)
             elif action == "copy":
                 dest = kwargs.get("destination")
                 if not dest:
                     return ToolResult(success=False, error="复制操作需要 destination 参数")
-                return await self._copy(path, _normalize_path(dest))
+                dest = _normalize_path(dest)
+                _check_path_allowed(dest)
+                return await self._copy(path, dest)
             elif action == "list":
                 return await self._list(path)
             elif action == "search":

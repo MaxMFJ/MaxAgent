@@ -2,7 +2,7 @@
   "task_id": "9d8000b5",
   "session_id": "duck_local_011fcda0_dtask_",
   "task_description": "根据爬取的AI行业数据，设计HTML展示页面的整体布局、配色方案、图表样式、交互效果等，输出详细的MD设计说明文档\n\n【相关文件路径】/Users/lzz/Desktop\n\n【文件结构摘要】（大文件已压缩，可分段 read_file 按需读取详情）\n【/Users/lzz/Desktop】可直接读取",
-  "status": "running",
+  "status": "stopped",
   "current_iteration": 1,
   "max_iterations": 30,
   "action_checkpoints": [
@@ -20,7 +20,7 @@
     }
   ],
   "created_at": "2026-03-20T11:23:12.678716",
-  "updated_at": "2026-03-20T11:23:28.598816",
+  "updated_at": "2026-03-21T13:52:44.643270",
   "last_client_disconnect_at": null,
-  "final_result": null
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
 }

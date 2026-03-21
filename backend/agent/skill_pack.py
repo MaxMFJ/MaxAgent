@@ -30,6 +30,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -146,6 +147,7 @@ class SkillPackManager:
     """
 
     _instance: Optional["SkillPackManager"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._packs: Dict[str, SkillPack] = {}
@@ -154,7 +156,9 @@ class SkillPackManager:
     @classmethod
     def get_instance(cls) -> "SkillPackManager":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     def initialize(self, packs_dir: Optional[str] = None):

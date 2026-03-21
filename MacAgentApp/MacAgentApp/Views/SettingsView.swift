@@ -26,6 +26,7 @@ struct SettingsView: View {
         NavItem(title: "Context", icon: "chart.bar.xaxis",                  index: 11),
         NavItem(title: "Chow Duck", icon: "bird",                           index: 12),
         NavItem(title: "端口",   icon: "cable.connector",                     index: 13),
+        NavItem(title: "定时任务", icon: "clock.arrow.2.circlepath",           index: 14),
     ]
 
     var body: some View {
@@ -131,6 +132,11 @@ struct SettingsView: View {
                     case 13:
                         ScrollView {
                             PortSettingsContent()
+                                .padding(20)
+                        }
+                    case 14:
+                        ScrollView {
+                            ScheduledTasksSettingsContent()
                                 .padding(20)
                         }
                     default:

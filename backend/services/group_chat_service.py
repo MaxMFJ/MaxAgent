@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -43,6 +44,7 @@ class GroupChatService:
     """群聊管理服务（单例）"""
 
     _instance: Optional["GroupChatService"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self) -> None:
         self._groups: Dict[str, GroupChat] = {}  # group_id → GroupChat
@@ -55,7 +57,9 @@ class GroupChatService:
     @classmethod
     def get_instance(cls) -> "GroupChatService":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ── 持久化 ────────────────────────────────────────────────────

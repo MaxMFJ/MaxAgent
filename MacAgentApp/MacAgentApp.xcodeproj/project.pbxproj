@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2FA4151906D65558C507569B /* PortSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F634291F3212FD31A180945 /* PortSettingsView.swift */; };
+		SCHD000100000000SCHTSK01 /* ScheduledTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCHD000200000000SCHTSK01 /* ScheduledTasksView.swift */; };
 
 		HD00000100000000HDSRV01 /* HumanDemoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HD00000200000000HDSRV01 /* HumanDemoService.swift */; };
 		HD00000100000000HDVIEW01 /* HumanDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HD00000200000000HDVIEW01 /* HumanDemoView.swift */; };
@@ -99,6 +100,7 @@
 		5E03CA151535EB06065CF359 /* Pods-MacAgentApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacAgentApp.release.xcconfig"; path = "Target Support Files/Pods-MacAgentApp/Pods-MacAgentApp.release.xcconfig"; sourceTree = "<group>"; };
 		6BFA7AE349288F5BDAFADD6A /* ContextVisualizationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextVisualizationView.swift; sourceTree = "<group>"; };
 		6F634291F3212FD31A180945 /* PortSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PortSettingsView.swift; sourceTree = "<group>"; };
+		SCHD000200000000SCHTSK01 /* ScheduledTasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduledTasksView.swift; sourceTree = "<group>"; };
 		96FBF8AC5BB63CB582E2C7D1 /* HITLOverlayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HITLOverlayView.swift; sourceTree = "<group>"; };
 		A1000000234567890ABCDEF1 /* MacAgentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacAgentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002234567890ABCDEF1 /* MacAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAgentApp.swift; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 				DDA100020000000000DUCK01 /* DuckSettingsView.swift */,
 				6F634291F3212FD31A180945 /* PortSettingsView.swift */,
 				HD00000200000000HDVIEW01 /* HumanDemoView.swift */,
+				SCHD000200000000SCHTSK01 /* ScheduledTasksView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -666,6 +669,7 @@
 
 				HD00000100000000HDSRV01 /* HumanDemoService.swift in Sources */,
 				HD00000100000000HDVIEW01 /* HumanDemoView.swift in Sources */,
+				SCHD000100000000SCHTSK01 /* ScheduledTasksView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

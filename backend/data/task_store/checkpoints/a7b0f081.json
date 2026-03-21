@@ -2,7 +2,7 @@
   "task_id": "a7b0f081",
   "session_id": "duck_local_ca78da97_dtask_",
   "task_description": "【第1次自动重试】上次执行失败，请这次**立即使用工具直接操作**，不要先描述计划。必须使用 write_file 或 run_shell 完成任务。\n历史失败原因：任务超时：总执行时间超过 300s 上限\n\n原始任务：根据AI行业研究报告设计文档，生成一个漂亮的HTML展示页面。需要包含：1) 市场趋势和大数据图表展示 2) 大模型技术进展板块 3) 投资动态和企业产品展示 4) 现代化UI设计，使用渐变背景、卡片式布局、动画效果",
-  "status": "running",
+  "status": "stopped",
   "current_iteration": 2,
   "max_iterations": 30,
   "action_checkpoints": [
@@ -32,7 +32,7 @@
     }
   ],
   "created_at": "2026-03-20T11:23:12.675651",
-  "updated_at": "2026-03-20T11:23:41.328660",
+  "updated_at": "2026-03-21T13:52:44.643002",
   "last_client_disconnect_at": null,
-  "final_result": null
+  "final_result": "任务因服务重启被中断，可通过「恢复任务」继续执行"
 }

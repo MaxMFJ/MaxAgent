@@ -17,6 +17,7 @@ import io
 import json
 import logging
 import secrets
+import threading
 import time
 import uuid
 import zipfile
@@ -68,6 +69,7 @@ class EggBuilder:
     """Egg 打包器（单例）"""
 
     _instance: Optional["EggBuilder"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._eggs: Dict[str, EggRecord] = {}
@@ -76,7 +78,9 @@ class EggBuilder:
     @classmethod
     def get_instance(cls) -> "EggBuilder":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ─── 持久化 ──────────────────────────────────────

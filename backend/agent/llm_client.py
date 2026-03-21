@@ -7,6 +7,7 @@ import asyncio
 import os
 import json
 import logging
+import random
 from typing import Optional, List, Dict, Any, AsyncGenerator
 from dataclasses import dataclass, field
 
@@ -145,7 +146,59 @@ class LLMClient:
                     return limit
                 return max_tokens
         return max_tokens
-    
+
+    # ─── 指数退避重试 ───────────────────────────────
+
+    _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504, 529}
+    _NON_RETRYABLE_KEYWORDS = {"unauthorized", "invalid api key", "quota", "insufficient", "context_length", "token_limit"}
+
+    async def _call_with_retry(self, coro_factory, max_retries: int = 3):
+        """带指数退避的 API 调用重试。coro_factory 是一个返回 awaitable 的无参可调用对象。"""
+        # Circuit breaker check
+        from services.circuit_breaker import get_circuit_breaker
+        cb = get_circuit_breaker(self.config.provider or "llm")
+        if not cb.allow_request():
+            raise RuntimeError(
+                f"LLM 断路器已熔断（provider={self.config.provider}）。"
+                f"连续失败过多，请等待 {cb.recovery_timeout:.0f}s 后自动恢复，或检查 API 服务状态。"
+            )
+        # Pre-call rate limit check
+        rate_err = UsageTracker.shared().check_rate_limit()
+        if rate_err:
+            raise RuntimeError(rate_err)
+        last_exc = None
+        for attempt in range(max_retries + 1):
+            try:
+                coro = coro_factory()
+                if get_timeout_policy is not None:
+                    result = await get_timeout_policy().with_llm_timeout(coro)
+                else:
+                    result = await coro
+                cb.record_success()
+                return result
+            except Exception as e:
+                last_exc = e
+                error_str = str(e).lower()
+                # 不可重试的错误立即抛出（不计入断路器）
+                if any(kw in error_str for kw in self._NON_RETRYABLE_KEYWORDS):
+                    raise
+                if "401" in error_str or "403" in error_str or "400" in error_str:
+                    raise
+                # 记录失败到断路器
+                cb.record_failure()
+                # 最后一次尝试，不再重试
+                if attempt >= max_retries:
+                    raise
+                # 指数退避 + 抖动
+                base_delay = min(2 ** attempt, 8)
+                delay = base_delay + random.uniform(0, base_delay * 0.5)
+                logger.warning(
+                    f"[llm_retry] Attempt {attempt + 1}/{max_retries + 1} failed: {str(e)[:120]}. "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                await asyncio.sleep(delay)
+        raise last_exc  # unreachable but satisfies type checker
+
     async def chat(
         self,
         messages: List[Dict[str, Any]],
@@ -186,11 +239,9 @@ class LLMClient:
             kwargs["extra_body"] = extra_body
 
         try:
-            create_coro = self._client.chat.completions.create(**kwargs)
-            if get_timeout_policy is not None:
-                response = await get_timeout_policy().with_llm_timeout(create_coro)
-            else:
-                response = await create_coro
+            response = await self._call_with_retry(
+                lambda: self._client.chat.completions.create(**kwargs)
+            )
             message = response.choices[0].message
             content = extract_text_from_content(message.content)
             
@@ -233,7 +284,7 @@ class LLMClient:
                         # If it's neither a string nor a dict, convert to dict if possible
                         try:
                             args = dict(args)
-                        except:
+                        except Exception:
                             pass  # Keep original if conversion fails
                     result["tool_calls"].append({
                         "id": tc.id,
@@ -334,11 +385,9 @@ class LLMClient:
             local_prompt_tokens = count_messages_tokens(messages)
             token_counter = StreamTokenCounter(prompt_tokens=local_prompt_tokens)
             
-            create_coro = self._client.chat.completions.create(**kwargs)
-            if get_timeout_policy is not None:
-                stream = await get_timeout_policy().with_llm_timeout(create_coro)
-            else:
-                stream = await create_coro
+            stream = await self._call_with_retry(
+                lambda: self._client.chat.completions.create(**kwargs)
+            )
             
             tool_calls_buffer = {}
             chunk_count = 0
@@ -433,7 +482,7 @@ class LLMClient:
                                         # If it's neither a string nor a dict, convert to dict if possible
                                         try:
                                             args = dict(args)
-                                        except:
+                                        except Exception:
                                             pass  # Keep original if conversion fails
                                     tc["arguments"] = args
                                     tc["_truncated"] = False

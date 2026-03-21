@@ -55,6 +55,7 @@ class ConnectionManager:
         self._lock = asyncio.Lock()
         # 断线消息缓冲：session_id → deque[(timestamp, message)]
         self._pending_buffers: Dict[str, deque] = {}
+        self._last_buffer_sweep: float = 0.0
 
     def get_server_status(self) -> ServerStatus:
         return get_server_status()
@@ -155,12 +156,25 @@ class ConnectionManager:
 
     def _buffer_message(self, session_id: str, message: dict):
         """缓冲重要消息，供客户端重连后补发"""
+        self._sweep_expired_buffers()
         if session_id not in self._pending_buffers:
             self._pending_buffers[session_id] = deque(maxlen=_MAX_BUFFER_PER_SESSION)
         self._pending_buffers[session_id].append((time.time(), message))
         logger.debug(f"Buffered {message.get('type')} for session {session_id} "
                      f"(buffer size: {len(self._pending_buffers[session_id])})")
 
+    def _sweep_expired_buffers(self):
+        """清理所有过期的缓冲条目，防止内存泄漏"""
+        now = time.time()
+        if now - self._last_buffer_sweep < 60:
+            return
+        self._last_buffer_sweep = now
+        stale = [sid for sid, buf in self._pending_buffers.items()
+                 if not buf or (now - buf[-1][0]) > _BUFFER_EXPIRE_SECS]
+        for sid in stale:
+            del self._pending_buffers[sid]
+        if stale:
+            logger.info(f"[buffer_sweep] Removed {len(stale)} expired session buffers")
     async def flush_pending(self, session_id: str, websocket: WebSocket):
         """客户端重连后，补发缓冲的重要消息"""
         buf = self._pending_buffers.pop(session_id, None)

@@ -278,7 +278,7 @@ class ModelSelector:
             try:
                 with open(self._strategy_file, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         
         # Default strategy
@@ -305,7 +305,7 @@ class ModelSelector:
             try:
                 with open(self._history_file, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         return []
     

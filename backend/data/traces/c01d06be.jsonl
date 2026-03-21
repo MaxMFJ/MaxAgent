@@ -1,2 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "newapi/claude-haiku-4-5-20251001-thinking", "latency_ms": 6898, "success": true, "ts": 1773214065.063945}
-{"iteration": 1, "type": "tool", "action_type": "call_tool", "latency_ms": 15334, "success": false, "error": "搜索失败: ", "ts": 1773214081.12766}

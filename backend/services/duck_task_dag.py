@@ -97,10 +97,13 @@ class DAGExecution:
         }
 
 
+import threading as _threading
+
 class DAGTaskOrchestrator:
     """DAG 任务编排器（单例）"""
 
     _instance: Optional["DAGTaskOrchestrator"] = None
+    _instance_lock = _threading.Lock()
     _complete_hooks: List[Callable] = []  # 全局完成钩子
 
     def __init__(self):
@@ -108,11 +111,14 @@ class DAGTaskOrchestrator:
         self._task_to_dag: Dict[str, tuple[str, str]] = {}  # task_id → (dag_id, node_id)
         self._callbacks: Dict[str, DAGCallback] = {}
         self._dag_locks: Dict[str, asyncio.Lock] = {}  # per-DAG lock for _on_node_complete
+        self._execution_ttl: int = 1800  # 已完成 DAG 保留 30 分钟
 
     @classmethod
     def get_instance(cls) -> "DAGTaskOrchestrator":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     @classmethod
@@ -532,6 +538,23 @@ class DAGTaskOrchestrator:
             except Exception as e:
                 logger.error(f"DAG complete hook error: {e}")
 
+        # 延迟清理 DAG 执行记录，防止内存泄漏
+        self._schedule_dag_cleanup(execution.dag_id)
+
+    def _schedule_dag_cleanup(self, dag_id: str):
+        """延迟清理已完成的 DAG 执行记录"""
+        async def _do_cleanup():
+            await asyncio.sleep(self._execution_ttl)
+            execution = self._executions.pop(dag_id, None)
+            if execution:
+                # 清理 task_to_dag 中关联的条目
+                task_ids = [tid for tid, (did, _) in self._task_to_dag.items() if did == dag_id]
+                for tid in task_ids:
+                    self._task_to_dag.pop(tid, None)
+                logger.info(f"[dag_cleanup] Removed DAG {dag_id} ({len(task_ids)} task mappings)")
+
+        asyncio.create_task(_do_cleanup())
+
     def _find_terminal_nodes(self, execution: DAGExecution) -> List[DAGNode]:
         """找到终端节点（没有其他节点依赖它的节点）"""
         depended_on: Set[str] = set()
@@ -576,6 +599,8 @@ class DAGTaskOrchestrator:
                 pass
 
         logger.info(f"DAG cancelled: {dag_id}")
+        # 延迟清理取消的 DAG
+        self._schedule_dag_cleanup(dag_id)
         return True
 
     # ─── 查询 ────────────────────────────────────────

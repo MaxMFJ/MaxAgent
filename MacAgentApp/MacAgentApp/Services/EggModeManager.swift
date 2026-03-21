@@ -155,7 +155,7 @@ class EggModeManager: ObservableObject {
         }
     }
 
-    private static func isPortFree(port: Int) -> Bool {
+    nonisolated private static func isPortFree(port: Int) -> Bool {
         let socketFD = socket(AF_INET, SOCK_STREAM, 0)
         guard socketFD >= 0 else { return false }
         defer { close(socketFD) }

@@ -1790,4 +1790,74 @@ class BackendService: ObservableObject {
         }
     }
 
+    // MARK: - Scheduled Tasks API
+
+    nonisolated func fetchScheduledTasks() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/scheduled-tasks") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        return arr
+    }
+
+    nonisolated func createScheduledTask(description: String, triggerType: String, triggerConfig: [String: Any], sessionId: String = "") async throws -> [String: Any] {
+        guard let url = URL(string: "\(baseURL)/scheduled-tasks") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "description": description,
+            "trigger_type": triggerType,
+            "trigger_config": triggerConfig,
+            "session_id": sessionId,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    nonisolated func pauseScheduledTask(taskId: String) async throws {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(baseURL)/scheduled-tasks/\(encoded)/pause") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func resumeScheduledTask(taskId: String) async throws {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(baseURL)/scheduled-tasks/\(encoded)/resume") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    nonisolated func deleteScheduledTask(taskId: String) async throws {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(baseURL)/scheduled-tasks/\(encoded)") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    // MARK: - Circuit Breaker API
+
+    nonisolated func fetchCircuitBreakers() async throws -> [[String: Any]] {
+        guard let url = URL(string: "\(baseURL)/runtime/circuit-breakers") else { throw URLError(.badURL) }
+        let (data, _) = try await urlSession.data(from: url)
+        guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        return arr
+    }
+
 }

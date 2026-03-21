@@ -42,3 +42,10 @@ async def worker_diagnostics():
     """Worker diagnostics: per-duck health, lease, assignment, status"""
     from services.runtime_health import get_worker_diagnostics
     return get_worker_diagnostics()
+
+
+@router.get("/circuit-breakers")
+async def circuit_breaker_status():
+    """All circuit breaker states (LLM provider fault detection)"""
+    from services.circuit_breaker import get_all_circuit_status
+    return get_all_circuit_status()

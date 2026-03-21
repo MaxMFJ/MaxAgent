@@ -35,6 +35,10 @@ struct SystemStatusDashboardView: View {
                 // 向量记忆状态（全宽）
                 MemoryStatusCard()
                     .environmentObject(vm)
+
+                // 熔断器状态（全宽）
+                CircuitBreakerCard()
+                    .environmentObject(vm)
             }
             .padding(16)
         }
@@ -478,6 +482,91 @@ private struct MemoryStatusCard: View {
                     }
                     .frame(maxWidth: 180)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - 熔断器状态
+
+private struct CircuitBreakerCard: View {
+    @EnvironmentObject var vm: MonitoringViewModel
+
+    var body: some View {
+        CyberCard(glowColor: CyberColor.orange, padding: 14) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.trianglebadge.exclamationmark.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(CyberColor.orange)
+                    Text("LLM 熔断器")
+                        .font(CyberFont.body(size: 11, weight: .semibold))
+                        .foregroundColor(CyberColor.textPrimary)
+                    Spacer()
+                }
+
+                if vm.circuitBreakers.isEmpty {
+                    Text("无活跃断路器")
+                        .font(CyberFont.mono(size: 10))
+                        .foregroundColor(CyberColor.textSecond)
+                } else {
+                    ForEach(Array(vm.circuitBreakers.enumerated()), id: \.offset) { _, cb in
+                        CircuitBreakerRow(cb: cb)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct CircuitBreakerRow: View {
+    let cb: [String: Any]
+
+    private var name: String { cb["name"] as? String ?? "unknown" }
+    private var state: String { cb["state"] as? String ?? "closed" }
+    private var failureCount: Int { cb["failure_count"] as? Int ?? 0 }
+    private var totalTrips: Int { cb["total_trips"] as? Int ?? 0 }
+    private var threshold: Int { cb["failure_threshold"] as? Int ?? 5 }
+
+    private var stateColor: Color {
+        switch state {
+        case "closed": return CyberColor.green
+        case "open": return CyberColor.red
+        case "half_open": return CyberColor.orange
+        default: return CyberColor.textSecond
+        }
+    }
+
+    private var stateLabel: String {
+        switch state {
+        case "closed": return "正常"
+        case "open": return "熔断"
+        case "half_open": return "恢复中"
+        default: return state.uppercased()
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            NeonDot(color: stateColor, size: 6)
+            Text(name)
+                .font(CyberFont.mono(size: 10))
+                .foregroundColor(CyberColor.textPrimary)
+            Text(stateLabel)
+                .font(CyberFont.mono(size: 9, weight: .bold))
+                .foregroundColor(stateColor)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(stateColor.opacity(0.15))
+                .cornerRadius(3)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("失败 \(failureCount)/\(threshold)")
+                    .font(CyberFont.mono(size: 9))
+                    .foregroundColor(failureCount > 0 ? CyberColor.orange : CyberColor.textSecond)
+                Text("熔断 \(totalTrips) 次")
+                    .font(CyberFont.mono(size: 9))
+                    .foregroundColor(totalTrips > 0 ? CyberColor.red : CyberColor.textSecond)
             }
         }
     }

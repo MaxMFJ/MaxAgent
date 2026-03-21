@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import socket
+import threading
 import time
 import uuid
 from typing import Any, Dict, Optional
@@ -1062,6 +1063,7 @@ class LocalDuckManager:
     """管理所有本地 Duck 实例（单例）"""
 
     _instance: Optional["LocalDuckManager"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._workers: Dict[str, LocalDuckWorker] = {}
@@ -1069,7 +1071,9 @@ class LocalDuckManager:
     @classmethod
     def get_instance(cls) -> "LocalDuckManager":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     async def create_local_duck(

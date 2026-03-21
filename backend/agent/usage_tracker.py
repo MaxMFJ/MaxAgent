@@ -44,6 +44,21 @@ class UsageTracker:
         # Sliding windows for real-time RPM/TPM
         self._rpm_window: List[float] = []
         self._tpm_window: List[tuple] = []
+        # Rate limits (configurable via env)
+        self.rpm_limit: int = int(os.environ.get("MACAGENT_RPM_LIMIT", "60"))
+        self.tpm_limit: int = int(os.environ.get("MACAGENT_TPM_LIMIT", "200000"))
+
+    def check_rate_limit(self) -> Optional[str]:
+        """Pre-call rate check. Returns error message if limit exceeded, None if OK."""
+        now = time.time()
+        cutoff = now - 60  # 1 分钟窗口
+        rpm = sum(1 for t in self._rpm_window if t > cutoff)
+        tpm = sum(tk for t, tk in self._tpm_window if t > cutoff)
+        if rpm >= self.rpm_limit:
+            return f"请求频率超限: {rpm}/{self.rpm_limit} RPM，请稍后重试"
+        if tpm >= self.tpm_limit:
+            return f"Token 用量超限: {tpm}/{self.tpm_limit} TPM，请稍后重试"
+        return None
 
     # ------------------------------------------------------------------
     # Recording

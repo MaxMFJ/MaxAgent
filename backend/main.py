@@ -549,7 +549,33 @@ async def lifespan(app: FastAPI):
             logger.warning("[Duck] Failed to start duck client: %s", e)
     # ─────────────────────────────────────────────────────────────────────────
 
+    # 启动数据目录定期清理
+    try:
+        from services.data_cleanup import start_cleanup_loop as _start_data_cleanup
+        _start_data_cleanup()
+    except Exception as e:
+        logger.warning(f"Data cleanup loop failed to start: {e}")
+
+    # 启动定时任务调度器
+    try:
+        from services.scheduled_task_service import ScheduledTaskService
+        await ScheduledTaskService.get_instance().start()
+    except Exception as e:
+        logger.warning(f"Scheduled task service failed to start: {e}")
+
     yield
+    # Graceful shutdown: stop scheduled tasks
+    try:
+        from services.scheduled_task_service import ScheduledTaskService as _STS
+        await _STS.get_instance().stop()
+    except Exception:
+        pass
+    # Graceful shutdown: stop data cleanup
+    try:
+        from services.data_cleanup import stop_cleanup_loop as _stop_data_cleanup
+        _stop_data_cleanup()
+    except Exception:
+        pass
     # Graceful shutdown: persist final metrics snapshot
     try:
         from services.runtime_metrics import metrics as rt_metrics

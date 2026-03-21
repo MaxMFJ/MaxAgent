@@ -1,8 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 15461, "success": true, "ts": 1773458686.1873548}
-{"iteration": 1, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773458686.753655}
-{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 4563, "success": true, "ts": 1773458693.3207512}
-{"iteration": 2, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773458693.905096}
-{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 12675, "success": true, "ts": 1773458709.075041}
-{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 2599, "success": true, "error": null, "ts": 1773458712.237157}
-{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 4785, "success": true, "ts": 1773458719.0259252}
-{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 969, "success": true, "error": null, "ts": 1773458720.595924}

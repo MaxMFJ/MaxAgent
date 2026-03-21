@@ -6,6 +6,7 @@ Duck Registry — 分身 Agent 注册中心
 import asyncio
 import json
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -41,6 +42,7 @@ class DuckRegistry:
     """Duck 注册中心 (单例)"""
 
     _instance: Optional["DuckRegistry"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._ducks: Dict[str, DuckInfo] = {}
@@ -50,7 +52,9 @@ class DuckRegistry:
     @classmethod
     def get_instance(cls) -> "DuckRegistry":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ─── 初始化 ──────────────────────────────────────

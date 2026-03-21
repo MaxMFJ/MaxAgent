@@ -177,6 +177,14 @@ class AgentViewModel: ObservableObject {
     @Published var contextData: [String: Any] = [:]
     @Published var isLoadingContext: Bool = false
 
+    // MARK: - Scheduled Tasks
+    @Published var scheduledTasks: [[String: Any]] = []
+    @Published var isLoadingScheduledTasks: Bool = false
+
+    // MARK: - Circuit Breakers
+    @Published var circuitBreakers: [[String: Any]] = []
+    @Published var isLoadingCircuitBreakers: Bool = false
+
     // MARK: - Chow Duck
     @AppStorage("chowDuckEnabled") var chowDuckEnabled: Bool = false
     @Published var duckList: [[String: Any]] = []
@@ -2028,6 +2036,71 @@ class AgentViewModel: ObservableObject {
 
     func eggDownloadURL(eggId: String) -> URL? {
         backendService.eggDownloadURL(eggId: eggId)
+    }
+
+    // MARK: - Scheduled Tasks
+
+    func loadScheduledTasks() async {
+        isLoadingScheduledTasks = true
+        defer { isLoadingScheduledTasks = false }
+        do {
+            scheduledTasks = try await backendService.fetchScheduledTasks()
+        } catch {
+            // 静默失败
+        }
+    }
+
+    func createScheduledTask(description: String, triggerType: String, triggerConfig: [String: Any], sessionId: String = "") async {
+        do {
+            _ = try await backendService.createScheduledTask(
+                description: description,
+                triggerType: triggerType,
+                triggerConfig: triggerConfig,
+                sessionId: sessionId
+            )
+            await loadScheduledTasks()
+        } catch {
+            errorMessage = "创建定时任务失败: \(error.localizedDescription)"
+        }
+    }
+
+    func pauseScheduledTask(taskId: String) async {
+        do {
+            try await backendService.pauseScheduledTask(taskId: taskId)
+            await loadScheduledTasks()
+        } catch {
+            errorMessage = "暂停定时任务失败: \(error.localizedDescription)"
+        }
+    }
+
+    func resumeScheduledTask(taskId: String) async {
+        do {
+            try await backendService.resumeScheduledTask(taskId: taskId)
+            await loadScheduledTasks()
+        } catch {
+            errorMessage = "恢复定时任务失败: \(error.localizedDescription)"
+        }
+    }
+
+    func deleteScheduledTask(taskId: String) async {
+        do {
+            try await backendService.deleteScheduledTask(taskId: taskId)
+            await loadScheduledTasks()
+        } catch {
+            errorMessage = "删除定时任务失败: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Circuit Breakers
+
+    func loadCircuitBreakers() async {
+        isLoadingCircuitBreakers = true
+        defer { isLoadingCircuitBreakers = false }
+        do {
+            circuitBreakers = try await backendService.fetchCircuitBreakers()
+        } catch {
+            // 静默失败
+        }
     }
 
 }

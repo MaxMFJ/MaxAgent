@@ -367,7 +367,7 @@ end tell
                                 "size": {"width": w, "height": h},
                                 "center": {"x": x + w//2, "y": y + h//2}
                             })
-                        except:
+                        except Exception:
                             pass
                 
                 if elements:

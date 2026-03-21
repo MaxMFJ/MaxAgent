@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import shutil
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -256,10 +257,13 @@ class DuckSandbox:
 # ─── 单例 ──────────────────────────────────────────────
 
 _sandbox_instance: Optional[DuckSandbox] = None
+_sandbox_lock = threading.Lock()
 
 
 def get_duck_sandbox() -> DuckSandbox:
     global _sandbox_instance
     if _sandbox_instance is None:
-        _sandbox_instance = DuckSandbox()
+        with _sandbox_lock:
+            if _sandbox_instance is None:
+                _sandbox_instance = DuckSandbox()
     return _sandbox_instance

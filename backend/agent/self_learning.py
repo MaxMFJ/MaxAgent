@@ -47,7 +47,7 @@ class SelfLearningEngine:
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         return default
     

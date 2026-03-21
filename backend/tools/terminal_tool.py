@@ -63,17 +63,27 @@ class TerminalTool(BaseTool):
     requires_confirmation = True
     
     DANGEROUS_PATTERNS = [
-        "rm -rf /",
-        "rm -rf /*",
-        "rm -rf ~",
-        "mkfs",
-        "dd if=",
-        ":(){:|:&};:",
-        "chmod -R 777 /",
-        "chown -R",
-        "> /dev/sda",
-        "mv /* ",
+        r"rm\s+(-\w+\s+)*-r\w*\s+/(\s|$|\*|&)",   # rm -rf / 及变体
+        r"rm\s+(-\w+\s+)*-r\w*\s+~(\s|$|/\*|&)",   # rm -rf ~
+        r"\bmkfs\b",
+        r"\bdd\s+if=",
+        r":\(\)\{\s*:\|\s*:&\s*\};:",               # fork bomb
+        r"chmod\s+(-\w+\s+)*777\s+/",
+        r"chown\s+(-\w+\s+)*-R\s+\w+\s+/(\s|$)",
+        r">\s*/dev/sd[a-z]",
+        r"\bmv\s+/\*",
+        r"\bcurl\b.*\|\s*(ba)?sh",                   # curl | sh
+        r"\bwget\b.*\|\s*(ba)?sh",                   # wget | sh
+        r"\bsudo\s+rm\b",
+        r"\bshutdown\b",
+        r"\breboot\b",
+        r"\bhalt\b",
+        r"\blaunchctl\s+unload\b.*com\.apple",       # 系统服务卸载
+        r"\bdiskutil\s+(erase|unmount)\b",
     ]
+
+    # 编译正则（类变量，只编译一次）
+    _DANGEROUS_RE = [re.compile(p, re.IGNORECASE) for p in DANGEROUS_PATTERNS]
     
     async def execute(self, **kwargs) -> ToolResult:
         command = kwargs.get("command", "").strip()
@@ -185,10 +195,9 @@ class TerminalTool(BaseTool):
         )
     
     def _is_dangerous(self, command: str) -> bool:
-        """Check if command matches dangerous patterns"""
-        command_lower = command.lower()
-        for pattern in self.DANGEROUS_PATTERNS:
-            if pattern.lower() in command_lower:
+        """Check if command matches dangerous patterns (regex-based)"""
+        for pattern in self._DANGEROUS_RE:
+            if pattern.search(command):
                 return True
         return False
 

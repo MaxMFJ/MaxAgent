@@ -1149,7 +1149,7 @@ end tell
                 with open(save_path, "rb") as f:
                     import base64
                     image_base64 = base64.b64encode(f.read()).decode("utf-8")
-            except:
+            except Exception:
                 pass
             
             result_data = {
@@ -1197,7 +1197,7 @@ print(0)
             window_id = int(stdout.decode().strip())
             if window_id > 0:
                 return window_id
-        except:
+        except Exception:
             pass
         return None
     
@@ -1227,7 +1227,7 @@ end tell
                 parts = output.split(",")
                 if len(parts) == 4:
                     return tuple(int(p.strip()) for p in parts)
-        except:
+        except Exception:
             pass
         return None
     
@@ -1262,7 +1262,7 @@ end tell
                 with open(save_path, "rb") as f:
                     import base64
                     image_base64 = base64.b64encode(f.read()).decode("utf-8")
-            except:
+            except Exception:
                 pass
             
             result_data = {

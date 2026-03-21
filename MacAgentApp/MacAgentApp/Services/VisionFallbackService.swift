@@ -164,36 +164,3 @@ struct TextMatch: Codable {
     let rect: CGRect
     let center: CGPoint
 }
-
-// 使 CGRect 和 CGPoint 符合 Codable（系统类型需要扩展）
-extension CGRect: @retroactive Codable {
-    enum CodingKeys: String, CodingKey { case x, y, width, height }
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(x: try c.decode(CGFloat.self, forKey: .x),
-                  y: try c.decode(CGFloat.self, forKey: .y),
-                  width: try c.decode(CGFloat.self, forKey: .width),
-                  height: try c.decode(CGFloat.self, forKey: .height))
-    }
-    public func encode(to encoder: Encoder) throws {
-        var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(origin.x, forKey: .x)
-        try c.encode(origin.y, forKey: .y)
-        try c.encode(size.width, forKey: .width)
-        try c.encode(size.height, forKey: .height)
-    }
-}
-
-extension CGPoint: @retroactive Codable {
-    enum CodingKeys: String, CodingKey { case x, y }
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(x: try c.decode(CGFloat.self, forKey: .x),
-                  y: try c.decode(CGFloat.self, forKey: .y))
-    }
-    public func encode(to encoder: Encoder) throws {
-        var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(x, forKey: .x)
-        try c.encode(y, forKey: .y)
-    }
-}

@@ -368,8 +368,9 @@ class TaskPersistenceManager:
         
         # 启动超时计时器
         task_id = checkpoint.task_id
-        if task_id in self._orphan_timers:
-            self._orphan_timers[task_id].cancel()
+        old_timer = self._orphan_timers.pop(task_id, None)
+        if old_timer:
+            old_timer.cancel()
         
         async def orphan_timeout_handler():
             try:
@@ -385,8 +386,10 @@ class TaskPersistenceManager:
             except Exception as e:
                 logger.warning(f"Orphan timeout handler error for {task_id}: {e}")
             finally:
-                # 清理定时器引用，防止内存泄漏
-                self._orphan_timers.pop(task_id, None)
+                # 仅在当前 task 仍是注册的那个时才清理，避免 race
+                current = self._orphan_timers.get(task_id)
+                if current is asyncio.current_task():
+                    self._orphan_timers.pop(task_id, None)
         
         self._orphan_timers[task_id] = asyncio.create_task(orphan_timeout_handler())
         logger.info(f"Orphan timer started for task {task_id}, timeout={self.orphan_timeout}s")

@@ -7,6 +7,7 @@ Duck Message Relay — Duck 间消息中转
 from __future__ import annotations
 
 import logging
+import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -20,6 +21,7 @@ class DuckMessageRelay:
     """Duck 间消息中转服务（单例）"""
 
     _instance: Optional["DuckMessageRelay"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         self._message_log: List[Dict[str, Any]] = []
@@ -28,7 +30,9 @@ class DuckMessageRelay:
     @classmethod
     def get_instance(cls) -> "DuckMessageRelay":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     async def relay_message(

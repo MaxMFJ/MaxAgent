@@ -10,6 +10,7 @@ import platform
 import smtplib
 import socket
 import ssl
+import threading
 import time
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
@@ -38,6 +39,7 @@ class TunnelLifecycleService:
     """Cloudflare Tunnel 全生命周期管理"""
 
     _instance: Optional["TunnelLifecycleService"] = None
+    _instance_lock = threading.Lock()
 
     def __init__(self):
         # 状态
@@ -64,7 +66,9 @@ class TunnelLifecycleService:
     @classmethod
     def get_instance(cls) -> "TunnelLifecycleService":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
 
     # ── 公共 API ────────────────────────────────

@@ -2,19 +2,30 @@
 LLM 配置持久化
 将用户通过 Mac App 配置的 API key / provider / model 保存到磁盘，
 uvicorn reload 后自动恢复，避免丢失运行时配置。
+API Key 优先使用 macOS Keychain 安全存储，JSON 中仅保存掩码占位符。
 """
 import json
 import logging
 import os
+import tempfile
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 from paths import DATA_DIR
 
+try:
+    from config.keychain_helper import keychain_store, keychain_load
+except ImportError:
+    keychain_store = lambda account, secret: False
+    keychain_load = lambda account: None
+
 CONFIG_FILE = os.path.join(DATA_DIR, "llm_config.json")
-# 与 app_state.CLOUD_PROVIDERS 一致，用于持久化“远程回退”配置（当前为本地时，选“远程”用此配置）
+# 与 app_state.CLOUD_PROVIDERS 一致，用于持久化"远程回退"配置（当前为本地时，选"远程"用此配置）
 CLOUD_PROVIDERS = {"deepseek", "openai", "newapi", "gemini", "anthropic"}
+
+_KEYCHAIN_ACCOUNT = "api_key"
+_KEYCHAIN_MASK = "***keychain***"
 
 
 def load_llm_config() -> dict:
@@ -41,7 +52,11 @@ def save_llm_config(
     if provider is not None:
         cfg["provider"] = provider
     if api_key is not None:
-        cfg["api_key"] = api_key
+        # 尝试存入 Keychain，成功则 JSON 中只存掩码
+        if keychain_store(_KEYCHAIN_ACCOUNT, api_key):
+            cfg["api_key"] = _KEYCHAIN_MASK
+        else:
+            cfg["api_key"] = api_key
     if base_url is not None:
         cfg["base_url"] = base_url
     if model is not None:
@@ -67,18 +82,34 @@ def save_llm_config(
         cfg["remote_fallback_provider"] = v if v in CLOUD_PROVIDERS else ""
     os.makedirs(DATA_DIR, exist_ok=True)
     try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        # 原子写入：先写临时文件再 rename，防止并发写入导致数据损坏
+        fd, tmp_path = tempfile.mkstemp(dir=DATA_DIR, suffix=".tmp", prefix="llm_config_")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_path, CONFIG_FILE)
+        except Exception:
+            # 清理临时文件
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
     except Exception as e:
         logger.warning(f"Failed to save llm_config: {e}")
     return cfg
 
 
 def get_persisted_api_key() -> Optional[str]:
-    """优先返回持久化的 api_key，其次 env var"""
+    """优先返回 Keychain 中的 api_key，其次 JSON 持久化，最后 env var"""
+    # 1. 尝试 Keychain
+    kc_key = keychain_load(_KEYCHAIN_ACCOUNT)
+    if kc_key:
+        return kc_key
+    # 2. JSON 持久化
     cfg = load_llm_config()
     key = cfg.get("api_key", "").strip()
-    if key:
+    if key and key != _KEYCHAIN_MASK:
         return key
     return os.getenv("DEEPSEEK_API_KEY")
 

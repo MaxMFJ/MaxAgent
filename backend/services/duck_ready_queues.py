@@ -16,12 +16,55 @@ import asyncio
 import json
 import logging
 import time
+import itertools
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from services.duck_protocol import DuckStatus, DuckType, TaskStatus
 
 logger = logging.getLogger(__name__)
+
+
+# ─── Priority Queue Wrapper ──────────────────────────
+class PriorityReadyQueue:
+    """asyncio.PriorityQueue 的包装，自动用 (priority, seq, item) 排序。
+    priority 越小越优先（0 = 最高）。对外 API 与 asyncio.Queue 兼容。"""
+
+    _counter = itertools.count()
+
+    def __init__(self, maxsize: int = 0):
+        self._q: asyncio.PriorityQueue = asyncio.PriorityQueue(maxsize=maxsize)
+
+    def put_nowait(self, item: dict):
+        priority = item.get("priority", 0)
+        seq = next(self._counter)
+        self._q.put_nowait((priority, seq, item))
+
+    async def put(self, item: dict):
+        priority = item.get("priority", 0)
+        seq = next(self._counter)
+        await self._q.put((priority, seq, item))
+
+    def get_nowait(self) -> dict:
+        _, _, item = self._q.get_nowait()
+        return item
+
+    async def get(self) -> dict:
+        _, _, item = await self._q.get()
+        return item
+
+    def qsize(self) -> int:
+        return self._q.qsize()
+
+    def empty(self) -> bool:
+        return self._q.empty()
+
+    def full(self) -> bool:
+        return self._q.full()
+
+    @property
+    def maxsize(self) -> int:
+        return self._q.maxsize
 
 # ─── Configuration ───────────────────────────────────
 DEFAULT_QUEUE_MAXSIZE = 100
@@ -48,7 +91,7 @@ _SNAPSHOT_FILE = _SNAPSHOT_DIR / "ready_queue_snapshot.json"
 
 
 # ─── Typed Ready Queues ──────────────────────────────
-_ready_queues: Dict[str, asyncio.Queue] = {}
+_ready_queues: Dict[str, PriorityReadyQueue] = {}
 _overflow_pending: Dict[str, List[dict]] = {}  # backpressure: 溢出暂存
 _queue_lock = asyncio.Lock()
 
@@ -96,13 +139,13 @@ def is_system_overloaded() -> bool:
     return compute_pressure_score() > PRESSURE_THRESHOLD
 
 
-async def get_ready_queue(duck_type_value: str) -> asyncio.Queue:
-    """获取或懒创建某类型的 bounded ready queue"""
+async def get_ready_queue(duck_type_value: str) -> PriorityReadyQueue:
+    """获取或懒创建某类型的 bounded ready queue（按优先级排序）"""
     if duck_type_value not in _ready_queues:
         async with _queue_lock:
             if duck_type_value not in _ready_queues:
                 maxsize = ready_queue_config.get(duck_type_value, DEFAULT_QUEUE_MAXSIZE)
-                _ready_queues[duck_type_value] = asyncio.Queue(maxsize=maxsize)
+                _ready_queues[duck_type_value] = PriorityReadyQueue(maxsize=maxsize)
                 _overflow_pending[duck_type_value] = []
                 logger.info(
                     f"[ready_queue] Created bounded queue for '{duck_type_value}' "
