@@ -38,5 +38,25 @@
     "category": "evolution",
     "timestamp": "2026-03-01T01:10:11.513193",
     "read": true
+  },
+  {
+    "id": "55aa9bc1-e4f7-44c8-8420-9238d9e85561",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-18T14:51:46.657811",
+    "read": true
+  },
+  {
+    "id": "3e44fcd2-09e0-4664-aeec-1caff7ec7912",
+    "level": "warning",
+    "title": "启动检查: 2 条未分类错误",
+    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
+    "source": "log_analyzer",
+    "category": "system_error",
+    "timestamp": "2026-03-18T16:58:53.446681",
+    "read": true
   }
 ]

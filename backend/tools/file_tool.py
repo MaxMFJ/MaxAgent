@@ -102,6 +102,13 @@ class FileTool(BaseTool):
                 limit = int(kwargs.get("limit", 0) or 15000)
                 if limit <= 0:
                     limit = 15000
+                # Duck 模式强制限制 read limit，防止上下文爆炸
+                try:
+                    from app_state import get_duck_context
+                    if get_duck_context() is not None:
+                        limit = min(limit, 4000)
+                except ImportError:
+                    pass
                 return await self._read(path, offset=offset, limit=limit)
             elif action == "write":
                 content = kwargs.get("content", "")
@@ -153,7 +160,23 @@ class FileTool(BaseTool):
             is_duck = get_duck_context() is not None
         except ImportError:
             pass
-        if is_duck and file_size > BIG_FILE_THRESHOLD and offset == 0:
+        if is_duck and file_size > BIG_FILE_THRESHOLD:
+            # 有 offset 时返回精确分段（已被上面 limit=4000 限制）
+            if offset > 0:
+                with open(path, "r", encoding="utf-8", errors="replace") as f:
+                    full_content = f.read()
+                total_size = len(full_content)
+                segment = full_content[offset : offset + limit]
+                truncated = offset + limit < total_size
+                hint = (
+                    f"\n\n[分段提示] 共 {total_size} 字符，已读 {offset}–{offset + len(segment)}。"
+                    f"\n⚠️ Duck模式下请避免反复分段读取整个大文件，改用 create_and_run_script 处理。"
+                ) if truncated else ""
+                return ToolResult(
+                    success=True,
+                    data={"path": path, "content": segment + hint, "size": len(segment), "total_size": total_size, "offset": offset, "truncated": truncated},
+                )
+            # offset=0: 摘要模式
             with open(path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
             total_lines = len(lines)
@@ -180,7 +203,7 @@ class FileTool(BaseTool):
                 f"\n\n⚠️ 【禁止全量读取】你已获得文件结构摘要和首尾内容，禁止再次从 offset=0 读取全文。"
                 f"\n✅ 【正确做法】使用 create_and_run_script 编写 Python 脚本来修改此文件。"
                 f"脚本中 open('{path}') 读全文，用字符串替换/正则修改后写回。"
-                f"\n如只需读取某段代码，用 read offset=N limit=M 精确读取。"
+                f"\n如只需读取某段代码，用 read offset=N limit=M 精确读取（每次最多4000字符）。"
             )
             return ToolResult(
                 success=True,

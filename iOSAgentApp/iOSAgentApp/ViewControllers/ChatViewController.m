@@ -61,6 +61,7 @@ static const NSTimeInterval kStreamingThrottleInterval = 0.18; // 180ms，降低
 static const NSInteger kStreamingHeightUpdateDivisor = 6;      // 每 6 次节流更新才刷新行高（约 1s）
 
 static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
+static NSString * const kSavedGroupChatsKey = @"SavedGroupChats_v1";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -68,6 +69,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     // 初始化消息去重 set
     self.displayedMessageIds = [NSMutableSet set];
     self.groupChats = [NSMutableArray array];
+    [self loadGroupChats];
 
     // 深空黑主背景
     self.view.backgroundColor = TechTheme.backgroundPrimary;
@@ -84,6 +86,50 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     
     // 检查是否有未完成的 streaming 消息需要恢复
     [self checkPendingStreamingMessage];
+}
+
+// MARK: - Group Chat Persistence
+
+- (void)loadGroupChats {
+    NSData *data = [[NSUserDefaults standardUserDefaults] objectForKey:kSavedGroupChatsKey];
+    if (![data isKindOfClass:[NSData class]] || data.length == 0) { return; }
+
+    NSError *error = nil;
+    id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+    if (error || ![json isKindOfClass:[NSArray class]]) {
+        NSLog(@"[GroupChat] Failed to load persisted group chats: %@", error);
+        return;
+    }
+
+    NSMutableArray<GroupChat *> *loaded = [NSMutableArray array];
+    for (id item in (NSArray *)json) {
+        if ([item isKindOfClass:[NSDictionary class]]) {
+            GroupChat *g = [GroupChat groupChatWithDictionary:(NSDictionary *)item];
+            if (g.groupId.length > 0) { [loaded addObject:g]; }
+        }
+    }
+    if (loaded.count > 0) {
+        self.groupChats = loaded;
+        NSLog(@"[GroupChat] Restored %lu group chats from local store", (unsigned long)loaded.count);
+    }
+}
+
+- (void)saveGroupChats {
+    NSMutableArray *arr = [NSMutableArray arrayWithCapacity:self.groupChats.count];
+    for (GroupChat *g in self.groupChats) {
+        if ([g respondsToSelector:@selector(toDictionary)]) {
+            [arr addObject:[g toDictionary]];
+        }
+    }
+
+    NSError *error = nil;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:arr options:0 error:&error];
+    if (error || data.length == 0) {
+        NSLog(@"[GroupChat] Failed to serialize group chats: %@", error);
+        return;
+    }
+    [[NSUserDefaults standardUserDefaults] setObject:data forKey:kSavedGroupChatsKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)checkPendingStreamingMessage {
@@ -433,6 +479,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
 - (void)showConversationList {
     ConversationListViewController *listVC = [[ConversationListViewController alloc] init];
     listVC.delegate = self;
+    listVC.groupChats = [self.groupChats copy];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:listVC];
     [self presentViewController:nav animated:YES completion:nil];
 }
@@ -460,6 +507,38 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     if ([conversation.conversationId isEqualToString:[ConversationManager sharedManager].currentConversation.conversationId]) {
         [self.tableView reloadData];
         [self updateTitle];
+    }
+}
+
+- (void)didSelectGroupChat:(GroupChat *)groupChat {
+    // 从当前持久化列表里找到同一个 group（确保后续消息追加也写回同一个对象）
+    GroupChat *target = nil;
+    for (GroupChat *g in self.groupChats) {
+        if ([g.groupId isEqualToString:groupChat.groupId]) { target = g; break; }
+    }
+    if (!target) { target = groupChat; }
+
+    GroupChatViewController *vc = [[GroupChatViewController alloc] init];
+    vc.groupChat = target;
+    vc.delegate = self;
+    self.activeGroupChatVC = vc;
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)didDeleteGroupChat:(GroupChat *)groupChat {
+    if (!groupChat.groupId) { return; }
+    NSInteger idx = NSNotFound;
+    for (NSInteger i = 0; i < self.groupChats.count; i++) {
+        if ([self.groupChats[i].groupId isEqualToString:groupChat.groupId]) { idx = i; break; }
+    }
+    if (idx != NSNotFound) {
+        [self.groupChats removeObjectAtIndex:idx];
+        // 若正在打开的群聊被删除，自动返回
+        if (self.activeGroupChatVC && [self.activeGroupChatVC.groupChat.groupId isEqualToString:groupChat.groupId]) {
+            self.activeGroupChatVC = nil;
+            [self.navigationController popViewControllerAnimated:YES];
+        }
+        [self saveGroupChats];
     }
 }
 
@@ -1680,6 +1759,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
     dispatch_async(dispatch_get_main_queue(), ^{
         GroupChat *group = [GroupChat groupChatWithDictionary:groupData];
         [self.groupChats insertObject:group atIndex:0];
+        [self saveGroupChats];
 
         // 自动打开群聊视图
         GroupChatViewController *vc = [[GroupChatViewController alloc] init];
@@ -1701,6 +1781,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 } else {
                     [g addMessage:msg];
                 }
+                [self saveGroupChats];
                 break;
             }
         }
@@ -1717,6 +1798,7 @@ static NSString * const kUserDefaultsTTSEnabled = @"ttsEnabled";
                 if (self.activeGroupChatVC && [self.activeGroupChatVC.groupChat.groupId isEqualToString:groupId]) {
                     [self.activeGroupChatVC updateStatus:st summary:ts];
                 }
+                [self saveGroupChats];
                 break;
             }
         }

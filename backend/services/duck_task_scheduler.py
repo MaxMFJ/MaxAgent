@@ -64,6 +64,11 @@ class DuckTaskScheduler:
         self._task_sessions: Dict[str, str] = {}           # task_id → source_session_id（委派来源会话，用于完成后主动通知）
         self._timeout_handles: Dict[str, asyncio.Task] = {}
         self._lock = asyncio.Lock()
+        self._watchdog_task: Optional[asyncio.Task] = None
+        self._watchdog_interval: int = 20  # 秒
+        self._lease_timeout: int = 120     # Worker lease 超时（秒）
+        self._lease_scan_interval: int = 10  # lease 扫描间隔（秒）
+        self._lease_scanner_task: Optional[asyncio.Task] = None
 
     @classmethod
     def get_instance(cls) -> "DuckTaskScheduler":
@@ -76,6 +81,124 @@ class DuckTaskScheduler:
     async def initialize(self):
         TASK_STORE_DIR.mkdir(parents=True, exist_ok=True)
         self._load_from_disk()
+        self._start_watchdog()
+        self._start_lease_scanner()
+        self._register_duck_available_hook()
+
+    def _start_watchdog(self):
+        """启动后台 watchdog 定时器，每 N 秒 reschedule_pending"""
+        if self._watchdog_task and not self._watchdog_task.done():
+            return
+
+        async def _watchdog_loop():
+            while True:
+                await asyncio.sleep(self._watchdog_interval)
+                try:
+                    pending = [t for t in self._tasks.values() if t.status == TaskStatus.PENDING]
+                    if pending:
+                        logger.info(f"[watchdog] {len(pending)} pending tasks, triggering reschedule")
+                        await self.reschedule_pending()
+                except Exception as e:
+                    logger.warning(f"[watchdog] reschedule error: {e}")
+
+        self._watchdog_task = asyncio.create_task(_watchdog_loop())
+        logger.info(f"[scheduler] Pending watchdog started (interval={self._watchdog_interval}s)")
+
+    def _register_duck_available_hook(self):
+        """订阅 Duck 可用事件，立即触发 reschedule_pending"""
+        from services.duck_registry import on_duck_available
+
+        async def _on_duck_available(duck_id: str):
+            logger.info(f"[scheduler] Duck {duck_id} now available, triggering reschedule")
+            await self.reschedule_pending()
+
+        on_duck_available(_on_duck_available)
+
+    def _start_lease_scanner(self):
+        """启动 worker lease 超时扫描器（僵尸任务保护）"""
+        if self._lease_scanner_task and not self._lease_scanner_task.done():
+            return
+
+        async def _lease_scan_loop():
+            while True:
+                await asyncio.sleep(self._lease_scan_interval)
+                try:
+                    await self._check_lease_timeouts()
+                except Exception as e:
+                    logger.warning(f"[lease_scanner] error: {e}")
+
+        self._lease_scanner_task = asyncio.create_task(_lease_scan_loop())
+        logger.info(f"[scheduler] Lease scanner started (timeout={self._lease_timeout}s, scan_interval={self._lease_scan_interval}s)")
+
+    async def _check_lease_timeouts(self):
+        """扫描 ASSIGNED/RUNNING 任务，检测 lease 过期（无活跃信号）"""
+        now = time.time()
+        expired = []
+
+        for task in self._tasks.values():
+            if task.status not in (TaskStatus.ASSIGNED, TaskStatus.RUNNING):
+                continue
+            # lease 基准：最后活跃时间 > 分配时间 > 创建时间
+            lease_base = task.last_activity or task.assigned_at or task.created_at
+            if now - lease_base > self._lease_timeout:
+                expired.append(task)
+
+        for task in expired:
+            logger.warning(
+                f"[lease_expired] Task {task.task_id} on duck {task.assigned_duck_id} "
+                f"no activity for >{self._lease_timeout}s, re-queuing"
+            )
+            # Metrics
+            try:
+                from services.runtime_metrics import metrics
+                metrics.record_lease_expired()
+            except Exception:
+                pass
+
+            # Journal: LEASE_EXPIRED
+            try:
+                from services.runtime_journal import get_journal, LEASE_EXPIRED
+                await get_journal().append(LEASE_EXPIRED, task_id=task.task_id,
+                                           duck_id=task.assigned_duck_id or "")
+            except Exception:
+                pass
+
+            # v2.3: Per-duck lease expired tracking
+            if task.assigned_duck_id:
+                try:
+                    from services.runtime_metrics import metrics as rt_m
+                    rt_m.record_duck_lease_expired(task.assigned_duck_id)
+                except Exception:
+                    pass
+
+            # 释放 Duck
+            if task.assigned_duck_id:
+                registry = DuckRegistry.get_instance()
+                await registry.set_current_task(task.assigned_duck_id, None)
+
+            # 取消超时 watcher
+            handle = self._timeout_handles.pop(task.task_id, None)
+            if handle:
+                handle.cancel()
+
+            # 检查重试次数
+            if task.retry_count < task.max_retries:
+                task.retry_count += 1
+                task.status = TaskStatus.PENDING
+                task.assigned_duck_id = None
+                task.assigned_at = None
+                task.last_activity = None
+                self._persist_task(task)
+                logger.info(
+                    f"[lease_expired] Task {task.task_id} re-queued "
+                    f"(attempt {task.retry_count}/{task.max_retries})"
+                )
+            else:
+                logger.warning(
+                    f"[retry_budget_exhausted] task={task.task_id} "
+                    f"retries={task.retry_count}/{task.max_retries} (lease_expired) → FAILED_FINAL"
+                )
+                await self._fail_task(task, f"Lease expired after {task.retry_count} retries")
 
     def _load_from_disk(self):
         """加载未完成的任务，重启后 ASSIGNED/RUNNING 重置为 PENDING"""
@@ -83,9 +206,14 @@ class DuckTaskScheduler:
             try:
                 raw = json.loads(fpath.read_text(encoding="utf-8"))
                 task = DuckTask(**raw)
-                if task.status in (TaskStatus.PENDING, TaskStatus.ASSIGNED, TaskStatus.RUNNING):
+                if task.status in (
+                    TaskStatus.PENDING,
+                    TaskStatus.ENQUEUED,
+                    TaskStatus.ASSIGNED,
+                    TaskStatus.RUNNING,
+                ):
                     # 重启后连接已断开，已分配任务重置为待分配
-                    if task.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING):
+                    if task.status in (TaskStatus.ENQUEUED, TaskStatus.ASSIGNED, TaskStatus.RUNNING):
                         task.status = TaskStatus.PENDING
                         task.assigned_duck_id = None
                         self._persist_task(task)
@@ -121,6 +249,7 @@ class DuckTaskScheduler:
         task = DuckTask(
             description=description,
             task_type=task_type,
+            target_duck_type=target_duck_type,
             params=params or {},
             priority=priority,
             timeout=timeout,
@@ -135,6 +264,14 @@ class DuckTaskScheduler:
             self._persist_task(task)
 
         logger.info(f"Task submitted: {task.task_id} strategy={strategy}")
+
+        # Journal: TASK_CREATED
+        try:
+            from services.runtime_journal import get_journal, TASK_CREATED
+            await get_journal().append(TASK_CREATED, task_id=task.task_id,
+                                       extra={"strategy": strategy, "type": task.task_type})
+        except Exception:
+            pass
 
         # 调度
         if strategy == ScheduleStrategy.DIRECT:
@@ -157,12 +294,18 @@ class DuckTaskScheduler:
 
     async def _schedule_single(self, task: DuckTask, duck_type: Optional[DuckType]):
         """从可用池中选一个最合适的 Duck"""
+        duck_type = duck_type or task.target_duck_type
+        schedule_start = time.time()
         registry = DuckRegistry.get_instance()
         await registry.initialize()
         candidates = await registry.list_available(duck_type)
 
         if not candidates:
-            logger.warning(f"No available duck for task {task.task_id}, staying PENDING")
+            pending_time = time.time() - task.created_at
+            logger.warning(
+                f"No available duck for task {task.task_id}, staying PENDING "
+                f"(pending_time={pending_time:.1f}s, watchdog/duck_available will retry)"
+            )
             # 通知用户任务正在排队等待
             session_id = self._task_sessions.get(task.task_id)
             if session_id:
@@ -171,14 +314,22 @@ class DuckTaskScheduler:
                     session_id, task.task_id,
                     f"⏳ 当前没有可用的 Duck{type_hint}，任务已排队等待。Duck 上线后会自动分配执行。"
                 )
-            return  # 保持 PENDING, 等 Duck 上线后重新分配
+            return  # 保持 PENDING, watchdog + duck_available 事件会自动重试
 
         # 简单选择: 完成任务数最少的 (负载均衡)
         best = min(candidates, key=lambda d: d.completed_tasks + d.failed_tasks)
+        scheduling_latency = time.time() - schedule_start
+        pending_time = time.time() - task.created_at
+        logger.info(
+            f"[metrics] Task {task.task_id} scheduled → duck {best.duck_id} "
+            f"(pending_time={pending_time:.1f}s, scheduling_latency={scheduling_latency:.3f}s, "
+            f"candidates={len(candidates)})"
+        )
         await self._assign_to_duck(task, best.duck_id)
 
     async def _schedule_multi(self, task: DuckTask, duck_type: Optional[DuckType]):
         """拆分任务给多个 Duck (当前为简单 fan-out, 后续可扩展)"""
+        duck_type = duck_type or task.target_duck_type
         registry = DuckRegistry.get_instance()
         await registry.initialize()
         candidates = await registry.list_available(duck_type)
@@ -256,6 +407,13 @@ class DuckTaskScheduler:
         handle = asyncio.create_task(self._timeout_watcher(task.task_id, watcher_timeout))
         self._timeout_handles[task.task_id] = handle
 
+        # Journal: TASK_ASSIGNED
+        try:
+            from services.runtime_journal import get_journal, TASK_ASSIGNED
+            await get_journal().append(TASK_ASSIGNED, task_id=task.task_id, duck_id=duck_id)
+        except Exception:
+            pass
+
         logger.info(f"Task {task.task_id} assigned to duck {duck_id}")
 
     async def _send_to_local_duck(self, duck_id: str, payload: DuckTaskPayload) -> bool:
@@ -292,10 +450,51 @@ class DuckTaskScheduler:
             logger.warning(f"Result for unknown task: {result.task_id}")
             return
 
+        # Idempotent completion guard: 忽略终态任务的重复结果
+        if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
+            logger.info(
+                f"[duplicate_result_ignored] task={result.task_id} "
+                f"already in terminal state {task.status.value}, ignoring"
+            )
+            return
+
         task.output = result.output
         task.error = result.error
         task.completed_at = time.time()
         task.status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
+
+        # Journal: TASK_COMPLETED / TASK_FAILED
+        try:
+            from services.runtime_journal import get_journal, TASK_COMPLETED, TASK_FAILED as JNL_FAILED
+            evt = TASK_COMPLETED if result.success else JNL_FAILED
+            await get_journal().append(evt, task_id=result.task_id, duck_id=duck_id)
+        except Exception:
+            pass
+
+        # 执行时间指标
+        exec_time = task.completed_at - (task.assigned_at or task.created_at)
+        total_time = task.completed_at - task.created_at
+        logger.info(
+            f"[metrics] Task {result.task_id} done: success={result.success} "
+            f"exec_time={exec_time:.1f}s total_time={total_time:.1f}s duck={duck_id}"
+        )
+        # Runtime metrics aggregation
+        try:
+            from services.runtime_metrics import metrics as rt_metrics
+            rt_metrics.record_task_complete(exec_time, result.success)
+            rt_metrics.record_duck_task_complete(duck_id, exec_time, result.success)
+            # v2.3: Auto-quarantine unhealthy workers
+            health = rt_metrics.get_duck_health_score(duck_id)
+            if health < 0.3:
+                rt_metrics.quarantine_duck(duck_id)
+                try:
+                    from services.duck_ready_queues import stop_pull_loop
+                    stop_pull_loop(duck_id)
+                    logger.warning(f"[worker_health] Duck {duck_id} pull loop stopped (health={health:.2f})")
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
         # 取消超时
         handle = self._timeout_handles.pop(result.task_id, None)
@@ -304,6 +503,18 @@ class DuckTaskScheduler:
 
         # ── 自动重试判断（在释放 Duck 之前决定，避免 UI 状态闪烁）──────────────────
         should_retry = not result.success and task.retry_count < task.max_retries
+
+        # v2.3: Retry budget exhausted logging
+        if not result.success and not should_retry:
+            logger.warning(
+                f"[retry_budget_exhausted] task={result.task_id} "
+                f"retries={task.retry_count}/{task.max_retries} → FAILED_FINAL"
+            )
+            try:
+                from services.runtime_metrics import metrics
+                metrics.record_retry_exhausted()
+            except Exception:
+                pass
 
         # 更新 Duck 注册表
         registry = DuckRegistry.get_instance()
@@ -339,7 +550,22 @@ class DuckTaskScheduler:
             try:
                 await cb(task)
             except Exception as e:
-                logger.error(f"Task callback error: {e}")
+                logger.error(f"Task callback error: {e}", exc_info=True)
+                # 回调失败恢复：尝试重新触发 DAG 调度，防止 DAG 死锁
+                dag_info = None
+                try:
+                    from services.duck_task_dag import DAGTaskOrchestrator
+                    orch = DAGTaskOrchestrator.get_instance()
+                    dag_info = orch._task_to_dag.get(result.task_id)
+                    if dag_info:
+                        dag_id, node_id = dag_info
+                        execution = orch._executions.get(dag_id)
+                        if execution:
+                            logger.info(f"[recovery] Re-scheduling DAG {dag_id} after callback failure")
+                            await orch._schedule_ready_nodes(execution)
+                            await orch._check_dag_completion(execution)
+                except Exception as recovery_err:
+                    logger.error(f"[recovery] DAG recovery also failed: {recovery_err}")
 
         # 委派来源会话：子 Duck 完成后主动通知用户（主 Agent 接入对话）
         # 有 callback 的任务由自主模式 Future 驱动续步，跳过 webhook 续步避免重复执行
@@ -463,7 +689,7 @@ class DuckTaskScheduler:
         registry = DuckRegistry.get_instance()
         # 获取失败 duck 的类型，用于找同类型的替代
         failed_duck_info = await registry.get(failed_duck_id)
-        duck_type = failed_duck_info.duck_type if failed_duck_info else None
+        duck_type = failed_duck_info.duck_type if failed_duck_info else task.target_duck_type
         candidates = await registry.list_available(duck_type)
         # 排除失败的 duck（如果有其他选择）
         alt_candidates = [d for d in candidates if d.duck_id != failed_duck_id]
@@ -910,10 +1136,12 @@ class DuckTaskScheduler:
     # ─── 待分配任务重新调度 ──────────────────────────
 
     async def reschedule_pending(self):
-        """重新调度所有 PENDING 任务（Duck 上线时调用）"""
+        """重新调度所有 PENDING 任务（Duck 上线/释放时调用）"""
         pending = [t for t in self._tasks.values() if t.status == TaskStatus.PENDING]
+        if pending:
+            logger.info(f"[metrics] reschedule_pending: {len(pending)} tasks to reschedule")
         for task in pending:
-            await self._schedule_single(task, None)
+            await self._schedule_single(task, task.target_duck_type)
 
 
 def get_task_scheduler() -> DuckTaskScheduler:

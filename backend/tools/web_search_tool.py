@@ -3,12 +3,11 @@ Web Search Tool - 联网搜索能力
 为本地模型提供获取实时信息的"眼睛"
 
 支持多种搜索引擎和信息来源：
-- DuckDuckGo (免费，无需 API Key)
-- Google Custom Search (需要 API Key)
-- Bing Search (需要 API Key)
-- 网页内容抓取
+- Jina Search / Reader（结果更适合 LLM，需 JINA_API_KEY）
+- SearXNG（自托管元搜索，需 SEARXNG_URL）
+- DuckDuckGo（免费，无需 API Key）
+- 网页内容抓取 / 纯文本提取
 - 新闻搜索
-- 学术搜索
 """
 
 import os
@@ -19,6 +18,7 @@ import urllib.parse
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from .base import BaseTool, ToolResult, ToolCategory
+from .web_result_utils import compact_web_payload, extract_highlights_from_text, truncate_text
 
 import logging
 logger = logging.getLogger(__name__)
@@ -62,6 +62,7 @@ class WebSearchTool(BaseTool):
                 "type": "string",
                 "enum": [
                     "search",           # 通用搜索
+                    "research",         # 深度研究
                     "news",             # 新闻搜索
                     "fetch_page",       # 获取网页内容
                     "extract_text",     # 提取网页文本
@@ -117,6 +118,15 @@ class WebSearchTool(BaseTool):
         self.google_api_key = os.getenv("GOOGLE_API_KEY", "")
         self.google_cx = os.getenv("GOOGLE_CX", "")
         self.bing_api_key = os.getenv("BING_API_KEY", "")
+        self.jina_api_key = os.getenv("JINA_API_KEY", "")
+        self.searxng_url = os.getenv("SEARXNG_URL", "").rstrip("/")
+        self.web_search_backend = os.getenv("WEB_SEARCH_BACKEND", "auto").strip().lower()
+        self.web_read_backend = os.getenv("WEB_READ_BACKEND", "auto").strip().lower()
+        self.web_timeout = float(os.getenv("WEB_SEARCH_TIMEOUT", "15"))
+        self.jina_token_budget = os.getenv("JINA_TOKEN_BUDGET", "8000")
+        self.research_max_pages = max(2, min(int(os.getenv("WEB_RESEARCH_MAX_PAGES", "5")), 8))
+        self.research_excerpt_chars = max(400, min(int(os.getenv("WEB_RESEARCH_EXCERPT_CHARS", "1600")), 4000))
+        self.crawl4ai_headless = os.getenv("CRAWL4AI_HEADLESS", "true").lower() != "false"
         
     async def execute(
         self,
@@ -134,6 +144,7 @@ class WebSearchTool(BaseTool):
         
         actions = {
             "search": lambda: self._search(query, num_results, language, region, time_range),
+            "research": lambda: self._research(query, num_results, language, region, time_range),
             "news": lambda: self._search_news(query, num_results, language),
             "fetch_page": lambda: self._fetch_page(url),
             "extract_text": lambda: self._extract_text(url),
@@ -158,28 +169,375 @@ class WebSearchTool(BaseTool):
         region: str,
         time_range: Optional[str]
     ) -> ToolResult:
-        """通用搜索（使用 DuckDuckGo）"""
+        """通用搜索（支持 Jina / SearXNG / DuckDuckGo 多后端）"""
         if not query:
             return ToolResult(success=False, error="需要搜索关键词")
-        
+
+        errors: List[str] = []
+        for backend in self._search_backend_chain():
+            try:
+                if backend == "jina":
+                    results = await self._jina_search(query, num_results, region, search_type="web")
+                    if results:
+                        return self._format_search_result(query, results, backend="jina", source="Jina Search")
+                    errors.append("jina: no results")
+                elif backend == "searxng":
+                    results = await self._searxng_search(query, num_results, language, time_range, categories=None)
+                    if results:
+                        return self._format_search_result(query, results, backend="searxng", source="SearXNG")
+                    errors.append("searxng: no results")
+                elif backend == "ddg":
+                    results = await self._duckduckgo_search(query, num_results, region)
+                    if results:
+                        return self._format_search_result(query, results, backend="ddg", source="DuckDuckGo")
+                    errors.append("ddg: no results")
+                elif backend == "ddg_html":
+                    fallback = await self._fallback_search(query, num_results)
+                    if fallback.success and fallback.data.get("count", 0) > 0:
+                        return fallback
+                    errors.append(f"ddg_html: {fallback.error or 'no results'}")
+            except Exception as e:
+                logger.warning("Search backend %s failed: %s", backend, e)
+                errors.append(f"{backend}: {e}")
+
+        return ToolResult(success=False, error=f"搜索失败: {' | '.join(errors[-4:]) or 'no backend available'}")
+
+    async def _research(
+        self,
+        query: str,
+        num_results: int,
+        language: str,
+        region: str,
+        time_range: Optional[str],
+    ) -> ToolResult:
+        """多源搜索 + 正文抓取，面向 crawler / research 任务。"""
+        if not query:
+            return ToolResult(success=False, error="需要研究关键词")
+
+        target_results = min(max(int(num_results or 5), 3), self.research_max_pages)
+        search_tool_result = await self._search(query, target_results, language, region, time_range)
+        if not search_tool_result.success:
+            return search_tool_result
+
+        search_data = search_tool_result.data or {}
+        raw_results = search_data.get("results") or []
+        if not raw_results:
+            return ToolResult(success=True, data={
+                "query": query,
+                "findings": [],
+                "count": 0,
+                "search_backend": search_data.get("backend", ""),
+                "research_backend": "none",
+                "summary": "未获取到可用搜索结果。",
+            })
+
+        findings = await self._build_research_findings(raw_results[:target_results])
+        payload = {
+            "query": query,
+            "findings": findings,
+            "count": len(findings),
+            "search_backend": search_data.get("backend", ""),
+            "search_source": search_data.get("source", ""),
+            "research_backend": self._resolve_research_backend(findings),
+            "summary": self._summarize_findings(query, findings),
+        }
+        return ToolResult(success=True, data=compact_web_payload(payload, max_items=5, excerpt_chars=900))
+
+    def _search_backend_chain(self) -> List[str]:
+        """返回搜索后端优先级链。默认 auto = 免费优先，不自动走付费后端。"""
+        explicit = self.web_search_backend
+        if explicit in {"jina", "searxng", "ddg", "ddg_html"}:
+            return [explicit]
+        if explicit in {"hybrid", "best"}:
+            chain: List[str] = []
+            if self.jina_api_key:
+                chain.append("jina")
+            if self.searxng_url:
+                chain.append("searxng")
+            chain.extend(["ddg", "ddg_html"])
+            return chain
+
+        chain: List[str] = []
+        if self.searxng_url:
+            chain.append("searxng")
+        chain.extend(["ddg", "ddg_html"])
+        return chain
+
+    def _read_backend_chain(self) -> List[str]:
+        explicit = self.web_read_backend
+        if explicit in {"jina", "builtin"}:
+            return [explicit]
+        if explicit in {"hybrid", "best"}:
+            chain: List[str] = []
+            if self.jina_api_key:
+                chain.append("jina")
+            chain.append("builtin")
+            return chain
+
+        return ["builtin"]
+
+    def _research_backend_chain(self) -> List[str]:
+        chain: List[str] = []
+        if self._crawl4ai_available():
+            chain.append("crawl4ai")
+        chain.extend(self._read_backend_chain())
+        return chain
+
+    def _default_headers(self) -> Dict[str, str]:
+        return {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        }
+
+    def _jina_headers(self, accept: str = "application/json") -> Dict[str, str]:
+        headers = self._default_headers()
+        headers["Accept"] = accept
+        headers["Authorization"] = f"Bearer {self.jina_api_key}"
+        headers["X-Token-Budget"] = self.jina_token_budget
+        return headers
+
+    def _format_search_result(
+        self,
+        query: str,
+        results: List[SearchResult],
+        backend: str,
+        source: str,
+        data_key: str = "results",
+    ) -> ToolResult:
+        return ToolResult(success=True, data={
+            "query": query,
+            data_key: [r.to_dict() for r in results],
+            "count": len(results),
+            "source": source,
+            "backend": backend,
+        })
+
+    def _clean_snippet(self, text: Any, limit: int = 500) -> str:
+        return truncate_text(text, limit)
+
+    def _as_search_result(self, item: Dict[str, Any], default_source: str) -> Optional[SearchResult]:
+        title = str(item.get("title") or item.get("name") or "").strip()
+        url = str(item.get("url") or item.get("href") or item.get("link") or "").strip()
+        snippet = self._clean_snippet(
+            item.get("snippet")
+            or item.get("description")
+            or item.get("content")
+            or item.get("body")
+            or item.get("text")
+            or ""
+        )
+        published_date = (
+            item.get("published_date")
+            or item.get("publishedDate")
+            or item.get("date")
+            or item.get("published")
+        )
+        source = str(item.get("source") or item.get("engine") or default_source)
+        if not title and url:
+            title = url
+        if not url:
+            return None
+        return SearchResult(
+            title=title,
+            url=url,
+            snippet=snippet,
+            source=source,
+            published_date=str(published_date) if published_date else None,
+        )
+
+    def _parse_generic_search_payload(self, payload: Any, default_source: str, max_results: int) -> List[SearchResult]:
+        items: List[Dict[str, Any]] = []
+        if isinstance(payload, list):
+            items = [item for item in payload if isinstance(item, dict)]
+        elif isinstance(payload, dict):
+            for key in ("results", "data", "items"):
+                value = payload.get(key)
+                if isinstance(value, list):
+                    items = [item for item in value if isinstance(item, dict)]
+                    break
+
+        results: List[SearchResult] = []
+        for item in items[:max_results]:
+            parsed = self._as_search_result(item, default_source)
+            if parsed:
+                results.append(parsed)
+        return results
+
+    async def _jina_search(
+        self,
+        query: str,
+        num_results: int,
+        region: str,
+        search_type: str = "web",
+    ) -> List[SearchResult]:
+        if not self.jina_api_key:
+            return []
+
+        import httpx
+
+        params: Dict[str, Any] = {"num": max(1, min(int(num_results), 10))}
+        if search_type != "web":
+            params["type"] = search_type
+        if region:
+            params["gl"] = region.lower()[:2]
+
+        url = f"https://s.jina.ai/{urllib.parse.quote(query, safe='')}"
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(
+                url,
+                params=params,
+                headers=self._jina_headers(),
+                timeout=self.web_timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        return self._parse_generic_search_payload(payload, "Jina Search", num_results)
+
+    async def _searxng_search(
+        self,
+        query: str,
+        num_results: int,
+        language: str,
+        time_range: Optional[str],
+        categories: Optional[str],
+    ) -> List[SearchResult]:
+        if not self.searxng_url:
+            return []
+
+        import httpx
+
+        params: Dict[str, Any] = {
+            "q": query,
+            "format": "json",
+            "language": language,
+        }
+        if categories:
+            params["categories"] = categories
+        if time_range:
+            params["time_range"] = time_range
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(
+                f"{self.searxng_url}/search",
+                params=params,
+                headers=self._default_headers(),
+                timeout=self.web_timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        return self._parse_generic_search_payload(payload, "SearXNG", num_results)
+
+    def _crawl4ai_available(self) -> bool:
         try:
-            # 尝试使用 duckduckgo_search 库
-            results = await self._duckduckgo_search(query, num_results, region)
-            
-            if results:
-                return ToolResult(success=True, data={
-                    "query": query,
-                    "results": [r.to_dict() for r in results],
-                    "count": len(results),
-                    "source": "DuckDuckGo"
-                })
-            
-            # 备用：使用网页抓取方式
-            return await self._fallback_search(query, num_results)
-            
+            from crawl4ai import AsyncWebCrawler  # noqa: F401
+            return True
+        except Exception:
+            return False
+
+    async def _build_research_findings(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        findings: List[Dict[str, Any]] = []
+        crawl4ai_docs = await self._crawl4ai_fetch_many(items)
+        for item in items:
+            url = str(item.get("url") or "")
+            doc = crawl4ai_docs.get(url)
+            if doc is None:
+                doc = await self._read_result_for_research(url)
+
+            text = (doc or {}).get("text", "")
+            snippet = self._clean_snippet(item.get("snippet") or item.get("body") or "", 260)
+            excerpt = truncate_text(text, self.research_excerpt_chars) if text else ""
+            findings.append({
+                "title": str(item.get("title") or (doc or {}).get("title") or url),
+                "url": url,
+                "source": item.get("source", ""),
+                "published_date": item.get("published_date"),
+                "snippet": snippet,
+                "content_excerpt": excerpt,
+                "highlights": extract_highlights_from_text(excerpt or snippet, max_points=3, max_chars=180),
+                "read_backend": (doc or {}).get("backend", ""),
+            })
+        return findings
+
+    async def _crawl4ai_fetch_many(self, items: List[Dict[str, Any]]) -> Dict[str, Dict[str, str]]:
+        urls = [str(item.get("url") or "") for item in items if item.get("url")]
+        if not urls or not self._crawl4ai_available():
+            return {}
+
+        try:
+            from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
+
+            browser_config = BrowserConfig(headless=self.crawl4ai_headless, verbose=False)
+            run_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
+            docs: Dict[str, Dict[str, str]] = {}
+            async with AsyncWebCrawler(config=browser_config) as crawler:
+                for url in urls:
+                    try:
+                        result = await crawler.arun(url=url, config=run_config)
+                        if not getattr(result, "success", True):
+                            continue
+                        text = (
+                            getattr(result, "fit_markdown", None)
+                            or getattr(result, "markdown", None)
+                            or getattr(result, "cleaned_html", None)
+                            or ""
+                        )
+                        text = str(text or "").strip()
+                        if not text:
+                            continue
+                        docs[url] = {
+                            "title": str(getattr(result, "title", "") or ""),
+                            "text": text,
+                            "backend": "crawl4ai",
+                        }
+                    except Exception as item_error:
+                        logger.debug("Crawl4AI fetch failed for %s: %s", url, item_error)
+            return docs
         except Exception as e:
-            logger.error(f"Search error: {e}")
-            return await self._fallback_search(query, num_results)
+            logger.warning("Crawl4AI unavailable or failed: %s", e)
+            return {}
+
+    async def _read_result_for_research(self, url: str) -> Dict[str, str]:
+        if not url:
+            return {}
+        for backend in self._research_backend_chain():
+            if backend == "crawl4ai":
+                continue
+            if backend == "jina":
+                result = await self._extract_text_jina(url)
+            else:
+                result = await self._extract_text_builtin(url)
+            if result.success:
+                data = result.data or {}
+                return {
+                    "title": str(data.get("title") or ""),
+                    "text": str(data.get("text") or data.get("content") or ""),
+                    "backend": str(data.get("backend") or backend),
+                }
+        return {}
+
+    def _summarize_findings(self, query: str, findings: List[Dict[str, Any]]) -> str:
+        if not findings:
+            return f"未针对「{query}」提取到可用正文。"
+
+        lines = [f"围绕「{query}」共整理 {len(findings)} 个来源："]
+        for idx, item in enumerate(findings[:4], start=1):
+            title = truncate_text(item.get("title"), 70)
+            highlights = item.get("highlights") or []
+            if highlights:
+                lines.append(f"{idx}. {title}：{highlights[0]}")
+            else:
+                lines.append(f"{idx}. {title}：{truncate_text(item.get('snippet'), 120)}")
+        return "\n".join(lines)
+
+    def _resolve_research_backend(self, findings: List[Dict[str, Any]]) -> str:
+        backends: List[str] = []
+        for item in findings:
+            backend = str(item.get("read_backend") or "").strip()
+            if backend and backend not in backends:
+                backends.append(backend)
+        return " -> ".join(backends) if backends else "none"
     
     async def _duckduckgo_search(
         self,
@@ -233,7 +591,8 @@ class WebSearchTool(BaseTool):
                 "query": query,
                 "results": [r.to_dict() for r in results],
                 "count": len(results),
-                "source": "DuckDuckGo (HTML)"
+                "source": "DuckDuckGo (HTML)",
+                "backend": "ddg_html",
             })
             
         except Exception as e:
@@ -271,10 +630,39 @@ class WebSearchTool(BaseTool):
         """新闻搜索"""
         if not query:
             return ToolResult(success=False, error="需要搜索关键词")
-        
+
+        errors: List[str] = []
+        for backend in self._search_backend_chain():
+            try:
+                if backend == "jina":
+                    results = await self._jina_search(query, num_results, region="cn", search_type="news")
+                    if results:
+                        return self._format_search_result(query, results, backend="jina", source="Jina News", data_key="news")
+                    errors.append("jina_news: no results")
+                elif backend == "searxng":
+                    results = await self._searxng_search(query, num_results, language, None, categories="news")
+                    if results:
+                        return self._format_search_result(query, results, backend="searxng", source="SearXNG", data_key="news")
+                    errors.append("searxng_news: no results")
+                elif backend == "ddg":
+                    results = await self._duckduckgo_news(query, num_results)
+                    if results:
+                        return self._format_search_result(query, results, backend="ddg", source="DuckDuckGo", data_key="news")
+                    errors.append("ddg_news: no results")
+            except Exception as e:
+                logger.warning("News backend %s failed: %s", backend, e)
+                errors.append(f"{backend}: {e}")
+
+        rss_result = await self._search_news_rss(query, num_results)
+        if rss_result.success:
+            return rss_result
+        errors.append(rss_result.error or "google_news_rss failed")
+        return ToolResult(success=False, error=f"新闻搜索失败: {' | '.join(errors[-4:])}")
+
+    async def _duckduckgo_news(self, query: str, num_results: int) -> List[SearchResult]:
         try:
             from duckduckgo_search import DDGS
-            
+
             results = []
             with DDGS() as ddgs:
                 for r in ddgs.news(query, max_results=num_results):
@@ -282,21 +670,15 @@ class WebSearchTool(BaseTool):
                         title=r.get("title", ""),
                         url=r.get("url", ""),
                         snippet=r.get("body", ""),
-                        source=r.get("source", ""),
-                        published_date=r.get("date", "")
+                        source=r.get("source", "") or "DuckDuckGo",
+                        published_date=r.get("date", ""),
                     ))
-            
-            return ToolResult(success=True, data={
-                "query": query,
-                "news": [r.to_dict() for r in results],
-                "count": len(results)
-            })
-            
+            return results
         except ImportError:
-            # 备用方案：使用 Google News RSS
-            return await self._search_news_rss(query, num_results)
+            return []
         except Exception as e:
-            return ToolResult(success=False, error=f"新闻搜索失败: {str(e)}")
+            logger.error("DuckDuckGo news error: %s", e)
+            return []
     
     async def _search_news_rss(self, query: str, num_results: int) -> ToolResult:
         """使用 Google News RSS 搜索新闻"""
@@ -330,7 +712,9 @@ class WebSearchTool(BaseTool):
             return ToolResult(success=True, data={
                 "query": query,
                 "news": results,
-                "count": len(results)
+                "count": len(results),
+                "source": "Google News RSS",
+                "backend": "google_news_rss",
             })
             
         except Exception as e:
@@ -340,39 +724,56 @@ class WebSearchTool(BaseTool):
         """获取网页内容"""
         if not url:
             return ToolResult(success=False, error="需要 URL")
-        
+
+        builtin_result = await self._fetch_page_builtin(url)
+        if builtin_result.success:
+            return builtin_result
+
+        for backend in self._read_backend_chain():
+            if backend != "jina":
+                continue
+            reader_result = await self._extract_text_jina(url)
+            if reader_result.success:
+                data = reader_result.data or {}
+                return ToolResult(success=True, data={
+                    "url": url,
+                    "content_type": "text/markdown",
+                    "content": data.get("text", ""),
+                    "title": data.get("title", ""),
+                    "status_code": 200,
+                    "backend": "jina_reader",
+                    "note": "原始页面抓取失败，已回退到 Jina Reader 内容视图",
+                })
+
+        return builtin_result
+
+    async def _fetch_page_builtin(self, url: str) -> ToolResult:
         try:
             import httpx
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-            }
-            
+
             async with httpx.AsyncClient(follow_redirects=True) as client:
-                response = await client.get(url, headers=headers, timeout=15)
-                
+                response = await client.get(url, headers=self._default_headers(), timeout=self.web_timeout)
+
                 content_type = response.headers.get("content-type", "")
-                
                 if "text/html" in content_type:
                     html = response.text
-                    # 限制大小
                     if len(html) > 100000:
                         html = html[:100000] + "\n... (truncated)"
-                    
+
                     return ToolResult(success=True, data={
                         "url": url,
                         "content_type": content_type,
                         "html": html,
-                        "status_code": response.status_code
+                        "status_code": response.status_code,
+                        "backend": "builtin",
                     })
-                else:
-                    return ToolResult(success=True, data={
-                        "url": url,
-                        "content_type": content_type,
-                        "size": len(response.content),
-                        "status_code": response.status_code
-                    })
-                    
+                return ToolResult(success=True, data={
+                    "url": url,
+                    "content_type": content_type,
+                    "size": len(response.content),
+                    "status_code": response.status_code,
+                    "backend": "builtin",
+                })
         except Exception as e:
             return ToolResult(success=False, error=f"获取网页失败: {str(e)}")
     
@@ -380,61 +781,107 @@ class WebSearchTool(BaseTool):
         """提取网页纯文本"""
         if not url:
             return ToolResult(success=False, error="需要 URL")
-        
+
+        errors: List[str] = []
+        for backend in self._read_backend_chain():
+            if backend == "jina":
+                result = await self._extract_text_jina(url)
+            else:
+                result = await self._extract_text_builtin(url)
+
+            if result.success:
+                return result
+            errors.append(result.error or f"{backend} failed")
+
+        return ToolResult(success=False, error=f"提取文本失败: {' | '.join(errors[-3:])}")
+
+    async def _extract_text_builtin(self, url: str) -> ToolResult:
         try:
             import httpx
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-            }
-            
+
             async with httpx.AsyncClient(follow_redirects=True) as client:
-                response = await client.get(url, headers=headers, timeout=15)
+                response = await client.get(url, headers=self._default_headers(), timeout=self.web_timeout)
                 html = response.text
-            
-            # 尝试使用 BeautifulSoup
+
             try:
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(html, "html.parser")
-                
-                # 移除脚本和样式
+
                 for tag in soup(["script", "style", "nav", "footer", "header"]):
                     tag.decompose()
-                
-                # 获取标题
+
                 title = soup.title.string if soup.title else ""
-                
-                # 获取主要内容
                 main_content = soup.find("main") or soup.find("article") or soup.body
                 text = main_content.get_text(separator="\n", strip=True) if main_content else ""
-                
-                # 清理多余空行
                 lines = [line.strip() for line in text.split("\n") if line.strip()]
                 text = "\n".join(lines)
-                
-                # 限制长度
                 if len(text) > 10000:
                     text = text[:10000] + "\n... (truncated)"
-                
+
                 return ToolResult(success=True, data={
                     "url": url,
                     "title": title,
                     "text": text,
-                    "char_count": len(text)
+                    "char_count": len(text),
+                    "backend": "builtin",
                 })
-                
             except ImportError:
-                # 简单的正则提取
                 text = self._simple_extract_text(html)
                 return ToolResult(success=True, data={
                     "url": url,
                     "text": text[:10000],
                     "char_count": len(text),
-                    "note": "使用简单提取（安装 beautifulsoup4 获得更好效果）"
+                    "backend": "builtin",
+                    "note": "使用简单提取（安装 beautifulsoup4 获得更好效果）",
                 })
-                
         except Exception as e:
-            return ToolResult(success=False, error=f"提取文本失败: {str(e)}")
+            return ToolResult(success=False, error=f"builtin 提取失败: {str(e)}")
+
+    async def _extract_text_jina(self, url: str) -> ToolResult:
+        if not self.jina_api_key:
+            return ToolResult(success=False, error="未配置 JINA_API_KEY")
+
+        try:
+            import httpx
+
+            reader_url = f"https://r.jina.ai/{url}"
+            async with httpx.AsyncClient(follow_redirects=True) as client:
+                response = await client.get(
+                    reader_url,
+                    headers=self._jina_headers(),
+                    timeout=max(self.web_timeout, 20),
+                )
+                response.raise_for_status()
+                payload = response.json()
+
+            data = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), dict) else payload
+            if not isinstance(data, dict):
+                return ToolResult(success=False, error="Jina Reader 返回格式异常")
+
+            title = str(data.get("title") or payload.get("title") or "")
+            text = str(
+                data.get("content")
+                or data.get("text")
+                or data.get("markdown")
+                or payload.get("content")
+                or payload.get("text")
+                or ""
+            )
+            text = text.strip()
+            if not text:
+                return ToolResult(success=False, error="Jina Reader 未返回正文")
+            if len(text) > 12000:
+                text = text[:12000] + "\n... (truncated)"
+
+            return ToolResult(success=True, data={
+                "url": url,
+                "title": title,
+                "text": text,
+                "char_count": len(text),
+                "backend": "jina_reader",
+            })
+        except Exception as e:
+            return ToolResult(success=False, error=f"jina_reader 提取失败: {str(e)}")
     
     def _simple_extract_text(self, html: str) -> str:
         """简单的文本提取"""

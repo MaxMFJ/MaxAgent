@@ -1,0 +1,29 @@
+{
+  "uptime_seconds": 91.2,
+  "total_tasks_executed": 2,
+  "total_tasks_failed": 1,
+  "total_retries": 0,
+  "retry_rate": 0.0,
+  "lease_expired_count": 0,
+  "backpressure_count": 0,
+  "enqueue_count": 5,
+  "retry_exhausted_count": 0,
+  "active_workers": 3,
+  "active_worker_ids": [
+    "local_011fcda0",
+    "local_ca78da97",
+    "local_d936e706"
+  ],
+  "avg_queue_wait_time": 0.0,
+  "avg_exec_time": 0.0,
+  "avg_pull_latency": 0.002,
+  "per_type_enqueue": {
+    "coder": 1,
+    "crawler": 4
+  },
+  "per_type_backpressure": {},
+  "remote_pull_count": 0,
+  "remote_worker_count": 0,
+  "remote_exec_latency": 0.0,
+  "snapshot_time": 1773976998.719276
+}

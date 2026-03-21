@@ -151,7 +151,7 @@ class TaskGuidanceMixin:
         # 1b) 研究/投资/财报类任务：明确可用 web_search 获取实时数据
         if any(k in task for k in ("研究", "财报", "投资", "科技股", "股票", "新闻", "最新", "实时", "调研")):
             parts.append(
-                "[Web Research] You have the web_search tool to search web pages, news, financial data, etc. Use call_tool(tool_name=\"web_search\", args={\"action\":\"search\" or \"news\", \"query\":\"keywords\", \"language\":\"zh-CN\"}) to get data. Never refuse by saying you cannot fetch real-time data."
+                "[Web Research] You have the web_search tool to search web pages, news, financial data, etc. For multi-source research prefer call_tool(tool_name=\"web_search\", args={\"action\":\"research\", \"query\":\"keywords\", \"language\":\"zh-CN\"}); for quick lookup use action=\"search\" or \"news\". Never refuse by saying you cannot fetch real-time data."
             )
 
         # 2) 扫描并注入匹配的 skill/capsule（本地注册表优先；N/A 时按需拉取）

@@ -247,7 +247,34 @@ class ActionGeneratorMixin:
                 else:
                     out_limit = 300
                 result_summary = f"上一步执行成功。输出: {out_str[:out_limit]}{'...[已截断]' if len(out_str) > out_limit else ''}"
-                # 截图类任务：一旦截图成功，强制要求立即 finish，避免重复截图
+                # Duck 模式：检测重复读同一文件，注入警告防止无限循环
+                if is_read and _is_duck_mode:
+                    _current_path = ""
+                    if last_log.action.action_type == ActionType.READ_FILE:
+                        _current_path = (last_log.action.params.get("path") or "").strip()
+                    elif last_log.action.action_type == ActionType.CALL_TOOL:
+                        _current_path = ((last_log.action.params.get("args") or {}).get("path") or "").strip()
+                    if _current_path:
+                        _prev_read_count = 0
+                        for _prev_log in context.action_logs[:-1]:
+                            _pa = _prev_log.action
+                            _pp = ""
+                            if _pa.action_type == ActionType.READ_FILE:
+                                _pp = (_pa.params.get("path") or "").strip()
+                            elif _pa.action_type == ActionType.CALL_TOOL and (_pa.params.get("args") or {}).get("action") == "read":
+                                _pp = ((_pa.params.get("args") or {}).get("path") or "").strip()
+                            if _pp == _current_path:
+                                _prev_read_count += 1
+                        if _prev_read_count >= 2:
+                            result_summary += (
+                                f"\n\n⚠️ 【重复读取警告】你已读取 {_current_path} {_prev_read_count + 1} 次！"
+                                f" 禁止再次读取此文件。请立即使用 create_and_run_script 编写脚本处理，"
+                                f"或根据已获取的内容继续下一步操作。"
+                            )
+                        elif _prev_read_count == 1:
+                            result_summary += (
+                                f"\n\n⚠️ 这是第2次读取此文件。如需修改，请使用 create_and_run_script 而非再次读取。"
+                            )
                 task_desc = getattr(context, "task_description", "") or ""
                 if any(k in task_desc for k in ("截图", "截屏", "screenshot", "屏幕")):
                     if last_log.action.action_type == ActionType.CALL_TOOL and (

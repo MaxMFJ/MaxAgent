@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
+from .web_result_utils import compact_web_payload
 
 if TYPE_CHECKING:
     from runtime import RuntimeAdapter
@@ -89,6 +90,8 @@ class ToolResult:
         """Filter out binary blobs and oversized string values from tool results"""
         if not isinstance(data, dict):
             return data
+
+        data = compact_web_payload(data)
 
         filtered = {}
         for key, value in data.items():

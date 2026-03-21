@@ -42,7 +42,11 @@ BUILTIN_TEMPLATES: Dict[DuckType, DuckTemplate] = {
             "- Extract structured data from HTML\n"
             "- Call REST APIs and process JSON responses\n"
             "- Handle pagination and rate limiting\n"
-            "Always return structured data. Be efficient and respect robots.txt."
+            "- Run multi-source web research using search + readable page extraction\n"
+            "Always return structured data. Be efficient and respect robots.txt.\n"
+            "For quick lookup use web_search(action=search or news).\n"
+            "For multi-source research tasks, prefer web_search(action=research) so you get compact findings with extracted page content.\n"
+            "When a page is large, summarize evidence instead of copying raw text."
         ),
         required_tools=["browser", "http_request"],
         icon="🕷️",

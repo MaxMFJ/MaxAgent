@@ -1,5 +1,48 @@
 [
   {
+    "name": "filesystem",
+    "transport": "stdio",
+    "command": [
+      "npx",
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "/"
+    ],
+    "env": {},
+    "url": "",
+    "headers": {},
+    "timeout": 30.0,
+    "enabled": true
+  },
+  {
+    "name": "ai-vision",
+    "transport": "stdio",
+    "command": [
+      "npx",
+      "-y",
+      "ai-vision-mcp"
+    ],
+    "env": {},
+    "url": "",
+    "headers": {},
+    "timeout": 30.0,
+    "enabled": true
+  },
+  {
+    "name": "github",
+    "transport": "stdio",
+    "command": [
+      "npx",
+      "-y",
+      "@modelcontextprotocol/server-github"
+    ],
+    "env": {},
+    "url": "",
+    "headers": {},
+    "timeout": 30.0,
+    "enabled": true
+  },
+  {
     "name": "sequential-thinking",
     "transport": "stdio",
     "command": [
@@ -14,13 +57,26 @@
     "enabled": true
   },
   {
-    "name": "filesystem",
+    "name": "puppeteer",
     "transport": "stdio",
     "command": [
       "npx",
       "-y",
-      "@modelcontextprotocol/server-filesystem",
-      "/"
+      "@modelcontextprotocol/server-puppeteer"
+    ],
+    "env": {},
+    "url": "",
+    "headers": {},
+    "timeout": 30.0,
+    "enabled": true
+  },
+  {
+    "name": "memory",
+    "transport": "stdio",
+    "command": [
+      "npx",
+      "-y",
+      "@modelcontextprotocol/server-memory"
     ],
     "env": {},
     "url": "",

@@ -351,6 +351,7 @@ async def generate_plan(
     workspace_dir: str,
     duck_type: str = "general",
     max_steps: int = MAX_PLAN_STEPS,
+    broadcast_fn=None,
 ) -> List[PlanStep]:
     """调用 LLM 生成结构化的执行计划（含 completion_condition JSON）"""
     allowed_actions = get_allowed_actions(duck_type)
@@ -365,6 +366,15 @@ async def generate_plan(
         allowed_tools_desc=tools_desc,
     )
     try:
+        if broadcast_fn:
+            try:
+                await broadcast_fn({
+                    "type": "llm_request_start",
+                    "phase": "dag_planner",
+                    "model": getattr(getattr(llm_client, "config", None), "model", ""),
+                })
+            except Exception:
+                pass
         resp = await asyncio.wait_for(
             llm_client.chat(
                 messages=[{"role": "user", "content": prompt}],
@@ -372,6 +382,15 @@ async def generate_plan(
             ),
             timeout=STEP_LLM_TIMEOUT,
         )
+        if broadcast_fn:
+            try:
+                await broadcast_fn({
+                    "type": "llm_request_end",
+                    "phase": "dag_planner",
+                    "success": True,
+                })
+            except Exception:
+                pass
         content = resp.get("content", "") if isinstance(resp, dict) else str(resp)
         json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:
@@ -398,6 +417,16 @@ async def generate_plan(
                 logger.info(f"[Planner] Generated plan: {len(steps)} steps for {duck_type}")
                 return steps
     except Exception as e:
+        if broadcast_fn:
+            try:
+                await broadcast_fn({
+                    "type": "llm_request_end",
+                    "phase": "dag_planner",
+                    "success": False,
+                    "error": str(e)[:200],
+                })
+            except Exception:
+                pass
         logger.warning(f"[Planner] Plan generation failed: {e}, using single-step fallback")
 
     # 降级：单步执行
@@ -763,7 +792,13 @@ async def run_duck_task_with_plan(
 
     # ── 1. 规划阶段（运行一次，不允许 replan）──────────
     logger.info(f"[Executor] Task {task_id}: planning for duck_type={duck_type}")
-    steps = await generate_plan(llm_client, task_description, workspace_dir, duck_type)
+    steps = await generate_plan(
+        llm_client,
+        task_description,
+        workspace_dir,
+        duck_type,
+        broadcast_fn=broadcast_fn,
+    )
 
     state = ExecutionState(
         task_id=task_id,

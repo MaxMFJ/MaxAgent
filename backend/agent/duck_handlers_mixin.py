@@ -9,6 +9,7 @@ from typing import Any, AsyncGenerator, Dict
 
 from .action_schema import AgentAction, ActionResult, ActionType, TaskContext
 from tools.router import execute_tool
+from tools.web_result_utils import compact_web_payload
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,14 @@ class DuckHandlersMixin:
         try:
             result = await execute_tool(tool_name, args)
             out = result.data
+            if tool_name == "web_search" and result.success:
+                out = compact_web_payload(
+                    out,
+                    max_items=4,
+                    snippet_chars=180,
+                    excerpt_chars=600,
+                    include_content=False,
+                )
             # 保留原始结构化输出；仅在不可序列化时回退为字符串
             if out is not None and not isinstance(out, (str, int, float, bool, dict, list, type(None))):
                 out = str(out)
@@ -140,8 +149,14 @@ class DuckHandlersMixin:
             return {"success": False, "error": "delegate_dag 需要 description 和 nodes 参数"}
 
         try:
-            from services.duck_task_dag import DAGTaskOrchestrator, DAGNode
+            from services.duck_task_dag import (
+                DAGTaskOrchestrator,
+                DAGNode,
+                normalize_dag_dependencies,
+            )
             from services.duck_protocol import DuckType
+
+            nodes_raw, auto_chained = normalize_dag_dependencies(description, nodes_raw)
 
             dag_nodes = []
             for raw in nodes_raw:
@@ -191,12 +206,19 @@ class DuckHandlersMixin:
 
             asyncio.create_task(orchestrator.execute(execution.dag_id))
             logger.info(f"DAG {execution.dag_id} created with {len(dag_nodes)} nodes, executing asynchronously")
+            if auto_chained:
+                logger.warning(
+                    "DAG %s created without explicit depends_on; auto-chained sequential dependencies",
+                    execution.dag_id,
+                )
 
             return {
                 "success": True,
                 "output": (
                     f"多Agent协作 DAG 已创建并开始执行（dag_id: {execution.dag_id}，共 {len(dag_nodes)} 个子任务）。"
-                    f"群聊已自动创建，各Agent将在群聊中实时汇报进度。DAG 完成后系统会自动通知结果。"
+                    f"群聊已自动创建，各Agent将在群聊中实时汇报进度。"
+                    f"{' 检测到顺序任务，已自动补全串行 depends_on。' if auto_chained else ''}"
+                    f"DAG 完成后系统会自动通知结果。"
                 ),
                 "dag_id": execution.dag_id,
                 "node_count": len(dag_nodes),

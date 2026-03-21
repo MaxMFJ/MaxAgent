@@ -1,0 +1,10 @@
+{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 34958, "success": true, "ts": 1773826263.990874}
+{"iteration": 1, "type": "tool", "action_type": "run_shell", "latency_ms": 157, "success": true, "error": null, "ts": 1773826264.860186}
+{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 10051, "success": true, "ts": 1773826276.914866}
+{"iteration": 2, "type": "tool", "action_type": "call_tool", "latency_ms": 3269, "success": true, "error": null, "ts": 1773826280.7466502}
+{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5726, "success": true, "ts": 1773826288.476991}
+{"iteration": 3, "type": "tool", "action_type": "call_tool", "latency_ms": 616, "success": true, "error": null, "ts": 1773826289.615196}
+{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5414, "success": true, "ts": 1773826297.034666}
+{"iteration": 4, "type": "tool", "action_type": "call_tool", "latency_ms": 3688, "success": false, "error": "ClassifiedError(category=<ErrorCategory.TOOL: 'tool'>, severity=<ErrorSeverity.MEDIUM: 'medium'>, recovery=<RecoveryStrategy.RETRY_MODIFIED: 'retry_modified'>, message='工具 call_tool 执行失败', original_er", "ts": 1773826301.299979}
+{"iteration": 5, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5813, "success": true, "ts": 1773826309.118958}
+{"iteration": 5, "type": "tool", "action_type": "run_shell", "latency_ms": 153, "success": true, "error": null, "ts": 1773826309.8500102}

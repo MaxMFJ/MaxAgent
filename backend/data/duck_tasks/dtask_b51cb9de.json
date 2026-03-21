@@ -1,0 +1,23 @@
+{
+  "task_id": "dtask_b51cb9de",
+  "description": "调研阶段：收集用户对在线养猫的需求，了解目标用户群体、核心功能期望、用户体验需求等，形成需求文档\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "target_duck_type": "crawler",
+  "params": {},
+  "status": "assigned",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": "local_d936e706",
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773976972.172981,
+  "assigned_at": 1773976972.173748,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773976972.1737752
+}

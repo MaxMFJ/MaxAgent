@@ -26,6 +26,17 @@ DUCK_REGISTRY_FILE = DATA_DIR / "duck_registry.json"
 HEARTBEAT_TIMEOUT = 60
 
 
+# ─── Duck 可用事件回调 ────────────────────────────────
+# 签名：async def handler(duck_id: str) -> None
+_duck_available_hooks: list = []
+
+
+def on_duck_available(hook) -> None:
+    """注册 Duck 空闲回调（调度器用于自动 reschedule_pending）"""
+    if hook not in _duck_available_hooks:
+        _duck_available_hooks.append(hook)
+
+
 class DuckRegistry:
     """Duck 注册中心 (单例)"""
 
@@ -97,6 +108,13 @@ class DuckRegistry:
                     info.llm_provider_ref = existing.llm_provider_ref
             self._ducks[info.duck_id] = info
             self._save_to_disk()
+            # Pull-model: 启动该 Duck 的 pull loop
+            try:
+                from services.duck_ready_queues import start_pull_loop
+                duck_type_value = info.duck_type.value if info.duck_type else "general"
+                start_pull_loop(info.duck_id, duck_type_value)
+            except Exception as e:
+                logger.warning(f"Failed to start pull loop for {info.duck_id}: {e}")
             logger.info(f"Duck registered: {info.duck_id} ({info.name})")
             return info
 
@@ -106,6 +124,12 @@ class DuckRegistry:
                 return False
             del self._ducks[duck_id]
             self._save_to_disk()
+            # Pull-model: 停止 pull loop
+            try:
+                from services.duck_ready_queues import stop_pull_loop
+                stop_pull_loop(duck_id)
+            except Exception:
+                pass
             logger.info(f"Duck unregistered: {duck_id}")
             return True
 
@@ -148,9 +172,17 @@ class DuckRegistry:
     async def set_current_task(self, duck_id: str, task_id: Optional[str], busy_reason: Optional[str] = None):
         duck = self._ducks.get(duck_id)
         if duck:
+            was_busy = duck.status == DuckStatus.BUSY
             duck.current_task_id = task_id
             duck.busy_reason = busy_reason if task_id else None
             duck.status = DuckStatus.BUSY if task_id else DuckStatus.ONLINE
+            # Duck 释放时触发可用事件 → 调度器自动 reschedule
+            if was_busy and task_id is None:
+                for hook in _duck_available_hooks:
+                    try:
+                        await hook(duck_id)
+                    except Exception as e:
+                        logger.warning(f"duck_available hook error: {e}")
 
     async def update_llm_config(self, duck_id: str, **kwargs: Any) -> bool:
         """更新分身 LLM 配置，仅更新传入的字段。空字符串会清空该字段。"""
@@ -194,4 +226,10 @@ class DuckRegistry:
                 duck.current_task_id = None
                 timed_out.append(duck.duck_id)
                 logger.warning(f"Duck heartbeat timeout: {duck.duck_id}")
+                # Pull-model: 停止 pull loop
+                try:
+                    from services.duck_ready_queues import stop_pull_loop
+                    stop_pull_loop(duck.duck_id)
+                except Exception:
+                    pass
         return timed_out

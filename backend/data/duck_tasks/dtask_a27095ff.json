@@ -1,0 +1,23 @@
+{
+  "task_id": "dtask_a27095ff",
+  "description": "爬取在线养猫/虚拟宠物市场相关需求分析、竞品分析、用户痛点、市场趋势数据，输出完整的Word市场分析报告保存到 ~/Desktop/猫咪天堂/\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
+  "task_type": "crawler",
+  "target_duck_type": "crawler",
+  "params": {},
+  "status": "pending",
+  "priority": 0,
+  "timeout": 600,
+  "assigned_duck_id": null,
+  "parent_task_id": null,
+  "output": null,
+  "error": null,
+  "retry_count": 0,
+  "max_retries": 2,
+  "original_description": null,
+  "retry_errors": [],
+  "created_at": 1773826215.975772,
+  "assigned_at": 1773826215.9763572,
+  "started_at": null,
+  "completed_at": null,
+  "last_activity": 1773826215.976371
+}

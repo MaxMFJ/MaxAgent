@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -46,6 +47,8 @@ class DAGNode:
     status: TaskStatus = TaskStatus.PENDING
     output: Any = None
     error: Optional[str] = None
+    remaining_deps: int = 0                 # Pull-model: 剩余未完成依赖数
+    execution_emitted: bool = False           # Replay protection: 已入队标志
 
     def to_dict(self) -> dict:
         return {
@@ -104,6 +107,7 @@ class DAGTaskOrchestrator:
         self._executions: Dict[str, DAGExecution] = {}
         self._task_to_dag: Dict[str, tuple[str, str]] = {}  # task_id → (dag_id, node_id)
         self._callbacks: Dict[str, DAGCallback] = {}
+        self._dag_locks: Dict[str, asyncio.Lock] = {}  # per-DAG lock for _on_node_complete
 
     @classmethod
     def get_instance(cls) -> "DAGTaskOrchestrator":
@@ -152,11 +156,27 @@ class DAGTaskOrchestrator:
             group_id=existing_group_id or None,
         )
 
+        # 初始化每个节点的 remaining_deps 计数器
+        for node in execution.nodes.values():
+            node.remaining_deps = len(node.depends_on)
+
         self._executions[dag_id] = execution
+        self._dag_locks[dag_id] = asyncio.Lock()
         if callback:
             self._callbacks[dag_id] = callback
 
         logger.info(f"DAG created: {dag_id} with {len(nodes)} nodes")
+
+        # Journal: DAG_CREATED (sync context → fire-and-forget)
+        try:
+            from services.runtime_journal import get_journal, DAG_CREATED
+            asyncio.get_event_loop().create_task(
+                get_journal().append(DAG_CREATED, dag_id=dag_id,
+                                     extra={"node_count": len(nodes)})
+            )
+        except Exception:
+            pass
+
         return execution
 
     # ─── 执行 DAG ────────────────────────────────────
@@ -166,6 +186,27 @@ class DAGTaskOrchestrator:
         execution = self._executions.get(dag_id)
         if not execution:
             raise ValueError(f"DAG not found: {dag_id}")
+
+        try:
+            from services.duck_task_scheduler import get_task_scheduler
+            await get_task_scheduler().initialize()
+        except Exception as e:
+            logger.warning(f"DAG {dag_id} scheduler init failed: {e}")
+
+        # v2.3: Adaptive backpressure — reject under high pressure
+        try:
+            from services.duck_ready_queues import is_system_overloaded, compute_pressure_score
+            if is_system_overloaded():
+                pressure = compute_pressure_score()
+                logger.warning(
+                    f"[pressure_throttle] DAG {dag_id} rejected: "
+                    f"pressure={pressure:.2f} > threshold"
+                )
+                execution.status = "rejected"
+                execution.error = f"RETRY_LATER: system pressure {pressure:.2f}"
+                return
+        except Exception:
+            pass
 
         execution.status = "running"
         logger.info(f"DAG executing: {dag_id}")
@@ -177,8 +218,53 @@ class DAGTaskOrchestrator:
             else:
                 await self._create_group_chat(execution)
 
-        # 启动所有无依赖的节点
+        # Pull-model: 将根节点（无依赖）直接入队 ready queue
+        await self._enqueue_root_nodes(execution)
+
+        # Fallback: _schedule_ready_nodes 处理未被 pull 覆盖的节点
         await self._schedule_ready_nodes(execution)
+
+    async def _enqueue_root_nodes(self, execution: DAGExecution):
+        """将无依赖的根节点入队 ready queue（Pull-model 主路径）"""
+        from services.duck_ready_queues import enqueue_ready_node
+
+        # 统计根节点数量，辅助诊断串行任务被误判为并行的问题
+        root_nodes = [
+            n for n in execution.nodes.values()
+            if n.status == TaskStatus.PENDING and n.remaining_deps == 0 and not n.execution_emitted
+        ]
+        if len(root_nodes) > 1:
+            root_ids = [n.node_id for n in root_nodes]
+            logger.warning(
+                f"DAG {execution.dag_id}: found {len(root_nodes)} root nodes "
+                f"({root_ids}). If this is a serial DAG, dependencies may be misconfigured."
+            )
+
+        for node in root_nodes:
+
+            params = dict(node.params)
+            dag_id = execution.dag_id
+            node_id = node.node_id
+
+            async def on_complete(task: DuckTask, _dag_id=dag_id, _nid=node_id):
+                await self._on_node_complete(_dag_id, _nid, task)
+
+            accepted = await enqueue_ready_node(
+                dag_id=execution.dag_id,
+                node_id=node.node_id,
+                description=node.description,
+                task_type=node.task_type,
+                params=params,
+                priority=node.priority,
+                timeout=node.timeout,
+                duck_type=node.duck_type,
+                duck_id=node.duck_id,
+                callback=on_complete,
+                session_id=execution.session_id,
+            )
+            if accepted:
+                node.execution_emitted = True
+                node.status = TaskStatus.ENQUEUED
 
     async def _schedule_ready_nodes(self, execution: DAGExecution):
         """找出所有可以开始的节点并提交"""
@@ -188,6 +274,11 @@ class DAGTaskOrchestrator:
 
         for node in execution.nodes.values():
             if node.status != TaskStatus.PENDING:
+                continue
+            if node.execution_emitted:
+                continue
+            # Double-check remaining_deps（与 deps_satisfied 互为校验）
+            if node.remaining_deps > 0:
                 continue
 
             # 检查所有依赖是否完成
@@ -229,42 +320,117 @@ class DAGTaskOrchestrator:
 
             node.task_id = task.task_id
             node.status = TaskStatus.ASSIGNED
+            node.execution_emitted = True  # 防止重复派发
             self._task_to_dag[task.task_id] = (execution.dag_id, node.node_id)
 
-            logger.info(f"DAG {execution.dag_id}: node {node.node_id} → task {task.task_id}")
+            logger.info(f"DAG {execution.dag_id}: node {node.node_id} → task {task.task_id} (via fallback scheduler)")
 
             # 群聊: 主 Agent 发布任务分配消息
             await self._group_post_task_assign(execution, node)
 
     async def _on_node_complete(self, dag_id: str, node_id: str, task: DuckTask):
-        """节点任务完成回调"""
-        execution = self._executions.get(dag_id)
-        if not execution:
-            return
+        """节点任务完成回调 — Pull-model: 递减子节点计数器并入队就绪节点
 
-        node = execution.nodes.get(node_id)
-        if not node:
-            return
+        使用 per-DAG 锁防止多个节点同时完成时的并发竞争（例如菱形 DAG 中
+        B 和 C 同时完成时修改 D 的 remaining_deps）。
+        """
+        lock = self._dag_locks.get(dag_id)
+        if not lock:
+            lock = asyncio.Lock()
+            self._dag_locks[dag_id] = lock
 
-        node.status = task.status
-        node.output = task.output
-        node.error = task.error
+        async with lock:
+            execution = self._executions.get(dag_id)
+            if not execution:
+                return
 
-        logger.info(f"DAG {dag_id}: node {node_id} → {task.status.value}")
+            node = execution.nodes.get(node_id)
+            if not node:
+                return
 
-        # 群聊: Duck 汇报完成/失败
-        await self._group_post_node_result(execution, node, task)
+            # Idempotent guard: 防止同一节点回调被触发多次
+            if node.status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+                logger.info(
+                    f"DAG {dag_id}: node {node_id} already in terminal state "
+                    f"{node.status.value}, ignoring duplicate callback"
+                )
+                return
 
-        if task.status == TaskStatus.FAILED:
-            # 检查是否还有其他节点可以执行
-            # 如果失败节点是后续节点的依赖，则这些后续节点也标记为失败
-            self._propagate_failure(execution, node_id)
+            node.status = task.status
+            node.output = task.output
+            node.error = task.error
 
-        # 检查是否可以启动更多节点
-        await self._schedule_ready_nodes(execution)
+            logger.info(f"DAG {dag_id}: node {node_id} → {task.status.value}")
 
-        # 检查 DAG 是否全部完成
-        await self._check_dag_completion(execution)
+            # 群聊: Duck 汇报完成/失败
+            await self._group_post_node_result(execution, node, task)
+
+            if task.status == TaskStatus.FAILED:
+                self._propagate_failure(execution, node_id)
+            elif task.status == TaskStatus.COMPLETED:
+                # Pull-model: 递减依赖此节点的子节点计数器
+                await self._decrement_and_enqueue(execution, node_id)
+
+            # Fallback: 仍调用 _schedule_ready_nodes 处理未被 pull 覆盖的节点
+            await self._schedule_ready_nodes(execution)
+
+            # 检查 DAG 是否全部完成
+            await self._check_dag_completion(execution)
+
+    async def _decrement_and_enqueue(self, execution: DAGExecution, completed_node_id: str):
+        """递减子节点的 remaining_deps，为零时入队 ready queue"""
+        from services.duck_ready_queues import enqueue_ready_node
+
+        for child in execution.nodes.values():
+            if completed_node_id not in child.depends_on:
+                continue
+            if child.status != TaskStatus.PENDING:
+                continue
+
+            child.remaining_deps = max(0, child.remaining_deps - 1)
+
+            if child.remaining_deps == 0:
+                # Replay protection: 防止 crash recovery 重复入队
+                if child.execution_emitted:
+                    logger.info(
+                        f"DAG {execution.dag_id}: node {child.node_id} "
+                        f"already emitted, skipping (replay protection)"
+                    )
+                    continue
+
+                # 注入依赖节点的输出
+                params = dict(child.params)
+                for param_key, source_node_id in child.input_mapping.items():
+                    source_node = execution.nodes.get(source_node_id)
+                    if source_node and source_node.output is not None:
+                        params[param_key] = source_node.output
+
+                dag_id = execution.dag_id
+                child_node_id = child.node_id
+
+                async def on_complete(task: DuckTask, _dag_id=dag_id, _nid=child_node_id):
+                    await self._on_node_complete(_dag_id, _nid, task)
+
+                accepted = await enqueue_ready_node(
+                    dag_id=execution.dag_id,
+                    node_id=child.node_id,
+                    description=child.description,
+                    task_type=child.task_type,
+                    params=params,
+                    priority=child.priority,
+                    timeout=child.timeout,
+                    duck_type=child.duck_type,
+                    duck_id=child.duck_id,
+                    callback=on_complete,
+                    session_id=execution.session_id,
+                )
+                if accepted:
+                    child.execution_emitted = True
+                    child.status = TaskStatus.ENQUEUED
+                    logger.info(
+                        f"DAG {execution.dag_id}: node {child.node_id} deps satisfied, "
+                        f"enqueued to pull queue"
+                    )
 
     def _propagate_failure(self, execution: DAGExecution, failed_node_id: str):
         """传播失败：依赖失败节点的所有下游节点标记为失败"""
@@ -278,7 +444,10 @@ class DAGTaskOrchestrator:
     async def _check_dag_completion(self, execution: DAGExecution):
         """检查 DAG 是否全部完成"""
         all_nodes = list(execution.nodes.values())
-        pending = [n for n in all_nodes if n.status in (TaskStatus.PENDING, TaskStatus.ASSIGNED, TaskStatus.RUNNING)]
+        pending = [
+            n for n in all_nodes
+            if n.status in (TaskStatus.PENDING, TaskStatus.ENQUEUED, TaskStatus.ASSIGNED, TaskStatus.RUNNING)
+        ]
 
         if pending:
             return  # 还有节点在执行或等待
@@ -289,10 +458,26 @@ class DAGTaskOrchestrator:
 
         execution.completed_at = time.time()
 
-        if completed:
+        terminal_nodes = self._find_terminal_nodes(execution)
+
+        if failed:
+            execution.status = "failed"
+            execution.error = f"{len(failed)} of {len(all_nodes)} nodes failed"
+            execution.output = {
+                "total_nodes": len(all_nodes),
+                "completed": len(completed),
+                "failed": len(failed),
+                "results": {
+                    n.node_id: {"output": n.output, "description": n.description}
+                    for n in terminal_nodes if n.status == TaskStatus.COMPLETED
+                },
+                "errors": {
+                    n.node_id: {"error": n.error, "description": n.description}
+                    for n in failed
+                }
+            }
+        else:
             execution.status = "completed"
-            # 聚合结果：找到终端节点（无后继节点的节点）
-            terminal_nodes = self._find_terminal_nodes(execution)
             execution.output = {
                 "total_nodes": len(all_nodes),
                 "completed": len(completed),
@@ -302,17 +487,32 @@ class DAGTaskOrchestrator:
                     for n in terminal_nodes if n.status == TaskStatus.COMPLETED
                 },
             }
-        else:
-            execution.status = "failed"
-            execution.error = f"All {len(failed)} nodes failed"
-            execution.output = {
-                "errors": {
-                    n.node_id: {"error": n.error, "description": n.description}
-                    for n in failed
-                }
-            }
 
         logger.info(f"DAG {execution.dag_id} finished: {execution.status}")
+
+        # 清理 per-DAG 锁
+        self._dag_locks.pop(execution.dag_id, None)
+
+        # Journal: DAG_COMPLETED
+        try:
+            from services.runtime_journal import get_journal, DAG_COMPLETED
+            await get_journal().append(DAG_COMPLETED, dag_id=execution.dag_id,
+                                       extra={"status": execution.status})
+        except Exception:
+            pass
+
+        # v2.3: Slow DAG detection
+        dag_exec_time = execution.completed_at - execution.created_at
+        try:
+            from services.runtime_metrics import metrics as rt_m
+            is_slow = rt_m.record_dag_exec_time(dag_exec_time)
+            if is_slow:
+                logger.warning(
+                    f"[slow_dag_detected] DAG {execution.dag_id} "
+                    f"exec_time={dag_exec_time:.1f}s exceeds p95*3 threshold"
+                )
+        except Exception:
+            pass
 
         # 群聊: 更新状态并发布总结
         await self._group_finalize(execution)
@@ -358,6 +558,7 @@ class DAGTaskOrchestrator:
 
         execution.status = "cancelled"
         execution.completed_at = time.time()
+        self._dag_locks.pop(dag_id, None)
 
         # 项目经理: 清理监控数据
         try:
@@ -392,7 +593,13 @@ class DAGTaskOrchestrator:
     # ─── Group Chat 集成 ─────────────────────────────
 
     async def _create_group_chat(self, execution: DAGExecution) -> None:
-        """DAG 开始时自动创建群聊"""
+        """DAG 开始时自动创建群聊
+
+        分两阶段：
+        1. 核心创建 — 必须成功（失败则 ERROR 日志 + group_id 保持 None）
+        2. 装饰（监控 bot / 执行计划）— 失败仅 WARNING，不影响后续群聊消息
+        """
+        # ── Phase 1: 核心创建 ──
         try:
             from services.group_chat_service import get_group_chat_service
             svc = get_group_chat_service()
@@ -402,8 +609,13 @@ class DAGTaskOrchestrator:
                 dag_id=execution.dag_id,
             )
             execution.group_id = gc.group_id
+            logger.info("群聊已创建: %s dag=%s", gc.group_id, execution.dag_id)
+        except Exception as e:
+            logger.error("创建群聊失败（核心阶段）: %s", e, exc_info=True)
+            return
 
-            # ── 项目经理机器人自动加入 ──
+        # ── Phase 2: 装饰（监控 bot + 执行计划），失败不影响 group_id ──
+        try:
             from services.task_monitor_bot import (
                 TaskMonitorBot, MONITOR_BOT_ID, MONITOR_BOT_NAME, MONITOR_BOT_EMOJI,
             )
@@ -423,8 +635,10 @@ class DAGTaskOrchestrator:
                 gc.group_id,
                 f"{MONITOR_BOT_EMOJI} {MONITOR_BOT_NAME} 已加入，将在任务结束后发布执行分析报告",
             )
+        except Exception as e:
+            logger.warning("群聊监控 bot 注册失败: %s", e)
 
-            # 主 Agent 在群聊中发布执行计划
+        try:
             node_list = "\n".join(
                 f"  {i+1}. {n.description}"
                 + (f" (依赖: {', '.join(n.depends_on)})" if n.depends_on else "")
@@ -443,7 +657,7 @@ class DAGTaskOrchestrator:
                 running=0, pending=len(execution.nodes),
             )
         except Exception as e:
-            logger.warning("创建群聊失败: %s", e)
+            logger.warning("群聊执行计划发布失败: %s", e)
 
     async def _reuse_group_chat(self, execution: DAGExecution) -> None:
         """复用已有群聊，在其中追加新执行计划"""
@@ -664,6 +878,82 @@ def get_dag_orchestrator() -> DAGTaskOrchestrator:
     return DAGTaskOrchestrator.get_instance()
 
 
+def normalize_dag_dependencies(
+    description: str,
+    nodes_raw: List[Dict[str, Any]],
+) -> tuple[List[Dict[str, Any]], bool]:
+    """
+    Normalize dependency declarations from user/LLM input.
+
+    Safety rules:
+    1. If no node provides any explicit depends_on
+       AND the overall task clearly expresses sequential intent
+       → auto-chain all nodes in listed order.
+
+    2. If SOME nodes have explicit depends_on but others don't (partial edges)
+       AND serial intent is detected
+       → auto-chain nodes that lack depends_on to prevent them from running as parallel roots.
+       This fixes the common case where the LLM provides depends_on for some nodes but
+       forgets others, causing them to be dispatched simultaneously.
+    """
+    normalized = [dict(raw) for raw in nodes_raw]
+    if len(normalized) < 2:
+        return normalized, False
+
+    nodes_with_edges = [raw for raw in normalized if bool((raw.get("depends_on") or []))]
+    has_explicit_edges = len(nodes_with_edges) > 0
+    all_have_edges = has_explicit_edges and len(nodes_with_edges) == len(normalized) - 1  # first node naturally has no deps
+
+    # If ALL non-root nodes already have explicit depends_on, trust the LLM's structure
+    if all_have_edges:
+        return normalized, False
+
+    joined_text = " ".join(
+        [description or ""] + [str(raw.get("description") or "") for raw in normalized]
+    )
+    serial_intent = bool(
+        re.search(
+            r"(串行|按顺序|依次|顺序执行|分阶段|先.+再.+最后|先.+然后.+最后|步骤\d|阶段\d|上一阶段|下一阶段|基于前|等待.+完成后|sequential|in order|step by step)",
+            joined_text,
+            re.IGNORECASE,
+        )
+    )
+    if not serial_intent:
+        # 即使没有检测到串行意图，如果有部分 depends_on 且存在无依赖的非首节点，
+        # 记录警告以帮助调试
+        if has_explicit_edges:
+            orphan_count = sum(
+                1 for i, raw in enumerate(normalized)
+                if i > 0 and not bool((raw.get("depends_on") or []))
+            )
+            if orphan_count > 0:
+                logger.warning(
+                    f"[normalize_dag] Partial depends_on detected: {len(nodes_with_edges)} nodes "
+                    f"have edges, {orphan_count} non-root nodes have NO depends_on. "
+                    f"These will run as parallel roots. If this is a serial task, "
+                    f"add serial keywords to description."
+                )
+        return normalized, False
+
+    # Auto-chain: 为缺少 depends_on 的非首节点补全串行依赖
+    chained = False
+    for idx in range(1, len(normalized)):
+        if bool((normalized[idx].get("depends_on") or [])):
+            continue  # 已有显式依赖，保留
+        prev_node_id = str(normalized[idx - 1].get("node_id") or "").strip()
+        if prev_node_id:
+            normalized[idx]["depends_on"] = [prev_node_id]
+            chained = True
+
+    if chained:
+        logger.info(
+            f"[normalize_dag] Auto-chained serial dependencies for {len(normalized)} nodes "
+            f"(had_partial_edges={has_explicit_edges})"
+        )
+
+    return normalized, chained
+
+
 async def notify_duck_task_started(task_id: str, duck_id: str, duck_name: str) -> None:
     """Duck 开始执行任务时，在对应的 DAG 群聊中发送接受任务通知。
 
@@ -671,6 +961,21 @@ async def notify_duck_task_started(task_id: str, duck_id: str, duck_name: str) -
     """
     orchestrator = get_dag_orchestrator()
     entry = orchestrator._task_to_dag.get(task_id)
+    if not entry:
+        for _ in range(10):
+            await asyncio.sleep(0.05)
+            entry = orchestrator._task_to_dag.get(task_id)
+            if entry:
+                break
+    if not entry:
+        for dag_id, execution in orchestrator._executions.items():
+            for node_id, node in execution.nodes.items():
+                if node.task_id == task_id:
+                    entry = (dag_id, node_id)
+                    orchestrator._task_to_dag[task_id] = entry
+                    break
+            if entry:
+                break
     if not entry:
         return                       # 该任务不属于任何 DAG（standalone duck task），静默跳过
 
@@ -685,6 +990,7 @@ async def notify_duck_task_started(task_id: str, duck_id: str, duck_name: str) -
 
     # 更新节点状态为 RUNNING
     node.status = TaskStatus.RUNNING
+    node.duck_id = duck_id
 
     # 项目经理: 记录 Duck 开始执行
     try:

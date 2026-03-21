@@ -2,11 +2,12 @@
   "task_id": "dtask_d7f8903a",
   "description": "根据爬取的AI行业数据，设计HTML展示页面的整体布局、配色方案、图表样式、交互效果等，输出详细的MD设计说明文档\n【重要】保存文件时必须使用实际路径：/Users/lzz/Desktop，禁止用 /Users/xxx/ 或 $(whoami)。",
   "task_type": "designer",
+  "target_duck_type": null,
   "params": {},
-  "status": "pending",
+  "status": "assigned",
   "priority": 0,
   "timeout": 600,
-  "assigned_duck_id": null,
+  "assigned_duck_id": "local_011fcda0",
   "parent_task_id": null,
   "output": null,
   "error": null,
@@ -15,8 +16,8 @@
   "original_description": null,
   "retry_errors": [],
   "created_at": 1773475224.5816472,
-  "assigned_at": 1773475224.582037,
+  "assigned_at": 1773976992.1664488,
   "started_at": null,
   "completed_at": null,
-  "last_activity": 1773475224.582038
+  "last_activity": 1773976992.166451
 }

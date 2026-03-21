@@ -34,6 +34,22 @@ from .cache import router as cache_router
 from .file_index import router as file_index_router
 from .demos import router as demos_router
 from .group_chat import router as group_chat_router
+from .local_admin import router as local_admin_router
+
+# ACP (Agent Capability Protocol) — Open Agent API
+from .agent_manifest import router as agent_manifest_router
+from .agent_capability import router as agent_capability_router
+from .agent_invoke import router as agent_invoke_router
+from .agent_tasks import router as agent_tasks_router
+from .agent_stream import router as agent_stream_router
+from .agent_negotiate import router as agent_negotiate_router
+from .agent_auth import router as agent_auth_router
+
+# Runtime Health (v2.3)
+from .runtime_health import router as runtime_health_router
+
+# Remote Workers (v3.0)
+from .remote_workers import router as remote_workers_router
 
 all_routers = [
     health_router,
@@ -68,4 +84,17 @@ all_routers = [
     file_index_router,
     demos_router,
     group_chat_router,
+    local_admin_router,
+    # ACP — Open Agent API
+    agent_manifest_router,
+    agent_capability_router,
+    agent_invoke_router,
+    agent_tasks_router,
+    agent_stream_router,
+    agent_negotiate_router,
+    agent_auth_router,
+    # Runtime Health (v2.3)
+    runtime_health_router,
+    # Remote Workers (v3.0)
+    remote_workers_router,
 ]

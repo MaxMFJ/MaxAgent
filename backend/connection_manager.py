@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 _BUFFERED_MSG_TYPES = frozenset({
     "duck_task_complete", "duck_task_retry", "duck_task_progress",
     "done", "task_complete", "auto_delegated_to_duck",
+    "group_chat_created", "group_message", "group_status_update",
 })
 # 每个 session 最多缓冲多少条
 _MAX_BUFFER_PER_SESSION = 50

@@ -6,6 +6,7 @@
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) NSMutableArray<Conversation *> *conversations;
+@property (nonatomic, strong) NSMutableArray<GroupChat *> *mutableGroupChats;
 
 @end
 
@@ -33,6 +34,7 @@
 
     ConversationManager *manager = [ConversationManager sharedManager];
     self.conversations = manager.conversations;
+    self.mutableGroupChats = [NSMutableArray arrayWithArray:self.groupChats ?: @[]];
 
     [self setupNavigationBar];
     [self setupTableView];
@@ -54,7 +56,7 @@
     _tableView.backgroundColor = [UIColor clearColor];
     _tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     _tableView.separatorColor = [TechTheme.neonCyan colorWithAlphaComponent:0.1];
-    [_tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"ConversationCell"];
+    // 这里不注册 class，避免拿到默认 style=default 的 cell（detailTextLabel 为 nil）
     _tableView.rowHeight = 64;
     [self.view addSubview:_tableView];
 }
@@ -78,46 +80,90 @@
 
 #pragma mark - UITableViewDataSource
 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    // section 0: 普通对话；section 1: 群聊（如有）
+    return self.mutableGroupChats.count > 0 ? 2 : 1;
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.conversations.count;
+    if (section == 0) return self.conversations.count;
+    return self.mutableGroupChats.count;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    if (section == 0) return NSLocalizedString(@"conversations", nil);
+    return NSLocalizedString(@"group_chats", nil);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"ConversationCell" forIndexPath:indexPath];
+    static NSString * const kCellId = @"ConversationCellSubtitle";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:kCellId];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:kCellId];
+    }
 
-    Conversation *conversation = self.conversations[indexPath.row];
-    ConversationManager *manager = [ConversationManager sharedManager];
-    BOOL isActive = [conversation.conversationId isEqualToString:manager.currentConversation.conversationId];
-
-    // 重用时清理旧进度条
-    cell.backgroundColor = isActive
-        ? [TechTheme.neonCyan colorWithAlphaComponent:0.07]
-        : [UIColor clearColor];
     cell.selectedBackgroundView = [[UIView alloc] init];
     cell.selectedBackgroundView.backgroundColor = [TechTheme.neonCyan colorWithAlphaComponent:0.12];
 
-    cell.textLabel.text = conversation.title;
-    cell.textLabel.textColor = isActive ? TechTheme.neonCyan : TechTheme.textPrimary;
-    cell.textLabel.font = [TechTheme fontBodySize:14 weight:isActive ? UIFontWeightSemibold : UIFontWeightRegular];
+    if (indexPath.section == 0) {
+        Conversation *conversation = self.conversations[indexPath.row];
+        ConversationManager *manager = [ConversationManager sharedManager];
+        BOOL isActive = [conversation.conversationId isEqualToString:manager.currentConversation.conversationId];
 
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    formatter.dateStyle = NSDateFormatterShortStyle;
-    formatter.timeStyle = NSDateFormatterShortStyle;
-    NSString *messageCount = [NSString stringWithFormat:@"%lu msgs", (unsigned long)conversation.messages.count];
-    NSString *timeStr = [formatter stringFromDate:conversation.updatedAt];
-    cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@", messageCount, timeStr];
-    cell.detailTextLabel.textColor = isActive ? [TechTheme.neonCyan colorWithAlphaComponent:0.6] : TechTheme.textDim;
-    cell.detailTextLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightRegular];
+        cell.backgroundColor = isActive
+            ? [TechTheme.neonCyan colorWithAlphaComponent:0.07]
+            : [UIColor clearColor];
 
-    if (isActive) {
-        UIImage *checkImg = [UIImage systemImageNamed:@"checkmark.circle.fill"];
-        UIImageView *check = [[UIImageView alloc] initWithImage:checkImg];
-        check.tintColor = TechTheme.neonCyan;
-        check.frame = CGRectMake(0, 0, 20, 20);
-        cell.accessoryView = check;
+        cell.textLabel.text = conversation.title;
+        cell.textLabel.textColor = isActive ? TechTheme.neonCyan : TechTheme.textPrimary;
+        cell.textLabel.font = [TechTheme fontBodySize:14 weight:isActive ? UIFontWeightSemibold : UIFontWeightRegular];
+
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateStyle = NSDateFormatterShortStyle;
+        formatter.timeStyle = NSDateFormatterShortStyle;
+        NSString *messageCount = [NSString stringWithFormat:@"%lu msgs", (unsigned long)conversation.messages.count];
+        NSString *timeStr = [formatter stringFromDate:conversation.updatedAt];
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@", messageCount, timeStr];
+        cell.detailTextLabel.textColor = isActive ? [TechTheme.neonCyan colorWithAlphaComponent:0.6] : TechTheme.textDim;
+        cell.detailTextLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightRegular];
+
+        if (isActive) {
+            UIImage *checkImg = [UIImage systemImageNamed:@"checkmark.circle.fill"];
+            UIImageView *check = [[UIImageView alloc] initWithImage:checkImg];
+            check.tintColor = TechTheme.neonCyan;
+            check.frame = CGRectMake(0, 0, 20, 20);
+            cell.accessoryView = check;
+        } else {
+            cell.accessoryView = nil;
+            cell.accessoryType = UITableViewCellAccessoryNone;
+        }
     } else {
-        cell.accessoryView = nil;
-        cell.accessoryType = UITableViewCellAccessoryNone;
+        GroupChat *g = self.mutableGroupChats[indexPath.row];
+        BOOL isActive = NO;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(didSelectGroupChat:)]) {
+            // 不追踪“当前活跃群聊”，只做样式统一（不加 check）
+            isActive = NO;
+        }
+
+        cell.backgroundColor = isActive
+            ? [TechTheme.neonPurple colorWithAlphaComponent:0.08]
+            : [UIColor clearColor];
+
+        cell.textLabel.text = g.title.length > 0 ? g.title : @"协作群聊";
+        cell.textLabel.textColor = TechTheme.neonPurple;
+        cell.textLabel.font = [TechTheme fontBodySize:14 weight:UIFontWeightSemibold];
+
+        NSInteger total = g.taskSummary.total;
+        NSInteger done = g.taskSummary.completed + g.taskSummary.failed;
+        NSString *status = [GroupChat stringFromStatus:g.status] ?: @"active";
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"#%@ · %@ · %ld/%ld", g.groupId ?: @"", status, (long)done, (long)total];
+        cell.detailTextLabel.textColor = TechTheme.textDim;
+        cell.detailTextLabel.font = [TechTheme fontMonoSize:11 weight:UIFontWeightRegular];
+
+        UIImage *icon = [UIImage systemImageNamed:@"person.3.fill"];
+        UIImageView *iv = [[UIImageView alloc] initWithImage:icon];
+        iv.tintColor = [TechTheme.neonPurple colorWithAlphaComponent:0.9];
+        cell.accessoryView = iv;
     }
 
     return cell;
@@ -129,15 +175,30 @@
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
-        Conversation *conversation = self.conversations[indexPath.row];
-        
-        ConversationManager *manager = [ConversationManager sharedManager];
-        [manager deleteConversation:conversation];
-        
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-        
-        if ([self.delegate respondsToSelector:@selector(didDeleteConversation:)]) {
-            [self.delegate didDeleteConversation:conversation];
+        if (indexPath.section == 0) {
+            Conversation *conversation = self.conversations[indexPath.row];
+
+            ConversationManager *manager = [ConversationManager sharedManager];
+            [manager deleteConversation:conversation];
+
+            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+
+            if ([self.delegate respondsToSelector:@selector(didDeleteConversation:)]) {
+                [self.delegate didDeleteConversation:conversation];
+            }
+        } else {
+            GroupChat *g = self.mutableGroupChats[indexPath.row];
+            [self.mutableGroupChats removeObjectAtIndex:indexPath.row];
+            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+
+            if (self.mutableGroupChats.count == 0) {
+                // 删除最后一个群聊后，移除 section
+                [tableView reloadData];
+            }
+
+            if ([self.delegate respondsToSelector:@selector(didDeleteGroupChat:)]) {
+                [self.delegate didDeleteGroupChat:g];
+            }
         }
     }
 }
@@ -147,32 +208,50 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
-    Conversation *conversation = self.conversations[indexPath.row];
-    
-    ConversationManager *manager = [ConversationManager sharedManager];
-    [manager selectConversation:conversation];
-    
-    if ([self.delegate respondsToSelector:@selector(didSelectConversation:)]) {
-        [self.delegate didSelectConversation:conversation];
+    if (indexPath.section == 0) {
+        Conversation *conversation = self.conversations[indexPath.row];
+
+        ConversationManager *manager = [ConversationManager sharedManager];
+        [manager selectConversation:conversation];
+
+        if ([self.delegate respondsToSelector:@selector(didSelectConversation:)]) {
+            [self.delegate didSelectConversation:conversation];
+        }
+        [self dismiss];
+    } else {
+        GroupChat *g = self.mutableGroupChats[indexPath.row];
+        if ([self.delegate respondsToSelector:@selector(didSelectGroupChat:)]) {
+            [self.delegate didSelectGroupChat:g];
+        }
+        [self dismiss];
     }
-    
-    [self dismiss];
 }
 
 - (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
     UIContextualAction *deleteAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
                                                                                title:NSLocalizedString(@"delete", nil)
                                                                              handler:^(UIContextualAction *action, UIView *sourceView, void (^completionHandler)(BOOL)) {
-        Conversation *conversation = self.conversations[indexPath.row];
-        ConversationManager *manager = [ConversationManager sharedManager];
-        [manager deleteConversation:conversation];
-        
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-        
-        if ([self.delegate respondsToSelector:@selector(didDeleteConversation:)]) {
-            [self.delegate didDeleteConversation:conversation];
+        if (indexPath.section == 0) {
+            Conversation *conversation = self.conversations[indexPath.row];
+            ConversationManager *manager = [ConversationManager sharedManager];
+            [manager deleteConversation:conversation];
+
+            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+
+            if ([self.delegate respondsToSelector:@selector(didDeleteConversation:)]) {
+                [self.delegate didDeleteConversation:conversation];
+            }
+        } else {
+            GroupChat *g = self.mutableGroupChats[indexPath.row];
+            [self.mutableGroupChats removeObjectAtIndex:indexPath.row];
+            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+            if (self.mutableGroupChats.count == 0) {
+                [tableView reloadData];
+            }
+            if ([self.delegate respondsToSelector:@selector(didDeleteGroupChat:)]) {
+                [self.delegate didDeleteGroupChat:g];
+            }
         }
-        
         completionHandler(YES);
     }];
     

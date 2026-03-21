@@ -417,6 +417,71 @@ async def lifespan(app: FastAPI):
 
     logger.info("Chow Duck backend started (ReAct + Autonomous modes with Model Selection)")
 
+    # 启动 DAG Runtime Guarantees：续步排水循环 + 调度器 watchdog
+    # Journal: rotate + crash recovery
+    try:
+        from services.runtime_journal import get_journal, recover_runtime_state
+        from services.duck_protocol import TaskStatus
+        journal = get_journal()
+        journal.rotate(max_size_mb=10.0)
+        recovery = await recover_runtime_state()
+        if recovery["stats"].get("requeue", 0) > 0:
+            logger.info(f"[recovery] Recovered state: {recovery['stats']}")
+            # Requeue interrupted tasks via scheduler
+            try:
+                from services.duck_task_scheduler import get_task_scheduler
+                sched = get_task_scheduler()
+                for tid in recovery["requeue_task_ids"]:
+                    task = sched._tasks.get(tid)
+                    if task and task.status in (TaskStatus.ASSIGNED, TaskStatus.RUNNING):
+                        task.status = TaskStatus.PENDING
+                        task.assigned_duck_id = None
+                        logger.info(f"[recovery] Task {tid} reset to PENDING")
+            except Exception as re:
+                logger.warning(f"[recovery] Requeue failed: {re}")
+        journal.truncate()  # Clear journal after recovery
+    except Exception as e:
+        logger.warning(f"Journal recovery failed (non-blocking): {e}")
+
+    try:
+        from ws_handler import start_deferred_drain_loop
+        start_deferred_drain_loop()
+        logger.info("Deferred continuation drain loop started")
+    except Exception as e:
+        logger.warning(f"Deferred drain loop start failed: {e}")
+
+    # 启动 Ready Queue overflow drain loop
+    try:
+        from services.duck_ready_queues import load_queue_snapshot, start_overflow_drain_loop
+        start_overflow_drain_loop()
+        queue_recovery = await load_queue_snapshot()
+        if queue_recovery.get("restored", 0) or queue_recovery.get("skipped", 0):
+            logger.info(f"Ready queue snapshot recovery: {queue_recovery}")
+        logger.info("Ready queue overflow drain loop started")
+    except Exception as e:
+        logger.warning(f"Overflow drain loop start failed: {e}")
+
+    # 启动 Metrics 持久化循环 (30s snapshot)
+    try:
+        from services.runtime_metrics import start_metrics_snapshot_loop
+        start_metrics_snapshot_loop(interval=30.0)
+    except Exception as e:
+        logger.warning(f"Metrics snapshot loop start failed: {e}")
+
+    # 启动 Journal Compaction 循环 (10 min)
+    try:
+        from services.runtime_journal import start_journal_compaction_loop
+        start_journal_compaction_loop(interval=600.0)
+    except Exception as e:
+        logger.warning(f"Journal compaction loop start failed: {e}")
+
+    # 启动 Stuck Task Detector (30s scan)
+    try:
+        from services.runtime_health import start_stuck_task_detector
+        start_stuck_task_detector(interval=30.0)
+    except Exception as e:
+        logger.warning(f"Stuck task detector start failed: {e}")
+
     # Tunnel Lifecycle Service 初始化（异步启动 cloudflared，不阻塞后端）
     try:
         from services.tunnel_lifecycle import get_tunnel_lifecycle
@@ -485,6 +550,20 @@ async def lifespan(app: FastAPI):
     # ─────────────────────────────────────────────────────────────────────────
 
     yield
+    # Graceful shutdown: persist final metrics snapshot
+    try:
+        from services.runtime_metrics import metrics as rt_metrics
+        rt_metrics.persist_snapshot()
+        logger.info("Final metrics snapshot persisted")
+    except Exception as e:
+        logger.warning(f"Final metrics snapshot failed: {e}")
+    # Graceful shutdown: duck ready queues (persist pending + drain workers)
+    try:
+        from services.duck_ready_queues import graceful_shutdown as rq_shutdown
+        await rq_shutdown(timeout=30.0)
+        logger.info("Duck ready queues graceful shutdown complete")
+    except Exception as e:
+        logger.warning(f"Duck ready queues shutdown error: {e}")
     # MCP manager shutdown
     try:
         from agent.mcp_client import get_mcp_manager

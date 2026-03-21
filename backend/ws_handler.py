@@ -90,6 +90,32 @@ async def drain_deferred_continuations(session_id: str) -> None:
         await _on_duck_task_complete(session_id, task)
 
 
+# ─── 后台续步排水循环：每 5 秒检查一次排队的续步 ─────────────────────────
+_drain_loop_task: Optional[asyncio.Task] = None
+
+
+def start_deferred_drain_loop():
+    """启动后台排水循环，不再仅依赖 chat 完成事件"""
+    global _drain_loop_task
+    if _drain_loop_task and not _drain_loop_task.done():
+        return
+
+    async def _drain_loop():
+        while True:
+            await asyncio.sleep(5)
+            try:
+                async with _deferred_lock:
+                    session_ids = list(_deferred_continuations.keys())
+                for sid in session_ids:
+                    if not is_main_agent_busy(sid, "chat"):
+                        await drain_deferred_continuations(sid)
+            except Exception as e:
+                logger.warning(f"[drain_loop] error: {e}")
+
+    _drain_loop_task = asyncio.create_task(_drain_loop())
+    logger.info("[ws_handler] Deferred continuation drain loop started (interval=5s)")
+
+
 # ─── Duck 完成自动续步钩子 ───────────────────────────────────────────────────
 
 async def _run_agent_and_broadcast_result(
@@ -952,7 +978,7 @@ async def _handle_chat(
                         extra_system_prompt += (
                             f"\n\n[系统提示：自动联网预取 '{aug_query}' 的实时信息失败。"
                             f"但你仍然可以使用 web_search 工具获取实时数据（天气用 action=get_weather，"
-                            f"新闻用 action=news，通用搜索用 action=search）。请主动调用 web_search 工具来获取用户需要的信息，"
+                            f"新闻用 action=news，通用搜索用 action=search，多来源调研用 action=research）。请主动调用 web_search 工具来获取用户需要的信息，"
                             f"不要直接告诉用户'找不到技能'或'无法获取'。]"
                         )
                         logger.info(f"Web augmentation failed for '{aug_query}', injected fallback hint")
@@ -1740,8 +1766,14 @@ async def _handle_create_dag(message: dict, websocket: WebSocket, current_sessio
         return
 
     try:
-        from services.duck_task_dag import DAGTaskOrchestrator, DAGNode
+        from services.duck_task_dag import (
+            DAGTaskOrchestrator,
+            DAGNode,
+            normalize_dag_dependencies,
+        )
         from services.duck_protocol import DuckType
+
+        nodes_raw, auto_chained = normalize_dag_dependencies(description, nodes_raw)
 
         # 解析节点
         dag_nodes = []
@@ -1804,6 +1836,7 @@ async def _handle_create_dag(message: dict, websocket: WebSocket, current_sessio
             "description": description,
             "node_count": len(dag_nodes),
             "session_id": session_id,
+            "auto_chained": auto_chained,
         })
 
         # 异步执行（不阻塞 WS 线程）

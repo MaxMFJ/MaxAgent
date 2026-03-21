@@ -702,6 +702,68 @@ class LocalDuckWorker:
                     stream_task.cancel()
                     await asyncio.gather(stream_task, return_exceptions=True)
 
+        async def _run_monitored_awaitable(coro, hard_timeout: float) -> Any:
+            """对非流式 awaitable 复用活跃度监控，避免计划执行器静默卡死。"""
+            last_active[0] = time.time()
+            hard_deadline = time.time() + hard_timeout
+            task = asyncio.create_task(coro)
+
+            async def _emit_timeout_marker(reason: str) -> None:
+                if duck_phase[0] != "llm_waiting":
+                    return
+                try:
+                    await broadcast_monitor_event(
+                        session_id=source_session,
+                        task_id=payload.task_id,
+                        event={
+                            "type": "llm_request_end",
+                            "error": reason[:200],
+                            "success": False,
+                        },
+                        task_type="duck",
+                        worker_type="local_duck",
+                        worker_id=self.duck_id,
+                    )
+                except Exception:
+                    pass
+
+            try:
+                while True:
+                    done, _ = await asyncio.wait({task}, timeout=10)
+                    if task in done:
+                        return task.result()
+
+                    now = time.time()
+                    inactivity = now - last_active[0]
+                    if now >= hard_deadline:
+                        reason = f"任务超时：总执行时间超过 {int(hard_timeout)}s 上限"
+                        task.cancel()
+                        await asyncio.gather(task, return_exceptions=True)
+                        await _emit_timeout_marker(reason)
+                        raise asyncio.TimeoutError(reason)
+
+                    current_phase = duck_phase[0]
+                    if current_phase == "llm_waiting":
+                        timeout_threshold = LLM_INACTIVITY_TIMEOUT
+                    elif current_phase == "tool_executing":
+                        timeout_threshold = TOOL_INACTIVITY_TIMEOUT
+                    else:
+                        timeout_threshold = IDLE_INACTIVITY_TIMEOUT
+
+                    if inactivity > timeout_threshold:
+                        reason = (
+                            f"任务卡死：{int(inactivity)}s 内无任何进展"
+                            f"（相位={current_phase}，阈值={timeout_threshold}s）"
+                        )
+                        task.cancel()
+                        await asyncio.gather(task, return_exceptions=True)
+                        await _emit_timeout_marker(reason)
+                        raise asyncio.TimeoutError(reason)
+            finally:
+                if not task.done():
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+
         try:
             # v3.9: 使用确定性计划执行引擎（有 sandbox 时启用）
             if _sandbox:
@@ -750,7 +812,8 @@ class LocalDuckWorker:
                     except Exception:
                         pass
 
-                result = await asyncio.wait_for(
+                duck_phase[0] = "llm_waiting"
+                result = await _run_monitored_awaitable(
                     run_duck_task_with_plan(
                         agent=agent,
                         llm_client=_plan_llm,
@@ -762,7 +825,7 @@ class LocalDuckWorker:
                         hard_timeout=min(float(payload.timeout), 540.0),
                         broadcast_fn=_broadcast_chunk,
                     ),
-                    timeout=float(payload.timeout),
+                    float(payload.timeout),
                 )
             else:
                 result = await _run_smart(isolated_desc, float(payload.timeout))

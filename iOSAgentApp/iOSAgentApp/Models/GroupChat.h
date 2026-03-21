@@ -41,6 +41,7 @@ typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
 @property (nonatomic, assign, readonly) NSTimeInterval joinedAt;
 
 + (instancetype)participantWithDictionary:(NSDictionary *)dict;
+- (NSDictionary *)toDictionary;
 @end
 
 // MARK: - GroupMessage
@@ -57,6 +58,7 @@ typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
 @property (nonatomic, assign, readonly) NSTimeInterval timestamp;
 
 + (instancetype)messageWithDictionary:(NSDictionary *)dict;
+- (NSDictionary *)toDictionary;
 @end
 
 // MARK: - GroupTaskSummary
@@ -69,6 +71,7 @@ typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
 @property (nonatomic, assign) NSInteger pending;
 
 + (instancetype)summaryWithDictionary:(NSDictionary *)dict;
+- (NSDictionary *)toDictionary;
 @end
 
 // MARK: - GroupChat
@@ -91,6 +94,9 @@ typedef NS_ENUM(NSInteger, GroupMessageTypeValue) {
 
 + (GroupChatStatusType)statusFromString:(NSString *)str;
 + (NSString *)stringFromStatus:(GroupChatStatusType)status;
+
+/// 用于本地持久化/恢复（与后端 JSON 字段保持一致）
+- (NSDictionary *)toDictionary;
 
 @end
 

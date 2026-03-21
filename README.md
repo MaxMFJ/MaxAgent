@@ -28,6 +28,25 @@
 - **自愈**：诊断引擎、修复计划与执行
 - **多客户端**：Mac/iOS 同时连接，按 session 同步；可选 Cloudflared 隧道
 
+### DAG 分布式任务运行时
+- **DAG 编排**：复杂任务自动拆解为有向无环图，子任务由专职 Duck Agent 并行执行
+- **Pull-Based 调度**：类型化 Ready Queue + 加权轮转公平调度，Worker 主动拉取任务
+- **状态机**：9 态严格状态转换（CREATED → PENDING → ENQUEUED → ASSIGNED → RUNNING → COMPLETED / FAILED），幂等完成守卫
+- **可靠性**：Append-only Journal 崩溃恢复、Lease 超时僵尸任务保护、自适应背压控制
+- **Worker 健康**：Per-duck 健康评分 + 自动隔离，慢 DAG 检测
+- **分布式**：Remote Pull Protocol（HTTP + Bearer Token），支持远程 Worker 水平扩展
+- **可观测性**：就绪等级（OK/DEGRADED/CRITICAL）、Task Explain、Queue State、Worker 诊断、Stuck 检测
+
+> 详细文档：[docs/DAG_RUNTIME.md](docs/DAG_RUNTIME.md)
+
+### Open Agent API (ACP)
+- **Agent Card**（`GET /agent`）：对外发布 Agent 能力描述、支持的技能列表
+- **能力协商**（`POST /agent/negotiate`）：与其他 Agent 动态协商交互协议和能力
+- **任务调用**（`POST /agent/invoke`）：接收外部任务请求并交由内部 Agent 执行
+- **异步任务**（`GET /agent/tasks/{id}`）：查询异步任务状态和结果
+- **流式执行**（`POST /agent/stream`）：SSE 实时流式返回执行进度
+- **认证**（`POST /agent/auth`）：Token 签发与验证，保护所有 ACP 端点
+
 ---
 
 ## 系统要求
@@ -98,6 +117,15 @@ open MacAgentApp/MacAgentApp.xcodeproj
 | ENABLE_EVOMAP | false | 是否启用 EvoMap |
 | AUTH_ENABLED, AUTH_TOKEN | - | 隧道/iOS 认证 |
 | HF_ENDPOINT | - | 国内可设 `https://hf-mirror.com` 加速 BGE 下载 |
+| WEB_SEARCH_BACKEND | auto | `auto` 默认免费优先；可选 `hybrid/jina/searxng/ddg/ddg_html` |
+| WEB_READ_BACKEND | auto | `auto` 默认内置免费提取；可选 `hybrid/jina/builtin` |
+| JINA_API_KEY | - | 启用 Jina Search / Reader，适合给 Agent 提供更干净的网页正文 |
+| SEARXNG_URL | - | 自托管 SearXNG 实例，例如 `http://localhost:8080` |
+| WEB_SEARCH_TIMEOUT | 15 | 搜索和抓取请求超时时间（秒） |
+| JINA_TOKEN_BUDGET | 8000 | Jina Reader 返回正文的预算上限 |
+| WEB_RESEARCH_MAX_PAGES | 5 | `web_search(action=research)` 最多抓取的来源页数 |
+| WEB_RESEARCH_EXCERPT_CHARS | 1600 | research 模式保留的单页正文摘要长度 |
+| CRAWL4AI_HEADLESS | true | Crawl4AI 抓取时是否启用无头浏览器 |
 
 ### MCP 服务器
 
@@ -109,6 +137,36 @@ open MacAgentApp/MacAgentApp.xcodeproj
 | Puppeteer | `@modelcontextprotocol/server-puppeteer` | Node.js 18+ |
 | Filesystem | `@modelcontextprotocol/server-filesystem` | Node.js 18+ |
 | Memory | `@modelcontextprotocol/server-memory` | Node.js 18+ |
+
+### 推荐的联网搜索增强
+
+如果你希望 `web_search` 从“能用”升级到“更稳更适合 Agent”，推荐至少启用下面其中一种：
+
+```bash
+# 方案 1：免费优先（推荐默认）
+export WEB_SEARCH_BACKEND="auto"
+export WEB_READ_BACKEND="auto"
+export SEARXNG_URL="http://127.0.0.1:8080"
+
+# 方案 2：Jina Search / Reader（按量计费，显式启用）
+export JINA_API_KEY="your-jina-key"
+export WEB_SEARCH_BACKEND="hybrid"
+export WEB_READ_BACKEND="hybrid"
+
+# 也可以强制指定某个后端
+export WEB_SEARCH_BACKEND="searxng"
+export WEB_READ_BACKEND="jina"
+```
+
+当前后端优先级：
+- 免费默认 `auto`：
+- `search` / `news`：`SearXNG -> DuckDuckGo -> DuckDuckGo HTML fallback`
+- `extract_text`：`builtin HTML extraction`
+- `research`：`Search backend -> Crawl4AI -> builtin extraction`
+- 显式付费增强 `hybrid`：
+- `search` / `news`：`Jina -> SearXNG -> DuckDuckGo -> DuckDuckGo HTML fallback`
+- `extract_text`：`Jina Reader -> builtin HTML extraction`
+- `research`：`Search backend -> Crawl4AI -> Jina Reader -> builtin extraction`
 
 ---
 

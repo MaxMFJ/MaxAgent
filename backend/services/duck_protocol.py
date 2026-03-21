@@ -60,12 +60,49 @@ class DuckStatus(str, Enum):
 
 class TaskStatus(str, Enum):
     """Duck 任务生命周期"""
-    PENDING = "pending"       # 等待分配
-    ASSIGNED = "assigned"     # 已分配, 等待 Duck 确认
-    RUNNING = "running"       # 执行中
-    COMPLETED = "completed"   # 完成
-    FAILED = "failed"         # 失败
-    CANCELLED = "cancelled"   # 已取消
+    CREATED = "created"           # 刚创建（v2.2: 初始态）
+    PENDING = "pending"           # 等待分配
+    ENQUEUED = "enqueued"         # 已入 ready queue（v2.2: pull-model）
+    ASSIGNED = "assigned"         # 已分配, 等待 Duck 确认
+    RUNNING = "running"           # 执行中
+    COMPLETED = "completed"       # 完成
+    FAILED = "failed"             # 最终失败
+    FAILED_TEMP = "failed_temp"   # 临时失败（可重试, v2.2）
+    CANCELLED = "cancelled"       # 已取消
+
+
+# ─── Task State Machine ──────────────────────────────
+
+# 合法状态转换表
+_VALID_TRANSITIONS: dict[str, set[str]] = {
+    TaskStatus.CREATED: {TaskStatus.PENDING, TaskStatus.ENQUEUED, TaskStatus.CANCELLED},
+    TaskStatus.PENDING: {TaskStatus.ASSIGNED, TaskStatus.ENQUEUED, TaskStatus.CANCELLED, TaskStatus.FAILED},
+    TaskStatus.ENQUEUED: {TaskStatus.ASSIGNED, TaskStatus.PENDING, TaskStatus.CANCELLED},
+    TaskStatus.ASSIGNED: {TaskStatus.RUNNING, TaskStatus.PENDING, TaskStatus.FAILED, TaskStatus.FAILED_TEMP, TaskStatus.CANCELLED, TaskStatus.COMPLETED},
+    TaskStatus.RUNNING: {TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.FAILED_TEMP, TaskStatus.CANCELLED, TaskStatus.PENDING},
+    TaskStatus.FAILED_TEMP: {TaskStatus.PENDING, TaskStatus.ENQUEUED, TaskStatus.FAILED, TaskStatus.CANCELLED},
+    TaskStatus.FAILED: set(),         # 终态
+    TaskStatus.COMPLETED: set(),      # 终态
+    TaskStatus.CANCELLED: set(),      # 终态
+}
+
+
+def transition_task(task, new_status: "TaskStatus") -> bool:
+    """
+    验证并执行任务状态转换。
+    返回 True 如果转换合法，False + 日志如果非法。
+    """
+    old_status = task.status
+    valid = _VALID_TRANSITIONS.get(old_status, set())
+    if new_status not in valid:
+        import logging
+        logging.getLogger(__name__).warning(
+            f"[invalid_transition] task={getattr(task, 'task_id', '?')} "
+            f"{old_status.value} → {new_status.value} (allowed: {[s.value for s in valid]})"
+        )
+        return False
+    task.status = new_status
+    return True
 
 
 # ─── 基础消息 ─────────────────────────────────────────
@@ -145,6 +182,7 @@ class DuckTask(BaseModel):
     task_id: str = Field(default_factory=lambda: f"dtask_{uuid.uuid4().hex[:8]}")
     description: str
     task_type: str = "general"
+    target_duck_type: Optional[DuckType] = None
     params: Dict[str, Any] = Field(default_factory=dict)
     status: TaskStatus = TaskStatus.PENDING
     priority: int = 0

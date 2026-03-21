@@ -94,8 +94,14 @@ class DelegateDagTool(BaseTool):
             if IS_DUCK_MODE:
                 return ToolResult(success=False, error="Duck 模式下不允许创建 DAG 协作任务")
 
-            from services.duck_task_dag import DAGTaskOrchestrator, DAGNode
+            from services.duck_task_dag import (
+                DAGTaskOrchestrator,
+                DAGNode,
+                normalize_dag_dependencies,
+            )
             from services.duck_protocol import DuckType
+
+            nodes_raw, auto_chained = normalize_dag_dependencies(description, nodes_raw)
 
             # 解析节点
             dag_nodes = []
@@ -131,10 +137,23 @@ class DelegateDagTool(BaseTool):
                 ))
 
             orchestrator = DAGTaskOrchestrator.get_instance()
+            from services.duck_task_scheduler import get_task_scheduler
 
             # 获取当前 session_id
             from agent.terminal_session import get_current_session_id
-            session_id = get_current_session_id() or "default"
+            session_id = (
+                get_current_session_id()
+                or getattr(self, "_current_session_id", "")
+                or ""
+            )
+            if not session_id:
+                return ToolResult(
+                    success=False,
+                    error="delegate_dag 需要有效的当前会话，当前未获取到 session_id",
+                )
+
+            scheduler = get_task_scheduler()
+            await scheduler.initialize()
 
             execution = orchestrator.create_dag(
                 description=description,
@@ -152,6 +171,9 @@ class DelegateDagTool(BaseTool):
             )
 
             group_msg = f"群聊 {existing_group_id} 中续接执行" if existing_group_id else "群聊已自动创建，各Agent将在群聊中实时汇报进度"
+            chain_msg = ""
+            if auto_chained:
+                chain_msg = "\n检测到这是顺序任务，已自动按节点顺序补全 depends_on 串行依赖。"
 
             return ToolResult(
                 success=True,
@@ -162,7 +184,7 @@ class DelegateDagTool(BaseTool):
                     "message": (
                         f"多Agent协作DAG已创建并开始执行（共{len(dag_nodes)}个子任务）。\n"
                         f"节点：{node_summary}\n"
-                        f"{group_msg}。"
+                        f"{group_msg}。{chain_msg}"
                     ),
                 },
             )
