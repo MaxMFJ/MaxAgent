@@ -397,6 +397,13 @@ class LLMClient:
 
             stream_iter = stream.__aiter__()
             try:
+                finish_reason = None
+                usage_info = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                }
+
                 while True:
                     try:
                         chunk = await asyncio.wait_for(stream_iter.__anext__(), timeout=chunk_timeout)
@@ -429,12 +436,14 @@ class LLMClient:
                         }
                         logger.info(f"Got usage info: {usage_info}")
                     
-                    delta = chunk.choices[0].delta if chunk.choices else None
-                    
-                    if not delta:
-                        continue
-                
-                    if delta.content:
+                    choice = chunk.choices[0] if chunk.choices else None
+                    delta = choice.delta if choice else None
+
+                    if choice and choice.finish_reason:
+                        finish_reason = choice.finish_reason
+                        logger.info(f"Stream finish_reason: {finish_reason}, processed {chunk_count} chunks")
+
+                    if delta and delta.content:
                         chunk_text = extract_text_from_content(delta.content)
                         if chunk_text:
                             logger.debug(f"Content chunk: {chunk_text[:50] if len(chunk_text) > 50 else chunk_text}")
@@ -442,7 +451,7 @@ class LLMClient:
                             token_counter.add_content(chunk_text)
                             yield {"type": "content", "content": chunk_text}
                 
-                    if delta.tool_calls:
+                    if delta and delta.tool_calls:
                         for tc in delta.tool_calls:
                             idx = tc.index
                             if idx not in tool_calls_buffer:
@@ -460,9 +469,7 @@ class LLMClient:
                                 if tc.function.arguments:
                                     tool_calls_buffer[idx]["arguments"] += tc.function.arguments
                 
-                    if chunk.choices[0].finish_reason:
-                        finish_reason = chunk.choices[0].finish_reason
-                        logger.info(f"Stream finish_reason: {finish_reason}, processed {chunk_count} chunks")
+                    if choice and choice.finish_reason:
                         if tool_calls_buffer:
                             truncated = (finish_reason == "length")
                             if truncated:

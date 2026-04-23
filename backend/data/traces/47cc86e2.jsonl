@@ -1,8 +1,0 @@
-{"iteration": 1, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 3787, "success": true, "ts": 1773716550.919582}
-{"iteration": 1, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716551.46172}
-{"iteration": 2, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 8818, "success": true, "ts": 1773716562.281787}
-{"iteration": 2, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716562.851142}
-{"iteration": 3, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 5505, "success": true, "ts": 1773716570.360424}
-{"iteration": 3, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": false, "error": "ClassifiedError(category=<ErrorCategory.ENVIRONMENT: 'environment'>, severity=<ErrorSeverity.MEDIUM: 'medium'>, recovery=<RecoveryStrategy.RETRY_MODIFIED: 'retry_modified'>, message='目标文件或路径不存在', orig", "ts": 1773716570.898772}
-{"iteration": 4, "type": "llm", "model": "custom.ce677656/MiniMax-M2.5", "latency_ms": 2891, "success": true, "ts": 1773716575.7919738}
-{"iteration": 4, "type": "tool", "action_type": "list_directory", "latency_ms": 0, "success": true, "error": null, "ts": 1773716576.3727932}

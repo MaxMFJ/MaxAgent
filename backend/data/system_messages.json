@@ -1,62 +1,32 @@
 [
   {
-    "id": "796cc5d1-ca88-4629-afec-9ca66afba242",
+    "id": "b4388692-1f62-4751-8b3e-0580c9b0e05a",
     "level": "error",
-    "title": "任务被停止",
-    "content": "任务: 帮我做一个关于AI行业的研究报告2025-2026年的，先craw 搜集最新的行业数据和新闻，然后designer 设计页面md说明页面如何设计，最后coder 生成一个漂亮的HTML展示页面\n原因: LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.\n建议: Try: 1) Simplify the task description 2) Check API quota 3) Switch model",
-    "source": "chat_task",
+    "title": "对话执行错误",
+    "content": "Your request was blocked.",
+    "source": "chat_stream",
     "category": "system_error",
-    "timestamp": "2026-03-17T10:53:29.964666",
+    "timestamp": "2026-03-30T17:14:16.499017",
     "read": true
   },
   {
-    "id": "7735943c-5688-44f3-afd3-71775bfa15af",
+    "id": "319e0643-b8d7-439f-9685-8730e9b7f868",
     "level": "error",
-    "title": "任务被停止",
-    "content": "任务: 帮我做一个关于AI行业的研究报告2025-2026年的，先craw 搜集最新的行业数据和新闻，然后designer 设计页面md说明页面如何设计，最后coder 生成一个漂亮的HTML展示页面\n原因: LLM returned unparseable content 3 times consecutively. Please check model configuration or simplify the task description.\n建议: Try: 1) Simplify the task description 2) Check API quota 3) Switch model",
-    "source": "chat_task",
+    "title": "对话执行错误",
+    "content": "cannot access local variable 'finish_reason' where it is not associated with a value",
+    "source": "chat_stream",
     "category": "system_error",
-    "timestamp": "2026-03-17T13:18:12.739129",
+    "timestamp": "2026-03-31T08:39:36.833346",
     "read": true
   },
   {
-    "id": "f26f3078-9685-4cef-bd96-f70b0baa8d43",
-    "level": "warning",
-    "title": "启动检查: 2 条未分类错误",
-    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
-    "source": "log_analyzer",
+    "id": "130c3a8f-3dcb-421c-ad19-ad42a1670619",
+    "level": "error",
+    "title": "对话执行错误",
+    "content": "Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****483d is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}",
+    "source": "chat_stream",
     "category": "system_error",
-    "timestamp": "2026-03-17T17:06:40.235943",
-    "read": true
-  },
-  {
-    "id": "3f844b5c-25c2-4bce-908e-986d981807ac",
-    "level": "info",
-    "title": "进化/升级完成",
-    "content": "开发一个邮件发送工具，具备以下功能：1) 支持SMTP邮件发送协议；2) 支持邮件正文（纯文本）；3) 支持HTML格式邮件内容；4) 支持文件附件（包括生成的HTML页面文件）；5) 支持直接发送HTTP地址链接；6) 处理特殊编码需求，避免Base64限制；7) 包含邮件模板管理，方便后续调用。该工具将作为独立模块，可被其他任务模块调用，用于邮件通知和内容分发。",
-    "source": "upgrade",
-    "category": "evolution",
-    "timestamp": "2026-03-01T01:10:11.513193",
-    "read": true
-  },
-  {
-    "id": "55aa9bc1-e4f7-44c8-8420-9238d9e85561",
-    "level": "warning",
-    "title": "启动检查: 2 条未分类错误",
-    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-18T14:51:46.657811",
-    "read": true
-  },
-  {
-    "id": "3e44fcd2-09e0-4664-aeec-1caff7ec7912",
-    "level": "warning",
-    "title": "启动检查: 2 条未分类错误",
-    "content": "发现 2 条错误日志未匹配已知模式。\n最近一条: ws_handler - WebSocket error: WebSocket is not connected. Need to call \"accept\" first.",
-    "source": "log_analyzer",
-    "category": "system_error",
-    "timestamp": "2026-03-18T16:58:53.446681",
-    "read": true
+    "timestamp": "2026-04-23T14:27:15.973881",
+    "read": false
   }
 ]

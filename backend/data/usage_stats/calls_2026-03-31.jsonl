@@ -1,0 +1,4 @@
+{"ts": 1774919854.532707, "dt": "2026-03-31T01:17:34.532707+00:00", "model": "deepseek", "provider": "custom.592efab2", "prompt_tokens": 9, "completion_tokens": 1, "total_tokens": 10, "success": true, "latency_ms": 0, "error": null}
+{"ts": 1774923419.080323, "dt": "2026-03-31T02:16:59.080323+00:00", "model": "MiniMax-M2.5", "provider": "custom.ce677656", "prompt_tokens": 7498, "completion_tokens": 603, "total_tokens": 8101, "success": true, "latency_ms": 0, "error": null}
+{"ts": 1774923427.926921, "dt": "2026-03-31T02:17:07.926921+00:00", "model": "glm-5", "provider": "custom.d8b27d47", "prompt_tokens": 5286, "completion_tokens": 77, "total_tokens": 5363, "success": true, "latency_ms": 0, "error": null}
+{"ts": 1774923446.004618, "dt": "2026-03-31T02:17:26.004618+00:00", "model": "deepseek", "provider": "custom.592efab2", "prompt_tokens": 270, "completion_tokens": 79, "total_tokens": 349, "success": true, "latency_ms": 0, "error": null}
